@@ -22,7 +22,7 @@ export class DotRouterService {
     private router = inject(Router);
     private route = inject(ActivatedRoute);
 
-    portletReload$ = new Subject();
+    portletReload$ = new Subject<string | undefined>();
     private _storedRedirectUrl: string | null = '';
     private _routeHistory: PortletNav = { url: '' };
     private CUSTOM_PORTLET_ID_PREFIX = 'c_';
@@ -45,11 +45,12 @@ export class DotRouterService {
         return this._routeHistory.url;
     }
 
-    get previousUrl(): string {
+    // `PortletNav.previousUrl` is optional and is unset until the first navigation.
+    get previousUrl(): string | undefined {
         return this._routeHistory.previousUrl;
     }
 
-    get currentPortlet(): PortletNav {
+    get currentPortlet(): PortletNav & { id: string } {
         return {
             url: this.router.routerState.snapshot.url,
             id: this.getPortletId(this.router.routerState.snapshot.url),
@@ -57,11 +58,12 @@ export class DotRouterService {
         };
     }
 
-    set storedRedirectUrl(url: string) {
+    // `redirectMain` clears this by assigning null once the redirect is consumed.
+    set storedRedirectUrl(url: string | null) {
         this._storedRedirectUrl = url;
     }
 
-    get storedRedirectUrl(): string {
+    get storedRedirectUrl(): string | null {
         return this._storedRedirectUrl;
     }
 
@@ -76,7 +78,7 @@ export class DotRouterService {
     get queryParams(): Params {
         const nav = this.router.getCurrentNavigation();
 
-        return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
+        return nav?.finalUrl ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
 
     get canDeactivateRoute$(): Observable<boolean> {
@@ -456,7 +458,7 @@ export class DotRouterService {
 
     private addCacheBusting(navExtras?: NavigationExtras): NavigationExtras {
         if (navExtras) {
-            navExtras.queryParams['r'] = new Date().getTime();
+            navExtras.queryParams = { ...navExtras.queryParams, r: new Date().getTime() };
         } else {
             navExtras = { queryParams: { r: new Date().getTime() } };
         }

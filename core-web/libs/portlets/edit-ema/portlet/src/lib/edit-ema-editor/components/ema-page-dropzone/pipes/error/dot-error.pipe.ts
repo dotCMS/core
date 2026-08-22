@@ -18,6 +18,13 @@ export class DotErrorPipe implements PipeTransform {
         { payload, contentlets }: Container,
         emaDragItem: EmaDragItem | undefined
     ): DotErrorPipeResponse {
+        // No drag item means nothing is being dragged, so there is no rejection to describe.
+        // `isValidContentType` reported "invalid" for a missing item and the branch below then read
+        // `emaDragItem.contentType` — a TypeError for the exact input this signature admits.
+        if (!emaDragItem) {
+            return { message: '', args: [] };
+        }
+
         const { container = {} } =
             typeof payload === 'string' ? JSON.parse(payload) : payload || {};
 
@@ -56,11 +63,7 @@ export class DotErrorPipe implements PipeTransform {
         };
     }
 
-    private isValidContentType(acceptTypes: string, item: EmaDragItem | undefined): boolean {
-        if (!item) {
-            return false;
-        }
-
+    private isValidContentType(acceptTypes: string, item: EmaDragItem): boolean {
         if (item.baseType === DotCMSBaseTypesContentTypes.WIDGET) {
             return true;
         }

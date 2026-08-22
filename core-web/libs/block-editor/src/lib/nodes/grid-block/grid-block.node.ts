@@ -40,7 +40,9 @@ export const GridBlock = Node.create({
                     return [6, 6];
                 },
                 renderHTML: (attributes: Record<string, unknown>) => {
-                    const cols = Array.isArray(attributes.columns) ? attributes.columns : [6, 6];
+                    const cols = Array.isArray(attributes['columns'])
+                        ? attributes['columns']
+                        : [6, 6];
                     const pct1 = (cols[0] / 12) * 100;
                     const pct2 = (cols[1] / 12) * 100;
 
@@ -80,12 +82,12 @@ export const GridBlock = Node.create({
                     }
 
                     const { schema } = editor;
-                    const gridColumn = schema.nodes.gridColumn;
-                    const paragraph = schema.nodes.paragraph;
+                    const gridColumn = schema.nodes['gridColumn'];
+                    const paragraph = schema.nodes['paragraph'];
 
                     const col1 = gridColumn.create(null, paragraph.create());
                     const col2 = gridColumn.create(null, paragraph.create());
-                    const gridBlock = schema.nodes.gridBlock.create(null, [col1, col2]);
+                    const gridBlock = schema.nodes['gridBlock'].create(null, [col1, col2]);
 
                     if (dispatch) {
                         const pos = tr.selection.from;
@@ -149,7 +151,7 @@ export const GridBlock = Node.create({
                             const { tr } = state;
                             const from = gridPos;
                             const to = gridPos + gridNode.nodeSize;
-                            const paragraph = state.schema.nodes.paragraph.create();
+                            const paragraph = state.schema.nodes['paragraph'].create();
                             tr.replaceWith(from, to, paragraph);
                             tr.setSelection(TextSelection.near(tr.doc.resolve(from + 1)));
                             editor.view.dispatch(tr);

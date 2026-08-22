@@ -70,7 +70,7 @@ describe('DotAssetSearchComponent', () => {
     });
 
     it('should send the correct inputs to DotAssetCardListComponent', () => {
-        const dotAssetCardListComponent = spectator.query(DotAssetCardListComponent);
+        const dotAssetCardListComponent = spectator.query(DotAssetCardListComponent)!;
 
         // Default state
         expect(dotAssetCardListComponent.contentlets).toEqual([]);

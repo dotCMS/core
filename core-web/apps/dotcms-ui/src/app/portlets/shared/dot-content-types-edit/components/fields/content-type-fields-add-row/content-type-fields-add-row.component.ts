@@ -42,7 +42,7 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
 
     rowState = 'add';
     selectedColumnIndex = 0;
-    actions: MenuItem[];
+    actions: MenuItem[] = [];
 
     readonly $columns = input<number[]>([1, 2, 3, 4], { alias: 'columns' });
     readonly $disabled = input<boolean>(false, { alias: 'disabled' });
@@ -79,14 +79,15 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * Set columns active when mouse enter
      * @param col
      */
-    onMouseEnter(col: number, event): void {
+    onMouseEnter(col: number, event: MouseEvent): void {
         this.selectedColumnIndex = col;
         this.setFocus(this.getElementSelected());
         event.preventDefault();
     }
 
-    onMouseLeave(event): void {
-        this.removeFocus(event.target);
+    onMouseLeave(event: MouseEvent): void {
+        // The handler is bound to the column element itself, so `target` is that element.
+        this.removeFocus(event.target as HTMLElement);
     }
 
     /**
@@ -125,8 +126,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * Set focus on element sent as param
      * @param elem
      */
-    setFocus(elem: HTMLElement): void {
-        elem.focus({ preventScroll: true });
+    setFocus(elem: HTMLElement | undefined): void {
+        elem?.focus({ preventScroll: true });
     }
 
     /**
@@ -135,8 +136,8 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
      * @returns *
      * @memberof ContentTypeFieldsAddRowComponent
      */
-    removeFocus(elem: HTMLElement): void {
-        elem.blur();
+    removeFocus(elem: HTMLElement | undefined): void {
+        elem?.blur();
     }
 
     /**
@@ -161,8 +162,13 @@ export class ContentTypeFieldsAddRowComponent implements OnDestroy, OnInit {
         this.selectedColumnIndex = 0;
     }
 
-    private getElementSelected(): HTMLElement {
-        return this.$colContainerElem().nativeElement.children[this.selectedColumnIndex];
+    /**
+     * `#colContainer` lives behind `@if (rowState === 'select')`, and `setColumnSelect` reaches for
+     * it after a 201 ms timeout — by which point the state may have moved back to `'add'` or the
+     * component may be gone. Both focus helpers above accept the absence.
+     */
+    private getElementSelected(): HTMLElement | undefined {
+        return this.$colContainerElem()?.nativeElement.children[this.selectedColumnIndex];
     }
 
     private loadActions(): void {

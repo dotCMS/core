@@ -66,16 +66,18 @@ interface DotChart {
 }
 // ViewModel Interfaces
 export interface VmReportExperiment {
-    experiment: DotExperiment;
-    results: DotExperimentResults;
+    /** Null until `loadExperimentAndResults` resolves; `isLoading` covers that window. */
+    experiment: DotExperiment | null;
+    results: DotExperimentResults | null;
     dailyChart: DotChart | null;
     bayesianChart: DotChart | null;
     detailData: DotExperimentVariantDetail[];
     isLoading: boolean;
     status: ComponentStatus;
     winnerLegendSummary: SummaryLegend;
-    suggestedWinner: DotResultVariant | null;
-    promotedVariant: Variant | null;
+    suggestedWinner: DotResultVariant | null | undefined;
+    /** Undefined when no variant has been promoted — see `getPromotedVariant$`. */
+    promotedVariant: Variant | undefined;
 }
 
 const NOT_ENOUGH_DATA_LABEL = 'experiments.reports.not.enough.data';
@@ -103,14 +105,20 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         }
     );
 
-    readonly getSuggestedWinner$: Observable<DotResultVariant | null> = this.select(
-        ({ results }) =>
-            BayesianNoWinnerStatus.includes(results?.bayesianResult?.suggestedWinner)
+    readonly getSuggestedWinner$: Observable<DotResultVariant | null | undefined> = this.select(
+        ({ results }) => {
+            // `suggestedWinner` is absent until the bayesian result arrives, and an unrecognised one
+            // is not a winner — which is the `null` the status list already produces.
+            const suggestedWinner = results?.bayesianResult?.suggestedWinner;
+
+            return !suggestedWinner || BayesianNoWinnerStatus.includes(suggestedWinner)
                 ? null
-                : results?.goals.primary.variants[results?.bayesianResult?.suggestedWinner]
+                : results?.goals.primary.variants[suggestedWinner];
+        }
     );
 
-    readonly getPromotedVariant$: Observable<Variant | null> = this.select(({ experiment }) =>
+    /** Undefined when no variant has been promoted, which `find` returns for an empty match. */
+    readonly getPromotedVariant$: Observable<Variant | undefined> = this.select(({ experiment }) =>
         experiment?.trafficProportion?.variants.find(({ promoted }) => promoted)
     );
 
@@ -146,16 +154,18 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
 
     // Daily Chart
     readonly hasEnoughSessions$: Observable<boolean> = this.select(
-        ({ results }) => results && results.sessions.total >= MINIMUM_SESSIONS_TO_SHOW_CHART
+        // `!!` because `results` is null until they load, and "no results" is not "enough sessions".
+        ({ results }) => !!results && results.sessions.total >= MINIMUM_SESSIONS_TO_SHOW_CHART
     );
 
-    readonly getDailyChartData$: Observable<ChartData<'line'>> = this.select(({ results }) =>
-        results
-            ? {
-                  labels: this.getDailyChartLabels(results.goals.primary.variants),
-                  datasets: this.getDailyChartDatasets(results.goals.primary.variants)
-              }
-            : null
+    readonly getDailyChartData$: Observable<ChartData<'line'> | null> = this.select(
+        ({ results }) =>
+            results
+                ? {
+                      labels: this.getDailyChartLabels(results.goals.primary.variants),
+                      datasets: this.getDailyChartDatasets(results.goals.primary.variants)
+                  }
+                : null
     );
 
     readonly dailyChart$: Observable<DotChart> = this.select(
@@ -313,9 +323,14 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
             dailyChart,
             winnerLegendSummary: {
                 ...winnerLegendSummary,
+                // Spread rather than passed positionally: `get(key, ...args: string[])` and there
+                // is no variant description until a winner exists — the no-winner legends take no
+                // argument at all.
                 legend: this.dotMessageService.get(
                     winnerLegendSummary?.legend,
-                    suggestedWinner?.variantDescription
+                    ...(suggestedWinner?.variantDescription
+                        ? [suggestedWinner.variantDescription]
+                        : [])
                 )
             },
             suggestedWinner,
@@ -328,8 +343,8 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
         super(initialState);
     }
 
-    private updateTabTitle(experiment: DotExperiment) {
-        this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    private updateTabTitle(experiment: DotExperiment | undefined) {
+        this.title.setTitle(`${experiment?.name} - ${this.title.getTitle()}`);
     }
 
     private getDailyChartDatasets(
@@ -367,7 +382,7 @@ export class DotExperimentsReportsStore extends ComponentStore<DotExperimentsRep
     }
 
     private getDotExperimentVariantDetail(
-        experiment: DotExperiment,
+        experiment: DotExperiment | null,
         results: DotExperimentResults,
         variant: DotResultVariant,
         noDataLabel: string,

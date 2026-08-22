@@ -172,8 +172,6 @@ export class DotUveContentletToolsComponent {
      * edit, delete, etc.); the selected overlay is just a persistent
      * border so the user can see what's selected after the panel opens.
      */
-    readonly showHoverOverlay = computed(() => this.contentletArea() !== null);
-
     /**
      * Show the selected overlay whenever something is selected AND the
      * iframe layout isn't mid-flux. The store's `$iframeLayoutLocked`
@@ -190,18 +188,33 @@ export class DotUveContentletToolsComponent {
      * Snapshot of the area payload augmented with the current insert position for hovered contentlet.
      * Consumers can dispatch the returned object directly.
      */
-    readonly contentContext = computed<ActionPayload>(() => ({
-        ...this.contentletArea()?.payload,
-        position: this.buttonPosition()
-    }));
+    /**
+     * `| null` because `contentletArea()` is: nothing is hovered. Spreading an absent payload used
+     * to produce an object with every `ActionPayload` field optional, which is not an `ActionPayload`
+     * — and most readers below were already written with `?.`, so this is the shape they assumed.
+     */
+    readonly contentContext = computed<ActionPayload | null>(() => {
+        const payload = this.contentletArea()?.payload;
+
+        if (!payload) {
+            return null;
+        }
+
+        return { ...payload, position: this.buttonPosition() };
+    });
 
     /**
      * Snapshot of the area payload augmented with the current insert position for selected contentlet.
      */
-    readonly selectedContentContext = computed<ActionPayload>(() => {
+    readonly selectedContentContext = computed<ActionPayload | null>(() => {
         const selected = this.selected();
+
+        if (!selected) {
+            return null;
+        }
+
         return {
-            ...selected?.payload,
+            ...selected.payload,
             position: this.buttonPosition()
         };
     });
@@ -255,6 +268,13 @@ export class DotUveContentletToolsComponent {
      */
     readonly menuItems = computed<MenuItem[]>(() => {
         const context = this.selected() ? this.selectedContentContext() : this.contentContext();
+
+        // Nothing hovered or selected means none of these commands has a target to act on, so there
+        // is no menu to show. The toolbar that hosts it is already gated on the same condition.
+        if (!context) {
+            return [];
+        }
+
         return [
             {
                 label: this.#dotMessageService.get('content'),
@@ -278,7 +298,7 @@ export class DotUveContentletToolsComponent {
     readonly vtlMenuItems = computed<MenuItem[]>(() => {
         const context = this.selected() ? this.selectedContentContext() : this.contentContext();
         const { vtlFiles } = context ?? {};
-        return vtlFiles?.map((file) => ({
+        return (vtlFiles ?? []).map((file) => ({
             label: file?.name,
             command: () => this.editVTL.emit(file)
         }));
@@ -293,6 +313,13 @@ export class DotUveContentletToolsComponent {
      */
     readonly actionsMenuItems = computed<MenuItem[]>(() => {
         const context = this.contentContext();
+
+        // Same as `menuItems`: every command below emits this context, so without one there are no
+        // actions to offer.
+        if (!context) {
+            return [];
+        }
+
         const items: MenuItem[] = [];
 
         const vtlSubmenu = this.vtlMenuItems();
@@ -433,7 +460,8 @@ export class DotUveContentletToolsComponent {
      */
     readonly dragPayload = computed(() => {
         const selectedContext = this.selectedContentContext();
-        const { container, contentlet } = selectedContext;
+        const container = selectedContext?.container;
+        const contentlet = selectedContext?.contentlet;
 
         if (!contentlet) {
             return {
@@ -458,7 +486,9 @@ export class DotUveContentletToolsComponent {
      * drag handle dispatches the right contentlet.
      */
     readonly hoverDragPayload = computed(() => {
-        const { container, contentlet } = this.contentContext();
+        const context = this.contentContext();
+        const container = context?.container;
+        const contentlet = context?.contentlet;
 
         if (!contentlet) {
             return {
@@ -480,7 +510,9 @@ export class DotUveContentletToolsComponent {
     /**
      * Hides the menus when the contentlet area changes.
      */
-    readonly hideMenusMethod = signalMethod<ContentletArea>((_area) => {
+    // `| null` matches the `contentletArea` input it is wired to in the constructor: the menus need
+    // to close when the hover clears, which is exactly the null case.
+    readonly hideMenusMethod = signalMethod<ContentletArea | null>((_area) => {
         this.hideMenus();
     });
 
@@ -508,7 +540,8 @@ export class DotUveContentletToolsComponent {
      */
     protected promoteHoverToSelected(): void {
         const hovered = this.contentletArea();
-        if (!hovered) return;
+        const context = this.contentContext();
+        if (!hovered || !context) return;
 
         // Hover x/y/width/height are already in the editor's canvas
         // coordinate space — the SDK's auto-bounds channel reports them
@@ -522,7 +555,7 @@ export class DotUveContentletToolsComponent {
                 width: hovered.width,
                 height: hovered.height
             },
-            payload: this.contentContext()
+            payload: context
         });
     }
 

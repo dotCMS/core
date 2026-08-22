@@ -272,7 +272,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
     });
 
     it('should emit removeFields event when a Row is removed', () => {
-        let fieldsToRemove: DotCMSContentTypeField[];
+        let fieldsToRemove: DotCMSContentTypeField[] | undefined;
 
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
         const field = {
@@ -280,7 +280,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         fieldRow.divider.id = 'test';
 
         comp.fieldRows = [fieldRow];
@@ -289,7 +289,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         comp.removeFieldRow(fieldRow, 0);
 
-        expect([fieldRow.divider, fieldRow.columns[0].columnDivider, field]).toEqual(
+        expect([fieldRow.divider, fieldRow.columns![0].columnDivider, field]).toEqual(
             fieldsToRemove
         );
     });
@@ -314,7 +314,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             clazz: DotCMSClazzes.TEXT,
             name: 'nameField'
         };
-        fieldRow1.columns[0].fields = [field];
+        fieldRow1.columns![0].fields = [field];
 
         fixture.componentRef.setInput('layout', [fieldRow1]);
 
@@ -324,8 +324,8 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         comp.cancelLastDragAndDrop();
 
         expect(comp.fieldRows.length).toEqual(1);
-        expect(comp.fieldRows[0].columns.length).toEqual(1);
-        expect(comp.fieldRows[0].columns[0].fields).toEqual([field]);
+        expect(comp.fieldRows[0].columns!.length).toEqual(1);
+        expect(comp.fieldRows[0].columns![0].fields).toEqual([field]);
     });
 
     it('should cancel last tab field drag and drop operation fields', () => {
@@ -354,7 +354,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             name: 'nameField'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
@@ -378,7 +378,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
             name: 'nameField'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
@@ -414,12 +414,12 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
         fixture.componentRef.setInput('contentType', fakeContentType);
         const field = {
             ...dotcmsContentTypeFieldBasicMock,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+            clazz: DotCMSClazzes.WYSIWYG,
             id: 'wysiwyg-id',
             name: 'WYSIWYG'
         };
         const fieldRow: DotCMSContentTypeLayoutRow = FieldUtil.createFieldRow(1);
-        fieldRow.columns[0].fields = [field];
+        fieldRow.columns![0].fields = [field];
         comp.fieldRows = [fieldRow];
         fixture.detectChanges();
 
@@ -429,7 +429,7 @@ describe('ContentTypeFieldsDropZoneComponent', () => {
 
         const blockField = {
             ...field,
-            clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+            clazz: DotCMSClazzes.BLOCK_EDITOR,
             fieldType: 'Story-Block'
         };
         dialogOnClose.next({ kind: 'convert-to-block', field: blockField });
@@ -451,8 +451,8 @@ let fakeFields: DotCMSContentTypeLayoutRow[];
     standalone: false
 })
 class TestHostComponent {
-    layout: DotCMSContentTypeLayoutRow[];
-    loading: boolean;
+    layout!: DotCMSContentTypeLayoutRow[];
+    loading!: boolean;
 }
 
 // TODO: Upgrade tests to use FieldDragDropService (without mocking) and mocking DragulaService
@@ -461,7 +461,7 @@ class TestHostComponent {
 
 const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
-    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+    clazz: DotCMSClazzes.BLOCK_EDITOR,
     id: '12',
     name: 'field 12',
     sortOrder: 12,
@@ -547,7 +547,7 @@ describe('Load fields and drag and drop', () => {
                         loadFieldTypes() {
                             return of([
                                 {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                    clazz: DotCMSClazzes.WYSIWYG,
                                     helpText:
                                         'Show a rich text area for content input that allows a user to format content.',
                                     id: 'wysiwyg',
@@ -563,7 +563,7 @@ describe('Load fields and drag and drop', () => {
                                     ]
                                 },
                                 {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+                                    clazz: DotCMSClazzes.BLOCK_EDITOR,
                                     id: 'block editor',
                                     label: 'BLOCK EDITOR',
                                     properties: ['name', 'body', 'required', 'indexed']
@@ -621,7 +621,7 @@ describe('Load fields and drag and drop', () => {
                         fields: [
                             {
                                 ...dotcmsContentTypeFieldBasicMock,
-                                clazz: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+                                clazz: DotCMSClazzes.WYSIWYG,
                                 id: '3',
                                 name: 'field 3',
                                 sortOrder: 2,
@@ -740,7 +740,7 @@ describe('Load fields and drag and drop', () => {
     it('should save all updated fields', fakeAsync(() => {
         jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(false);
 
-        const updatedField = fakeFields[2].columns[0].fields[0];
+        const updatedField = fakeFields[2].columns![0].fields[0];
 
         fixture.detectChanges();
 
@@ -769,7 +769,7 @@ describe('Load fields and drag and drop', () => {
         comp.currentField = null;
         jest.spyOn(testFieldDragDropService, 'isDraggedEventStarted').mockReturnValue(true);
 
-        const updatedField = fakeFields[2].columns[0].fields[0];
+        const updatedField = fakeFields[2].columns![0].fields[0];
 
         fixture.detectChanges();
 
@@ -787,7 +787,7 @@ describe('Load fields and drag and drop', () => {
         const addRowsContainer = de.query(By.css('dot-add-rows')).componentInstance;
         addRowsContainer.$selectColums.emit(2);
         expect(comp.addRow).toHaveBeenCalled();
-        expect(comp.fieldRows[0].columns.length).toBe(2);
+        expect(comp.fieldRows[0].columns!.length).toBe(2);
     });
 
     it('should emit and create tab divider', () => {
@@ -820,7 +820,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should set dropped field if a drop event happen from source', () => {
         return fixture.whenStable().then(() => {
-            const dropField = fakeFields[2].columns[0].fields[0];
+            const dropField = fakeFields[2].columns![0].fields[0];
             becomeNewField(dropField);
             fixture.detectChanges();
 
@@ -896,10 +896,14 @@ describe('Load fields and drag and drop', () => {
 
     it('should save all the new fields and at the end DraggedStarted event should be false', () => {
         becomeNewField(fakeFields[2].divider);
-        becomeNewField(fakeFields[2].columns[0].columnDivider);
-        becomeNewField(fakeFields[2].columns[0].fields[0]);
+        becomeNewField(fakeFields[2].columns![0].columnDivider);
+        becomeNewField(fakeFields[2].columns![0].fields[0]);
 
-        const newlyField = fakeFields[2].columns[0].fields[0];
+        // A copy, so the shared fixture keeps its id: this stands in for a field the user has
+        // just dropped and not yet saved.
+        const newlyField: Partial<DotCMSContentTypeField> = {
+            ...fakeFields[2].columns![0].fields[0]
+        };
         delete newlyField.id;
         fixture.detectChanges();
         // select the fields[8] as the current field
@@ -907,7 +911,7 @@ describe('Load fields and drag and drop', () => {
             item: newlyField
         });
 
-        let emittedFields: DotCMSContentTypeLayoutRow[];
+        let emittedFields: DotCMSContentTypeLayoutRow[] | undefined;
         comp.saveFields.subscribe((fields) => {
             emittedFields = fields;
         });
@@ -935,7 +939,7 @@ describe('Load fields and drag and drop', () => {
 
     it('should open the dialog when a drop event happens from source', () => {
         fixture.detectChanges();
-        const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns[0].fields[0];
+        const fieldToEdit: DotCMSContentTypeField = fakeFields[2].columns![0].fields[0];
         testFieldDragDropService._fieldDropFromSource.next({
             item: fieldToEdit,
             target: {

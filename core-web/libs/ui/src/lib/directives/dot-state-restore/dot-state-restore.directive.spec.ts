@@ -21,7 +21,7 @@ describe('DotStateRestoreDirective', () => {
             `<p-table stateStorage="local" stateKey="test-key"  dotStateRestore></p-table>`
         );
 
-        const table = spectator.query(Table);
+        const table = spectator.query(Table)!;
 
         expect(table.sortField).toBe(savedState.sortField);
         expect(table.sortOrder).toBe(savedState.sortOrder);
@@ -32,7 +32,7 @@ describe('DotStateRestoreDirective', () => {
 
         spectator = createDirective();
 
-        const table = spectator.query(Table);
+        const table = spectator.query(Table)!;
 
         expect(table.sortField).toBe(savedState.sortField);
         expect(table.sortOrder).toBe(savedState.sortOrder);
@@ -51,7 +51,7 @@ describe('DotStateRestoreDirective', () => {
             `<p-table stateStorage="session" stateKey="no-key"  dotStateRestore></p-table>`
         );
 
-        const table = spectator.query(Table);
+        const table = spectator.query(Table)!;
 
         // Check that no stored state is applied
         expect(table.sortField).toBeUndefined();

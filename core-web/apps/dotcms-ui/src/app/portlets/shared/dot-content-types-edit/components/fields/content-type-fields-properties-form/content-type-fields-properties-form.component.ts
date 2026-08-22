@@ -65,10 +65,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     readonly $propertiesContainer = viewChild<ElementRef>('properties');
 
     /** Local copy of form field data for mutations */
-    formFieldData: DotCMSContentTypeField;
+    formFieldData!: DotCMSContentTypeField;
 
     /** Reactive form group for field properties */
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
 
     /** Array of field property names to display */
     fieldProperties: string[] = [];
@@ -77,7 +77,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     checkboxFields: string[] = ['indexed', 'listed', 'required', 'searchable', 'unique'];
 
     /** Original form value used for change detection */
-    private originalValue: DotCMSContentTypeField;
+    private originalValue!: DotCMSContentTypeField;
 
     /** Subject for managing component destruction and unsubscribing from observables */
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -95,11 +95,13 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     ngOnChanges(changes: SimpleChanges): void {
         if (
-            changes.$formFieldData?.currentValue &&
-            changes.$formFieldData.currentValue !== this.formFieldData
+            changes['$formFieldData']?.currentValue &&
+            changes['$formFieldData'].currentValue !== this.formFieldData
         ) {
-            this.formFieldData = this.$formFieldData();
-            if (this.formFieldData) {
+            const field = this.$formFieldData();
+
+            if (field) {
+                this.formFieldData = field;
                 this.destroy();
                 this.init();
                 this.cdr.detectChanges();
@@ -111,8 +113,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * Angular lifecycle hook called after component initialization
      */
     ngOnInit(): void {
-        this.formFieldData = this.$formFieldData();
-        if (this.formFieldData) {
+        const field = this.$formFieldData();
+
+        if (field) {
+            this.formFieldData = field;
             // ngOnChanges runs before ngOnInit when formFieldData is provided up-front,
             // so the form may already be initialized. Re-running init() here would create
             // a second FormGroup, leaving the rendered inputs bound to the old one while
@@ -142,7 +146,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
             const transformedValue = this.transformFormValue(this.form.value);
             this.saveField.emit(transformedValue);
         } else {
-            this.fieldProperties.forEach((property) => this.form.get(property).markAsTouched());
+            this.fieldProperties.forEach((property) => this.form.get(property)?.markAsTouched());
         }
 
         this.valid.emit(false);
@@ -155,8 +159,8 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * @param value - The form value to transform
      */
     transformFormValue(
-        value: Partial<DotCMSContentTypeField> & { newRenderMode?: string }
-    ): DotCMSContentTypeField {
+        value: Partial<DotCMSContentTypeField> & { newRenderMode?: string | null }
+    ): DotCMSContentTypeField & { newRenderMode?: string; label?: string } {
         if (this.formFieldData.clazz === DotCMSClazzes.CUSTOM_FIELD) {
             const existingVariables = this.formFieldData.fieldVariables || [];
             const otherVariables = existingVariables.filter(
@@ -198,12 +202,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     private init(): void {
         this.updateFormFieldData();
 
-        const properties: string[] = this.fieldPropertyService.getProperties(
-            this.formFieldData.clazz
-        );
+        const properties = this.fieldPropertyService.getProperties(this.formFieldData.clazz);
 
         this.initFormGroup(properties);
-        this.sortProperties(properties);
+        this.sortProperties(properties ?? []);
     }
 
     /**
@@ -212,7 +214,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      * @param [properties] - Optional array of property names to include in the form
      */
     private initFormGroup(properties?: string[]): void {
-        const formFields = {};
+        const formFields: Record<string, unknown> = {};
 
         if (properties) {
             properties
@@ -337,7 +339,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private setIndexedValueChecked(propertyValue: boolean): void {
         if (this.form.get('indexed') && propertyValue) {
-            this.form.get('indexed').setValue(propertyValue);
+            this.form.controls['indexed'].setValue(propertyValue);
         }
 
         this.handleDisabledIndexed(propertyValue);
@@ -353,7 +355,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
         this.setIndexedValueChecked(propertyValue);
 
         if (this.form.get('required') && propertyValue) {
-            this.form.get('required').setValue(propertyValue);
+            this.form.controls['required'].setValue(propertyValue);
         }
 
         this.handleDisabledRequired(propertyValue);
@@ -367,7 +369,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledIndexed(disable: boolean): void {
         if (this.form.get('indexed')) {
-            disable ? this.form.get('indexed').disable() : this.form.get('indexed').enable();
+            disable
+                ? this.form.controls['indexed'].disable()
+                : this.form.controls['indexed'].enable();
         }
     }
 
@@ -378,7 +382,9 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private handleDisabledRequired(disable: boolean): void {
         if (this.form.get('required')) {
-            disable ? this.form.get('required').disable() : this.form.get('required').enable();
+            disable
+                ? this.form.controls['required'].disable()
+                : this.form.controls['required'].enable();
         }
     }
 
@@ -387,7 +393,10 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
      */
     private updateFormFieldData() {
         if (!this.formFieldData.id) {
-            delete this.formFieldData['name'];
+            // `name` is required on `DotCMSContentTypeField` because that is what the endpoint
+            // returns; a new field is sent without it so the backend derives it. The cast states
+            // that difference instead of widening the model for all 27 of its consumers.
+            delete (this.formFieldData as Partial<DotCMSContentTypeField>).name;
         }
     }
 }

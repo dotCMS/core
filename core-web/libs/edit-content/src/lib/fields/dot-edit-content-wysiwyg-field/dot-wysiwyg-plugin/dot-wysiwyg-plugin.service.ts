@@ -155,6 +155,12 @@ export class DotWysiwygPluginService {
             )
         );
 
+        if (!ref) {
+            this.imagePickerBusy = false;
+
+            return;
+        }
+
         ref.onClose.subscribe((asset: DotCMSContentlet) => {
             this.imagePickerBusy = false;
 
@@ -187,10 +193,12 @@ export class DotWysiwygPluginService {
      */
     private handleImageDrop(editor: Editor) {
         editor.on('drop', (event) => {
-            const file = event.dataTransfer.files[0];
+            // A drop need not carry a DataTransfer at all, and one that does need not carry files
+            // — dragging selected text inside the editor is the common case.
+            const file = event.dataTransfer?.files[0];
 
             // Check if the file is an image
-            if (!file.type.includes('image')) {
+            if (!file?.type.includes('image')) {
                 return;
             }
 

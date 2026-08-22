@@ -81,17 +81,19 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     @Output() selected = new EventEmitter<DotPageAsset | string>();
     @Input() folderSearch = false;
 
-    @ViewChild('autoComplete') autoComplete: AutoComplete;
+    @ViewChild('autoComplete') autoComplete!: AutoComplete;
 
-    val: DotPageSelectorItem;
+    val!: DotPageSelectorItem;
     suggestions$: Subject<DotPageSelectorItem[]> = new Subject<DotPageSelectorItem[]>();
-    message: string;
-    searchType: string;
+    /** Null while there is nothing to tell the user — cleared at the start of each search. */
+    message: string | null = null;
+    searchType!: string;
     isError = false;
-    private currentHost: Site;
+    /** Null until a site is picked, and cleared when the query stops naming one. */
+    private currentHost: Site | null = null;
     private invalidHost = false;
 
-    propagateChange = (_: unknown) => {
+    propagateChange = (_: string | null) => {
         /* */
     };
 
@@ -188,7 +190,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param {(params) => void} fn
      * @memberof DotPageSelectorComponent
      */
-    registerOnChange(fn: (params) => void): void {
+    registerOnChange(fn: (params: string | null) => void): void {
         this.propagateChange = fn;
     }
 
@@ -201,7 +203,7 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             if (this.invalidHost) {
                 this.message = this.getEmptyMessage(SearchType.SITE);
             } else if (this.isFolderAndHost(query)) {
-                this.propagateChange(this.autoComplete.inputEL.nativeElement.value);
+                this.propagateChange(this.autoComplete.inputEL?.nativeElement.value);
                 this.message = this.dotMessageService.get('page.selector.folder.new');
             } else {
                 this.message = this.getEmptyMessage(this.searchType);
@@ -239,7 +241,8 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private fullSearch(param: string): Observable<DotPageSelectorItem[]> {
-        const host = decodeURI(this.parseUrl(param).host);
+        // Reached only through `isTwoStepSearch`, which is `isHostAndPath` — so the query parses.
+        const host = decodeURI(this.parseUrl(param)?.host ?? '');
 
         return this.dotPageSelectorService.getSites(host, true).pipe(
             take(1),
@@ -286,12 +289,12 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
     }
 
     private isHostAndPath(param: string): boolean {
-        const url: DotSimpleURL | { [key: string]: string } = this.parseUrl(param);
+        const url = this.parseUrl(param);
 
-        return url && !!(url.host && url.pathname.length > 0);
+        return !!url && !!url.host && url.pathname.length > 0;
     }
 
-    private parseUrl(query: string): DotSimpleURL {
+    private parseUrl(query: string): DotSimpleURL | null {
         try {
             const url = new URL(`http:${query}`);
 
@@ -315,8 +318,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
     private cleanAndValidateQuery(query: string): string {
         let cleanedQuery = '';
-        if (this.isTwoStepSearch(query)) {
-            const url = this.parseUrl(query);
+        const url = this.isTwoStepSearch(query) ? this.parseUrl(query) : null;
+
+        if (url) {
             url.host = this.cleanHost(decodeURI(url.host));
             url.pathname = this.cleanPath(url.pathname);
             cleanedQuery = `//${url.host}/${url.pathname}`;
@@ -326,7 +330,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
             cleanedQuery = this.cleanPath(query);
         }
 
-        this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
+        if (this.autoComplete.inputEL) {
+            this.autoComplete.inputEL.nativeElement.value = cleanedQuery;
+        }
 
         return cleanedQuery.startsWith('//')
             ? cleanedQuery
@@ -356,6 +362,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
 
             case 'folder':
                 return this.dotMessageService.get('page.selector.no.folder.results');
+
+            default:
+                return '';
         }
     }
 

@@ -37,7 +37,7 @@ class PushPublishServiceMock {
     template: ''
 })
 class TestDotPushPublishFormComponent {
-    @Input() data: DotPushPublishDialogData;
+    @Input() data!: DotPushPublishDialogData;
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
 }
@@ -194,13 +194,13 @@ describe('DotPushPublishDialogComponent', () => {
 
         it('should enable dialog accept action and formValid when form becomes valid', () => {
             comp.updateFormValid(true);
-            expect(comp.dialogActions.accept.disabled).toEqual(false);
+            expect(comp.dialogActions.accept!.disabled).toEqual(false);
             expect(comp.formValid).toEqual(true);
         });
 
         it('should disable accept action and formValid when form becomes invalid', () => {
             comp.updateFormValid(false);
-            expect(comp.dialogActions.accept.disabled).toEqual(true);
+            expect(comp.dialogActions.accept!.disabled).toEqual(true);
             expect(comp.formValid).toEqual(false);
         });
     });
@@ -224,7 +224,11 @@ describe('DotPushPublishDialogComponent', () => {
 
         describe('on success pushPublishContent', () => {
             beforeEach(() => {
-                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(of(null));
+                // The dialog reads the result as `!result?.errors`, so a null response is a path it
+                // handles even though the service declares one non-null.
+                jest.spyOn(pushPublishService, 'pushPublishContent').mockReturnValue(
+                    of(null as unknown as DotAjaxActionResponseView)
+                );
             });
 
             xit('should submit on accept and hide dialog', () => {
@@ -259,7 +263,7 @@ describe('DotPushPublishDialogComponent', () => {
             });
 
             it('should close the dialog', () => {
-                comp.dialogActions.cancel.action();
+                comp.dialogActions.cancel!.action!();
                 expect(comp.cancel.emit).toHaveBeenCalled();
                 expect(comp.dialogShow).toEqual(false);
                 expect(comp.eventData).toEqual(null);

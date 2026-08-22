@@ -252,7 +252,7 @@ describe('DotUveContentletToolsComponent', () => {
                 payload: {
                     ...MOCK_CONTENTLET_AREA.payload,
                     contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                         identifier: 'different-contentlet-id'
                     },
                     vtlFiles: undefined
@@ -489,7 +489,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
-                expect(spectator.component.contentContext().position).toBe('before');
+                expect(spectator.component.contentContext()!.position).toBe('before');
             });
 
             it('should update position to "after" when clicking bottom add button', () => {
@@ -498,7 +498,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.click(button as Element);
                 spectator.detectChanges();
 
-                expect(spectator.component.contentContext().position).toBe('after');
+                expect(spectator.component.contentContext()!.position).toBe('after');
             });
         });
 
@@ -587,14 +587,14 @@ describe('DotUveContentletToolsComponent', () => {
                 expect(items[1].label).toBe('template2.vtl');
             });
 
-            it('should return undefined when no vtl files', () => {
+            it('should return an empty list when no vtl files', () => {
                 const areaWithoutVtl = {
                     ...MOCK_CONTENTLET_AREA,
                     x: MOCK_CONTENTLET_AREA.x + 1, // Change position to make it different
                     payload: {
                         ...MOCK_CONTENTLET_AREA.payload,
                         contentlet: {
-                            ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                            ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                             identifier: 'different-contentlet-id-2'
                         },
                         vtlFiles: undefined
@@ -604,7 +604,10 @@ describe('DotUveContentletToolsComponent', () => {
                 editorSelected.set(toSelected(areaWithoutVtl));
                 spectator.detectChanges();
 
-                expect(spectator.component.vtlMenuItems()).toBeUndefined();
+                // `[]`, not `undefined`: the computed is declared `MenuItem[]` and used to return
+                // `undefined` when the contentlet had no VTL files, which this test had pinned. The
+                // declared type is the one every consumer reads against.
+                expect(spectator.component.vtlMenuItems()).toEqual([]);
             });
         });
 
@@ -635,7 +638,7 @@ describe('DotUveContentletToolsComponent', () => {
 
         describe('hoverTopClipOffset', () => {
             it('should be null when the top edge is visible', () => {
-                expect(spectator.component.hoverTopClipOffset()).toBeNull();
+                expect(spectator.component['hoverTopClipOffset']()).toBeNull();
             });
 
             it('should offset the top toolbar row when the top edge is scrolled above the iframe', () => {
@@ -643,7 +646,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverTopClipOffset()).toBe(50);
+                expect(spectator.component['hoverTopClipOffset']()).toBe(50);
 
                 const actions = spectator.query(byTestId('hover-actions')) as HTMLElement;
                 expect(actions.style.top).toBe('50px');
@@ -655,13 +658,13 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverTopClipOffset()).toBe(scrolledArea.height);
+                expect(spectator.component['hoverTopClipOffset']()).toBe(scrolledArea.height);
             });
         });
 
         describe('hoverBottomClipOffset', () => {
             it('should be null when the bottom edge is visible', () => {
-                expect(spectator.component.hoverBottomClipOffset()).toBeNull();
+                expect(spectator.component['hoverBottomClipOffset']()).toBeNull();
             });
 
             it('should offset the bottom add button when the bottom edge overflows the iframe', () => {
@@ -671,7 +674,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverBottomClipOffset()).toBe(100);
+                expect(spectator.component['hoverBottomClipOffset']()).toBe(100);
 
                 const addBottomButton = spectator.query(
                     byTestId('hover-add-bottom-button')
@@ -684,7 +687,7 @@ describe('DotUveContentletToolsComponent', () => {
         describe('hoverDragButtonTopOffset', () => {
             it('should be null when the natural vertical center is visible', () => {
                 // center = y(200) + height(400) / 2 = 400, within the 800px mock iframe.
-                expect(spectator.component.hoverDragButtonTopOffset()).toBeNull();
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBeNull();
             });
 
             it('should clamp the handle to the top of the iframe when the center is scrolled above it', () => {
@@ -694,7 +697,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // clampedCenter(0) - y(-300) = 300
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(300);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(300);
 
                 const dragButton = spectator.query(byTestId('hover-drag-button'))
                     ?.parentElement as HTMLElement;
@@ -709,7 +712,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.detectChanges();
 
                 // clampedCenter(800) - y(700) = 100
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(100);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(100);
             });
 
             it('should never exceed the contentlet height', () => {
@@ -717,7 +720,7 @@ describe('DotUveContentletToolsComponent', () => {
                 spectator.setInput('contentletArea', scrolledArea);
                 spectator.detectChanges();
 
-                expect(spectator.component.hoverDragButtonTopOffset()).toBe(scrolledArea.height);
+                expect(spectator.component['hoverDragButtonTopOffset']()).toBe(scrolledArea.height);
             });
         });
 
@@ -882,7 +885,7 @@ describe('DotUveContentletToolsComponent', () => {
             const dataItem = dragButton?.getAttribute('data-item');
 
             expect(dataItem).toBeTruthy();
-            const parsedItem = JSON.parse(dataItem);
+            const parsedItem = JSON.parse(dataItem!);
             expect(parsedItem.contentlet).toEqual(MOCK_CONTENTLET_AREA.payload.contentlet);
             expect(parsedItem.container).toEqual(MOCK_CONTENTLET_AREA.payload.container);
             expect(parsedItem.showLabelImage).toBe(true);
@@ -939,7 +942,7 @@ describe('DotUveContentletToolsComponent', () => {
                 payload: {
                     ...MOCK_CONTENTLET_AREA.payload,
                     contentlet: {
-                        ...MOCK_CONTENTLET_AREA.payload.contentlet,
+                        ...MOCK_CONTENTLET_AREA.payload.contentlet!,
                         identifier: 'other-id'
                     }
                 }

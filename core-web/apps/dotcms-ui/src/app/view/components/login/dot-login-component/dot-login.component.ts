@@ -25,7 +25,7 @@ import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 
-import { take, takeUntil, tap } from 'rxjs/operators';
+import { filter, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService, DotRouterService, DotFormatDateService } from '@dotcms/data-access';
 import { DotLoginParams, HttpCode, LoggerService, LoginService, User } from '@dotcms/dotcms-js';
@@ -79,9 +79,9 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
     message = '';
     isError = false;
-    loginForm: UntypedFormGroup;
+    loginForm!: UntypedFormGroup;
     languages: SelectItem[] = [];
-    loginInfo$: Observable<DotLoginInformation>;
+    loginInfo$!: Observable<DotLoginInformation>;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -96,6 +96,8 @@ export class DotLoginComponent implements OnInit, OnDestroy {
 
         this.loginInfo$ = this.loginPageStateService.get().pipe(
             takeUntil(this.destroy$),
+            // Null until `set()` has fetched the login page state.
+            filter((loginInfo): loginInfo is DotLoginInformation => !!loginInfo),
             tap((loginInfo: DotLoginInformation) => {
                 this.setInitialFormValues(loginInfo);
             })
@@ -122,7 +124,7 @@ export class DotLoginComponent implements OnInit, OnDestroy {
                     this.setMessage('');
                     this.loading.set(false);
                     this.dotRouterService.goToMain(user['editModeUrl']);
-                    this.dotFormatDateService.setLang(user.languageId);
+                    this.dotFormatDateService.setLang(user.languageId ?? '');
                 },
                 (res: HttpErrorResponse) => {
                     if (this.isBadRequestOrUnathorized(res.status)) {
@@ -147,15 +149,15 @@ export class DotLoginComponent implements OnInit, OnDestroy {
     }
 
     private setInitialFormValues(loginInfo: DotLoginInformation): void {
-        this.loginForm
-            .get('language')
-            .setValue(this.getLanguageFormatted(loginInfo.entity.currentLanguage));
+        this.loginForm.controls['language'].setValue(
+            this.getLanguageFormatted(loginInfo.entity.currentLanguage)
+        );
         this.setLanguageItems(loginInfo.entity.languages);
         this.setInitialMessage(loginInfo);
     }
 
     private isEmail(potentialEmail: string): boolean {
-        return !!new FormControl(potentialEmail, Validators.email).errors?.email;
+        return !!new FormControl(potentialEmail, Validators.email).errors?.['email'];
     }
 
     private setInitialMessage(loginInfo: DotLoginInformation): void {

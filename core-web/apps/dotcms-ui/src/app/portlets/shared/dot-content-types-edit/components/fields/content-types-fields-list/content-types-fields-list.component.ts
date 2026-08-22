@@ -24,7 +24,7 @@ import { FieldType } from '..';
     imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
-    @Input() baseType: string;
+    @Input() baseType!: string;
 
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
     fieldIcons = FIELD_ICONS;
@@ -76,7 +76,12 @@ export class ContentTypesFieldsListComponent implements OnInit {
                 );
 
                 const COLUMN_BREAK_FIELD = FieldUtil.createColumnBreak();
-                this.$fieldTypes.set([COLUMN_BREAK_FIELD, LINE_DIVIDER, ...fieldsFiltered]);
+                // The line divider is only prepended when the endpoint actually returned it.
+                this.$fieldTypes.set([
+                    COLUMN_BREAK_FIELD,
+                    ...(LINE_DIVIDER ? [LINE_DIVIDER] : []),
+                    ...fieldsFiltered
+                ]);
             });
     }
 

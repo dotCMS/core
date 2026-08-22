@@ -15,7 +15,7 @@ describe('DotDataViewComponent - Upload File', () => {
             props: {
                 data: [],
                 loading: false
-            }
+            } as unknown as NonNullable<Parameters<typeof createComponent>[0]>['props']
         });
         spectator.detectChanges();
     });

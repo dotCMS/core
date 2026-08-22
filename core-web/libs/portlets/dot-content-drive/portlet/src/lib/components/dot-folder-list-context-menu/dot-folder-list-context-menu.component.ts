@@ -258,13 +258,19 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #openWizard(workflowAction: DotCMSWorkflowAction, contentlet: DotCMSContentlet) {
+        // `setWizardInput` returns null when the action has no wizard steps; there is no dialog to
+        // open in that case. `DotWorkflowEventHandlerService.openWizard` guards the same way.
+        const wizardInput = this.#dotWorkflowEventHandlerService.setWizardInput(
+            workflowAction,
+            this.#dotMessageService.get('Workflow-Action')
+        );
+
+        if (!wizardInput) {
+            return;
+        }
+
         this.#dotWizardService
-            .open<DotWorkflowPayload>(
-                this.#dotWorkflowEventHandlerService.setWizardInput(
-                    workflowAction,
-                    this.#dotMessageService.get('Workflow-Action')
-                )
-            )
+            .open<DotWorkflowPayload>(wizardInput)
             .pipe(take(1))
             .subscribe((data: DotWorkflowPayload) => {
                 const payload = this.#dotWorkflowEventHandlerService.processWorkflowPayload(

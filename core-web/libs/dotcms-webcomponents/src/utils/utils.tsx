@@ -2,7 +2,7 @@ import { h } from '@stencil/core';
 
 import { DotOption, DotFieldStatus, DotFieldStatusClasses, DotKeyValueField } from '../models';
 
-export function nextTick(fn) {
+export function nextTick(fn: (() => void) | undefined | null) {
     const id = window.requestAnimationFrame(function () {
         fn && fn();
         window.cancelAnimationFrame(id);
@@ -39,7 +39,7 @@ export function getClassNames(
  * @param string val
  * @returns boolean
  */
-export function isStringType(val: string): boolean {
+export function isStringType(val: unknown): boolean {
     return typeof val === 'string' && !!val;
 }
 
@@ -76,7 +76,7 @@ export function getDotOptionsFromFieldValue(rawString: string): DotOption[] {
  * @param boolean valid
  * @returns string
  */
-export function getErrorClass(valid: boolean): string {
+export function getErrorClass(valid: boolean): string | undefined {
     return valid ? undefined : 'dot-field__error';
 }
 
@@ -86,7 +86,7 @@ export function getErrorClass(valid: boolean): string {
  * @param string name
  * @returns string
  */
-export function getHintId(name: string): string {
+export function getHintId(name: string): string | undefined {
     const value = slugify(name);
     return value ? `hint-${value}` : undefined;
 }
@@ -97,9 +97,12 @@ export function getHintId(name: string): string {
  * @param string name
  * @returns string
  */
-export function getId(name: string): string {
+export function getId(name: string): string | undefined {
+    // One `slugify`, not two: the original slugified its own result, which is a no-op on anything
+    // already slugified and was the only reason a nullable reached the second call.
     const value = slugify(name);
-    return name ? `dot-${slugify(value)}` : undefined;
+
+    return name ? `dot-${value}` : undefined;
 }
 
 /**
@@ -108,7 +111,7 @@ export function getId(name: string): string {
  * @param string name
  * @returns string
  */
-export function getLabelId(name: string): string {
+export function getLabelId(name: string): string | undefined {
     const value = slugify(name);
     return value ? `label-${value}` : undefined;
 }
@@ -194,7 +197,7 @@ export function updateStatus(
  * @param string message
  * @returns JSX.Element
  */
-export function getTagError(show: boolean, message: string) {
+export function getTagError(show: boolean, message: string | undefined) {
     return show && isStringType(message) ? (
         <span class="dot-field__error-message">{message}</span>
     ) : null;
@@ -237,8 +240,14 @@ export function isValidURL(url: string): boolean {
  *
  * @returns boolean
  */
-export function isFileAllowed(name: string, type: string, allowedExtensions: string): boolean {
-    if (allowedExtensions === '') {
+export function isFileAllowed(
+    name: string,
+    type: string,
+    allowedExtensions: string | undefined
+): boolean {
+    // Absent and empty mean the same thing — no restriction. Callers pass an optional `accept`
+    // prop, so an undefined used to reach `.split` below and throw instead of allowing the file.
+    if (!allowedExtensions) {
         return true;
     }
 
@@ -261,10 +270,12 @@ export function isFileAllowed(name: string, type: string, allowedExtensions: str
 }
 
 function getFileExtension(filename: string): string {
-    return /(?:\.([^.]+))?$/.exec(filename)[1];
+    // The optional group makes this regex match any string, so `exec` never returns null here —
+    // but the group itself is undefined for a name with no dot, which is the real empty case.
+    return /(?:\.([^.]+))?$/.exec(filename)?.[1] ?? '';
 }
 
-function slugify(text: string): string {
+function slugify(text: string): string | null {
     return text
         ? text
               .toString()

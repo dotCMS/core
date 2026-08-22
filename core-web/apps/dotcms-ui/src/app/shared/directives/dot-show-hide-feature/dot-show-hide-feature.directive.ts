@@ -53,17 +53,17 @@ export class DotShowHideFeatureDirective implements OnInit {
     private viewContainer = inject(ViewContainerRef);
     private dotPropertiesService = inject(DotPropertiesService);
 
-    private _featureFlag: FeaturedFlags;
+    private _featureFlag!: FeaturedFlags;
     @Input() set dotShowHideFeature(featureFlag: FeaturedFlags) {
         this._featureFlag = featureFlag;
     }
 
-    private _alternateTemplateRef: TemplateRef<Component>;
+    private _alternateTemplateRef!: TemplateRef<Component>;
     @Input() set dotShowHideFeatureAlternate(alternateTemplateRef: TemplateRef<Component>) {
         this._alternateTemplateRef = alternateTemplateRef;
     }
 
-    @Input() dotShowOnNotFound: boolean;
+    @Input() dotShowOnNotFound!: boolean;
 
     get alternateTemplateRef(): TemplateRef<Component> {
         return this._alternateTemplateRef;

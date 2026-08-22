@@ -13,6 +13,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsExperimentSummaryComponent } from './dot-experiments-experiment-summary.component';
 
+import type { InferInputSignals } from '@openng/spectator';
+
 const messageServiceMock = new MockDotMessageService({
     'experiments.summary.winner.testing': 'Testing',
     'experiments.summary.winner.session-to-date': 'Sessions to date:',
@@ -65,7 +67,7 @@ describe('DotExperimentsExperimentSummaryComponent', () => {
                 // Note: Using alias names (goals, scheduling, sessionsReached) instead of signal names
                 // ($goals, $scheduling, $sessionsReached) because Spectator handles signal inputs
                 // with aliases correctly when using the alias name in props.
-            } as unknown
+            } as unknown as InferInputSignals<DotExperimentsExperimentSummaryComponent>
         });
     });
 

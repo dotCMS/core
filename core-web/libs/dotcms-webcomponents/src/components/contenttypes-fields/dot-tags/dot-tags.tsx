@@ -30,7 +30,7 @@ import { SelectionFeedback } from './components/dot-autocomplete/dot-autocomplet
 })
 export class DotTagsComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value formatted splitted with a comma, for example: tag-1,tag-2 */
     @Prop({ mutable: true, reflect: true })
@@ -74,15 +74,15 @@ export class DotTagsComponent {
 
     /** Function or array of string to get the data to use for the autocomplete search */
     @Prop()
-    data: () => Promise<string[]> | string[] = null;
+    data: (() => Promise<string[]> | string[]) | null = null;
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the filed, clear value and emit events.
@@ -96,7 +96,7 @@ export class DotTagsComponent {
 
     @Watch('value')
     valueWatch(): void {
-        this.value = checkProp<DotTagsComponent, string>(this, 'value', 'string');
+        this.value = checkProp<DotTagsComponent, string>(this, 'value', 'string') ?? '';
     }
 
     componentWillLoad(): void {
@@ -113,7 +113,7 @@ export class DotTagsComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-tags__container">
                         <dot-autocomplete
                             class={getErrorClass(this.status.dotValid)}
@@ -123,7 +123,7 @@ export class DotTagsComponent {
                             onEnter={this.onEnterHandler.bind(this)}
                             onLostFocus={this.blurHandler.bind(this)}
                             onSelection={this.onSelectHandler.bind(this)}
-                            placeholder={this.placeholder || null}
+                            placeholder={this.placeholder || undefined}
                             threshold={this.threshold}
                         />
                         <div class="dot-tags__chips">
@@ -192,8 +192,8 @@ export class DotTagsComponent {
         return isStringType(this.value) ? this.value.split(',') : [];
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
     private isValid(): boolean {
@@ -220,7 +220,7 @@ export class DotTagsComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private updateStatus(): void {

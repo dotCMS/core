@@ -13,7 +13,7 @@ import {
     DotFolder,
     DotPagination,
     FolderSearchView,
-    SiteEntity
+    DotSite
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
 
@@ -72,7 +72,7 @@ describe('DotBrowsingService', () => {
 
     describe('getSitesTreePath', () => {
         it('should transform sites into TreeNodeItems', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'example.com' }),
                 createFakeSite({ identifier: 'site-2', hostname: 'test.com' })
             ];
@@ -119,7 +119,7 @@ describe('DotBrowsingService', () => {
         });
 
         it('should pass perPage and page parameters to getSites', (done) => {
-            const mockSites: SiteEntity[] = [createFakeSite()];
+            const mockSites: DotSite[] = [createFakeSite()];
             dotSiteService.getSites.mockReturnValue(
                 of({ sites: mockSites, pagination: mockPagination })
             );
@@ -163,7 +163,7 @@ describe('DotBrowsingService', () => {
 
     describe('getSitesPage', () => {
         it('should return sites and pagination metadata', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'example.com' })
             ];
 
@@ -189,7 +189,7 @@ describe('DotBrowsingService', () => {
 
     describe('resolveSiteByHostname', () => {
         it('should return the site with an exact hostname match', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'demo.com' }),
                 createFakeSite({ identifier: 'site-2', hostname: 'demo.com.other' })
             ];
@@ -210,7 +210,7 @@ describe('DotBrowsingService', () => {
         });
 
         it('should return null when no exact hostname match exists', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'other.com' })
             ];
 
@@ -382,7 +382,13 @@ describe('DotBrowsingService', () => {
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: true
+                    hasChildren: true,
+                    title: '',
+                    sortOrder: 0,
+                    filesMasks: '',
+                    defaultFileType: '',
+                    showOnMenu: true,
+                    permissions: null
                 },
                 {
                     id: 'folder-2',
@@ -390,7 +396,13 @@ describe('DotBrowsingService', () => {
                     name: 'folder2',
                     path: '/',
                     addChildrenAllowed: false,
-                    hasChildren: false
+                    hasChildren: false,
+                    title: '',
+                    sortOrder: 0,
+                    filesMasks: '',
+                    defaultFileType: '',
+                    showOnMenu: true,
+                    permissions: null
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
@@ -446,7 +458,13 @@ describe('DotBrowsingService', () => {
                     name: 'allowed-but-empty',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: false
+                    hasChildren: false,
+                    title: '',
+                    sortOrder: 0,
+                    filesMasks: '',
+                    defaultFileType: '',
+                    showOnMenu: true,
+                    permissions: null
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
@@ -471,7 +489,13 @@ describe('DotBrowsingService', () => {
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: true
+                    hasChildren: true,
+                    title: '',
+                    sortOrder: 0,
+                    filesMasks: '',
+                    defaultFileType: '',
+                    showOnMenu: true,
+                    permissions: null
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
@@ -496,7 +520,13 @@ describe('DotBrowsingService', () => {
                     name: 'child',
                     path: '/level1',
                     addChildrenAllowed: true,
-                    hasChildren: true
+                    hasChildren: true,
+                    title: '',
+                    sortOrder: 0,
+                    filesMasks: '',
+                    defaultFileType: '',
+                    showOnMenu: true,
+                    permissions: null
                 }
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
@@ -509,7 +539,7 @@ describe('DotBrowsingService', () => {
                 .searchFolders({ siteId: 'site-1', path: '/level1' }, 'example.com')
                 .subscribe(({ folders }) => {
                     expect(folders[0].label).toBe('example.com/level1/child/');
-                    expect(folders[0].data.path).toBe('/level1/child/');
+                    expect(folders[0].data!.path).toBe('/level1/child/');
                     done();
                 });
         });
@@ -558,7 +588,13 @@ describe('DotBrowsingService', () => {
             name: options.name,
             path: options.path,
             addChildrenAllowed: true,
-            hasChildren: options.hasChildren ?? false
+            hasChildren: options.hasChildren ?? false,
+            title: '',
+            sortOrder: 0,
+            filesMasks: '',
+            defaultFileType: '',
+            showOnMenu: true,
+            permissions: null
         });
 
         it('should build hierarchical tree structure from folder path using searchFolders', (done) => {
@@ -928,7 +964,7 @@ describe('DotBrowsingService', () => {
 
     describe('getCurrentSiteAsTreeNodeItem', () => {
         it('should transform current site into TreeNodeItem', (done) => {
-            const mockSite: SiteEntity = createFakeSite({
+            const mockSite: DotSite = createFakeSite({
                 identifier: 'site-1',
                 hostname: 'example.com'
             });

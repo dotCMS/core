@@ -20,7 +20,7 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
 pnpm nx build dotcms-ui                    # Build
 pnpm nx test {project}                     # Test specific project
-pnpm nx test {project} --testPathPattern=  # Test specific file
+pnpm nx test {project} --testPathPatterns=  # Test specific file (note the plural — Jest renamed it)
 pnpm nx lint {project}                     # Lint
 pnpm nx affected:test                      # Test only changed projects
 pnpm run test:dotcms                       # Test all
@@ -98,6 +98,82 @@ Always wrap form fields with this structure for consistent styling:
 </form>
 ```
 
+## TypeScript Strict Mode
+
+Strict mode is being rolled out **one project at a time** (epic #35932), bottom-up through the dependency graph. `tsconfig.base.json` stays at `"strict": false` — never flip it globally.
+
+To make a project strict:
+
+1. Add the flags to the **project's own** `tsconfig.json` (not `tsconfig.spec.json`, not the base):
+
+    ```json
+    "forceConsistentCasingInFileNames": true,
+    "strict": true,
+    "noImplicitOverride": true,
+    "noPropertyAccessFromIndexSignature": true,
+    "noImplicitReturns": true,
+    "noFallthroughCasesInSwitch": true
+    ```
+
+2. Fix every error. No new `any` — use explicit types. To silence something unavoidable, use `@ts-expect-error` with a `// TODO(#issue):` note, never a blanket `@ts-ignore`.
+
+**What enforces this:** for Rollup libs that emit declarations (`"declaration": true`), `@rollup/plugin-typescript` is in the build chain and reports type errors, so the `build` target is the gate — CI runs `nx run-many -t build` (the `build-test` execution in `core-web/pom.xml`). Do **not** add a separate `typecheck` target to those projects; it is redundant. `lint` does not catch type errors — ESLint reports lint rules, not TS diagnostics.
+
+Vite-based projects are the exception: their builds use esbuild and skip type checking, which is why the Nx Vite plugin infers a separate `typecheck` target for them.
+
+Verify locally:
+
+```bash
+pnpm exec tsc -p <projectRoot>/tsconfig.lib.json --noEmit
+pnpm exec nx run <project>:build
+pnpm exec nx affected -t build,lint --base=origin/main   # check you didn't break consumers
+```
+
+`<projectRoot>` is the path from `project.json`, which is often nested — e.g. `libs/sdk/create-app`, not `libs/create-app`. Two caveats on the tsconfig name:
+
+- **Apps** use `tsconfig.app.json`.
+- **Some projects have no `tsconfig.lib.json`** (`libs/sdk/create-app` is one); use their `tsconfig.json` instead.
+
+Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the spec config extends, so specs go strict too and their errors are yours to fix.
+
+> **Watch out for masked results.** If a tsconfig declares a `types` entry that is not installed, `tsc` reports `TS2688: Cannot find type definition file for '<name>'` and **stops before semantic checking** — you get one error and no type checking at all. A stable error count across a change proves nothing in that case. `libs/dotcms-js/tsconfig.spec.json` is affected today (`"types": ["jasmine"]`, and `@types/jasmine` is not installed in the workspace); check it with `--types node` to see real diagnostics. `apps/dotcms-block-editor` had the same defect in **three** of its configs — worth checking `tsconfig.editor.json` too, not just `spec`.
+>
+> A **`files` entry pointing at a file that does not exist** masks results the same way: `tsc` reports `TS6053: File '<path>' not found` and aborts before semantic checking. Unlike a non-matching `include` glob — which is harmless — a missing `files` entry is fatal. This is what hid `libs/sdk/angular/tsconfig.spec.json` (it listed a `next/test-setup.ts` left over from a deleted directory), so that config had never completed a single semantic pass. Before trusting any error count, confirm `tsc` actually reached the code: a config-level error means it did not.
+>
+> **Deprecated options abort too.** The workspace runs TypeScript 6.x, which raises `TS5101` for `baseUrl` and `TS5107` for `moduleResolution: "node"` / `"node10"` unless `ignoreDeprecations: "6.0"` is set — and those are config-level errors, so they abort before semantic checking just like the two above. `libs/dotcms-webcomponents` reports **2** errors without the flag and **279** with it. It cannot set the option in its tsconfig, because Stencil bundles TypeScript 5.8.3, which only accepts `"5.0"`; pass `--ignoreDeprecations 6.0` on the CLI instead.
+>
+> **The general rule:** any error whose code starts `TS5` or `TS6`, or `TS2688`, is a *configuration* error. `tsc` never reached your code, so the count that follows means nothing. Read the first error before trusting the last number.
+>
+> **A silent fake zero: `include: []`.** All the aborts above at least *report* something. This one does not. Many project tsconfigs hold only `references` and delegate the real work to `tsconfig.lib.json` / `tsconfig.app.json` — `apps/dotcms-binary-field-builder/tsconfig.json` is one. Pointing `tsc -p` at that file compiles **nothing** and prints nothing, which reads exactly like a clean project. That app had *none* of the six flags while appearing to be at zero. **Measure `tsconfig.lib.json` for libraries and `tsconfig.app.json` for apps — never the project tsconfig that only holds `references`.**
+>
+> **A project with no `build` target has never had its templates checked.** `libs/edit-content` and `libs/block-editor` have only a `test` target. Both declare `strictTemplates` in `angularCompilerOptions`, and in both it is inert: nothing ever compiles their templates. Since `tsc -p` does not check templates either (see above), a library like this can be at 0 errors on both its configs and still have template type errors — a manual `nx run <app>:build` of a consuming app found a real one in `block-editor`. Treat "0 errors" on a build-less library as covering its TypeScript only.
+>
+> **The repo's TypeScript is not always the strictest compiler in the build.** `libs/dotcms-webcomponents` type-checks twice: once by the workspace's `tsc` (6.0.3) and once by Stencil, which bundles its own 5.8.3. TypeScript 6 re-declared `Node.textContent` as an asymmetric accessor — `get(): string`, `set(value: string | null)` — so `element.textContent.replace(...)` is clean under 6 and `Object is possibly 'null'` under 5.8. The project reached **0** on `tsc -p` and the Stencil build still failed. Where two compilers check the same sources, the build is the gate; `tsc -p` at zero is a necessary condition, not a sufficient one.
+>
+> Related, and the reason that took two attempts to find: **verify a build by its exit status, never by grepping its output.** Stencil prints `transpile finished` and `build finished` for the phases that did succeed, so a grep for `finished` matches on a run that ends in `build failed` and exits non-zero. Four commits went in claiming a passing build on that basis.
+>
+> **`moduleResolution: node10` breaks Angular too, not just `@dotcms/*`.** A blast-radius sweep reported `libs/image-editor` at **996** spec errors; 335 of them were `TS2307: Cannot find module '@angular/common/http'`. Its `tsconfig.spec.json` carried `module: commonjs` + `moduleResolution: node10`, which cannot resolve subpath exports from *any* package. The real count was **8**. Unlike the aborts above this one produces a plausible-looking flood of code errors, so the tell is the first error, not the count: `TS2307` on a package that is obviously installed means the resolver, not the code. `libs/portlets/dot-agents` has the same config today (991 spec / 2 lib, unmeasured).
+>
+> **A Vite virtual module reads as one error per consumer.** `libs/sdk/client` imports `virtual:sdk-version`, which its Vite build injects and `tsc -p` cannot resolve. `libs/sdk/angular`, `libs/sdk/react` and `libs/sdk/vue` therefore each report exactly one `TS2307` that their real `build` target does not. Subtract it before comparing counts.
+>
+> **`SpyObject<T>` cannot re-implement a union-returning method.** `@openng/spectator`'s mapped type routes every member through `T[P] extends (...args: any[]) => infer R ? ... : ...`. When `R` is a union — `string | string[] | undefined`, say — that conditional *distributes*, so the member's type becomes an **intersection** of `jest.Mock`s whose `mockImplementation` overloads demand `=> undefined`, `=> string` and `=> string[]` simultaneously. No implementation satisfies all three, and the error names an intersection the source never wrote. Reach the spy through one explicit signature (`store.m as unknown as jest.Mock<R, [A]>`) rather than trying to satisfy it.
+>
+> **Flags interact across projects.** `libs/portlets/dot-query-tool` has `noImplicitReturns` *without* `strict`, and that combination caught a `TS7030` that `libs/edit-content` — which has `noImplicitReturns` too — did not, because its `strict` changes how a mixed `void`/teardown return is inferred. A clean `tsc -p` on the project you changed is not sufficient: re-measure the strict consumers as well.
+>
+> **A duplicate key in a tsconfig silently wins, and `tsc` does not warn.** `"strict": true` followed later in the same object by `"strict": false` leaves the project non-strict, with no diagnostic of any kind. Two projects on this branch (`libs/new-block-editor`, `libs/edit-content-bridge`) were closed as strict while being nothing of the kind, because the flags were added above a pre-existing `"strict": false`. The only thing that reported it was the **Angular compiler**, as a `Duplicate key "strict" in object literal` warning in an app build's output. After adding flags, read the whole `compilerOptions` block — do not just append.
+>
+> **The app build is the template gate even when `strictTemplates` is off.** It is `false` in all four apps (#35930), but a library's own `strictNullChecks` still applies to the expressions in its templates, and the Angular compiler is the only thing that evaluates them. `dotcms-binary-field-builder:build:production` found eight real errors in `libs/edit-content` and `libs/portlets/edit-ema/ui` after both measured 0 on `tsc -p`. For any library whose types feed a template, run a consuming app's production build before calling it done.
+>
+> **An ambient `.d.ts` only protects the project that includes it.** `libs/portlets/dot-experiments` declared the untyped `jstat` module in `src/jstat.d.ts`, reached through its own `include`. A strict consumer compiling those sources through a path mapping pulls in the import graph but *not* that sibling declaration, so `edit-ema/portlet` inherited a `TS7016` from a dependency measuring 0. Put such declarations in `core-web/types/` and wire them with a `paths` entry in `tsconfig.base.json`, which every project inherits (`htmldiff-js` and `jstat` are the precedents). A triple-slash reference also works but `@typescript-eslint/triple-slash-reference` forbids it.
+>
+> **An unresolved type name becomes `any` and inflates the count downstream.** Annotating a parameter with a type you forgot to import gives you one `TS2304` *and* a cascade of `TS7006`/`TS7031` on everything that reads it, because the annotation itself is `any`. Check `grep -cE 'TS2304|TS2552'` after every batch of annotations; a count that went *up* is usually this. Related: **an intersection with `any` is `any`** — one `declare global { interface Window { x: any } }` defeated every annotation downstream of it.
+>
+> **Removing an `any` raises the count before it lowers it.** Typing two parameters in `edit-ema/portlet` took it 213 → 239 → 194. Do not judge a fix by the immediate delta.
+>
+> **Nx silently runs a subset when a project name is wrong.** `nx run-many -t test -p edit-ema-portlet edit-ema-ui` ran only `edit-ema-ui` and exited **0** — the real name is `portlets-edit-ema-portlet`. There is no warning about the name that matched nothing. Confirm the summary names every project you asked for; `nx show projects | grep <fragment>` gets the real names.
+>
+> **`nx run <project>:test` does not type-check — anywhere.** `jest-preset-angular` runs on ts-jest, and ts-jest copies TypeScript's `isolatedModules` into its own transpile-only switch (`config-set.js:229`), which stops it from building the language-service host it needs for diagnostics (`ts-compiler.js:74`). Since the Jest guidance below requires `isolatedModules: true` in every `tsconfig.spec.json`, **passing tests are never evidence that specs type-check.** `libs/data-access` proved it: 84 `tsc` errors alongside 754 green tests. Always verify specs with `tsc -p <projectRoot>/tsconfig.spec.json --noEmit`.
+
 ## Portlet Development
 
 New portlets go in `libs/portlets/`. For full patterns, architecture, testing, and Nx generator setup:
@@ -110,8 +186,8 @@ New portlets go in `libs/portlets/`. For full patterns, architecture, testing, a
 
 - Use `dot-content-drive` portlet as reference for test config
 - `tsconfig.spec.json` tsconfig.spec.json must have "isolatedModules": true in compilerOptions
-- `tsconfig.json` — do NOT add `"strict": true` or `"module": "preserve"`
-- `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`)
+- `tsconfig.json` — do NOT add `"module": "preserve"`
+- `tsconfig.spec.json` — keep minimal (only `module`, `target`, `types`); do NOT add `"strict": true` here, it belongs in the project's `tsconfig.json` (see [TypeScript Strict Mode](#typescript-strict-mode))
 - Import `mockProvider` from `@openng/spectator/jest` (not `@openng/spectator`)
 
 ### SignalStore Tests

@@ -42,7 +42,7 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     @Output() addAsset = new EventEmitter<DotCMSContentlet>();
 
     @Input() languageId = '*';
-    @Input() type: EditorAssetTypes;
+    @Input() type!: EditorAssetTypes;
 
     private currentSearch = '';
     private readonly store = inject(DotAssetSearchStore);
@@ -72,7 +72,7 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     }
 
     ngAfterViewInit() {
-        fromEvent(this.input.nativeElement, 'input')
+        fromEvent<Event>(this.input.nativeElement, 'input')
             .pipe(takeUntilDestroyed(this.destroyRef), debounceTime(450))
             .subscribe((event: Event) => {
                 const target = event.target as HTMLInputElement;

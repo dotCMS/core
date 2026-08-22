@@ -62,7 +62,7 @@ describe('TemplateBuilderSidebarComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore);
 
-        boxComponent = spectator.query(TemplateBuilderBoxComponent);
+        boxComponent = spectator.query(TemplateBuilderBoxComponent)!;
 
         store.setState({
             ...INITIAL_STATE_MOCK,
@@ -83,7 +83,7 @@ describe('TemplateBuilderSidebarComponent', () => {
 
     it('should emit widthChange when a width is selected in the dropdown', () => {
         const sidebarUpdateMock = jest.spyOn(store, 'updateSidebarWidth');
-        const dropdown = spectator.query(byTestId('select-sidebar-width'));
+        const dropdown = spectator.query(byTestId('select-sidebar-width'))!;
 
         spectator.dispatchFakeEvent(dropdown, 'onChange');
 

@@ -43,9 +43,11 @@ describe('FloatingMenuDirective', () => {
     });
 
     it('should create an instance', () => {
-        const hostEl = fixture.debugElement.query(By.css('tiptap-floating-menu'));
-        const directive = new FloatingMenuDirective(hostEl);
-        expect(directive).toBeTruthy();
+        // Resolved through the injector rather than constructed: the directive takes its
+        // ElementRef via inject(), so it has no constructor parameters.
+        const directiveEl = fixture.debugElement.query(By.directive(FloatingMenuDirective));
+
+        expect(directiveEl.injector.get(FloatingMenuDirective)).toBeTruthy();
     });
 
     it('should render the floating menu', fakeAsync(() => {

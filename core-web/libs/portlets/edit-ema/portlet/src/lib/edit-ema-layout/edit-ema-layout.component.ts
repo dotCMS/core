@@ -16,6 +16,7 @@ import { MessageService } from 'primeng/api';
 import {
     debounceTime,
     distinctUntilChanged,
+    filter,
     finalize,
     switchMap,
     take,
@@ -65,7 +66,8 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         });
     });
 
-    private lastTemplate: DotTemplateDesigner;
+    /** The last edited template, or `undefined` if the user never changed the layout. */
+    private lastTemplate?: DotTemplateDesigner;
 
     updateTemplate$ = new Subject<DotTemplateDesigner>();
     destroy$: Subject<boolean> = new Subject<boolean>();
@@ -99,6 +101,14 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     saveTemplate(template: DotTemplateDesigner) {
+        const pageId = this.uveStore.$layoutProps()?.pageId;
+
+        // The layout editor only renders for a loaded page, so this is the interval before the first
+        // load — there is no page to save the layout to.
+        if (!pageId) {
+            return;
+        }
+
         this.messageService.add({
             severity: 'info',
             summary: 'Info',
@@ -108,7 +118,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
         this.dotPageLayoutService
             // To save a layout and no a template the title should be null
-            .save(this.uveStore.$layoutProps().pageId, { ...template, title: null })
+            .save(pageId, { ...template, title: null })
             .pipe(take(1))
             .subscribe(
                 () => this.handleSuccessSaveTemplate(),
@@ -137,6 +147,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                 tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
+                filter(() => !!this.uveStore.$layoutProps()?.pageId),
                 switchMap((layout: DotTemplateDesigner) => {
                     this.messageService.add({
                         severity: 'info',
@@ -146,7 +157,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                     });
 
                     return this.dotPageLayoutService
-                        .save(this.uveStore.$layoutProps().pageId, {
+                        .save(this.uveStore.$layoutProps()?.pageId ?? '', {
                             ...layout,
                             title: null
                         })
@@ -172,7 +183,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             summary: 'Success',
             detail: this.dotMessageService.get('dot.common.message.saved')
         });
-        this.uveStore.pageReload();
+        this.uveStore['pageReload']();
         this.uveStore.setIsClientReady(false);
     }
 
@@ -203,7 +214,12 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         this.dotRouterService.pageLeaveRequest$
             .pipe(takeUntil(this.destroy$), distinctUntilChanged()) // To prevent an spam of toasts when clicking on some route
             .subscribe(() => {
-                this.saveTemplate(this.lastTemplate);
+                // Guarded: leaving the page without having touched the layout used to call
+                // `saveTemplate(undefined)`, which the signature never allowed. There is nothing
+                // to force-save in that case.
+                if (this.lastTemplate) {
+                    this.saveTemplate(this.lastTemplate);
+                }
             });
     }
 }

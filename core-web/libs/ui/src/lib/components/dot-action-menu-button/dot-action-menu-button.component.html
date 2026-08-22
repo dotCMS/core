@@ -1,7 +1,7 @@
-@if (actions.length > 1 && filteredActions.length) {
+@if ((actions?.length ?? 0) > 1 && filteredActions.length) {
     <dot-menu [icon]="icon" [model]="filteredActions" />
 }
-@if (actions.length === 1 && filteredActions.length === 1) {
+@if (actions?.length === 1 && filteredActions.length === 1) {
     @if ($hasIcon()) {
         <p-button
             (click)="filteredActions[0].command($event)"

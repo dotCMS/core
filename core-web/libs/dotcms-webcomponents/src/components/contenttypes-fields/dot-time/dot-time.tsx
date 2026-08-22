@@ -27,7 +27,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTimeComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value format hh:mm:ss e.g., 15:22:00 */
     @Prop({ mutable: true, reflect: true })
@@ -74,22 +74,23 @@ export class DotTimeComponent {
     step = '1';
 
     @State()
-    classNames: DotFieldStatusClasses;
+    classNames!: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
      */
     @Method()
     async reset(): Promise<void> {
+        // Absent before the first render, when there is nothing to reset yet.
         const input = this.el.querySelector('dot-input-calendar');
-        input.reset();
+        await input?.reset();
     }
 
     componentWillLoad(): void {
@@ -110,12 +111,12 @@ export class DotTimeComponent {
 
     @Watch('min')
     minWatch(): void {
-        this.min = checkProp<DotTimeComponent, string>(this, 'min', 'time');
+        this.min = checkProp<DotTimeComponent, string>(this, 'min', 'time') ?? '';
     }
 
     @Watch('max')
     maxWatch(): void {
-        this.max = checkProp<DotTimeComponent, string>(this, 'max', 'time');
+        this.max = checkProp<DotTimeComponent, string>(this, 'max', 'time') ?? '';
     }
 
     @Listen('_dotValueChange')
@@ -148,7 +149,7 @@ export class DotTimeComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <dot-input-calendar
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         disabled={this.disabled}
                         type="time"
                         name={this.name}

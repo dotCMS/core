@@ -6,7 +6,9 @@ export const CurrentUserAdminDataMock = {
     givenName: 'TEST',
     roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
     surname: 'User',
-    userId: 'testId'
+    userId: 'testId',
+    // Added to `DotCurrentUser` after these fixtures were written.
+    loginAs: false
 };
 
 export const CurrentUserDataMock = {
@@ -15,7 +17,9 @@ export const CurrentUserDataMock = {
     givenName: 'TEST',
     roleId: 'e7d23sde-5127-45fc-8123-d424fd510e3',
     surname: 'User',
-    userId: 'testId'
+    userId: 'testId',
+    // Added to `DotCurrentUser` after these fixtures were written.
+    loginAs: false
 };
 
 export class DotCurrentUserServiceMock {

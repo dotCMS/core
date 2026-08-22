@@ -21,6 +21,7 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import {
     FormBuilder,
+    FormControl,
     FormGroup,
     ReactiveFormsModule,
     ValidatorFn,
@@ -171,7 +172,7 @@ export class DotEditContentFormComponent implements OnInit {
         return (
             !this.$store.isNew() &&
             (contentlet?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ||
-                !!contentlet?.URL_MAP_FOR_CONTENT)
+                !!contentlet?.['URL_MAP_FOR_CONTENT'])
         );
     });
 
@@ -232,7 +233,7 @@ export class DotEditContentFormComponent implements OnInit {
      */
     #lastContentletRevisionKey: string | null = null;
 
-    #flushTimeoutId: ReturnType<typeof setTimeout> | null = null;
+    #flushTimeoutId: ReturnType<typeof setTimeout> | undefined;
 
     /**
      * Computed property that determines if the content type has only one tab.
@@ -473,7 +474,9 @@ export class DotEditContentFormComponent implements OnInit {
      * @param {Record<string, any>} value The raw form value
      * @memberof DotEditContentFormComponent
      */
-    onFormChange(value: Record<string, string>) {
+    // `FormValues`, not `Record<string, string>`: category, multi-select and tag controls hold
+    // arrays, and `processFormValue` below already accepts the wider shape.
+    onFormChange(value: FormValues) {
         const processedValue = this.processFormValue(value);
         this.changeValue.emit(processedValue);
     }
@@ -592,16 +595,27 @@ export class DotEditContentFormComponent implements OnInit {
      */
     private openWizard(
         workflow: DotCMSWorkflowAction,
-        inode: string,
-        contentlet: { [key: string]: string | object }
+        // Optional for brand-new content, which has no inode yet — `DotFireActionOptions.inode`
+        // that this forwards to is optional for the same reason.
+        inode: string | undefined,
+        // `| undefined` in the value type rather than dropping `identifier` from the payload when
+        // it is absent: new content has no identifier, and omitting the key versus sending it as
+        // undefined are indistinguishable once serialised — but only one of them is a type change.
+        contentlet: { [key: string]: string | object | undefined }
     ): void {
+        const wizardInput = this.#dotWorkflowEventHandlerService.setWizardInput(
+            workflow,
+            this.#dotMessageService.get('Workflow-Action')
+        );
+
+        // `setWizardInput` returns null when the action has no wizard steps.
+        // DotWorkflowEventHandlerService.openWizard guards the same way.
+        if (!wizardInput) {
+            return;
+        }
+
         this.#dotWizardService
-            .open<DotWorkflowPayload>(
-                this.#dotWorkflowEventHandlerService.setWizardInput(
-                    workflow,
-                    this.#dotMessageService.get('Workflow-Action')
-                )
-            )
+            .open<DotWorkflowPayload>(wizardInput)
             .pipe(take(1))
             .subscribe((data: DotWorkflowPayload) => {
                 this.$store.fireWorkflowAction({
@@ -644,7 +658,9 @@ export class DotEditContentFormComponent implements OnInit {
                 const field = this.$formFields().find((f) => f.variable === key);
 
                 if (!field) {
-                    return [key, fieldValue];
+                    // `?? ''` to match this method's documented contract above: null and
+                    // undefined become an empty string. This branch was the one leak.
+                    return [key, fieldValue ?? ''];
                 }
 
                 if (field.fieldType === FIELD_TYPES.CATEGORY) {
@@ -674,7 +690,7 @@ export class DotEditContentFormComponent implements OnInit {
         // programmatic CVA noise, not edits.
         this.#userTouched = false;
 
-        const controls = this.$formFields().reduce(
+        const controls = this.$formFields().reduce<Record<string, FormControl>>(
             (acc, field) => ({
                 ...acc,
                 [field.variable]: this.createFormControl(field)
@@ -797,7 +813,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @memberof DotEditContentFormComponent
      */
     goBack(): void {
-        const contentTypeVariable = this.$store.contentType().variable;
+        const contentTypeVariable = this.$store.contentType()?.variable;
 
         this.#router.navigate([CONTENT_SEARCH_ROUTE], {
             queryParams: { filter: contentTypeVariable }

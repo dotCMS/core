@@ -227,7 +227,10 @@ export class DotRelationshipFieldComponent
             field: this.$field(),
             contentlet: this.$contentlet(),
             targetLanguageId: locale?.id,
-            targetLanguage: locale
+            // `?? undefined` collapses the store's null into the single "absent" value this
+            // object already uses — `targetLanguageId` above does the same via `?.`, and
+            // `initialize` declares both members as optional rather than nullable.
+            targetLanguage: locale ?? undefined
         };
     });
 
@@ -390,6 +393,12 @@ export class DotRelationshipFieldComponent
                 footer: FooterComponent
             }
         });
+
+        // `DialogService.open` returns null when it refuses to open a duplicate — the existing
+        // content selector is already up and the user's selection will arrive through it.
+        if (!this.#dialogRef) {
+            return;
+        }
 
         this.#dialogRef.onClose
             .pipe(

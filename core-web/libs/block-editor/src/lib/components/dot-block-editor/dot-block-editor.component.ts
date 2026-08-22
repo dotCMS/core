@@ -120,29 +120,37 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     /** Field-level allowed blocks, with paragraph forced in as the legacy default. */
     #allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
 
-    @Input() field: DotCMSContentTypeField;
-    @Input() contentlet: DotCMSContentlet;
+    // Optional: both are read through `?.` already, so neither is required to be bound.
+    @Input() field?: DotCMSContentTypeField;
+    @Input() contentlet?: DotCMSContentlet;
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
     @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
-    public allowedContentTypes: string;
-    public customStyles: string;
+    public allowedContentTypes = '';
+    public customStyles = '';
     public displayCountBar: boolean | string = true;
-    public charLimit: number;
+    /** NaN until `setFieldVariable` runs, and NaN whenever the field variable is absent —
+     * `updateCharLimitValidity` treats any non-finite limit as "no limit". */
+    public charLimit = NaN;
     public customBlocks = '';
     public content: Content = '';
-    public contentletIdentifier: string;
+    public contentletIdentifier = '';
     public disabled = false;
-    editor: Editor;
+    /** Null until the async `ngOnInit` finishes building it; `writeValue` can arrive first. */
+    editor: Editor | null = null;
     subject = new Subject();
     freezeScroll = true;
-    private onChange: (value: string) => void;
-    private onTouched: () => void;
+    // Assigned by Angular through `registerOnChange` / `registerOnTouched` before either is
+    // called. Left without a no-op default so a call outside a form still fails loudly.
+    private onChange!: (value: string) => void;
+    private onTouched!: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private _customNodes = new Map([
+    // Annotated because the entries are different Node types; inference would otherwise pin
+    // the map to whichever one comes first.
+    private _customNodes = new Map<string, AnyExtension>([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
@@ -153,7 +161,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
-    private isAIPluginInstalled$: Observable<boolean>;
+    private isAIPluginInstalled$!: Observable<boolean>;
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
 
@@ -167,8 +175,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         placement: 'left'
     };
 
-    // v3 stopped exporting CharacterCountStorage; mirror the shape locally.
-    get characterCount(): { characters: () => number; words: () => number } {
+    // v3 stopped exporting CharacterCountStorage; mirror the shape locally. Undefined while
+    // the editor is still being built — every caller already guards with `?.`.
+    get characterCount(): { characters: () => number; words: () => number } | undefined {
         return this.editor?.storage.characterCount;
     }
 
@@ -183,7 +192,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     get readingTime() {
         // The constant used by Medium for words an adult can read per minute is 265
         // More Information here: https://help.medium.com/hc/en-us/articles/214991667-Read-time
-        return Math.ceil(this.characterCount.words() / 265);
+        return Math.ceil((this.characterCount?.words() ?? 0) / 265);
     }
 
     /**
@@ -241,7 +250,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         }
     }
 
-    async loadCustomBlocks(urls: string[]): Promise<PromiseSettledResult<AnyExtension>[]> {
+    // The element type is the imported module namespace — a record of the extensions the
+    // remote bundle exports — not a single extension.
+    async loadCustomBlocks(
+        urls: string[]
+    ): Promise<PromiseSettledResult<Record<string, AnyExtension>>[]> {
         return Promise.allSettled(urls.map(async (url) => import(/* webpackIgnore: true */ url)));
     }
 
@@ -398,7 +411,13 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      * @memberof DotBlockEditorComponent
      */
     private subscribeToEditorEvents() {
-        this.editor.on('create', () => {
+        const editor = this.editor;
+
+        if (!editor) {
+            return;
+        }
+
+        editor.on('create', () => {
             // A CVA write can arrive before TipTap finishes booting; replay that buffered
             // value first so the initial document is wrapped/filtered against the real schema.
             this.setEditorContent(this.#pendingValue ?? this.value);
@@ -409,12 +428,12 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         });
 
         // Validate char limit on every update (typing, paste, etc.)
-        this.editor.on('update', () => {
+        editor.on('update', () => {
             this.updateCharLimitValidity();
         });
 
         // Mark control as touched when user leaves the editor (proper ControlValueAccessor pattern)
-        this.editor.on('blur', () => {
+        editor.on('blur', () => {
             this.onTouched?.();
         });
 
@@ -422,8 +441,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateCharCount());
 
-        this.editor.on('transaction', ({ editor }) => {
-            this.freezeScroll = FREEZE_SCROLL_KEY.getState(editor.view.state)?.freezeScroll;
+        editor.on('transaction', ({ editor: transactionEditor }) => {
+            this.freezeScroll =
+                FREEZE_SCROLL_KEY.getState(transactionEditor.view.state)?.freezeScroll ?? false;
         });
 
         this.cd.detectChanges();
@@ -436,18 +456,25 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      * @memberof DotBlockEditorComponent
      */
     private updateCharCount(): void {
-        const tr = this.editor.state.tr.setMeta('addToHistory', false);
+        const editor = this.editor;
+        const characterCount = this.characterCount;
 
-        if (this.characterCount.characters() != 0) {
-            tr.step(new SetDocAttrStep('charCount', this.characterCount.characters()))
-                .step(new SetDocAttrStep('wordCount', this.characterCount.words()))
+        if (!editor || !characterCount) {
+            return;
+        }
+
+        const tr = editor.state.tr.setMeta('addToHistory', false);
+
+        if (characterCount.characters() != 0) {
+            tr.step(new SetDocAttrStep('charCount', characterCount.characters()))
+                .step(new SetDocAttrStep('wordCount', characterCount.words()))
                 .step(new SetDocAttrStep('readingTime', this.readingTime));
         } else {
             // If the content is empty, we need to remove the attributes
             tr.step(new RestoreDefaultDOMAttrs());
         }
 
-        this.editor.view.dispatch(tr);
+        editor.view.dispatch(tr);
     }
 
     private showVideoThumbnail$(): Observable<boolean> {
@@ -508,9 +535,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private parsedCustomModules(
-        prevModule,
-        module: PromiseFulfilledResult<AnyExtension> | PromiseRejectedResult
-    ) {
+        prevModule: Record<string, AnyExtension>,
+        module: PromiseSettledResult<Record<string, AnyExtension>>
+    ): Record<string, AnyExtension> {
         if (module.status === IMPORT_RESULTS.REJECTED) {
             console.warn('Failed to load the module', module.reason);
         }
@@ -534,8 +561,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
         const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
-        const moduleObj = customModules.reduce(this.parsedCustomModules, {});
-        const loadedExtensions = Object.values(moduleObj) as AnyExtension[];
+        const moduleObj = customModules.reduce<Record<string, AnyExtension>>(
+            this.parsedCustomModules,
+            {}
+        );
+        const loadedExtensions = Object.values(moduleObj);
         const registeredExtensionNames = loadedExtensions
             .map((extension) => extension?.name)
             .filter((name): name is string => typeof name === 'string' && name.length > 0);
@@ -744,7 +774,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         title: {
                             default: null,
                             parseHTML: (el) => el.getAttribute('title'),
-                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                            renderHTML: (attrs) => (attrs['title'] ? { title: attrs['title'] } : {})
                         },
                         'aria-label': {
                             default: null,
@@ -755,7 +785,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         rel: {
                             default: null,
                             parseHTML: (el) => el.getAttribute('rel'),
-                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                            renderHTML: (attrs) => (attrs['rel'] ? { rel: attrs['rel'] } : {})
                         }
                     };
                 }
@@ -764,7 +794,9 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     }
 
     private setEditorJSONContent(content: Content) {
-        if (!this.editor || typeof content === 'string') {
+        // `content` is also guarded for null: spreading it produced a document-less object
+        // whose `content` came from `preserveUnknownBlockNodes(undefined)`.
+        if (!this.editor || !content || typeof content === 'string') {
             this.content = content;
 
             return;

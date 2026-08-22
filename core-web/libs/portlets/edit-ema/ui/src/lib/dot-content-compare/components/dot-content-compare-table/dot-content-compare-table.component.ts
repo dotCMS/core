@@ -45,8 +45,10 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
 export class DotContentCompareTableComponent {
     private dotMessageService = inject(DotMessageService);
 
-    @Input() data: DotContentCompareTableData;
-    @Input() showDiff: boolean;
+    @Input() data!: DotContentCompareTableData;
+    // Defaults true, matching DotContentCompareStore's initial state and the `dotDiff`
+    // pipe's own default; `false` would silently disable diffing for unbound consumers.
+    @Input() showDiff = true;
     $showActions = input<boolean>(true, { alias: 'showActions' });
     /**
      * When `true`, swap the column order so the PREVIOUS (compare) version

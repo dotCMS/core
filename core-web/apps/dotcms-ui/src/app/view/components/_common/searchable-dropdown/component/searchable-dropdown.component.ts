@@ -39,6 +39,14 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
  * @class SearchableDropdownComponent
  * @implements {ControlValueAccessor}
  */
+/**
+ * A dropdown row.
+ *
+ * The component reads whichever properties `labelPropertyName` and `valuePropertyName` name, so a
+ * row is only ever known by key — never by a fixed shape.
+ */
+type SearchableDropdownRow = Record<string, unknown>;
+
 @Component({
     providers: [
         {
@@ -68,36 +76,36 @@ export class SearchableDropdownComponent
     private cd = inject(ChangeDetectorRef);
 
     @Input()
-    data: Record<string, unknown>[];
+    data!: Record<string, unknown>[];
 
-    @Input() action: (event: Event) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action?: (event: Event) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
     @Input()
-    cssClassDataList: string;
+    cssClassDataList!: string;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     /**
      * Sets the width of the searchable-dropdown button
@@ -118,16 +126,16 @@ export class SearchableDropdownComponent
     overlayWidth = '300px';
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
     disabled = false;
 
     @Input()
-    externalItemListTemplate: TemplateRef<unknown>;
+    externalItemListTemplate!: TemplateRef<unknown>;
 
     @Input()
-    externalFilterTemplate: TemplateRef<unknown>;
+    externalFilterTemplate!: TemplateRef<unknown>;
 
     @Output()
     switch: EventEmitter<unknown> = new EventEmitter();
@@ -145,27 +153,29 @@ export class SearchableDropdownComponent
     display: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('searchInput', { static: false })
-    searchInput: ElementRef;
+    searchInput!: ElementRef;
 
     @ViewChild('searchPanel', { static: true })
-    searchPanelRef: Popover;
+    searchPanelRef!: Popover;
 
     @ViewChild('dataView', { static: true })
-    dataViewRef: DataView;
+    dataViewRef!: DataView;
 
     @ViewChild('button')
-    button: ElementRef;
+    button!: ElementRef;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<unknown>;
+    @ContentChildren(PrimeTemplate) templates!: QueryList<PrimeTemplate>;
 
     valueString = '';
-    value: unknown;
-    overlayPanelMinHeight: string;
-    options: unknown[];
+    /** Null until a row is picked, which is also what `writeValue(null)` sets. */
+    value: SearchableDropdownRow | null = null;
+    overlayPanelMinHeight!: string;
+    options: SearchableDropdownRow[] = [];
     label: string | null = null;
-    externalSelectTemplate: TemplateRef<unknown>;
+    externalSelectTemplate!: TemplateRef<unknown>;
 
-    selectedOptionIndex = 0;
+    /** Null while the overlay is closed — `hideOverlayHandler` clears it. */
+    selectedOptionIndex: number | null = 0;
     selectedOptionValue = '';
 
     propagateChange = (_: unknown) => {
@@ -173,7 +183,7 @@ export class SearchableDropdownComponent
     };
 
     ngOnChanges(changes: SimpleChanges): void {
-        if (this.usePlaceholder(changes.placeholder) || changes.persistentPlaceholder) {
+        if (this.usePlaceholder(changes['placeholder']) || changes['persistentPlaceholder']) {
             this.setLabel();
         }
 
@@ -183,9 +193,9 @@ export class SearchableDropdownComponent
 
     ngAfterViewInit(): void {
         if (this.searchInput) {
-            fromEvent(this.searchInput.nativeElement, 'keyup')
+            fromEvent<KeyboardEvent>(this.searchInput.nativeElement, 'keyup')
                 .pipe(
-                    tap((keyboardEvent: KeyboardEvent) => {
+                    tap((keyboardEvent) => {
                         if (
                             keyboardEvent.key === 'ArrowUp' ||
                             keyboardEvent.key === 'ArrowDown' ||
@@ -194,7 +204,10 @@ export class SearchableDropdownComponent
                             this.selectDropdownOption(keyboardEvent.key);
                         }
                     }),
-                    map((keyboardEvent: KeyboardEvent) => keyboardEvent.target['value']),
+                    map(
+                        (keyboardEvent: KeyboardEvent) =>
+                            (keyboardEvent.target as HTMLInputElement).value
+                    ),
                     distinctUntilChanged(),
                     debounceTime(500)
                 )
@@ -248,10 +261,11 @@ export class SearchableDropdownComponent
         }
 
         setTimeout(() => {
-            if (!this.overlayPanelMinHeight) {
-                this.overlayPanelMinHeight = this.searchPanelRef.container
-                    .getBoundingClientRect()
-                    .height.toString();
+            // `container` is only set while the popover is mounted, and this runs a tick later.
+            const container = this.searchPanelRef.container;
+
+            if (!this.overlayPanelMinHeight && container) {
+                this.overlayPanelMinHeight = container.getBoundingClientRect().height.toString();
             }
         }, 0);
         this.display.emit();
@@ -267,7 +281,7 @@ export class SearchableDropdownComponent
      * @param {PaginationEvent} event
      * @memberof SearchableDropdownComponent
      */
-    paginate(event: DataViewLazyLoadEvent): void {
+    paginate(event: DataViewLazyLoadEvent | null): void {
         const paginationEvent = {
             first: event?.first ?? 0,
             rows: event?.rows ?? this.rows,
@@ -285,7 +299,7 @@ export class SearchableDropdownComponent
      * @param * value
      * @memberof SearchableDropdownComponent
      */
-    writeValue(value: unknown): void {
+    writeValue(value: SearchableDropdownRow | null): void {
         this.setValue(value);
     }
 
@@ -295,7 +309,7 @@ export class SearchableDropdownComponent
      * @param {*} fn
      * @memberof SearchableDropdownComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
@@ -311,14 +325,19 @@ export class SearchableDropdownComponent
      * @returns {string}
      * @memberof SearchableDropdownComponent
      */
-    getItemLabel(dropDownItem: unknown): string {
-        let resultProps;
-        if (dropDownItem && Array.isArray(this.labelPropertyName)) {
-            resultProps = this.labelPropertyName.map((item) => {
+    getItemLabel(dropDownItem: SearchableDropdownRow | null | undefined): string {
+        if (!dropDownItem) {
+            return '';
+        }
+
+        if (Array.isArray(this.labelPropertyName)) {
+            const resultProps = this.labelPropertyName.map((item) => {
                 if (item.indexOf('.') > -1) {
-                    let propertyName;
+                    let propertyName: unknown;
                     item.split('.').forEach((nested) => {
-                        propertyName = propertyName ? propertyName[nested] : dropDownItem[nested];
+                        propertyName = propertyName
+                            ? (propertyName as SearchableDropdownRow)[nested]
+                            : dropDownItem[nested];
                     });
 
                     return propertyName;
@@ -328,9 +347,9 @@ export class SearchableDropdownComponent
             });
 
             return resultProps.join(' - ');
-        } else if (dropDownItem) {
-            return dropDownItem[`${this.labelPropertyName}`];
         }
+
+        return String(dropDownItem[`${this.labelPropertyName}`] ?? '');
     }
 
     /**
@@ -340,7 +359,7 @@ export class SearchableDropdownComponent
      * @param {*} item
      * @memberof SearchableDropdownComponent
      */
-    handleClick(item: unknown): void {
+    handleClick(item: SearchableDropdownRow): void {
         if (this.value !== item || this.multiple) {
             this.setValue(item);
             this.propagateChange(this.getValueToPropagate());
@@ -386,31 +405,44 @@ export class SearchableDropdownComponent
                 ? this.rows
                 : this.options.length
             : this.options.length;
-        if (actionKey === 'ArrowDown' && itemsCount - 1 > this.selectedOptionIndex) {
-            this.selectedOptionIndex++;
-            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
-        } else if (actionKey === 'ArrowUp' && 0 < this.selectedOptionIndex) {
-            this.selectedOptionIndex--;
-            this.selectedOptionValue = this.getItemLabel(this.options[this.selectedOptionIndex]);
-        } else if (actionKey === 'Enter' && this.selectedOptionIndex !== null) {
-            this.handleClick(this.options[this.selectedOptionIndex]);
+        const index = this.selectedOptionIndex;
+
+        if (index === null) {
+            return;
+        }
+
+        if (actionKey === 'ArrowDown' && itemsCount - 1 > index) {
+            this.selectedOptionIndex = index + 1;
+            this.selectedOptionValue = this.getItemLabel(this.options[index + 1]);
+        } else if (actionKey === 'ArrowUp' && 0 < index) {
+            this.selectedOptionIndex = index - 1;
+            this.selectedOptionValue = this.getItemLabel(this.options[index - 1]);
+        } else if (actionKey === 'Enter') {
+            this.handleClick(this.options[index]);
         }
 
         this.cd.detectChanges();
     }
 
     private setLabel(): void {
+        // Cast rather than coerced: the template's `[class.selected]` compares
+        // `item[getValueLabelPropertyName()]` against this, so both sides must read the property
+        // the same way — including when no `labelPropertyName` is configured and both are
+        // `undefined`. Coercing this side to `''` makes that comparison false and the selected row
+        // loses its class.
         this.valueString = this.value
-            ? this.value[this.getValueLabelPropertyName()]
+            ? (this.value[this.getValueLabelPropertyName()] as string)
             : this.placeholder;
         this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
         this.cd.markForCheck();
     }
 
     private setOptions(change: SimpleChanges): void {
-        if (change.data && change.data.currentValue) {
-            this.options = structuredClone(change.data.currentValue).map((item) => {
-                item.label = this.getItemLabel(item);
+        if (change['data'] && change['data'].currentValue) {
+            this.options = (
+                structuredClone(change['data'].currentValue) as SearchableDropdownRow[]
+            ).map((item) => {
+                item['label'] = this.getItemLabel(item);
 
                 return item;
             });
@@ -423,7 +455,7 @@ export class SearchableDropdownComponent
         return placeholderChange && placeholderChange.currentValue && !this.value;
     }
 
-    private setValue(newValue: unknown): void {
+    private setValue(newValue: SearchableDropdownRow | null): void {
         this.value = newValue;
 
         this.setLabel();
@@ -436,7 +468,7 @@ export class SearchableDropdownComponent
     }
 
     private getValueToPropagate() {
-        return !this.valuePropertyName ? this.value : this.value[this.valuePropertyName];
+        return !this.valuePropertyName ? this.value : this.value?.[this.valuePropertyName];
     }
 }
 

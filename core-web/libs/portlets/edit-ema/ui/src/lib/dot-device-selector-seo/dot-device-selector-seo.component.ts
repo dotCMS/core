@@ -63,7 +63,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
     private window = inject<Window>(WINDOW);
 
-    @Input() value: DotDevice;
+    @Input() value!: DotDevice;
     @Input() hideSocialMedia = false;
 
     /**
@@ -73,16 +73,16 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
     @Output() selected = new EventEmitter<DotDevice>();
     @Output() changeSeoMedia = new EventEmitter<string>();
     @Output() hideOverlayPanel = new EventEmitter<string>();
-    @ViewChild('deviceSelector') overlayPanel: Popover;
-    previewUrl: string;
+    @ViewChild('deviceSelector') overlayPanel!: Popover;
+    previewUrl = '';
 
     protected linkToAddDevice = '/c/content';
-    protected linkToEditDeviceQueryParams = {
+    protected linkToEditDeviceQueryParams: { devices: string | null } = {
         devices: null
     };
 
-    options$: Observable<DotDevice[]>;
-    SOCIAL_MEDIA_TILES: SocialMediaOption[];
+    options$!: Observable<DotDevice[]>;
+    SOCIAL_MEDIA_TILES: SocialMediaOption[] = [];
 
     protected get isCMSAdmin(): boolean {
         return !!this.currentUser?.admin;
@@ -178,7 +178,7 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
         return this.dotDevicesService.get().pipe(
             take(1),
             mergeMap((devices: DotDevice[]) => {
-                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode;
+                this.linkToEditDeviceQueryParams.devices = devices[0]?.stInode ?? null;
 
                 return devices;
             }),
@@ -218,9 +218,11 @@ export class DotDeviceSelectorSeoComponent implements OnInit {
                         frontEndUrl.indexOf('?') != -1 ? '&' : '?'
                     }disabledNavigateMode=true&mode=LIVE`
                 );
-            } finally {
-                this.previewUrl = url.toString();
             }
+
+            // Assigned after the try/catch rather than in a `finally`: both branches set
+            // `url`, but only this ordering lets the compiler see that.
+            this.previewUrl = url.toString();
         }
     }
 }

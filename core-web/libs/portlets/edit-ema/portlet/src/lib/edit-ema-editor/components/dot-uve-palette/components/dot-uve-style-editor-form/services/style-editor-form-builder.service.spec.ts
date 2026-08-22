@@ -1,7 +1,7 @@
 import { TestBed } from '@angular/core/testing';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { StyleEditorFormSchema } from '@dotcms/uve';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import { StyleEditorFormBuilderService } from './style-editor-form-builder.service';
 

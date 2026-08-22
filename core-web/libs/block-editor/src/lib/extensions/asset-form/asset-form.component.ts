@@ -13,15 +13,17 @@ import { DEFAULT_LANG_ID } from '../../shared/utils';
 })
 export class AssetFormComponent {
     @Input() languageId = DEFAULT_LANG_ID;
-    @Input() type: EditorAssetTypes;
-    @Input() onSelectAsset: (payload: DotCMSContentlet | string) => void;
-    @Input() preventClose: (value: boolean) => void;
-    @Input() onHide: (value: boolean) => void;
+    // All four are set imperatively by `BubbleAssetFormExtension` right after it creates the
+    // component, before the first change detection pass.
+    @Input() type!: EditorAssetTypes;
+    @Input() onSelectAsset!: (payload: DotCMSContentlet | string) => void;
+    @Input() preventClose!: (value: boolean) => void;
+    @Input() onHide!: (value: boolean) => void;
 
     public disableTabs = false;
     public activeTab = 0;
 
-    public onPreventClose(value) {
+    public onPreventClose(value: boolean) {
         this.preventClose(value);
         this.disableTabs = value;
     }

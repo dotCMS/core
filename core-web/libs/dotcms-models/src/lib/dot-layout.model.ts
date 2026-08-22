@@ -5,14 +5,21 @@ export interface DotLayout {
     body: DotLayoutBody;
     footer: boolean;
     header: boolean;
-    sidebar: DotLayoutSideBar;
+    /** Null when the layout has no sidebar; the template builder clears it so an empty
+     *  sidebar is not persisted. */
+    sidebar: DotLayoutSideBar | null;
     title: string;
     themeId?: string;
-    width: string;
+    /** Null before a width is chosen — the template builder already reads it as `width ?? ''`. */
+    width: string | null;
 }
 
 export interface DotTemplateDesigner {
     layout: DotLayout;
-    title?: string;
+    /**
+     * `null` means "save this as a page layout, not as a named template" — three call sites send it
+     * deliberately, and the layout endpoint distinguishes it from an absent title.
+     */
+    title?: string | null;
     themeId: string;
 }

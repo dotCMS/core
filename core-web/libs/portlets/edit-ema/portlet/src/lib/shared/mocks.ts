@@ -1,4 +1,4 @@
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { CurrentUser } from '@dotcms/dotcms-js';
 import { CONTAINER_SOURCE, DEFAULT_VARIANT_ID, FeaturedFlags } from '@dotcms/dotcms-models';
@@ -24,7 +24,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from './consts';
-import { ActionPayload, ClientData } from './models';
+import { ActionPayload, ClientData, DraggedPayload } from './models';
 
 import {
     Container,
@@ -421,7 +421,8 @@ export const EDIT_ACTION_PAYLOAD_MOCK: ActionPayload = {
     position: 'before'
 };
 
-export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
+// Keyed by language id; see the note on `UVE_PAGE_RESPONSE_MAP` below.
+export const PAGE_RESPONSE_BY_LANGUAGE_ID: Record<string, Observable<unknown>> = {
     1: of({
         page: {
             title: 'hello world',
@@ -510,7 +511,7 @@ export const PAGE_RESPONSE_BY_LANGUAGE_ID = {
     })
 };
 
-export const getVanityUrl = (url, mock) =>
+export const getVanityUrl = (url: string, mock: Partial<DotCMSVanityUrl>) =>
     ({
         vanityUrl: {
             ...mock,
@@ -649,10 +650,12 @@ export const ACTION_MOCK: ClientData = {
     }
 };
 
-export const ITEM_MOCK = {
+export const ITEM_MOCK: EmaDragItem = {
     contentType: 'file',
     baseType: 'FILEASSET',
-    draggedPayload: null
+    // Not read by the components this fixture is used in — they render bounds and error text from
+    // the container and the content type. `DraggedPayload` is required on `EmaDragItem`.
+    draggedPayload: undefined as unknown as DraggedPayload
 };
 
 export const getBoundsMockWithEmptyContainer = (payload: ClientData): Container[] => {
@@ -741,7 +744,10 @@ export const BASE_SHELL_ITEMS = [
         href: 'layout',
         id: 'layout',
         isDisabled: false,
-        tooltip: null
+        // `undefined`, not `null`: `NavigationBarItem.tooltip` is an optional `string`, so `null`
+        // was never assignable — it compiled only because this file sits outside the type-checked
+        // configs. `toEqual` treats an undefined-valued key as an absent one, which is the intent.
+        tooltip: undefined
     },
     {
         icon: 'pi-sliders-h',
@@ -782,7 +788,12 @@ export const BASE_SHELL_PROPS_RESPONSE = {
     items: BASE_SHELL_ITEMS
 };
 
-export const UVE_PAGE_RESPONSE_MAP = {
+/**
+ * Keyed by language id. `Record<string, ...>` because callers index it with the id they hold, which
+ * is a `string` on `DotPageApiParams` and a number in the defaults — an object literal with numeric
+ * keys has string keys at runtime either way, but its inferred type accepts neither.
+ */
+export const UVE_PAGE_RESPONSE_MAP: Record<string, Observable<unknown>> = {
     // URLContentMap with hasLiveVersion false
     9: of({
         page: {

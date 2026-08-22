@@ -165,6 +165,10 @@ export class EditorModalService implements OnDestroy {
             )
         );
 
+        if (!ref) {
+            return;
+        }
+
         this.pickerRefs.set(mode, ref);
 
         ref.onClose.subscribe((contentlet?: DotCMSContentlet) => {
@@ -203,11 +207,11 @@ export class EditorModalService implements OnDestroy {
             data: { context: editor.getText() }
         });
 
-        this.aiImageDialogRef.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
-            if (selectedImage?.response?.contentlet) {
-                this.zone.run(() =>
-                    insertDotImageFromContentlet(editor, selectedImage.response.contentlet)
-                );
+        this.aiImageDialogRef?.onClose.subscribe((selectedImage?: DotGeneratedAIImage) => {
+            const contentlet = selectedImage?.response?.contentlet;
+
+            if (contentlet) {
+                this.zone.run(() => insertDotImageFromContentlet(editor, contentlet));
             }
             this.aiImageDialogRef = null;
             this.zone.run(() => this.aiImageOpen.set(false));
@@ -248,7 +252,7 @@ export class EditorModalService implements OnDestroy {
             style: { 'max-width': '90vw' }
         });
 
-        this.aiContentDialogRef.onClose.subscribe((html?: string) => {
+        this.aiContentDialogRef?.onClose.subscribe((html?: string) => {
             if (html) {
                 this.zone.run(() => editor.chain().focus().insertContent(html).run());
             }

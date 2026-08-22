@@ -253,7 +253,9 @@ export class DotWorkflowActionsFireService {
      */
     publishContentletAndWaitForIndex<T>(
         contentType: string,
-        data: { [key: string]: string | number },
+        // Values may be null: callers send null to clear a field, and the endpoint
+        // distinguishes that from an empty string.
+        data: { [key: string]: string | number | null },
         individualPermissions?: { [key: string]: string[] }
     ): Observable<T> {
         return this.publishContentlet(

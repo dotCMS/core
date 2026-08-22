@@ -57,7 +57,12 @@ describe('DotSystemConfigService', () => {
                                 'b0ab76ea89ce7bbcccd2ecaba4e19f4e13a5422350526cb5191c4e17f4e28317'
                         }
                     }
-                }
+                },
+                errors: [],
+                i18nMessagesMap: {},
+                messages: [],
+                pagination: null,
+                permissions: []
             };
 
             const expectedConfig: DotSystemConfig = {

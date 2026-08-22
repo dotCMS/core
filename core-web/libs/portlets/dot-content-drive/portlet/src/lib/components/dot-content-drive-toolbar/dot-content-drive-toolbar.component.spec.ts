@@ -22,7 +22,7 @@ import {
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -59,6 +59,8 @@ describe('DotContentDriveToolbarComponent', () => {
         undefined
     );
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+    const userSearchableActiveSignal = signal<string[]>([]);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
@@ -80,8 +82,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 setDialog: jest.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
-                userSearchableFields: signal([]),
-                userSearchableActive: signal<string[]>([]),
+                userSearchableFields: userSearchableFieldsSignal,
+                userSearchableActive: userSearchableActiveSignal,
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
@@ -153,6 +155,8 @@ describe('DotContentDriveToolbarComponent', () => {
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
+        userSearchableFieldsSignal.set([]);
+        userSearchableActiveSignal.set([]);
     });
 
     it('should render toolbar container', () => {
@@ -353,7 +357,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 (item) => item.label == 'content-drive.add-new.context-menu.folder'
             );
 
-            foldersItem?.command({});
+            foldersItem?.command?.({});
 
             expect(store.setDialog).toHaveBeenCalledWith({
                 type: DIALOG_TYPE.FOLDER,
@@ -631,11 +635,11 @@ describe('DotContentDriveToolbarComponent', () => {
 
     describe('field-filter chips', () => {
         it('should render a chip only for active variables resolved against loaded fields', () => {
-            store.userSearchableFields.set([
+            userSearchableFieldsSignal.set([
                 createFakeTextField({ variable: 'body', name: 'Body' })
             ]);
             // 'ghost' has no matching loaded field (the URL-restore / stale case) and must be dropped.
-            store.userSearchableActive.set(['body', 'ghost']);
+            userSearchableActiveSignal.set(['body', 'ghost']);
             spectator.detectChanges();
 
             expect(spectator.component.$activeFieldFilters().map((f) => f.variable)).toEqual([

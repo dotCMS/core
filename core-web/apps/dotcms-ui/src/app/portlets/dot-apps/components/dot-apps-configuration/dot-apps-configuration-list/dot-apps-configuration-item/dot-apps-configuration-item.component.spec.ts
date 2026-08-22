@@ -136,7 +136,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             const deleteBtn = fixture.debugElement.query(By.css('[data-testId="delete"]'));
 
             jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
 
             jest.spyOn(component.delete, 'emit');

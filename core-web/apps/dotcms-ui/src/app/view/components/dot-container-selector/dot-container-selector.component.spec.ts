@@ -163,7 +163,7 @@ describe('ContainerSelectorComponent', () => {
         searchable.pageChange.emit({ filter: '', first: 0 } as PaginationEvent);
         tick();
         spectator.detectChanges();
-        expect(searchable.data[0].identifier).toEqual('427c47a4-c380-439f');
-        expect(searchable.data[1].identifier).toEqual('container/path');
+        expect(searchable.data[0]['identifier']).toEqual('427c47a4-c380-439f');
+        expect(searchable.data[1]['identifier']).toEqual('container/path');
     }));
 });

@@ -52,15 +52,15 @@ export class DotEditContentCustomFieldComponent extends BaseWrapperField {
     /**
      * The field to render.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, { alias: 'field' });
     /**
      * The content type to render the field for.
      */
-    $contentType = input<string>(null, { alias: 'contentType' });
+    $contentType = input<string | null>(null, { alias: 'contentType' });
     /**
      * The contentlet to render the field for.
      */
-    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
+    $contentlet = input<DotCMSContentlet | null>(null, { alias: 'contentlet' });
     /**
      * The render mode to use.
      */

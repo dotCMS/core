@@ -62,13 +62,14 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() fg: FormGroup;
-    @Input() contentTypes: DotCMSContentType[];
+    @Input() fg!: FormGroup;
+    @Input() contentTypes!: DotCMSContentType[];
 
-    menuItems: MenuItem[];
+    menuItems: MenuItem[] = [];
     activeTabIndex = 0;
     monacoEditors: Record<string, MonacoStandaloneCodeEditor> = {};
-    contentTypeNamesById = {};
+    /** Content type names keyed by id, built from whichever types the container allows. */
+    contentTypeNamesById: Record<string, string> = {};
 
     ngOnInit() {
         if (this.contentTypes && this.contentTypes.length > 0) {
@@ -82,8 +83,8 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.contentTypes?.currentValue?.length > 0) {
-            changes.contentTypes.currentValue.forEach(({ id, name }: DotCMSContentType) => {
+        if (changes['contentTypes']?.currentValue?.length > 0) {
+            changes['contentTypes'].currentValue.forEach(({ id, name }: DotCMSContentType) => {
                 this.contentTypeNamesById[id] = name;
             });
 
@@ -125,7 +126,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param {number} [index=null] - number = null
      * @returns false
      */
-    public handleTabClick(event: MouseEvent, index: number = null): boolean {
+    public handleTabClick(event: MouseEvent, index: number | null = null): boolean {
         if (index === 0) {
             event.preventDefault();
             event.stopPropagation();
@@ -142,8 +143,9 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param {number} [index=null] - number = null
      * @memberof DotContentEditorComponent
      */
-    removeItem(index: number = null): void {
-        if (this.contentTypes.length > 0) {
+    removeItem(index: number | null = null): void {
+        // The default is `null`, which names no tab to remove.
+        if (index !== null && this.contentTypes.length > 0) {
             this.getcontainerStructures.removeAt(index - 1);
             const currentTabIndex = this.findCurrentTabIndex(index);
             this.updateActiveTabIndex(currentTabIndex);
@@ -158,8 +160,16 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     focusCurrentEditor(tabIdx: number) {
         if (tabIdx > 0) {
+            // `.get(...)`, not `.controls[...]`: a `FormArray` element is an `AbstractControl`, which
+            // has no `controls` map — only `FormGroup` does. The id also gates the lookup below,
+            // where an absent one would index `monacoEditors` by `undefined`.
             const contentTypeId =
-                this.getcontainerStructures.controls[tabIdx - 1].get('structureId').value;
+                this.getcontainerStructures.controls[tabIdx - 1].get('structureId')?.value;
+
+            if (!contentTypeId) {
+                return;
+            }
+
             // Tab Panel does not trigger any event after completely rendered.
             // Tab Panel and Monaco-Editor take sometime to render it completely.
             requestAnimationFrame(() => {
@@ -174,7 +184,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @return {*}  {number}
      * @memberof DotContentEditorComponent
      */
-    findCurrentTabIndex(index): number {
+    findCurrentTabIndex(index: number): number {
         // -1 in condition because if it is first tab then no need to minus
         return index - 1 > 0 ? index - 1 : this.getcontainerStructures.length > 0 ? index : 0;
     }
@@ -198,7 +208,12 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                 onSave: (codeTemplate: string) => {
                     const editor = this.monacoEditors[contentType.structureId];
 
-                    const selections = editor.getSelections();
+                    const selections = editor?.getSelections();
+                    const model = editor?.getModel();
+
+                    if (!selections || !model) {
+                        return;
+                    }
 
                     const editOperation = selections.map((selection) => {
                         return {
@@ -212,7 +227,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
                         };
                     });
 
-                    editor.getModel().pushEditOperations(selections, editOperation, () => {
+                    model.pushEditOperations(selections, editOperation, () => {
                         return null;
                     });
                 }
@@ -225,7 +240,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @param monacoInstance - The monaco instance that is created by the component.
      * @memberof DotContentEditorComponent
      */
-    monacoInit(monacoEditor) {
+    monacoInit(monacoEditor: { name: string; editor: MonacoStandaloneCodeEditor }) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
         if (this.contentTypes.length === 0) {
             this.monacoEditors[monacoEditor.name].updateOptions({ readOnly: true });

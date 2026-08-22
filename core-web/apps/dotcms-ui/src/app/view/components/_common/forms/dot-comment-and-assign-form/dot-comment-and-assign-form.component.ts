@@ -72,11 +72,11 @@ export class DotCommentAndAssignFormComponent
     private readonly cdr = inject(ChangeDetectorRef);
     fb = inject(UntypedFormBuilder);
 
-    @Input() data: DotCommentAndAssignData;
+    @Input() data!: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();
-    form: UntypedFormGroup;
-    dotRoles: SelectItem[];
+    form!: UntypedFormGroup;
+    dotRoles: SelectItem[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -84,7 +84,7 @@ export class DotCommentAndAssignFormComponent
         if (this.data) {
             if (this.data[DotActionInputs.ASSIGNABLE]) {
                 this.dotRolesService
-                    .get(this.data.roleId, this.data.roleHierarchy)
+                    .get(this.data.roleId ?? '', this.data.roleHierarchy)
                     .pipe(take(1))
                     .subscribe((items: DotRole[]) => {
                         this.dotRoles = items.map((role) => {
@@ -109,7 +109,9 @@ export class DotCommentAndAssignFormComponent
 
     private initForm(): void {
         this.form = this.fb.group({
-            assign: this.dotRoles ? this.dotRoles[0].value : '',
+            // `?.length`, not truthiness: `[]` is truthy, so this took the first-role branch and
+            // read `[0].value` off an empty list. The check has always meant "if there are roles".
+            assign: this.dotRoles?.length ? this.dotRoles[0].value : '',
             comments: '',
             pathToMove: this.data[DotActionInputs.MOVEABLE] ? ['', [Validators.required]] : ''
         });

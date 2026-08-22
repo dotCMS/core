@@ -44,23 +44,35 @@ export const getExperimentMock = (index: number): DotExperiment => {
     return { ...ExperimentMocks[index] };
 };
 
-export const getRunningExperimentMock = (): DotExperiment | undefined => {
-    return ExperimentMocks.find((experiment) => experiment.status === DotExperimentStatus.RUNNING);
+/**
+ * `ExperimentMocks` is a fixed literal that contains one experiment in each of the states the three
+ * helpers below hand out, so the lookup always succeeds — `find` just cannot say so. Resolving it
+ * here, and throwing if the fixture list ever stops holding a match, keeps the guarantee in one
+ * place: every caller reads the result immediately, and each of them was otherwise left narrowing a
+ * `| undefined` that could not occur.
+ */
+const findMockExperiment = (predicate: (experiment: DotExperiment) => boolean): DotExperiment => {
+    const experiment = ExperimentMocks.find(predicate);
+
+    if (!experiment) {
+        throw new Error('ExperimentMocks no longer contains an experiment matching this predicate');
+    }
+
+    return experiment;
 };
 
-export const getDraftExperimentMock = (): DotExperiment | undefined => {
-    return ExperimentMocks.find(
+export const getRunningExperimentMock = (): DotExperiment =>
+    findMockExperiment((experiment) => experiment.status === DotExperimentStatus.RUNNING);
+
+export const getDraftExperimentMock = (): DotExperiment =>
+    findMockExperiment(
         (experiment) =>
             experiment.status === DotExperimentStatus.DRAFT &&
             experiment.trafficProportion.variants.length > 1
     );
-};
 
-export const getScheduleExperimentMock = (): DotExperiment | undefined => {
-    return ExperimentMocks.find(
-        (experiment) => experiment.status === DotExperimentStatus.SCHEDULED
-    );
-};
+export const getScheduleExperimentMock = (): DotExperiment =>
+    findMockExperiment((experiment) => experiment.status === DotExperimentStatus.SCHEDULED);
 
 export const getExperimentAllMocks = (): Array<DotExperiment> => {
     return [{ ...getExperimentMock(0) }, { ...getExperimentMock(1) }, { ...getExperimentMock(2) }];

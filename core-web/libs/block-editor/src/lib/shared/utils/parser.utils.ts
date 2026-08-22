@@ -54,7 +54,7 @@ const gridContent: BlockMap = {
     gridColumn: true
 };
 
-const relatedContent = {
+const relatedContent: Record<string, BlockMap> = {
     image: imageContent,
     table: tableContent,
     orderedList: orderedListContent,
@@ -70,14 +70,14 @@ const relatedContent = {
  * @param {*} blocksMap
  * @return {*}
  */
-const isHeading = (node, blocksMap) => {
+const isHeading = (node: JSONContent, blocksMap: BlockMap) => {
     const { type, attrs } = node;
     if (type !== 'heading') {
         return false;
     }
 
     // Make sure to check the the type + the level so it can macth the mao.
-    return blocksMap[type + attrs.level];
+    return blocksMap[type + attrs?.['level']];
 };
 
 export const removeInvalidNodes = (
@@ -86,7 +86,7 @@ export const removeInvalidNodes = (
     remoteBlockNames: string[] = []
 ) => {
     const blocksMap = getBlockMap(allowedBlocks, remoteBlockNames);
-    const content = Array.isArray(data) ? [...data] : [...(data as JSONContent).content];
+    const content = Array.isArray(data) ? [...data] : [...((data as JSONContent).content ?? [])];
 
     return purifyNodeTree(content, blocksMap);
 };
@@ -103,15 +103,17 @@ export const purifyNodeTree = (content: JSONContent[], blocksMap: BlockMap): JSO
         return content;
     }
 
-    const allowedContent = [];
+    const allowedContent: JSONContent[] = [];
 
     for (const i in content) {
         const node = content[i];
 
-        if (blocksMap[node.type] || isHeading(node, blocksMap)) {
+        if (blocksMap[node.type ?? ''] || isHeading(node, blocksMap)) {
             allowedContent.push({
                 ...node,
-                content: purifyNodeTree(node.content, blocksMap)
+                // Left undefined when the node has no children — leaf nodes such as `text`
+                // must not gain an empty `content` array.
+                content: node.content ? purifyNodeTree(node.content, blocksMap) : node.content
             });
         }
     }

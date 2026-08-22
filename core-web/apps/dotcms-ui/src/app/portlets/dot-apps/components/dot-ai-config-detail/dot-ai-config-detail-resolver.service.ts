@@ -8,8 +8,12 @@ import { DotApp } from '@dotcms/dotcms-models';
 
 const DOT_AI_APP_KEY = 'dotAI';
 
-export const dotAiConfigDetailResolver: ResolveFn<DotApp> = (route: ActivatedRouteSnapshot) => {
+export const dotAiConfigDetailResolver: ResolveFn<DotApp | null> = (
+    route: ActivatedRouteSnapshot
+) => {
     const id = route.paramMap.get('id');
 
-    return inject(DotAppsService).getConfiguration(DOT_AI_APP_KEY, id).pipe(take(1));
+    return inject(DotAppsService)
+        .getConfiguration(DOT_AI_APP_KEY, id ?? '')
+        .pipe(take(1));
 };

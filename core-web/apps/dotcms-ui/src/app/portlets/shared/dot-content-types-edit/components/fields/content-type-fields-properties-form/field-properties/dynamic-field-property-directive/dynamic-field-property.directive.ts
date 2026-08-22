@@ -26,14 +26,14 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     private previousField: DotCMSContentTypeField | null = null;
     private previousPropertyName: string | null = null;
 
-    @Input() propertyName: string;
-    @Input() field: DotCMSContentTypeField;
-    @Input() group: UntypedFormGroup;
+    @Input() propertyName!: string;
+    @Input() field!: DotCMSContentTypeField;
+    @Input() group!: UntypedFormGroup;
 
     ngOnChanges(changes: SimpleChanges): void {
-        const fieldChanged = changes.field;
-        const propertyNameChanged = changes.propertyName;
-        const groupChanged = changes.group;
+        const fieldChanged = changes['field'];
+        const propertyNameChanged = changes['propertyName'];
+        const groupChanged = changes['group'];
 
         // Only create component if field, propertyName or group actually changed
         if (
@@ -75,6 +75,11 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
 
     private createComponent(property: string): void {
         const component = this.fieldPropertyService.getComponent(property);
+
+        if (!component) {
+            return;
+        }
+
         this.componentRef = this.viewContainerRef.createComponent(component);
 
         this.updateComponent();
@@ -88,13 +93,12 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
         this.componentRef.instance.property = {
             field: this.field,
             name: this.propertyName,
-            value: this.field[this.propertyName]
+            value: this.field[this.propertyName as keyof DotCMSContentTypeField]
         };
 
         this.componentRef.instance.group = this.group;
-        this.componentRef.instance.helpText = this.fieldPropertyService.getFieldType(
-            this.field.clazz
-        ).helpText;
+        this.componentRef.instance.helpText =
+            this.fieldPropertyService.getFieldType(this.field.clazz)?.helpText ?? '';
     }
 
     private destroyComponent(): void {

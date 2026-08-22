@@ -22,11 +22,11 @@ export const newEditContentForContentletGuard: CanActivateFn = (
     const dotContentTypeService = inject(DotContentTypeService);
     const dotRouterService = inject(DotRouterService); // Inject the Router service
 
-    return dotContentletService.getContentletByInode(inode).pipe(
+    return dotContentletService.getContentletByInode(inode ?? '').pipe(
         switchMap((contentlet) => {
             return dotContentTypeService.getContentType(contentlet.contentType).pipe(
                 map(({ metadata }) => {
-                    const newEditorEnabled = metadata?.CONTENT_EDITOR2_ENABLED;
+                    const newEditorEnabled = metadata?.['CONTENT_EDITOR2_ENABLED'];
                     if (!newEditorEnabled) {
                         return true;
                     }
@@ -54,9 +54,9 @@ export const newEditContentForContentTypeGuard: CanActivateFn = (
     const dotContentTypeService = inject(DotContentTypeService);
     const dotRouterService = inject(DotRouterService); // Inject the Router service
 
-    return dotContentTypeService.getContentType(contentType).pipe(
+    return dotContentTypeService.getContentType(contentType ?? '').pipe(
         map(({ metadata }) => {
-            const newEditorEnabled = metadata?.CONTENT_EDITOR2_ENABLED;
+            const newEditorEnabled = metadata?.['CONTENT_EDITOR2_ENABLED'];
             if (!newEditorEnabled) {
                 return true;
             }

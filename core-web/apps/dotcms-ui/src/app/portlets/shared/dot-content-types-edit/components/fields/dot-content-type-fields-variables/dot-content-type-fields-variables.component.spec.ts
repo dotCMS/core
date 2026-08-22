@@ -32,7 +32,7 @@ class TestHostComponent {
     value: DotCMSContentTypeField = {
         ...dotcmsContentTypeFieldBasicMock,
         contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-        id: mockFieldVariables[0].fieldId
+        id: mockFieldVariables[0].fieldId!
     };
 }
 
@@ -135,7 +135,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             ...EMPTY_FIELD,
             clazz: DotCMSClazzes.BLOCK_EDITOR,
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-            id: mockFieldVariables[0].fieldId
+            id: mockFieldVariables[0].fieldId!
         };
 
         beforeEach(() => {
@@ -170,7 +170,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             ...EMPTY_FIELD,
             clazz: DotCMSClazzes.CUSTOM_FIELD,
             contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
-            id: mockFieldVariables[0].fieldId
+            id: mockFieldVariables[0].fieldId!
         };
 
         beforeEach(() => {

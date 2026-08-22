@@ -88,16 +88,16 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should load scheduling current values', () => {
-        const startDateCalendar: DatePicker = spectator.query(DatePicker);
-        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker)!;
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker)!;
 
         expect(startDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.startDate);
         expect(endDateCalendar.value.getTime()).toEqual(EXPERIMENT_MOCK.scheduling.endDate);
     });
 
     it('should have set the props correctly', () => {
-        const startDateCalendar: DatePicker = spectator.query(DatePicker);
-        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker)!;
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker)!;
 
         expect(startDateCalendar.stepMinute).toEqual(30);
         expect(startDateCalendar.readonlyInput).toEqual(true);
@@ -113,9 +113,9 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     it('should save form when is valid', () => {
         jest.spyOn(store, 'setSelectedScheduling');
         const submitButtonWrapper = spectator.query(byTestId('add-scheduling-button'));
-        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
+        const submitButton = submitButtonWrapper!.querySelector('button')! || submitButtonWrapper;
 
-        expect(submitButton.hasAttribute('disabled')).toBe(false);
+        expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(submitButtonWrapper).toContainText('Done');
         expect(spectator.component.form.valid).toEqual(true);
 
@@ -127,41 +127,41 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
     });
 
     it('should set min dates correctly', () => {
-        const startDateCalendar: DatePicker = spectator.query(DatePicker);
-        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker)!;
+        const endDateCalendar: DatePicker = spectator.queryLast(DatePicker)!;
         const component = spectator.component;
         const time5days = 432e6; // value set in the ActiveRouteMock
         const mockMinEndDate = MOCK_DATA_MILLISECONDS + time5days;
 
-        component.form.get('startDate').setValue(new Date());
+        component.form.get('startDate')!.setValue(new Date())!;
         startDateCalendar.onSelect.emit();
 
         spectator.detectChanges();
 
-        expect(endDateCalendar.minDate.getTime()).toEqual(mockMinEndDate);
-        expect(endDateCalendar.defaultDate.getTime()).toEqual(mockMinEndDate);
+        expect(endDateCalendar.minDate!.getTime()!).toEqual(mockMinEndDate);
+        expect(endDateCalendar.defaultDate!.getTime()!).toEqual(mockMinEndDate);
     });
 
     it('should clear end date if start date is equal or more', () => {
-        const startDateCalendar: DatePicker = spectator.query(DatePicker);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker)!;
         const component = spectator.component;
 
-        component.form.get('startDate').setValue(new Date());
-        component.form.get('endDate').setValue(new Date());
+        component.form.get('startDate')!.setValue(new Date())!;
+        component.form.get('endDate')!.setValue(new Date())!;
         startDateCalendar.onSelect.emit();
 
         spectator.detectChanges();
 
-        expect(component.form.get('endDate').value).toEqual(null);
+        expect(component.form.get('endDate')!.value!).toEqual(null);
     });
 
     it('max end date date should be 90 days', () => {
-        const startDateCalendar: DatePicker = spectator.query(DatePicker);
+        const startDateCalendar: DatePicker = spectator.query(DatePicker)!;
         const component = spectator.component;
         // Default vale of 90 because max end date is not defined in the Active Route
         const expectedEndDate = new Date(MOCK_DATA_MILLISECONDS + TIME_90_DAYS);
 
-        component.form.get('startDate').setValue(new Date());
+        component.form.get('startDate')!.setValue(new Date())!;
         startDateCalendar.onSelect.emit();
 
         spectator.detectChanges();
@@ -171,7 +171,7 @@ describe('DotExperimentsConfigurationSchedulingAddComponent', () => {
 
     it('should close sidebar', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Drawer);
+        sidebar = spectator.query(Drawer)!;
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

@@ -1,7 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
-import { of } from 'rxjs';
+import { Observable, of } from 'rxjs';
 
 import { TestBed, waitForAsync } from '@angular/core/testing';
 import { ActivatedRouteSnapshot } from '@angular/router';
@@ -10,14 +7,23 @@ import { DotCreateContentletResolver } from './dot-create-contentlet.resolver.se
 
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
 
-const activatedRouteSnapshotMock: any = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-    'toString'
-]);
-activatedRouteSnapshotMock.paramMap = {};
-activatedRouteSnapshotMock.queryParamMap = {};
+// A plain object rather than `jest.fn<T>(name, methods)`: that shape is `jasmine.createSpyObj`
+// migrated mechanically, and `jest.fn` accepts neither argument. The spec only assigns and reads
+// `paramMap` / `queryParamMap`.
+const activatedRouteSnapshotMock = {
+    paramMap: {} as { get?: () => string | null },
+    queryParamMap: {} as { get?: () => string | null }
+} as unknown as ActivatedRouteSnapshot & {
+    paramMap: { get?: () => string | null };
+    queryParamMap: { get?: () => string | null };
+};
 
 class DotContentletEditorServiceMock {
-    getActionUrl(_url: string) {}
+    // Matches the real service, which returns `Observable<string>`. Declared `void`, every
+    // `.mockReturnValue(of(...))` below was assigning an observable to a method that returns nothing.
+    getActionUrl(_url: string): Observable<string> {
+        return of('');
+    }
 }
 
 describe('DotCreateContentletResolver', () => {
@@ -43,46 +49,46 @@ describe('DotCreateContentletResolver', () => {
     }));
 
     it('should get and return the action url', () => {
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });
 
     it('should append the folder inode with `?` when the action url has no query string', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=inode-1');
         });
     });
 
     it('should append the folder inode with `&` when the action url already has a query string', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'inode-1';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(
+        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(
             of('urlTest?foo=bar')
         );
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?foo=bar&folder=inode-1');
         });
     });
 
     it('should encode the folder inode', () => {
         activatedRouteSnapshotMock.queryParamMap.get = () => 'a b/c';
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest?folder=a%20b%2Fc');
         });
     });
 
     it('should not append anything when there is no folder query param', () => {
-        jest.spyOn<any>(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
+        jest.spyOn(dotContentletEditorService, 'getActionUrl').mockReturnValue(of('urlTest'));
 
-        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url: string) => {
+        dotCreateContentletResolver.resolve(activatedRouteSnapshotMock).subscribe((url) => {
             expect(url).toEqual('urlTest');
         });
     });

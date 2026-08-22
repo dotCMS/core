@@ -30,7 +30,7 @@ function cleanOptionText(option: string): string {
     ]
 })
 class MonacoEditorMockComponent {
-    @Input() options: Record<string, unknown>;
+    @Input() options!: Record<string, unknown>;
 
     writeValue() {}
 

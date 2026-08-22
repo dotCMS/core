@@ -76,7 +76,7 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
     standalone: false
 })
 class TestContentTypeFieldsListComponent {
-    @Input() baseType: string;
+    @Input() baseType!: string;
 }
 
 @Component({
@@ -91,7 +91,7 @@ class TestContentTypeFieldsRowListComponent {}
     template: ''
 })
 class TestDotIframeComponent {
-    @Input() src: string;
+    @Input() src!: string;
 }
 
 @Component({
@@ -100,7 +100,7 @@ class TestDotIframeComponent {
     standalone: false
 })
 class TestHostComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
 }
 
@@ -110,7 +110,7 @@ class TestHostComponent {
     standalone: true
 })
 class MockDotStyleEditorBuilderComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
 }
 
 class FieldDragDropServiceMock {
@@ -360,7 +360,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Fields', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 pTabPanel = panels[0];
@@ -427,14 +427,14 @@ describe('ContentTypesLayoutComponent', () => {
                 it('should set actions correctly', () => {
                     const addRow: MenuItem = splitButton.componentInstance.model[0];
                     const addTabDivider: MenuItem = splitButton.componentInstance.model[1];
-                    addRow.command({ originalEvent: createFakeEvent('click') });
+                    addRow.command!({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
                     // Clear the mock before the second call
                     (dotEventsService.notify as jest.Mock).mockClear();
 
-                    addTabDivider.command({ originalEvent: createFakeEvent('click') });
+                    addTabDivider.command!({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
                 });
@@ -442,7 +442,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Permission', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions
@@ -469,7 +469,7 @@ describe('ContentTypesLayoutComponent', () => {
         });
 
         describe('Push History', () => {
-            let pTabPanel;
+            let pTabPanel: DebugElement;
             beforeEach(() => {
                 const panels = de.queryAll(By.css('p-tabpanel'));
                 // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions, [3]=PushHistory

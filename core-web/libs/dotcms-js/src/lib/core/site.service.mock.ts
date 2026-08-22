@@ -20,7 +20,7 @@ export const mockSites: Site[] = [
 ];
 
 export class SiteServiceMock {
-    _currentSite: Site;
+    _currentSite: Site | undefined;
     private _currentSite$: Subject<Site> = new Subject<Site>();
 
     get currentSite(): Site {

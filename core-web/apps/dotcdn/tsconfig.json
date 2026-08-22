@@ -3,6 +3,12 @@
     "files": [],
     "include": [],
     "compilerOptions": {
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
         "types": ["jest", "node"],
         "target": "es2020",
         "module": "preserve",

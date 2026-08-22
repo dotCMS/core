@@ -100,7 +100,7 @@
         </div>
     </ng-template>
     <ul class="results-seo-tool__result-card-list">
-        @for (item of readMoreValues[seoMedia]; track item) {
+        @for (item of seoMedia ? readMoreValues[seoMedia] : []; track item) {
             <li>
                 <i class="results-seo-tool__result-icon pi pi-info-circle"></i>
                 <span

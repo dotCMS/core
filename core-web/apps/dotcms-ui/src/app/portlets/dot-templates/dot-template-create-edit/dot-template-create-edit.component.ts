@@ -53,9 +53,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     readonly #store = inject(DotTemplateStore);
     readonly #globalStore = inject(GlobalStore);
 
-    vm$: Observable<VM>;
+    vm$!: Observable<VM>;
 
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
@@ -191,7 +191,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
                 }
             }
         });
-        ref.onClose.pipe(takeUntil(this.destroy$)).subscribe((goToListing: boolean) => {
+        ref?.onClose.pipe(takeUntil(this.destroy$)).subscribe((goToListing: boolean) => {
             if (goToListing || goToListing === undefined) {
                 this.cancelTemplate();
             }
@@ -221,7 +221,9 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
         });
     }
 
-    private getFormValue(template: DotTemplateItem): { [key: string]: string | DotLayout } {
+    private getFormValue(template: DotTemplateItem): {
+        [key: string]: string | DotLayout | undefined | null;
+    } {
         if (template.type === 'design') {
             return {
                 type: template.type,

@@ -11,5 +11,5 @@ import { PopoverModule } from 'primeng/popover';
     imports: [ButtonModule, PopoverModule]
 })
 export class DotFieldHelperComponent {
-    @Input() message: string;
+    @Input() message!: string;
 }

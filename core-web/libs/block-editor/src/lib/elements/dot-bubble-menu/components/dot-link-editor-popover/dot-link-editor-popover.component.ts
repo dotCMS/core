@@ -84,7 +84,7 @@ const REL_OPTIONS = [
     imports: [FormsModule, Listbox, InputText, Select, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
-    @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
+    @ViewChild('popover', { read: EditorModalDirective }) private popover!: EditorModalDirective;
     @ViewChild('input', { read: ElementRef }) private searchInput?: ElementRef<HTMLInputElement>;
     @ViewChild('resultListbox') private searchResultsListbox?: Listbox;
 
@@ -353,7 +353,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
                         hasTitleImage: c.hasTitleImage,
                         inode: c.inode,
                         displayName: c.title,
-                        url: c.path || c.urlMap
+                        url: c['path'] || c['urlMap']
                     }))
                 );
                 this.isSearching.set(false);

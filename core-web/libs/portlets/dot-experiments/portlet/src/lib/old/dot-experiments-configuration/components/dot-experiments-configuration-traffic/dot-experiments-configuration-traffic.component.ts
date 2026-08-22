@@ -49,7 +49,7 @@ export class DotExperimentsConfigurationTrafficComponent {
     splitEvenly = TrafficProportionTypes.SPLIT_EVENLY;
 
     sidebarHost = viewChild.required(DotDynamicDirective);
-    private componentRef: ComponentRef<
+    private componentRef!: ComponentRef<
         | DotExperimentsConfigurationTrafficAllocationAddComponent
         | DotExperimentsConfigurationTrafficSplitAddComponent
     >;
@@ -63,7 +63,7 @@ export class DotExperimentsConfigurationTrafficComponent {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.TRAFFIC_LOAD);
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {

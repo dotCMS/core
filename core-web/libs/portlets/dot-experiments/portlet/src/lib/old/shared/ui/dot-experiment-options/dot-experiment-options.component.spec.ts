@@ -55,19 +55,19 @@ describe('DotExperimentOptionsComponent', () => {
         const headerA = spectator.query(byTestId('dot-options-item-header_a'));
         const headerB = spectator.query(byTestId('dot-options-item-header_b'));
 
-        expect(headerA.querySelector('h2')).toHaveText('Title A');
-        expect(headerA.querySelector('p')).toHaveText('Detail A');
-        expect(headerA.querySelector('i')).toHaveClass('test-icon');
+        expect(headerA!.querySelector('h2')!).toHaveText('Title A');
+        expect(headerA!.querySelector('p')!).toHaveText('Detail A');
+        expect(headerA!.querySelector('i')!).toHaveClass('test-icon');
 
-        expect(headerB.querySelector('h2')).toHaveText('Title B');
-        expect(headerB.querySelector('p')).toHaveText('Detail B');
-        expect(headerB.querySelector('i')).not.toExist();
+        expect(headerB!.querySelector('h2')!).toHaveText('Title B');
+        expect(headerB!.querySelector('p')!).toHaveText('Detail B');
+        expect(headerB!.querySelector('i')!).not.toExist();
     });
 
     it('should add the class expand to an option clicked that contains content', () => {
         const headerOptionWithContent = spectator.query(byTestId('dot-options-item-header_b'));
 
-        spectator.click(headerOptionWithContent);
+        spectator.click(headerOptionWithContent!);
         spectator.detectComponentChanges();
 
         expect(spectator.query(byTestId('dot-options-item-content_b'))).toHaveClass('pb-4');

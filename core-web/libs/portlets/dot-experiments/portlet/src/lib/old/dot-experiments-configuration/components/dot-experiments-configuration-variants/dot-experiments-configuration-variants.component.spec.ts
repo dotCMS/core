@@ -23,9 +23,11 @@ import {
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotExperiment,
     DotExperimentStatus,
     DotPageMode,
-    ExperimentSteps
+    ExperimentSteps,
+    Variant
 } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 import {
@@ -205,8 +207,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             const addVariantButtonWrapper = spectator.query(byTestId('variant-add-button'));
             const addVariantButton =
-                addVariantButtonWrapper.querySelector('button') || addVariantButtonWrapper;
-            expect(addVariantButton.hasAttribute('disabled')).toBe(true);
+                addVariantButtonWrapper!.querySelector('button')! || addVariantButtonWrapper;
+            expect(addVariantButton.hasAttribute('disabled')!).toBe(true);
         });
     });
 
@@ -244,7 +246,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             jest.spyOn(store, 'openSidebar');
 
             const addButtonWrapper = spectator.query(byTestId('variant-add-button'));
-            const addButton = addButtonWrapper.querySelector('button') || addButtonWrapper;
+            const addButton = addButtonWrapper!.querySelector('button')! || addButtonWrapper;
             spectator.click(addButton);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.VARIANTS);
@@ -255,7 +257,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             const variantWeightWrapper = spectator.query(byTestId('variant-weight'));
             const variantWeightButton =
-                variantWeightWrapper.querySelector('button') || variantWeightWrapper;
+                variantWeightWrapper!.querySelector('button')! || variantWeightWrapper;
             spectator.click(variantWeightButton);
 
             expect(store.openSidebar).toHaveBeenCalledWith(ExperimentSteps.TRAFFICS_SPLIT);
@@ -264,7 +266,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         it('should goToEditPage emit a variant and mode(preview) when View button is clicked', () => {
             const previewButtonWrapper = spectator.query(byTestId('variant-preview-button'));
             const previewButton =
-                previewButtonWrapper.querySelector('button') || previewButtonWrapper;
+                previewButtonWrapper!.querySelector('button')! || previewButtonWrapper;
             spectator.click(previewButton);
 
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
@@ -279,7 +281,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
         it('should goToEditPage emit a variant and mode(edit) when edit button is clicked', () => {
             const editButtonWrapper = spectator.query(byTestId('variant-edit-button'));
-            const editButton = editButtonWrapper.querySelector('button') || editButtonWrapper;
+            const editButton = editButtonWrapper!.querySelector('button')! || editButtonWrapper;
             spectator.click(editButton);
 
             expect(router.navigate).toHaveBeenCalledWith(['edit-page/content'], {
@@ -301,7 +303,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
             jest.spyOn(confirmationService, 'confirm');
 
             const buttonWrapper = spectator.queryLast(byTestId('variant-delete-button'));
-            const button = buttonWrapper.querySelector('button') || buttonWrapper;
+            const button = buttonWrapper!.querySelector('button')! || buttonWrapper;
 
             spectator.click(button);
 
@@ -346,8 +348,8 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
 
             // Check add variant button is disabled
             const addButtonWrapper = spectator.query(byTestId('variant-add-button'));
-            const addButton = addButtonWrapper.querySelector('button') || addButtonWrapper;
-            expect(addButton.hasAttribute('disabled')).toBe(true);
+            const addButton = addButtonWrapper!.querySelector('button')! || addButtonWrapper;
+            expect(addButton.hasAttribute('disabled')!).toBe(true);
 
             const enableTooltips = spectator
                 .queryAll(Tooltip)
@@ -379,7 +381,7 @@ describe('DotExperimentsConfigurationVariantsComponent', () => {
         });
     });
 
-    function loadExperiment(mock, variants) {
+    function loadExperiment(mock: DotExperiment, variants: Variant[]) {
         dotExperimentsService.getById.mockReturnValue(
             of({
                 ...mock,

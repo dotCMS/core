@@ -50,6 +50,57 @@ export interface ActionsHandlerDependencies {
     onSectionOffset?: (payload: { sectionIndex: number; offsetTop: number }) => void;
 }
 
+/**
+ * The payload each UVE action carries over the postMessage channel.
+ *
+ * `PostMessage.payload` is `unknown`, because one channel carries all of them; this is where the
+ * pairing is written down. The map below used to be
+ * `Record<DotCMSUVEAction, (payload: unknown) => void>`, which claimed every handler accepts
+ * anything — `strictFunctionTypes` rejects assigning `(p: SetUrlPayload) => void` to that, and it
+ * is right to. Handlers that take no payload still satisfy their entry: a function may ignore
+ * arguments it is passed.
+ */
+interface UveActionPayloads {
+    [DotCMSUVEAction.NAVIGATION_UPDATE]: SetUrlPayload;
+    [DotCMSUVEAction.SET_BOUNDS]: Container[];
+    [DotCMSUVEAction.SET_CONTENTLET]: ClientContentletArea | null;
+    [DotCMSUVEAction.SET_SELECTED_CONTENTLET]: ClientContentletArea;
+    [DotCMSUVEAction.COPY_CONTENTLET_INLINE_EDITING]: {
+        dataset: InlineEditingContentletDataset;
+    };
+    [DotCMSUVEAction.UPDATE_CONTENTLET_INLINE_EDITING]: UpdatedContentlet;
+    [DotCMSUVEAction.CLIENT_READY]: {
+        graphql: {
+            query: string;
+            variables: Record<string, unknown>;
+        };
+        params: Record<string, unknown>;
+        query: string;
+    };
+    [DotCMSUVEAction.EDIT_CONTENTLET]: DotCMSContentlet;
+    [DotCMSUVEAction.CREATE_CONTENTLET]: { contentType: string };
+    [DotCMSUVEAction.REORDER_MENU]: ReorderMenuPayload;
+    [DotCMSUVEAction.INIT_INLINE_EDITING]: {
+        type: DotCMSInlineEditingType;
+        data?: DotCMSInlineEditingPayload;
+    };
+    [DotCMSUVEAction.REGISTER_STYLE_SCHEMAS]: { schemas: StyleEditorFormSchema[] };
+    [DotCMSUVEAction.SECTION_OFFSET]: { sectionIndex: number; offsetTop: number };
+
+    // Signals with no payload.
+    [DotCMSUVEAction.IFRAME_SCROLL]: unknown;
+    [DotCMSUVEAction.IFRAME_SCROLL_END]: unknown;
+    [DotCMSUVEAction.IFRAME_HEIGHT]: unknown;
+    [DotCMSUVEAction.GET_PAGE_DATA]: unknown;
+    [DotCMSUVEAction.PING_EDITOR]: unknown;
+    [DotCMSUVEAction.NOOP]: unknown;
+}
+
+/** One handler per action, each taking that action's own payload. */
+type UveActionHandlers = {
+    [A in DotCMSUVEAction]: (payload: UveActionPayloads[A]) => void;
+};
+
 @Injectable()
 export class DotUveActionsHandlerService {
     private readonly dotMessageService = inject(DotMessageService);
@@ -68,7 +119,7 @@ export class DotUveActionsHandlerService {
             onSectionOffset
         } = deps;
 
-        const CLIENT_ACTIONS_FUNC_MAP: Record<DotCMSUVEAction, (payload: unknown) => void> = {
+        const CLIENT_ACTIONS_FUNC_MAP: UveActionHandlers = {
             [DotCMSUVEAction.NAVIGATION_UPDATE]: (payload: SetUrlPayload) => {
                 const currentPageUrl = uveStore.pageParams()?.url;
                 const incomingUrl = payload.url;
@@ -83,7 +134,7 @@ export class DotUveActionsHandlerService {
                 if (isSameUrl) {
                     uveStore.setEditorState(EDITOR_STATE.IDLE);
                 } else {
-                    uveStore.pageLoad({
+                    uveStore['pageLoad']({
                         url: payload.url,
                         [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                     });
@@ -148,6 +199,14 @@ export class DotUveActionsHandlerService {
                 dataset: InlineEditingContentletDataset;
             }) => {
                 const contentArea = uveStore.editorContentArea();
+
+                // No content area means nothing is hovered or selected, so there is no contentlet to
+                // copy and no container to copy it into — both of which the rest of this handler
+                // reads. `editorContentArea()` is null whenever the pointer is outside a contentlet.
+                if (!contentArea) {
+                    return;
+                }
+
                 const { contentlet, container } = contentArea.payload;
 
                 // Move focus to an inline field that has already cleared (or does
@@ -196,6 +255,12 @@ export class DotUveActionsHandlerService {
                     return;
                 }
 
+                // The copy is keyed by the contentlet being copied; without one there is nothing
+                // to decide about.
+                if (!contentlet) {
+                    return;
+                }
+
                 const currentTreeNode = uveStore.getCurrentTreeNode(container, contentlet);
 
                 this.dotCopyContentModalService
@@ -212,7 +277,7 @@ export class DotUveActionsHandlerService {
                             uveStore.setEditorState(EDITOR_STATE.INLINE_EDITING);
 
                             if (res) {
-                                uveStore.pageReload();
+                                uveStore['pageReload']();
                             }
                         })
                     )
@@ -288,7 +353,7 @@ export class DotUveActionsHandlerService {
                             }
                         })
                     )
-                    .subscribe(() => uveStore.pageReload());
+                    .subscribe(() => uveStore['pageReload']());
             },
             [DotCMSUVEAction.CLIENT_READY]: (devConfig: {
                 graphql: {
@@ -322,9 +387,11 @@ export class DotUveActionsHandlerService {
                     return;
                 }
 
-                const pageParams = convertClientParamsToPageParams(params);
+                // `convertClientParamsToPageParams` returns null for absent params, and
+                // `pageReload` already takes no argument to mean "reload with what the store has".
+                const pageParams = convertClientParamsToPageParams(params) ?? undefined;
 
-                uveStore.pageReload(pageParams);
+                uveStore['pageReload'](pageParams);
                 uveStore.setIsClientReady(true);
             },
             [DotCMSUVEAction.EDIT_CONTENTLET]: (contentlet: DotCMSContentlet) => {
@@ -350,11 +417,20 @@ export class DotUveActionsHandlerService {
                 });
             },
             [DotCMSUVEAction.REORDER_MENU]: ({ startLevel, depth }: ReorderMenuPayload) => {
+                const pagePath = uveStore.pageParams()?.url;
+                const hostId = uveStore.pageAsset()?.site?.identifier;
+
+                // The reorder dialog is opened on a URL built from both; with either missing there
+                // is no page whose menu could be reordered.
+                if (!pagePath || !hostId) {
+                    return;
+                }
+
                 const urlObject = createReorderMenuURL({
                     startLevel,
                     depth,
-                    pagePath: uveStore.pageParams().url,
-                    hostId: uveStore.pageAsset()?.site?.identifier
+                    pagePath,
+                    hostId
                 });
 
                 dialog.openDialogOnUrl(
@@ -394,7 +470,11 @@ export class DotUveActionsHandlerService {
             }
         };
 
-        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action];
+        // The one cast in this file, and the only place it belongs: `action` and `payload` arrive
+        // as an unrelated pair from the SDK, so nothing here can prove they match. Indexing the
+        // map yields the union of every handler, which accepts only the intersection of their
+        // payloads — i.e. nothing. `UveActionPayloads` above is the contract this leans on.
+        const actionToExecute = CLIENT_ACTIONS_FUNC_MAP[action] as (payload: unknown) => void;
         actionToExecute?.(payload);
     }
 
@@ -407,7 +487,11 @@ export class DotUveActionsHandlerService {
         // Note: Enterprise check should be done by caller if needed
         switch (type) {
             case 'BLOCK_EDITOR':
-                blockSidebar?.open(data);
+                // `data` is optional on the event and the sidebar cannot open without it: it needs
+                // the inode, field name and content to build the editor.
+                if (data) {
+                    blockSidebar?.open(data);
+                }
                 break;
 
             case 'WYSIWYG':

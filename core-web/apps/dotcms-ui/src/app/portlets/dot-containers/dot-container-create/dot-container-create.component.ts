@@ -40,7 +40,7 @@ export class DotContainerCreateComponent implements OnInit {
     ngOnInit() {
         this.activatedRoute.data
             .pipe(
-                map((x) => x?.container),
+                map((x) => x?.['container']),
                 take(1)
             )
             .subscribe((container: DotContainerEntity) => {

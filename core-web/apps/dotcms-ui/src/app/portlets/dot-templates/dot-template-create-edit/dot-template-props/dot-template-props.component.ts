@@ -65,11 +65,11 @@ export class DotTemplatePropsComponent implements OnInit, OnDestroy {
     private el = inject(ElementRef);
 
     private destroy$ = new Subject<void>();
-    private originalTemplate: DotTemplateItem;
+    private originalTemplate!: DotTemplateItem;
 
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
 
-    isFormValid$: Observable<boolean>;
+    isFormValid$!: Observable<boolean>;
 
     ngOnInit(): void {
         const { template } = this.config.data;
@@ -99,9 +99,9 @@ export class DotTemplatePropsComponent implements OnInit, OnDestroy {
         );
 
         // Handle keyboard shortcuts (Cmd/Ctrl+Enter to save)
-        fromEvent(this.el.nativeElement, 'keydown')
+        fromEvent<KeyboardEvent>(this.el.nativeElement, 'keydown')
             .pipe(takeUntil(this.destroy$))
-            .subscribe((keyboardEvent: KeyboardEvent) => {
+            .subscribe((keyboardEvent) => {
                 const nodeName = (keyboardEvent.target as Element).nodeName;
                 const hasFormChanged =
                     JSON.stringify(this.form.value) !== JSON.stringify(this.originalTemplate);

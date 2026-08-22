@@ -29,7 +29,7 @@ interface DotActionMenuClickEvent {
 export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: CustomMenuItem[] = [];
 
-    @Input() item: Record<string, unknown>;
+    @Input() item!: Record<string, unknown>;
 
     @Input() icon? = 'pi pi-ellipsis-v';
 
@@ -38,7 +38,7 @@ export class DotActionMenuButtonComponent implements OnInit {
     $hasIcon = signal(false);
 
     ngOnInit() {
-        this.filteredActions = this.actions
+        this.filteredActions = (this.actions ?? [])
             .filter((action: DotActionMenuItem) =>
                 action.shouldShow ? action.shouldShow(this.item) : true
             )
@@ -46,7 +46,7 @@ export class DotActionMenuButtonComponent implements OnInit {
                 return {
                     ...action.menuItem,
                     command: ($event: DotActionMenuClickEvent) => {
-                        action.menuItem.command(this.item);
+                        action.menuItem.command?.(this.item);
 
                         $event?.originalEvent?.stopPropagation();
                     }
@@ -54,7 +54,7 @@ export class DotActionMenuButtonComponent implements OnInit {
             });
 
         if (this.filteredActions.length === 1) {
-            this.$hasIcon.set(this.filteredActions[0].icon ? true : false);
+            this.$hasIcon.set(this.filteredActions[0]['icon'] ? true : false);
         }
     }
 }

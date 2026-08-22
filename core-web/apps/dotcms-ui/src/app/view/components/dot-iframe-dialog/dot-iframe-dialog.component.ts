@@ -22,10 +22,10 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
 })
 export class DotIframeDialogComponent implements OnChanges {
     @ViewChild('dialog', { static: true })
-    dotDialog: Dialog;
+    dotDialog!: Dialog;
 
     @Input()
-    url: string;
+    url: string | null = null;
 
     @Input()
     header = '';
@@ -47,15 +47,15 @@ export class DotIframeDialogComponent implements OnChanges {
     @Output()
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
-    show: boolean;
+    show = false;
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.url) {
-            this.show = !!changes.url.currentValue;
+        if (changes['url']) {
+            this.show = !!changes['url'].currentValue;
         }
 
-        if (changes.header) {
-            this.header = changes.header.currentValue;
+        if (changes['header']) {
+            this.header = changes['header'].currentValue;
         }
     }
 
@@ -80,7 +80,7 @@ export class DotIframeDialogComponent implements OnChanges {
      * @memberof DotIframeDialogComponent
      */
     onLoad($event: { target: HTMLIFrameElement }): void {
-        $event.target.contentWindow.focus();
+        $event.target.contentWindow?.focus();
         this.charge.emit($event);
     }
 

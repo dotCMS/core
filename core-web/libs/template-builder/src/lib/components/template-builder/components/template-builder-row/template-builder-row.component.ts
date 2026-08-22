@@ -28,7 +28,7 @@ export class TemplateBuilderRowComponent {
     private dialogService = inject(DialogService);
     private dotMessage = inject(DotMessageService);
 
-    @Input() row: DotGridStackWidget;
+    @Input() row!: DotGridStackWidget;
 
     @Input() isResizing = false;
 
@@ -49,6 +49,11 @@ export class TemplateBuilderRowComponent {
             },
             resizable: false
         });
+
+        // `open()` can return null when the dialog cannot be created.
+        if (!ref) {
+            return;
+        }
 
         ref.onClose
             .pipe(

@@ -14,6 +14,7 @@ import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 import { BASIC_TIPPY_OPTIONS, getEditorElement, getNodePosition } from '../../../shared';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
+import { BubbleFormValue, DynamicControl } from '../model';
 import { imageFormControls } from '../utils';
 
 export interface BubbleFormProps {
@@ -21,8 +22,10 @@ export interface BubbleFormProps {
     editor: Editor;
     element: HTMLElement;
     tippyOptions?: Partial<Props>;
-    component?: ComponentRef<BubbleFormComponent>;
-    form$: Observable<{ [key: string]: string }>;
+    // Required, not optional: `BubbleFormExtension` is the only caller and always creates the
+    // component before building the plugin. The view dereferences it unconditionally.
+    component: ComponentRef<BubbleFormComponent>;
+    form$: Observable<BubbleFormValue>;
 }
 
 export type BubbleFormViewProps = BubbleFormProps & {
@@ -31,14 +34,15 @@ export type BubbleFormViewProps = BubbleFormProps & {
 
 interface PluginState {
     open: boolean;
-    form: [];
-    options: { customClass: string };
+    // Was declared `[]`, the empty-tuple type, so `next.form` could never hold a control.
+    form: DynamicControl<string | boolean>[];
+    options: { customClass: string } | null;
 }
 
 export class BubbleFormView extends BubbleMenuView {
     public override editor: Editor;
 
-    public node: Node;
+    public node: Node | null = null;
 
     public override element: HTMLElement;
 
@@ -49,9 +53,9 @@ export class BubbleFormView extends BubbleMenuView {
 
     public tippyOptions?: Partial<Props>;
 
-    public pluginKey: PluginKey;
+    public override pluginKey: PluginKey;
 
-    public component?: ComponentRef<BubbleFormComponent>;
+    public component: ComponentRef<BubbleFormComponent>;
 
     private $destroy = new Subject<boolean>();
 
@@ -123,11 +127,12 @@ export class BubbleFormView extends BubbleMenuView {
                 if (selection instanceof NodeSelection) {
                     const node = view.nodeDOM(from) as HTMLElement;
 
-                    if (node) {
-                        this.node = doc.nodeAt(from);
-                        const type = this.node.type.name;
+                    const docNode = doc.nodeAt(from);
 
-                        return this.tippyRect(node, type);
+                    if (node && docNode) {
+                        this.node = docNode;
+
+                        return this.tippyRect(node, docNode.type.name);
                     }
                 }
 
@@ -188,14 +193,14 @@ export class BubbleFormView extends BubbleMenuView {
         return null;
     }
 
-    private tippyRect(node, type) {
+    private tippyRect(node: HTMLElement, type: string): DOMRect {
         const domRect = document.querySelector('#bubble-menu')?.getBoundingClientRect();
 
         return domRect || getNodePosition(node, type);
     }
 
     private shouldHideOnScroll(node: HTMLElement): boolean {
-        return this.tippy?.state.isMounted && this.tippy?.popper.contains(node);
+        return !!(this.tippy?.state.isMounted && this.tippy?.popper.contains(node));
     }
 }
 

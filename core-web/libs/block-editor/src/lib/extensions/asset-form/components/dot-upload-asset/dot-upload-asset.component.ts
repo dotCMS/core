@@ -48,21 +48,23 @@ export class DotUploadAssetComponent implements OnDestroy {
     hide = new EventEmitter<boolean>();
 
     @Input()
-    type: EditorAssetTypes;
+    type!: EditorAssetTypes;
 
     public status = STATUS.SELECT;
-    public file: File;
-    public src: string | ArrayBuffer | SafeResourceUrl;
-    public error: string;
+    /** Null in the SELECT state and after `cancelAction` clears the selection. */
+    public file: File | null = null;
+    public src!: string | ArrayBuffer | SafeResourceUrl;
+    public error = '';
     public animation = 'shakeend';
-    public $uploadRequestSubs: Subscription;
-    public controller: AbortController;
+    // Both only exist while an upload is in flight; `cancelUploading` can run before one starts.
+    public $uploadRequestSubs?: Subscription;
+    public controller?: AbortController;
 
     get errorMessage() {
         return ` Don't close this window while the ${this.type} uploads`;
     }
 
-    @HostListener('window:click', ['$event.target']) onClick(e) {
+    @HostListener('window:click', ['$event.target']) onClick(e: EventTarget) {
         const clickedOutside = !this.el.nativeElement.contains(e);
 
         // If it's uploading and the user click outside the component, shake the message
@@ -90,7 +92,13 @@ export class DotUploadAssetComponent implements OnDestroy {
         const file = files[0];
         const reader = new FileReader();
         this.preventClose.emit(true);
-        reader.onload = (e) => this.setFile(file, e.target.result);
+        reader.onload = (e) => {
+            const buffer = e.target?.result;
+
+            if (buffer !== null && buffer !== undefined) {
+                this.setFile(file, buffer);
+            }
+        };
 
         /*
          * We can not use `reader.readDataAsUrl()` method because of this:
@@ -142,10 +150,16 @@ export class DotUploadAssetComponent implements OnDestroy {
      * @memberof DotUploadAssetComponent
      */
     private uploadFile() {
+        const file = this.file;
+
+        if (!file) {
+            return;
+        }
+
         this.controller = new AbortController();
         this.status = STATUS.UPLOAD;
         this.$uploadRequestSubs = this.dotUploadFileService
-            .publishContent({ data: this.file, signal: this.controller.signal })
+            .publishContent({ data: file, signal: this.controller.signal })
             .pipe(
                 take(1),
                 catchError((error: HttpErrorResponse) => this.handleError(error))
@@ -199,7 +213,9 @@ export class DotUploadAssetComponent implements OnDestroy {
     }
 
     private cancelUploading(): void {
-        this.$uploadRequestSubs.unsubscribe();
+        // Guarded to match `controller?.abort()` below: `cancelAction` can fire from the SELECT
+        // state, where no upload has started and there is no subscription to tear down.
+        this.$uploadRequestSubs?.unsubscribe();
         this.controller?.abort();
     }
 }

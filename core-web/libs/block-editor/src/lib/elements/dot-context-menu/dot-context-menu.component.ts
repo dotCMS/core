@@ -124,13 +124,13 @@ export class DotContextMenuComponent {
             {
                 label: MENU_LABELS.CUT,
                 command: () => this.cutCommand(),
-                shortcut: this.getShortcut(SHORTCUTS.CUT),
+                shortcut: this.getShortcut(SHORTCUTS['CUT']),
                 disabled: !hasSelection
             },
             {
                 label: MENU_LABELS.COPY,
                 command: () => this.copyCommand(),
-                shortcut: this.getShortcut(SHORTCUTS.COPY),
+                shortcut: this.getShortcut(SHORTCUTS['COPY']),
                 disabled: !hasSelection
             },
             {
@@ -153,12 +153,12 @@ export class DotContextMenuComponent {
             {
                 label: MENU_LABELS.PASTE,
                 command: () => this.pasteCommand(),
-                shortcut: this.getShortcut(SHORTCUTS.PASTE)
+                shortcut: this.getShortcut(SHORTCUTS['PASTE'])
             },
             {
                 label: MENU_LABELS.PASTE_WITHOUT_FORMAT,
                 command: () => this.pasteWithoutFormatCommand(),
-                shortcut: this.getShortcut(SHORTCUTS.PASTE_WITHOUT_FORMAT)
+                shortcut: this.getShortcut(SHORTCUTS['PASTE_WITHOUT_FORMAT'])
             },
             {
                 label: MENU_LABELS.PASTE_MARKDOWN,

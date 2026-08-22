@@ -66,16 +66,20 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
     private cdr = inject(ChangeDetectorRef);
 
-    downloadOptions: SelectItem[];
-    filterOptions: SelectItem[];
-    dialogActions: DotDialogActions;
-    form: UntypedFormGroup;
+    downloadOptions: SelectItem[] = [];
+    filterOptions: SelectItem[] = [];
+    dialogActions!: DotDialogActions;
+    form!: UntypedFormGroup;
     showDialog = false;
     errorMessage = '';
 
-    private currentFilterKey: string;
+    private currentFilterKey!: string;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private filters: SelectItem[] = null;
+    /**
+     * Null until the filter list has been fetched. `ngOnInit` branches on exactly that, so an
+     * empty array here would read as "already loaded" and skip the fetch.
+     */
+    private filters: SelectItem[] | null = null;
 
     ngOnInit() {
         this.dotDownloadBundleDialogService.showDialog$
@@ -127,17 +131,22 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         if (this.form.valid) {
             this.errorMessage = '';
             const value = this.form.value;
-            const bundleForm = {};
+            const bundleForm: Record<string, string> = {};
             bundleForm['bundleId'] = value.bundleId;
             bundleForm['operation'] =
                 value.downloadOptionSelected === DownloadType.PUBLISH ? '0' : '1';
             bundleForm['filterKey'] = value.filterKey;
 
-            this.dialogActions.accept.disabled = true;
-            this.dialogActions.accept.label = this.dotMessageService.get(
-                'download.bundle.downloading'
-            );
-            this.dialogActions.cancel.disabled = true;
+            // `accept` and `cancel` are optional on `DotDialogActions`; this component sets both in
+            // `setDialogActions`, so the guard only covers the interval before the dialog is built.
+            if (this.dialogActions.accept && this.dialogActions.cancel) {
+                this.dialogActions.accept.disabled = true;
+                this.dialogActions.accept.label = this.dotMessageService.get(
+                    'download.bundle.downloading'
+                );
+                this.dialogActions.cancel.disabled = true;
+            }
+
             this.downloadFile(bundleForm);
         }
     }
@@ -158,7 +167,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private initDialog(bundleId: string): void {
         this.setDialogActions();
         this.errorMessage = '';
-        this.filterOptions = this.filters;
+        this.filterOptions = this.filters ?? [];
         this.form = this.fb.group({
             downloadOptionSelected: [this.downloadOptions[0].value, [Validators.required]],
             filterKey: this.currentFilterKey,
@@ -185,11 +194,17 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
                         };
                     })
                     .sort((a: SelectItem, b: SelectItem) => {
-                        if (a.label > b.label) {
+                        // `SelectItem.label` is optional; these are built with `filter.title` just
+                        // above, so `''` only ever affects an item that never had one — which sorts
+                        // first, as an unnamed entry should.
+                        const aLabel = a.label ?? '';
+                        const bLabel = b.label ?? '';
+
+                        if (aLabel > bLabel) {
                             return 1;
                         }
 
-                        if (a.label < b.label) {
+                        if (aLabel < bLabel) {
                             return -1;
                         }
 
@@ -221,9 +236,8 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     }
 
     private listenForChanges(): void {
-        this.form
-            .get('downloadOptionSelected')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['downloadOptionSelected'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .subscribe((state: string) => {
                 this.handleDropDownState(state);
             });
@@ -236,7 +250,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
             filterKey.setValue('');
             this.filterOptions = [];
         } else {
-            this.filterOptions = this.filters;
+            this.filterOptions = this.filters ?? [];
             filterKey.enable();
             filterKey.setValue(this.currentFilterKey);
         }
@@ -257,7 +271,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         })
             .then((res: Response) => {
                 const contentDisposition = res.headers.get('content-disposition');
-                fileName = this.getFilenameFromContentDisposition(contentDisposition);
+                fileName = this.getFilenameFromContentDisposition(contentDisposition ?? '');
 
                 return res.blob();
             })

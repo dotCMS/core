@@ -42,8 +42,8 @@ import { DotFavoriteSelectorComponent } from '../dot-favorite-selector/dot-favor
 import { DotUVEPaletteContenttypeComponent } from '../dot-uve-palette-contenttype/dot-uve-palette-contenttype.component';
 
 const mockStore = {
-    contenttypes: signal([]),
-    contentlets: signal([]),
+    contenttypes: signal<DotCMSContentType[]>([]),
+    contentlets: signal<DotCMSContentlet[]>([]),
     pagination: {
         perPage: signal(30),
         totalEntries: signal(0),
@@ -407,7 +407,7 @@ describe('DotUvePaletteListComponent', () => {
             expect(addButton).toBeTruthy();
 
             // Query the DotFavoriteSelectorComponent using Spectator
-            const favoritesPanelComponent = spectator.query(DotFavoriteSelectorComponent);
+            const favoritesPanelComponent = spectator.query(DotFavoriteSelectorComponent)!;
             expect(favoritesPanelComponent).toBeTruthy();
 
             // Create spy on the component's toggle method
@@ -554,7 +554,7 @@ describe('DotUvePaletteListComponent', () => {
             const sortMenuButton = spectator.query('[data-testid="sort-menu-button"]');
             expect(sortMenuButton).toBeTruthy();
 
-            const menuComponent = spectator.query(Menu);
+            const menuComponent = spectator.query(Menu)!;
             expect(menuComponent).toBeTruthy();
 
             const showSpy = jest.spyOn(menuComponent, 'show');
@@ -571,7 +571,7 @@ describe('DotUvePaletteListComponent', () => {
             const contentTypeComponent = spectator.query('dot-uve-palette-contenttype');
             expect(contentTypeComponent).toBeTruthy();
 
-            const contextMenuComponent = spectator.query(ContextMenu);
+            const contextMenuComponent = spectator.query(ContextMenu)!;
             expect(contextMenuComponent).toBeTruthy();
 
             const showSpy = jest.spyOn(contextMenuComponent, 'show');
@@ -993,7 +993,7 @@ describe('DotUvePaletteListComponent', () => {
             setLoadedContentTypes();
             spectator.detectChanges();
 
-            const contextMenuComponent = spectator.query(ContextMenu);
+            const contextMenuComponent = spectator.query(ContextMenu)!;
             expect(contextMenuComponent).toBeTruthy();
 
             const showSpy = jest.spyOn(contextMenuComponent, 'show');

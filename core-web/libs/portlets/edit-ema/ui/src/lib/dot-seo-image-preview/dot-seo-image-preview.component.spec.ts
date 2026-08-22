@@ -43,13 +43,13 @@ describe('DotSeoImagePreviewComponent', () => {
         });
         spectator.detectComponentChanges();
 
-        const imageElement = spectator.query(byTestId('seo-image-preview'));
+        const imageElement = spectator.query(byTestId('seo-image-preview'))!;
         expect(imageElement).toBeTruthy();
-        expect(imageElement.getAttribute('src')).toBe('sample-image-url.jpg');
+        expect(imageElement!.getAttribute('src')).toBe('sample-image-url.jpg');
     });
 
     it('should call onImageError() when the image fails to load', () => {
-        const imageElement = spectator.query(byTestId('seo-image-preview'));
+        const imageElement = spectator.query(byTestId('seo-image-preview'))!;
 
         spectator.dispatchFakeEvent(imageElement, 'error');
         spectator.detectComponentChanges();

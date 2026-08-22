@@ -239,10 +239,14 @@ describe('ExistingContentService', () => {
         it('should handle contentlets without title by using identifier', (done) => {
             const contentletsWithoutTitle = [
                 createFakeContentlet({
-                    identifier: '789',
+                    // `title` is declared non-nullable on `DotCMSContentlet`, but the API does
+                    // return contentlets without one — that is what this test covers, and the
+                    // service falls back to the identifier. Widening the model reaches into
+                    // block-editor and edit-ema-ui, so it is left for its own change.
                     title: null,
+                    identifier: '789',
                     languageId: 1
-                })
+                } as unknown as Partial<DotCMSContentlet>)
             ];
 
             const responseWithoutTitle = {
@@ -490,7 +494,10 @@ describe('ExistingContentService', () => {
         it('should combine columns and content correctly', (done) => {
             spectator.service
                 .getColumnsAndContent(mockContentTypeId)
-                .subscribe(([columns, response]) => {
+                // Narrowed before destructuring: the method emits `[...] | null` and this test
+                // covers the success path.
+                .subscribe((result) => {
+                    const [columns, response] = result!;
                     // Verify columns
                     expect(columns.length).toBeGreaterThan(0);
                     expect(columns).toEqual(expectedColumns);
@@ -500,15 +507,15 @@ describe('ExistingContentService', () => {
                     const item0 = {
                         identifier: response.contentlets[0].identifier,
                         title: response.contentlets[0].title,
-                        field: response.contentlets[0].field,
-                        description: response.contentlets[0].description,
+                        field: response.contentlets[0]['field'],
+                        description: response.contentlets[0]['description'],
                         language: response.contentlets[0].language
                     };
                     const item1 = {
                         identifier: response.contentlets[1].identifier,
                         title: response.contentlets[1].title,
-                        field: response.contentlets[1].field,
-                        description: response.contentlets[1].description,
+                        field: response.contentlets[1]['field'],
+                        description: response.contentlets[1]['description'],
                         language: response.contentlets[1].language
                     };
                     expect(item0).toEqual({
@@ -542,7 +549,9 @@ describe('ExistingContentService', () => {
 
             spectator.service
                 .getColumnsAndContent(mockContentTypeId)
-                .subscribe(([columns, response]) => {
+                // Narrowed before destructuring: the method emits `[...] | null`.
+                .subscribe((result) => {
+                    const [columns, response] = result!;
                     expect(columns.length).toBeGreaterThan(0);
                     expect(response.contentlets).toEqual([]);
                     expect(response.totalResults).toBe(0);
@@ -553,13 +562,14 @@ describe('ExistingContentService', () => {
         it('should handle content without title', () => {
             const contentWithoutTitle = [
                 createFakeContentlet({
-                    identifier: '789',
+                    // See the note on the other "without title" test above.
                     title: null,
+                    identifier: '789',
                     description: 'Description 3',
                     field: 'Field 3',
                     languageId: mockLocales[0].id,
                     modDate: '2024-01-03T00:00:00Z'
-                })
+                } as unknown as Partial<DotCMSContentlet>)
             ];
 
             const responseWithoutTitle = {
@@ -571,12 +581,14 @@ describe('ExistingContentService', () => {
 
             dotContentSearchService.search.mockReturnValue(of(responseWithoutTitle));
 
-            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe(([_, response]) => {
+            // Narrowed before destructuring: the method emits `[...] | null`.
+            spectator.service.getColumnsAndContent(mockContentTypeId).subscribe((result) => {
+                const [, response] = result!;
                 const item = {
                     identifier: response.contentlets[0].identifier,
                     title: response.contentlets[0].title,
-                    field: response.contentlets[0].field,
-                    description: response.contentlets[0].description,
+                    field: response.contentlets[0]['field'],
+                    description: response.contentlets[0]['description'],
                     language: response.contentlets[0].language
                 };
                 expect(item).toEqual({

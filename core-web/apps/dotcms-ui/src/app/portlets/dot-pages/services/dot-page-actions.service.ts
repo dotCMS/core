@@ -421,7 +421,7 @@ export class DotPageActionsService {
     }
 
     #getFavoritePageUrl(item: DotCMSContentlet): string {
-        const pageURI = item.urlMap ?? (item.url ? item.url.split('?')[0] : '');
+        const pageURI = item['urlMap'] ?? (item.url ? item.url.split('?')[0] : '');
         return generateDotFavoritePageUrl({
             pageURI,
             languageId: item.languageId,

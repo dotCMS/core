@@ -7,7 +7,12 @@ import { computed, inject } from '@angular/core';
 
 import { catchError, tap, exhaustMap, switchMap } from 'rxjs/operators';
 
-import { ComponentStatus, TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    isTreeNodeContentData,
+    TreeNodeItem,
+    TreeNodeSelectItem
+} from '@dotcms/dotcms-models';
 import { DotBrowsingService } from '@dotcms/ui';
 
 /** Maximum number of items to fetch per page */
@@ -162,6 +167,15 @@ export const SiteFieldStore = signalStore(
                 pipe(
                     exhaustMap((event: TreeNodeSelectItem) => {
                         const { node } = event;
+
+                        // Narrowed through the model's own discriminant, matching
+                        // `expandNode` in the host-folder store: a load-more sentinel node
+                        // carries neither hostname nor path, and there is nothing under it
+                        // to fetch. `TreeNode.data` is optional in PrimeNG besides.
+                        if (!node.data || !isTreeNodeContentData(node.data)) {
+                            return EMPTY;
+                        }
+
                         const { hostname, path } = node.data;
 
                         const fullPath = `${hostname}/${path}`;

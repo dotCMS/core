@@ -98,7 +98,10 @@ export type DotContentDriveActionableItem = DotCMSContentlet | DotContentDriveAc
  * Pagination event emitted by the folder list view,
  * extending the lazy-load event shape with a resolved 1-indexed page number.
  */
-export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page: number };
+export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & {
+    /** Optional like the rest of the lazy-load shape — `onPaginate` reads it as `page ?? 1`. */
+    page?: number;
+};
 
 /**
  * Interface representing data needed for context menu interactions
@@ -145,7 +148,7 @@ export interface DotContentDriveQueryFilters {
  *   filters: { text: "product review" },
  *   contentTypes: ["Blog", "News"],
  *   sortBy: "title:asc",
- *   offset: 0,
+ *   contentCursor: 0,
  *   maxResults: 20
  * }
  */

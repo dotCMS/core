@@ -45,12 +45,12 @@ export class DotWorkflowsActionsSelectorFieldComponent
         DotWorkflowsActionsSelectorFieldService
     );
 
-    @ViewChild('dropdown') dropdown: Select;
-    @Input() workflows: DotCMSWorkflow[];
+    @ViewChild('dropdown') dropdown!: Select;
+    @Input() workflows!: DotCMSWorkflow[];
 
-    actions$: Observable<SelectItemGroup[]>;
+    actions$!: Observable<SelectItemGroup[]>;
     disabled = false;
-    value: string;
+    value!: string;
 
     ngOnInit() {
         this.actions$ = this.dotWorkflowsActionsSelectorFieldService.get().pipe(
@@ -66,8 +66,8 @@ export class DotWorkflowsActionsSelectorFieldComponent
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (!changes.workflows.firstChange) {
-            this.dotWorkflowsActionsSelectorFieldService.load(changes.workflows.currentValue);
+        if (!changes['workflows'].firstChange) {
+            this.dotWorkflowsActionsSelectorFieldService.load(changes['workflows'].currentValue);
         }
     }
 
@@ -91,7 +91,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
      * @param {*} fn
      * @memberof DotWorkflowsActionsSelectorFieldComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
@@ -137,6 +137,6 @@ export class DotWorkflowsActionsSelectorFieldComponent
      *                      and the current value is not in the list of options). Otherwise, returns `false`.
      */
     private shouldClearDropdown(dropdown: Select, options: string[], value: string): boolean {
-        return dropdown && options.length && !options.includes(value);
+        return !!dropdown && options.length > 0 && !options.includes(value);
     }
 }

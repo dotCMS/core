@@ -2,12 +2,7 @@ import { patchState, signalStoreFeature, type, withComputed, withMethods } from 
 
 import { computed, inject, Signal, untracked } from '@angular/core';
 
-import {
-    DotExperimentStatus,
-    DotTreeNode,
-    SeoMetaTags,
-    SeoMetaTagsResult
-} from '@dotcms/dotcms-models';
+import { DotTreeNode, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { StyleEditorFormSchema } from '@dotcms/types/internal';
 import { WINDOW } from '@dotcms/utils';
@@ -23,6 +18,7 @@ import { DEFAULT_PERSONA } from '../../../shared/consts';
 import { EDITOR_STATE } from '../../../shared/enums';
 import {
     ActionPayload,
+    DotPageAssetParams,
     ContainerPayload,
     ContentletPayload,
     PositionPayload,
@@ -33,16 +29,38 @@ import {
     getContentTypeVarRecord,
     getFullPageURL,
     getPersonalization,
+    isExperimentBlockingEdit,
     mapContainerStructureToArrayOfContainers,
     sanitizeURL
 } from '../../../utils';
 import { PageType, UVEState } from '../../models';
-import { PageComputed } from '../page/withPage';
-
-import type { WorkflowLockComputed } from '../workflow/withWorkflow';
+import { PageSnapshot } from '../page/withPage';
 
 export interface ViewComputed {
     viewMode: Signal<UVE_MODE>;
+}
+
+/**
+ * Exactly what this feature reads from the features composed before it.
+ *
+ * This used to be `props: type<PageComputed & WorkflowLockComputed & ViewComputed>()`, naming
+ * three whole interfaces where only these four signals are ever read. That over-wide constraint
+ * silently degraded the *host* store's type: `signalStore` resolved `UVEStore` with
+ * `{ [x: string]: Function; ... }`, collapsing every method into a string index signature while
+ * leaving the signals named. Consumers saw the effect as 43 `TS4111` errors on ordinary calls
+ * like `uveStore.pageReload()`, and it is why `withWorkflow` reaches `pageReload()` through a
+ * type assertion.
+ *
+ * Bisected to `WorkflowLockComputed` specifically — `PageComputed` and `ViewComputed` are used
+ * the same way by `withWorkflow` and `withView` and neither triggers it. Narrowing the constraint
+ * to what is actually consumed restores the store's type, with no runtime change: the same 1397
+ * tests pass either way, because none of this exists after compilation.
+ */
+export interface EditorDeps {
+    pageAsset: Signal<PageSnapshot>;
+    pageVariantId: Signal<string>;
+    viewMode: Signal<UVE_MODE>;
+    $lockIsPageLocked: Signal<boolean>;
 }
 
 export interface EditorComputed {
@@ -58,7 +76,15 @@ export interface SetSeoDataParams {
     ogTagsResults: SeoMetaTagsResult[];
 }
 
-const buildIframeURL = ({ url, params, dotCMSHost }) => {
+const buildIframeURL = ({
+    url,
+    params,
+    dotCMSHost
+}: {
+    url: string;
+    params: DotPageAssetParams;
+    dotCMSHost: string;
+}) => {
     const host = (params.clientHost || dotCMSHost).replace(/\/$/, '');
     const pageURL = getFullPageURL({ url, params, userFriendlyParams: true });
     const iframeURL = new URL(`${host}/${pageURL}&dotCMSHost=${dotCMSHost}`);
@@ -88,17 +114,14 @@ export function withEditor() {
     return signalStoreFeature(
         {
             state: type<UVEState>(),
-            props: type<PageComputed & WorkflowLockComputed & ViewComputed>()
+            props: type<EditorDeps>()
         },
         withComputed((store) => {
             const dotWindow = inject(WINDOW);
 
             const editorHasAccessToEditMode = computed(() => {
                 const isPageEditable = store.pageAsset()?.page?.canEdit;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(store.pageExperiment()?.status);
+                const isExperimentRunning = isExperimentBlockingEdit(store.pageExperiment());
 
                 if (!isPageEditable || isExperimentRunning) {
                     return false;
@@ -120,10 +143,7 @@ export function withEditor() {
                 // their layout — the nav button stays disabled with the
                 // "advanced-template" tooltip.
                 const canDrawTemplate = store.pageAsset()?.template?.drawed;
-                const isExperimentRunning = [
-                    DotExperimentStatus.RUNNING,
-                    DotExperimentStatus.SCHEDULED
-                ].includes(store.pageExperiment()?.status);
+                const isExperimentRunning = isExperimentBlockingEdit(store.pageExperiment());
 
                 return (
                     canEditPage &&
@@ -168,7 +188,9 @@ export function withEditor() {
                     const persona = viewAs?.persona;
                     const isDefaultPersona = persona?.identifier === DEFAULT_PERSONA.identifier;
 
-                    return numberContents > 1 || !persona || isDefaultPersona;
+                    // `?? 0`: an absent count read as `undefined > 1`, i.e. false, which is what
+                    // zero gives too.
+                    return (numberContents ?? 0) > 1 || !persona || isDefaultPersona;
                 }),
                 $allowedContentTypes: computed<Record<string, true>>(() => {
                     return getContentTypeVarRecord(store.pageAsset()?.containers);
@@ -181,7 +203,9 @@ export function withEditor() {
 
                     return (!!hovered || !!selected) && canEditPage && isIdle;
                 }),
-                $styleSchema: computed<StyleEditorFormSchema>(() => {
+                // `| undefined`: the `find` below can miss, and the consumer in
+                // `edit-ema-editor.component.ts` already declares it that way.
+                $styleSchema: computed<StyleEditorFormSchema | undefined>(() => {
                     const selected = store.editorSelected();
                     const styleSchemas = store.editorStyleSchemas();
                     const contentSchema = styleSchemas.find(
@@ -268,7 +292,7 @@ export function withEditor() {
                     }
                 ),
                 $pageRender: computed<string>(() => {
-                    return store.pageAsset()?.page?.rendered;
+                    return store.pageAsset()?.page?.rendered ?? '';
                 }),
                 $editorIsInDraggingState: computed<boolean>(() => {
                     return store.editorState() === EDITOR_STATE.DRAGGING;
@@ -288,6 +312,11 @@ export function withEditor() {
                         // Force iframe reload on every page load to avoid caching issues and window dirty state
                         // We need a new reference to avoid the iframe to be cached
                         // More reference: https://github.com/dotCMS/core/issues/30981
+                        return new String('');
+                    }
+
+                    // Only reachable for a headless page, which by definition has params.
+                    if (!params) {
                         return new String('');
                     }
 
@@ -441,17 +470,22 @@ export function withEditor() {
                         areContainersEquals(container, positionPayload.container)
                     ) ?? { contentletsId: [] };
 
-                    const container = positionPayload.container
-                        ? {
-                              ...positionPayload.container,
-                              contentletsId
-                          }
-                        : null;
+                    // No `? : null` branch: `container` is required on `PositionPayload`, and an
+                    // `ActionPayload` without one is not constructible anyway — the null was
+                    // guarding against a shape the parameter type rules out.
+                    const container = {
+                        ...positionPayload.container,
+                        contentletsId
+                    };
 
                     return {
                         ...positionPayload,
-                        language_id: languageId.toString(),
-                        pageId: id,
+                        // `?? ''` on both: `PageData` derives them from a possibly-absent page
+                        // asset. Unreachable through the SDK message that calls this — it comes
+                        // from a rendered page — and it replaces `undefined.toString()`, which is
+                        // what used to happen if it ever were reached.
+                        language_id: languageId?.toString() ?? '',
+                        pageId: id ?? '',
                         pageContainers: containers,
                         personaTag,
                         container
@@ -470,7 +504,11 @@ export function withEditor() {
 
                     const { personalization, id: pageId } = store.$pageData();
                     const variantId = store.pageVariantId();
-                    const treeOrder = contentletsId.findIndex((id) => id === contentId).toString();
+                    // `?? []` — `contentletsId` is optional on `ContainerPayload`: a container the
+                    // SDK reports before any content has been added to it has none.
+                    const treeOrder = (contentletsId ?? [])
+                        .findIndex((id) => id === contentId)
+                        .toString();
 
                     return {
                         contentId,
@@ -479,7 +517,7 @@ export function withEditor() {
                         variantId,
                         personalization,
                         treeOrder,
-                        pageId
+                        pageId: pageId ?? ''
                     };
                 },
                 setOgTags(ogTags: SeoMetaTags) {

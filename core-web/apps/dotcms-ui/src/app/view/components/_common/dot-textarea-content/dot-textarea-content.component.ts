@@ -42,22 +42,22 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     };
 
     @Input()
-    height: string;
+    height!: string;
 
     @Input()
-    show;
+    show?: string[];
 
     @Input()
     value = '';
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    customStyles: Record<string, unknown>;
+    customStyles!: Record<string, unknown>;
 
     @Input()
-    editorName: string;
+    editorName!: string;
 
     @Output()
     monacoInit = new EventEmitter<unknown>();
@@ -78,8 +78,8 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     }
 
     selectOptions: SelectItem[] = [];
-    selected: string;
-    styles: Record<string, unknown> | string;
+    selected!: string;
+    styles!: Record<string, unknown> | string;
     editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs-light',
         minimap: {
@@ -177,7 +177,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param any fn
      * @memberof DotTextareaContentComponent
      */
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 
@@ -191,7 +191,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
                   .map((item) => {
                       return this.DEFAULT_OPTIONS.find((option) => option.value === item);
                   })
-                  .filter((item) => item) // Remove undefined values in the array
+                  .filter((item): item is SelectItem => !!item) // Remove undefined values
             : this.DEFAULT_OPTIONS;
     }
 }

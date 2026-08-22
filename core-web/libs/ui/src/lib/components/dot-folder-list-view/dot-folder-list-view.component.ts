@@ -378,7 +378,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     /** Fixed widths per non-text column type (predictable, so no measuring needed). */
     private readonly EXTRA_COL_TYPE_WIDTH: Partial<
-        Record<DotFolderListViewColumn['type'], string>
+        Record<NonNullable<DotFolderListViewColumn['type']>, string>
     > = {
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE]: '12rem',
         [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: '16rem',

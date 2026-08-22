@@ -105,7 +105,9 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should initialize with default values', () => {
-            expect(spectator.component.contentType).toBeUndefined();
+            // `null`, not `undefined`: `contentType` is now seeded with the same value
+            // `onContentTypeChange(null)` and `loadContentType('')` set it back to.
+            expect(spectator.component.contentType).toBeNull();
             expect(spectator.component.currentCardinalityIndex).toBeUndefined();
         });
     });
@@ -148,7 +150,11 @@ describe('DotNewRelationshipsComponent', () => {
         });
 
         it('should handle null contentType from service', () => {
-            contentTypeService.getContentType.mockReturnValue(of(null));
+            // `getContentType` declares a non-null content type; the component guards anyway,
+            // and this test is what drives that guard.
+            contentTypeService.getContentType.mockReturnValue(
+                of(null as unknown as DotCMSContentType)
+            );
 
             spectator.setInput('velocityVar', 'NonExistent');
             spectator.detectChanges();

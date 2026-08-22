@@ -42,6 +42,9 @@ export class DotStateRestoreDirective implements AfterViewInit {
 
     applyStateSort(state: TableState): void {
         this.#table.sortField = state.sortField;
-        this.#table.sortOrder = state.sortOrder;
+
+        if (state.sortOrder !== undefined) {
+            this.#table.sortOrder = state.sortOrder;
+        }
     }
 }

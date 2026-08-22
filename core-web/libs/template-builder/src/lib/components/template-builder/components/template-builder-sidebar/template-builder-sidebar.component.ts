@@ -24,7 +24,7 @@ export class TemplateBuilderSidebarComponent {
         containers: []
     };
 
-    @Input() containerMap: DotContainerMap;
+    @Input() containerMap!: DotContainerMap;
     readonly widthOptions = ['Small', 'Medium', 'Large'];
 
     get width() {

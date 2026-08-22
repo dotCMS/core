@@ -7,7 +7,7 @@ import { Component, EventEmitter, Input, Output } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
+import { Site, SiteService, SiteServiceMock } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -165,7 +165,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
                 .mockReturnValue([]);
 
             spectator.detectChanges();
-            siteService.setFakeCurrentSite({});
+            siteService.setFakeCurrentSite({} as Site);
 
             expect(loadSpy).toHaveBeenCalledTimes(2); // Once on init, once on site switch
             expect(getAboutLinksSpy).toHaveBeenCalledTimes(2);
@@ -176,7 +176,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
             jest.spyOn(spectator.component, 'getAboutLinks').mockReturnValue(mockAboutLinks);
 
             spectator.detectChanges();
-            siteService.setFakeCurrentSite({});
+            siteService.setFakeCurrentSite({} as Site);
 
             expect(spectator.component.$aboutLinks()).toEqual(mockAboutLinks);
         });
@@ -251,7 +251,7 @@ describe('DotToolbarAnnouncementsComponent', () => {
             const announcements = spectator.component.$announcements();
 
             announcements.forEach((item) => {
-                const icon = icons[item.type] || icons.important;
+                const icon = icons[item.type] || icons['important'];
                 expect(icon).toBeTruthy();
             });
         });

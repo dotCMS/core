@@ -41,8 +41,9 @@ export class DotExperimentsConfigurationSchedulingComponent {
 
     vm$: Observable<{
         experimentId: string;
-        scheduling: RangeOfDateAndTime;
-        status: StepStatus;
+        scheduling: RangeOfDateAndTime | null;
+        status: StepStatus | null;
+        schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$.pipe(
@@ -50,7 +51,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
     );
 
     sidebarHost = viewChild.required(DotDynamicDirective);
-    private componentRef: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
+    private componentRef!: ComponentRef<DotExperimentsConfigurationSchedulingAddComponent>;
 
     /**
      * Open the sidebar to set the Scheduling
@@ -61,7 +62,7 @@ export class DotExperimentsConfigurationSchedulingComponent {
         this.dotExperimentsConfigurationStore.openSidebar(ExperimentSteps.SCHEDULING);
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent(status);
         } else {

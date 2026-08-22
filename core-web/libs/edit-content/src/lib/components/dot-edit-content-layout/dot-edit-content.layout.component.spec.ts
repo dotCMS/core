@@ -1,4 +1,4 @@
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
@@ -11,7 +11,7 @@ import { of, Subject } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal } from '@angular/core';
+import { Provider, signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -35,12 +35,18 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSWorkflowAction, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSWorkflowAction,
+    DotContentletDepths,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 import {
     MOCK_MULTIPLE_WORKFLOW_ACTIONS,
-    MOCK_SINGLE_WORKFLOW_ACTIONS
+    MOCK_SINGLE_WORKFLOW_ACTIONS,
+    mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { DotEditContentLayoutComponent } from './dot-edit-content.layout.component';
@@ -198,7 +204,9 @@ describe('EditContentLayoutComponent', () => {
             activeTab: 0,
             isSidebarOpen: true,
             activeSidebarTab: 0,
-            isBetaMessageVisible: true
+            isBetaMessageVisible: true,
+            // `UIState` gained this after the mock was written; the initial state seeds 'all'.
+            localeSelectorTab: 'all'
         });
 
         dotContentTypeService.updateContentType.mockReturnValue(of(CONTENT_TYPE_MOCK));
@@ -615,7 +623,7 @@ describe('EditContentLayoutComponent', () => {
                 of(MOCK_MULTIPLE_WORKFLOW_ACTIONS)
             );
 
-            store.initializeExistingContent('123');
+            store.initializeExistingContent({ inode: '123', depth: DotContentletDepths.ZERO });
             spectator.detectChanges();
             tick();
 
@@ -781,8 +789,10 @@ describe('EditContentLayoutComponent - In-place (dialog) host', () => {
 
         spectator = createComponent({ detectChanges: false });
         store = spectator.inject(DotEditContentStore, true);
-        jest.spyOn(store, 'initializeExistingContent').mockImplementation(() => undefined);
-        jest.spyOn(store, 'initialize').mockImplementation(() => undefined);
+        // rxMethod calls resolve to an `RxMethodRef` ({ destroy }); the stubs have to return one.
+        const noopRxMethodRef = { destroy: () => undefined };
+        jest.spyOn(store, 'initializeExistingContent').mockImplementation(() => noopRxMethodRef);
+        jest.spyOn(store, 'initialize').mockImplementation(() => noopRxMethodRef);
         spectator.detectChanges();
     });
 
@@ -940,7 +950,7 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
         dialogCloseMock = jest.fn();
     });
 
-    const createWithDialogRef = (extraProviders: unknown[] = []) =>
+    const createWithDialogRef = (extraProviders: Provider[] = []) =>
         createDialogComponent({
             detectChanges: false,
             providers: [
@@ -990,6 +1000,9 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             let rejectFn: ((type?: ConfirmEventType) => void) | undefined;
             jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
                 rejectFn = opts.reject as (type?: ConfirmEventType) => void;
+
+                // `confirm` is chainable and returns the service.
+                return dsConfirmService;
             });
 
             dialogRef.close('result');
@@ -1010,7 +1023,10 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
 
             let acceptFn: (() => void) | undefined;
             jest.spyOn(dsConfirmService, 'confirm').mockImplementation((opts) => {
-                acceptFn = opts.accept;
+                acceptFn = opts.accept as () => void;
+
+                // `confirm` is chainable and returns the service.
+                return dsConfirmService;
             });
 
             dialogRef.close('result');
@@ -1065,10 +1081,11 @@ describe('EditContentLayoutComponent - Dialog Dirty-Close Guard', () => {
             jest.spyOn(dsStore, 'workflowActionSuccess').mockReturnValue(null);
             const confirmSpy = jest.spyOn(dsConfirmService, 'confirm');
 
-            const mockEvent = { preventDefault: jest.fn() } as unknown as Event;
+            const preventDefault = jest.fn();
+            const mockEvent = { preventDefault } as unknown as Event;
             mockDynamicDialog.dialog.close(mockEvent);
 
-            expect((mockEvent as { preventDefault: jest.Mock }).preventDefault).toHaveBeenCalled();
+            expect(preventDefault).toHaveBeenCalled();
             expect(confirmSpy).toHaveBeenCalledTimes(1);
             expect(pDialogCloseMock).not.toHaveBeenCalled();
         });
@@ -1195,7 +1212,7 @@ describe.each([
 
         /** Puts the store in the state a loaded contentlet produces, so the sidebar renders. */
         const loadContentlet = (contentlet = MOCK_CONTENTLET_1_TAB) => {
-            patchState(store, {
+            patchState(store as unknown as WritableStateSource<object>, {
                 contentlet,
                 contentType: CONTENT_TYPE_MOCK,
                 state: ComponentStatus.LOADED
@@ -1215,12 +1232,23 @@ describe.each([
 
             // The lock and workflow features also react to `contentlet`, so their services
             // need observables or their effects blow up before the ones under test run.
-            spectator
-                .inject(DotContentletService, true)
-                .canLock.mockReturnValue(of({ entity: { canLock: true } }));
-            spectator
-                .inject(DotWorkflowsActionsService, true)
-                .getByInode.mockReturnValue(of(MOCK_SINGLE_WORKFLOW_ACTIONS));
+            spectator.inject(DotContentletService, true).canLock.mockReturnValue(
+                // `canLock` maps `response.entity` before emitting, so the mock is the
+                // unwrapped `DotContentletCanLock` — not the HTTP envelope it used to return.
+                of({
+                    canLock: true,
+                    id: 'id',
+                    inode: 'inode',
+                    locked: false,
+                    lockedBy: ''
+                })
+            );
+            spectator.inject(DotWorkflowsActionsService, true).getByInode.mockReturnValue(
+                // `mockWorkflowsActions`, not `MOCK_SINGLE_WORKFLOW_ACTIONS`: `getByInode`
+                // returns a flat action list, while the latter is the scheme-grouped shape
+                // that `getDefaultActions` produces.
+                of(mockWorkflowsActions)
+            );
             spectator
                 .inject(DotWorkflowService, true)
                 .getWorkflowStatus.mockReturnValue(of(MOCK_WORKFLOW_STATUS));
@@ -1229,7 +1257,7 @@ describe.each([
         it('should fetch sidebar data even while the sidebar component is not rendered', fakeAsync(() => {
             // `@if` is false here (not loaded, not saving, not reloading), so the sidebar is
             // never mounted — yet the data must still load, because the store owns it.
-            patchState(store, {
+            patchState(store as unknown as WritableStateSource<object>, {
                 contentlet: MOCK_CONTENTLET_1_TAB,
                 state: ComponentStatus.LOADING
             });
@@ -1252,7 +1280,10 @@ describe.each([
             dotEditContentService.getVersions.mockClear();
 
             // Flip the `@if` off — Angular destroys the sidebar and, before this fix, its effects.
-            patchState(store, { contentType: null, state: ComponentStatus.LOADING });
+            patchState(store as unknown as WritableStateSource<object>, {
+                contentType: null,
+                state: ComponentStatus.LOADING
+            });
             spectator.detectChanges();
             tick();
             expect(spectator.query('dot-edit-content-sidebar')).toBeNull();
@@ -1278,7 +1309,7 @@ describe.each([
             dotEditContentService.getReferencePages.mockClear();
             dotEditContentService.getVersions.mockClear();
 
-            patchState(store, {
+            patchState(store as unknown as WritableStateSource<object>, {
                 contentlet: { ...MOCK_CONTENTLET_1_TAB, inode: 'inode-after-publish' }
             });
             spectator.detectChanges();

@@ -25,14 +25,21 @@ import {
     DotContentDriveState
 } from '../../../shared/models';
 
+/**
+ * Members are declared **required with an `| undefined` value**, not optional. In
+ * `@ngrx/signals`, an optional state *key* makes the generated store *member* optional too, so
+ * `store.x` itself becomes possibly-undefined and `store.x()` is not callable — that alone
+ * accounted for 40 `TS2722` errors here. The values are still seeded and cleared with `undefined`,
+ * so nothing changes at runtime.
+ */
 interface WithActionExecutionState {
     /** The action currently being applied, or `undefined` when nothing is running. */
-    actionExecution?: DotContentDriveActionExecution;
+    actionExecution: DotContentDriveActionExecution | undefined;
     /**
      * Outcome of the last finished execution, awaiting presentation. The shell consumes this and
      * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
      */
-    actionExecutionResult?: DotContentDriveActionExecutionResult;
+    actionExecutionResult: DotContentDriveActionExecutionResult | undefined;
 }
 
 /**

@@ -128,7 +128,7 @@ describe('DotReportIssueComponent', () => {
     });
 
     it('should disable submit while request is in flight', () => {
-        const response$ = new Subject<unknown>();
+        const response$ = new Subject<string>();
         reportIssueMock.mockReturnValue(response$);
 
         component.form.get('description')?.setValue('Report issue');

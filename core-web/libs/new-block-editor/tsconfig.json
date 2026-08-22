@@ -1,12 +1,13 @@
 {
     "compilerOptions": {
+        "strict": true,
+        "noPropertyAccessFromIndexSignature": true,
         "target": "es2022",
         "useDefineForClassFields": false,
         "forceConsistentCasingInFileNames": true,
         "noImplicitOverride": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        "strict": false,
         "module": "preserve",
         "moduleResolution": "bundler",
         "lib": ["dom", "dom.iterable", "es2022"]

@@ -13,6 +13,14 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { SearchableDropdownComponent } from './searchable-dropdown.component';
 
+/** The rows this spec feeds the dropdown — the shape the host's `[data]` binding receives. */
+type SiteRow = {
+    id: number;
+    label: string;
+    name: string;
+    hostName: string;
+};
+
 @Component({
     selector: 'dot-host-component',
     template: `
@@ -36,45 +44,45 @@ import { SearchableDropdownComponent } from './searchable-dropdown.component';
 })
 class HostTestComponent {
     @Input()
-    data: any[];
+    data!: any[];
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
-    @Input() action: (action: any) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action!: (action: any) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    overlayWidth: string;
+    overlayWidth!: string;
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
-    disabled: boolean;
+    disabled!: boolean;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -84,7 +92,7 @@ describe('SearchableDropdownComponent', () => {
     let hostComp: HostTestComponent;
     let de: DebugElement;
     let comp: SearchableDropdownComponent;
-    const data = [];
+    const data: SiteRow[] = [];
     let rows: number;
     let pageLinkSize: number;
     let mainButton: DebugElement;
@@ -239,7 +247,7 @@ describe('SearchableDropdownComponent', () => {
     it('should display defaultFilterTemplate', () => {
         hostFixture.detectChanges();
         const searchInput = de.query(By.css('[data-testid="searchInput"]'));
-        expect(searchInput.attributes.autofocus).toBeDefined();
+        expect(searchInput.attributes['autofocus']).toBeDefined();
         expect(searchInput).not.toBeNull();
     });
 
@@ -266,7 +274,7 @@ describe('SearchableDropdownComponent', () => {
         const pageCount = 4;
         rows = 2;
         const filter = 'filter';
-        let event;
+        let event: { first: number; rows: number; filter: string };
 
         comp.pageChange.subscribe((e) => {
             event = e;
@@ -293,8 +301,8 @@ describe('SearchableDropdownComponent', () => {
     });
 
     describe('emit the change event', () => {
-        let items;
-        let dataExpected;
+        let items: DebugElement[];
+        let dataExpected: SiteRow;
 
         beforeEach(() => {
             hostComp.data = data;
@@ -420,42 +428,42 @@ describe('SearchableDropdownComponent', () => {
     standalone: false
 })
 class HostTestExternalTemplateComponent {
-    @Input() data: any[];
+    @Input() data!: any[];
 
     @Input()
-    cssClass: string;
+    cssClass!: string;
 
-    @Input() action: (action: any) => void;
-
-    @Input()
-    labelPropertyName: string | string[];
+    @Input() action!: (action: any) => void;
 
     @Input()
-    valuePropertyName: string;
+    labelPropertyName!: string | string[];
+
+    @Input()
+    valuePropertyName!: string;
 
     @Input()
     pageLinkSize = 3;
 
     @Input()
-    rows: number;
+    rows!: number;
 
     @Input()
-    totalRecords: number;
+    totalRecords!: number;
 
     @Input()
     placeholder = '';
 
     @Input()
-    persistentPlaceholder: boolean;
+    persistentPlaceholder!: boolean;
 
     @Input()
-    width: string;
+    width!: string;
 
     @Input()
-    multiple: boolean;
+    multiple!: boolean;
 
     @Input()
-    cssClassDataList: string;
+    cssClassDataList!: string;
 }
 
 describe('SearchableDropdownComponent', () => {
@@ -465,7 +473,7 @@ describe('SearchableDropdownComponent', () => {
     let hostComp: HostTestExternalTemplateComponent;
     let de: DebugElement;
     let comp: SearchableDropdownComponent;
-    const data = [];
+    const data: SiteRow[] = [];
     let rows: number;
     let pageLinkSize: number;
     let mainButton: DebugElement;

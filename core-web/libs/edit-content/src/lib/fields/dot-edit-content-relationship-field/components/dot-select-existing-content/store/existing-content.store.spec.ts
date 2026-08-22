@@ -1,5 +1,5 @@
 import { SpyObject, mockProvider } from '@openng/spectator/jest';
-import { Observable, of, throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
 import { TestBed, fakeAsync, tick } from '@angular/core/testing';
 
@@ -150,9 +150,12 @@ describe('ExistingContentStore', () => {
 
     describe('Computed Properties', () => {
         it('should compute loading state correctly', fakeAsync(() => {
-            const mockObservable = of([mockColumns, mockData]).pipe(delay(100)) as Observable<
-                [Column[], RelationshipFieldSearchResponse]
-            >;
+            // The tuple is annotated at the array literal: `of([a, b])` infers
+            // `Observable<(A | B)[]>`, and casting the observable afterwards cannot recover it.
+            const mockObservable = of<[Column[], RelationshipFieldSearchResponse]>([
+                mockColumns,
+                mockData
+            ]).pipe(delay(100));
 
             service.getColumnsAndContent.mockReturnValue(mockObservable);
 
@@ -468,7 +471,7 @@ describe('ExistingContentStore', () => {
 
         it('should handle null from getColumnsAndContent gracefully', fakeAsync(() => {
             service.getColumnsAndContent.mockReturnValue(of(null));
-            service.getConstrainedIdentifiers.mockReturnValue(of(new Set()));
+            service.getConstrainedIdentifiers.mockReturnValue(of(new Set<string>()));
 
             store.initLoad({
                 contentTypeId: '123',

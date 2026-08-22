@@ -107,11 +107,11 @@ export class DotWorkflowAssignCommentComponent {
         });
     }
 
-    protected onAssignChange(assign: string): void {
+    protected onAssignChange(assign: string | null): void {
         this.$assign.set(assign ?? '');
     }
 
-    protected onCommentChange(comment: string): void {
+    protected onCommentChange(comment: string | null): void {
         this.$comment.set(comment ?? '');
     }
 

@@ -28,9 +28,9 @@ export class ContentTypeFieldsTabComponent implements OnInit {
     readonly removeTab = output<DotCMSContentTypeLayoutRow>();
 
     /** Local copy of fieldTab for access */
-    fieldTab: DotCMSContentTypeLayoutRow;
+    fieldTab!: DotCMSContentTypeLayoutRow;
 
-    label: string;
+    label!: string;
 
     ngOnInit() {
         this.fieldTab = this.$fieldTab();

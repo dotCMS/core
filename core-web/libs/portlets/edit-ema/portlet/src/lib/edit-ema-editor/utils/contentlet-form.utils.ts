@@ -81,7 +81,8 @@ export type QuickEditField = Pick<
  * @param values - The values string from the field definition (format: "label|value\n...")
  * @returns Array of {label, value} objects, empty array if input is null/undefined
  */
-export function parseFieldValues(values?: string): FieldOption[] {
+// `| null` because `DotCMSContentTypeField.values` is; the `!values` guard below already covers it.
+export function parseFieldValues(values?: string | null): FieldOption[] {
     if (!values) {
         return [];
     }

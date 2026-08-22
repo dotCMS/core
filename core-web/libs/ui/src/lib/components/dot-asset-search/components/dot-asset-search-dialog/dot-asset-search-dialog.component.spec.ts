@@ -19,7 +19,7 @@ describe('DotAssetSearchDialogComponent', () => {
             {
                 provide: DynamicDialogRef,
                 useValue: {
-                    close: (_) => {
+                    close: (_?: unknown) => {
                         /* */
                     }
                 }
@@ -41,7 +41,7 @@ describe('DotAssetSearchDialogComponent', () => {
     });
 
     it('should set editorAssetType from config data', () => {
-        const dotAssetSearchComponent = spectator.query(DotAssetSearchComponent);
+        const dotAssetSearchComponent = spectator.query(DotAssetSearchComponent)!;
         expect(dotAssetSearchComponent.type).toBe('image');
     });
 

@@ -3,6 +3,7 @@
 import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
+import { RouterStateSnapshot } from '@angular/router';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotTemplate } from '@dotcms/dotcms-models';
@@ -32,6 +33,9 @@ const templateMock: DotTemplate = {
     hasLiveVersion: true,
     working: true
 };
+
+/** Both resolvers declare this parameter `_state` and never read it. */
+const UNUSED_STATE = null as unknown as RouterStateSnapshot;
 
 describe('DotTemplateDesignerService', () => {
     let service: DotTemplateCreateEditResolver;
@@ -70,12 +74,12 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? null : 'ID';
                         }
                     }
                 } as any,
-                null
+                UNUSED_STATE
             )
             .subscribe((res) => {
                 expect(templateService.getById).toHaveBeenCalledWith('ID');
@@ -93,12 +97,12 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? 'inode123' : 'ID';
                         }
                     }
                 } as any,
-                null
+                UNUSED_STATE
             )
             .subscribe((res) => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });
@@ -116,12 +120,12 @@ describe('DotTemplateDesignerService', () => {
             .resolve(
                 {
                     paramMap: {
-                        get(param) {
+                        get(param: string) {
                             return param === 'inode' ? 'inode123' : 'ID';
                         }
                     }
                 } as any,
-                null
+                UNUSED_STATE
             )
             .subscribe(() => {
                 expect(templateService.getFiltered).toHaveBeenCalledWith({ filter: 'inode123' });

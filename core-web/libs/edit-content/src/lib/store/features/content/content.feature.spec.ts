@@ -100,7 +100,9 @@ describe('ContentFeature', () => {
         dotMessageService = spectator.inject(DotMessageService);
 
         dotMessageService.get.mockImplementation((key) => {
-            const messages = {
+            // `Partial<Record<string, string>>`: the mock is called with any key and falls back
+            // to returning the key itself.
+            const messages: Partial<Record<string, string>> = {
                 New: 'New',
                 'dotcms.content.management.platform.title': 'DotCMS'
             };

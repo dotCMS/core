@@ -739,7 +739,7 @@ describe('DotContentCompareStore', () => {
     it('should update compare', () => {
         dotContentCompareStore.updateCompare(expectedData.data.versions[1]);
         dotContentCompareStore.state$.subscribe((data) => {
-            expect(data.data.compare).toEqual(newCompare);
+            expect(data.data!.compare).toEqual(newCompare);
         });
     });
 

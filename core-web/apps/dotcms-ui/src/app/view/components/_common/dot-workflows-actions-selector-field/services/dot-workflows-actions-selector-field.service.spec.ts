@@ -9,6 +9,7 @@ import { SelectItemGroup } from 'primeng/api';
 
 import { DotHttpErrorManagerService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import { HttpCode, ResponseView } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 import { mockWorkflows, mockWorkflowsActions } from '@dotcms/utils-testing';
 
 import { DotWorkflowsActionsSelectorFieldService } from './dot-workflows-actions-selector-field.service';
@@ -92,10 +93,9 @@ describe('DotWorkflowsActionsSelectorFieldService', () => {
 
     it('should handle error', () => {
         const mock = new ResponseView(
-            new HttpResponse({
+            new HttpResponse<DotCMSResponse<unknown>>({
                 body: null,
                 status: HttpCode.BAD_REQUEST,
-                headers: null,
                 url: ''
             })
         );

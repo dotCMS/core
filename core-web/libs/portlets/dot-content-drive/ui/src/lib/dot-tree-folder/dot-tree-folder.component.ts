@@ -136,7 +136,7 @@ export class DotTreeFolderComponent {
      * @param event - DragEvent
      */
     @HostListener('dragenter', ['$event'])
-    onDragEnter(event: DragEvent & { fromElement?: HTMLElement }) {
+    onDragEnter(event: DragEvent & { fromElement?: HTMLElement | null }) {
         event.stopPropagation();
         event.preventDefault();
     }
@@ -204,6 +204,12 @@ export class DotTreeFolderComponent {
         const targetFolder = this.$activeDropNode();
 
         this.$activeDropNode.set(null);
+
+        // Both payloads declare a non-null targetFolder, and a drop with no active
+        // drop node has no destination to report.
+        if (!targetFolder) {
+            return;
+        }
 
         const files = event.dataTransfer?.files ?? undefined;
 

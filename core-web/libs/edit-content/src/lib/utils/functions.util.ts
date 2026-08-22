@@ -177,7 +177,9 @@ export const getSingleSelectableFieldOptions = (
  * @returns
  */
 export const getFinalCastedValue = (
-    value: object | string | number | undefined,
+    // Nullable: the resolution functions return null for absent values, and the guard
+    // below already treats undefined as "leave as-is".
+    value: object | string | number | null | undefined,
     field: DotCMSContentTypeField
 ) => {
     if (CALENDAR_FIELD_TYPES.includes(field.fieldType as FIELD_TYPES)) {
@@ -384,7 +386,9 @@ export const isSingleColumnLayout = (layout: Tab['layout']): boolean =>
  * @param formData - The original form data to be transformed.
  * @returns The transformed form data with filtered fields and organized tabs.
  */
-export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
+// Nullable: the store's `contentType` is null until it loads, and the guard on the first line was
+// already written for exactly that.
+export const transformFormDataFn = (contentType: DotCMSContentType | null): Tab[] => {
     if (!contentType) {
         return [];
     }
@@ -402,7 +406,7 @@ export const transformFormDataFn = (contentType: DotCMSContentType): Tab[] => {
         ...tab,
         layout: tab.layout.map((row) => ({
             ...row,
-            columns: row.columns.map((column) => ({
+            columns: (row.columns ?? []).map((column) => ({
                 ...column,
                 fields: column.fields
                     .filter((field) => !isFilteredType(field))
@@ -440,7 +444,7 @@ export const sortLocalesTranslatedFirst = (locales: DotLanguage[]): DotLanguage[
  */
 export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     if (
-        !contentlet.URL_MAP_FOR_CONTENT ||
+        !contentlet['URL_MAP_FOR_CONTENT'] ||
         !contentlet.host ||
         contentlet.languageId === undefined
     ) {
@@ -452,7 +456,7 @@ export const generatePreviewUrl = (contentlet: DotCMSContentlet): string => {
     const baseUrl = `${window.location.origin}/dotAdmin/#/edit-page/content`;
     const params = new URLSearchParams();
 
-    params.set('url', `${contentlet.URL_MAP_FOR_CONTENT}?host_id=${contentlet.host}`);
+    params.set('url', `${contentlet['URL_MAP_FOR_CONTENT']}?host_id=${contentlet.host}`);
     params.set('language_id', contentlet.languageId.toString());
     params.set('com.dotmarketing.persona.id', 'modes.persona.no.persona');
     params.set('mode', UVE_MODE.EDIT);
@@ -538,7 +542,9 @@ export const prepareContentletForCopy = (
 
     return {
         ...contentlet,
-        inode: undefined,
+        // Cleared on purpose — the copy is a new contentlet, so it must not carry an inode.
+        // `DotCMSContentlet` types it as a required string, hence the cast.
+        inode: undefined as unknown as string,
         locked: false,
         lockedBy: undefined,
         ...clearedBinaryFields
@@ -598,16 +604,16 @@ export const createCustomFieldConfig = (
     };
 
     // Override with individual field variables (highest priority)
-    if (individualVars.showAsModal !== undefined) {
-        mergedConfig.showAsModal = individualVars.showAsModal as boolean;
+    if (individualVars['showAsModal'] !== undefined) {
+        mergedConfig.showAsModal = individualVars['showAsModal'] as boolean;
     }
 
-    if (individualVars.width) {
-        mergedConfig.width = individualVars.width as string;
+    if (individualVars['width']) {
+        mergedConfig.width = individualVars['width'] as string;
     }
 
-    if (individualVars.height) {
-        mergedConfig.height = individualVars.height as string;
+    if (individualVars['height']) {
+        mergedConfig.height = individualVars['height'] as string;
     }
 
     return mergedConfig;

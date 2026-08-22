@@ -65,7 +65,8 @@ describe('DotContentDriveActionPreviewComponent', () => {
 
     /** The row checkbox input, which is what a user actually clicks. */
     const rowCheckbox = (index: number): HTMLInputElement =>
-        spectator.queryAll(byTestId('item-row'))[index].querySelector('input');
+        // Every rendered row has a checkbox; a missing one is a failure, not a case to handle.
+        spectator.queryAll(byTestId('item-row'))[index].querySelector('input')!;
 
     beforeEach(() => {
         spectator = createComponent({
@@ -87,19 +88,19 @@ describe('DotContentDriveActionPreviewComponent', () => {
         it('should key rows on inode so language variants stay distinct', () => {
             // Two language versions of one contentlet share an identifier — the grid's default —
             // and inodes are what gets fired.
-            expect(spectator.query(DotFolderListViewComponent).$dataKey()).toBe('inode');
+            expect(spectator.query(DotFolderListViewComponent)!.$dataKey()).toBe('inode');
         });
 
         it('should page in memory, since the whole selection is already here', () => {
-            expect(spectator.query(DotFolderListViewComponent).$lazy()).toBe(false);
+            expect(spectator.query(DotFolderListViewComponent)!.$lazy()).toBe(false);
         });
 
         it('should strip the grid affordances that make no sense in a dialog', () => {
-            expect(spectator.query(DotFolderListViewComponent).$readOnly()).toBe(true);
+            expect(spectator.query(DotFolderListViewComponent)!.$readOnly()).toBe(true);
         });
 
         it('should forward the caller-provided selection', () => {
-            expect(spectator.query(DotFolderListViewComponent).$selection()).toEqual(ITEMS);
+            expect(spectator.query(DotFolderListViewComponent)!.$selection()).toEqual(ITEMS);
         });
     });
 
@@ -115,13 +116,13 @@ describe('DotContentDriveActionPreviewComponent', () => {
             // content type, and drops locale, edited-by, last-edited and the actions column.
             const [firstRow] = spectator.queryAll(byTestId('item-row'));
 
-            expect(firstRow.querySelector('[data-testid="item-title-text"]').textContent).toContain(
-                'Destination Guide'
-            );
+            expect(
+                firstRow.querySelector('[data-testid="item-title-text"]')!.textContent
+            ).toContain('Destination Guide');
             expect(firstRow.querySelector('[data-testid="contentlet-thumbnail"]')).toBeTruthy();
             expect(firstRow.querySelector('[data-testid="item-status"]')).toBeTruthy();
             expect(
-                firstRow.querySelector('[data-testid="item-content-type"]').textContent
+                firstRow.querySelector('[data-testid="item-content-type"]')!.textContent
             ).toContain('Web Page');
 
             expect(firstRow.querySelector('[data-testid="item-language"]')).toBeFalsy();
@@ -172,7 +173,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             const emitted = jest.fn();
             spectator.output('selectionChange').subscribe(emitted);
 
-            spectator.click(spectator.query(byTestId('header-checkbox')).querySelector('input'));
+            spectator.click(spectator.query(byTestId('header-checkbox'))!.querySelector('input')!);
             spectator.detectChanges();
 
             expect(emitted).toHaveBeenCalledWith([]);
@@ -236,7 +237,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             spectator.setInput('lockedByOthers', ['theirs']);
             spectator.detectChanges();
 
-            expect(spectator.query(DotFolderListViewComponent).$selection()).toEqual(lockedItems);
+            expect(spectator.query(DotFolderListViewComponent)!.$selection()).toEqual(lockedItems);
 
             const emitted = jest.fn();
             spectator.output('selectionChange').subscribe(emitted);
@@ -253,7 +254,7 @@ describe('DotContentDriveActionPreviewComponent', () => {
             spectator.setInput('disabled', true);
             spectator.detectChanges();
 
-            expect(spectator.query(DotFolderListViewComponent).$disabled()).toBe(true);
+            expect(spectator.query(DotFolderListViewComponent)!.$disabled()).toBe(true);
             expect(rowCheckbox(0).disabled).toBe(true);
         });
 

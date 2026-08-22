@@ -87,33 +87,33 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
-    @Input() columns: DataTableColumn[];
-    @Input() url: string;
-    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Input() columns!: DataTableColumn[];
+    @Input() url!: string;
+    @Input() actionHeaderOptions!: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder: string;
-    @Input() sortField: string;
+    @Input() sortOrder!: string;
+    @Input() sortField!: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
     @Input() actions: DotActionMenuItem[] = [];
     @Input() dataKey = '';
     @Input() checkbox = false;
-    @Input() mapItems: <T = Record<string, unknown>[]>(item: T) => T;
+    @Input() mapItems!: <T = Record<string, unknown>[]>(item: T) => T;
     @Input() contextMenu = false;
     @Output() rowWasClicked: EventEmitter<unknown> = new EventEmitter();
     @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
     @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
 
     @ViewChild('gf', { static: true })
-    globalSearch: ElementRef;
+    globalSearch!: ElementRef;
     @ViewChild('dataTable', { static: true })
-    dataTable: Table;
+    dataTable!: Table;
 
     @ViewChild('cm', { static: false })
     contextMenuRef: ContextMenu | undefined;
 
-    @ContentChildren(PrimeTemplate) templates: QueryList<ElementRef>;
+    @ContentChildren(PrimeTemplate) templates!: QueryList<ElementRef>;
 
     // Signal to track when contextMenuRef is available
     private readonly contextMenuRefSignal = signal<ContextMenu | undefined>(undefined);
@@ -125,20 +125,20 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         return hasContextMenu && ref ? ref : null;
     });
 
-    @ContentChild('rowTemplate') rowTemplate: TemplateRef<unknown>;
-    @ContentChild('beforeSearchTemplate') beforeSearchTemplate: TemplateRef<unknown>;
-    @ContentChild('headerTemplate') headerTemplate: TemplateRef<unknown>;
+    @ContentChild('rowTemplate') rowTemplate!: TemplateRef<unknown>;
+    @ContentChild('beforeSearchTemplate') beforeSearchTemplate!: TemplateRef<unknown>;
+    @ContentChild('headerTemplate') headerTemplate!: TemplateRef<unknown>;
 
     readonly DATE_FORMAT = 'date';
-    items: unknown[];
-    selected: Record<string, unknown>[];
-    filter;
+    items: unknown[] = [];
+    selected: Record<string, unknown>[] = [];
+    filter = '';
     isContentFiltered = false;
-    dateColumns: DataTableColumn[];
+    dateColumns: DataTableColumn[] = [];
     loading = true;
-    contextMenuItems: MenuItem[];
-    maxLinksPage: number;
-    totalRecords: number;
+    contextMenuItems: MenuItem[] = [];
+    maxLinksPage!: number;
+    totalRecords!: number;
 
     constructor() {
         this.paginatorService.url = this.url;
@@ -196,8 +196,8 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     handleRowClick(rowData: Record<string, unknown>): void {
         // If the system template or system container is clicked, do nothing.
         if (
-            rowData?.identifier === 'SYSTEM_TEMPLATE' ||
-            rowData?.identifier === 'SYSTEM_CONTAINER'
+            rowData?.['identifier'] === 'SYSTEM_TEMPLATE' ||
+            rowData?.['identifier'] === 'SYSTEM_CONTAINER'
         ) {
             return;
         }
@@ -212,7 +212,11 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof DotListingDataTableComponent
      */
     loadDataPaginationEvent(event: TableLazyLoadEvent): void {
-        this.loadData(event.first, event.sortField as string, event.sortOrder);
+        this.loadData(
+            event.first ?? 0,
+            event.sortField as string,
+            (event.sortOrder as OrderDirection) ?? undefined
+        );
     }
 
     /**
@@ -242,7 +246,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loadFirstPage(): void {
         this.loading = true;
         this.paginatorService
-            .get()
+            .get<unknown[]>()
             .pipe(take(1))
             .subscribe((items) => {
                 this.setItems(items);
@@ -258,7 +262,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         this.loading = true;
         if (this.columns) {
             this.paginatorService
-                .getCurrentPage()
+                .getCurrentPage<unknown[]>()
                 .pipe(take(1))
                 .subscribe((items) => this.setItems(items));
         }
@@ -280,8 +284,12 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      * @memberof ListingDataTableComponent
      */
     focusFirstRow(): void {
-        const rows: HTMLTableRowElement[] = this.dataTable.tableViewChild.nativeElement.rows;
-        if (rows.length > 1) {
+        // PrimeNG only assigns `tableViewChild` once the table renders, and this is called from a
+        // keyboard handler that can arrive first.
+        const rows: HTMLTableRowElement[] | undefined =
+            this.dataTable.tableViewChild?.nativeElement.rows;
+
+        if (rows && rows.length > 1) {
             rows[1].focus();
         }
     }
@@ -297,7 +305,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         );
     }
 
-    private setItems(items): void {
+    private setItems(items: unknown[]): void {
         // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
         // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
@@ -310,7 +318,9 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     private isTypeNumber(col: DataTableColumn): boolean {
-        return this.items && this.items[0] && typeof this.items[0][col.fieldName] === 'number';
+        const first = this.items?.[0] as Record<string, unknown> | undefined;
+
+        return typeof first?.[col.fieldName] === 'number';
     }
 
     private setSortParams(sortFieldParam?: string, sortOrderParam?: OrderDirection) {
@@ -322,7 +332,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
 
     private getPage(offset: number): void {
         this.paginatorService
-            .getWithOffset(offset)
+            .getWithOffset<unknown[]>(offset)
             .pipe(take(1))
             .subscribe((items) => this.setItems(items));
     }

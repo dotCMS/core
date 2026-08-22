@@ -12,10 +12,12 @@ import { Select, SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
 
+import { DotAppsSecret } from '@dotcms/dotcms-models';
 import { DotFieldRequiredDirective } from '@dotcms/ui';
 
 import { DotAppsConfigurationDetailFormComponent } from './dot-apps-configuration-detail-form.component';
 
+import { aliasedProps } from '../../../../../../test/spectator-aliased-props';
 import { DotAppsConfigurationDetailGeneratedStringFieldComponent } from '../dot-apps-configuration-detail-generated-string-field/dot-apps-configuration-detail-generated-string-field.component';
 
 const headingSecret = {
@@ -143,10 +145,14 @@ const formState = {
     name: secrets[0].value,
     password: secrets[1].value,
     enabled: JSON.parse(secrets[2].value),
-    select: secrets[3].options[0].value,
+    select: secrets[3].options![0].value,
     integration: secrets[4].value,
     generatedString: secrets[5].value
 };
+
+/** `formFields` is the alias of `$formFields` — see {@link aliasedProps}. */
+const aliasedFormFields = (formFields: DotAppsSecret[]) =>
+    aliasedProps<DotAppsConfigurationDetailFormComponent>({ formFields });
 
 describe('DotAppsConfigurationDetailFormComponent', () => {
     let spectator: Spectator<DotAppsConfigurationDetailFormComponent>;
@@ -172,9 +178,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('Without warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    formFields: secrets
-                } as unknown
+                props: aliasedFormFields(secrets)
             });
             spectator.detectChanges();
         });
@@ -192,9 +196,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should focus the first form field when form fields are available', async () => {
             // Create component with formFields
             const spectatorWithFields = createComponent({
-                props: {
-                    formFields: secrets
-                } as unknown
+                props: aliasedFormFields(secrets)
             });
             spectatorWithFields.detectChanges();
             await spectatorWithFields.fixture.whenStable();
@@ -213,27 +215,27 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should load Label, Textarea & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('name'));
+            const row = spectator.query(byTestId('name'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
 
             const field = secrets[0];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
             expect(labelElement.classList).toContain('p-label-input-required');
 
-            const textareaElement = row.querySelector('textarea');
+            const textareaElement = row.querySelector('textarea')!;
             expect(textareaElement.getAttribute('id')).toBe(field.name);
             expect(textareaElement.value).toBe(field.value);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Checkbox & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('enabled'));
+            const row = spectator.query(byTestId('enabled'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
@@ -243,52 +245,52 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const checkboxElement = row.querySelector('p-checkbox');
             expect(checkboxElement).toBeTruthy();
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent).toContain(field.label);
 
-            const inputElement = row.querySelector('input');
+            const inputElement = row.querySelector('input')!;
             expect(inputElement.id).toBe(field.name);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Select & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('select'));
+            const row = spectator.query(byTestId('select'))!;
 
             const markdownElement = row.querySelector('markdown');
             expect(markdownElement).toBeTruthy();
 
             const field = secrets[3];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
 
-            const selectComponent = spectator.query(Select);
+            const selectComponent = spectator.query(Select)!;
             expect(selectComponent.id).toBe(field.name);
             expect(selectComponent.options).toBe(field.options);
 
-            const hintElement = row.querySelector('.p-field-hint');
+            const hintElement = row.querySelector('.p-field-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Label, Button & Hint with right attributes', () => {
-            const row = spectator.query(byTestId('integration'));
+            const row = spectator.query(byTestId('integration'))!;
 
             const field = secrets[4];
 
-            const labelElement = row.querySelector('label');
+            const labelElement = row.querySelector('label')!;
             expect(labelElement.textContent.trim()).toBe(field.label);
 
-            const buttonElement = row.querySelector('button');
+            const buttonElement = row.querySelector('button')!;
             expect(buttonElement.id).toBe(field.name);
 
-            const hintElement = row.querySelector('.form__group-hint');
+            const hintElement = row.querySelector('.form__group-hint')!;
             expect(hintElement.textContent).toBe(field.hint);
         });
 
         it('should load Generated String Field component with right attributes', () => {
-            const row = spectator.query(byTestId('generated-string-field'));
+            const row = spectator.query(byTestId('generated-string-field'))!;
             expect(row).toBeTruthy();
 
             expect(
@@ -297,8 +299,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         });
 
         it('should Button be disabled when no configured app', () => {
-            const row = spectator.query(byTestId('integration'));
-            const buttonElement = row.querySelector('button');
+            const row = spectator.query(byTestId('integration'))!;
+            const buttonElement = row.querySelector('button')!;
             expect(buttonElement.disabled).toBe(true);
         });
 
@@ -310,8 +312,8 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
             const openMock = jest.fn();
             window.open = openMock;
-            const row = spectator.query(byTestId('integration'));
-            const buttonElement = row.querySelector('button');
+            const row = spectator.query(byTestId('integration'))!;
+            const buttonElement = row.querySelector('button')!;
 
             buttonElement.click();
             expect(openMock).toHaveBeenCalledWith(field.value, '_blank');
@@ -335,9 +337,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             const spyDataOutput = jest.spyOn(spectator.component.data, 'emit');
             const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
-            spectator.component.myFormGroup.get('name').setValue('Test2');
-            spectator.component.myFormGroup.get('password').setValue('Password2');
-            spectator.component.myFormGroup.get('enabled').setValue('false');
+            spectator.component.myFormGroup.get('name')!.setValue('Test2');
+            spectator.component.myFormGroup.get('password')!.setValue('Password2');
+            spectator.component.myFormGroup.get('enabled')!.setValue('false');
 
             expect(spyDataOutput).toHaveBeenCalledTimes(3);
             expect(spyValidOutput).toHaveBeenCalledTimes(3);
@@ -345,23 +347,23 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should render HEADING field as section header with label text', () => {
             const spectatorWithHeading = createComponent({
-                props: { formFields: [headingSecret, ...secrets] } as unknown
+                props: aliasedFormFields([headingSecret, ...secrets])
             });
             spectatorWithHeading.detectChanges();
 
-            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]');
+            const header = spectatorWithHeading.query('[data-testid="sectionHeader"]')!;
             expect(header).toBeTruthy();
             expect(header.classList).toContain('dot-apps-configuration-detail__section-header');
-            expect(header.querySelector('h3').textContent.trim()).toBe(headingSecret.label);
+            expect(header.querySelector('h3')!.textContent.trim()).toBe(headingSecret.label);
         });
 
         it('should render INFO field as info box with hint text', () => {
             const spectatorWithInfo = createComponent({
-                props: { formFields: [infoSecret, ...secrets] } as unknown
+                props: aliasedFormFields([infoSecret, ...secrets])
             });
             spectatorWithInfo.detectChanges();
 
-            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]');
+            const infoBox = spectatorWithInfo.query('[data-testid="infoBox"]')!;
             expect(infoBox).toBeTruthy();
             expect(infoBox.classList).toContain('dot-apps-configuration-detail__info-box');
             expect(infoBox.querySelector('markdown')).toBeTruthy();
@@ -369,9 +371,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
 
         it('should not add HEADING or INFO fields to the form group', () => {
             const spectatorWithExtra = createComponent({
-                props: {
-                    formFields: [headingSecret, infoSecret, ...secrets]
-                } as unknown
+                props: aliasedFormFields([headingSecret, infoSecret, ...secrets])
             });
             spectatorWithExtra.detectChanges();
 
@@ -382,7 +382,7 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
         it('should emit form state disabled when required field empty', () => {
             const spyValidOutput = jest.spyOn(spectator.component.valid, 'emit');
 
-            spectator.component.myFormGroup.get('name').setValue('');
+            spectator.component.myFormGroup.get('name')!.setValue('');
             expect(spyValidOutput).toHaveBeenCalledWith(false);
             expect(spyValidOutput).toHaveBeenCalledTimes(1);
         });
@@ -391,18 +391,9 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
     describe('With warnings', () => {
         beforeEach(() => {
             spectator = createComponent({
-                props: {
-                    formFields: secrets.map((item, i) => {
-                        if (i < 3) {
-                            return {
-                                ...item,
-                                warnings: [`error ${i}`]
-                            };
-                        }
-
-                        return item;
-                    })
-                } as unknown
+                props: aliasedFormFields(
+                    secrets.map((item, i) => (i < 3 ? { ...item, warnings: [`error ${i}`] } : item))
+                )
             });
             spectator.detectChanges();
         });

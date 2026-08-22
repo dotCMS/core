@@ -6,7 +6,7 @@ import { DotContentletItem } from '../../models/dot-contentlet-item.model';
     styleUrl: 'dot-video-thumbnail.scss'
 })
 export class DotVideoThumbnail {
-    @State() src: string = null;
+    @State() src?: string;
 
     /**
      *
@@ -14,7 +14,12 @@ export class DotVideoThumbnail {
      * @type {DotContentletItem}
      * @memberof DotVideoThumbnail
      */
-    @Prop() contentlet: DotContentletItem;
+    /**
+     * Required in practice, not optional: `render` destructures it and the video URL interpolates
+     * its inode, so a missing contentlet has always thrown rather than degraded — the same reason
+     * `dot-contentlet-thumbnail` declares it this way.
+     */
+    @Prop() contentlet!: DotContentletItem;
 
     /**
      *
@@ -22,7 +27,7 @@ export class DotVideoThumbnail {
      * @type {string}
      * @memberof variable
      */
-    @Prop() variable: string;
+    @Prop() variable?: string;
 
     /**
      * If the video is playable or not.
@@ -102,7 +107,14 @@ export class DotVideoThumbnail {
         canvas.width = width;
         canvas.height = height;
 
+        // Null only when the 2d context cannot be created at all — a canvas already bound to a
+        // different context type, or one the browser refused. There is no thumbnail to make then.
         const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+            return;
+        }
+
         ctx.drawImage(video, 0, 0, width, height);
 
         this.src = canvas.toDataURL('image/jpeg');
@@ -115,7 +127,11 @@ export class DotVideoThumbnail {
      * @param originalWidth
      * @param newWidth
      */
-    private determineNewHeight(originalHeight, originalWidth, newWidth) {
+    private determineNewHeight(
+        originalHeight: number,
+        originalWidth: number,
+        newWidth: number
+    ): number {
         return (originalHeight / originalWidth) * newWidth;
     }
 }

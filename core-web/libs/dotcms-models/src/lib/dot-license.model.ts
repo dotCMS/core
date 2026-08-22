@@ -6,7 +6,7 @@
  */
 export interface DotLicense {
     displayServerId: string;
-    isCommunity: false;
+    isCommunity: boolean;
     level: number;
     levelName: string;
 }

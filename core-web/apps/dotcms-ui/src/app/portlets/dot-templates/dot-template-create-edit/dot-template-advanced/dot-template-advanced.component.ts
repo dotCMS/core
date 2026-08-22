@@ -65,13 +65,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
 
-    @Input() body: string;
-    @Input() didTemplateChanged: boolean;
+    @Input() body!: string;
+    @Input() didTemplateChanged!: boolean;
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
-    editor: MonacoEditor;
-    form: UntypedFormGroup;
-    actions: DotPortletToolbarActions;
+    editor!: MonacoEditor;
+    form!: UntypedFormGroup;
+    actions!: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
@@ -85,8 +85,8 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     }
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.didTemplateChanged) {
-            this.actions = this.getActions(!changes.didTemplateChanged.currentValue);
+        if (changes['didTemplateChanged']) {
+            this.actions = this.getActions(!changes['didTemplateChanged'].currentValue);
         }
     }
 
@@ -125,9 +125,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     }
 
     private setContainerId({ identifier, hostName }: DotContainer): string {
+        if (!hostName) {
+            return identifier;
+        }
+
         const regex = new RegExp('//' + hostName);
 
-        return identifier?.includes(hostName) ? identifier.replace(regex, '') : identifier;
+        return identifier.includes(hostName) ? identifier.replace(regex, '') : identifier;
     }
 
     private getActions(disabled = true): DotPortletToolbarActions {

@@ -530,7 +530,7 @@ export class AngularFormBridge implements FormBridge {
         const header = options.header ?? 'Select Content';
 
         this.#zone.run(() => {
-            this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
+            const dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
                 header,
                 appendTo: 'body',
                 closable: true,
@@ -547,7 +547,16 @@ export class AngularFormBridge implements FormBridge {
                 }
             });
 
-            this.#dialogRef.onClose.subscribe((content) => {
+            // `DialogService.open` returns null when it refuses to open a duplicate — the
+            // browser modal is already up. Keep the existing `#dialogRef` in that case so the
+            // controller returned below still closes the dialog the caller can see.
+            if (!dialogRef) {
+                return;
+            }
+
+            this.#dialogRef = dialogRef;
+
+            dialogRef.onClose.subscribe((content) => {
                 if (content) {
                     options.onClose({
                         identifier: content.identifier,

@@ -154,7 +154,7 @@ describe('DotContentTypeFilterComponent', () => {
             .find((de) => predicate(de.componentInstance as Listbox)) as DebugElement;
 
     const leftListbox = () => findListbox((l) => !l.multiple);
-    const rightListbox = () => findListbox((l) => l.multiple);
+    const rightListbox = () => findListbox((l) => !!l.multiple);
 
     const triggerFocusChange = (name: string | null) => {
         spectator.triggerEventHandler(leftListbox(), 'ngModelChange', name);
@@ -204,8 +204,12 @@ describe('DotContentTypeFilterComponent', () => {
         spectator.detectChanges();
     };
 
-    beforeAll(() => jest.useFakeTimers());
-    afterAll(() => jest.useRealTimers());
+    beforeAll(() => {
+        jest.useFakeTimers();
+    });
+    afterAll(() => {
+        jest.useRealTimers();
+    });
 
     beforeEach(() => {
         spectator = createComponent();

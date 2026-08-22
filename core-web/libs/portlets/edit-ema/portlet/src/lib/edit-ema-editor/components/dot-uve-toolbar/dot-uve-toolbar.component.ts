@@ -97,10 +97,12 @@ export class DotUveToolbarComponent {
         const params = this.#store.pageParams();
         const site = this.#store.pageAsset()?.site;
 
+        // `?? ''` on both: this builds the "add to favourites" URL, and there is no page to
+        // favourite before one has loaded — the toolbar renders the button disabled until then.
         return createFavoritePagesURL({
             languageId: Number(params?.language_id),
-            pageURI: params?.url,
-            siteId: site?.identifier
+            pageURI: params?.url ?? '',
+            siteId: site?.identifier ?? ''
         });
     });
 
@@ -133,7 +135,9 @@ export class DotUveToolbarComponent {
     readonly $isPaletteOpen = this.#store.editorPaletteOpen;
     readonly $canEditPage = this.#store.editorCanEditContent;
 
-    readonly $devices: Signal<DotDeviceListItem[]> = toSignal(
+    // `| null` in the signal's type, because that is the declared `initialValue`: the device list
+    // is not known until the service answers.
+    readonly $devices: Signal<DotDeviceListItem[] | null> = toSignal(
         this.#deviceService.get().pipe(map((devices = []) => [...DEFAULT_DEVICES, ...devices])),
         {
             initialValue: null
@@ -142,19 +146,19 @@ export class DotUveToolbarComponent {
 
     protected readonly $pageParams = this.#store.pageParams;
     protected readonly $previewDate = computed<Date>(() => {
-        const publishDate = this.$pageParams().publishDate;
+        const publishDate = this.$pageParams()?.publishDate;
         const previewDate = publishDate ? convertUTCToLocalTime(new Date(publishDate)) : new Date();
 
         return previewDate;
     });
 
     protected readonly $showDeviceSelector = computed(() => {
-        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
-        return !isEditMode && this.$devices()?.length > 0;
+        const isEditMode = this.$pageParams()?.mode === UVE_MODE.EDIT;
+        return !isEditMode && (this.$devices()?.length ?? 0) > 0;
     });
 
     protected readonly $showUrlContentMap = computed(() => {
-        const isEditMode = this.$pageParams().mode === UVE_MODE.EDIT;
+        const isEditMode = this.$pageParams()?.mode === UVE_MODE.EDIT;
         return isEditMode && this.$urlContentMap();
     });
 
@@ -227,7 +231,7 @@ export class DotUveToolbarComponent {
 
         this.#store.trackUVECalendarChange({ selectedDate: publishDateUTC });
 
-        this.#store.pageReload({ publishDate: publishDateUTC });
+        this.#store['pageReload']({ publishDate: publishDateUTC });
     }
 
     /**
@@ -307,7 +311,7 @@ export class DotUveToolbarComponent {
             return;
         }
 
-        this.#store.pageLoad({ language_id });
+        this.#store['pageLoad']({ language_id });
     }
 
     /**
@@ -321,7 +325,7 @@ export class DotUveToolbarComponent {
             persona.identifier === DEFAULT_PERSONA.identifier || persona.personalized;
 
         if (existPersona) {
-            this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
+            this.#store['pageLoad']({ [PERSONA_KEY]: persona.identifier });
 
             return;
         }
@@ -341,8 +345,8 @@ export class DotUveToolbarComponent {
             accept: () => {
                 this.#personalizeService.personalized(persona.pageId, persona.keyTag).subscribe({
                     next: () => {
-                        this.#store.pageLoad({ [PERSONA_KEY]: persona.identifier });
-                        this.$personaSelector().fetchPersonas();
+                        this.#store['pageLoad']({ [PERSONA_KEY]: persona.identifier });
+                        this.$personaSelector()?.fetchPersonas();
                     },
                     error: (err: unknown) => {
                         const detail =
@@ -355,12 +359,12 @@ export class DotUveToolbarComponent {
                             summary: this.#dotMessageService.get('error'),
                             detail
                         });
-                        this.$personaSelector().resetValue();
+                        this.$personaSelector()?.resetValue();
                     }
                 });
             },
             reject: () => {
-                this.$personaSelector().resetValue();
+                this.$personaSelector()?.resetValue();
             }
         });
     }
@@ -384,10 +388,10 @@ export class DotUveToolbarComponent {
                 this.#personalizeService
                     .despersonalized(persona.pageId, persona.keyTag)
                     .subscribe(() => {
-                        this.$personaSelector().fetchPersonas();
+                        this.$personaSelector()?.fetchPersonas();
 
                         if (persona.selected) {
-                            this.#store.pageLoad({
+                            this.#store['pageLoad']({
                                 [PERSONA_KEY]: DEFAULT_PERSONA.identifier
                             });
                         }
@@ -424,7 +428,9 @@ export class DotUveToolbarComponent {
             },
             reject: () => {
                 // If is rejected, bring back the current language on selector
-                this.$languageSelector()?.value.set(this.#store.pageLanguage());
+                // `?? null` — the selector's `value` model accepts null for "nothing selected",
+                // which is what an unloaded page's language is.
+                this.$languageSelector()?.value.set(this.#store.pageLanguage() ?? null);
             }
         });
     }

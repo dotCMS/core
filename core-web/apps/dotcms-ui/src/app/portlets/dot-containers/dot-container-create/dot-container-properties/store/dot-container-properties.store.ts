@@ -29,10 +29,12 @@ export interface DotContainerPropertiesState {
     showPrePostLoopInput: boolean;
     isContentTypeVisible: boolean;
     isContentTypeButtonEnabled: boolean;
-    container: DotContainer;
+    /** Null until the resolver's container lands, or on the create path until it is saved. */
+    container: DotContainer | null;
     containerStructures: DotContainerStructure[];
     contentTypes: DotCMSContentType[];
-    originalForm: DotContainerPayload;
+    /** Null until the form has been built from the loaded container. */
+    originalForm: DotContainerPayload | null;
     apiLink: string;
     invalidForm: boolean;
 }
@@ -61,7 +63,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         });
         this.activatedRoute.data
             .pipe(
-                map((x) => x?.container),
+                map((x) => x?.['container']),
                 take(1),
                 filter((containerEntity) => !!containerEntity)
             )
@@ -108,7 +110,13 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
                 isContentTypeVisible,
                 container,
                 containerStructures
-            }: DotContainerPropertiesState
+            }: Pick<
+                DotContainerPropertiesState,
+                | 'showPrePostLoopInput'
+                | 'isContentTypeVisible'
+                | 'container'
+                | 'containerStructures'
+            >
         ) => {
             return {
                 ...state,
@@ -177,7 +185,10 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     }>(
         (
             state: DotContainerPropertiesState,
-            { isContentTypeVisible, showPrePostLoopInput }: DotContainerPropertiesState
+            {
+                isContentTypeVisible,
+                showPrePostLoopInput
+            }: Pick<DotContainerPropertiesState, 'isContentTypeVisible' | 'showPrePostLoopInput'>
         ) => {
             return {
                 ...state,
@@ -238,6 +249,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
 
                 return this.dotContainersService.create(container);
             }),
+            filter((container): container is DotContainerEntity => !!container),
             tap((container: DotContainerEntity) => {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('message.container.published')
@@ -261,6 +273,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
 
                 return this.dotContainersService.update(container);
             }),
+            filter((container): container is DotContainerEntity => !!container),
             tap((container: DotContainerEntity) => {
                 this.dotGlobalMessageService.success(
                     this.dotMessageService.get('message.container.updated')

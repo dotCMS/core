@@ -30,11 +30,12 @@ import { DotMenuItem } from '../suggestions/suggestions.component';
     standalone: false
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {
-    @ContentChildren(SuggestionsListItemComponent) items: QueryList<SuggestionsListItemComponent>;
+    @ContentChildren(SuggestionsListItemComponent) items!: QueryList<SuggestionsListItemComponent>;
     @HostBinding('attr.id') id = 'editor-suggestion-list';
     @Input() suggestionItems: DotMenuItem[] = [];
 
-    keyManager: FocusKeyManager<SuggestionsListItemComponent>;
+    // Built in ngAfterViewInit, once `items` has been projected.
+    keyManager!: FocusKeyManager<SuggestionsListItemComponent>;
     private destroy$ = new Subject<boolean>();
     private mouseMove = true;
 
@@ -52,13 +53,13 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     @HostListener('mouseover', ['$event'])
     onMouseOver(e: MouseEvent) {
         const element = e.target as HTMLElement;
-        const value = element.dataset?.index as unknown;
+        const value = element.dataset?.['index'] as unknown;
 
         if (isNaN(value as number) || !this.mouseMove) {
             return;
         }
 
-        const index = Number(element?.dataset.index);
+        const index = Number(element?.dataset['index']);
 
         if (element.getAttribute('disabled')) {
             this.keyManager.activeItem?.unfocus();
@@ -113,7 +114,7 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
      * @memberof SuggestionListComponent
      */
     execCommand() {
-        this.keyManager.activeItem.command();
+        this.keyManager.activeItem?.command();
     }
 
     /**

@@ -26,8 +26,8 @@ export class DotCopyLinkComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);
 
     @Input() copy = '';
-    @Input() label: string;
-    @Input() tooltipText: string;
+    @Input() label!: string;
+    @Input() tooltipText!: string;
 
     ngOnInit() {
         this.tooltipText = this.tooltipText || this.dotMessageService.get('Copy');

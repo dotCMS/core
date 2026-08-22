@@ -60,9 +60,9 @@ import { DotMenuService } from '../../../api/services/dot-menu.service';
     standalone: false
 })
 class TestContentTypeFieldsDropZoneComponent {
-    @Input() layout: DotCMSContentTypeLayoutRow[];
-    @Input() loading: boolean;
-    @Input() contentType: DotCMSContentType;
+    @Input() layout!: DotCMSContentTypeLayoutRow[];
+    @Input() loading!: boolean;
+    @Input() contentType!: DotCMSContentType;
     @Output() saveFields = new EventEmitter<DotCMSContentTypeField[]>();
     @Output() removeFields = new EventEmitter<DotCMSContentTypeField[]>();
 
@@ -75,7 +75,7 @@ class TestContentTypeFieldsDropZoneComponent {
     standalone: true
 })
 class TestContentTypeLayoutComponent {
-    @Input() contentType: DotCMSContentType;
+    @Input() contentType!: DotCMSContentType;
     @Output() openEditDialog: EventEmitter<any> = new EventEmitter();
     @Output() changeContentTypeName: EventEmitter<string> = new EventEmitter();
 }
@@ -86,9 +86,9 @@ class TestContentTypeLayoutComponent {
     standalone: true
 })
 class TestContentTypesFormComponent {
-    @Input() data: DotCMSContentType;
-    @Input() layout: DotCMSContentTypeField[];
-    @Input() contentType: DotCMSContentType;
+    @Input() data!: DotCMSContentType;
+    @Input() layout!: DotCMSContentTypeField[];
+    @Input() contentType!: DotCMSContentType;
     @Output() $send: EventEmitter<DotCMSContentType> = new EventEmitter();
     @Output() $valid: EventEmitter<boolean> = new EventEmitter();
 
@@ -103,9 +103,9 @@ class TestContentTypesFormComponent {
     standalone: false
 })
 export class TestDotMenuComponent {
-    @Input() icon: string;
-    @Input() float: boolean;
-    @Input() model: MenuItem[];
+    @Input() icon!: string;
+    @Input() float!: boolean;
+    @Input() model!: MenuItem[];
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -132,7 +132,7 @@ describe('DotContentTypesEditComponent', () => {
     let dotHttpErrorManagerService: DotHttpErrorManagerService;
     let dialog: DebugElement;
 
-    const getConfig = (route) => {
+    const getConfig = (route: { contentType: Partial<DotCMSContentType> }) => {
         return {
             declarations: [
                 DotContentTypesEditComponent,
@@ -348,7 +348,7 @@ describe('DotContentTypesEditComponent', () => {
 
                 contentTypeForm.triggerEventHandler('$send', mockContentType);
 
-                const replacedWorkflowsPropContentType = {
+                const replacedWorkflowsPropContentType: Partial<DotCMSContentType> = {
                     ...mockContentType
                 };
 
@@ -435,7 +435,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should bind save button disabled attribute to canSave property from the form', () => {
                 form.triggerEventHandler('$valid', true);
-                expect(comp.dialogActions.accept.disabled).toBe(false);
+                expect(comp.dialogActions.accept!.disabled).toBe(false);
             });
 
             it('should submit form when save button is clicked', fakeAsync(() => {
@@ -443,7 +443,7 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
                 fixture.detectChanges();
                 // Call accept action directly via component
-                comp.dialogActions.accept.action();
+                comp.dialogActions.accept!.action!();
                 expect(form.componentInstance.submitForm).toHaveBeenCalledTimes(1);
             }));
         });
@@ -617,12 +617,12 @@ describe('DotContentTypesEditComponent', () => {
             const dotEventsService = fixture.debugElement.injector.get(DotEventsService);
             jest.spyOn(dotEventsService, 'notify');
 
-            comp.contentTypeActions[0].command({ originalEvent: createFakeEvent('click') });
+            comp.contentTypeActions[0].command!({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[0].label).toBe('Add rows');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-row');
             expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
-            comp.contentTypeActions[1].command({ originalEvent: createFakeEvent('click') });
+            comp.contentTypeActions[1].command!({ originalEvent: createFakeEvent('click') });
             expect(comp.contentTypeActions[1].label).toBe('Add tab');
             expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
             expect(dotEventsService.notify).toHaveBeenCalledTimes(2);
@@ -678,7 +678,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should update fields attribute when a field is edit', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
-            const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
+            const fieldToUpdate: DotCMSContentTypeField = layout[0].columns![0].fields[0];
             fieldToUpdate.name = 'Updated field';
 
             jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(layout));
@@ -694,7 +694,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should update fields on dropzone event', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
-            const fieldToUpdate: DotCMSContentTypeField = layout[0].columns[0].fields[0];
+            const fieldToUpdate: DotCMSContentTypeField = layout[0].columns![0].fields[0];
 
             jest.spyOn(fieldService, 'updateField').mockReturnValue(of(layout));
 
@@ -788,8 +788,8 @@ describe('DotContentTypesEditComponent', () => {
 
             const fieldsReturnByServer: DotCMSContentTypeLayoutRow[] =
                 structuredClone(currentLayoutInServer);
-            newFieldsAdded.concat(fieldsReturnByServer[0].columns[0].fields);
-            fieldsReturnByServer[0].columns[0].fields = newFieldsAdded;
+            newFieldsAdded.concat(fieldsReturnByServer[0].columns![0].fields);
+            fieldsReturnByServer[0].columns![0].fields = newFieldsAdded;
 
             jest.spyOn(fieldService, 'saveFields').mockReturnValue(of(fieldsReturnByServer));
 
@@ -815,9 +815,9 @@ describe('DotContentTypesEditComponent', () => {
             );
 
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
-            layout[0].columns[0].fields = fieldsReturnByServer;
+            layout[0].columns![0].fields = fieldsReturnByServer;
             layout[0].divider.id = new Date().getMilliseconds().toString();
-            layout[0].columns[0].columnDivider.id = new Date().getMilliseconds().toString();
+            layout[0].columns![0].columnDivider.id = new Date().getMilliseconds().toString();
 
             const newRow: DotCMSContentTypeLayoutRow = {
                 divider: {
@@ -877,7 +877,7 @@ describe('DotContentTypesEditComponent', () => {
 
         it('should remove fields on dropzone event', () => {
             const layout: DotCMSContentTypeLayoutRow[] = structuredClone(currentLayoutInServer);
-            layout[0].columns[0].fields = layout[0].columns[0].fields.slice(-1);
+            layout[0].columns![0].fields = layout[0].columns![0].fields.slice(-1);
 
             jest.spyOn(fieldService, 'deleteFields').mockReturnValue(
                 of({ fields: layout, deletedIds: ['3'] })
@@ -966,7 +966,7 @@ describe('DotContentTypesEditComponent', () => {
 
                 contentTypeForm.triggerEventHandler('$send', fakeContentType);
 
-                const replacedWorkflowsPropContentType = {
+                const replacedWorkflowsPropContentType: Partial<DotCMSContentType> = {
                     ...fakeContentType
                 };
 

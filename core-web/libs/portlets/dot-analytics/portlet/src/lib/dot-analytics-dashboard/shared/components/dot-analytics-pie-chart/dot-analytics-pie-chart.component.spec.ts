@@ -82,7 +82,7 @@ describe('DotAnalyticsPieChartComponent', () => {
         });
 
         spectator.detectChanges();
-        const measure = spectator.query('.pie-chart__measure-wrap');
+        const measure = spectator.query('.pie-chart__measure-wrap')!;
         expect(measure).toBeTruthy();
         (measure as HTMLElement).style.width = '400px';
         await spectator.fixture.whenStable();
@@ -98,15 +98,15 @@ describe('DotAnalyticsPieChartComponent', () => {
     });
 
     it('should render D3 pie paths and legend when loaded with data', () => {
-        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')).toExist();
-        expect(spectator.query('[data-testid="analytics-d3-pie-svg"] path')).toExist();
-        expect(spectator.query('[data-testid="analytics-pie-legend-row"]')).toExist();
-        expect(spectator.query('.chart-skeleton--pie')).not.toExist();
+        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')!).toExist();
+        expect(spectator.query('[data-testid="analytics-d3-pie-svg"] path')!).toExist();
+        expect(spectator.query('[data-testid="analytics-pie-legend-row"]')!).toExist();
+        expect(spectator.query('.chart-skeleton--pie')!).not.toExist();
     });
 
     it('should highlight legend row when hovering pie slice', () => {
-        const path = spectator.query('[data-testid="analytics-d3-pie-svg"] path');
-        const row = spectator.query('[data-testid="analytics-pie-legend-row"]');
+        const path = spectator.query('[data-testid="analytics-d3-pie-svg"] path')!;
+        const row = spectator.query('[data-testid="analytics-pie-legend-row"]')!;
         expect(path).toExist();
         expect(row).toExist();
 
@@ -126,31 +126,31 @@ describe('DotAnalyticsPieChartComponent', () => {
         spectator.setInput({ status: ComponentStatus.LOADING });
         spectator.detectChanges();
 
-        expect(spectator.query('.chart-skeleton--pie')).toExist();
-        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')).not.toExist();
+        expect(spectator.query('.chart-skeleton--pie')!).toExist();
+        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')!).not.toExist();
     });
 
     it('should show error state when status is ERROR', () => {
         spectator.setInput({ status: ComponentStatus.ERROR });
         spectator.detectChanges();
 
-        expect(spectator.query('dot-analytics-state-message')).toExist();
-        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')).not.toExist();
+        expect(spectator.query('dot-analytics-state-message')!).toExist();
+        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')!).not.toExist();
     });
 
     it('should show empty state when results are empty', () => {
         spectator.setInput({ results: [], status: ComponentStatus.LOADED });
         spectator.detectChanges();
 
-        expect(spectator.query('dot-analytics-empty-state')).toExist();
-        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')).not.toExist();
+        expect(spectator.query('dot-analytics-empty-state')!).toExist();
+        expect(spectator.query('[data-testid="analytics-d3-pie-svg"]')!).not.toExist();
     });
 
     it('should resolve card title when title input is set', () => {
         spectator.setInput({ title: 'analytics.charts.browser-breakdown.title' });
         spectator.detectChanges();
 
-        const card = spectator.query('[data-testid="analytics-chart"]');
+        const card = spectator.query('[data-testid="analytics-chart"]')!;
         expect(card?.querySelector('.p-card-title')?.textContent?.trim()).toBe('Translated title');
     });
 });

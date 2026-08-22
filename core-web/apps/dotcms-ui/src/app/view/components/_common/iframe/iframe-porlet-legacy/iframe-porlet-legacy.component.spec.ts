@@ -50,7 +50,7 @@ import { DotMenuService } from '../../../../../api/services/dot-menu.service';
 import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
-import { IFrameModule } from '../index';
+import { IframeComponent } from '../iframe-component/iframe.component';
 
 const routeDatamock = {
     canAccessPortlet: true
@@ -85,7 +85,7 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogComponent],
+            imports: [IframeComponent, RouterTestingModule, DotDownloadBundleDialogComponent],
             providers: [
                 provideHttpClient(),
                 provideHttpClientTesting(),
@@ -143,7 +143,7 @@ xdescribe('IframePortletLegacyComponent', () => {
         route.queryParams = of({ url: 'hello/world' });
         route.params = of({ id: 'portlet-id' });
 
-        let src: string;
+        let src: string | undefined;
         comp.url.subscribe((url) => {
             src = url;
         });
@@ -159,7 +159,7 @@ xdescribe('IframePortletLegacyComponent', () => {
 
         jest.spyOn(dotMenuService, 'getUrlById').mockReturnValue(of('fake-url'));
 
-        let src: string;
+        let src: string | undefined;
 
         comp.url.subscribe((url) => {
             src = url;

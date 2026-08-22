@@ -168,12 +168,12 @@ describe('DotAppsConfigurationComponent', () => {
         });
 
         it('should set App from resolver', () => {
-            expect(component.$app().key).toBe(appData.key);
-            expect(component.$app().name).toBe(appData.name);
+            expect(component.$app()!.key).toBe(appData.key);
+            expect(component.$app()!.name).toBe(appData.name);
         });
 
         it('should set onInit Pagination Service with right values', () => {
-            expect(paginationService.url).toBe(`v1/apps/${component.$app().key}`);
+            expect(paginationService.url).toBe(`v1/apps/${component.$app()!.key}`);
             expect(paginationService.paginationPerPage).toBe(component.$paginationPerPage());
             expect(paginationService.sortField).toBe('name');
             expect(paginationService.sortOrder).toBe(1);
@@ -210,7 +210,7 @@ describe('DotAppsConfigurationComponent', () => {
                 By.css('dot-apps-configuration-list')
             ).componentInstance;
             fixture.detectChanges();
-            expect(listComp.siteConfigurations()).toEqual(component.$app().sites);
+            expect(listComp.siteConfigurations()).toEqual(component.$app()!.sites);
             expect(listComp.itemsPerPage()).toBe(component.$paginationPerPage());
         });
 
@@ -232,7 +232,7 @@ describe('DotAppsConfigurationComponent', () => {
             ).componentInstance;
             listComp.edit.emit(sites[0]);
             expect(routerService.goToUpdateAppsConfiguration).toHaveBeenCalledWith(
-                component.$app().key,
+                component.$app()!.key,
                 sites[0]
             );
         });
@@ -252,14 +252,16 @@ describe('DotAppsConfigurationComponent', () => {
             )[1];
 
             jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
 
             jest.spyOn(appsServices, 'deleteAllConfigurations').mockReturnValue(of(null));
 
             deleteAllBtn.triggerEventHandler('click', null);
             expect(dialogService.confirm).toHaveBeenCalledTimes(1);
-            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(component.$app().key);
+            expect(appsServices.deleteAllConfigurations).toHaveBeenCalledWith(
+                component.$app()!.key
+            );
             expect(appsServices.deleteAllConfigurations).toHaveBeenCalledTimes(1);
         });
 
@@ -280,7 +282,7 @@ describe('DotAppsConfigurationComponent', () => {
             listComp.delete.emit(sites[0]);
 
             expect(appsServices.deleteConfiguration).toHaveBeenCalledWith(
-                component.$app().key,
+                component.$app()!.key,
                 sites[0].id
             );
         });
@@ -289,8 +291,8 @@ describe('DotAppsConfigurationComponent', () => {
             // Clear the spy to only count calls from this specific test
             setExtraParamsSpy.mockClear();
 
-            component.$searchInputElement().nativeElement.value = 'test';
-            component.$searchInputElement().nativeElement.dispatchEvent(new Event('keyup'));
+            component.$searchInputElement()!.nativeElement.value = 'test';
+            component.$searchInputElement()!.nativeElement.dispatchEvent(new Event('keyup'));
             tick(550);
             expect(setExtraParamsSpy).toHaveBeenCalledWith('filter', 'test');
             expect(setExtraParamsSpy).toHaveBeenCalledTimes(1);

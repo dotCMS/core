@@ -86,8 +86,19 @@ export interface DotContentDriveSort {
  * @interface DotContentDriveInit
  */
 export interface DotContentDriveInit {
-    currentSite: DotSite;
-    path: string;
+    /**
+     * Nullable *and* undefined-able on the way in: the initial state seeds `undefined` (so the store
+     * can tell "not yet known" from a real selection) while `GlobalStore.siteDetails()` yields
+     * `DotSite | null`. `initContentDrive` collapses both with `?? SYSTEM_HOST`, which is why
+     * {@link DotContentDriveState} narrows this back to `DotSite | undefined`.
+     *
+     * Declared required-with-a-nullable-value rather than optional: in `@ngrx/signals` an optional
+     * state *key* makes the store *member* optional too, so `store.currentSite()` would not even be
+     * callable.
+     */
+    currentSite: DotSite | null | undefined;
+    /** Undefined by default — `DEFAULT_PATH` is literally `undefined`, meaning the site root. */
+    path: string | undefined;
     filters: DotContentDriveFilters;
     isTreeExpanded: boolean;
 }
@@ -182,12 +193,18 @@ export interface DotContentDrivePage {
  * @interface DotContentDriveState
  */
 export interface DotContentDriveState extends DotContentDriveInit {
+    /**
+     * Narrowed from {@link DotContentDriveInit}: `initContentDrive` resolves a null site to
+     * `SYSTEM_HOST`, so the state only ever holds a real site or the pre-init `undefined`.
+     */
+    currentSite: DotSite | undefined;
     items: DotContentDriveItem[];
     selectedItems: DotContentDriveItem[];
     status: DotContentDriveStatus;
     pagination: DotContentDrivePagination;
     sort: DotContentDriveSort;
-    contextMenu?: DotContentDriveContextMenu;
+    /** Required-with-`undefined`, for the same reason as `currentSite` above. */
+    contextMenu: DotContentDriveContextMenu | undefined;
     pages: DotContentDrivePage[];
     /**
      * Eligible searchable fields of the currently-selected single content type. Populated by the
@@ -240,8 +257,12 @@ export interface DotContentDriveState extends DotContentDriveInit {
      *
      * `undefined` while the request is in flight, and if it fails or the environment declares no
      * default — see {@link defaultLanguageLoaded}.
+     *
+     * Declared required-with-an-undefined-able-value rather than optional, for the same reason as
+     * {@link DotContentDriveInit.currentSite}: an optional state *key* makes the store *member*
+     * optional too, so `store.defaultLanguageId()` would not even be callable.
      */
-    defaultLanguageId?: number;
+    defaultLanguageId: number | undefined;
     /**
      * Whether the languages request has settled — to a default id, to no default, or to a failure.
      * Distinguishes "not fetched yet" from "fetched, nothing to seed", which lets the first search

@@ -58,9 +58,16 @@ import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerS
 import { I18nService } from '../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
+    ConditionCreateEvent,
+    ConditionDeleteEmitEvent,
+    ConditionDeleteEvent,
+    ConditionEmitEvent,
+    ConditionGroupActionEvent,
+    ConditionGroupCreateEvent,
+    ConditionGroupEmitEvent,
     RuleActionActionEvent,
-    RuleActionEvent,
-    ConditionGroupActionEvent
+    RuleActionEmitEvent,
+    RuleActionEvent
 } from '../../services/models/rule-event.model';
 import { DotRuleActionComponent } from '../actions/dot-rule-action.component';
 import { DotConditionGroupComponent } from '../conditions/condition-group/dot-condition-group.component';
@@ -124,28 +131,31 @@ export class DotRuleComponent {
     readonly updateFireOn = output<RuleActionEvent>();
 
     // Outputs - Rule Action Events
-    readonly createRuleAction = output<RuleActionActionEvent>();
+    // `createRuleAction` carries only the rule: there is no action yet to describe.
+    readonly createRuleAction = output<RuleActionEvent>();
     readonly updateRuleActionType = output<RuleActionActionEvent>();
     readonly updateRuleActionParameter = output<RuleActionActionEvent>();
     readonly deleteRuleAction = output<RuleActionActionEvent>();
 
     // Outputs - Condition Group Events
     readonly updateConditionGroupOperator = output<ConditionGroupActionEvent>();
-    readonly createConditionGroup = output<ConditionGroupActionEvent>();
+    readonly createConditionGroup = output<ConditionGroupCreateEvent>();
 
     // Outputs - Condition Events
-    readonly createCondition = output<ConditionActionEvent>();
-    readonly deleteCondition = output<ConditionActionEvent>();
+    readonly createCondition = output<ConditionCreateEvent>();
+    readonly deleteCondition = output<ConditionDeleteEvent>();
     readonly updateConditionType = output<ConditionActionEvent>();
     readonly updateConditionParameter = output<ConditionActionEvent>();
     readonly updateConditionOperator = output<ConditionActionEvent>();
     readonly openPushPublishDialog = output<string>();
 
     // State
-    formModel: UntypedFormGroup;
+    // The three `!` below are built by `initializeFormModel` and `initializeFireOnOptions`,
+    // which the constructor calls; the compiler does not follow a call into a method.
+    formModel!: UntypedFormGroup;
     readonly fireOnValue = signal('EVERY_PAGE');
-    fireOnOptions$: Observable<{ label: string; value: string }[]>;
-    fireOnPlaceholder$: Observable<string>;
+    fireOnOptions$!: Observable<{ label: string; value: string }[]>;
+    fireOnPlaceholder$!: Observable<string>;
     readonly showAddToBundleDialog = signal(false);
     hideFireOn: boolean;
 
@@ -180,9 +190,10 @@ export class DotRuleComponent {
 
     actionTypePlaceholder = '';
     conditionTypePlaceholder = '';
-    ruleActionOptions: MenuItem[];
-    tooltipRuleOnText: string;
-    tooltipRuleOffText: string;
+    // Empty until the i18n labels resolve, which is what the template already renders.
+    ruleActionOptions: MenuItem[] = [];
+    tooltipRuleOnText = '';
+    tooltipRuleOffText = '';
 
     private readonly enabledStateDelayEmitter = signal<RuleActionEvent | null>(null);
     private readonly i18nCache: Record<string, Observable<string>> = {};
@@ -371,9 +382,11 @@ export class DotRuleComponent {
         });
     }
 
-    onDeleteCondition(event: ConditionActionEvent, conditionGroup: ConditionGroupModel): void {
-        Object.assign(event.payload, { conditionGroup, rule: this.$rule() });
-        this.deleteCondition.emit(event);
+    onDeleteCondition(event: ConditionDeleteEmitEvent, conditionGroup: ConditionGroupModel): void {
+        this.deleteCondition.emit({
+            type: event.type,
+            payload: { ...event.payload, conditionGroup, rule: this.$rule() }
+        });
     }
 
     onCreateConditionGroupClicked(): void {
@@ -386,77 +399,80 @@ export class DotRuleComponent {
         });
     }
 
-    onCreateCondition(event: ConditionActionEvent): void {
+    onCreateCondition(event: ConditionGroupEmitEvent): void {
         this.logger.info('DotRuleComponent', 'onCreateCondition');
-        Object.assign(event.payload, { rule: this.$rule() });
-        this.createCondition.emit(event);
+        this.createCondition.emit({
+            type: event.type,
+            payload: { ...event.payload, rule: this.$rule() }
+        });
     }
 
-    onUpdateRuleActionType(event: {
-        type: string;
-        payload: { value: string; index: number };
-    }): void {
+    onUpdateRuleActionType(event: RuleActionEmitEvent): void {
         this.logger.info('DotRuleComponent', 'onUpdateRuleActionType');
         this.updateRuleActionType.emit({
-            payload: Object.assign({ rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, rule: this.$rule() },
             type: RULE_RULE_ACTION_UPDATE_TYPE
         });
     }
 
-    onUpdateRuleActionParameter(event): void {
+    onUpdateRuleActionParameter(event: RuleActionEmitEvent): void {
         this.logger.info('DotRuleComponent', 'onUpdateRuleActionParameter');
         this.updateRuleActionParameter.emit({
-            payload: Object.assign({ rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, rule: this.$rule() },
             type: RULE_RULE_ACTION_UPDATE_PARAMETER
         });
     }
 
-    onDeleteRuleAction(event: { type: string; payload: { value: string; index: number } }): void {
+    onDeleteRuleAction(event: RuleActionEmitEvent): void {
         this.logger.info('DotRuleComponent', 'onDeleteRuleAction');
         this.deleteRuleAction.emit({
-            payload: Object.assign({ rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, rule: this.$rule() },
             type: RULE_RULE_ACTION_DELETE
         });
     }
 
     onUpdateConditionGroupOperator(
-        event: { type: string; payload: { value: string; index: number } },
+        event: ConditionGroupEmitEvent,
         conditionGroup: ConditionGroupModel
     ): void {
         this.updateConditionGroupOperator.emit({
-            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, conditionGroup, rule: this.$rule() },
             type: RULE_CONDITION_UPDATE_TYPE
         });
     }
 
-    onUpdateConditionType(
-        event: { type: string; payload: { value: string; index: number } },
-        conditionGroup: ConditionGroupModel
-    ): void {
+    onUpdateConditionType(event: ConditionEmitEvent, conditionGroup: ConditionGroupModel): void {
         this.logger.info('DotRuleComponent', 'onUpdateConditionType');
         this.updateConditionType.emit({
-            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, conditionGroup, rule: this.$rule() },
             type: RULE_CONDITION_UPDATE_TYPE
         });
     }
 
-    onUpdateConditionParameter(event, conditionGroup: ConditionGroupModel): void {
+    onUpdateConditionParameter(
+        event: ConditionEmitEvent,
+        conditionGroup: ConditionGroupModel
+    ): void {
         this.logger.info('DotRuleComponent', 'onUpdateConditionParameter');
         this.updateConditionParameter.emit({
-            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, conditionGroup, rule: this.$rule() },
             type: RULE_CONDITION_UPDATE_PARAMETER
         });
     }
 
-    onUpdateConditionOperator(event, conditionGroup: ConditionGroupModel): void {
+    onUpdateConditionOperator(
+        event: ConditionEmitEvent,
+        conditionGroup: ConditionGroupModel
+    ): void {
         this.logger.info('DotRuleComponent', 'onUpdateConditionOperator');
         this.updateConditionOperator.emit({
-            payload: Object.assign({ conditionGroup, rule: this.$rule() }, event.payload),
+            payload: { ...event.payload, conditionGroup, rule: this.$rule() },
             type: RULE_CONDITION_UPDATE_OPERATOR
         });
     }
 
-    deleteRuleClicked(event: Event): void {
+    /** `undefined` when PrimeNG fires the menu command without an originating DOM event. */
+    deleteRuleClicked(event: Event | undefined): void {
         const ruleActions = this.$ruleActions();
         const rule = this.$rule();
 

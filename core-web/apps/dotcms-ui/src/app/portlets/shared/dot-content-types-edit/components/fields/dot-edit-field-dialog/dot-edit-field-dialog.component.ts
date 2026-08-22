@@ -63,7 +63,12 @@ export class DotEditFieldDialogComponent {
     readonly $propertiesForm =
         viewChild.required<ContentTypeFieldsPropertiesFormComponent>('fieldPropertiesForm');
 
-    private readonly data = this.config.data;
+    /**
+     * `DynamicDialogConfig.data` is optional, but this dialog is only ever opened with a payload
+     * (see `ContentTypeFieldsDropZoneComponent.openFieldDialog`). Asserting it once here keeps the
+     * three fields below non-nullable for the template and the nested forms.
+     */
+    private readonly data = this.config.data as DotEditFieldDialogData;
     readonly currentField = this.data.currentField;
     readonly currentFieldType = this.data.currentFieldType;
     readonly contentType = this.data.contentType;
@@ -76,7 +81,7 @@ export class DotEditFieldDialogComponent {
 
     activeTab = 0;
     hideButtons = false;
-    saveBtn: DialogButton = this.buildOverviewSaveBtn();
+    saveBtn: DialogButton | null = this.buildOverviewSaveBtn();
     cancelBtn: DialogButton = {
         label: this.dotMessageService.get('contenttypes.dropzone.action.cancel'),
         action: () => this.ref.close()
@@ -149,7 +154,9 @@ export class DotEditFieldDialogComponent {
             this.overviewFormChanged = formChanged;
         }
 
-        this.saveBtn = { ...this.saveBtn, disabled: !formChanged };
+        if (this.saveBtn) {
+            this.saveBtn = { ...this.saveBtn, disabled: !formChanged };
+        }
     }
 
     /**

@@ -13,7 +13,7 @@ interface CodeBlockProps {
  * @returns The rendered code block component.
  */
 export const CodeBlock = ({ node, children }: CodeBlockProps) => {
-    const language = node?.attrs?.language || '';
+    const language = node?.attrs?.['language'] || '';
 
     return (
         <pre data-language={language}>
