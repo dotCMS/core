@@ -114,7 +114,7 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
      * @memberof SuggestionListComponent
      */
     execCommand() {
-        this.keyManager.activeItem?.command?.();
+        this.keyManager.activeItem?.command?.({});
     }
 
     /**

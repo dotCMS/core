@@ -17,7 +17,7 @@
     @if (data?.contentlet; as contentlet) {
         <div class="state">
             <dot-contentlet-status-badge [state]="contentlet" />
-            <p-tag severity="info" [value]="contentlet.language | lowercase" />
+            <p-tag severity="info" [value]="languageLabel | lowercase" />
         </div>
     }
 </div>

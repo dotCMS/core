@@ -4,3 +4,6 @@ vite.config.*.timestamp*
 vitest.config.*.timestamp*
 
 .angular
+
+# temp probes for #37120 template checks
+**/tsconfig.strictprobe.json

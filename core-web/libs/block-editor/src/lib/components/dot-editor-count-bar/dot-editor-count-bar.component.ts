@@ -16,7 +16,9 @@ interface CharacterCountStorageShape {
 export class DotEditorCountBarComponent {
     // The parent only renders this component inside its `@if (editor)` block, so both are
     // always bound by the time the template reads them.
-    @Input() characterCount!: CharacterCountStorageShape;
+    // The editor's storage is only populated once tiptap initialises, so the parent's getter
+    // legitimately yields undefined on the first pass.
+    @Input() characterCount?: CharacterCountStorageShape;
     @Input() charLimit = NaN;
     @Input() readingTime = 0;
 

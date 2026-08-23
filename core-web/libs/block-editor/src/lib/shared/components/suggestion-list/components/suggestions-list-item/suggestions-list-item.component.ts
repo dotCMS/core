@@ -1,4 +1,4 @@
-import { MenuItemCommandEvent } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { FocusableOption } from '@angular/cdk/a11y';
 import {
     Component,
@@ -32,7 +32,8 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     index: string | number = '';
 
     // Assigned by SuggestionsComponent for every item it renders.
-    @Input() command?: (event?: MenuItemCommandEvent) => void;
+    // Mirrors PrimeNG's own `MenuItem['command']` so a `DotMenuItem` can be passed straight in.
+    @Input() command?: MenuItem['command'];
     @Input() label = '';
     @Input() url = '';
     @Input() page = false;
@@ -43,6 +44,20 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     icon = false;
 
+    /**
+     * A contentlet's `language` is either a plain code or a full `DotLanguage`; `p-tag` needs a
+     * string.
+     */
+    get languageLabel(): string {
+        const language = this.data?.contentlet?.language;
+
+        if (!language) {
+            return '';
+        }
+
+        return typeof language === 'string' ? language : (language.isoCode ?? '');
+    }
+
     private readonly element = inject(ElementRef);
     private readonly sanitizer = inject(DomSanitizer);
 
@@ -50,7 +65,8 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     onMouseDown(e: MouseEvent) {
         e.preventDefault();
         if (!this.disabled) {
-            this.command?.();
+            // Every field on `MenuItemCommandEvent` is optional; the handlers here ignore it.
+            this.command?.({});
         }
     }
 

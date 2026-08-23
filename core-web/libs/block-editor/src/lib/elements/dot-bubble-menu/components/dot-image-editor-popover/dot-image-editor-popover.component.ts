@@ -50,11 +50,9 @@ export class DotImageEditorPopoverComponent {
         onShown: this.focusSearchInput.bind(this)
     };
 
-    @HostListener('document:keydown.escape', ['$event'])
-    protected onEscapeKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            this.cancelImageEditing();
-        }
+    @HostListener('document:keydown.escape')
+    protected onEscapeKey() {
+        this.cancelImageEditing();
     }
 
     /**

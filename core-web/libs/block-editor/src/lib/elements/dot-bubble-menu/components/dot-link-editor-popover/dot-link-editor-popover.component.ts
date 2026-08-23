@@ -149,11 +149,9 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * Handles the Escape key press to close the popover.
      * This provides a consistent way for users to cancel link editing.
      */
-    @HostListener('document:keydown.escape', ['$event'])
-    protected onEscapeKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            this.popover.hide();
-        }
+    @HostListener('document:keydown.escape')
+    protected onEscapeKey() {
+        this.popover.hide();
     }
 
     /**

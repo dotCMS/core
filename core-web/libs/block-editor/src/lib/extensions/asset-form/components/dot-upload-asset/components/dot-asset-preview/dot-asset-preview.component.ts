@@ -1,3 +1,4 @@
+import { SafeResourceUrl } from '@angular/platform-browser';
 import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 
 import { EditorAssetTypes } from '@dotcms/dotcms-models';
@@ -14,8 +15,9 @@ export class DotAssetPreviewComponent {
     type!: EditorAssetTypes;
 
     @Input()
-    file!: File;
+    // PrimeNG's FileUpload decorates the File with `objectURL`, which `File` does not declare.
+    file!: File & { objectURL?: string };
 
     @Input()
-    src!: string | ArrayBuffer;
+    src!: string | ArrayBuffer | SafeResourceUrl;
 }
