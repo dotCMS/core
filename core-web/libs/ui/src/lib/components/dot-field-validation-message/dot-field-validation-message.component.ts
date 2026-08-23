@@ -70,7 +70,9 @@ export class DotFieldValidationMessageComponent implements OnDestroy {
      * @param control
      */
     @Input()
-    set field(control: UntypedFormControl | AbstractControl) {
+    set field(control: UntypedFormControl | AbstractControl | null) {
+        // Callers pass `form.get('x')`, which is nullable. The guard below already handled that
+        // at runtime; the signature just did not say so.
         if (control) {
             this._field = control;
             control.statusChanges.pipe(takeUntil(this.destroy$)).subscribe(() => {

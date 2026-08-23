@@ -17,4 +17,18 @@ import { DotContentletStatusBadgeComponent } from '../../../dot-contentlet-statu
 })
 export class DotAssetCardComponent {
     @Input() contentlet!: DotCMSContentlet;
+
+    /**
+     * `language` on a contentlet is either a plain code or a full `DotLanguage`. The template
+     * needs a string, and passing the object rendered as "[object Object]".
+     */
+    get languageLabel(): string {
+        const language = this.contentlet?.language;
+
+        if (!language) {
+            return '';
+        }
+
+        return typeof language === 'string' ? language : (language.isoCode ?? '');
+    }
 }

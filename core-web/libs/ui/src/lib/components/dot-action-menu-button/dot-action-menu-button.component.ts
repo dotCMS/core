@@ -31,7 +31,9 @@ export class DotActionMenuButtonComponent implements OnInit {
 
     @Input() item!: Record<string, unknown>;
 
-    @Input() icon? = 'pi pi-ellipsis-v';
+    // Always has a default, so it is never undefined — the `?` made it `string | undefined`
+    // and broke every consumer that types `icon` as `string`.
+    @Input() icon = 'pi pi-ellipsis-v';
 
     @Input() actions?: DotActionMenuItem[];
 
