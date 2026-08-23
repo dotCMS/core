@@ -152,7 +152,10 @@ export class DotAssetPickerComponent implements OnInit {
         root: { class: 'border-0! rounded-none!' },
         gutterHandle: {
             'aria-label': this.#dotMessageService.get('dot.asset.picker.splitter.aria')
-        }
+        },
+        // PrimeNG types `pt` with every section required even though partial objects are the
+        // documented usage, so the untouched sections are declared empty.
+        panel: {}
     };
 
     constructor() {

@@ -6,6 +6,7 @@ import { UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
 import { UIChart } from 'primeng/chart';
+import { SelectChangeEvent } from 'primeng/select';
 
 import { take } from 'rxjs/operators';
 
@@ -54,8 +55,8 @@ export class AppComponent implements OnInit {
      * @param {*} event
      * @memberof AppComponent
      */
-    changePeriod(element: HTMLTextAreaElement): void {
-        this.dotCdnStore.getChartStats(element.value);
+    changePeriod(event: SelectChangeEvent): void {
+        this.dotCdnStore.getChartStats(event.value);
     }
 
     /**

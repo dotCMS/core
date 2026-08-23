@@ -15,7 +15,7 @@
             <dot-dataview
                 [data]="content.data"
                 [loading]="store.contentIsLoading()"
-                [error]="content.error"
+                [error]="content.error ?? ''"
                 [accept]="$acceptAttr()"
                 [uploadDisabled]="$uploadDisabled()"
                 [selectedContent]="store.selectedContent()"

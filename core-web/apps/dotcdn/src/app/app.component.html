@@ -25,7 +25,7 @@
                             } @else {
                                 <h3 class="dot-cdn__stats-value">{{ stats.value }}</h3>
                             }
-                            <dot-icon [name]="stats.icon" size="32" />
+                            <dot-icon [name]="stats.icon" [size]="32" />
                         </div>
                     }
                 </div>
@@ -86,7 +86,9 @@
                         <button
                             (click)="purgeUrls()"
                             [label]="VMPurgeLoaders.isPurgeUrlsLoading ? 'loading...' : 'Purge URL'"
-                            [disabled]="purgeZoneForm.get('purgeUrlsTextArea').value.length === 0"
+                            [disabled]="
+                                (purgeZoneForm.get('purgeUrlsTextArea')?.value?.length ?? 0) === 0
+                            "
                             pButton></button>
                     </div>
                 </form>
