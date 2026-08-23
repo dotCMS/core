@@ -40,7 +40,7 @@ export interface DotMenuItem extends MenuItem {
     icon?: string;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
-    data?: Record<string, unknown>;
+    data?: { contentlet?: DotCMSContentlet };
     commandKey?: string;
 }
 
