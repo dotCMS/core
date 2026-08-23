@@ -9,10 +9,10 @@
                     <dot-suggestions-list-item
                         [command]="item.command"
                         [index]="item.tabindex || $index"
-                        [label]="item.label"
-                        [url]="item.icon"
+                        [label]="item.label ?? ''"
+                        [url]="item.icon ?? ''"
                         [data]="item.data"
-                        [disabled]="item.disabled" />
+                        [disabled]="item.disabled ?? false" />
                 } @else {
                     <div class="divider"></div>
                 }

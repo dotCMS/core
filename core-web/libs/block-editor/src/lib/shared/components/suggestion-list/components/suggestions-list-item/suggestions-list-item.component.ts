@@ -1,3 +1,4 @@
+import { MenuItemCommandEvent } from 'primeng/api';
 import { FocusableOption } from '@angular/cdk/a11y';
 import {
     Component,
@@ -27,10 +28,11 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
 
     @HostBinding('attr.data-index')
     @Input()
-    index = '';
+    // `SuggestionsComponent` passes either the item's own tabindex or the loop index.
+    index: string | number = '';
 
     // Assigned by SuggestionsComponent for every item it renders.
-    @Input() command!: () => void;
+    @Input() command?: (event?: MenuItemCommandEvent) => void;
     @Input() label = '';
     @Input() url = '';
     @Input() page = false;
@@ -48,7 +50,7 @@ export class SuggestionsListItemComponent implements FocusableOption, OnInit {
     onMouseDown(e: MouseEvent) {
         e.preventDefault();
         if (!this.disabled) {
-            this.command();
+            this.command?.();
         }
     }
 
