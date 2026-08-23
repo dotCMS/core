@@ -64,7 +64,7 @@ export class DotUploadAssetComponent implements OnDestroy {
         return ` Don't close this window while the ${this.type} uploads`;
     }
 
-    @HostListener('window:click', ['$event.target']) onClick(e: EventTarget) {
+    @HostListener('window:click', ['$event.target']) onClick(e: EventTarget | null) {
         const clickedOutside = !this.el.nativeElement.contains(e);
 
         // If it's uploading and the user click outside the component, shake the message

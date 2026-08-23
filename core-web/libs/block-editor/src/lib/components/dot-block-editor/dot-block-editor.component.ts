@@ -141,7 +141,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     public disabled = false;
     /** Null until the async `ngOnInit` finishes building it; `writeValue` can arrive first. */
     editor: Editor | null = null;
-    subject = new Subject();
+    subject = new Subject<void>();
     freezeScroll = true;
     // Assigned by Angular through `registerOnChange` / `registerOnTouched` before either is
     // called. Left without a no-op default so a call outside a form still fails loudly.
@@ -169,11 +169,12 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     readonly dotMarketingConfigService = inject(DotMarketingConfigService);
     readonly dotAiService = inject(DotAiService);
 
+    // `as const` so `placement` keeps its literal type; tippy types it as a union, not `string`.
     readonly dotDragHandleOptions = {
         duration: 250,
         zIndex: 5,
         placement: 'left'
-    };
+    } as const;
 
     // v3 stopped exporting CharacterCountStorage; mirror the shape locally. Undefined while
     // the editor is still being built — every caller already guards with `?.`.

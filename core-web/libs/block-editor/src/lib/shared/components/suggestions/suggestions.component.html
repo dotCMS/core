@@ -11,7 +11,7 @@
                         [index]="item.tabindex || $index"
                         [label]="item.label ?? ''"
                         [url]="item.icon ?? ''"
-                        [data]="item.data"
+                        [data]="item.data ?? null"
                         [disabled]="item.disabled ?? false" />
                 } @else {
                     <div class="divider"></div>

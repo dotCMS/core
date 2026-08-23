@@ -1,3 +1,4 @@
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { Component, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { AngularNodeViewComponent } from '../../NodeViewRenderer';
@@ -10,7 +11,7 @@ import { AngularNodeViewComponent } from '../../NodeViewRenderer';
     standalone: false
 })
 export class ContentletBlockComponent extends AngularNodeViewComponent implements OnInit {
-    protected readonly data = signal(null);
+    protected readonly data = signal<DotCMSContentlet | null>(null);
 
     ngOnInit() {
         this.data.set(this.node.attrs['data']);
