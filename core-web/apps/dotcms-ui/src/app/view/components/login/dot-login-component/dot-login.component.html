@@ -75,7 +75,7 @@
                     {{ loginInfo.i18nMessagesMap['remember-me'] }}
                 </label>
             </div>
-            @if (!isLoginInProgress) {
+            @if (!loading()) {
                 <a
                     [routerLink]="['/public/forgotPassword']"
                     class="password-settings__forgot-password"

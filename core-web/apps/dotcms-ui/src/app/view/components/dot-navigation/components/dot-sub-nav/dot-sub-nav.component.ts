@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
 
 @Component({
     animations: [
@@ -42,7 +42,7 @@ import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul!: ElementRef;
 
-    @Input() data!: DotMenu;
+    @Input() data!: MenuGroup;
 
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
