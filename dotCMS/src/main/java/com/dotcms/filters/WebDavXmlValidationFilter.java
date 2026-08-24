@@ -3,6 +3,7 @@ package com.dotcms.filters;
 import com.dotmarketing.business.portal.ThreadLocalSaxParserFactory;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.SecurityLogger;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
@@ -103,8 +104,9 @@ public class WebDavXmlValidationFilter implements Filter {
 
         final Optional<byte[]> body = readCappedBody(request);
         if (body.isEmpty()) {
-            Logger.warn(this, String.format("Rejecting oversized WebDAV %s body from %s",
-                    request.getMethod(), request.getRemoteAddr()));
+            SecurityLogger.logWarn(WebDavXmlValidationFilter.class,
+                    String.format("Rejecting oversized WebDAV %s body from %s",
+                            request.getMethod(), request.getRemoteAddr()));
             response.sendError(HttpServletResponse.SC_REQUEST_ENTITY_TOO_LARGE);
             return;
         }
@@ -112,8 +114,9 @@ public class WebDavXmlValidationFilter implements Filter {
         // An absent body is legal: PROPFIND with no body means allprop, and LOCK with no body is
         // a lock refresh. Only inspect when there is something to inspect.
         if (body.get().length > 0 && declaresDoctype(body.get())) {
-            Logger.warn(this, String.format("Rejecting WebDAV %s body declaring a DOCTYPE from %s",
-                    request.getMethod(), request.getRemoteAddr()));
+            SecurityLogger.logWarn(WebDavXmlValidationFilter.class,
+                    String.format("Rejecting WebDAV %s body declaring a DOCTYPE from %s",
+                            request.getMethod(), request.getRemoteAddr()));
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
             return;
         }
