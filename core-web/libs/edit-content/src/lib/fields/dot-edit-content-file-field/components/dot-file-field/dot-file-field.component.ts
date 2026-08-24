@@ -200,7 +200,7 @@ export class DotFileFieldComponent
      *
      * @memberof DotEditContentFileFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Signal indicating whether the field has an error.
      *

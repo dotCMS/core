@@ -2,7 +2,9 @@ import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/d
 
 export interface DotCategoryField {
     field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    // Nullable: `getSelectedFromContentlet`, the only consumer, already declares it so and
+    // returns [] when absent — new content reaches the store with no contentlet yet.
+    contentlet: DotCMSContentlet | null;
 }
 
 /**

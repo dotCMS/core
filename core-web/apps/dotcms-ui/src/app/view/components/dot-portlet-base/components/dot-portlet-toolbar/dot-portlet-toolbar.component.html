@@ -14,7 +14,7 @@
         </div>
 
         <div class="dot-portlet-toolbar__actions" data-testId="actionsWrapper">
-            @if (actions?.cancel) {
+            @if (actions) {
                 <button
                     (click)="onCancelClick($event)"
                     [label]="cancelButtonLabel || ('cancel' | dm)"

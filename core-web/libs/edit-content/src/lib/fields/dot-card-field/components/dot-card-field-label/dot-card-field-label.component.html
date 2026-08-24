@@ -4,9 +4,9 @@
     [for]="$variableName()">
     <ng-content />
 </label>
-@if ($hint()) {
+@if ($hint(); as hint) {
     <i
         class="pi pi-info-circle text-xs"
-        [pTooltip]="$hint()"
+        [pTooltip]="hint"
         tooltipStyleClass="tooltip-label-hint"></i>
 }

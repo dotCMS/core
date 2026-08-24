@@ -74,7 +74,7 @@ export class DotCategoryFieldComponent
      * Represents a DotCMS contentlet and is a required input
      * @description DotCMSContentlet input representing a DotCMS contentlet.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Represents a boolean value and is a required input
      * @description Boolean input representing a boolean value.

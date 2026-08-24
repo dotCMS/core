@@ -98,7 +98,7 @@ export class DotEditContentWYSIWYGFieldComponent extends BaseWrapperField {
     /**
      * A required input representing a DotCMS contentlet.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 
     /**
      * Event emitted when disabledWYSIWYG changes.

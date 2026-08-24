@@ -6,26 +6,30 @@
 <div class="legacy-custom-field">
     @if (src) {
         @if (showAsModal) {
-            <!-- Modal mode: Show input with button -->
-            <div class="flex gap-2 legacy-custom-field__modal-trigger">
-                <input
-                    class="disabled-input"
-                    [id]="field.variable"
-                    [attr.data-testId]="field.variable"
-                    [formControlName]="field.variable"
-                    [readonly]="true"
-                    type="text"
-                    pInputText />
+            <!-- Modal mode: Show input with button.
+                 `field` is an optional input: with no field there is no form control to bind,
+                 so the trigger row cannot render. -->
+            @if (field) {
+                <div class="flex gap-2 legacy-custom-field__modal-trigger">
+                    <input
+                        class="disabled-input"
+                        [id]="field.variable"
+                        [attr.data-testId]="field.variable"
+                        [formControlName]="field.variable"
+                        [readonly]="true"
+                        type="text"
+                        pInputText />
 
-                <button
-                    pButton
-                    [outlined]="true"
-                    type="button"
-                    label="Open"
-                    class="legacy-custom-field__show-button"
-                    (click)="openModal()"
-                    data-testId="custom-field-show-button"></button>
-            </div>
+                    <button
+                        pButton
+                        [outlined]="true"
+                        type="button"
+                        label="Open"
+                        class="legacy-custom-field__show-button"
+                        (click)="openModal()"
+                        data-testId="custom-field-show-button"></button>
+                </div>
+            }
 
             <!-- Modal Dialog -->
             @defer (when $showModal()) {

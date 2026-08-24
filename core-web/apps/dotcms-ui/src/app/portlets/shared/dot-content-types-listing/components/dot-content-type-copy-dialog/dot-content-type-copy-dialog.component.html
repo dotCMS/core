@@ -65,7 +65,7 @@
                 <p-button
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
-                    [loading]="isSaving$ | async"
+                    [loading]="$isSaving$() | async"
                     (click)="dialogActions.accept.action()"
                     data-testId="dotDialogAcceptAction" />
             }

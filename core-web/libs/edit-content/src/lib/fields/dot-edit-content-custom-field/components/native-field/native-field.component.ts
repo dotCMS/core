@@ -71,7 +71,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The content type to render the field for.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * A readonly field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
