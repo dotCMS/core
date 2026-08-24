@@ -1,0 +1,39 @@
+<div class="flex flex-col gap-2">
+    <span class="text-xs font-medium text-gray-600">
+        {{ 'apps.ai.additional-properties.label' | dm }}
+    </span>
+
+    @if (properties().length > 0) {
+        <div class="flex flex-col gap-2">
+            @for (property of properties().controls; track $index; let i = $index) {
+                <div class="flex items-center gap-2" [formGroup]="property">
+                    <input
+                        pInputText
+                        formControlName="key"
+                        class="w-1/3 text-sm"
+                        [placeholder]="'apps.ai.additional-properties.key.placeholder' | dm" />
+                    <input
+                        pInputText
+                        formControlName="value"
+                        class="flex-1 text-sm"
+                        [placeholder]="'apps.ai.additional-properties.value.placeholder' | dm" />
+                    <p-button
+                        icon="pi pi-trash"
+                        [text]="true"
+                        severity="secondary"
+                        size="small"
+                        [attr.aria-label]="'apps.ai.additional-properties.remove.aria-label' | dm"
+                        (onClick)="removeProperty(i)" />
+                </div>
+            }
+        </div>
+    }
+
+    <p-button
+        [text]="true"
+        size="small"
+        icon="pi pi-plus"
+        [label]="'apps.ai.additional-properties.add.button' | dm"
+        styleClass="self-start"
+        (onClick)="addProperty()" />
+</div>

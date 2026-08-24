@@ -15,6 +15,8 @@ import dev.langchain4j.model.vertexai.gemini.VertexAiGeminiStreamingChatModel;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} implementation for Google Vertex AI.
@@ -36,6 +38,31 @@ class VertexAiModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "vertex_ai";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.required("projectId", ProviderFieldType.STRING),
+                    ProviderField.required("location", ProviderFieldType.STRING),
+                    ProviderField.optional("credentialsJson", ProviderFieldType.SECRET,
+                            "GCP service account JSON key; omit to use Application Default Credentials"),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER,
+                            "Ignored when credentialsJson is set"));
+            case EMBEDDINGS -> throw new UnsupportedOperationException(
+                    "Embeddings are not supported for Vertex AI provider via LangChain4J");
+            case IMAGE -> throw new UnsupportedOperationException(
+                    "Image generation is not supported for Vertex AI provider via LangChain4J");
+        };
     }
 
     @Override

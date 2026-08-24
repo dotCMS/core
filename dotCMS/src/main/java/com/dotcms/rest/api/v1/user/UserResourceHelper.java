@@ -446,10 +446,19 @@ public class UserResourceHelper implements Serializable {
 	}
 
     /**
-     * Remove the roles associated to the user
+     * Removes ALL of the user's role memberships, with no {@code editUsers} gate: this includes
+     * system-managed memberships such as the user's individual role (the anchor for
+     * individually-granted permissions and workflow task assignment), which the system only
+     * re-links lazily on the next {@code RoleAPI#getUserRole} call.
+     *
      * @param user User
+     * @deprecated no longer used by the user endpoints — {@code UserResource#processRoles}
+     * reconciles memberships and never touches non-user-assignable roles ({@code editUsers =
+     * false}). Kept only for binary compatibility with external callers of this OSGi-exported
+     * package; use {@link com.dotmarketing.business.RoleAPI} membership methods instead.
      */
-    public void removeRoles(User user) throws DotDataException {
+    @Deprecated
+    public void removeRoles(final User user) throws DotDataException {
 
         Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
         APILocator.getRoleAPI().removeAllRolesFromUser(user);

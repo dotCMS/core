@@ -180,6 +180,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `code` | StarterKit | Inline code | any text |
 | `superscript` | `@tiptap/extension-superscript` | Sup | any text |
 | `subscript` | `@tiptap/extension-subscript` | Sub | any text |
+| `highlight` | `@tiptap/extension-highlight` | — (schema only; the legacy editor has no button either) | any text |
 | `link` | `@tiptap/extension-link` | Link popover | any text (gated by `link` allowed-block) |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
 
