@@ -89,6 +89,14 @@ public class BulkRefreshResource {
 
         final User user = init(request, response).getUser();
 
+        if (null == form) {
+            // Jersey hands over a null form for an absent body or a literal `null`, and bean
+            // validation never runs on it - so without this the first dereference NPEs into
+            // RuntimeExceptionMapper and answers 500 for what is plainly a bad request.
+            throw new IllegalArgumentException(
+                    "A request body with a non-empty contentletIds array is required");
+        }
+
         Logger.debug(this, () -> String.format("User %s is submitting %d inode(s) to be reindexed",
                 user.getUserId(), form.getContentletIds().size()));
 

@@ -41,6 +41,7 @@ import org.mockito.ArgumentCaptor;
  */
 public class BulkRefreshCompletionListenerTest {
 
+    private static final String JOB_ID = "job-42";
     private static final String USER_ID = "user-1";
 
     private SystemEventsAPI systemEventsAPI;
@@ -183,6 +184,42 @@ public class BulkRefreshCompletionListenerTest {
                 !data.containsKey(BulkRefreshCompletionListener.EVENT_TOTAL));
     }
 
+    /**
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
+     * <p>
+     * Given scenario: A run the user cancelled themselves, after most items had already been reindexed.
+     * <p>
+     * Expected result: Reported as a cancellation at WARNING, not as a failure at ERROR. The user chose
+     * this outcome, and the toast has always treated CANCELED as a legitimate partial - the notification
+     * disagreeing with it told the same user their reindex had broken.
+     */
+    @Test
+    public void test_onJobCompleted_cancelledRunIsNotReportedAsAFailure() throws Exception {
+        listener.notify(event(JobState.CANCELED, counters(500, 400, 0, 100, 400)));
+
+        assertEquals(NotificationLevel.WARNING, capturedLevel());
+    }
+
+    /**
+     * Method to test: {@link BulkRefreshCompletionListener#notify}
+     * <p>
+     * Given scenario: Any completed run.
+     * <p>
+     * Expected result: The pushed payload carries the job id. The event is user-scoped, so without it a
+     * client cannot tell its own submission from one made in another tab, another window, or a Login-As
+     * session - and every open grid reacts to all of them.
+     */
+    @Test
+    public void test_onJobCompleted_payloadCarriesTheJobId() throws Exception {
+        listener.notify(event(JobState.SUCCESS, counters(1, 1, 0, 0, 1)));
+
+        final ArgumentCaptor<Payload> payload = ArgumentCaptor.forClass(Payload.class);
+        verify(systemEventsAPI).pushAsync(any(), payload.capture());
+        final Map<String, Object> data = (Map<String, Object>) payload.getValue().getData();
+
+        assertEquals(JOB_ID, data.get(BulkRefreshCompletionListener.EVENT_JOB_ID));
+    }
+
     private void setUpFresh() throws Exception {
         setUp();
     }
@@ -212,6 +249,7 @@ public class BulkRefreshCompletionListenerTest {
     private static JobCompletedEvent event(final JobState state,
             final Map<String, Object> metadata) {
         final Job job = mock(Job.class);
+        when(job.id()).thenReturn(JOB_ID);
         when(job.queueName()).thenReturn(BulkRefreshHelper.BULK_REFRESH_QUEUE_NAME);
         when(job.state()).thenReturn(state);
         when(job.parameters()).thenReturn(

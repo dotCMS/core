@@ -385,6 +385,21 @@ public class BulkRefreshResourceIntegrationTest extends Junit5WeldBaseTest {
     }
 
     /**
+     * Method to test: {@link BulkRefreshResource#bulkRefresh}
+     * <p>
+     * Given scenario: The request arrives with no body at all, which Jersey hands over as a null form.
+     * <p>
+     * Expected result: Rejected as a bad request. Bean validation never runs on a null form, so without
+     * an explicit check the first dereference NPEs and the endpoint answers 500 for what is plainly a
+     * malformed request — contradicting the 400 its own {@code @ApiResponse} set documents.
+     */
+    @Test
+    void test_bulkRefresh_nullBodyIsRejectedAsBadRequest() {
+        assertThrows(IllegalArgumentException.class,
+                () -> resource.bulkRefresh(requestFor(adminUser), response, null));
+    }
+
+    /**
      * Method to test: {@link BulkRefreshContentletsProcessor#cancel}
      * <p>
      * Given scenario: A larger selection is submitted and cancellation is requested straight away.

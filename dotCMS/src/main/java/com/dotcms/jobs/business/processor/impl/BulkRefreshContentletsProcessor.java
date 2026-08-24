@@ -18,6 +18,8 @@ import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.Versionable;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.business.ContentletCache;
@@ -83,6 +85,7 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
     private final ContentletIndexAPI contentletIndexAPI;
     private final ContentletCache contentletCache;
     private final UserAPI userAPI;
+    private final VersionableAPI versionableAPI;
 
     private final AtomicBoolean cancellationRequested = new AtomicBoolean(false);
 
@@ -108,18 +111,20 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
     public BulkRefreshContentletsProcessor() {
         this(APILocator.getContentletAPI(), APILocator.getIdentifierAPI(),
                 APILocator.getContentletIndexAPI(), CacheLocator.getContentletCache(),
-                APILocator.getUserAPI());
+                APILocator.getUserAPI(), APILocator.getVersionableAPI());
     }
 
     @VisibleForTesting
     BulkRefreshContentletsProcessor(final ContentletAPI contentletAPI,
             final IdentifierAPI identifierAPI, final ContentletIndexAPI contentletIndexAPI,
-            final ContentletCache contentletCache, final UserAPI userAPI) {
+            final ContentletCache contentletCache, final UserAPI userAPI,
+            final VersionableAPI versionableAPI) {
         this.contentletAPI = contentletAPI;
         this.identifierAPI = identifierAPI;
         this.contentletIndexAPI = contentletIndexAPI;
         this.contentletCache = contentletCache;
         this.userAPI = userAPI;
+        this.versionableAPI = versionableAPI;
     }
 
     @Override
@@ -191,15 +196,37 @@ public class BulkRefreshContentletsProcessor implements JobProcessor, Validator,
             // keyed eviction leaves a stale cached version to be written to the index, which is the
             // precise failure this endpoint exists to repair.
             //
-            // Hence: evict the inodes we know, read the versions to learn the rest, evict those too,
-            // then read again. The second read is the one whose result gets indexed, and it is cold,
-            // so what reaches the index came from the database rather than from the cache.
+            // Hence: evict every version's inode before reading, so the read that feeds the index is
+            // cold and what reaches the index came from the database rather than from the cache.
+            //
+            // The inodes come from VersionableAPI rather than from ContentletAPI, because that path
+            // reads the version tables directly - no contentlet cache, no per-version permission
+            // filtering. Learning them through contentletAPI.findAllVersions meant running the
+            // expensive read twice per identifier, once purely to discover what to evict.
             workItem.inodes.forEach(this.contentletCache::remove);
-            this.contentletAPI.findAllVersions(identifier, false, user, false)
+            this.versionableAPI.findAllVersions(identifier).stream()
+                    .map(Versionable::getInode)
+                    .filter(UtilMethods::isSet)
                     .forEach(this.contentletCache::remove);
 
             final List<Contentlet> versions =
                     this.contentletAPI.findAllVersions(identifier, false, user, false);
+
+            if (versions.isEmpty()) {
+                // Nothing was written, so this is not a success. The content can vanish between
+                // resolution and this read, and counting it green would report a reindex that never
+                // touched the index - the misleading success this job exists to remove.
+                fail(workItem, "The content no longer has any version to reindex",
+                        recordItemResults);
+                return;
+            }
+
+            // Then evict again through the Contentlet overload, which does strictly more than the
+            // inode one: it also invalidates the page, site and relationship caches derived from the
+            // version. Running it here rather than before the read is what keeps both properties -
+            // the read above is already cold thanks to the inode eviction, and the derived caches
+            // still go. Evicting only by inode would have left those stale.
+            versions.forEach(this.contentletCache::remove);
 
             for (final Contentlet version : versions) {
                 // Without this the write is only enqueued, and "done" would be a lie.

@@ -106,10 +106,18 @@ public class BulkRefreshHelper {
     /**
      * Whether the user may reindex content.
      * <p>
-     * Matches the legacy gate in {@code view_contentlets.jsp} so nobody who could press the old
+     * Matches the legacy gate in {@code view_contentlets.jsp:209} so nobody who could press the old
      * Refresh button loses access, and nobody who could not gains it. "Always available" in the
      * ticket means <i>not gated by content state</i> — that still holds; this is a role gate, and
      * reindexing is expensive enough to want one.
+     * <p>
+     * <b>In practice this resolves to CMS Administrator alone.</b> {@code Role.CMS_POWER_USER} is the
+     * role <i>key</i> {@code "CMS Power User"}, and no such key ships in the starter data, so
+     * {@code loadRoleByKey} answers null and {@code doesUserHaveRole(user, null)} is silently false.
+     * Legacy makes the identical call, so this is faithful rather than a regression — but it was
+     * failing silently, which is why the miss is now logged. Granting real Power Users access means
+     * resolving the role by name, and that widens the gate beyond what legacy allowed: a product
+     * decision, not something to change while matching legacy.
      * <p>
      * This gates <i>submission</i> only. It does not protect a submitted job's contents: the
      * generic {@code GET /api/v1/jobs/{jobId}/status} requires only a backend user and returns the
@@ -122,7 +130,16 @@ public class BulkRefreshHelper {
     public boolean canRefresh(final User user) throws DotDataException {
 
         final RoleAPI roleAPI = APILocator.getRoleAPI();
-        return roleAPI.doesUserHaveRole(user, roleAPI.loadRoleByKey(Role.CMS_POWER_USER))
+
+        final Role powerUser = roleAPI.loadRoleByKey(Role.CMS_POWER_USER);
+        if (null == powerUser) {
+            Logger.warn(this, String.format(
+                    "No role found for key [%s], so the reindex gate is CMS Administrator only. "
+                            + "This matches the legacy Refresh button, which resolves the same key.",
+                    Role.CMS_POWER_USER));
+        }
+
+        return roleAPI.doesUserHaveRole(user, powerUser)
                 || roleAPI.doesUserHaveRole(user, roleAPI.loadCMSAdminRole());
     }
 

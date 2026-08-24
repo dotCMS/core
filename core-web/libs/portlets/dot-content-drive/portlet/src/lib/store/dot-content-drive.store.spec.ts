@@ -1754,6 +1754,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeRefresh('Refresh', ['inode-1']);
 
             bulkRefreshEvents$.next({
+                jobId: 'job-1',
                 state: 'SUCCESS',
                 total: 1,
                 successCount: 1,
@@ -1767,12 +1768,92 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 successCount: 1,
                 skippedCount: 0,
                 failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                backgrounded: true
             });
         });
     });
 
     describe('reportRefreshCompleted', () => {
+        it('should ignore a run this store never submitted', () => {
+            // The event is scoped to the user, not the tab. Without correlating on jobId a reindex
+            // fired in another tab, another window or a Login-As session toasts counts here for
+            // content this grid never selected, and reloads it for no reason.
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'somebody-elses-job',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not clear an unrelated action that is still in flight on the success path', () => {
+            // The early-return branches were careful not to touch actionExecution; the settle path was
+            // not, because it shares onSettled with the synchronous actions. Firing Lock after a
+            // backgrounded reindex and letting the reindex land wiped Lock's indicator and reopened
+            // the replay guard, so Lock could be fired again over rows already being changed.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should mark the outcome as backgrounded', () => {
+            // How the shell knows this one arrived unprompted and must not close a dialog the user is
+            // working in.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()?.backgrounded).toBe(true);
+        });
+
+        it('should settle a given run only once', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            const event = {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            };
+            store.reportRefreshCompleted('Refresh', event);
+            store.clearActionExecutionResult();
+
+            store.reportRefreshCompleted('Refresh', event);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
         it('should not clear an unrelated action that is still in flight', () => {
             // Now that a reindex no longer locks the dialog, another action can genuinely be running
             // when the reindex event lands. Blanket-clearing actionExecution here would un-gate that
@@ -1785,6 +1866,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
 
             store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
                 state: 'FAILED_PERMANENTLY',
                 total: 0,
                 successCount: 0,
@@ -1799,14 +1881,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report an unusable outcome rather than settling on it', () => {
             store.executeRefresh('Refresh', ['inode-1']);
 
-            store.reportRefreshCompleted('Refresh', { state: 'SUCCESS' });
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
             expect(store.actionExecutionResult()).toBeUndefined();
         });
 
         it('should settle with the pushed counters and its own partial copy', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
             store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
                 state: 'SUCCESS',
                 total: 4,
                 successCount: 2,
@@ -1820,12 +1904,15 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 successCount: 2,
                 skippedCount: 1,
                 failCount: 1,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                backgrounded: true
             });
         });
 
         it('should still report a cancelled run, whose counters do account for every item', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
             store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
                 state: 'CANCELED',
                 total: 4,
                 successCount: 1,
@@ -1842,7 +1929,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // A job that died mid-run still carries the counters it had reached, so an all-zero result
             // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
             // state is checked.
+            store.executeRefresh('Refresh', ['inode-1']);
             store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
                 state: 'FAILED_PERMANENTLY',
                 total: 0,
                 successCount: 0,
@@ -1858,7 +1947,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report an error when the counters do not account for every item', () => {
             // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
             // Settling on that would silently drop the 7 never attempted.
+            store.executeRefresh('Refresh', ['inode-1']);
             store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
                 state: 'SUCCESS',
                 total: 10,
                 successCount: 3,
@@ -1872,7 +1963,8 @@ describe('DotContentDriveStore - withActionExecution', () => {
         });
 
         it('should report an error when the event carried no counters at all', () => {
-            store.reportRefreshCompleted('Refresh', { state: 'SUCCESS' });
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
 
             expect(httpErrorManager.handle).toHaveBeenCalled();
             expect(store.actionExecutionResult()).toBeUndefined();

@@ -46,6 +46,18 @@ interface WithActionExecutionState {
      * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
      */
     actionExecutionResult?: DotContentDriveActionExecutionResult;
+    /**
+     * Ids of the reindex jobs this store submitted and has not yet settled.
+     *
+     * `BULK_REFRESH_COMPLETED` is scoped to the submitting *user*, so this store also receives runs
+     * fired from another tab, another window, or a Login-As session. Reporting those would toast
+     * counts for content this grid never selected. Only ids in here are acted on.
+     *
+     * Not persisted: a page reload loses them, and a run submitted before the reload settles silently.
+     * The notification bell still records it, and that is the better trade against reacting to
+     * somebody else's run.
+     */
+    refreshJobIds: string[];
 }
 
 /**
@@ -69,7 +81,8 @@ export function withActionExecution() {
         },
         withState<WithActionExecutionState>({
             actionExecution: undefined,
-            actionExecutionResult: undefined
+            actionExecutionResult: undefined,
+            refreshJobIds: []
         }),
         withMethods(
             (
@@ -296,7 +309,17 @@ export function withActionExecution() {
                                 }),
                                 takeUntilDestroyed(destroyRef)
                             )
-                            .subscribe();
+                            .subscribe((response) => {
+                                if (!response?.jobId) {
+                                    return;
+                                }
+
+                                // Remember the run so its completion event can be told apart from
+                                // every other one this user's session receives.
+                                patchState(store, {
+                                    refreshJobIds: [...store.refreshJobIds(), response.jobId]
+                                });
+                            });
                     },
 
                     /**
@@ -321,6 +344,16 @@ export function withActionExecution() {
                         actionName: string,
                         event: DotBulkRefreshCompletedEvent
                     ): void => {
+                        if (!event.jobId || !store.refreshJobIds().includes(event.jobId)) {
+                            // Not ours: another tab's run, or one already settled. Silent by design -
+                            // an error toast here would blame the user for somebody else's event.
+                            return;
+                        }
+
+                        patchState(store, {
+                            refreshJobIds: store.refreshJobIds().filter((id) => id !== event.jobId)
+                        });
+
                         const closes =
                             undefined !== event.total &&
                             (event.successCount ?? 0) +
@@ -355,12 +388,20 @@ export function withActionExecution() {
                             return;
                         }
 
-                        onSettled({
-                            actionName,
-                            successCount: event.successCount ?? 0,
-                            skippedCount: event.skippedCount ?? 0,
-                            failCount: event.failedCount ?? 0,
-                            partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                        // Deliberately not onSettled: that clears actionExecution, which by now may
+                        // belong to a different action the user fired *after* this reindex started.
+                        // Wiping it hid that action's indicator and reopened its replay guard, so it
+                        // could be fired a second time over rows already being changed.
+                        patchState(store, {
+                            actionExecutionResult: {
+                                actionName,
+                                successCount: event.successCount ?? 0,
+                                skippedCount: event.skippedCount ?? 0,
+                                failCount: event.failedCount ?? 0,
+                                partialDetailKey:
+                                    'content-drive.action-center.toast.refreshed-partial',
+                                backgrounded: true
+                            }
                         });
                     },
 

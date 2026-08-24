@@ -167,6 +167,15 @@ export interface DotContentDriveActionExecutionResult {
      * different supplies its own copy rather than borrowing that one.
      */
     partialDetailKey?: string;
+    /**
+     * Whether this outcome arrived unprompted, from a job that finished in the background.
+     *
+     * Every other result settles a request the user is waiting on, so closing the dialog and reloading
+     * the grid is the natural next step. A backgrounded one can land at any moment — minutes later,
+     * while the user is filling in a different action's form — and doing either would throw away work
+     * they are in the middle of.
+     */
+    backgrounded?: boolean;
 }
 
 /**

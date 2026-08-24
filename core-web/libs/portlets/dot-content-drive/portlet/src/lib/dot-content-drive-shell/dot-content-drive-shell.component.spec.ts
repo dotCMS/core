@@ -508,6 +508,44 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.clearActionExecutionResult).toHaveBeenCalled();
         });
 
+        it('should never close the dialog for a backgrounded outcome', () => {
+            // A reindex reports itself by push, so its result can land minutes after it was fired -
+            // while the user is mid-way through configuring a different action. Closing the dialog
+            // then throws away whatever they had typed.
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
+            // Nor pulled the rows out from under the open form.
+            expect(store.loadItems).not.toHaveBeenCalled();
+            // Still reported, and still consumed.
+            expect(messageService.add).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should still refresh the grid for a backgrounded outcome when no dialog is open', () => {
+            // The common case: the user fired the reindex and carried on browsing. Nothing is at risk,
+            // so the grid picks up the reindexed state.
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+
         it('should stay silent while no result is published', () => {
             spectator.detectChanges();
 

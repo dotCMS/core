@@ -348,4 +348,12 @@ export interface DotBulkRefreshCounts {
  */
 export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCounts> {
     state: string;
+    /**
+     * The run this settles.
+     *
+     * The event is scoped to the submitting user, not to a browser tab, so a client receives runs it
+     * never started — another tab, another window, a Login-As session. Without this a grid reacts to
+     * all of them: it toasts counts for content it never selected and reloads itself for no reason.
+     */
+    jobId?: string;
 }

@@ -27,6 +27,7 @@ import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshItemResult;
 import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshItemStatus;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
@@ -60,6 +61,7 @@ public class BulkRefreshContentletsProcessorTest {
     private ContentletIndexAPI contentletIndexAPI;
     private ContentletCache contentletCache;
     private UserAPI userAPI;
+    private VersionableAPI versionableAPI;
     private BulkRefreshContentletsProcessor processor;
 
     @Before
@@ -69,13 +71,14 @@ public class BulkRefreshContentletsProcessorTest {
         contentletIndexAPI = mock(ContentletIndexAPI.class);
         contentletCache = mock(ContentletCache.class);
         userAPI = mock(UserAPI.class);
+        versionableAPI = mock(VersionableAPI.class);
 
         final User user = mock(User.class);
         when(user.getUserId()).thenReturn(USER_ID);
         when(userAPI.loadUserById(USER_ID)).thenReturn(user);
 
         processor = new BulkRefreshContentletsProcessor(contentletAPI, identifierAPI,
-                contentletIndexAPI, contentletCache, userAPI);
+                contentletIndexAPI, contentletCache, userAPI, versionableAPI);
     }
 
     /**
@@ -219,9 +222,8 @@ public class BulkRefreshContentletsProcessorTest {
         // Every version evicted through the Contentlet overload, which resolves to its inode and also
         // invalidates the page, host and relationship caches derived from it.
         verify(contentletCache, atLeast(2)).remove(any(Contentlet.class));
-        // Two reads: the first learns the version inodes, the second is taken cold and is what gets
-        // indexed.
-        verify(contentletAPI, times(2))
+        // One permission-filtered read, taken cold because the inode eviction above already ran.
+        verify(contentletAPI, times(1))
                 .findAllVersions(any(Identifier.class), anyBoolean(), any(User.class), anyBoolean());
     }
 
@@ -410,6 +412,56 @@ public class BulkRefreshContentletsProcessorTest {
      * @param inodes       the submitted inodes that resolve to it
      * @param versionCount how many versions {@code findAllVersions} returns
      */
+    /**
+     * Method to test: {@link BulkRefreshContentletsProcessor#process(Job)}
+     * <p>
+     * Given scenario: An identifier resolves, but by the time it is reindexed it has no versions left —
+     * the content was deleted between resolution and the reindex.
+     * <p>
+     * Expected result: Counted as a failure, not a success. Zero documents were written, so reporting
+     * it green would be exactly the misleading success this job exists to remove.
+     */
+    @Test
+    public void test_process_anIdentifierWithNoVersionsIsNotASuccess() throws Exception {
+        final String identifier = "ident-gone";
+        stubIdentifier(identifier, List.of("inode-1"), 0);
+
+        final Job job = job(List.of("inode-1"), false, true);
+        processor.process(job);
+
+        final Map<String, Object> metadata = processor.getResultMetadata(job);
+        assertEquals(0, metadata.get("successCount"));
+        assertEquals(1, metadata.get("failedCount"));
+        assertEquals(0, metadata.get("versionsIndexed"));
+        verify(contentletIndexAPI, never()).addContentToIndex(any(Contentlet.class), anyBoolean());
+    }
+
+    /**
+     * Method to test: {@link BulkRefreshContentletsProcessor#process(Job)}
+     * <p>
+     * Given scenario: One identifier with three versions is reindexed.
+     * <p>
+     * Expected result: The cache is evicted from the cheap unfiltered version lookup, and the
+     * permission-filtered read runs exactly once. It used to run twice per identifier — once purely to
+     * learn the inodes to evict — which doubled the DB round trips and the permission filtering for
+     * every item in the submission.
+     */
+    @Test
+    public void test_process_readsThePermissionFilteredVersionsOnlyOnce() throws Exception {
+        final String identifier = "ident-A";
+        stubIdentifier(identifier, List.of("inode-1"), 3);
+
+        processor.process(job(List.of("inode-1"), false, false));
+
+        verify(contentletAPI, times(1))
+                .findAllVersions(any(Identifier.class), anyBoolean(), any(User.class), anyBoolean());
+        verify(versionableAPI, times(1)).findAllVersions(any(Identifier.class));
+        // Every version's inode evicted before the read that feeds the index.
+        verify(contentletCache).remove(identifier + "-v0");
+        verify(contentletCache).remove(identifier + "-v1");
+        verify(contentletCache).remove(identifier + "-v2");
+    }
+
     private void stubIdentifier(final String identifier, final List<String> inodes,
             final int versionCount) throws Exception {
         for (final String inode : inodes) {
@@ -426,6 +478,8 @@ public class BulkRefreshContentletsProcessorTest {
         }
         when(contentletAPI.findAllVersions(eq(id), anyBoolean(), any(User.class), anyBoolean()))
                 .thenReturn(versions);
+        when(versionableAPI.findAllVersions(id))
+                .thenReturn(new ArrayList<>(versions));
     }
 
     private static Contentlet contentlet(final String inode, final String identifier) {

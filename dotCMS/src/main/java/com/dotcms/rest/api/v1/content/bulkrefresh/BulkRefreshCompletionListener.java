@@ -62,11 +62,13 @@ public class BulkRefreshCompletionListener implements EventSubscriber<JobComplet
     static final String EVENT_SKIPPED_COUNT = "skippedCount";
     static final String EVENT_VERSIONS_INDEXED = "versionsIndexed";
     static final String EVENT_STATE = "state";
+    static final String EVENT_JOB_ID = "jobId";
 
     private static final String NOTIFICATION_TITLE_KEY = "notification.bulkrefresh.title";
     private static final String NOTIFICATION_SUCCESS_KEY = "notification.bulkrefresh.success";
     private static final String NOTIFICATION_PARTIAL_KEY = "notification.bulkrefresh.partial";
     private static final String NOTIFICATION_FAILED_KEY = "notification.bulkrefresh.failed";
+    private static final String NOTIFICATION_CANCELLED_KEY = "notification.bulkrefresh.cancelled";
 
     private final SystemEventsAPI systemEventsAPI;
     private final NotificationAPI notificationAPI;
@@ -138,7 +140,13 @@ public class BulkRefreshCompletionListener implements EventSubscriber<JobComplet
 
         final String messageKey;
         final NotificationLevel level;
-        if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
+        if (JobState.CANCELED == job.state()) {
+            // Cancellation is an outcome the user chose, not a fault. Reporting it as ERROR told them
+            // their reindex had broken when they had stopped it themselves - and it disagreed with the
+            // toast, which has always treated CANCELED as a legitimate partial.
+            messageKey = NOTIFICATION_CANCELLED_KEY;
+            level = NotificationLevel.WARNING;
+        } else if (JobState.SUCCESS != job.state() || (0 == succeeded && failed > 0)) {
             messageKey = NOTIFICATION_FAILED_KEY;
             level = NotificationLevel.ERROR;
         } else if (failed > 0 || skipped > 0) {
@@ -177,6 +185,9 @@ public class BulkRefreshCompletionListener implements EventSubscriber<JobComplet
                 job.result().flatMap(JobResult::metadata);
 
         final Map<String, Object> counters = new HashMap<>();
+        // The submitter may have several runs going, in several tabs. Without the job id a client
+        // cannot tell which of them this event settles, and every open grid reacts to all of them.
+        counters.put(EVENT_JOB_ID, job.id());
         counters.put(EVENT_STATE, job.state());
         metadata.ifPresent(found -> {
             counters.put(EVENT_TOTAL, found.get(EVENT_TOTAL));

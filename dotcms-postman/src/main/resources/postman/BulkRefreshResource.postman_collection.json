@@ -353,6 +353,48 @@
               }
             }
           ]
+        },
+        {
+          "name": "Submit Without A Body Expect Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "description": "No body at all. Jersey hands the resource a null form, bean validation never runs on it, and the documented 400 has to come from an explicit check rather than from an NPE."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Jersey hands the resource a null form for an absent body, and bean validation never runs",
+                  "// on it. Without an explicit check the first dereference NPEs into RuntimeExceptionMapper",
+                  "// and answers 500, contradicting the documented 400.",
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
         }
       ]
     }
