@@ -4,7 +4,7 @@
     @if (options()?.primary; as primary) {
         <dot-action-button
             (press)="handlePrimaryAction()"
-            [model]="primary.model"
+            [model]="primary.model ?? []"
             class="transition-all duration-200"
             [class]="
                 selectedItems().length ? '-translate-y-5 opacity-0' : 'translate-y-0 opacity-100'
@@ -27,8 +27,8 @@
                 <span class="mr-3 border-r border-white px-3 py-1">
                     {{ selectedItems().length }} {{ 'selected' | dm }}
                 </span>
-                @if (options() && options().secondary) {
-                    @for (action of options().secondary; track action) {
+                @if (options()?.secondary; as secondary) {
+                    @for (action of secondary; track action) {
                         <p-splitButton
                             [model]="action.model"
                             [outlined]="true"

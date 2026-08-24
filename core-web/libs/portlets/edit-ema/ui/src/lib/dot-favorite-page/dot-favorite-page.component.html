@@ -21,14 +21,18 @@
                                                 [width]="vm.imgWidth"
                                                 [height]="vm.imgHeight" />
                                         } @else {
-                                            <div data-testId="favoriteCardImageContainer">
-                                                <img
-                                                    class="h-auto w-full object-cover"
-                                                    [alt]="vm.formState.title"
-                                                    [src]="vm.formState.thumbnail + '?' + timeStamp"
-                                                    (load)="onPreviewLoaded()"
-                                                    (error)="onPreviewLoaded()" />
-                                            </div>
+                                            @if (vm.formState; as formState) {
+                                                <div data-testId="favoriteCardImageContainer">
+                                                    <img
+                                                        class="h-auto w-full object-cover"
+                                                        [alt]="formState.title"
+                                                        [src]="
+                                                            formState.thumbnail + '?' + timeStamp
+                                                        "
+                                                        (load)="onPreviewLoaded()"
+                                                        (error)="onPreviewLoaded()" />
+                                                </div>
+                                            }
                                         }
                                     </div>
                                     @if (isThumbnailLoading()) {

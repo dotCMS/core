@@ -21,7 +21,7 @@
                 [autofocus]="true"
                 [options]="filterOptions"
                 id="filterKey"
-                pAutoFocus
+                [pAutoFocus]="true"
                 formControlName="filterKey"
                 appendTo="body" />
         </div>
@@ -41,7 +41,7 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true" />
+                        [showTime]="true" />
                     <dot-field-validation-message
                         [field]="form.get('publishDate')"
                         message="{{
@@ -61,7 +61,7 @@
                         dataType="string"
                         dateFormat="yy-mm-dd"
                         placeholder="yyyy-mm-dd hh:mm"
-                        showTime="true" />
+                        [showTime]="true" />
                     <dot-field-validation-message
                         [field]="form.get('expireDate')"
                         message="{{
