@@ -1,7 +1,6 @@
 {
     "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "strict": true,
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "target": "es2017",

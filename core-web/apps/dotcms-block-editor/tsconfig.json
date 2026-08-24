@@ -17,12 +17,6 @@
         "target": "es2020",
         "module": "preserve",
         "moduleResolution": "bundler",
-        "lib": ["dom", "dom.iterable", "es2022"],
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "lib": ["dom", "dom.iterable", "es2022"]
     }
 }

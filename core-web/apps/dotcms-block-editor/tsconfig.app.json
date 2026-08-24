@@ -11,9 +11,5 @@
         "incremental": true,
         "esModuleInterop": true
     },
-    "files": ["src/main.ts", "src/polyfills.ts"],
-    "angularCompilerOptions": {
-        "typeCheckHostBindings": true,
-        "strictTemplates": true
-    }
+    "files": ["src/main.ts", "src/polyfills.ts"]
 }
