@@ -222,7 +222,10 @@ public class WebDavXmlValidationFilter implements Filter {
 
                 @Override
                 public void setReadListener(final ReadListener readListener) {
-                    // The body is fully buffered, so there is nothing to notify about.
+                    // Unreachable in practice: the WebDAV servlet reads the body with blocking
+                    // I/O and never registers a listener (milton-api and milton-servlet 1.8.1.4
+                    // contain no reference to ReadListener, AsyncContext or startAsync). The body
+                    // is fully buffered here anyway, so there would be nothing to notify about.
                     throw new UnsupportedOperationException();
                 }
             };
