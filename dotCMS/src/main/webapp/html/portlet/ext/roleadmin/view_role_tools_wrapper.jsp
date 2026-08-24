@@ -15,6 +15,12 @@
         NOT redirect or error so the JSP is safe to hit standalone.
 --%>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="java.util.regex.Pattern" %>
+<%!
+    /* See `view_role_permissions_wrapper.jsp` for the full rationale. */
+    private static final Pattern ROLE_ID_UUID = Pattern.compile(
+            "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
+%>
 <%--
     Do NOT include `/html/portlet/ext/roleadmin/init.jsp` — it wraps
     `<portlet:defineObjects />`, which requires a portlet container context
@@ -28,7 +34,10 @@
 <%@ include file="/html/common/messages_inc.jsp" %>
 
 <%
-    final String roleId = request.getParameter("roleId");
+    final String rawRoleId = request.getParameter("roleId");
+    final String roleId = (rawRoleId != null && ROLE_ID_UUID.matcher(rawRoleId).matches())
+            ? rawRoleId
+            : null;
 %>
 
 <%-- Dojo widgets + DWR RoleAjax bootstrap used by the Tools JS. --%>
@@ -179,8 +188,10 @@
     // legacy `findRole()` uses and seed `currentRole` / `currentRoleId`
     // manually before kicking off the layouts load.
     dojo.addOnLoad(function () {
-        <% if (UtilMethods.isSet(roleId)) { %>
-        var _roleId = '<%= UtilMethods.escapeSingleQuotes(roleId) %>';
+        <% if (roleId != null) { %>
+        // `roleId` is validated against a UUID pattern above, so it's safe
+        // to interpolate directly into this inline script.
+        var _roleId = '<%= roleId %>';
         dojo.xhrGet({
             url: '/api/role/loadbyid/id/' + encodeURIComponent(_roleId),
             handleAs: 'json',
@@ -191,9 +202,11 @@
                 // shared `setRoleName` also touches `displayRoleName1/2`
                 // which don't exist in this wrapper (they're in the full
                 // portlet's other tabs); calling it here would NPE.
+                // `textContent` (not `innerHTML`) so a role name that
+                // happens to carry markup can't inject into the page.
                 var nameEl = dojo.byId('displayRoleName3');
                 if (nameEl) {
-                    nameEl.innerHTML = (role && role.name) ? role.name : '';
+                    nameEl.textContent = (role && role.name) ? role.name : '';
                 }
                 loadRoleLayouts(_roleId);
 
