@@ -1244,6 +1244,35 @@ public class RoleResourceIntegrationTest {
     }
 
     /**
+     * Given Scenario: The role's editUsers flag is false — its memberships are system-managed
+     * (a user's individual role, system roles). The legacy Roles portlet never allowed this
+     * removal (it renders no selection checkboxes and hides the Remove button for such roles),
+     * and the grant endpoint already rejects these roles with 403. See #37109.
+     * Expected Result: DotSecurityException (403) for the whole request, mirroring the grant
+     * endpoint; the membership is intact.
+     */
+    @Test
+    public void testRemoveUsersFromRole_editUsersFalse_forbidden() throws Exception {
+        final Role role = new RoleDataGen().editUsers(true).nextPersisted();
+        final User member = UserTestUtil.getUser("frozenrm" + uniq(), false, true);
+        roleAPI.addRoleToUser(role, member);
+        assertTrue(isDirectMember(role, member));
+
+        role.setEditUsers(false);
+        roleAPI.save(role);
+
+        try {
+            resource.removeUsersFromRole(adminRequest(), new MockHttpResponse().response(),
+                    role.getId(), new RoleUsersForm(Set.of(member.getUserId())));
+            fail("Should have thrown DotSecurityException for an editUsers=false role");
+        } catch (final DotSecurityException e) {
+            // expected
+        }
+
+        assertTrue("membership must be intact", isDirectMember(role, member));
+    }
+
+    /**
      * Given Scenario: An anonymous caller (no session user, no Authorization header).
      * Expected Result: rejected by the InitBuilder's rejectWhenNoUser gate (401); the
      * membership is intact.
