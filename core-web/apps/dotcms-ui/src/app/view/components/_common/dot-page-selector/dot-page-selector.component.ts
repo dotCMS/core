@@ -163,7 +163,9 @@ export class DotPageSelectorComponent implements ControlValueAccessor {
      * @param {KeyboardEvent} $event
      * @memberof DotTextareaContentComponent
      */
-    onKeyEnter($event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.enter`) as the base `Event`, and only `stopPropagation()` is needed here.
+    onKeyEnter($event: Event): void {
         $event.stopPropagation();
     }
 

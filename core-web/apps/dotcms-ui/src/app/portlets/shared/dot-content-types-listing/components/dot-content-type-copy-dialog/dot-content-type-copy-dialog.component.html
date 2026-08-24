@@ -58,7 +58,7 @@
                     [label]="dialogActions.cancel.label"
                     [disabled]="dialogActions.cancel.disabled"
                     severity="secondary"
-                    (click)="dialogActions.cancel.action()"
+                    (click)="dialogActions.cancel.action?.()"
                     data-testId="dotDialogCancelAction" />
             }
             @if (dialogActions.accept) {
@@ -66,7 +66,7 @@
                     [label]="dialogActions.accept.label"
                     [disabled]="dialogActions.accept.disabled"
                     [loading]="$isSaving$() | async"
-                    (click)="dialogActions.accept.action()"
+                    (click)="dialogActions.accept.action?.()"
                     data-testId="dotDialogAcceptAction" />
             }
         </ng-template>
