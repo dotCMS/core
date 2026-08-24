@@ -5,7 +5,6 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
@@ -63,8 +62,19 @@ public class WebDavXmlValidationFilter implements Filter {
     static final int MAX_BODY_BYTES =
             Config.getIntProperty("WEBDAV_MAX_XML_BODY_BYTES", 512 * 1024);
 
-    /** Aborts the detection parse as soon as the declaration is seen. */
-    private static final SAXException DOCTYPE_SEEN = new SAXException("DOCTYPE declared");
+    /**
+     * Aborts the detection parse as soon as the declaration is seen. Recognised by type and
+     * through the cause chain, never by instance: a parser that wraps a handler exception would
+     * defeat an identity check, and the failure mode of that would be a DTD forwarded silently.
+     */
+    private static final class DoctypeSeenException extends SAXException {
+        private DoctypeSeenException() {
+            super("DOCTYPE declared");
+        }
+    }
+
+    /** Guards against a self-referencing or cyclic cause chain. */
+    private static final int MAX_CAUSE_DEPTH = 10;
 
     @Override
     public void init(final FilterConfig filterConfig) {
@@ -118,16 +128,9 @@ public class WebDavXmlValidationFilter implements Filter {
      */
     private static Optional<byte[]> readCappedBody(final HttpServletRequest request) throws IOException {
         try (InputStream in = request.getInputStream()) {
-            final ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            final byte[] chunk = new byte[8192];
-            int read;
-            while ((read = in.read(chunk)) != -1) {
-                buffer.write(chunk, 0, read);
-                if (buffer.size() > MAX_BODY_BYTES) {
-                    return Optional.empty();
-                }
-            }
-            return Optional.of(buffer.toByteArray());
+            // Reading one byte past the cap is enough to know it was exceeded.
+            final byte[] body = in.readNBytes(MAX_BODY_BYTES + 1);
+            return body.length > MAX_BODY_BYTES ? Optional.empty() : Optional.of(body);
         }
     }
 
@@ -148,7 +151,7 @@ public class WebDavXmlValidationFilter implements Filter {
                 @Override
                 public void startDTD(final String name, final String publicId, final String systemId)
                         throws SAXException {
-                    throw DOCTYPE_SEEN;
+                    throw new DoctypeSeenException();
                 }
             });
             reader.setErrorHandler(new DefaultHandler());
@@ -162,18 +165,27 @@ public class WebDavXmlValidationFilter implements Filter {
         try {
             reader.parse(new InputSource(new ByteArrayInputStream(body)));
             return false;
-        } catch (final SAXException e) {
-            if (e == DOCTYPE_SEEN) {
+        } catch (final Exception e) {
+            // Catch broadly and inspect the chain: a parser is free to wrap what a handler throws.
+            if (declaredDoctype(e)) {
                 return true;
             }
             Logger.debug(WebDavXmlValidationFilter.class,
                     () -> "WebDAV body did not parse, forwarding it unchanged: " + e.getMessage());
             return false;
-        } catch (final IOException e) {
-            Logger.debug(WebDavXmlValidationFilter.class,
-                    () -> "Could not read the WebDAV body while inspecting it: " + e.getMessage());
-            return false;
         }
+    }
+
+    /** Whether this throwable, or anything it wraps, is the marker from the lexical handler. */
+    private static boolean declaredDoctype(final Throwable thrown) {
+        Throwable cause = thrown;
+        for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
+            if (cause instanceof DoctypeSeenException) {
+                return true;
+            }
+            cause = cause.getCause() == cause ? null : cause.getCause();
+        }
+        return false;
     }
 
     /** Replays the already-consumed body so the WebDAV servlet can read it again. */
