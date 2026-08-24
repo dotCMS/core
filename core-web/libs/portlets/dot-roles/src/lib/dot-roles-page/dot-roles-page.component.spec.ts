@@ -2,7 +2,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesPageComponent } from './dot-roles-page.component';
@@ -52,6 +52,8 @@ function baseStoreMock(overrides: Record<string, unknown> = {}) {
         members: jest.fn().mockReturnValue([]),
         memberCount: jest.fn().mockReturnValue(0),
         isSystemRole: jest.fn().mockReturnValue(false),
+        canModifyRole: jest.fn().mockReturnValue(true),
+        fetchRoleDetail: jest.fn(),
         canGrantUsers: jest.fn().mockReturnValue(true),
         setFilter: jest.fn(),
         selectRole: jest.fn(),
@@ -72,7 +74,10 @@ describe('DotRolesPageComponent', () => {
         schemas: [CUSTOM_ELEMENTS_SCHEMA],
         detectChanges: false,
         componentProviders: [baseStoreMock(), mockProvider(DotRolesPortletService)],
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
+        providers: [
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+        ]
     });
 
     beforeEach(() => {

@@ -32,7 +32,8 @@ describe('DotRolesDetailHeaderComponent', () => {
                 selectedRoleStatus: jest.fn().mockReturnValue('init'),
                 selectedRoleIsParent: jest.fn().mockReturnValue(false),
                 memberCount: jest.fn().mockReturnValue(0),
-                isSystemRole: jest.fn().mockReturnValue(false)
+                isSystemRole: jest.fn().mockReturnValue(false),
+                canModifyRole: jest.fn().mockReturnValue(true)
             }),
             mockProvider(DialogService, { open: jest.fn() })
         ],

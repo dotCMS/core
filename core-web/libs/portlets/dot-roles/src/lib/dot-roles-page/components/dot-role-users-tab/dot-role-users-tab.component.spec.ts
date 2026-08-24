@@ -1,16 +1,17 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRoleUsersTabComponent } from './dot-role-users-tab.component';
 
+import { DotRolesPortletService } from '../../../services/dot-roles-portlet.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 const MESSAGES = {
@@ -59,9 +60,15 @@ describe('DotRoleUsersTabComponent', () => {
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
+            }),
+            mockProvider(DotRolesPortletService, {
+                searchUsers: jest.fn().mockReturnValue(of([]))
             })
         ],
-        providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
+        providers: [
+            { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+        ]
     });
 
     beforeEach(() => {

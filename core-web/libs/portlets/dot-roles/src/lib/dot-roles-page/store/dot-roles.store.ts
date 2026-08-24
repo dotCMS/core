@@ -9,6 +9,15 @@ import { catchError, map, switchMap, tap } from 'rxjs/operators';
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 
 import {
+    appendChildToParent,
+    collectAncestorChain,
+    findRoleInTree,
+    patchNodeChildren,
+    patchNodeInPlace,
+    removeNodeFromTree
+} from './dot-roles.tree-utils';
+
+import {
     DotRoleDetail,
     DotRoleFormValue,
     DotRoleMember,
@@ -100,6 +109,16 @@ export const DotRolesStore = signalStore(
 
         /** True when the selected role is a system role (locked / immutable). */
         isSystemRole: computed(() => selectedRole()?.system ?? false),
+
+        // System AND locked roles are rejected by the BE for edit/delete
+        // (RoleHelper.updateRole / deleteRole return 403). Header + tree
+        // context menu + edit dialog all key off this so the disabled state
+        // stays consistent across entry points.
+        canModifyRole: computed(() => {
+            const role = selectedRole();
+
+            return !!role && !role.system && !role.locked;
+        }),
 
         /** True when the selected role can accept user grants. */
         canGrantUsers: computed(() => selectedRole()?.editUsers ?? true),
@@ -198,7 +217,12 @@ export const DotRolesStore = signalStore(
          * `withMethods` wrapping.
          */
         const refreshMembersFor = (role: { id: string; roleKey?: string | null }): void => {
-            const chain = collectAncestorChain(store.roles(), role);
+            // Under active search, some ancestors of the picked role may live
+            // only in `searchResults` (the lazy tree hasn't loaded that branch
+            // yet). Concat the two so `findRoleInTree` can walk into either;
+            // if both contain the same id the cache-first order still wins.
+            const searchTree = store.isSearching() ? (store.searchResults() ?? []) : [];
+            const chain = collectAncestorChain([...store.roles(), ...searchTree], role);
             if (chain.length === 0) {
                 patchState(store, { members: [], membersStatus: 'loaded' });
 
@@ -330,6 +354,30 @@ export const DotRolesStore = signalStore(
                 });
             },
 
+            /**
+             * On-demand fetch of a role's full detail (no state mutation).
+             * The tree/context nodes carry a partial `DotRoleNode` shape —
+             * under active search they're even thinner (`unwrapLegacySearchNode`
+             * only keeps id/name/locked), so callers that need the full form
+             * payload (`roleKey`, `parent`, `description`, `editUsers/Permissions/Layouts`)
+             * must resolve it here before opening the Edit dialog. PUT is a
+             * full replace, so a partial role opened in edit would silently
+             * wipe the missing fields on save.
+             */
+            async fetchRoleDetail(roleId: string): Promise<DotRoleDetail | null> {
+                try {
+                    return await new Promise<DotRoleDetail>((resolve, reject) => {
+                        service.loadRoleById(roleId, false).subscribe({
+                            next: (role) => resolve(role),
+                            error: (err) => reject(err)
+                        });
+                    });
+                } catch (error) {
+                    httpErrorManager.handle(error);
+                    return null;
+                }
+            },
+
             setActiveTab(activeTab: DotRoleTab): void {
                 patchState(store, { activeTab });
             },
@@ -396,8 +444,8 @@ export const DotRolesStore = signalStore(
             },
 
             /**
-             * Update a role (PUT /v1/roles/{roleId} — #36936). Returns the
-             * hydrated updated role on success, or `null` on failure with the
+             * Update a role (PUT /v1/roles/{roleId}). Returns the hydrated
+             * updated role on success, or `null` on failure with the
              * error routed through `httpErrorManager`.
              *
              * State reconciliation:
@@ -449,7 +497,7 @@ export const DotRolesStore = signalStore(
             },
 
             /**
-             * Delete a role (DELETE /v1/roles/{roleId} — #36939). Returns the
+             * Delete a role (DELETE /v1/roles/{roleId}). Returns the
              * deletion result on success (including `usersAffected`, the
              * cascade blast radius) so the caller can surface it in a toast.
              *
@@ -489,7 +537,7 @@ export const DotRolesStore = signalStore(
 
             /**
              * Grant a user membership in the currently-selected role
-             * (POST /v1/roles/{roleId}/users/{userId} — #36937).
+             * (POST /v1/roles/{roleId}/users/{userId}).
              *
              * Refreshes members on success so the Users tab reflects the grant
              * (and inherited-vs-direct labelling stays correct). The BE is
@@ -526,7 +574,7 @@ export const DotRolesStore = signalStore(
 
             /**
              * Bulk-remove users from the currently-selected role
-             * (DELETE /v1/roles/{roleId}/users — #36938). Returns the
+             * (DELETE /v1/roles/{roleId}/users). Returns the
              * partial-success report so the caller can surface which rows
              * were skipped (typically inherited memberships that can only
              * be revoked from the ancestor that grants them).
@@ -577,146 +625,3 @@ export const DotRolesStore = signalStore(
         };
     })
 );
-
-/**
- * Immutably splice `newChildren` into the tree under the node with `id`.
- * Returns a new tree; unchanged branches are shared by reference.
- */
-function patchNodeChildren(
-    nodes: DotRoleNode[],
-    id: string,
-    newChildren: DotRoleNode[]
-): DotRoleNode[] {
-    return nodes.map((node) => {
-        if (node.id === id) {
-            return { ...node, roleChildren: newChildren };
-        }
-        if (node.roleChildren && node.roleChildren.length > 0) {
-            return {
-                ...node,
-                roleChildren: patchNodeChildren(node.roleChildren, id, newChildren)
-            };
-        }
-        return node;
-    });
-}
-
-/**
- * Immutably replace the node with `id`, preserving `roleChildren` from the
- * previous version. Used by updateRole when the parent hasn't changed — the
- * server response may omit deeper descendants we already lazy-loaded.
- */
-function patchNodeInPlace(
-    nodes: DotRoleNode[],
-    id: string,
-    replacement: DotRoleNode
-): DotRoleNode[] {
-    return nodes.map((node) => {
-        if (node.id === id) {
-            return { ...replacement, roleChildren: node.roleChildren ?? [] };
-        }
-        if (node.roleChildren && node.roleChildren.length > 0) {
-            return {
-                ...node,
-                roleChildren: patchNodeInPlace(node.roleChildren, id, replacement)
-            };
-        }
-        return node;
-    });
-}
-
-/** Immutably drop the node with `id` from anywhere in the tree. */
-function removeNodeFromTree(nodes: DotRoleNode[], id: string): DotRoleNode[] {
-    return nodes.reduce<DotRoleNode[]>((acc, node) => {
-        if (node.id === id) {
-            return acc;
-        }
-        if (node.roleChildren && node.roleChildren.length > 0) {
-            acc.push({
-                ...node,
-                roleChildren: removeNodeFromTree(node.roleChildren, id)
-            });
-        } else {
-            acc.push(node);
-        }
-        return acc;
-    }, []);
-}
-
-/**
- * Immutably append a newly-created role to its parent's `roleChildren`.
- * Sharing branches by reference keeps re-render churn minimal.
- */
-function appendChildToParent(
-    nodes: DotRoleNode[],
-    parentId: string,
-    child: DotRoleNode
-): DotRoleNode[] {
-    return nodes.map((node) => {
-        if (node.id === parentId) {
-            return {
-                ...node,
-                roleChildren: [...(node.roleChildren ?? []), child]
-            };
-        }
-        if (node.roleChildren && node.roleChildren.length > 0) {
-            return {
-                ...node,
-                roleChildren: appendChildToParent(node.roleChildren, parentId, child)
-            };
-        }
-        return node;
-    });
-}
-
-/**
- * Build the ancestor chain for a role, ordered `[role, parent, grandparent,
- * ..., root]`. Matches the Java `RoleAPI.findRoleHierarchy` semantics (a
- * self-referential `parent === id` marks the root). The chain drives the
- * parallel `/v1/users/filter?roleKey=X` fan-out in `loadMembers`.
- */
-function collectAncestorChain(
-    tree: DotRoleNode[],
-    role: { id: string; roleKey?: string | null }
-): DotRoleNode[] {
-    const start = findRoleInTree(tree, role.id) ?? {
-        id: role.id,
-        name: role.id,
-        roleKey: role.roleKey ?? undefined
-    };
-    const chain: DotRoleNode[] = [start];
-    let cursor: DotRoleNode | null = start;
-    // Guard against pathological data — hierarchies deeper than 20 aren't
-    // realistic in practice, and this stops any accidental cycles cold.
-    for (let i = 0; i < 20; i++) {
-        const parentId = cursor.parent;
-        if (!parentId || parentId === cursor.id) {
-            break;
-        }
-        const parentNode = findRoleInTree(tree, parentId);
-        if (!parentNode) {
-            break;
-        }
-        chain.push(parentNode);
-        cursor = parentNode;
-    }
-
-    return chain;
-}
-
-/** Walk the tree looking for a node id. Returns the node or `null`. */
-function findRoleInTree(nodes: DotRoleNode[], id: string): DotRoleNode | null {
-    for (const node of nodes) {
-        if (node.id === id) {
-            return node;
-        }
-        if (node.roleChildren && node.roleChildren.length > 0) {
-            const found = findRoleInTree(node.roleChildren, id);
-            if (found) {
-                return found;
-            }
-        }
-    }
-
-    return null;
-}

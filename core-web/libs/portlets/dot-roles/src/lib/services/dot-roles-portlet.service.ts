@@ -7,27 +7,29 @@ import { map, switchMap } from 'rxjs/operators';
 
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
+import {
+    DotRoleUserFilterResult,
+    LegacyRoleSearchNode,
+    RoleHierarchyEntry,
+    sanitizeRoleForm,
+    toRoleMemberResults,
+    unwrapLegacySearchNode
+} from './dot-roles.adapters';
+
 import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
 
-/**
- * User row shape returned by `/v1/users/filter?roleKey=X`. The endpoint
- * accepts `roleKey` (not `roleId`) as the filter parameter. Same wire
- * format used by the dot-users portlet.
- */
-export interface DotRoleUserFilterResult {
-    readonly userId: string;
-    readonly firstName?: string;
-    readonly lastName?: string;
-    readonly emailAddress?: string;
-}
+// Re-export public types from the adapters module so external consumers
+// (store, tests, components) keep importing them from the service.
+export type { DotRoleUserFilterResult } from './dot-roles.adapters';
 
-/** Row shape from `/v1/roles/{roleId}/rolehierarchyanduserroles`. */
-interface RoleHierarchyEntry {
-    readonly id: string;
-    readonly name?: string;
-    readonly roleKey?: string;
-    readonly user?: boolean;
-}
+/**
+ * `UserResource.filter` defaults `per_page=40` — without an explicit override
+ * a role with more than 40 members silently truncates and the Grant popover
+ * only shows the first 40 candidates. This value is a bridge until #37070
+ * ships a proper server-paged members endpoint. Keeps realistic dotCMS roles
+ * (typically well under 500 members) whole without hammering the endpoint.
+ */
+export const USER_FILTER_PAGE_SIZE = 500;
 
 /** Wire response for DELETE /v1/roles/{roleId} — matches `RoleDeletionView`. */
 export interface DotRoleDeletionResult {
@@ -64,17 +66,7 @@ export interface DotRoleUsersRemovalResult {
     readonly skipped: DotRoleUsersRemovalSkip[];
 }
 
-/**
- * Legacy Dojo `ItemFileReadStore`-shaped response of the deprecated
- * `GET /api/role/loadbyname/name/{query}/` search endpoint. See
- * `searchRoles` for the full rationale + the shape's quirks.
- */
-interface LegacyRoleSearchNode {
-    readonly id: string;
-    readonly name: string;
-    readonly locked?: boolean;
-    readonly children?: LegacyRoleSearchNode[];
-}
+/** Wire envelope of the legacy Dojo `ItemFileReadStore` search response. */
 interface LegacyRoleSearchResponse {
     readonly identifier?: string;
     readonly label?: string;
@@ -84,21 +76,6 @@ interface LegacyRoleSearchResponse {
         readonly top?: boolean;
         readonly children?: LegacyRoleSearchNode[];
     }>;
-}
-
-/**
- * Adapt a `LegacyRoleSearchNode` into the modern `DotRoleNode` shape.
- * The legacy payload underscores dashes in the id (Dojo tree DnD
- * artifact — `r.getId().replace('-', '_')` in `RoleResource.buildFilteredJsonTree`);
- * reverse that so consumers keep receiving proper UUIDs.
- */
-function unwrapLegacySearchNode(node: LegacyRoleSearchNode): DotRoleNode {
-    return {
-        id: node.id.replace(/_/g, '-'),
-        name: node.name,
-        locked: node.locked,
-        roleChildren: (node.children ?? []).map(unwrapLegacySearchNode)
-    };
 }
 
 /**
@@ -186,10 +163,29 @@ export class DotRolesPortletService {
      * fallback below.
      */
     loadRoleMembersByKey(roleKey: string): Observable<DotRoleUserFilterResult[]> {
-        const url = `/api/v1/users/filter?roleKey=${encodeURIComponent(roleKey)}`;
+        const url =
+            `/api/v1/users/filter?roleKey=${encodeURIComponent(roleKey)}` +
+            `&per_page=${USER_FILTER_PAGE_SIZE}`;
 
         return this.#http
             .get<DotCMSResponse<DotRoleUserFilterResult[]>>(url)
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * GET /v1/users/filter?query=X — free-text user search for the Grant
+     * popover. Empty `query` returns the first page (used to seed the picker
+     * on open). `per_page` overrides the endpoint's 40-default; same bridge
+     * as `loadRoleMembersByKey`.
+     */
+    searchUsers(query: string): Observable<DotRoleUserFilterResult[]> {
+        const params = new URLSearchParams({ per_page: String(USER_FILTER_PAGE_SIZE) });
+        if (query) {
+            params.set('query', query);
+        }
+
+        return this.#http
+            .get<DotCMSResponse<DotRoleUserFilterResult[]>>(`/api/v1/users/filter?${params}`)
             .pipe(map((response) => response.entity ?? []));
     }
 
@@ -214,22 +210,9 @@ export class DotRolesPortletService {
             roleId
         )}/rolehierarchyanduserroles?roleHierarchyForAssign=false`;
 
-        return this.#http.get<DotCMSResponse<RoleHierarchyEntry[]>>(url).pipe(
-            map((response) => {
-                const entries = response.entity ?? [];
-                return entries
-                    .filter((entry) => entry.user === true)
-                    .map((entry) => {
-                        const [firstName = '', ...rest] = (entry.name ?? '').split(' ');
-                        return {
-                            userId: entry.roleKey ?? entry.id,
-                            firstName,
-                            lastName: rest.join(' '),
-                            emailAddress: ''
-                        };
-                    });
-            })
-        );
+        return this.#http
+            .get<DotCMSResponse<RoleHierarchyEntry[]>>(url)
+            .pipe(map((response) => toRoleMemberResults(response.entity ?? [])));
     }
 
     /**
@@ -245,20 +228,8 @@ export class DotRolesPortletService {
      */
     createRole(form: DotRoleFormValue): Observable<DotRoleDetail> {
         return this.#http
-            .post<DotCMSResponse<DotRoleDetail>>('/api/v1/roles', this.#sanitizeRoleForm(form))
+            .post<DotCMSResponse<DotRoleDetail>>('/api/v1/roles', sanitizeRoleForm(form))
             .pipe(map((response) => response.entity));
-    }
-
-    #sanitizeRoleForm(form: DotRoleFormValue): DotRoleFormValue {
-        const trimmedKey = form.roleKey?.trim();
-        const trimmedDescription = form.description?.trim();
-
-        return {
-            ...form,
-            roleKey: trimmedKey ? trimmedKey : undefined,
-            description: trimmedDescription ? trimmedDescription : undefined,
-            parentRoleId: form.parentRoleId ?? undefined
-        };
     }
 
     /**
@@ -280,7 +251,7 @@ export class DotRolesPortletService {
         return this.#http
             .put<
                 DotCMSResponse<DotRoleDetail>
-            >(`/api/v1/roles/${encodeURIComponent(roleId)}`, this.#sanitizeRoleForm(form))
+            >(`/api/v1/roles/${encodeURIComponent(roleId)}`, sanitizeRoleForm(form))
             .pipe(map((response) => response.entity));
     }
 

@@ -55,7 +55,7 @@
             (click)="onEditRole()"
             data-testid="edit-role-btn"
             [outlined]="true"
-            [disabled]="store.isSystemRole()">
+            [disabled]="!store.canModifyRole()">
             {{ 'roles.action.edit' | dm }}
         </button>
     </header>

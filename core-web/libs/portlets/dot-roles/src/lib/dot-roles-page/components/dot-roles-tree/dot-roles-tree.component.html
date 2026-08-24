@@ -55,14 +55,8 @@
             <ng-template #folderTreeNodeLabel let-node>
                 @let data = node.data;
                 @let isLeaf = node.leaf === true;
-                <!--
-                    Row height is dictated by the tallest child via `items-center`.
-                    Both the icon and the inline `+` button are constrained to
-                    `text-base` (16px) so the node matches the 35px height that
-                    Content Drive gets with a plain text label. Do NOT swap the
-                    `+` for `<button pButton>` — the PrimeNG button ships with
-                    ~40px minimum height that pushes the row past 50px.
-                -->
+                <!-- Do NOT swap the `+` for `<button pButton>` — PrimeNG's
+                     ~40px min-height pushes the row past 50px. -->
                 <span class="group flex w-full items-center gap-2">
                     <span
                         class="material-symbols-outlined text-color-secondary text-base leading-none"
@@ -81,11 +75,6 @@
             </ng-template>
         </dot-folder-tree>
     } @else {
-        <!--
-            Empty state — centered stack with icon + title + hint, matching
-            the pattern used in `dot-tags-list`. `pt-8` gives the search
-            result some breathing room from the filter input above.
-        -->
         <div
             class="text-color-secondary flex flex-col items-center gap-2 pt-8 text-center"
             data-testid="tree-empty">
@@ -95,11 +84,8 @@
     }
 }
 
-<!--
-    Overlay helpers — kept as siblings (not inside the tree branch above)
-    so they don't participate in any parent gap/flex layout and stay
-    available regardless of the tree's loading / empty state.
--->
+<!-- Kept as siblings so they stay available regardless of the tree's
+     loading / empty state and don't inherit the parent's gap/flex layout. -->
 <p-contextMenu #rolesCtxMenu [model]="$contextMenuItems()" appendTo="body" />
 
 <p-confirmDialog

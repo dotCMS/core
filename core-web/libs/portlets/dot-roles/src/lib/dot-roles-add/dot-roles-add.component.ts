@@ -1,5 +1,3 @@
-import { Observable, of } from 'rxjs';
-
 import { Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -9,8 +7,6 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
-
-import { catchError, map } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -110,13 +106,5 @@ export class DotRolesAddComponent {
 
             return acc;
         }, []);
-    }
-
-    // Placeholder to prove the observable chain compiles; not currently used.
-    protected _unused(): Observable<boolean> {
-        return of(true).pipe(
-            map((v) => v),
-            catchError(() => of(false))
-        );
     }
 }
