@@ -54,9 +54,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
-    protected readonly $isSaving = computed(
-        () => this.uveStore.uveStatus() === UVE_STATUS.LOADING
-    );
+    protected readonly $isSaving = computed(() => this.uveStore.uveStatus() === UVE_STATUS.LOADING);
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
