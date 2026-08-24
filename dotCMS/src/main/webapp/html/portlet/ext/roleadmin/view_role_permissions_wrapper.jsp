@@ -17,6 +17,21 @@
         when debugging JSP-level errors independent of Angular).
 --%>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
+<%@ page import="java.util.regex.Pattern" %>
+<%!
+    /*
+     * Strict UUID guard for the reflected `roleId` param. The JSP is
+     * reachable directly (not just via the Angular wrapper) and the
+     * legacy `UtilMethods.escapeSingleQuotes` misleadingly UNESCAPES
+     * single quotes rather than escaping them, so reflecting the raw
+     * param into an inline `<script>` string would be a real XSS
+     * vector. If the value is not a well-formed UUID we skip the JS
+     * emission entirely — the JSP renders its idle state (same as
+     * when the param is omitted).
+     */
+    private static final Pattern ROLE_ID_UUID = Pattern.compile(
+            "[a-fA-F0-9]{8}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{4}-[a-fA-F0-9]{12}");
+%>
 <%--
     Do NOT include `/html/portlet/ext/roleadmin/init.jsp` — it wraps
     `<portlet:defineObjects />`, which requires a portlet container context
@@ -30,7 +45,10 @@
 <%@ include file="/html/common/messages_inc.jsp" %>
 
 <%
-    final String roleId = request.getParameter("roleId");
+    final String rawRoleId = request.getParameter("roleId");
+    final String roleId = (rawRoleId != null && ROLE_ID_UUID.matcher(rawRoleId).matches())
+            ? rawRoleId
+            : null;
 %>
 
 <%-- Dojo widgets + DWR RoleAjax bootstrap used by the permissions JS. --%>
@@ -108,8 +126,10 @@
     // fine at this level; no incremental state is preserved intentionally
     // so the JSP stays a thin, replaceable wrapper.
     dojo.addOnLoad(function () {
-        <% if (UtilMethods.isSet(roleId)) { %>
-        loadPermissionsForRole('<%= UtilMethods.escapeSingleQuotes(roleId) %>');
+        <% if (roleId != null) { %>
+        // `roleId` is validated against a UUID pattern above, so it's safe
+        // to interpolate directly into this inline script.
+        loadPermissionsForRole('<%= roleId %>');
         <% } %>
     });
 </script>

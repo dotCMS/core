@@ -320,11 +320,15 @@ export class DotRolesPortletService {
     }
 
     /**
-     * Reparent a role via `PUT /v1/roles/{roleId}`. Drag-and-drop in the tree
-     * calls this — it loads the role first (to preserve unrelated fields the
-     * form isn't collecting) and PUTs a form that only changes `parentRoleId`.
-     * Pass `null` to move to root. Round-trips the loaded detail so the store
-     * can splice the updated shape into its tree.
+     * Reparent a role via `PUT /v1/roles/{roleId}`. Loads the role first so
+     * the request preserves fields the drag-and-drop UI is not collecting
+     * (roleKey, description, edit flags) — PUT is a full replace and would
+     * otherwise wipe them. Pass `null` to move to root.
+     *
+     * Staged for the tree drag-and-drop feature — kept here (not deleted)
+     * so the wiring point stays in one predictable place; the store method
+     * that will call this lands with the DnD ticket. If DnD is dropped
+     * from the roadmap, delete this method with the ticket that decides so.
      */
     reparentRole(roleId: string, newParentId: string | null): Observable<DotRoleDetail> {
         return this.loadRoleById(roleId, false).pipe(
