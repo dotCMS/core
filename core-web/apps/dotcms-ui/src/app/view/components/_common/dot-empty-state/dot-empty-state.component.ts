@@ -23,7 +23,7 @@ export class DotEmptyStateComponent implements OnInit {
     @Input() title!: string;
     @Input() content!: string;
     @Input() buttonLabel!: string;
-    @Output() buttonClick = new EventEmitter<string>();
+    @Output() buttonClick = new EventEmitter<void>();
 
     columnWidth!: string;
     public readonly checkBoxWidth: number = 3.5;
@@ -43,11 +43,10 @@ export class DotEmptyStateComponent implements OnInit {
     /**
      *  Emits event to navigate later to a Portlet
      *
-     * @param {string} event
      * @memberof DotEmptyStateComponent
      */
-    handleClick(event: string) {
-        this.buttonClick.emit(event);
+    handleClick() {
+        this.buttonClick.emit();
     }
 
     private getColumnWidth(): string {

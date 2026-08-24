@@ -42,7 +42,7 @@ export class DotCreateContentletComponent implements OnInit {
     @Output() shutdown: EventEmitter<unknown> = new EventEmitter();
     url$!: Observable<string>;
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     ngOnInit() {
         this.url$ = merge(
@@ -90,10 +90,10 @@ export class DotCreateContentletComponent implements OnInit {
 
     /**
      * Handle custom event
-     * @param {unknown} event
+     * @param {CustomEvent} event
      * @memberof DotCreateContentletComponent
      */
-    onCustom(event: unknown): void {
+    onCustom(event: CustomEvent): void {
         this.custom.emit(event);
     }
 }

@@ -66,7 +66,7 @@ export class DotContentletWrapperComponent {
     shutdown: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     private isContentletModified = false;
     private _appMainTitle = '';
