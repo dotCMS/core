@@ -31,7 +31,9 @@ export class DotContentCompareComponent {
     private dotMessageService = inject(DotMessageService);
     private dotIframeService = inject(DotIframeService);
 
-    @Input() set data(data: DotContentCompareEvent) {
+    // Nullable: the only binding is `data$ | async`, and the guard below was already written
+    // for the pipe's initial null.
+    @Input() set data(data: DotContentCompareEvent | null) {
         if (data != null) {
             this.store.loadData(data);
         }

@@ -71,7 +71,7 @@
         </label>
         <dot-workflows-actions-selector-field
             [tabindex]="6"
-            [workflows]="workflowsSelected$ | async"
+            [workflows]="(workflowsSelected$ | async) ?? []"
             formControlName="NEW" />
     </div>
     @if (form.get('workflows')?.disabled) {

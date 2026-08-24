@@ -10,7 +10,11 @@ import { GCircle } from '../../../../../models/gcircle.model';
 import { ServerSideFieldModel } from '../../../../../services/api/serverside-field/ServerSideFieldModel';
 import { I18nService } from '../../../../../services/i18n/i18n.service';
 import { DropdownInputModel } from '../../../../../services/models/input.model';
-import { DotVisitorsLocationComponent } from '../dot-visitors-location.component';
+import {
+    DISTANCE_UNITS,
+    DistanceUnit,
+    DotVisitorsLocationComponent
+} from '../dot-visitors-location.component';
 
 interface Param<T> {
     key: string;
@@ -52,11 +56,13 @@ export class DotVisitorsLocationContainerComponent {
     readonly parameterValuesChange = output<{ name: string; value: string }[]>();
 
     // State
-    circle$: BehaviorSubject<GCircle> = new BehaviorSubject({
+    /** Seed for `circle$`, and the fallback the template needs because `| async` is typed nullable. */
+    readonly initialCircle: GCircle = {
         center: { lat: 38.89, lng: -77.04 },
         radius: 10000
-    });
-    preferredUnit = 'm';
+    };
+    circle$: BehaviorSubject<GCircle> = new BehaviorSubject(this.initialCircle);
+    preferredUnit: DistanceUnit = 'm';
 
     lat = 0;
     lng = 0;
@@ -133,10 +139,15 @@ export class DotVisitorsLocationContainerComponent {
         this.lat = parseFloat(params.latitude.value) || this.lat;
         this.lng = parseFloat(params.longitude.value) || this.lng;
         this.radius = parseFloat(params.radius.value) || 50000;
-        this.preferredUnit =
+        const preferredUnit =
             params.preferredDisplayUnits.value ||
             instance.parameterDefs['preferredDisplayUnits'].defaultValue ||
             'm';
+        // The rule parameter is a free-form string; anything unrecognised falls back to metres
+        // rather than reaching the child as an invalid DistanceUnit.
+        this.preferredUnit = DISTANCE_UNITS.includes(preferredUnit as DistanceUnit)
+            ? (preferredUnit as DistanceUnit)
+            : 'm';
 
         this.circle$.next({ center: { lat: this.lat, lng: this.lng }, radius: this.radius });
     }
