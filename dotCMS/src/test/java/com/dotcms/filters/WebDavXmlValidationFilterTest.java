@@ -15,6 +15,7 @@ import com.dotcms.mock.request.DotCMSMockRequest;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import java.util.Locale;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
@@ -113,6 +114,29 @@ public class WebDavXmlValidationFilterTest {
 
         verify(chain).doFilter(request, response);
         verify(response, never()).sendError(anyInt());
+    }
+
+    /**
+     * Method names are normalised with Locale.ROOT. Under a Turkish default locale the plain
+     * toUpperCase() of "propfind" is "PROPFİND", with a dotted capital I, which would not match
+     * and would skip validation altogether.
+     */
+    @Test
+    public void methodMatchingSurvivesATurkishDefaultLocale() throws Exception {
+        final Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
+            final FilterChain chain = mock(FilterChain.class);
+            final HttpServletResponse response = mock(HttpServletResponse.class);
+
+            new WebDavXmlValidationFilter()
+                    .doFilter(request("propfind", DOCTYPE_BODY), response, chain);
+
+            verify(response).sendError(HttpServletResponse.SC_BAD_REQUEST);
+            verify(chain, never()).doFilter(any(), any());
+        } finally {
+            Locale.setDefault(original);
+        }
     }
 
     @Test

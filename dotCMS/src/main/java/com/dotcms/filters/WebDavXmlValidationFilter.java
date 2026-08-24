@@ -11,6 +11,7 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.Filter;
@@ -24,6 +25,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
+import org.apache.commons.lang3.exception.ExceptionUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
@@ -73,9 +75,6 @@ public class WebDavXmlValidationFilter implements Filter {
         }
     }
 
-    /** Guards against a self-referencing or cyclic cause chain. */
-    private static final int MAX_CAUSE_DEPTH = 10;
-
     @Override
     public void init(final FilterConfig filterConfig) {
         // Nothing to configure.
@@ -97,7 +96,7 @@ public class WebDavXmlValidationFilter implements Filter {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
 
-        if (!XML_BODY_METHODS.contains(request.getMethod().toUpperCase())) {
+        if (!XML_BODY_METHODS.contains(request.getMethod().toUpperCase(Locale.ROOT))) {
             chain.doFilter(req, res);
             return;
         }
@@ -166,26 +165,15 @@ public class WebDavXmlValidationFilter implements Filter {
             reader.parse(new InputSource(new ByteArrayInputStream(body)));
             return false;
         } catch (final Exception e) {
-            // Catch broadly and inspect the chain: a parser is free to wrap what a handler throws.
-            if (declaredDoctype(e)) {
+            // Search the whole chain, not just the throwable itself: a parser is free to wrap what
+            // a handler throws. indexOfType tolerates a cyclic chain.
+            if (ExceptionUtils.indexOfType(e, DoctypeSeenException.class) != -1) {
                 return true;
             }
             Logger.debug(WebDavXmlValidationFilter.class,
                     () -> "WebDAV body did not parse, forwarding it unchanged: " + e.getMessage());
             return false;
         }
-    }
-
-    /** Whether this throwable, or anything it wraps, is the marker from the lexical handler. */
-    private static boolean declaredDoctype(final Throwable thrown) {
-        Throwable cause = thrown;
-        for (int depth = 0; cause != null && depth < MAX_CAUSE_DEPTH; depth++) {
-            if (cause instanceof DoctypeSeenException) {
-                return true;
-            }
-            cause = cause.getCause() == cause ? null : cause.getCause();
-        }
-        return false;
     }
 
     /** Replays the already-consumed body so the WebDAV servlet can read it again. */
