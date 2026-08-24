@@ -6,6 +6,7 @@ import {
     Component,
     OnDestroy,
     OnInit,
+    computed,
     effect,
     inject
 } from '@angular/core';
@@ -19,8 +20,7 @@ import {
     finalize,
     switchMap,
     take,
-    takeUntil,
-    tap
+    takeUntil
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
@@ -53,6 +53,10 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     protected readonly uveStore = inject(UVEStore);
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
+
+    protected readonly $isSaving = computed(
+        () => this.uveStore.uveStatus() === UVE_STATUS.LOADING
+    );
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
@@ -87,6 +91,13 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     nextTemplateUpdate(template: DotTemplateDesigner) {
+        // Drop edits that complete mid-flight: in-progress drags or open dropdowns
+        // can still emit templateChange after the canvas is frozen. Discarding them
+        // prevents corrupting the payload of the in-flight save.
+        if (this.uveStore.uveStatus() === UVE_STATUS.LOADING) {
+            return;
+        }
+
         this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate$.next(template);
         this.lastTemplate = template;
@@ -134,10 +145,11 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
             .pipe(
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
-                tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
+                    // Lock the canvas only when the POST is actually sent, not on every edit.
+                    this.uveStore.setUveStatus(UVE_STATUS.LOADING);
                     this.messageService.add({
                         severity: 'info',
                         summary: 'Info',

@@ -116,3 +116,13 @@
         }
     </div>
 }
+@if (disabled) {
+    <div
+        class="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-[2px] cursor-not-allowed"
+        data-testId="template-builder-disabled-overlay">
+        <p-progress-spinner
+            [style]="{ width: '3rem', height: '3rem' }"
+            strokeWidth="4"
+            aria-label="Saving layout" />
+    </div>
+}

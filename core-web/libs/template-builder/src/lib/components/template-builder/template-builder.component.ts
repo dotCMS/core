@@ -31,6 +31,7 @@ import {
 
 import { DividerModule } from 'primeng/divider';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
@@ -89,6 +90,7 @@ import {
         DynamicDialogModule,
         ToolbarModule,
         DividerModule,
+        ProgressSpinnerModule,
         AddWidgetComponent,
         TemplateBuilderActionsComponent,
         TemplateBuilderSectionComponent,
@@ -112,6 +114,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
 
     @Input()
     containerMap!: DotContainerMap;
+
+    @Input()
+    disabled = false;
 
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
@@ -271,6 +276,42 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 isAnonymousTemplate: currentTemplate?.anonymous || this.template.anonymous // We createa a custom template for the page
             });
         }
+
+        if (changes.disabled !== undefined && this.grid) {
+            this.applyGridDisabled(!!changes.disabled.currentValue);
+        }
+    }
+
+    /**
+     * @description Enables or disables drag, resize, and external drop on the main grid
+     * and all of its subgrids. Called synchronously from ngOnChanges so GridStack
+     * blocks (or restores) interactions in the same tick the input changes — before
+     * any Angular render cycle.
+     *
+     * @param {boolean} disabled
+     * @memberof TemplateBuilderComponent
+     */
+    private applyGridDisabled(disabled: boolean): void {
+        if (disabled) {
+            this.grid.disable();
+            // Cancel any in-progress drag (internal row move or external toolbar widget drag-in).
+            // GridStack's DDDraggable registers a document keydown listener and calls cancel()
+            // on Escape, removing the drag clone from the DOM so the overlay becomes visible.
+            // PrimeNG dropdowns also close on Escape, covering the open-dropdown edge case.
+            document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+            );
+        } else {
+            this.grid.enable();
+        }
+
+        const subGridEls = this.grid.el.querySelectorAll(
+            '.grid-stack'
+        ) as NodeListOf<GridHTMLElement>;
+
+        subGridEls.forEach((el) => {
+            el.gridstack?.[disabled ? 'disable' : 'enable']();
+        });
     }
 
     /**
