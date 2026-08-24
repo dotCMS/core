@@ -1,6 +1,8 @@
 package com.dotcms.filters;
 
 import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
@@ -58,9 +60,17 @@ public class WebDavXmlValidationFilterTest {
         // The filter consumes the body to inspect it, so it must hand the servlet a replayable copy.
         final ArgumentCaptor<ServletRequest> forwarded = ArgumentCaptor.forClass(ServletRequest.class);
         verify(chain).doFilter(forwarded.capture(), any());
+        final ServletRequest downstream = forwarded.getValue();
         assertArrayEquals("Body was not replayed intact to the servlet",
                 LEGITIMATE_PROPFIND.getBytes(StandardCharsets.UTF_8),
-                forwarded.getValue().getInputStream().readAllBytes());
+                downstream.getInputStream().readAllBytes());
+
+        // A request body is read once. Repeated calls must hand back the same stream rather than
+        // silently restarting it from byte zero.
+        assertSame("getInputStream() handed out a second, rewound stream",
+                downstream.getInputStream(), downstream.getInputStream());
+        assertEquals("The body was re-readable after being consumed",
+                0, downstream.getInputStream().readAllBytes().length);
     }
 
     /**

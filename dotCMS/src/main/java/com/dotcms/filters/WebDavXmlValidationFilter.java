@@ -181,6 +181,13 @@ public class WebDavXmlValidationFilter implements Filter {
 
         private final byte[] body;
 
+        /**
+         * Built once and handed back on every call. Returning a fresh stream each time would let a
+         * second caller silently re-read the body from the start, which is not how a request body
+         * behaves.
+         */
+        private ServletInputStream stream;
+
         private BufferedBodyRequest(final HttpServletRequest request, final byte[] body) {
             super(request);
             this.body = body;
@@ -188,8 +195,11 @@ public class WebDavXmlValidationFilter implements Filter {
 
         @Override
         public ServletInputStream getInputStream() {
+            if (stream != null) {
+                return stream;
+            }
             final ByteArrayInputStream source = new ByteArrayInputStream(body);
-            return new ServletInputStream() {
+            stream = new ServletInputStream() {
                 @Override
                 public int read() {
                     return source.read();
@@ -216,6 +226,7 @@ public class WebDavXmlValidationFilter implements Filter {
                     throw new UnsupportedOperationException();
                 }
             };
+            return stream;
         }
 
         @Override
