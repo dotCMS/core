@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { TreeNodeData } from '@dotcms/dotcms-models';
@@ -584,27 +584,31 @@ describe('DotUploadDropzoneComponent', () => {
     });
 
     describe('when disabled', () => {
-        // The host disables the zone where the user cannot add children to the target folder.
+        // The host disables the zone where the user cannot add content to the target folder.
         // Uploading creates a contentlet in it, which the server refuses (ESContentletAPIImpl:605),
-        // so accepting the drop only means the user waits for a failure they could not have
-        // predicted from the UI.
+        // so letting the drop through only means the user waits for a failure they could not have
+        // predicted. The zone stays visible and explains itself instead of going quiet, which would
+        // read as a broken drop target.
+        const BLOCKED_MESSAGE = 'You do not have permission to add content here.';
+
         beforeEach(() => {
             spectator.setInput('disabled', true);
+            spectator.setInput('disabledMessage', BLOCKED_MESSAGE);
             spectator.detectChanges();
         });
 
-        it('should not activate the overlay on drag enter', () => {
+        it('should still open the overlay on drag enter, so the reason can be shown', () => {
             spectator.component.onDragEnter(createDragEnterEvent());
             spectator.detectChanges();
 
-            expect(spectator.component.active).toBe(false);
+            expect(spectator.component.active).toBe(true);
         });
 
-        it('should not announce the drag to the host', () => {
+        it('should show the reason in place of the usual prompt', () => {
             spectator.component.onDragEnter(createDragEnterEvent());
             spectator.detectChanges();
 
-            expect(dragEnterSpyEmitter).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('message-content-text'))).toHaveText(BLOCKED_MESSAGE);
         });
 
         it('should not emit an upload when files are dropped', () => {
@@ -616,16 +620,27 @@ describe('DotUploadDropzoneComponent', () => {
             expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
         });
 
-        // Left to the browser deliberately: preventing the default here would swallow the drop
-        // silently, while letting it through means the OS shows its own "cannot drop" cursor.
-        it('should still accept drops once re-enabled', () => {
+        it('should accept an upload again once re-enabled', () => {
             spectator.setInput('disabled', false);
             spectator.detectChanges();
 
+            const files = [new File([''], 'a.png')] as unknown as FileList;
+            spectator.component.onDrop(createDropEvent(files));
+            spectator.detectChanges();
+
+            expect(uploadFilesSpyEmitter).toHaveBeenCalled();
+        });
+
+        // Without a message there is nothing to explain, so the zone keeps its normal prompt rather
+        // than rendering an empty overlay.
+        it('should keep the usual prompt when no reason was given', () => {
+            spectator.setInput('disabledMessage', '');
             spectator.component.onDragEnter(createDragEnterEvent());
             spectator.detectChanges();
 
-            expect(spectator.component.active).toBe(true);
+            expect(spectator.query(byTestId('message-content-text'))).not.toHaveText(
+                BLOCKED_MESSAGE
+            );
         });
     });
 });

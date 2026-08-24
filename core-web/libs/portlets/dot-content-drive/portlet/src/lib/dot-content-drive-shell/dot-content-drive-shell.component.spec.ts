@@ -821,8 +821,8 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         // Dropping a file creates a contentlet in the target folder, which the server refuses
-        // without CAN_ADD_CHILDREN. The zone has to refuse the gesture rather than accept it and
-        // fail after the upload has already started.
+        // without CAN_ADD_CHILDREN. The zone refuses the upload rather than failing after it has
+        // started, and carries the reason so it does not just read as a broken drop target.
         it('should disable the dropzone where children cannot be added', () => {
             canAddChildrenSignal.set(false);
             spectator.detectChanges();
@@ -830,6 +830,15 @@ describe('DotContentDriveShellComponent', () => {
             const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
 
             expect(dropzone.componentInstance.$disabled()).toBe(true);
+        });
+
+        it('should tell the dropzone why the upload is refused', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabledMessage()).toBeTruthy();
         });
 
         it('should leave the dropzone enabled where children can be added', () => {
