@@ -60,7 +60,6 @@ import {
     LIST_TABLE_STYLE,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
-    RESULTS_SEGMENT,
     ROWS_PER_PAGE_OPTIONS,
     SEARCH_DEBOUNCE_MS,
     SKELETON_COLUMNS,
@@ -83,19 +82,13 @@ import {
     formatSchedule,
     goalTypeOf,
     isAllowed,
+    resultsCommandsOf,
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
-
-/** Results URL of an experiment. */
-const resultsCommandsOf = (experimentId: string): string[] => [
-    EXPERIMENTS_URL,
-    experimentId,
-    RESULTS_SEGMENT
-];
 
 @Component({
     selector: 'dot-experiments-list',
