@@ -226,7 +226,6 @@
                 "libs/block-editor/**/*",
                 "libs/data-access/**/*",
                 "libs/dot-rules/**/*",
-                "libs/dotcms/**/*",
                 "libs/edit-content/**/*",
                 "libs/edit-content-bridge/**/*",
                 "libs/global-store/**/*",

@@ -13,7 +13,6 @@
         "test": "nx test",
         "lint": "ng lint",
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/apps/dotcms-ui/package.json;cd dist/apps/dotcms-ui",
-        "build:docs:dotcms": "typedoc --options libs/dotcms/typedoc.json;",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",
         "publish:docs": "gh-pages --dist ./docs --dest ./",
         "build:dev": "nx run dotcms-ui:build:development",
