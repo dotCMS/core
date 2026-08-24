@@ -262,6 +262,9 @@ describe('EditEmaLayoutComponent', () => {
     describe('LOADING guard and disabled binding', () => {
         it('should drop templateChange events and not forbid navigation while uveStatus is LOADING', () => {
             store.setUveStatus(UVE_STATUS.LOADING);
+            // The mock is shared across all tests — clear accumulated calls from earlier tests
+            // before asserting this specific action had no effect.
+            (dotRouter.forbidRouteDeactivation as jest.Mock).mockClear();
 
             templateBuilder.templateChange.emit();
 
