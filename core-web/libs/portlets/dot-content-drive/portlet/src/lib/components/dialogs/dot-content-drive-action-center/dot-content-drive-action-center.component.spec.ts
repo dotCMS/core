@@ -497,13 +497,13 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeTruthy();
         });
 
         it('should not show the notice when the selection has no folders', () => {
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeFalsy();
         });
 
         it('should send folders and contentlets in one Add to Bundle call', () => {
@@ -511,7 +511,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // is one call rather than a contentlet call plus a folder call.
             mockSelectedItems.set([
                 contentlet({ inode: 'inode-1', identifier: 'id-1' }),
-                { type: 'folder', identifier: 'folder-1' } as unknown as DotContentDriveItem
+                folder('folder-1')
             ]);
             spectator.detectChanges();
 
@@ -533,7 +533,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.detectChanges();
 
-            const notice = spectator.query('[data-testid="folders-ignored-message"]');
+            const notice = spectator.query('[data-testid="folders-limited-message"]');
 
             expect(notice).toBeTruthy();
             expect(notice?.classList.contains('no-enter-motion')).toBe(true);
@@ -1777,6 +1777,31 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).toHaveBeenCalledWith(
                 expect.any(String),
                 ['id-drop'],
+                PUSH_PUBLISH_SETTINGS
+            );
+        });
+
+        // The mirror of the Add to Bundle case: allowing folders into the selection is only worth
+        // anything if they reach the payload, because a folder the user lacks PUBLISH on comes back
+        // from `PublisherAPIImpl` as a counted per-asset error. Dropped before the call, it would
+        // never be counted and the user would never learn it did not go.
+        it('should send folders and contentlets in one Push Publish call', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                folder('folder-1')
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-1', 'folder-1'],
                 PUSH_PUBLISH_SETTINGS
             );
         });

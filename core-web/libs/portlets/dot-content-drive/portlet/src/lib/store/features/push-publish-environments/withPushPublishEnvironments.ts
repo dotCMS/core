@@ -1,20 +1,11 @@
 import { tapResponse } from '@ngrx/operators';
-import {
-    patchState,
-    signalStoreFeature,
-    type,
-    withHooks,
-    withMethods,
-    withState
-} from '@ngrx/signals';
+import { patchState, signalStoreFeature, withHooks, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { pipe, switchMap } from 'rxjs';
 
 import { inject } from '@angular/core';
 
 import { PushPublishService } from '@dotcms/data-access';
-
-import { DotContentDriveState } from '../../../shared/models';
 
 interface WithPushPublishEnvironmentsState {
     /**
@@ -38,10 +29,9 @@ interface WithPushPublishEnvironmentsState {
  * with no environment the current role can send to, and that is the case the servlet fails on.
  */
 export function withPushPublishEnvironments() {
+    // No input-state constraint: this feature reads nothing from the host store, it only owns its
+    // own slice. Leaving one off keeps it usable from any signal store that wants the same gate.
     return signalStoreFeature(
-        {
-            state: type<DotContentDriveState>()
-        },
         withState<WithPushPublishEnvironmentsState>({
             hasPushPublishEnvironments: undefined
         }),
@@ -65,8 +55,19 @@ export function withPushPublishEnvironments() {
                                     patchState(store, {
                                         hasPushPublishEnvironments: environments.length > 0
                                     }),
-                                error: () =>
-                                    patchState(store, { hasPushPublishEnvironments: false })
+                                error: (error: unknown) => {
+                                    // A failed lookup and an empty list both disable the action,
+                                    // but they are not the same event: without this, a broken
+                                    // endpoint or a misconfigured proxy renders as "no environment"
+                                    // — a configuration message — with nothing anywhere for support
+                                    // to go on. The UX stays as it is; only the trail is added.
+                                    console.error(
+                                        'Error loading push publish environments:',
+                                        error
+                                    );
+
+                                    patchState(store, { hasPushPublishEnvironments: false });
+                                }
                             })
                         )
                     )

@@ -36,10 +36,7 @@ import {
     DotContentDriveItem,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import {
-    DotPermissionsIframeDialogComponent,
-    DotPushHistoryIframeDialogComponent
-} from '@dotcms/ui';
+import { DotJspIframeDialogComponent } from '@dotcms/ui';
 import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/utils-testing';
 
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
@@ -230,15 +227,19 @@ describe('DotFolderListViewContextMenuComponent', () => {
         it('should build correct menu items for contentlet', async () => {
             await component.getMenuItems(mockContextMenuData);
 
-            const items = component.$items();
-            expect(items[0].label).toBe('content-drive.context-menu.edit-content');
-            expect(items[1].label).toBe('content-drive.context-menu.lock');
-            expect(items[2].label).toBe('Assign Workflow');
-            expect(items[3].label).toBe('Save');
-            expect(items[4].label).toBe('Save / Publish');
-            // Suffixed, because the default fixture has no reachable environment.
-            expect(items[5].label).toBe('content-drive.context-menu.push-publish.no-environment');
-            expect(items[6].label).toBe('contenttypes.content.add_to_bundle');
+            // Asserted as one ordered list rather than index by index: this test is about the
+            // order, so the positions have to stay pinned, but an inserted item then fails once
+            // with the whole list in the diff instead of pointing at whichever index shifted.
+            expect(component.$items().map((item) => item.label)).toEqual([
+                'content-drive.context-menu.edit-content',
+                'content-drive.context-menu.lock',
+                'Assign Workflow',
+                'Save',
+                'Save / Publish',
+                // Suffixed, because the default fixture has no reachable environment.
+                'content-drive.context-menu.push-publish.no-environment',
+                'contenttypes.content.add_to_bundle'
+            ]);
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -502,7 +503,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     ).toBeUndefined();
                 });
 
-                it('should open DotPermissionsIframeDialogComponent with correct config when triggered', async () => {
+                // Both dialogs share one component now, so `data` is what distinguishes them —
+                // asserting the component alone would pass with the two call sites swapped.
+                it('should open the permissions JSP with correct config when triggered', async () => {
                     await component.getMenuItems(folderContextMenuWithEditPermissions);
 
                     component
@@ -511,13 +514,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         ?.command?.({} as unknown as MenuItemCommandEvent);
 
                     expect(dialogService.open).toHaveBeenCalledWith(
-                        DotPermissionsIframeDialogComponent,
+                        DotJspIframeDialogComponent,
                         expect.objectContaining({
                             width: 'min(92vw, 75rem)',
                             closable: true,
                             closeOnEscape: true,
                             data: {
-                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`
+                                url: `/html/portlet/ext/folders/permissions.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`,
+                                titleKey: 'Permissions',
+                                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                                testIdPrefix: 'permissions'
                             }
                         })
                     );
@@ -568,7 +574,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     ).toBeUndefined();
                 });
 
-                it('should open DotPushHistoryIframeDialogComponent with correct config when triggered', async () => {
+                it('should open the push history JSP with correct config when triggered', async () => {
                     await component.getMenuItems(folderContextMenuWithEditPermissions);
 
                     component
@@ -577,13 +583,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         ?.command?.({} as unknown as MenuItemCommandEvent);
 
                     expect(dialogService.open).toHaveBeenCalledWith(
-                        DotPushHistoryIframeDialogComponent,
+                        DotJspIframeDialogComponent,
                         expect.objectContaining({
                             width: 'min(92vw, 75rem)',
                             closable: true,
                             closeOnEscape: true,
                             data: {
-                                url: `/html/portlet/ext/folders/push_history.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`
+                                url: `/html/portlet/ext/folders/push_history.jsp?folderIdentifier=${folderWithEditPermissions.identifier}&popup=true`,
+                                titleKey: 'publisher_push_history',
+                                emptyKey: 'dot.push-history.iframe.dialog.no-asset',
+                                testIdPrefix: 'push-history'
                             }
                         })
                     );
@@ -929,6 +938,64 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
 
                     expect(store.reloadContentDrive).not.toHaveBeenCalled();
+                });
+
+                // The sidebar tree serves this menu too, so a user can right-click an *ancestor* of
+                // the folder they are browsing. Reloading the current path would then reload a path
+                // that no longer exists, leaving the grid empty and the breadcrumb pointing into a
+                // deleted folder.
+                describe('when the deleted folder contains the one being browsed', () => {
+                    it('should move to the site root', async () => {
+                        store.setPath(`${folderWithEdit.path}nested/`);
+                        jest.spyOn(store, 'setPath');
+
+                        await component.getMenuItems(folderContextMenuWithEdit);
+                        deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                        expect(store.setPath).toHaveBeenCalledWith('/');
+                    });
+
+                    it('should move to the site root when browsing the deleted folder itself', async () => {
+                        store.setPath(folderWithEdit.path);
+                        jest.spyOn(store, 'setPath');
+
+                        await component.getMenuItems(folderContextMenuWithEdit);
+                        deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                        expect(store.setPath).toHaveBeenCalledWith('/');
+                    });
+
+                    // A sibling or a child of the browsed folder leaves the current path valid, so
+                    // moving would throw the user out of where they were working for no reason.
+                    it('should stay put when the deleted folder is elsewhere', async () => {
+                        store.setPath('/somewhere-else/');
+                        jest.spyOn(store, 'setPath');
+
+                        await component.getMenuItems(folderContextMenuWithEdit);
+                        deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                        (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                        expect(store.setPath).not.toHaveBeenCalled();
+                    });
+                });
+
+                // The two cases above assert only what does *not* happen, so dropping the
+                // `handle(error)` call entirely would keep them green while the delete failed in
+                // total silence. This is the AC clause that says a failure reaches the user.
+                it('should surface a failed delete through the HTTP error handler', async () => {
+                    folderService.deleteFolder = jest
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(
+                        spectator.inject(DotHttpErrorManagerService, true).handle
+                    ).toHaveBeenCalled();
                 });
             });
 

@@ -39,17 +39,14 @@ import {
     DotWorkflowPayload,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import {
-    DotPermissionsIframeDialogComponent,
-    DotPermissionsIframeDialogData,
-    DotPushHistoryIframeDialogComponent,
-    DotPushHistoryIframeDialogData
-} from '@dotcms/ui';
+import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui';
 
 import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    SUCCESS_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    ROOT_PATH
 } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
@@ -465,13 +462,16 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #openPermissionsDialog(identifier: string): void {
-        this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+        this.#dialogService.open(DotJspIframeDialogComponent, {
             header: this.#dotMessageService.get('Edit-Permissions'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
-                url: this.#buildPermissionsUrl(identifier)
-            } satisfies DotPermissionsIframeDialogData,
+                url: this.#buildPermissionsUrl(identifier),
+                titleKey: 'Permissions',
+                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                testIdPrefix: 'permissions'
+            } satisfies DotJspIframeDialogData,
             modal: true,
             appendTo: 'body',
             closable: true,
@@ -491,13 +491,16 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #openPushHistoryDialog(identifier: string): void {
-        this.#dialogService.open(DotPushHistoryIframeDialogComponent, {
+        this.#dialogService.open(DotJspIframeDialogComponent, {
             header: this.#dotMessageService.get('content-drive.context-menu.push-history'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
-                url: this.#buildPushHistoryUrl(identifier)
-            } satisfies DotPushHistoryIframeDialogData,
+                url: this.#buildPushHistoryUrl(identifier),
+                titleKey: 'publisher_push_history',
+                emptyKey: 'dot.push-history.iframe.dialog.no-asset',
+                testIdPrefix: 'push-history'
+            } satisfies DotJspIframeDialogData,
             modal: true,
             appendTo: 'body',
             closable: true,
@@ -613,18 +616,47 @@ export class DotFolderListViewContextMenuComponent {
                             'content-drive.dialog.delete-folder.success',
                             folder.name
                         ),
-                        life: ERROR_MESSAGE_LIFE
+                        life: SUCCESS_MESSAGE_LIFE
                     });
-                    // Both listed the folder, and they reload separately: `reloadContentDrive`
-                    // refreshes the grid only, so without `loadFolders` the sidebar tree keeps
+                    // The tree serves this menu too, so the deleted folder can be an ancestor of
+                    // the one being browsed — or the browsed folder itself. Reloading the current
+                    // path would then fetch a path that no longer exists, leaving an empty grid
+                    // and a breadcrumb pointing inside a deleted folder. Moving to the root is the
+                    // one destination guaranteed to still be there.
+                    if (this.#browsingInside(folder.path)) {
+                        this.#store.setPath(ROOT_PATH);
+                    } else {
+                        this.#store.reloadContentDrive();
+                    }
+
+                    // Always: the tree reloads separately from the grid, so without this it keeps
                     // showing a folder that no longer exists until the next navigation.
-                    this.#store.reloadContentDrive();
                     this.#store.loadFolders();
                 },
                 error: (error: HttpErrorResponse) => {
                     this.#httpErrorManagerService.handle(error);
                 }
             });
+    }
+
+    /**
+     * Whether the browsed path sits at or under `folderPath`.
+     *
+     * Compared with a trailing slash on both sides so `/blog-archive/` is not read as living inside
+     * `/blog/`; folder paths from the drive already carry one, and the root's own `undefined` path
+     * can never be inside anything.
+     */
+    #browsingInside(folderPath: string): boolean {
+        const currentPath = this.#store.path();
+
+        if (!currentPath) {
+            return false;
+        }
+
+        const target = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+        const current = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
+
+        return current.startsWith(target);
     }
 
     #buildPushHistoryUrl(identifier: string): string {

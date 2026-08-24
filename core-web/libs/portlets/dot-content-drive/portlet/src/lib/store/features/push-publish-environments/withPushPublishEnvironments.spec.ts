@@ -60,7 +60,21 @@ describe('withPushPublishEnvironments', () => {
     it('should look the environments up on init, with no explicit call', () => {
         build();
 
-        expect(getEnvironments).toHaveBeenCalled();
+        // Times, not merely called: consolidating the two independent lookups into one is why this
+        // feature exists, so "at least once" would pass a regression that reinstated them.
+        expect(getEnvironments).toHaveBeenCalledTimes(1);
+    });
+
+    // A `computed()` that called the service per read would satisfy every other test in this file
+    // while firing one request per consumer, which is the shape this feature replaced.
+    it('should not look the environments up again when several consumers read the gate', () => {
+        build(of([environment('a')]));
+
+        store.hasPushPublishEnvironments();
+        store.hasPushPublishEnvironments();
+        store.hasPushPublishEnvironments();
+
+        expect(getEnvironments).toHaveBeenCalledTimes(1);
     });
 
     it('should stay undefined while the lookup is in flight, which is distinct from false', () => {

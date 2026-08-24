@@ -60,6 +60,13 @@ const PERCENTAGE_WIDTH_BUDGET = FIXED_COLUMNS.reduce(
  *
  * Proportions between the columns shown are preserved, so a subset reads like the full table does.
  * Non-percentage widths are passed through: only the percentage columns share this budget.
+ *
+ * **Assumes every column meant to share the budget carries a percentage width.** Both passes skip
+ * anything not ending in `%`, so a column added later with no width — or a `rem` one promoted into
+ * the fixed set — claims no share while the percentage columns scale up to fill the whole budget
+ * without it. That is the same "unclaimed width lands somewhere surprising" failure this function
+ * exists to prevent, just relocated, so give new fixed columns a percentage width or widen this
+ * first.
  */
 export const rescaleToWidthBudget = (
     columns: DotFolderListViewFixedColumn[]

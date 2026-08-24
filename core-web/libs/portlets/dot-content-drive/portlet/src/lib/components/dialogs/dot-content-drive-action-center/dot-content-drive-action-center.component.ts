@@ -549,14 +549,13 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             // row's own id has to be read the same way — matching a folder on `inode` would drop it
             // from the preview of the very action it is about to be fired on.
             const eligible = new Set(quickAction.eligibleInodes);
-            const pool = supportsFolders(quickAction.id)
-                ? this.$selectedItems()
-                : this.$contentlets();
+            // Resolved once: it is a registry lookup with the same answer for every row, and the
+            // `filter` below would otherwise repeat it per item.
+            const takesFolders = supportsFolders(quickAction.id);
+            const pool = takesFolders ? this.$selectedItems() : this.$contentlets();
 
             return this.#inTableOrder(
-                pool.filter((item) =>
-                    eligible.has(supportsFolders(quickAction.id) ? item.identifier : item.inode)
-                )
+                pool.filter((item) => eligible.has(takesFolders ? item.identifier : item.inode))
             );
         }
 

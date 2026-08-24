@@ -122,10 +122,19 @@ interface DotActionCenterQuickActionDef {
      */
     nameKey: string;
     icon: string;
-    /** Row-state heuristic — not a permission check. Counted items can still fail at fire. */
-    eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** Among eligible items; feeds `warningCount`. */
-    warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
+    /**
+     * Row-state heuristic — not a permission check. Counted items can still fail at fire.
+     *
+     * Takes the union, not `DotCMSContentlet`, because a `supportsFolders` action's rows include
+     * folders. That makes the compiler hold the invariant a comment used to: a predicate reading a
+     * contentlet-only field has to narrow first, so adding `supportsFolders` to an action whose
+     * predicate reads `locked` or `contentType` fails to build instead of silently reading
+     * `undefined` off a folder.
+     */
+    eligibleWhen: (item: DotContentDriveItem) => boolean;
+    /** Among eligible items; feeds `warningCount`. Takes the union for the same reason as
+     * {@link DotActionCenterQuickActionDef.eligibleWhen}. */
+    warnWhen?: (item: DotContentDriveItem, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
     warningHint?: string;
     /** Rendered but disabled — see {@link DotActionCenterQuickAction.comingSoon}. */
@@ -154,9 +163,9 @@ interface DotActionCenterQuickActionDef {
  *   while `canLock` allows it. Hint says "may require" for that reason.
  */
 export const isLockedByAnotherUser = (
-    item: DotCMSContentlet,
+    item: DotContentDriveItem,
     { isAdmin }: DotActionCenterContext
-): boolean => !isAdmin && !!item.locked && !item.contentEditable;
+): boolean => !isAdmin && !isFolder(item) && !!item.locked && !item.contentEditable;
 
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
@@ -185,13 +194,15 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         icon: 'lock',
         // UX filter only: locking archived content has no upside and can block delete
         // (`canLock` is a delete precondition). Server still allows it.
-        eligibleWhen: (item) => !item.locked && !item.archived
+        // `isFolder` narrows the union rather than guarding at runtime: Lock has no
+        // `supportsFolders`, so it never receives one.
+        eligibleWhen: (item) => !isFolder(item) && !item.locked && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.UNLOCK,
         nameKey: 'content-drive.context-menu.unlock',
         icon: 'lock_open',
-        eligibleWhen: (item) => !!item.locked && !item.archived,
+        eligibleWhen: (item) => !isFolder(item) && !!item.locked && !item.archived,
         // Warn, don't filter — only the server knows if unlock will succeed.
         warnWhen: isLockedByAnotherUser,
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
@@ -282,10 +293,9 @@ export const getQuickActions = (
             return [];
         }
 
-        // Safe because a folder-capable action's `eligibleWhen` ignores the row — that is the
-        // precondition for setting `supportsFolders`, since a folder carries none of the state the
-        // contentlet-only predicates read.
-        const eligible = (scoped as DotCMSContentlet[]).filter(quickAction.eligibleWhen);
+        // No cast: `eligibleWhen` takes the union, so the contentlet-only predicates narrow inside
+        // themselves and the compiler enforces what this used to assert in prose.
+        const eligible = scoped.filter(quickAction.eligibleWhen);
         // One pass → count and fired ids stay aligned. See `eligibleInodes` for why the key differs
         // by action.
         const eligibleInodes = eligible.map((item) =>

@@ -806,15 +806,6 @@ describe('DotFolderListViewComponent', () => {
             });
         });
 
-        it('should keep the sized columns at their authored widths whatever is hidden', () => {
-            // No rescaling: dropping a column hands its share to the title, not to everyone.
-            spectator.detectChanges();
-
-            expect(headerCells().map((cell) => cell.style.width)).toEqual(
-                HEADER_COLUMNS.map((column) => column.width ?? '')
-            );
-        });
-
         it('should leave room for the checkbox column instead of overflowing the table', () => {
             // Regression guard: percentages adding up to a full 100% put the `table-layout: fixed`
             // table 3rem past its container, which reads as a horizontal scrollbar that scrolls

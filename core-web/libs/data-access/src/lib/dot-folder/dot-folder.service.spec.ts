@@ -393,5 +393,25 @@ describe('DotFolderService', () => {
 
             expect(result).toBe(true);
         });
+
+        // The consumer routes this to `httpErrorManager.handle` and skips both reloads, so the
+        // observable has to actually error rather than complete quietly. Without this, a change
+        // that swallowed the failure here would keep the consumer's tests green too, since those
+        // only assert the reloads did *not* happen.
+        it('should error when the delete fails', () => {
+            let errored = false;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe({
+                error: () => {
+                    errored = true;
+                }
+            });
+
+            spectator
+                .expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST)
+                .flush({ message: 'Folder not found' }, { status: 404, statusText: 'Not Found' });
+
+            expect(errored).toBe(true);
+        });
     });
 });

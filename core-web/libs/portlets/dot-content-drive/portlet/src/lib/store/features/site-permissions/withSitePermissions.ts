@@ -1,5 +1,5 @@
 import { tapResponse } from '@ngrx/operators';
-import { patchState, signalStoreFeature, type, withMethods, withState } from '@ngrx/signals';
+import { patchState, signalStoreFeature, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { filter, pipe, switchMap, tap } from 'rxjs';
 
@@ -9,7 +9,6 @@ import { DotPermissionsService } from '@dotcms/data-access';
 import { DotSite } from '@dotcms/dotcms-models';
 
 import { SYSTEM_HOST } from '../../../shared/constants';
-import { DotContentDriveState } from '../../../shared/models';
 
 interface WithSitePermissionsState {
     /**
@@ -34,10 +33,9 @@ interface WithSitePermissionsState {
  * cannot answer for.
  */
 export function withSitePermissions() {
+    // No input-state constraint: the site arrives as this method's argument and the feature owns
+    // the only slice it touches, so nothing here needs the host store's shape.
     return signalStoreFeature(
-        {
-            state: type<DotContentDriveState>()
-        },
         withState<WithSitePermissionsState>({
             siteCanAddChildren: undefined
         }),
