@@ -93,10 +93,14 @@ jobs:
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
 
+      # Shallow checkout (fetch-depth: 1): this job only needs HEAD of the default
+      # branch (or the explicitly supplied release commit, fetched below) to cut
+      # the release branch from. fetch-depth: 0 pulled every branch ref
+      # (~2k+ branches, ~1.1 GB pack) and cost ~20 min per release run.
       - name: Checkout core
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          fetch-depth: 1
           token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
 
       - uses: ./.github/actions/core-cicd/cleanup-runner
@@ -146,7 +150,15 @@ jobs:
             git push origin :refs/tags/${release_tag}
           fi
 
-          git reset --hard ${{ steps.set-version.outputs.release_commit }}
+          release_commit=${{ steps.set-version.outputs.release_commit }}
+          # Shallow checkout (fetch-depth: 1) only guarantees HEAD of the default
+          # branch. When an explicit release commit was supplied, fetch just that
+          # commit (GitHub enables uploadpack.allowAnySHA1InWant) before resetting.
+          if ! git cat-file -e "${release_commit}^{commit}" 2>/dev/null; then
+            echo "Release commit ${release_commit} not present locally, fetching it"
+            git fetch --depth=1 origin "${release_commit}"
+          fi
+          git reset --hard "${release_commit}"
           release_version=${{ steps.set-version.outputs.release_version }}
           release_branch=${{ steps.set-version.outputs.release_branch }}
 
