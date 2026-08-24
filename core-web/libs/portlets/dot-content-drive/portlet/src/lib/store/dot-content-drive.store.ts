@@ -639,10 +639,11 @@ export const DotContentDriveStore = signalStore(
         /**
          * Whether the browsed folder accepts new children.
          *
-         * Every creation affordance lands on the same server-side check: a new folder needs
-         * CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673-676`), and a new contentlet needs it on
-         * the destination folder (`ESContentletAPIImpl:605-609`) — which is what an upload and a
-         * dropped file create.
+         * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+         * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+         * the contentlet checkin path never checks it, so that one is gated here for consistency
+         * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+         * creating a folder in the same place forbids.
          *
          * Computed here rather than in each consumer because three surfaces gate on it — the New
          * menu, the Upload button and the drop zone — and three copies of the folder-then-site

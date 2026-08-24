@@ -669,9 +669,9 @@ describe('DotContentDriveToolbarComponent', () => {
 
     describe('creating in a folder that refuses children', () => {
         // Both creation paths enforce CAN_ADD_CHILDREN on the destination folder server-side:
-        // FolderAPIImpl:673-676 for a folder, ESContentletAPIImpl:605-609 for a contentlet, which
-        // is what an upload creates. Offering the buttons anyway means the user picks a file or
-        // fills in a dialog and only then gets refused.
+        // FolderAPIImpl:673 for a folder. An upload is NOT refused server-side — the contentlet
+        // checkin path does not check this permission — so the gate is there to keep one route into
+        // a folder from quietly allowing what creating a folder forbids.
         const withPermissions = async (permissions: string[]) => {
             selectedNodeSignal.set({ data: { permissions } });
             await settleToolbarAnimation(spectator);

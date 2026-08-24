@@ -65,9 +65,9 @@ export class DotUploadDropzoneComponent {
     /**
      * Refuses the upload, without hiding the zone.
      *
-     * Set where the user cannot add content to the target folder. An upload creates a contentlet in
-     * it, which the server refuses (`ESContentletAPIImpl:605-609`), so letting the drop through only
-     * buys the user a failure they had no way to predict.
+     * Set where the user cannot add content to the target folder. The host owns why: in Content
+     * Drive it is the same CAN_ADD_CHILDREN gate the New menu and the folder tree use, so one route
+     * into a folder cannot quietly allow what the others forbid.
      *
      * The overlay still appears on drag, carrying {@link $disabledMessage} instead of the usual
      * prompt: a zone that goes quiet reads as a broken drop target, while one that explains itself

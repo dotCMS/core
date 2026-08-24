@@ -585,10 +585,9 @@ describe('DotUploadDropzoneComponent', () => {
 
     describe('when disabled', () => {
         // The host disables the zone where the user cannot add content to the target folder.
-        // Uploading creates a contentlet in it, which the server refuses (ESContentletAPIImpl:605),
-        // so letting the drop through only means the user waits for a failure they could not have
-        // predicted. The zone stays visible and explains itself instead of going quiet, which would
-        // read as a broken drop target.
+        // The host disables it where the user cannot add content to the target folder. The zone
+        // stays visible and explains itself instead of going quiet, which would read as a broken
+        // drop target.
         const BLOCKED_MESSAGE = 'You do not have permission to add content here.';
 
         beforeEach(() => {

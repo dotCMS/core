@@ -91,7 +91,7 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { encodeFilters, isFolder } from '../utils/functions';
+import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -789,7 +789,49 @@ export class DotContentDriveShellComponent {
      * type, upload the files directly; otherwise open the type menu (anchored to the content area)
      * and carry the files into the payload to upload right after the user picks.
      */
+    /**
+     * Refuses a drop onto a folder the user cannot add content to, and says so.
+     *
+     * A drag onto a tree folder is a third route into that folder, alongside the New menu and the
+     * grid drop zone, and it is the one that bypassed the gate. Creating a folder and moving a
+     * contentlet are both refused server-side without this permission (`FolderAPIImpl:673`,
+     * `ESContentletAPIImpl:607`), so an ungated drop hands the user a failure they could not have
+     * predicted from the UI. An upload is *not* refused server-side — the contentlet checkin path
+     * does not check it — which is the stronger reason to gate it here rather than the weaker one:
+     * otherwise one route into a folder quietly allows what the other two forbid.
+     *
+     * A toast rather than a refused drop target, because the drag is over a tree node with no room
+     * to explain itself, and a gesture that simply does nothing reads as a broken UI.
+     *
+     * @param {DotFolderTreeNodeData} [targetFolder] - The folder dropped on
+     * @returns {boolean} Whether the drop may proceed
+     */
+    #canDropInto(targetFolder?: DotFolderTreeNodeData): boolean {
+        if (canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())) {
+            return true;
+        }
+
+        const isSiteRoot = !(targetFolder as { permissions?: string[] })?.permissions?.length;
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('content-drive.no-permission.title'),
+            detail: this.#dotMessageService.get(
+                isSiteRoot
+                    ? 'content-drive.no-permission.add-to-site'
+                    : 'content-drive.no-permission.add-to-folder'
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        return false;
+    }
+
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+        if (!this.#canDropInto(targetFolder)) {
+            return;
+        }
+
         const contentData =
             targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
                 ? (targetFolder as DotFolderTreeNodeContentData)
@@ -1051,6 +1093,10 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
+        if (!this.#canDropInto(event.targetFolder)) {
+            return;
+        }
+
         const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
 
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);

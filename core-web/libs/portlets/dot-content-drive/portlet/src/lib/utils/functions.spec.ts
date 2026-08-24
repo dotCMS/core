@@ -24,6 +24,7 @@ import {
 import {
     applyLoadMoreToHierarchy,
     buildLoadMoreNode,
+    canAddChildrenTo,
     buildUserSearchablePayload,
     decodeByFilterKey,
     decodeFilters,
@@ -1839,5 +1840,45 @@ describe('mergeFolderNodePage', () => {
         const merged = mergeFolderNodePage([node('a', '/a/'), loadMore], [node('b', '/b/')]);
 
         expect(ids(merged)).toEqual(['a', loadMore.data?.id, 'b']);
+    });
+});
+
+describe('canAddChildrenTo', () => {
+    const node = (permissions?: string[]) =>
+        ({ type: 'folder', path: '/x/', permissions }) as unknown as DotFolderTreeNodeData;
+
+    it('should allow a folder that grants CAN_ADD_CHILDREN', () => {
+        expect(canAddChildrenTo(node(['READ', 'CAN_ADD_CHILDREN']), undefined)).toBe(true);
+    });
+
+    it('should refuse a folder that does not', () => {
+        expect(canAddChildrenTo(node(['READ', 'EDIT']), undefined)).toBe(false);
+    });
+
+    // A node with no permissions is the site root: its parent is the host, not a folder, so the
+    // tree carries nothing for it and the site-level answer decides.
+    it('should fall back to the site answer at the root', () => {
+        expect(canAddChildrenTo(node(), false)).toBe(false);
+        expect(canAddChildrenTo(node(), true)).toBe(true);
+    });
+
+    it('should treat an empty permission array as the root too', () => {
+        expect(canAddChildrenTo(node([]), false)).toBe(false);
+    });
+
+    // Both unknowns read as allowed: a lookup still in flight, and an instance too old to report
+    // the field. The alternative denies users who hold the permission.
+    it('should allow while the site answer is unknown', () => {
+        expect(canAddChildrenTo(node(), undefined)).toBe(true);
+    });
+
+    it('should allow when there is no target at all', () => {
+        expect(canAddChildrenTo(undefined, undefined)).toBe(true);
+    });
+
+    // The folder's own answer is the more specific one and must win in both directions.
+    it('should prefer the folder answer over the site answer', () => {
+        expect(canAddChildrenTo(node(['CAN_ADD_CHILDREN']), false)).toBe(true);
+        expect(canAddChildrenTo(node(['READ']), true)).toBe(false);
     });
 });
