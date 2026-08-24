@@ -342,7 +342,10 @@ jobs:
         uses: actions/checkout@v4
         with:
           ref: main
-          fetch-depth: 0
+          # Shallow checkout: this job only needs HEAD of main (it does its own
+          # `git fetch origin main` before checkout -B). fetch-depth: 0 pulled
+          # every branch ref (~2k+ branches, ~1.1 GB pack) at ~19-20 min.
+          fetch-depth: 1
           token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
 
       - name: Bump MinSdkVersion.VALUE and open PR
