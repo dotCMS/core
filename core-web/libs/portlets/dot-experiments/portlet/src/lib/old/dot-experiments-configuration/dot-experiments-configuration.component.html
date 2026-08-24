@@ -1,7 +1,7 @@
 @if (vm$ | async; as vm) {
     <dot-experiments-header
         (goBack)="goToExperimentList(vm.experiment?.pageId)"
-        [experiment]="vm.experiment"
+        [experiment]="vm.experiment ?? null"
         [isLoading]="vm.isLoading"
         [title]="vm.experiment?.name ?? ''">
         <div class="flex grow-0 items-center justify-between">
