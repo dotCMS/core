@@ -70,13 +70,13 @@ type SearchableDropdownRow = Record<string, unknown>;
         NgTemplateOutlet
     ]
 })
-export class SearchableDropdownComponent
+export class SearchableDropdownComponent<T = SearchableDropdownRow>
     implements ControlValueAccessor, OnChanges, AfterContentInit, AfterViewInit
 {
     private cd = inject(ChangeDetectorRef);
 
     @Input()
-    data!: Record<string, unknown>[];
+    data!: T[];
 
     @Input() action?: (event: Event) => void;
 
@@ -138,7 +138,7 @@ export class SearchableDropdownComponent
     externalFilterTemplate!: TemplateRef<unknown>;
 
     @Output()
-    switch: EventEmitter<unknown> = new EventEmitter();
+    switch: EventEmitter<T> = new EventEmitter();
 
     @Output()
     filterChange: EventEmitter<string> = new EventEmitter();
@@ -168,9 +168,9 @@ export class SearchableDropdownComponent
 
     valueString = '';
     /** Null until a row is picked, which is also what `writeValue(null)` sets. */
-    value: SearchableDropdownRow | null = null;
+    value: T | null = null;
     overlayPanelMinHeight!: string;
-    options: SearchableDropdownRow[] = [];
+    options: T[] = [];
     label: string | null = null;
     externalSelectTemplate!: TemplateRef<unknown>;
 
@@ -299,7 +299,7 @@ export class SearchableDropdownComponent
      * @param * value
      * @memberof SearchableDropdownComponent
      */
-    writeValue(value: SearchableDropdownRow | null): void {
+    writeValue(value: T | null): void {
         this.setValue(value);
     }
 
@@ -325,10 +325,12 @@ export class SearchableDropdownComponent
      * @returns {string}
      * @memberof SearchableDropdownComponent
      */
-    getItemLabel(dropDownItem: SearchableDropdownRow | null | undefined): string {
+    getItemLabel(dropDownItem: T | SearchableDropdownRow | null | undefined): string {
         if (!dropDownItem) {
             return '';
         }
+
+        const row = this.#row(dropDownItem as T);
 
         if (Array.isArray(this.labelPropertyName)) {
             const resultProps = this.labelPropertyName.map((item) => {
@@ -337,19 +339,19 @@ export class SearchableDropdownComponent
                     item.split('.').forEach((nested) => {
                         propertyName = propertyName
                             ? (propertyName as SearchableDropdownRow)[nested]
-                            : dropDownItem[nested];
+                            : row[nested];
                     });
 
                     return propertyName;
                 }
 
-                return dropDownItem[item];
+                return row[item];
             });
 
             return resultProps.join(' - ');
         }
 
-        return String(dropDownItem[`${this.labelPropertyName}`] ?? '');
+        return String(row[`${this.labelPropertyName}`] ?? '');
     }
 
     /**
@@ -359,7 +361,7 @@ export class SearchableDropdownComponent
      * @param {*} item
      * @memberof SearchableDropdownComponent
      */
-    handleClick(item: SearchableDropdownRow): void {
+    handleClick(item: T): void {
         if (this.value !== item || this.multiple) {
             this.setValue(item);
             this.propagateChange(this.getValueToPropagate());
@@ -431,7 +433,7 @@ export class SearchableDropdownComponent
         // `undefined`. Coercing this side to `''` makes that comparison false and the selected row
         // loses its class.
         this.valueString = this.value
-            ? (this.value[this.getValueLabelPropertyName()] as string)
+            ? (this.#row(this.value)[this.getValueLabelPropertyName()] as string)
             : this.placeholder;
         this.label = this.persistentPlaceholder ? this.placeholder : this.valueString;
         this.cd.markForCheck();
@@ -439,10 +441,8 @@ export class SearchableDropdownComponent
 
     private setOptions(change: SimpleChanges): void {
         if (change['data'] && change['data'].currentValue) {
-            this.options = (
-                structuredClone(change['data'].currentValue) as SearchableDropdownRow[]
-            ).map((item) => {
-                item['label'] = this.getItemLabel(item);
+            this.options = (structuredClone(change['data'].currentValue) as T[]).map((item) => {
+                this.#row(item)['label'] = this.getItemLabel(item);
 
                 return item;
             });
@@ -455,7 +455,7 @@ export class SearchableDropdownComponent
         return placeholderChange && placeholderChange.currentValue && !this.value;
     }
 
-    private setValue(newValue: SearchableDropdownRow | null): void {
+    private setValue(newValue: T | null): void {
         this.value = newValue;
 
         this.setLabel();
@@ -468,7 +468,19 @@ export class SearchableDropdownComponent
     }
 
     private getValueToPropagate() {
-        return !this.valuePropertyName ? this.value : this.value?.[this.valuePropertyName];
+        if (!this.valuePropertyName || !this.value) {
+            return this.value;
+        }
+
+        return this.#row(this.value)[this.valuePropertyName];
+    }
+
+    /**
+     * Rows are only ever known by key (see the note on {@link SearchableDropdownRow}); this is
+     * the single place that view is taken, so `T` stays whatever the caller actually passes.
+     */
+    #row(value: T): SearchableDropdownRow {
+        return value as SearchableDropdownRow;
     }
 }
 
