@@ -7,9 +7,9 @@
 @if (loading) {
     <div class="size-full bg-(--color-palette-black-op-30)"></div>
 }
-@if (!loading && globalError()?.message) {
+@if (!loading && globalError()?.message; as globalErrorMessage) {
     <div class="ui negative message font-bold text-red-600 first:mx-8 first:my-2 first:mb-4">
-        <div class="header">{{ globalError().message }}</div>
+        <div class="header">{{ globalErrorMessage }}</div>
         <p>{{ getI18nLabel('contact.admin.error') | async }}</p>
     </div>
 }
