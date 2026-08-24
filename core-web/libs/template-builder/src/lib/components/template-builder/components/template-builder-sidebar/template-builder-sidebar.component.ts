@@ -32,7 +32,7 @@ export class TemplateBuilderSidebarComponent {
     }
 
     get containers() {
-        return this.sidebarProperties.containers;
+        return this.sidebarProperties.containers ?? [];
     }
 
     /**
