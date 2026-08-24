@@ -1,66 +1,77 @@
 @let selected = store.selectedRoleId();
 
-<div class="flex min-h-0 flex-1">
-    <aside class="flex min-h-0 w-80 min-w-64 flex-col border-r border-surface-200">
-        <dot-roles-tree data-testid="roles-tree" />
-    </aside>
+<!-- Initial 22/78 split matches the old fixed-width aside (`w-80`). -->
+<p-splitter
+    [panelSizes]="[22, 78]"
+    [minSizes]="[15, 40]"
+    class="flex min-h-0 flex-1"
+    [pt]="splitterPt">
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-hidden">
+            <dot-roles-tree data-testid="roles-tree" />
+        </div>
+    </ng-template>
 
-    <section class="flex min-h-0 flex-1 flex-col overflow-auto">
-        @if (selected) {
-            <dot-roles-detail-header data-testid="role-detail-header" />
+    <ng-template pTemplate>
+        <div class="flex h-full flex-col overflow-auto">
+            @if (selected) {
+                <dot-roles-detail-header data-testid="role-detail-header" />
 
-            <p-tabs
-                [pt]="tabsPt"
-                [value]="store.activeTab()"
-                (valueChange)="onTabChange($event)"
-                data-testid="role-detail-tabs">
-                <p-tablist>
-                    <p-tab value="users" data-testid="tab-users">
-                        {{ 'roles.tab.users' | dm }}
-                    </p-tab>
-                    <p-tab value="permissions" data-testid="tab-permissions">
-                        {{ 'roles.tab.permissions' | dm }}
-                    </p-tab>
-                    <p-tab value="tools" data-testid="tab-tools">
-                        {{ 'roles.tab.tools' | dm }}
-                    </p-tab>
-                </p-tablist>
+                <p-tabs
+                    [pt]="tabsPt"
+                    [value]="store.activeTab()"
+                    (valueChange)="onTabChange($event)"
+                    data-testid="role-detail-tabs">
+                    <p-tablist>
+                        <p-tab value="users" data-testid="tab-users">
+                            {{ 'roles.tab.users' | dm }}
+                        </p-tab>
+                        <p-tab value="permissions" data-testid="tab-permissions">
+                            {{ 'roles.tab.permissions' | dm }}
+                        </p-tab>
+                        <p-tab value="tools" data-testid="tab-tools">
+                            {{ 'roles.tab.tools' | dm }}
+                        </p-tab>
+                    </p-tablist>
 
-                <p-tabpanels [pt]="tabPanelsPt">
-                    <p-tabpanel value="users" [pt]="tabPanelPt">
-                        <dot-role-users-tab data-testid="users-tab" />
-                    </p-tabpanel>
-                    <p-tabpanel value="permissions" [pt]="tabPanelPt">
-                        <!--
-                            Only mount the iframe when its tab is active. PrimeNG
-                            hides inactive `p-tabpanel`s with `display:none`, and
-                            the wrapped Dojo widgets inside the JSP snapshot the
-                            container width at boot via `dojo.contentBox(...)`
-                            (see `buildLayoutsGrid` for tools, and the accordion
-                            for permissions). If the iframe loads while hidden
-                            those measurements return 0 and the widget renders
-                            forever at that width. Mounting on activation
-                            guarantees the JSP boots with the real viewport
-                            width.
-                        -->
-                        @if (store.activeTab() === 'permissions') {
-                            <dot-role-permissions-iframe data-testid="permissions-tab" />
-                        }
-                    </p-tabpanel>
-                    <p-tabpanel value="tools" [pt]="tabPanelPt">
-                        @if (store.activeTab() === 'tools') {
-                            <dot-role-tools-iframe data-testid="tools-tab" />
-                        }
-                    </p-tabpanel>
-                </p-tabpanels>
-            </p-tabs>
-        } @else {
-            <div
-                class="text-color-secondary flex flex-1 flex-col items-center justify-center gap-2"
-                data-testid="empty-selection">
-                <span class="material-symbols-outlined text-5xl opacity-50">left_panel_open</span>
-                <p>{{ 'roles.detail.empty' | dm }}</p>
-            </div>
-        }
-    </section>
-</div>
+                    <p-tabpanels [pt]="tabPanelsPt">
+                        <p-tabpanel value="users" [pt]="tabPanelPt">
+                            <dot-role-users-tab data-testid="users-tab" />
+                        </p-tabpanel>
+                        <p-tabpanel value="permissions" [pt]="tabPanelPt">
+                            <!--
+                                Only mount the iframe when its tab is active. PrimeNG
+                                hides inactive `p-tabpanel`s with `display:none`, and
+                                the wrapped Dojo widgets inside the JSP snapshot the
+                                container width at boot via `dojo.contentBox(...)`
+                                (see `buildLayoutsGrid` for tools, and the accordion
+                                for permissions). If the iframe loads while hidden
+                                those measurements return 0 and the widget renders
+                                forever at that width. Mounting on activation
+                                guarantees the JSP boots with the real viewport
+                                width.
+                            -->
+                            @if (store.activeTab() === 'permissions') {
+                                <dot-role-permissions-iframe data-testid="permissions-tab" />
+                            }
+                        </p-tabpanel>
+                        <p-tabpanel value="tools" [pt]="tabPanelPt">
+                            @if (store.activeTab() === 'tools') {
+                                <dot-role-tools-iframe data-testid="tools-tab" />
+                            }
+                        </p-tabpanel>
+                    </p-tabpanels>
+                </p-tabs>
+            } @else {
+                <div
+                    class="text-color-secondary flex flex-1 flex-col items-center justify-center gap-2"
+                    data-testid="empty-selection">
+                    <span class="material-symbols-outlined text-5xl opacity-50">
+                        left_panel_open
+                    </span>
+                    <p>{{ 'roles.detail.empty' | dm }}</p>
+                </div>
+            }
+        </div>
+    </ng-template>
+</p-splitter>

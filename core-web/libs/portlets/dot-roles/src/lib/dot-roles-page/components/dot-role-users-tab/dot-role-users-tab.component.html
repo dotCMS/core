@@ -223,7 +223,7 @@
                         </div>
                     }
                 } @else {
-                    <!-- Friendly empty state — icon + title + hint copy. -->
+                    <!-- Friendly empty state — icon + title. -->
                     <div
                         class="text-color-secondary flex flex-col items-center gap-2 px-3 py-6 text-center"
                         data-testid="grant-user-empty">
@@ -232,9 +232,6 @@
                         </span>
                         <p class="m-0 text-sm font-medium text-color">
                             {{ 'roles.users.search.empty.title' | dm }}
-                        </p>
-                        <p class="text-color-secondary m-0 text-xs">
-                            {{ 'roles.users.search.empty.copy' | dm }}
                         </p>
                     </div>
                 }
