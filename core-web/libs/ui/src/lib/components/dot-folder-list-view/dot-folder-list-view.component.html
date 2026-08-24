@@ -39,13 +39,17 @@
                 }
             </th>
             @for (column of $columns(); track column.field) {
-                <!-- `min-width: max-content` is what guarantees a header is never cut, and the browser
-                     measures it exactly, so the column is never wider than the label needs either.
-                     It is also what stops `table-layout: fixed` from squeezing the cell: `width` there
-                     is only a share to distribute, and the fixed columns' percentages resolve against
-                     the table's enlarged `min-width`, so they inflate and take room back — which cut
-                     even a short label. Values still truncate in their own cells.
-                     `title` stays as a belt-and-braces affordance. -->
+                <!-- `min-width: max-content` reads like the guarantee that a header is never cut, but
+                     under `table-layout: fixed` it does nothing: the column is sized from the first
+                     row's `width` and a cell's min-width is ignored. Measured in the rendered portlet,
+                     a 7rem header cell whose label and sort icon needed 113px was laid out at 98px,
+                     min-width and all. It is kept only for the layouts that are not fixed; what
+                     actually has to hold is the width each column is given, which is why
+                     `#resolveExtraColumnWidth` sizes an extra column from its own header and reserves
+                     room for the sort indicator.
+                     Nothing clips here either (`whitespace-nowrap`, no `overflow`), so a header that
+                     outgrows its cell draws over its neighbour instead of truncating, which is what
+                     `title` is the affordance for when a narrow table does cut a label. -->
                 @if (column.sortable && !$readOnly()) {
                     <th
                         class="whitespace-nowrap"
