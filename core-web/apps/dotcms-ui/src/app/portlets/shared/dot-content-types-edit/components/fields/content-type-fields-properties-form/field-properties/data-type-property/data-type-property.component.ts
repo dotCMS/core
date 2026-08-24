@@ -1,10 +1,7 @@
 import { Component, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
-import {
-    DATA_TYPE_PROPERTY_INFO,
-    DataTypeOption
-} from '../../../service/data-type-property-info';
+import { DATA_TYPE_PROPERTY_INFO, DataTypeOption } from '../../../service/data-type-property-info';
 import { FieldProperty } from '../field-properties.model';
 
 @Component({

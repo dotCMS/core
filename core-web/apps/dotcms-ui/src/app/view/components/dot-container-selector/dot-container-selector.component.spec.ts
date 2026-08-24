@@ -91,7 +91,8 @@ describe('ContainerSelectorComponent', () => {
         const searchable = spectator.debugElement.query(
             By.css('[data-testid="searchableDropdown"]')
         );
-        const searchableComponent = searchable.componentInstance as SearchableDropdownComponent<DotContainer>;
+        const searchableComponent =
+            searchable.componentInstance as SearchableDropdownComponent<DotContainer>;
 
         expect(searchableComponent.labelPropertyName).toEqual(['name', 'hostName']);
         expect(searchableComponent.multiple).toBe(true);

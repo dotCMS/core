@@ -387,7 +387,7 @@ describe('DotContentTypesPortletComponent', () => {
             owner: '123',
             system: false
         };
-        expect(comp.addToBundleIdentifier).not.toBeDefined();
+        expect(comp.addToBundleIdentifier).toBeNull();
 
         comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command!(mockContentType);
 
@@ -412,7 +412,7 @@ describe('DotContentTypesPortletComponent', () => {
             owner: '123',
             system: false
         };
-        expect(comp.addToMenuContentType).not.toBeDefined();
+        expect(comp.addToMenuContentType).toBeNull();
 
         comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command!(mockContentType);
 
