@@ -1,9 +1,9 @@
 @if (vm$ | async; as vm) {
     <dot-experiments-header
-        (goBack)="goToExperimentList(vm.experiment.pageId)"
+        (goBack)="goToExperimentList(vm.experiment?.pageId)"
         [experiment]="vm.experiment"
         [isLoading]="vm.isLoading"
-        [title]="vm.experiment?.name">
+        [title]="vm.experiment?.name ?? ''">
         <div class="flex grow-0 items-center justify-between">
             <p-button
                 (click)="menu.toggle($event)"
@@ -19,16 +19,16 @@
     </dot-experiments-header>
 
     <div class="flex size-full flex-col gap-4 overflow-y-auto bg-gray-100 p-4 md:p-8">
-        @if (!vm.isLoading) {
+        @if (!vm.isLoading && vm.experiment; as experiment) {
             <p-card data-testId="experiment-description">
                 <dot-experiments-inplace-edit-text
-                    (textChanged)="saveDescriptionAction($event, vm.experiment)"
+                    (textChanged)="saveDescriptionAction($event, experiment)"
                     [disabled]="
                         vm.experimentStatus === experimentStatus.RUNNING ||
                         !!vm.disabledTooltipLabel
                     "
                     [isLoading]="vm.isDescriptionSaving"
-                    [text]="vm.experiment.description"
+                    [text]="experiment.description"
                     emptyTextMessage="experiments.configure.description.add" />
             </p-card>
             <dot-experiments-configuration-variants />
