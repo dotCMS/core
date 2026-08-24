@@ -5,6 +5,7 @@ import type { Injector } from '@angular/core';
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
+import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -147,6 +148,10 @@ export function createEditorExtensions(
         IndentExtension,
         Superscript,
         Subscript,
+        // Legacy-compat + parity: the legacy editor registers Highlight, so stored content can
+        // carry `highlight` marks. Without it here TipTap aborts the whole document (#37145).
+        // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
+        Highlight,
         createUploadPlaceholderExtension(uploadCopy),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes

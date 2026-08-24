@@ -12,6 +12,9 @@ import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openaiofficial.OpenAiOfficialImageModel;
 
 import java.time.Duration;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
 import java.util.function.Consumer;
 
 class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
@@ -19,6 +22,44 @@ class AzureOpenAiModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "azure_openai";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS, Capability.IMAGE);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        final List<ProviderField> common = List.of(
+                ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                ProviderField.required("endpoint", ProviderFieldType.STRING),
+                ProviderField.optionalUnless("model", ProviderFieldType.STRING, "deploymentName",
+                        "Required if deploymentName is not set"),
+                ProviderField.optionalUnless("deploymentName", ProviderFieldType.STRING, "model",
+                        "Required if model is not set"),
+                ProviderField.optional("apiVersion", ProviderFieldType.STRING, "e.g. 2024-02-01"));
+        return switch (capability) {
+            case CHAT -> concat(common,
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> concat(common,
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case IMAGE -> concat(common,
+                    ProviderField.optional("size", ProviderFieldType.STRING, "e.g. 1024x1024"),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+        };
+    }
+
+    private static List<ProviderField> concat(final List<ProviderField> common, final ProviderField... extra) {
+        final List<ProviderField> all = new ArrayList<>(common);
+        all.addAll(List.of(extra));
+        return List.copyOf(all);
     }
 
     @Override
