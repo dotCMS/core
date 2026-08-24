@@ -1,4 +1,9 @@
-import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
+import {
+    DOT_FOLDER_TREE_PAGE_SIZE,
+    DotCMSBaseTypesContentTypes,
+    DotSite
+} from '@dotcms/dotcms-models';
+import { SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -6,8 +11,8 @@ import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrde
 export const SYSTEM_HOST: DotSite = {
     aliases: '',
     archived: false,
-    hostname: 'SYSTEM_HOST',
-    identifier: 'SYSTEM_HOST'
+    hostname: SYSTEM_HOST_ID,
+    identifier: SYSTEM_HOST_ID
 };
 
 // Default pagination
@@ -18,18 +23,30 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
 };
 
 /**
- * Page size used when loading the initial folder hierarchy (deep-link restore) via
- * `GET /api/v1/folder/search`. Each ancestor level of the target path is fetched in full so the
- * selected folder is always present and the tree can expand to it. Matches the backend's
- * `SUB_FOLDER_UNLIMITED_SAFETY_CAP` (10000) — the ceiling the server itself enforces.
+ * Page size for interactive folder-tree expand and load-more.
+ * Re-exports the shared limit used by Host Folder Field so both stay in sync.
  */
-export const FOLDER_TREE_SEARCH_PAGE_SIZE = 10000;
+export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
 
 /**
- * Page size used when a user expands a folder node. Children load one page at a time; if more
- * remain, a "Load more" node is appended so the DOM stays bounded on large levels.
+ * Page size for the deep-link / initial hierarchy fetch only. One request per ancestor level
+ * (parallel). Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ *
+ * Pinned to the backend's cap for `includePermissions=true`
+ * (`content.drive.folder.search.permissions.max.per.page`, default 200): anything larger is
+ * rejected with a 400, and the hierarchy load must carry permissions so every node the tree
+ * renders on first paint can gate its context menu without a second round-trip.
+ *
+ * An ancestor sorting past this page is fetched individually instead of by widening the page,
+ * see `getFolderHierarchyByPath`.
+ *
+ * Deliberately a whole multiple of {@link FOLDER_TREE_PAGE_SIZE}: load-more resumes in
+ * 40-sized pages, so the hierarchy's page count has to convert to a clean page boundary.
  */
-export const FOLDER_TREE_PAGE_SIZE = 50;
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
+
+/** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
+export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
 export const DEFAULT_SORT = {
     field: 'modDate',
@@ -92,6 +109,22 @@ export const DEBOUNCE_TIME = 500;
  * field whose variable happens to be `title`, `workflow`, etc.
  */
 export const USER_SEARCHABLE_PREFIX = 'us.';
+
+/**
+ * Filter-bag key backing the "Show Shared Assets" toggle, which drives `includeSystemHost` on the
+ * search request. It lives in the bag rather than in its own query param so it inherits the URL
+ * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
+ *
+ * Like `languageId`, it is always seeded rather than written only when it differs from the default,
+ * so the state that is applied is always visible in the URL instead of being implied by absence.
+ */
+export const SHARED_ASSETS_FILTER_KEY = 'sharedAssets';
+
+/** Shows SYSTEM_HOST (shared) assets. The seeded default. */
+export const SHARED_ASSETS_ENABLED_VALUE = 'true';
+
+/** Hides SYSTEM_HOST (shared) assets. */
+export const SHARED_ASSETS_DISABLED_VALUE = 'false';
 
 /**
  * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
@@ -228,28 +261,6 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
 /**
- * Options shown in the upload-type selector dialog. `baseType` is the base type fired to the
- * upload endpoint, which the backend resolves to the matching content type: `DOTASSET` for Assets,
- * `FILEASSET` for Files.
- */
-export const UPLOAD_SELECTOR_OPTIONS = [
-    {
-        baseType: DotCMSBaseTypesContentTypes.DOTASSET,
-        icon: 'image',
-        labelKey: 'content-drive.dialog.upload-selector.asset',
-        descriptionKey: 'content-drive.dialog.upload-selector.asset.description',
-        recommended: true
-    },
-    {
-        baseType: DotCMSBaseTypesContentTypes.FILEASSET,
-        icon: 'code_blocks',
-        labelKey: 'content-drive.dialog.upload-selector.file',
-        descriptionKey: 'content-drive.dialog.upload-selector.file.description',
-        recommended: false
-    }
-] as const;
-
-/**
  * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
  * folder's `defaultBaseType`: `null` means "ask each time" (the upload menu is shown on every
  * upload), `DOTASSET`/`FILEASSET` force every upload to that base type. The backend routes the
@@ -300,9 +311,9 @@ export const WARNING_MESSAGE_LIFE = 4200;
 export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
 
-// Dropzone state
-export const DROPZONE_STATE = {
-    INTERNAL_DRAG: 'internal-drag',
-    ACTIVE: 'active',
-    INACTIVE: 'inactive'
-} as const;
+/**
+ * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no
+ * identifier) whose only job is to give browser Back a history entry to pop, so Back closes the
+ * create panel too (AC8). The deep-link reader ignores it; only real identifiers are resolved.
+ */
+export const NEW_CONTENT_MARKER = 'new';

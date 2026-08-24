@@ -1667,6 +1667,288 @@
 			]
 		},
 		{
+			"name": "UpdateUserEmptyRolesRemovesAll",
+			"item": [
+				{
+					"name": "CreateTestUserWithRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"const responseData = pm.response.json();",
+									"pm.test(\"Entity carries the created userID\", function () {",
+									"    pm.expect(responseData.entity).to.have.property('userID').that.is.a('string');",
+									"});",
+									"pm.environment.set(\"emptyRolesUserId\", responseData.entity.userID);"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"active\": true,\n    \"firstName\": \"EmptyRoles\",\n    \"lastName\": \"TestUser37109\",\n    \"email\": \"emptyroles37109@dotcms.com\",\n    \"password\": [\"1\",\"2\",\"3\",\"4\",\"5\",\"6\",\"7\",\"8\"],\n    \"roles\": [\"DOTCMS_BACK_END_USER\", \"Scripting Developer\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VerifyUserHoldsAssignableRoles",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// Precondition pin: the user really holds the two assignable roles before the empty-array update",
+									"const roles = pm.response.json().entity;",
+									"const keys = roles.map(r => r.roleKey);",
+									"pm.test(\"User holds DOTCMS_BACK_END_USER and Scripting Developer\", function () {",
+									"    pm.expect(keys).to.include('DOTCMS_BACK_END_USER');",
+									"    pm.expect(keys).to.include('Scripting Developer');",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/users/{{emptyRolesUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"users",
+								"{{emptyRolesUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateUserWithEmptyRolesArray",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// #37109: an explicit empty roles array must be honored (was a silent no-op)",
+									"pm.test(\"Errors array is empty\", function () {",
+									"    pm.expect(pm.response.json()).to.have.property('errors').that.is.an('array').and.is.empty;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{emptyRolesUserId}}\",\n    \"active\": true,\n    \"firstName\": \"EmptyRoles\",\n    \"lastName\": \"TestUser37109\",\n    \"email\": \"emptyroles37109@dotcms.com\",\n    \"roles\": []\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "VerifyAllUserAssignableRolesRemoved",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200 OK or 201 Created\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});",
+									"",
+									"// #37109: after roles: [] every user-assignable (editUsers=true) role must be gone,",
+									"// while system-managed memberships (the user's individual role) are preserved.",
+									"const roles = pm.response.json().entity;",
+									"const keys = roles.map(r => r.roleKey);",
+									"pm.test(\"Assignable roles are removed\", function () {",
+									"    pm.expect(keys).to.not.include('DOTCMS_BACK_END_USER');",
+									"    pm.expect(keys).to.not.include('Scripting Developer');",
+									"});",
+									"pm.test(\"No user-assignable role remains\", function () {",
+									"    pm.expect(roles.filter(r => r.editUsers === true)).to.be.empty;",
+									"});",
+									"pm.test(\"System-managed memberships are preserved\", function () {",
+									"    pm.expect(roles.length).to.be.above(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/roles/users/{{emptyRolesUserId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"roles",
+								"users",
+								"{{emptyRolesUserId}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "UpdateUserWithNullRoleEntryRejected",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"// #37109: null/blank entries in the roles list are rejected up front,",
+									"// mirroring RoleUsersForm on the role-side membership endpoints.",
+									"pm.test(\"Status code is 400 Bad Request\", function () {",
+									"    pm.expect(pm.response.code).to.eql(400);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/users",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"users"
+							]
+						},
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"userId\": \"{{emptyRolesUserId}}\",\n    \"active\": true,\n    \"firstName\": \"EmptyRoles\",\n    \"lastName\": \"TestUser37109\",\n    \"email\": \"emptyroles37109@dotcms.com\",\n    \"roles\": [\"DOTCMS_BACK_END_USER\", null]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						}
+					},
+					"response": []
+				}
+			]
+		},
+		{
 			"name": "FindUsers",
 			"item": [
 				{

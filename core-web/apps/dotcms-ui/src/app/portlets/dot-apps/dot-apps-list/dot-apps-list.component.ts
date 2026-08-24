@@ -1,7 +1,15 @@
 import { patchState, signalState } from '@ngrx/signals';
 import { fromEvent as observableFromEvent } from 'rxjs';
 
-import { Component, DestroyRef, ElementRef, AfterViewInit, inject, viewChild } from '@angular/core';
+import {
+    AfterViewInit,
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    ElementRef,
+    inject,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 
@@ -29,6 +37,7 @@ interface DotAppsListState {
     selector: 'dot-apps-list',
     templateUrl: './dot-apps-list.component.html',
     styleUrls: ['./dot-apps-list.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         InputTextModule,
         ButtonModule,
@@ -88,15 +97,16 @@ export class DotAppsListComponent implements AfterViewInit {
      * Opens the Export dialog for all configurations
      */
     openExportDialog(): void {
-        // For export all, we don't pass an app - the store handles this
-        this.#dialogStore.openExport(null as unknown as DotApp);
+        // For export all, we don't pass an app — the store handles null to mean "all apps".
+        this.#dialogStore.openExport(null);
     }
 
     /**
-     * Checks if export button is disabled based on existing configurations
+     * True when at least one app has a saved configuration — the export button is
+     * enabled only in that case.
      */
-    isExportButtonDisabled(): boolean {
-        return this.state.allApps().filter((app: DotApp) => app.configurationsCount).length > 0;
+    hasExportableApps(): boolean {
+        return this.state.allApps().some((app: DotApp) => !!app.configurationsCount);
     }
 
     /**
@@ -134,10 +144,13 @@ export class DotAppsListComponent implements AfterViewInit {
     }
 
     private filterApps(searchCriteria?: string): void {
-        this.#dotAppsService.get(searchCriteria).subscribe((apps: DotApp[]) => {
-            patchState(this.state, {
-                displayedApps: apps
+        this.#dotAppsService
+            .get(searchCriteria)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((apps: DotApp[]) => {
+                patchState(this.state, {
+                    displayedApps: apps
+                });
             });
-        });
     }
 }

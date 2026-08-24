@@ -50,12 +50,15 @@ export function Container({ container }: DotCMSContainerRendererProps) {
     const { pageAsset } = useContext(DotCMSPageContext);
     const isDevMode = useIsDevMode();
 
+    // pageAsset is undefined while useEditableDotCMSPage is still waiting on the UVE editor to
+    // resolve a draft/non-live page - Container never actually renders in that state (its parent
+    // DotCMSLayoutBody shows ErrorMessage instead), but the guard keeps this honest either way.
     const containerData = useMemo(
-        () => getContainersData(pageAsset, container),
+        () => (pageAsset ? getContainersData(pageAsset, container) : null),
         [pageAsset, container]
     );
     const contentlets = useMemo(
-        () => getContentletsInContainer(pageAsset, container),
+        () => (pageAsset ? getContentletsInContainer(pageAsset, container) : []),
         [pageAsset, container]
     );
 

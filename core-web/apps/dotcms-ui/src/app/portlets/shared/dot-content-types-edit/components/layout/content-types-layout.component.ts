@@ -8,7 +8,8 @@ import {
     input,
     output,
     signal,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, NavigationEnd, Router } from '@angular/router';
@@ -38,6 +39,7 @@ import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor
     selector: 'dot-content-type-layout',
     templateUrl: 'content-types-layout.component.html',
     providers: [DotClipboardUtil],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         TabsModule,
         SplitButtonModule,

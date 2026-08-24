@@ -9,10 +9,8 @@ import { By } from '@angular/platform-browser';
 import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DotMessageService, PushPublishService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, PushPublishEnvSelectorComponent } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
-
-import { PushPublishEnvSelectorComponent } from './dot-push-publish-env-selector.component';
 
 import { DOTTestBed } from '../../../../test/dot-test-bed';
 

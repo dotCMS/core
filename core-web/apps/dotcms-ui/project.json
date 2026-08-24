@@ -127,7 +127,7 @@
         "serve": {
             "continuous": true,
             "executor": "@angular/build:dev-server",
-            "dependsOn": [],
+            "dependsOn": [{ "target": "build", "projects": ["dotcms-webcomponents"] }],
             "defaultConfiguration": "development",
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy-dev.conf.mjs",

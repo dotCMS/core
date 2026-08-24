@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -11,6 +11,7 @@ import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } fr
 @Component({
     selector: 'dot-analytics-error',
     imports: [DotEmptyContainerComponent, DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-analytics-error.component.html'
 })
 export default class DotAnalyticsErrorComponent {

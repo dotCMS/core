@@ -28,7 +28,7 @@
     filterMode="lenient"
     selectionMode="single">
     <ng-template let-node pTemplate="default">
-        <span>{{ node?.label | dotTruncatePath }}</span>
+        <span>{{ node?.label | dotFolderName }}</span>
     </ng-template>
     <ng-template let-item pTemplate="value">
         @if (item?.label) {
@@ -41,7 +41,7 @@
 
 @let error = store.error();
 @if (error) {
-    <div class="text-red-500 text-sm mt-2">
+    <div class="mt-2 text-sm text-red-500">
         {{ error | dm }}
     </div>
 }

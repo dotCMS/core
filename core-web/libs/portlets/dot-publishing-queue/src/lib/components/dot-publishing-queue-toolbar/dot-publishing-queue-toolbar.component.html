@@ -50,13 +50,28 @@
                     appendTo="body"
                     showTransitionOptions="0ms"
                     hideTransitionOptions="0ms"
-                    data-testid="pq-add-bundle-menu" />
+                    data-testid="pq-add-bundle-menu">
+                    <!-- Classes mirror PrimeNG's default item markup so padding
+                         and hover stay identical. -->
+                    <ng-template pTemplate="item" let-item>
+                        <span class="p-menu-item-link">
+                            <span class="p-menu-item-label">{{ item.label }}</span>
+                            @if (showsDraftCount(item)) {
+                                <span
+                                    class="text-color-secondary ml-auto pl-4 text-sm"
+                                    data-testid="pq-select-bundle-count">
+                                    {{ store.draftBundlesTotal() }}
+                                </span>
+                            }
+                        </span>
+                    </ng-template>
+                </p-menu>
                 <p-button
                     (onClick)="addBundleMenu.toggle($event)"
-                    [attr.aria-label]="'publishing-queue.add-bundle' | dm"
+                    [attr.aria-label]="$bundlesLabel()"
                     data-testid="pq-add-bundle-btn">
-                    <span class="p-button-label">
-                        {{ 'publishing-queue.add-bundle' | dm }}
+                    <span class="p-button-label" data-testid="pq-add-bundle-btn-label">
+                        {{ $bundlesLabel() }}
                     </span>
                     <span
                         class="material-symbols-rounded -my-1 w-5 leading-none!"

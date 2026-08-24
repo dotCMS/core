@@ -75,6 +75,7 @@ The lib follows a strict split: **data fetching** delegates to `@dotcms/data-acc
 | `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`) and per-type metadata reads (`getContentType`, used by `ContentletEditUrlService`). |
 | `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down (`/api/content/_search`). The editor-flavoured query string (`+contentType:X +languageId:Y +deleted:false +working:true +catchall:** title:''^15`) is built inline at the call site (`buildContentletByTypeQuery` in `slash-menu-catalog.ts`); the service itself stays generic. |
 | `DotLanguagesService` | Language metadata for the editor store (`getById`). |
+| `DotSiteService` | `getCurrentSite()` for the asset pickers — `DotAssetPickerComponent` needs a `DotSite` to browse and the editor holds none of its own. |
 | `DotAiService` | AI text generation, AI image generation + publish, plugin status check. Identical surface to legacy block-editor usage. |
 | `DotUploadFileService` | Wrapped by the lib's local `DotUploadService` adapter (see below). |
 | `DotMessageService` | i18n. Used everywhere. |
@@ -86,7 +87,7 @@ Do **not** create custom HTTP services in this lib for any of the above. If you 
 | Service | Why it stays local |
 |---|---|
 | `EditorPopoverService` | Caret-anchored popover state (active id, anchor rect, per-popover payloads). Editor-only concern. |
-| `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, image / video pickers). Editor-only concern. |
+| `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, and the image / video / audio asset pickers). Editor-only concern. |
 | `EditorToolbarStore` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
 | `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
 | `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
@@ -105,7 +106,7 @@ The editor uses two distinct overlay primitives. Pick by interaction model, not 
 | Primitive | Use | Anchored to | Modality | Examples |
 |-----------|-----|-------------|----------|----------|
 | `<dot-editor-popover>` shell | Compact, caret-anchored, single form | Caret / trigger rect via `@floating-ui/dom` | Non-modal — no backdrop, no focus trap, click-outside dismisses | link, table, image-properties, emoji |
-| PrimeNG `DialogService.open()` | Centered modal — large content, multi-pane, embeddable, or external library component | Viewport center | Modal — backdrop, focus trap, explicit close | AI content, AI image, image picker, video picker |
+| PrimeNG `DialogService.open()` | Centered modal — large content, multi-pane, embeddable, or external library component | Viewport center | Modal — backdrop, focus trap, explicit close | AI content, AI image, asset picker (image / video / audio) |
 
 When an overlay has both an input area AND a result/preview area, default to a centered modal — caret-anchored popovers get cramped.
 
@@ -123,10 +124,11 @@ Each popover content component:
 
 ### Centered modals via `DialogService.open()` (`EditorModalService`)
 
-Every centered modal in the editor — AI content, AI image, image picker, video picker — is opened through PrimeNG's `DialogService.open()`, surfaced by `EditorModalService` (`services/editor-modal.service.ts`). One pattern, one teardown story:
+Every centered modal in the editor — AI content, AI image, and the image / video / audio asset pickers — is opened through PrimeNG's `DialogService.open()`, surfaced by `EditorModalService` (`services/editor-modal.service.ts`). One pattern, one teardown story:
 
 - The editor component provides `DialogService` at the component scope so each editor instance gets its own dynamic-dialog factory. Provided in `editor.component.ts`.
-- `EditorModalService` keeps one private `DynamicDialogRef` per modal kind, set to `null` between opens.
+- `EditorModalService` keeps one live `DynamicDialogRef` per modal kind, cleared between opens (the three asset pickers share one `Map` keyed by media mode, since they are one flow parameterised by mimetype).
+- The asset pickers additionally resolve the current site through `DotSiteService` before opening — `DotAssetPickerComponent` cannot be configured without a `DotSite`. It is cached per editor instance and fetched lazily on first open. That async gap is why they guard on a *pending* set as well as the live ref: without it two fast clicks both sail past the ref check and stack two dialogs.
 - Each `openX(editor)` method calls `dialogService.open(Component, config)` with the right `data` and subscribes to `dialogRef.onClose` to apply the result (insert nodes, mutate state) into the editor.
 - Modal components inject `DynamicDialogRef` and signal a result by calling `this.dialogRef.close(result)`. Cancel/Escape/X close with no value, which the `onClose` subscriber treats as "no-op".
 - `ngOnDestroy()` on the service closes every live ref so an editor unmount mid-dialog doesn't orphan an overlay.
@@ -178,6 +180,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `code` | StarterKit | Inline code | any text |
 | `superscript` | `@tiptap/extension-superscript` | Sup | any text |
 | `subscript` | `@tiptap/extension-subscript` | Sub | any text |
+| `highlight` | `@tiptap/extension-highlight` | — (schema only; the legacy editor has no button either) | any text |
 | `link` | `@tiptap/extension-link` | Link popover | any text (gated by `link` allowed-block) |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
 
@@ -201,7 +204,7 @@ These slash entries do not map 1:1 to a node — they trigger flows that mutate 
 | AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()` (centered modal). On accept, inserts a `dotImage` node. |
 | AI Content | Opens `AiContentDialogComponent` via `DialogService.open()` (centered modal). On insert, the generated HTML is parsed against the editor schema so each block becomes a normal editable node (paragraphs / headings / lists). Does NOT wrap in an `aiContent` block. |
 | Content type | Opens an in-place sub-menu of allowed content types, then a contentlet picker. Inserts a `dotContent` node. |
-| Image / Video | Opens `DotBrowserSelectorComponent` via `DialogService.open()` (centered modal picker). Inserts the corresponding `dotImage` / `dotVideo` node. |
+| Image / Video / Audio | Opens `DotAssetPickerComponent` via `DialogService.open()` (centered modal picker) — the same picker the Edit Content File and Image fields use, so browsing for an asset looks the same everywhere. Inserts the corresponding `dotImage` / `dotVideo` / `dotAudio` node. Config comes from `buildAssetPickerConfig` + `buildAssetPickerDialogConfig` (`@dotcms/ui`); the mode (`image` \| `video` \| `audio`) is what supplies the mimetype narrowing and the dialog title. |
 | Table / Link / Emoji | Opens a caret-anchored `<dot-editor-popover>`. Insert / mutate the corresponding node. |
 
 ### Customer-supplied remote commands (`customBlocks` field variable)

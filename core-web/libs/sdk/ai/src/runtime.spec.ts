@@ -148,3 +148,78 @@ describe('createRuntime.run — context-load timeout', () => {
         expect(result.value).toBe(1);
     }, 5000);
 });
+
+describe('createRuntime context freshness', () => {
+    const fetchMock = jest.fn();
+
+    beforeEach(() => {
+        fetchMock.mockReset();
+        global.fetch = fetchMock as unknown as typeof fetch;
+    });
+
+    it('loads all site states and reuses the snapshot within one runtime', async () => {
+        let siteLoads = 0;
+        fetchMock.mockImplementation(async (url: string) => {
+            const parsed = new URL(url);
+            if (parsed.pathname === '/api/v1/site') {
+                siteLoads += 1;
+                expect(parsed.searchParams.get('archive')).toBe('true');
+                return jsonResponse({
+                    entity: [
+                        {
+                            identifier: `site-${siteLoads}`,
+                            siteName: 'demo.dotcms.com',
+                            isDefault: true,
+                            isArchived: siteLoads === 1,
+                            isLive: siteLoads > 1
+                        }
+                    ]
+                });
+            }
+            return jsonResponse({ entity: [] });
+        });
+
+        const dotcms = createRuntime({ url: 'https://demo.dotcms.com', token: 't' });
+        const first = await dotcms.loadContext();
+        const cached = await dotcms.loadContext();
+        expect(first.sites[0]).toMatchObject({ archived: true, live: false });
+        expect(cached.sites[0].identifier).toBe('site-1');
+        expect(siteLoads).toBe(1);
+    });
+
+    it('paginates and de-duplicates the complete site catalog', async () => {
+        fetchMock.mockImplementation(async (url: string) => {
+            const parsed = new URL(url);
+            if (parsed.pathname !== '/api/v1/site') {
+                return jsonResponse({ entity: [] });
+            }
+            const page = Number(parsed.searchParams.get('page'));
+            if (page === 0) {
+                return jsonResponse({
+                    entity: Array.from({ length: 200 }, (_, index) => ({
+                        identifier: `site-${index}`,
+                        siteName: `site-${index}.example.com`,
+                        isLive: true
+                    }))
+                });
+            }
+            return jsonResponse({
+                entity: [
+                    { identifier: 'site-199', siteName: 'duplicate.example.com', isLive: false },
+                    { identifier: 'site-200', siteName: 'last.example.com', isLive: false }
+                ]
+            });
+        });
+
+        const context = await createRuntime({
+            url: 'https://demo.dotcms.com',
+            token: 't'
+        }).loadContext();
+
+        expect(context.sites).toHaveLength(201);
+        expect(context.sites.find((site) => site.identifier === 'site-199')?.hostname).toBe(
+            'duplicate.example.com'
+        );
+        expect(context.sites.find((site) => site.identifier === 'site-200')?.live).toBe(false);
+    });
+});

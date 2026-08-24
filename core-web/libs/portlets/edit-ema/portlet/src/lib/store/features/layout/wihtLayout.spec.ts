@@ -6,6 +6,7 @@ import { of } from 'rxjs';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { DotPropertiesService } from '@dotcms/data-access';
+import { withFlags } from '@dotcms/store';
 
 import { withLayout } from './withLayout';
 
@@ -14,7 +15,6 @@ import { MOCK_RESPONSE_HEADLESS } from '../../../shared/mocks';
 import { mapContainerStructureToDotContainerMap } from '../../../utils';
 import { UVEState } from '../../models';
 import { createInitialUVEState } from '../../testing/mocks';
-import { withFlags } from '../flags/withFlags';
 import { withPage } from '../page/withPage';
 
 const initialState = createInitialUVEState();

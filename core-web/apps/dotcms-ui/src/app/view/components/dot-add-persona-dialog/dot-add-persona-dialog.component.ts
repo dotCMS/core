@@ -1,4 +1,13 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    ViewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -18,6 +27,7 @@ import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-cre
 const PERSONA_CONTENT_TYPE = 'persona';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-add-persona-dialog',
     templateUrl: './dot-add-persona-dialog.component.html',
     styleUrls: ['./dot-add-persona-dialog.component.scss'],

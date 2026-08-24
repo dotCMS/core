@@ -269,6 +269,7 @@ import com.dotmarketing.startup.runonce.Task260407AddBaseTypeColumnToIdentifier;
 import com.dotmarketing.startup.runonce.Task260505AddPluginsPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260507CreateS3VanityAliasTable;
 import com.dotmarketing.startup.runonce.Task260615AlterClusterIdLength;
+import com.dotmarketing.startup.runonce.Task260420AddDotAuthPortletToMenu;
 import com.dotmarketing.startup.runonce.Task260720AddDefaultBaseTypeToFolderTable;
 import com.google.common.collect.ImmutableList;
 
@@ -640,6 +641,9 @@ public class TaskLocatorUtil {
 		ret.add(Task00002LoadClusterLicenses.class);
 		ret.add(Task00040CheckAnonymousUser.class);
 		ret.add(Task00050LoadAppsSecrets.class);
+		// run-always reconcile, not version-gated: the bundled starter can record a db_version
+		// past this task's number while its layouts predate the dotAuth portlet (fresh-install gap)
+		ret.add(Task260420AddDotAuthPortletToMenu.class);
         return ret.stream().sorted(classNameComparator).collect(Collectors.toList());
 	}
 

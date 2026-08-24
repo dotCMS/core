@@ -9,7 +9,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     FormsModule,
@@ -38,17 +39,18 @@ import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-mod
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    PushPublishEnvSelectorComponent
 } from '@dotcms/ui';
 
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
-import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
     styleUrls: ['./dot-push-publish-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         AutoFocusModule,
         FormsModule,

@@ -6,7 +6,8 @@ import {
     HostBinding,
     OnDestroy,
     OnInit,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 import { filter, takeUntil } from 'rxjs/operators';
@@ -25,6 +26,7 @@ import { DotSpinnerComponent } from '@dotcms/ui';
     selector: 'dot-global-message',
     templateUrl: './dot-global-message.component.html',
     styleUrls: ['./dot-global-message.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotSpinnerComponent]
 })
 export class DotGlobalMessageComponent implements OnInit, OnDestroy {

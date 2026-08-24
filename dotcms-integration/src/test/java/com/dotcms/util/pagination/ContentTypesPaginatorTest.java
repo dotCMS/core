@@ -1,6 +1,7 @@
 package com.dotcms.util.pagination;
 
-import com.dotcms.content.elasticsearch.business.IndiciesInfo;
+import com.dotcms.content.elasticsearch.business.ContentletIndexAPI;
+import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.contenttype.model.type.BaseContentType;
@@ -209,16 +210,21 @@ public class ContentTypesPaginatorTest {
      */
     @Test
     public void whenTheIndicesAreDeactivateShouldReturnNAInEntries() throws DotDataException, IOException {
-        final IndiciesInfo indiciesInfo = APILocator.getIndiciesAPI().loadIndicies();
-
-        final String live = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getLive());
-        final String working = APILocator.getESIndexAPI().removeClusterIdFromName(indiciesInfo.getWorking());
+        // Read the active pointers through the phase-aware getter, not loadIndicies(): the latter only
+        // returns the legacy (non-versioned) rows, so from Phase 3 it reports nothing and
+        // removeClusterIdFromName(null) degrades that into "" — an index named the empty string, which
+        // then flows into deactivate/activate (issue #36360).
+        final ContentletIndexAPI contentletIndexAPI = APILocator.getContentletIndexAPI();
+        final String live = contentletIndexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
+        final String working = contentletIndexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
         try {
-            if (live != null) {
-                APILocator.getContentletIndexAPI().deactivateIndex(live);
+            if (UtilMethods.isSet(live)) {
+                contentletIndexAPI.deactivateIndex(live);
             }
 
-            APILocator.getContentletIndexAPI().deactivateIndex(working);
+            if (UtilMethods.isSet(working)) {
+                contentletIndexAPI.deactivateIndex(working);
+            }
 
             final ContentTypesPaginator paginator = new ContentTypesPaginator();
 
@@ -229,11 +235,13 @@ public class ContentTypesPaginatorTest {
             }
 
         }finally {
-            if (live != null) {
-                APILocator.getContentletIndexAPI().activateIndex(live);
+            if (UtilMethods.isSet(live)) {
+                contentletIndexAPI.activateIndex(live);
             }
 
-            APILocator.getContentletIndexAPI().activateIndex(working);
+            if (UtilMethods.isSet(working)) {
+                contentletIndexAPI.activateIndex(working);
+            }
         }
     }
 
