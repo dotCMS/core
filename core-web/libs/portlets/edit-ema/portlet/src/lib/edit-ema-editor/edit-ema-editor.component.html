@@ -77,7 +77,7 @@
                     [text]="true"
                     [rounded]="true"
                     size="small"
-                    [pt]="{ icon: { class: 'text-gray-900!' } }"
+                    styleClass="[&_.p-button-icon]:text-gray-900!"
                     data-testId="uve-toolbar-copy-url">
                     <p-popover #copyUrlOverlay>
                         <div class="url-list">
@@ -225,9 +225,8 @@
         <p-tabs
             [value]="$editorPanelActiveTab()"
             [dt]="{ tabpanel: { padding: '0' } }"
-            [pt]="{ tablist: { class: 'bg-gray-100' } }"
             (valueChange)="handleRightSidebarTabChange($event)">
-            <p-tablist>
+            <p-tablist class="bg-gray-100">
                 <p-tab [value]="0">
                     <div [pTooltip]="'uve.toolbar.content.editor' | dm" tooltipPosition="bottom">
                         <i class="pi pi-pencil"></i>

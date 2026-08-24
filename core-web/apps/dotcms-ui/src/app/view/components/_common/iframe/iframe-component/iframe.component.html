@@ -1,6 +1,6 @@
 @let isLoading = $isLoading();
 
-<dot-loading-indicator fullscreen="true" />
+<dot-loading-indicator [fullscreen]="true" />
 
 @if (showOverlay) {
     <dot-overlay-mask (click)="iframeOverlayService.hide()" />

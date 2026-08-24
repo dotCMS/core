@@ -183,10 +183,16 @@ export class DotFavoritePageComponent implements OnInit, OnDestroy {
     /**
      * Handle Delete button
      *
-     * @param {string} inode
+     * @param {string | undefined} inode
      * @memberof DotFavoritePageComponent
      */
-    onDelete(inode: string): void {
+    onDelete(inode: string | undefined): void {
+        // The button carries `[disabled]="!vm.formState?.inode"`, so this is unreachable in the
+        // UI; stating it keeps the invariant in the code rather than in an assertion.
+        if (!inode) {
+            return;
+        }
+
         this.store.deleteFavoritePage(inode);
     }
 
