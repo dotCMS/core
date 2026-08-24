@@ -118,7 +118,6 @@ class MockDotAppsService {
     standalone: true
 })
 class MockDotKeyValueComponent {
-    @Input() autoFocus!: boolean;
     @Input() showHiddenField!: string;
     @Input() variables!: DotKeyValue[];
     @Output() updatedList = new EventEmitter<DotKeyValue[]>();
@@ -386,7 +385,6 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             expect(keyValue).toBeTruthy();
-            expect(keyValue.componentInstance.autoFocus).toBe(false);
             expect(keyValue.componentInstance.showHiddenField).toBe(true);
             expect(keyValue.componentInstance.variables).toEqual([
                 { key: 'custom', hidden: false, value: 'test' }

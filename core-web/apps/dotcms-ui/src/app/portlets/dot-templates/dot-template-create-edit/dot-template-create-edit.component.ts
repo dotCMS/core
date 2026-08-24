@@ -264,11 +264,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             });
     }
 
-    private formatTemplateItem({
-        layout,
-        body,
-        themeId
-    }: DotTemplateSaveEvent): DotTemplateItem {
+    private formatTemplateItem({ layout, body, themeId }: DotTemplateSaveEvent): DotTemplateItem {
         let value = {
             ...this.form.value,
             body

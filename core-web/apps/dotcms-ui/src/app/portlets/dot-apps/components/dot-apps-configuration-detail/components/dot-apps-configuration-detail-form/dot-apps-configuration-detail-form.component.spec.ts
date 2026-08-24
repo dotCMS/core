@@ -408,15 +408,13 @@ describe('DotAppsConfigurationDetailFormComponent', () => {
             expect(warningIcons[1]).toBeTruthy();
             expect(warningIcons[2]).toBeTruthy();
 
-            // Verify warning icon attributes
-            expect(warningIcons[0].getAttribute('name')).toBe('warning');
-            expect(warningIcons[0].getAttribute('size')).toBe('18');
-
-            expect(warningIcons[1].getAttribute('name')).toBe('warning');
-            expect(warningIcons[1].getAttribute('size')).toBe('18');
-
-            expect(warningIcons[2].getAttribute('name')).toBe('warning');
-            expect(warningIcons[2].getAttribute('size')).toBe('18');
+            // `size` is a number input bound with `[size]`, so it is not a DOM attribute.
+            // `dot-icon` renders it as the glyph's font-size, which is what actually has to
+            // hold — the previous `getAttribute('size')` check never verified that.
+            warningIcons.forEach((icon) => {
+                expect(icon.getAttribute('name')).toBe('warning');
+                expect(icon.querySelector('i')?.style.fontSize).toBe('18px');
+            });
 
             // Verify that the form fields have the expected warnings
             expect(formFields[0].warnings).toEqual(['error 0']);

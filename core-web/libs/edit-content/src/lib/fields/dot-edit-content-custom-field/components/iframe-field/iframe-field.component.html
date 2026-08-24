@@ -10,7 +10,7 @@
                  `field` is an optional input: with no field there is no form control to bind,
                  so the trigger row cannot render. -->
             @if (field) {
-                <div class="flex gap-2 legacy-custom-field__modal-trigger">
+                <div class="legacy-custom-field__modal-trigger flex gap-2">
                     <input
                         class="disabled-input"
                         [id]="field.variable"
