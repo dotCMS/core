@@ -1866,6 +1866,33 @@ describe('DotContentDriveStore - withActionExecution', () => {
             });
         });
 
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
         it('should never report a negative success count', () => {
             // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
             addToBundleService.addToBundle.mockReturnValue(
@@ -1962,6 +1989,32 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecutionResult()).toEqual({
                 actionName: 'Push Publish',
                 successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Push Publish',
+                successCount: 1,
                 skippedCount: 0,
                 failCount: 1
             });
