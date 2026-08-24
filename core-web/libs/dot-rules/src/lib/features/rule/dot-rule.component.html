@@ -8,7 +8,7 @@
     @if (showAddToBundleDialog()) {
         <dot-add-to-bundle
             (cancel)="showAddToBundleDialog.set(false)"
-            [assetIdentifier]="rule.key" />
+            [assetIdentifier]="rule.key ?? ''" />
     }
     <div
         [class.hidden]="hidden"

@@ -204,5 +204,5 @@
 @if ($state.addToBundleIdentifier()) {
     <dot-add-to-bundle
         (cancel)="clearAddToBundle()"
-        [assetIdentifier]="$state.addToBundleIdentifier()" />
+        [assetIdentifier]="$state.addToBundleIdentifier() ?? ''" />
 }
