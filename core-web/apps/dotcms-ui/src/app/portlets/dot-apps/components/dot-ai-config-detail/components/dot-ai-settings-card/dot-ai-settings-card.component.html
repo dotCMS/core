@@ -1,0 +1,120 @@
+<div class="flex flex-col gap-4 rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+    <div class="flex items-start gap-3">
+        <i class="pi pi-cog text-lg text-gray-500"></i>
+        <div class="flex min-w-0 flex-1 flex-col gap-1">
+            <span class="text-sm font-semibold text-gray-900">
+                {{ 'apps.ai.settings.title' | dm }}
+            </span>
+            <span class="text-sm text-gray-500">
+                {{ 'apps.ai.settings.description' | dm }}
+            </span>
+        </div>
+    </div>
+
+    <form [formGroup]="form" class="flex flex-col gap-4">
+        <div class="field">
+            <label for="rolePrompt" class="text-xs font-medium text-gray-600">
+                {{ 'apps.ai.settings.role-prompt.label' | dm }}
+            </label>
+            <textarea
+                pTextarea
+                id="rolePrompt"
+                formControlName="rolePrompt"
+                rows="3"
+                class="w-full resize-y text-sm"
+                [placeholder]="'apps.ai.settings.role-prompt.placeholder' | dm"></textarea>
+            <small class="text-gray-500">
+                {{ 'apps.ai.settings.role-prompt.hint' | dm }}
+            </small>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+            <div class="field">
+                <label for="textPrompt" class="text-xs font-medium text-gray-600">
+                    {{ 'apps.ai.settings.text-prompt.label' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="textPrompt"
+                    formControlName="textPrompt"
+                    class="w-full text-sm"
+                    [placeholder]="'apps.ai.settings.text-prompt.placeholder' | dm" />
+            </div>
+            <div class="field">
+                <label for="imagePrompt" class="text-xs font-medium text-gray-600">
+                    {{ 'apps.ai.settings.image-prompt.label' | dm }}
+                </label>
+                <input
+                    pInputText
+                    id="imagePrompt"
+                    formControlName="imagePrompt"
+                    class="w-full text-sm"
+                    [placeholder]="'apps.ai.settings.image-prompt.placeholder' | dm" />
+            </div>
+        </div>
+
+        <div class="field w-1/2">
+            <label for="imageSize" class="text-xs font-medium text-gray-600">
+                {{ 'apps.ai.settings.image-size.label' | dm }}
+            </label>
+            <p-select
+                inputId="imageSize"
+                formControlName="imageSize"
+                [options]="imageSizeOptions"
+                optionLabel="label"
+                optionValue="value"
+                styleClass="w-full text-sm" />
+        </div>
+    </form>
+
+    <p-panel
+        [toggleable]="true"
+        [toggler]="'header'"
+        [collapsed]="true"
+        [header]="'apps.ai.settings.advanced.header' | dm: [advancedFields.length.toString()]"
+        transitionOptions="250ms cubic-bezier(0.4, 0, 0.2, 1)">
+        <div class="flex flex-col gap-4">
+            <form [formGroup]="advancedForm" class="grid grid-cols-2 gap-4">
+                @for (settingsField of advancedFields; track settingsField.key) {
+                    @if (settingsField.type === 'checkbox') {
+                        <div class="field col-span-2 flex items-center gap-2">
+                            <p-checkbox
+                                [inputId]="settingsField.key"
+                                [formControlName]="settingsField.key"
+                                [binary]="true" />
+                            <label [for]="settingsField.key" class="text-sm text-gray-700">
+                                {{ settingsField.label | dm }}
+                            </label>
+                        </div>
+                    } @else {
+                        <div class="field">
+                            <label
+                                [for]="settingsField.key"
+                                class="text-xs font-medium text-gray-600">
+                                {{ settingsField.label | dm }}
+                            </label>
+                            @if (settingsField.type === 'number') {
+                                <p-inputnumber
+                                    [inputId]="settingsField.key"
+                                    [formControlName]="settingsField.key"
+                                    [useGrouping]="false"
+                                    styleClass="w-full"
+                                    inputStyleClass="w-full text-sm" />
+                            } @else {
+                                <input
+                                    pInputText
+                                    [id]="settingsField.key"
+                                    [formControlName]="settingsField.key"
+                                    class="w-full text-sm" />
+                            }
+                            @if (settingsField.hint) {
+                                <small class="text-gray-500">{{ settingsField.hint | dm }}</small>
+                            }
+                        </div>
+                    }
+                }
+            </form>
+            <dot-ai-additional-properties [properties]="additionalProperties" />
+        </div>
+    </p-panel>
+</div>
