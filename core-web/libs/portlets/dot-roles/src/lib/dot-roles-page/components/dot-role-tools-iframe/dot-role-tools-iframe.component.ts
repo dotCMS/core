@@ -5,13 +5,14 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolesStore } from '../../store/dot-roles.store';
 
+/** Base path of the wrapper JSP that renders the Dojo tool groups widget. */
+const TOOLS_WRAPPER_JSP = '/html/portlet/ext/roleadmin/view_role_tools_wrapper.jsp';
+
 /**
  * Tools tab hosts an iframe wrapping the existing Dojo Tool Groups UI.
- *
- * Interim solution per epic #36909 — the Angular replacement is tracked as
- * a separate follow-up task filed off the spike #36929 (design pending).
- * The wrapper JSP at `view_role_tools_wrapper.jsp` communicates readiness /
- * size via `postMessage`.
+ * Interim per epic #36909 until the Angular replacement ships. URL
+ * construction mirrors the permissions iframe: `encodeURIComponent` on the
+ * role id then `bypassSecurityTrustResourceUrl` on a same-origin path.
  */
 @Component({
     selector: 'dot-role-tools-iframe',
@@ -30,8 +31,8 @@ export class DotRoleToolsIframeComponent {
             return null;
         }
 
-        return this.#sanitizer.bypassSecurityTrustResourceUrl(
-            `/html/portlet/ext/roleadmin/view_role_tools_wrapper.jsp?roleId=${roleId}`
-        );
+        const url = `${TOOLS_WRAPPER_JSP}?roleId=${encodeURIComponent(roleId)}`;
+
+        return this.#sanitizer.bypassSecurityTrustResourceUrl(url);
     });
 }

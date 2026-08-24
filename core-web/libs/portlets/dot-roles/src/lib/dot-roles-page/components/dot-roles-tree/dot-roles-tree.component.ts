@@ -26,7 +26,7 @@ import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
-import { DotRoleDetail, DotRoleNode } from '../../../models/dot-roles.models';
+import { DotRoleNode } from '../../../models/dot-roles.models';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 interface DotRolePrimeTreeNode extends TreeNode {
@@ -217,20 +217,27 @@ export class DotRolesTreeComponent {
         this.store.selectRole(node.data.id);
     }
 
-    #editContextNode(): void {
+    // Fetch the full detail before opening — under active search the tree
+    // node is a thin `{id, name, locked}` and PUT is a full replace, so
+    // opening the dialog with the partial node would silently wipe
+    // `parent / roleKey / description / editUsers / editPermissions /
+    // editLayouts` on save.
+    async #editContextNode(): Promise<void> {
         const node = this.#contextNode();
         if (!node) {
             return;
         }
 
-        // The Edit dialog expects a full `DotRoleDetail`. The tree node
-        // carries the `DotRoleNode` shape, which is a subset — the dialog
-        // hydrates missing fields (description) from its own state.
+        const detail = await this.store.fetchRoleDetail(node.data.id);
+        if (!detail) {
+            return;
+        }
+
         this.#dialogService.open(DotRolesEditComponent, {
             width: '700px',
             closable: true,
             closeOnEscape: true,
-            data: { role: node.data as DotRoleDetail }
+            data: { role: detail }
         });
     }
 
