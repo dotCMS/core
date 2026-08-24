@@ -208,13 +208,6 @@
                                         [text]="true"
                                         [rounded]="true"
                                         size="small"
-                                        [label]="'experiments.list.actions.view-results' | dm"
-                                        (onClick)="onViewResults(row.experiment)"
-                                        data-testid="experiment-view-results-btn" />
-                                    <p-button
-                                        [text]="true"
-                                        [rounded]="true"
-                                        size="small"
                                         (onClick)="
                                             onRowMenuToggle(row.experiment); rowMenu.toggle($event)
                                         "

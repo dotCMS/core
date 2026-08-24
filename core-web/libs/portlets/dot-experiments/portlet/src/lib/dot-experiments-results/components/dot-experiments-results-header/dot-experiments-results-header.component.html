@@ -39,29 +39,19 @@
 
 <div class="flex flex-none items-center gap-2">
     <p-button
-        [rounded]="true"
         [outlined]="true"
         severity="secondary"
         [label]="'experiments.action.configuration' | dm"
         (onClick)="onConfiguration()"
-        data-testid="experiments-results-configuration-btn">
-        <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
-            settings
-        </span>
-    </p-button>
+        data-testid="experiments-results-configuration-btn" />
 
     @if ($showStop()) {
         <p-button
-            [rounded]="true"
             [outlined]="true"
             severity="danger"
             [label]="'experiments.action.stop-experiment' | dm"
             [disabled]="store.$isSaving()"
             (onClick)="confirmStop()"
-            data-testid="experiments-results-stop-btn">
-            <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
-                stop_circle
-            </span>
-        </p-button>
+            data-testid="experiments-results-stop-btn" />
     }
 </div>
