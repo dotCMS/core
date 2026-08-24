@@ -219,11 +219,12 @@ selection and the results are the same at every step.
 - **FR-011**: A status selection MUST NOT conflict with a workflow filter that also constrains
   archived content; the two MUST combine into one coherent result set.
 - **FR-012**: Users MUST be able to select any combination of the three statuses from a single
-  control in the Content Drive toolbar, positioned **after the content-type filter and immediately
-  before the workflow filter**. Status and workflow ask the same kind of question — where content
-  sits in its lifecycle, and whether anyone is holding it — so they read as a pair; and content type
-  keeps its position as the selection the workflow filter's options and the field-filter menu are
-  both derived from.
+  control in the Content Drive toolbar, positioned **after the workflow filter and before the locale
+  filter**. Content type and workflow MUST stay adjacent: the workflow filter's options are derived
+  from the content-type selection, and that is the only such dependency in the row. Status depends on
+  nothing, so it sits beside workflow — the two ask the same kind of question, where content sits in
+  its lifecycle and whether anyone is holding it — without coming between workflow and the selection
+  it reads from.
 - **FR-013**: The control's labels MUST be localizable, following the Content Drive naming
   convention already used by the other filters.
 - **FR-014**: The active selection MUST be reflected as a chip, consistent with the other toolbar
