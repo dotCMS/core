@@ -1,4 +1,8 @@
-import { MonacoEditorModule, MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
+import {
+    MonacoEditorModule,
+    MonacoEditorConstructionOptions,
+    MonacoStandaloneCodeEditor
+} from '@materia-ui/ngx-monaco-editor';
 
 import { NgStyle } from '@angular/common';
 import {
@@ -17,6 +21,12 @@ import { DomSanitizer, SafeStyle } from '@angular/platform-browser';
 
 import { SelectItem } from 'primeng/api';
 import { SelectButtonModule } from 'primeng/selectbutton';
+
+/** Payload of {@link DotTextareaContentComponent.monacoInit}. */
+export interface DotTextareaMonacoInit {
+    name: string;
+    editor: MonacoStandaloneCodeEditor;
+}
 
 @Component({
     selector: 'dot-textarea-content',
@@ -60,7 +70,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     editorName!: string;
 
     @Output()
-    monacoInit = new EventEmitter<unknown>();
+    monacoInit = new EventEmitter<DotTextareaMonacoInit>();
 
     @Output()
     valueChange = new EventEmitter<string>();
@@ -72,14 +82,20 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
         };
     }
 
+    /**
+     * TODO(#37120): this has never produced valid CSS. `styles` is an object, so the host ends
+     * up with `style="[object Object]"` and nothing is applied — the width/height already reach
+     * the textarea and the editor through `[ngStyle]`. Making it emit real CSS would newly style
+     * the host element, so it is left as-is and needs its own issue.
+     */
     @HostBinding('style')
     get myStyle(): SafeStyle {
-        return this.sanitizer.bypassSecurityTrustStyle(this.styles as string);
+        return this.sanitizer.bypassSecurityTrustStyle(this.styles as unknown as string);
     }
 
     selectOptions: SelectItem[] = [];
     selected!: string;
-    styles!: Record<string, unknown> | string;
+    styles!: Record<string, unknown>;
     editorOptions: MonacoEditorConstructionOptions = {
         theme: 'vs-light',
         minimap: {
@@ -143,10 +159,10 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * Initializes the Monaco Editor
      *
-     * @param {unknown} editor
+     * @param {MonacoStandaloneCodeEditor} editor
      * @memberof DotTextareaContentComponent
      */
-    onInit(editor: unknown): void {
+    onInit(editor: MonacoStandaloneCodeEditor): void {
         this.monacoInit.emit({ name: this.editorName, editor });
     }
 
