@@ -56,6 +56,7 @@ import {
     DotLanguage,
     DotTreeNode,
     FeaturedFlags,
+    SEO_MEDIA_TYPES,
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
@@ -356,7 +357,9 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         return shouldShowSeoResults
             ? {
                   ogTags,
-                  socialMedia
+                  // The store carries this as a plain string from the device selector; the only
+                  // values it ever holds are the SEO media types the selector offers.
+                  socialMedia: socialMedia as SEO_MEDIA_TYPES
               }
             : null;
     });

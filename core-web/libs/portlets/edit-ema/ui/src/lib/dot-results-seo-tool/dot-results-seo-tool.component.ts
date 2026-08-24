@@ -53,10 +53,7 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
      * `SEO_MEDIA_TYPES` rather than `string`: it keys `readMoreValues`, and `''` is the
      * "nothing selected yet" value the template's `@for` reads as an empty list.
      */
-    // The store types the selected media as a plain string all the way from the device selector,
-    // and `getFilteredMetaTagsByMedia` downstream takes a `string` too — this input was the only
-    // point claiming the narrower enum.
-    @Input() seoMedia = '';
+    @Input() seoMedia: SEO_MEDIA_TYPES | '' = '';
     @Input() seoOGTags?: SeoMetaTags;
     @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[] | null>;
     currentResults$!: Observable<SeoMetaTagsResult[]>;
