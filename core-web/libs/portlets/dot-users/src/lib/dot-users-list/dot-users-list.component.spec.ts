@@ -9,10 +9,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUsersListComponent } from './dot-users-list.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
 
-import { DotUserListItem, DotUsersService } from '../services/dot-users.service';
+import { DotUsersService } from '../services/dot-users.service';
+import { createFakeUser } from '../testing/dot-user.mock';
 
-const MOCK_USERS: DotUserListItem[] = [
-    {
+const MOCK_USERS = [
+    createFakeUser({
         userId: 'dotcms.org.1',
         id: 'dotcms.org.1',
         firstName: 'Admin',
@@ -21,16 +22,12 @@ const MOCK_USERS: DotUserListItem[] = [
         name: 'Admin User',
         emailAddress: 'admin@dotcms.com',
         gravitar: 'abc',
-        active: true,
         admin: true,
-        backendUser: true,
         frontendUser: true,
-        hasConsoleAccess: true,
         lastLoginDate: 1717977600000,
-        lastLoginIP: '10.0.0.1',
-        failedLoginAttempts: 0
-    },
-    {
+        lastLoginIP: '10.0.0.1'
+    }),
+    createFakeUser({
         userId: 'dotcms.org.9',
         id: 'dotcms.org.9',
         firstName: 'Snow',
@@ -40,14 +37,10 @@ const MOCK_USERS: DotUserListItem[] = [
         emailAddress: 'snow@dotcms.com',
         gravitar: 'def',
         active: false,
-        admin: false,
         backendUser: false,
         frontendUser: true,
-        hasConsoleAccess: false,
-        lastLoginDate: null,
-        lastLoginIP: null,
-        failedLoginAttempts: 0
-    }
+        hasConsoleAccess: false
+    })
 ];
 
 const MESSAGES = {
@@ -205,12 +198,12 @@ describe('DotUsersListComponent', () => {
     });
 
     describe('bulk delete', () => {
-        const REPLACEMENT: DotUserListItem = {
+        const REPLACEMENT = createFakeUser({
             ...MOCK_USERS[0],
             userId: 'dotcms.org.42',
             id: 'dotcms.org.42',
             emailAddress: 'ops@dotcms.com'
-        };
+        });
 
         it('confirmDelete should open the bulk delete dialog and reset the replacement', () => {
             spectator.component['$bulkReplacementUser'].set(REPLACEMENT);

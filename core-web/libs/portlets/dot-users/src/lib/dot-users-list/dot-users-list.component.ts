@@ -181,12 +181,21 @@ export class DotUsersListComponent {
 
             if (result.action === 'save') {
                 if (result.mode === 'create') {
-                    this.store.createUser(result.payload, result.gettingStartedChange);
+                    this.store.createUser({
+                        payload: result.payload,
+                        gettingStartedChange: result.gettingStartedChange
+                    });
                 } else {
-                    this.store.updateUser(result.payload, result.gettingStartedChange);
+                    this.store.updateUser({
+                        payload: result.payload,
+                        gettingStartedChange: result.gettingStartedChange
+                    });
                 }
             } else if (result.action === 'delete') {
-                this.store.deleteSingleUser(result.userId, result.replacementUserId);
+                this.store.deleteSingleUser({
+                    userId: result.userId,
+                    replacementUserId: result.replacementUserId
+                });
             }
         });
     }
@@ -219,22 +228,36 @@ export class DotUsersListComponent {
     }
 
     /**
-     * Formats the Roles column: first two role names comma-separated,
-     * followed by `and N more` when the user carries more. Returns
-     * `null` while the per-user role fetch is still in flight so the
-     * cell renders empty instead of a misleading `and -2 more`.
+     * Formatted Roles-column data keyed by userId. Derived once per
+     * `store.userRoles()` change instead of allocating a fresh object
+     * from a template-called method on every row per CD pass. The
+     * template does a plain map lookup: `$rolesByUserId()[user.userId]`.
+     *
+     * Entries are `null` while the per-user role fetch is still in
+     * flight so the cell renders empty instead of a misleading
+     * `and -2 more`.
      */
-    formatRoles(userId: string): { visible: string; more: number } | null {
-        const roles = this.store.userRoles()[userId];
-        if (!roles || roles.length === 0) {
-            return null;
-        }
+    protected readonly $rolesByUserId = computed<
+        Record<string, { visible: string; more: number } | null>
+    >(() => {
+        const source = this.store.userRoles();
 
-        return {
-            visible: roles.slice(0, 2).join(', '),
-            more: Math.max(0, roles.length - 2)
-        };
-    }
+        return Object.fromEntries(
+            Object.entries(source).map(([userId, roles]) => {
+                if (!roles || roles.length === 0) {
+                    return [userId, null];
+                }
+
+                return [
+                    userId,
+                    {
+                        visible: roles.slice(0, 2).join(', '),
+                        more: Math.max(0, roles.length - 2)
+                    }
+                ];
+            })
+        );
+    });
 
     initials(user: DotUserListItem): string {
         const first = (user.firstName ?? '').charAt(0);

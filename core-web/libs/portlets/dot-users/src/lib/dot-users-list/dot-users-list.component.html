@@ -117,7 +117,7 @@
                     </td>
                     <td data-testid="users-cell-email">{{ user.emailAddress }}</td>
                     <td data-testid="users-cell-roles">
-                        @if (formatRoles(user.userId); as roles) {
+                        @if ($rolesByUserId()[user.userId]; as roles) {
                             <span>{{ roles.visible }}</span>
                             @if (roles.more > 0) {
                                 <span class="text-color-secondary italic">

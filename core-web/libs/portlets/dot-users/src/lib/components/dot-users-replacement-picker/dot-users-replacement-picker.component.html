@@ -11,6 +11,7 @@
     [forceSelection]="true"
     [showClear]="true"
     [invalid]="invalid()"
+    [showEmptyMessage]="true"
     appendTo="body"
     styleClass="w-full"
     inputStyleClass="w-full"
@@ -23,5 +24,26 @@
             <span class="font-medium">{{ displayName(candidate) }}</span>
             <span class="text-color-secondary text-xs">{{ candidate.emailAddress }}</span>
         </div>
+    </ng-template>
+    <ng-template pTemplate="empty">
+        @if ($isLoading()) {
+            <div
+                class="text-color-secondary px-3 py-2 text-sm"
+                data-testid="users-replacement-picker-loading">
+                {{ 'users.dialog.replacement-picker.loading' | dm }}
+            </div>
+        } @else if ($hasError()) {
+            <div
+                class="px-3 py-2 text-sm text-red-600"
+                data-testid="users-replacement-picker-error">
+                {{ 'users.dialog.replacement-picker.error' | dm }}
+            </div>
+        } @else {
+            <div
+                class="text-color-secondary px-3 py-2 text-sm"
+                data-testid="users-replacement-picker-empty">
+                {{ 'users.dialog.replacement-picker.empty' | dm }}
+            </div>
+        }
     </ng-template>
 </p-autoComplete>

@@ -10,40 +10,18 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
 
-import { DotUserDetail, DotUserListItem, DotUsersService } from '../services/dot-users.service';
+import { DotUsersService } from '../services/dot-users.service';
+import { createFakeUser, createFakeUserDetail } from '../testing/dot-user.mock';
 
-const MOCK_USER: DotUserListItem = {
-    userId: 'user-42',
-    id: 'user-42',
-    firstName: 'Jane',
-    lastName: 'Doe',
-    fullName: 'Jane Doe',
-    name: 'Jane Doe',
-    emailAddress: 'jane@dotcms.com',
-    gravitar: '',
-    active: true,
-    admin: false,
-    backendUser: true,
-    frontendUser: false,
-    hasConsoleAccess: true,
-    lastLoginDate: null,
-    lastLoginIP: null,
-    failedLoginAttempts: 0
-};
+const MOCK_USER = createFakeUser();
+const MOCK_USER_DETAIL = createFakeUserDetail();
 
-const MOCK_USER_DETAIL: DotUserDetail = {
-    ...MOCK_USER,
-    birthday: null,
-    middleName: null,
-    nickname: null,
-    languageId: 'en-US',
-    timeZoneId: null,
-    male: null,
-    female: null,
-    additionalInfo: null,
-    createDate: null,
-    modificationDate: null
-};
+/** p-button doesn't forward clicks itself — reach the inner native button. */
+function saveButton(spectator: Spectator<DotUsersCreateComponent>): HTMLButtonElement {
+    return spectator
+        .query(byTestId('users-dialog-save-btn'))!
+        .querySelector('button') as HTMLButtonElement;
+}
 
 const MESSAGES = {
     'users.dialog.tabs.profile': 'Profile',
@@ -127,9 +105,13 @@ describe('DotUsersCreateComponent', () => {
         });
 
         it('should not close on save when the form is invalid', () => {
-            spectator.component['save']();
+            spectator.click(saveButton(spectator));
 
             expect(dialogRef.close).not.toHaveBeenCalled();
+            // markAllAsTouched runs on invalid Save so field-level
+            // errors surface immediately — verify by looking at the
+            // required first-name control's touched state.
+            expect(spectator.component.form.controls.account.controls.firstName.touched).toBe(true);
         });
 
         it('should close with the form value on save when valid', () => {
@@ -142,8 +124,9 @@ describe('DotUsersCreateComponent', () => {
                     confirmPassword: 'Xy7#abcdef'
                 }
             });
+            spectator.detectChanges();
 
-            spectator.component['save']();
+            spectator.click(saveButton(spectator));
 
             expect(dialogRef.close).toHaveBeenCalledWith(
                 expect.objectContaining({ action: 'save' })
@@ -165,6 +148,11 @@ describe('DotUsersCreateComponent', () => {
 
         it('should keep canConfirmDelete false when the user is missing', () => {
             expect(spectator.component['$canConfirmDelete']()).toBe(false);
+        });
+
+        it('should render Save enabled in create mode (dataReady is true immediately)', () => {
+            const button = saveButton(spectator);
+            expect(button.disabled).toBe(false);
         });
     });
 
@@ -227,7 +215,8 @@ describe('DotUsersCreateComponent', () => {
                 frontend: false
             });
 
-            spectator.component['save']();
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
 
             expect(dialogRef.close).toHaveBeenCalledWith(
                 expect.objectContaining({
@@ -252,15 +241,15 @@ describe('DotUsersCreateComponent', () => {
         it('should emit `gettingStartedChange: add` when the toggle flips ON', () => {
             spectator.component.form.controls.access.patchValue({ showGettingStarted: true });
 
-            spectator.component['save']();
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
 
             expect(dialogRef.close).toHaveBeenCalledWith(
                 expect.objectContaining({ gettingStartedChange: 'add' })
             );
         });
 
-        const REPLACEMENT_USER: DotUserListItem = {
-            ...MOCK_USER,
+        const REPLACEMENT_USER = createFakeUser({
             userId: 'user-99',
             id: 'user-99',
             emailAddress: 'nobody@dotcms.com',
@@ -268,7 +257,7 @@ describe('DotUsersCreateComponent', () => {
             lastName: 'Else',
             fullName: 'Nobody Else',
             name: 'Nobody Else'
-        };
+        });
 
         it('should require both email match AND a replacement user to enable delete confirmation', () => {
             spectator.component['openDeleteConfirm']();

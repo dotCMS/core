@@ -60,9 +60,12 @@ export interface DotUserDetail extends DotUserListItem {
  * Contract notes:
  * - Create requires `password`; update leaves it optional and skips the
  *   password mutation when omitted.
- * - Omitting `roles` on update means "do not touch role membership".
- *   A non-empty `roles` list REPLACES the user's role membership
- *   entirely (see UserResource#processRoles).
+ * - A non-empty `roles` list REPLACES the user's role membership
+ *   entirely (see UserResource#processRoles). The FE always sends the
+ *   full role list echoed back from {@link DotUsersService.getUserRoles}
+ *   with Access-toggle deltas applied, so membership is preserved on
+ *   every save — omitting `roles` (the alternative "don't touch" mode)
+ *   is not used by this UI.
  */
 export interface DotUserFormPayload {
     userId?: string;
@@ -216,6 +219,13 @@ export class DotUsersService {
      *      backend `PUT /api/v1/users` replaces the full role list, so
      *      we must send back every role key the user already had, minus
      *      the access-role keys that are now toggled off.
+     *
+     * Note: `/api/v1/roles/users/{id}` is served by the
+     * `includeImplicitRoles = true` overload — inherited roles come
+     * back alongside direct grants without a discriminator. Echoing
+     * that list back into `PUT /api/v1/users` therefore promotes
+     * inherited roles to direct grants, which is a big part of the
+     * reason we're moving away from sending `roles` on update.
      */
     getUserRoles(userIdOrEmail: string): Observable<DotRoleView[]> {
         return this.#http

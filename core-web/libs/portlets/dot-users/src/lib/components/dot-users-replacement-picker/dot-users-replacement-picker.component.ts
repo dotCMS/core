@@ -1,3 +1,5 @@
+import { of, Subject } from 'rxjs';
+
 import {
     ChangeDetectionStrategy,
     Component,
@@ -12,7 +14,7 @@ import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
-import { take } from 'rxjs/operators';
+import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -62,24 +64,50 @@ export class DotUsersReplacementPickerComponent {
     readonly selectionChange = output<DotUserListItem | null>();
 
     protected readonly $suggestions = signal<DotUserListItem[]>([]);
+    protected readonly $isLoading = signal(false);
+    /**
+     * Distinct from "no matches" so a 500 doesn't look like an empty
+     * result set. The empty-template reads this to swap the copy.
+     */
+    protected readonly $hasError = signal(false);
+
+    /**
+     * Search queries flow through a Subject so `switchMap` can cancel
+     * an in-flight request the moment a newer query arrives. The 300ms
+     * PrimeNG delay narrows the race but a slow early response can
+     * still overwrite a newer one if we subscribe per keystroke.
+     */
+    readonly #query$ = new Subject<string>();
+
+    constructor() {
+        this.#query$
+            .pipe(
+                tap(() => {
+                    this.$isLoading.set(true);
+                    this.$hasError.set(false);
+                }),
+                switchMap((query) =>
+                    this.#usersService
+                        .getUsersPaginated({ filter: query, page: 1, perPage: 10 })
+                        .pipe(catchError(() => of(null)))
+                ),
+                takeUntilDestroyed(this.#destroyRef)
+            )
+            .subscribe((response) => {
+                this.$isLoading.set(false);
+                if (response === null) {
+                    this.$hasError.set(true);
+                    this.$suggestions.set([]);
+
+                    return;
+                }
+                const excluded = new Set(this.excludedUserIds());
+                this.$suggestions.set(response.entity.filter((user) => !excluded.has(user.userId)));
+            });
+    }
 
     protected onSearch(event: AutoCompleteCompleteEvent): void {
-        this.#usersService
-            .getUsersPaginated({
-                filter: event.query,
-                page: 1,
-                perPage: 10
-            })
-            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
-            .subscribe({
-                next: (response) => {
-                    const excluded = new Set(this.excludedUserIds());
-                    this.$suggestions.set(
-                        response.entity.filter((user) => !excluded.has(user.userId))
-                    );
-                },
-                error: () => this.$suggestions.set([])
-            });
+        this.#query$.next(event.query);
     }
 
     protected onSelect(value: DotUserListItem | null): void {

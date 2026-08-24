@@ -11,7 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListStore } from './dot-users-list.store';
 
-import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
+import { DotUsersService } from '../../services/dot-users.service';
+import { createFakeUser } from '../../testing/dot-user.mock';
 
 const MESSAGES = {
     'users.delete.success.one': 'User deleted.',
@@ -21,8 +22,8 @@ const MESSAGES = {
     'users.update.success': 'User updated.'
 };
 
-const MOCK_USERS: DotUserListItem[] = [
-    {
+const MOCK_USERS = [
+    createFakeUser({
         userId: 'dotcms.org.1',
         id: 'dotcms.org.1',
         firstName: 'Admin',
@@ -31,16 +32,11 @@ const MOCK_USERS: DotUserListItem[] = [
         name: 'Admin User',
         emailAddress: 'admin@dotcms.com',
         gravitar: 'abc',
-        active: true,
         admin: true,
-        backendUser: true,
-        frontendUser: false,
-        hasConsoleAccess: true,
         lastLoginDate: 1717977600000,
-        lastLoginIP: '10.0.0.1',
-        failedLoginAttempts: 0
-    },
-    {
+        lastLoginIP: '10.0.0.1'
+    }),
+    createFakeUser({
         userId: 'dotcms.org.2',
         id: 'dotcms.org.2',
         firstName: 'Dave',
@@ -49,15 +45,10 @@ const MOCK_USERS: DotUserListItem[] = [
         name: 'Dave Smith',
         emailAddress: 'dave@dotcms.com',
         gravitar: 'def',
-        active: true,
-        admin: false,
-        backendUser: true,
         frontendUser: true,
-        hasConsoleAccess: true,
         lastLoginDate: 1717891200000,
-        lastLoginIP: '10.0.0.2',
-        failedLoginAttempts: 0
-    }
+        lastLoginIP: '10.0.0.2'
+    })
 ];
 
 const MOCK_RESPONSE = {
@@ -291,11 +282,13 @@ describe('DotUsersListStore', () => {
         usersService.getUsersPaginated.mockClear();
 
         store.createUser({
-            firstName: 'Ada',
-            lastName: 'Lovelace',
-            email: 'ada@dotcms.com',
-            active: true,
-            password: 'Xy7#abcdef'
+            payload: {
+                firstName: 'Ada',
+                lastName: 'Lovelace',
+                email: 'ada@dotcms.com',
+                active: true,
+                password: 'Xy7#abcdef'
+            }
         });
 
         expect(usersService.createUser).toHaveBeenCalledWith(
@@ -315,10 +308,12 @@ describe('DotUsersListStore', () => {
         usersService.createUser.mockReturnValueOnce(throwError(() => new Error('boom')));
 
         store.createUser({
-            firstName: 'Ada',
-            lastName: 'Lovelace',
-            email: 'ada@dotcms.com',
-            active: true
+            payload: {
+                firstName: 'Ada',
+                lastName: 'Lovelace',
+                email: 'ada@dotcms.com',
+                active: true
+            }
         });
 
         expect(errorManager.handle).toHaveBeenCalled();
@@ -330,11 +325,13 @@ describe('DotUsersListStore', () => {
         usersService.getUsersPaginated.mockClear();
 
         store.updateUser({
-            userId: 'dotcms.org.1',
-            firstName: 'Admin',
-            lastName: 'User',
-            email: 'admin@dotcms.com',
-            active: true
+            payload: {
+                userId: 'dotcms.org.1',
+                firstName: 'Admin',
+                lastName: 'User',
+                email: 'admin@dotcms.com',
+                active: true
+            }
         });
 
         expect(usersService.updateUser).toHaveBeenCalledWith(
@@ -353,7 +350,10 @@ describe('DotUsersListStore', () => {
         const messageDisplay = spectator.inject(DotMessageDisplayService);
         usersService.getUsersPaginated.mockClear();
 
-        store.deleteSingleUser('dotcms.org.1', 'dotcms.org.42');
+        store.deleteSingleUser({
+            userId: 'dotcms.org.1',
+            replacementUserId: 'dotcms.org.42'
+        });
 
         expect(usersService.deleteUser).toHaveBeenCalledWith('dotcms.org.1', 'dotcms.org.42');
         expect(messageDisplay.push).toHaveBeenCalled();

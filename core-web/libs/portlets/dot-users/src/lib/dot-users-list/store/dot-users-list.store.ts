@@ -189,126 +189,152 @@ export const DotUsersListStore = signalStore(
             },
 
             /**
-             * Creates a new user and reloads the list on success. Errors are
-             * surfaced through the shared HTTP error manager; the list stays
-             * in `loaded` state so the user can retry from the same dialog.
+             * Creates a new user and reloads the list on success. Errors
+             * are surfaced through the shared HTTP error manager; the
+             * list stays in `loaded` state so the user can retry from
+             * the same dialog.
              *
-             * `gettingStartedChange` optionally chains a toolgroup PUT after
-             * user creation succeeds. A "getting started" failure is soft —
-             * we log it via the shared error manager but the user creation
-             * is still considered successful (the toolgroup can be toggled
-             * again from the same dialog).
+             * `gettingStartedChange` optionally chains a toolgroup PUT
+             * after user creation succeeds. A "getting started" failure
+             * is soft — logged via the error manager but the user
+             * creation is still considered successful (the toolgroup
+             * can be toggled again from the same dialog).
+             *
+             * `rxMethod` + `switchMap` gives per-call teardown (so the
+             * subscription can't outlive the component) and cancels a
+             * previous in-flight save if the user double-clicks — the
+             * new request supersedes the pending one instead of firing
+             * two PUTs.
              */
-            createUser(payload: DotUserFormPayload, gettingStartedChange?: 'add' | 'remove') {
-                patchState(store, { status: 'loading' });
-                usersService
-                    .createUser(payload)
-                    .pipe(
-                        take(1),
-                        switchMap((created) => {
-                            // create defaults to `not present`, so only an
-                            // explicit "add" is meaningful here.
-                            if (gettingStartedChange !== 'add' || !created.userId) {
-                                return of(created);
-                            }
-
-                            return usersService.setGettingStarted(created.userId, true).pipe(
-                                map(() => created),
-                                catchError((error) => {
-                                    httpErrorManager.handle(error);
-
+            createUser: rxMethod<{
+                payload: DotUserFormPayload;
+                gettingStartedChange?: 'add' | 'remove';
+            }>(
+                pipe(
+                    tap(() => patchState(store, { status: 'loading' })),
+                    switchMap(({ payload, gettingStartedChange }) =>
+                        usersService.createUser(payload).pipe(
+                            switchMap((created) => {
+                                // Create defaults to "not present", so
+                                // only an explicit "add" is meaningful.
+                                if (gettingStartedChange !== 'add' || !created.userId) {
                                     return of(created);
-                                })
-                            );
-                        })
-                    )
-                    .subscribe({
-                        next: () => {
-                            messageDisplayService.push({
-                                life: 5000,
-                                severity: DotMessageSeverity.SUCCESS,
-                                message: messageService.get('users.create.success'),
-                                type: DotMessageType.SIMPLE_MESSAGE
-                            });
-                            loadUsers();
-                        },
-                        error: (error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { status: 'loaded' });
-                        }
-                    });
-            },
+                                }
 
-            /**
-             * Updates a user and reloads the list on success. Same error
-             * contract as `createUser`. `gettingStartedChange` optionally
-             * chains the toolgroup PUT (add or remove).
-             */
-            updateUser(payload: DotUserFormPayload, gettingStartedChange?: 'add' | 'remove') {
-                patchState(store, { status: 'loading' });
-                usersService
-                    .updateUser(payload)
-                    .pipe(
-                        take(1),
-                        switchMap((updated) => {
-                            if (!gettingStartedChange || !payload.userId) {
-                                return of(updated);
-                            }
-
-                            return usersService
-                                .setGettingStarted(payload.userId, gettingStartedChange === 'add')
-                                .pipe(
-                                    map(() => updated),
+                                return usersService.setGettingStarted(created.userId, true).pipe(
+                                    map(() => created),
                                     catchError((error) => {
                                         httpErrorManager.handle(error);
 
-                                        return of(updated);
+                                        return of(created);
                                     })
                                 );
-                        })
+                            }),
+                            tap(() => {
+                                messageDisplayService.push({
+                                    life: 5000,
+                                    severity: DotMessageSeverity.SUCCESS,
+                                    message: messageService.get('users.create.success'),
+                                    type: DotMessageType.SIMPLE_MESSAGE
+                                });
+                                loadUsers();
+                            }),
+                            catchError((error) => {
+                                httpErrorManager.handle(error);
+                                patchState(store, { status: 'loaded' });
+
+                                return EMPTY;
+                            })
+                        )
                     )
-                    .subscribe({
-                        next: () => {
-                            messageDisplayService.push({
-                                life: 5000,
-                                severity: DotMessageSeverity.SUCCESS,
-                                message: messageService.get('users.update.success'),
-                                type: DotMessageType.SIMPLE_MESSAGE
-                            });
-                            loadUsers();
-                        },
-                        error: (error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { status: 'loaded' });
-                        }
-                    });
-            },
+                )
+            ),
 
             /**
-             * Single-user delete dispatched from the dialog footer. Separate
-             * from `deleteSelectedUsers`, which acts on the bulk-selection.
+             * Updates a user and reloads the list on success. Same
+             * error / teardown contract as {@link createUser}.
+             * `gettingStartedChange` optionally chains the toolgroup
+             * PUT (add or remove).
              */
-            deleteSingleUser(userId: string, replacementUserId?: string) {
-                patchState(store, { status: 'loading' });
-                usersService
-                    .deleteUser(userId, replacementUserId)
-                    .pipe(take(1))
-                    .subscribe({
-                        next: () => {
-                            messageDisplayService.push({
-                                life: 5000,
-                                severity: DotMessageSeverity.SUCCESS,
-                                message: messageService.get('users.delete.success.one'),
-                                type: DotMessageType.SIMPLE_MESSAGE
-                            });
-                            loadUsers();
-                        },
-                        error: (error) => {
-                            httpErrorManager.handle(error);
-                            patchState(store, { status: 'loaded' });
-                        }
-                    });
-            },
+            updateUser: rxMethod<{
+                payload: DotUserFormPayload;
+                gettingStartedChange?: 'add' | 'remove';
+            }>(
+                pipe(
+                    tap(() => patchState(store, { status: 'loading' })),
+                    switchMap(({ payload, gettingStartedChange }) =>
+                        usersService.updateUser(payload).pipe(
+                            switchMap((updated) => {
+                                if (!gettingStartedChange || !payload.userId) {
+                                    return of(updated);
+                                }
+
+                                return usersService
+                                    .setGettingStarted(
+                                        payload.userId,
+                                        gettingStartedChange === 'add'
+                                    )
+                                    .pipe(
+                                        map(() => updated),
+                                        catchError((error) => {
+                                            httpErrorManager.handle(error);
+
+                                            return of(updated);
+                                        })
+                                    );
+                            }),
+                            tap(() => {
+                                messageDisplayService.push({
+                                    life: 5000,
+                                    severity: DotMessageSeverity.SUCCESS,
+                                    message: messageService.get('users.update.success'),
+                                    type: DotMessageType.SIMPLE_MESSAGE
+                                });
+                                loadUsers();
+                            }),
+                            catchError((error) => {
+                                httpErrorManager.handle(error);
+                                patchState(store, { status: 'loaded' });
+
+                                return EMPTY;
+                            })
+                        )
+                    )
+                )
+            ),
+
+            /**
+             * Single-user delete dispatched from the dialog footer.
+             * Separate from `deleteSelectedUsers`, which acts on the
+             * bulk-selection.
+             */
+            deleteSingleUser: rxMethod<{
+                userId: string;
+                replacementUserId?: string;
+            }>(
+                pipe(
+                    tap(() => patchState(store, { status: 'loading' })),
+                    switchMap(({ userId, replacementUserId }) =>
+                        usersService.deleteUser(userId, replacementUserId).pipe(
+                            tap(() => {
+                                messageDisplayService.push({
+                                    life: 5000,
+                                    severity: DotMessageSeverity.SUCCESS,
+                                    message: messageService.get('users.delete.success.one'),
+                                    type: DotMessageType.SIMPLE_MESSAGE
+                                });
+                                loadUsers();
+                            }),
+                            catchError((error) => {
+                                httpErrorManager.handle(error);
+                                patchState(store, { status: 'loaded' });
+
+                                return EMPTY;
+                            })
+                        )
+                    )
+                )
+            ),
 
             deleteSelectedUsers(replacementUserId?: string) {
                 const selected = store.selectedUsers();

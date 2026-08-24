@@ -40,7 +40,7 @@ export interface DotUsersForm {
  * Maps a flat value interface (leaves are primitives) to the matching
  * shape of `FormControl`s used inside a `FormGroup<T>`.
  */
-type ControlsOf<T extends Record<string, unknown>> = {
+type ControlsOf<T extends object> = {
     [K in keyof T]: FormControl<T[K]>;
 };
 

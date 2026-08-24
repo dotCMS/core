@@ -1,15 +1,14 @@
-import { forkJoin, of } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
-    DestroyRef,
+    effect,
     inject,
-    signal
+    signal,
+    untracked
 } from '@angular/core';
-import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormsModule, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
@@ -21,20 +20,15 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
 
-import { catchError, finalize, take } from 'rxjs/operators';
-
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
+import { DotUsersCreateStore } from './store/dot-users-create.store';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
 
 import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
-import {
-    DotUserFormPayload,
-    DotUserListItem,
-    DotUsersService
-} from '../services/dot-users.service';
+import { DotUserFormPayload, DotUserListItem } from '../services/dot-users.service';
 
 interface DialogData {
     user?: DotUserListItem;
@@ -109,16 +103,17 @@ const ACCESS_ROLE_KEYS = {
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex h-full min-h-0 flex-col' }
+    host: { class: 'flex h-full min-h-0 flex-col' },
+    // Dialog-scoped store: each dialog instance gets its own hydration
+    // pipeline, keeping HTTP + status out of the component body.
+    providers: [DotUsersCreateStore]
 })
 export class DotUsersCreateComponent {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #config = inject<DynamicDialogConfig<DialogData>>(DynamicDialogConfig);
     readonly #fb = inject(FormBuilder);
     readonly #messageService = inject(DotMessageService);
-    readonly #usersService = inject(DotUsersService);
-    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
-    readonly #destroyRef = inject(DestroyRef);
+    readonly #store = inject(DotUsersCreateStore);
 
     readonly user = this.#config.data?.user ?? null;
     readonly isEdit = !!this.user;
@@ -225,42 +220,21 @@ export class DotUsersCreateComponent {
      * gets a fresh state after they course-correct.
      */
     protected readonly $deleteAttempted = signal(false);
-    protected readonly $isLoading = signal(false);
 
     /**
-     * Full list of role KEYS the user currently holds — populated by
-     * `GET /api/v1/roles/users/{userId}` on load. On save we start from
-     * this list, strip the three access-role keys, then add back the
-     * ones whose toggles are ON. This preserves every other role
-     * membership (personal role, project-specific roles, etc.) since
-     * the backend `PUT /api/v1/users` replaces the full role list.
+     * Hydration signals surfaced from the dialog-scoped store — the
+     * shell just reads them; the store owns the forkJoin + status.
      */
-    readonly #$loadedUserRoleKeys = signal<string[]>([]);
-
-    /**
-     * Snapshot of the `Show Getting Started` toggle at load time so
-     * `buildPayload` can detect a diff and emit the appropriate
-     * `add` / `remove` instruction for the toolgroup PUT.
-     */
-    readonly #$initialGettingStarted = signal(false);
-
-    /**
-     * The full `additionalInfo` map as returned by `getUser`. The backend
-     * replaces this map wholesale on save (it does not merge), so we
-     * carry the untouched keys through here and overlay only the five
-     * fields the profile tab surfaces. Without this, custom keys stored
-     * by other tools would be wiped every time this dialog saves.
-     */
-    readonly #$loadedAdditionalInfo = signal<Record<string, unknown>>({});
-
+    protected readonly $isLoading = computed(() => this.#store.status() === 'loading');
     /**
      * Signals that the initial data is fully hydrated — profile fields,
      * assigned roles, and the getting-started state. In create mode
-     * we consider ourselves ready immediately (nothing to load). Save
-     * is disabled until this flips to `true` so we never send a `roles`
-     * list built from a stale, empty snapshot.
+     * we short-circuit to `true` because there's nothing to load. Save
+     * is disabled until this flips to `true`.
      */
-    protected readonly $dataReady = signal(false);
+    protected readonly $dataReady = computed(
+        () => !this.isEdit || this.#store.status() === 'loaded'
+    );
 
     protected readonly $isSaveDisabled = computed(() => !this.$dataReady());
 
@@ -327,11 +301,24 @@ export class DotUsersCreateComponent {
     constructor() {
         if (this.user) {
             this.hydrateFromListItem(this.user);
-            this.loadUserDetail(this.user.userId);
+            this.#store.loadUserDetail(this.user.userId);
         } else {
             this.enableCreatePasswordValidators();
-            this.$dataReady.set(true);
         }
+
+        // Watch the store for status transitions the shell has to
+        // react to: `loaded` triggers form patching from the fetched
+        // detail; `error` closes the dialog after the shared HTTP
+        // error manager surfaces its toast (the store handles the
+        // toast, we handle the dialog lifecycle).
+        effect(() => {
+            const status = this.#store.status();
+            if (status === 'loaded') {
+                untracked(() => this.applyLoadedDetail());
+            } else if (status === 'error') {
+                untracked(() => this.#dialogRef.close());
+            }
+        });
     }
 
     protected close(): void {
@@ -419,79 +406,39 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Fetches everything the dialog needs to reach a fully-editable
-     * state in edit mode:
-     *   - `getUser` — full profile fields incl. additionalInfo
-     *   - `getUserRoles` — role KEYS used to hydrate the Access toggles
-     *     and to seed the "preserve other memberships" payload on save
-     *   - `getGettingStartedState` — Show Getting Started initial value
-     *
-     * The getting-started call is wrapped in `catchError` because it's
-     * a non-critical side surface — if it fails we default to `false`
-     * and let the user toggle it manually. All three run in parallel;
-     * the Save button stays disabled until every response has landed
-     * (see `$dataReady`).
+     * Patches the form with the fully-hydrated detail from the store.
+     * Called once when status transitions to `loaded`.
      */
-    private loadUserDetail(userId: string): void {
-        this.$isLoading.set(true);
-        forkJoin({
-            user: this.#usersService.getUser(userId),
-            userRoles: this.#usersService.getUserRoles(userId),
-            gettingStarted: this.#usersService
-                .getGettingStartedState(userId)
-                .pipe(catchError(() => of(false)))
-        })
-            .pipe(
-                take(1),
-                finalize(() => this.$isLoading.set(false)),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe({
-                next: ({ user, userRoles, gettingStarted }) => {
-                    const roleKeys = userRoles
-                        .map((role) => role.roleKey)
-                        .filter((key): key is string => !!key);
+    private applyLoadedDetail(): void {
+        const detail = this.#store.detail();
+        if (!detail) {
+            return;
+        }
+        const roleKeySet = new Set(this.#store.roleKeys());
+        const additionalInfo = this.#store.additionalInfo();
 
-                    this.#$loadedUserRoleKeys.set(roleKeys);
-                    this.#$initialGettingStarted.set(gettingStarted);
-
-                    const roleKeySet = new Set(roleKeys);
-                    const additionalInfo = user.additionalInfo ?? {};
-                    this.#$loadedAdditionalInfo.set(additionalInfo);
-
-                    this.form.patchValue({
-                        account: {
-                            firstName: user.firstName ?? '',
-                            lastName: user.lastName ?? '',
-                            email: user.emailAddress ?? '',
-                            active: user.active ?? true
-                        },
-                        additionalInfo: {
-                            prefix: (additionalInfo['prefix'] as string) ?? '',
-                            suffix: (additionalInfo['suffix'] as string) ?? '',
-                            title: (additionalInfo['title'] as string) ?? '',
-                            company: (additionalInfo['company'] as string) ?? '',
-                            website: (additionalInfo['website'] as string) ?? ''
-                        },
-                        access: {
-                            cmsAdmin: roleKeySet.has(ACCESS_ROLE_KEYS.cmsAdmin),
-                            backend: roleKeySet.has(ACCESS_ROLE_KEYS.backend),
-                            frontend: roleKeySet.has(ACCESS_ROLE_KEYS.frontend),
-                            showGettingStarted: gettingStarted
-                        }
-                    });
-                    this.form.markAsPristine();
-                    this.$dataReady.set(true);
-                },
-                error: (error) => {
-                    // Toast fires from the manager; dropping the dialog
-                    // frees the user from a permanently disabled Save
-                    // with no hint why. Cancel still worked, but nothing
-                    // pointed at the load failure.
-                    this.#httpErrorManager.handle(error);
-                    this.#dialogRef.close();
-                }
-            });
+        this.form.patchValue({
+            account: {
+                firstName: detail.firstName ?? '',
+                lastName: detail.lastName ?? '',
+                email: detail.emailAddress ?? '',
+                active: detail.active ?? true
+            },
+            additionalInfo: {
+                prefix: (additionalInfo['prefix'] as string) ?? '',
+                suffix: (additionalInfo['suffix'] as string) ?? '',
+                title: (additionalInfo['title'] as string) ?? '',
+                company: (additionalInfo['company'] as string) ?? '',
+                website: (additionalInfo['website'] as string) ?? ''
+            },
+            access: {
+                cmsAdmin: roleKeySet.has(ACCESS_ROLE_KEYS.cmsAdmin),
+                backend: roleKeySet.has(ACCESS_ROLE_KEYS.backend),
+                frontend: roleKeySet.has(ACCESS_ROLE_KEYS.frontend),
+                showGettingStarted: this.#store.gettingStarted()
+            }
+        });
+        this.form.markAsPristine();
     }
 
     private enableCreatePasswordValidators(): void {
@@ -531,7 +478,7 @@ export class DotUsersCreateComponent {
         // any keys the profile tab does not surface, then overlay the
         // five managed fields. We always write those five — an empty
         // string wins over the stale value that would otherwise stick.
-        const additionalInfo: Record<string, unknown> = { ...this.#$loadedAdditionalInfo() };
+        const additionalInfo: Record<string, unknown> = { ...this.#store.additionalInfo() };
         for (const key of ADDITIONAL_INFO_KEYS) {
             additionalInfo[key] = (additionalInfoValue[key] ?? '').trim();
         }
@@ -557,7 +504,7 @@ export class DotUsersCreateComponent {
         payload.roles = this.mergeRoleKeysForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
-        if (access.showGettingStarted !== this.#$initialGettingStarted()) {
+        if (access.showGettingStarted !== this.#store.gettingStarted()) {
             gettingStartedChange = access.showGettingStarted ? 'add' : 'remove';
         }
 
@@ -592,9 +539,9 @@ export class DotUsersCreateComponent {
     }): string[] {
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
         const personalRoleKey = this.user?.userId ?? '';
-        const nonAccess = this.#$loadedUserRoleKeys().filter(
-            (key) => !accessKeys.has(key) && key !== personalRoleKey
-        );
+        const nonAccess = this.#store
+            .roleKeys()
+            .filter((key) => !accessKeys.has(key) && key !== personalRoleKey);
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);

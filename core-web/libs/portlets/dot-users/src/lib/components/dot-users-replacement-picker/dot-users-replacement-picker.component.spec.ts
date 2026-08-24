@@ -1,5 +1,5 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { of, Subject, throwError } from 'rxjs';
 
 import { AutoCompleteCompleteEvent } from 'primeng/autocomplete';
 
@@ -9,35 +9,11 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotUsersReplacementPickerComponent } from './dot-users-replacement-picker.component';
 
 import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
+import { createFakeUser } from '../../testing/dot-user.mock';
 
 const MESSAGES = {
     'users.dialog.delete-confirm.replacement-placeholder': 'Select a replacement'
 };
-
-/** Baseline user shape — spec-level defaults kept exhaustive so
- * individual tests can override only the fields under test without
- * repeating the boilerplate. */
-function fakeUser(overrides: Partial<DotUserListItem> = {}): DotUserListItem {
-    return {
-        userId: 'user-1',
-        id: 'user-1',
-        firstName: 'Jane',
-        lastName: 'Doe',
-        fullName: 'Jane Doe',
-        name: 'Jane Doe',
-        emailAddress: 'jane@dotcms.com',
-        gravitar: '',
-        active: true,
-        admin: false,
-        backendUser: true,
-        frontendUser: false,
-        hasConsoleAccess: true,
-        lastLoginDate: null,
-        lastLoginIP: null,
-        failedLoginAttempts: 0,
-        ...overrides
-    };
-}
 
 /** Minimal search event — component only reads `.query`. */
 function searchEvent(query: string): AutoCompleteCompleteEvent {
@@ -61,9 +37,9 @@ describe('DotUsersReplacementPickerComponent', () => {
     describe('onSearch — exclusion filtering', () => {
         it('drops candidates whose userId appears in excludedUserIds', () => {
             const candidates = [
-                fakeUser({ userId: 'user-1' }),
-                fakeUser({ userId: 'user-2' }),
-                fakeUser({ userId: 'user-3' })
+                createFakeUser({ userId: 'user-1' }),
+                createFakeUser({ userId: 'user-2' }),
+                createFakeUser({ userId: 'user-3' })
             ];
             spectator = createComponent({
                 props: { excludedUserIds: ['user-2'] }
@@ -110,19 +86,121 @@ describe('DotUsersReplacementPickerComponent', () => {
         });
     });
 
-    describe('onSearch — error path', () => {
-        it('swallows the error and empties the suggestion list', () => {
+    describe('onSearch — loading, error, empty states', () => {
+        it('flips $isLoading on before the response resolves', () => {
+            spectator = createComponent();
+            const service = spectator.inject(DotUsersService, true);
+            const gate = new Subject<{
+                entity: DotUserListItem[];
+                errors: [];
+                messages: [];
+                permissions: [];
+                i18nMessagesMap: Record<string, string>;
+                pagination: { currentPage: number; perPage: number; totalEntries: number };
+            }>();
+            (service.getUsersPaginated as jest.Mock).mockReturnValue(gate);
+
+            spectator.component['onSearch'](searchEvent('ada'));
+
+            expect(spectator.component['$isLoading']()).toBe(true);
+            expect(spectator.component['$hasError']()).toBe(false);
+
+            gate.next({
+                entity: [],
+                errors: [],
+                messages: [],
+                permissions: [],
+                i18nMessagesMap: {},
+                pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
+            });
+            gate.complete();
+
+            expect(spectator.component['$isLoading']()).toBe(false);
+        });
+
+        it('surfaces an error flag when the service fails and clears suggestions', () => {
             spectator = createComponent();
             const service = spectator.inject(DotUsersService, true);
             (service.getUsersPaginated as jest.Mock).mockReturnValue(
                 throwError(() => new Error('boom'))
             );
 
-            spectator.component['$suggestions'].set([fakeUser()]);
+            spectator.component['$suggestions'].set([createFakeUser()]);
 
             spectator.component['onSearch'](searchEvent('ada'));
 
+            expect(spectator.component['$hasError']()).toBe(true);
+            expect(spectator.component['$isLoading']()).toBe(false);
             expect(spectator.component['$suggestions']()).toEqual([]);
+        });
+
+        it('recovers the error flag when a subsequent query succeeds', () => {
+            spectator = createComponent();
+            const service = spectator.inject(DotUsersService, true);
+            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+                throwError(() => new Error('boom'))
+            );
+
+            spectator.component['onSearch'](searchEvent('ada'));
+            expect(spectator.component['$hasError']()).toBe(true);
+
+            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+                of({
+                    entity: [createFakeUser({ userId: 'user-1' })],
+                    errors: [],
+                    messages: [],
+                    permissions: [],
+                    i18nMessagesMap: {},
+                    pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+                })
+            );
+            spectator.component['onSearch'](searchEvent('ada again'));
+
+            expect(spectator.component['$hasError']()).toBe(false);
+            expect(spectator.component['$suggestions']().map((u) => u.userId)).toEqual(['user-1']);
+        });
+
+        it('cancels an in-flight request when a newer query arrives (switchMap)', () => {
+            spectator = createComponent();
+            const service = spectator.inject(DotUsersService, true);
+            const stale = new Subject<{
+                entity: DotUserListItem[];
+                errors: [];
+                messages: [];
+                permissions: [];
+                i18nMessagesMap: Record<string, string>;
+                pagination: { currentPage: number; perPage: number; totalEntries: number };
+            }>();
+            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(stale);
+
+            spectator.component['onSearch'](searchEvent('slow'));
+
+            const fresh = createFakeUser({ userId: 'fresh-1' });
+            (service.getUsersPaginated as jest.Mock).mockReturnValueOnce(
+                of({
+                    entity: [fresh],
+                    errors: [],
+                    messages: [],
+                    permissions: [],
+                    i18nMessagesMap: {},
+                    pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+                })
+            );
+            spectator.component['onSearch'](searchEvent('fast'));
+
+            // Stale response resolves LATE — must be ignored, current
+            // suggestions stay as the fresh set.
+            stale.next({
+                entity: [createFakeUser({ userId: 'stale-1' })],
+                errors: [],
+                messages: [],
+                permissions: [],
+                i18nMessagesMap: {},
+                pagination: { currentPage: 1, perPage: 10, totalEntries: 1 }
+            });
+            stale.complete();
+
+            expect(spectator.component['$suggestions']().map((u) => u.userId)).toEqual(['fresh-1']);
         });
     });
 
@@ -132,7 +210,7 @@ describe('DotUsersReplacementPickerComponent', () => {
             const emitted: (DotUserListItem | null)[] = [];
             spectator.component.selectionChange.subscribe((value) => emitted.push(value));
 
-            const user = fakeUser({ userId: 'user-99' });
+            const user = createFakeUser({ userId: 'user-99' });
             spectator.component['onSelect'](user);
 
             expect(emitted).toEqual([user]);
@@ -156,7 +234,7 @@ describe('DotUsersReplacementPickerComponent', () => {
 
         it('returns fullName when it is set', () => {
             const value = spectator.component['displayName'](
-                fakeUser({
+                createFakeUser({
                     fullName: 'Jane Doe',
                     name: 'ignored',
                     firstName: 'ignored',
@@ -169,14 +247,14 @@ describe('DotUsersReplacementPickerComponent', () => {
 
         it('falls back to name when fullName is blank', () => {
             const value = spectator.component['displayName'](
-                fakeUser({ fullName: '', name: 'Nick Name' })
+                createFakeUser({ fullName: '', name: 'Nick Name' })
             );
             expect(value).toBe('Nick Name');
         });
 
         it('falls back to first+last when both fullName and name are blank', () => {
             const value = spectator.component['displayName'](
-                fakeUser({
+                createFakeUser({
                     fullName: '',
                     name: '',
                     firstName: 'Ada',
@@ -188,7 +266,7 @@ describe('DotUsersReplacementPickerComponent', () => {
 
         it('falls back to emailAddress when every name field is blank', () => {
             const value = spectator.component['displayName'](
-                fakeUser({
+                createFakeUser({
                     fullName: '',
                     name: '',
                     firstName: '',
@@ -201,7 +279,7 @@ describe('DotUsersReplacementPickerComponent', () => {
 
         it('returns an empty string when every source field is missing', () => {
             const value = spectator.component['displayName'](
-                fakeUser({
+                createFakeUser({
                     fullName: '',
                     name: '',
                     firstName: '',
@@ -214,7 +292,7 @@ describe('DotUsersReplacementPickerComponent', () => {
 
         it('treats whitespace-only fullName as blank and continues the fallback', () => {
             const value = spectator.component['displayName'](
-                fakeUser({ fullName: '   ', name: 'Nick Name' })
+                createFakeUser({ fullName: '   ', name: 'Nick Name' })
             );
             expect(value).toBe('Nick Name');
         });
