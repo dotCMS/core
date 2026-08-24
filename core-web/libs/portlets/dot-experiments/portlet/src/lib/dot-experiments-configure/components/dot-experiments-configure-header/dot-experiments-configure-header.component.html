@@ -49,11 +49,7 @@
             [disabled]="true"
             [pTooltip]="'experiments.list.action.coming-soon' | dm"
             tooltipPosition="bottom"
-            data-testid="experiments-configure-results-btn">
-            <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
-                monitoring
-            </span>
-        </p-button>
+            data-testid="experiments-configure-results-btn" />
     }
 
     @if ($showStop()) {
@@ -62,11 +58,7 @@
             severity="danger"
             [label]="'experiments.action.stop-experiment' | dm"
             (onClick)="confirmStop()"
-            data-testid="experiments-configure-stop-btn">
-            <span class="material-symbols-rounded text-lg! leading-none" aria-hidden="true">
-                stop_circle
-            </span>
-        </p-button>
+            data-testid="experiments-configure-stop-btn" />
     }
 
     @if ($hasMenuItems()) {
