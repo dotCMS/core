@@ -23,7 +23,7 @@
             </div>
             <p-divider layout="vertical" />
             <dotcms-template-builder-actions
-                [themeId]="template.themeId"
+                [themeId]="template.themeId ?? null"
                 (selectTheme)="updateTheme($event)"
                 [layoutProperties]="vm.layoutProperties"
                 data-testId="template-builder-actions" />
@@ -44,20 +44,18 @@
                 {{ 'dot.template.builder.header' | dm }}
             </dotcms-template-builder-section>
         }
+        <!-- `sidebar` is null once emptied — the builder clears it so it is not saved. -->
+        @let sidebar = vm.layoutProperties.sidebar;
         <div
-            [class.template-builder__container--right]="
-                vm.layoutProperties.sidebar.location === 'right'
-            "
+            [class.template-builder__container--right]="sidebar?.location === 'right'"
             class="template-builder__container">
-            @if (vm.layoutProperties.sidebar.location?.length) {
+            @if (sidebar && sidebar.location?.length) {
                 <dotcms-template-builder-sidebar
                     [class]="{
-                        'template-builder__sidebar--small':
-                            vm.layoutProperties.sidebar.width === 'small',
-                        'template-builder__sidebar--large':
-                            vm.layoutProperties.sidebar.width === 'large'
+                        'template-builder__sidebar--small': sidebar.width === 'small',
+                        'template-builder__sidebar--large': sidebar.width === 'large'
                     }"
-                    [sidebarProperties]="vm.layoutProperties.sidebar"
+                    [sidebarProperties]="sidebar"
                     [containerMap]="vm.containerMap" />
             }
             <div class="grid-stack flex-1">
