@@ -1,3 +1,4 @@
+import { tapResponse } from '@ngrx/operators';
 import {
     patchState,
     signalStoreFeature,
@@ -6,10 +7,10 @@ import {
     withMethods,
     withState
 } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { pipe, switchMap } from 'rxjs';
 
 import { inject } from '@angular/core';
-
-import { take } from 'rxjs/operators';
 
 import { PushPublishService } from '@dotcms/data-access';
 
@@ -52,18 +53,25 @@ export function withPushPublishEnvironments() {
              * unreachable lookup as "probably fine", offers a push that has nowhere to go and fails
              * at the servlet with a message the user cannot act on.
              */
-            loadPushPublishEnvironments: (): void => {
-                pushPublishService
-                    .getEnvironments()
-                    .pipe(take(1))
-                    .subscribe({
-                        next: (environments) =>
-                            patchState(store, {
-                                hasPushPublishEnvironments: environments.length > 0
-                            }),
-                        error: () => patchState(store, { hasPushPublishEnvironments: false })
-                    });
-            }
+            loadPushPublishEnvironments: rxMethod<void>(
+                pipe(
+                    switchMap(() =>
+                        // Consumed inside the inner `.pipe()`, where the Observable is strongly
+                        // typed: the standalone `pipe(...)` outside cannot propagate the response
+                        // type through the `switchMap` under Angular's strict production build.
+                        pushPublishService.getEnvironments().pipe(
+                            tapResponse({
+                                next: (environments) =>
+                                    patchState(store, {
+                                        hasPushPublishEnvironments: environments.length > 0
+                                    }),
+                                error: () =>
+                                    patchState(store, { hasPushPublishEnvironments: false })
+                            })
+                        )
+                    )
+                )
+            )
         })),
         withHooks((store) => {
             return {

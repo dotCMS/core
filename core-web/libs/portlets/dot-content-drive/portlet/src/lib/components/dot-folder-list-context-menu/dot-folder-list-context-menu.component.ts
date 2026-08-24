@@ -225,9 +225,11 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
-            // Last, and gated on EDIT because that is what `FolderAPIImpl.delete` enforces. Ordered
-            // after everything else because it is the one entry here that destroys something.
-            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT)) {
+            // Last, and gated on **both** permissions, because `FolderAPIImpl.delete` enforces both:
+            // EDIT at `:438` and EDIT_PERMISSIONS at `:456`. Gating on EDIT alone offered Delete to
+            // a contributor who would confirm the destructive dialog and only then be refused.
+            // Ordered after everything else because it is the one entry here that destroys something.
+            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT) && canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
                     command: () => this.#confirmDeleteFolder(contentlet)

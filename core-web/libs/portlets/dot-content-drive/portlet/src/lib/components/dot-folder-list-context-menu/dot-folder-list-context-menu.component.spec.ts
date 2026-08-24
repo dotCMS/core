@@ -345,13 +345,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 showAddToBundle: false
             };
 
-            it('should build the EDIT-gated items for a folder with only EDIT', async () => {
+            it('should build only Folder Settings for a folder with just EDIT', async () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
-                // Both entries behind EDIT: Folder Settings, and Delete last.
+                // Delete needs EDIT_PERMISSIONS too, matching `FolderAPIImpl.delete`.
                 expect(component.$items().map((item) => item.label)).toEqual([
-                    'content-drive.context-menu.edit-folder',
-                    'content-drive.context-menu.delete-folder'
+                    'content-drive.context-menu.edit-folder'
                 ]);
             });
 
@@ -398,7 +397,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
-                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(2);
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(1);
             });
 
             it('should use memoized folder menu items on second call', async () => {
@@ -417,7 +416,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-                expect(component.$items()).toHaveLength(2);
+                expect(component.$items()).toHaveLength(1);
             });
 
             it('should build empty menu when folder has no permissions', async () => {
@@ -751,7 +750,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             describe('delete', () => {
                 const folderWithEdit: DotContentDriveFolder = {
                     ...mockFolder,
-                    permissions: [PERMISSIONS_TYPE.EDIT]
+                    permissions: [PERMISSIONS_TYPE.EDIT, PERMISSIONS_TYPE.EDIT_PERMISSIONS]
                 };
 
                 const folderContextMenuWithEdit: DotContentDriveContextMenu = {
@@ -783,8 +782,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     component.$memoizedMenuItems.set({});
                 });
 
-                // EDIT, because that is what FolderAPIImpl.delete enforces (`:438`).
-                it('should show Delete when the folder has EDIT permission', async () => {
+                // `FolderAPIImpl.delete` enforces **both**: EDIT at `:438` and EDIT_PERMISSIONS at
+                // `:456`. Gating on EDIT alone offered Delete to a contributor who would confirm the
+                // destructive dialog and then be refused with a 403.
+                it('should show Delete when the folder has EDIT and EDIT_PERMISSIONS', async () => {
                     await component.getMenuItems(folderContextMenuWithEdit);
 
                     expect(deleteItem()).toBeDefined();
@@ -794,6 +795,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await component.getMenuItems({
                         triggeredEvent: mockEvent,
                         contentlet: { ...mockFolder, permissions: [PERMISSIONS_TYPE.READ] },
+                        showAddToBundle: false
+                    });
+
+                    expect(deleteItem()).toBeUndefined();
+                });
+
+                it('should not show Delete with EDIT but no EDIT_PERMISSIONS', async () => {
+                    await component.getMenuItems({
+                        triggeredEvent: mockEvent,
+                        contentlet: { ...mockFolder, permissions: [PERMISSIONS_TYPE.EDIT] },
                         showAddToBundle: false
                     });
 
