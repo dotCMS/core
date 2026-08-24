@@ -36,7 +36,7 @@ export class DotEditContentletComponent implements OnInit {
     @Output()
     shutdown: EventEmitter<unknown> = new EventEmitter();
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
 
     url$!: Observable<string>;
 
