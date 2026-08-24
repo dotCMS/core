@@ -48,9 +48,17 @@ describe('DotPermissionsIframeComponent', () => {
             expect(iframe.style.minHeight).toBe('34rem');
         });
 
-        it('should have title "Permissions"', () => {
+        it('should have title "Permissions" by default', () => {
             const iframe = spectator.query(byTestId('permissions-iframe')) as HTMLIFrameElement;
             expect(iframe.getAttribute('title')).toBe('Permissions');
+        });
+
+        it('should honor a custom iframeTitle input', () => {
+            spectator = createComponent({
+                props: { url: '/some/path', iframeTitle: 'User permissions' }
+            });
+            const iframe = spectator.query(byTestId('permissions-iframe')) as HTMLIFrameElement;
+            expect(iframe.getAttribute('title')).toBe('User permissions');
         });
     });
 
@@ -73,6 +81,17 @@ describe('DotPermissionsIframeComponent', () => {
 
         it('should render permissions-empty when url is a protocol-relative URL', () => {
             spectator = createComponent({ props: { url: '//evil.example.com' } });
+
+            expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
+            expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();
+        });
+
+        it('should render permissions-empty when url starts with `/\\` (backslash-relative)', () => {
+            // Browsers resolve backslash as `/` in the relative-slash
+            // URL state, so `/\evil.com/path` becomes `//evil.com/path`
+            // once the parser runs — same protocol-relative cross-origin
+            // hazard as `//evil.com` above.
+            spectator = createComponent({ props: { url: '/\\evil.example.com/path' } });
 
             expect(spectator.query(byTestId('permissions-empty'))).toBeTruthy();
             expect(spectator.query(byTestId('permissions-iframe'))).toBeFalsy();

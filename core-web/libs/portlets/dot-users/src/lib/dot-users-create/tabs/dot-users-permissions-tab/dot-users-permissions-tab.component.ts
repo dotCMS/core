@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 
 import { DotMessagePipe, DotPermissionsIframeComponent } from '@dotcms/ui';
 
@@ -18,16 +18,14 @@ import { DotMessagePipe, DotPermissionsIframeComponent } from '@dotcms/ui';
  */
 @Component({
     selector: 'dot-users-permissions-tab',
-    standalone: true,
     imports: [DotMessagePipe, DotPermissionsIframeComponent],
     templateUrl: './dot-users-permissions-tab.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex h-full min-h-0 flex-col block' }
+    host: { class: 'flex h-full min-h-0 flex-col' }
 })
 export class DotUsersPermissionsTabComponent {
     readonly userId = input<string | null>(null);
 
-    readonly permissionsUrl = computed<string>(() => {
+    readonly $permissionsUrl = computed<string>(() => {
         const id = this.userId();
         if (!id) {
             return '';

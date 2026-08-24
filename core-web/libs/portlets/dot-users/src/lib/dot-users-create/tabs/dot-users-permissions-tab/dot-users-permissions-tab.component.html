@@ -1,12 +1,19 @@
-@if (permissionsUrl()) {
+@if ($permissionsUrl()) {
     <dot-permissions-iframe
-        [url]="permissionsUrl()"
+        [url]="$permissionsUrl()"
         height="100%"
+        [iframeTitle]="'users.dialog.permissions.iframe.title' | dm"
         class="flex min-h-0 flex-1 flex-col" />
 } @else {
     <div
         class="flex h-full min-h-96 flex-col items-center justify-center gap-2 py-8"
         data-testid="users-permissions-tab-empty">
+        <!--
+            `text-5xl!` needed on the Material Symbols icon: Google's
+            `.material-symbols-rounded { font-size: 24px }` ties
+            tailwind's `text-*` classes on specificity, so we force
+            with `!important` (`!` suffix) to size the icon.
+        -->
         <span class="material-symbols-rounded text-5xl! text-surface-400" aria-hidden="true">
             lock_person
         </span>
