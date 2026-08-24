@@ -33,7 +33,7 @@
     <div
         (mousemove)="fixGridStackNodeOptions()"
         [ngStyle]="customStyles"
-        class="overflow-y-auto overflow-x-hidden transition-opacity duration-300 ease-in-out h-full p-6"
+        class="h-full overflow-x-hidden overflow-y-auto p-6 transition-opacity duration-300 ease-in-out"
         #templateContainerRef
         data-testId="template-builder-main">
         @if (vm.layoutProperties.header) {
@@ -118,7 +118,7 @@
 }
 @if (disabled) {
     <div
-        class="absolute inset-0 z-50 flex items-center justify-center bg-white/50 backdrop-blur-[2px] cursor-not-allowed"
+        class="absolute inset-0 z-50 flex cursor-not-allowed items-center justify-center bg-white/50 backdrop-blur-[2px]"
         data-testId="template-builder-disabled-overlay">
         <p-progress-spinner
             [style]="{ width: '3rem', height: '3rem' }"
