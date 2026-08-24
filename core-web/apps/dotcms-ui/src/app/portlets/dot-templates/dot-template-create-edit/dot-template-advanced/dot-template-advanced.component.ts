@@ -21,27 +21,13 @@ import { DotContainer } from '@dotcms/dotcms-models';
 
 import { DotPortletToolbarActions } from '../../../../shared/models/dot-portlet-toolbar.model/dot-portlet-toolbar-actions.model';
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
-import { DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
+import { DotTextareaMonacoInit, DotTextareaContentComponent } from '../../../../view/components/_common/dot-textarea-content/dot-textarea-content.component';
 import { DotContainerSelectorComponent } from '../../../../view/components/dot-container-selector/dot-container-selector.component';
 import { DotPortletToolbarComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 import { DotPortletBaseComponent } from '../../../../view/components/dot-portlet-base/dot-portlet-base.component';
 import { DotTemplateItem } from '../store/dot-template.store';
 
-interface MonacoEditorOperation {
-    range: number;
-    text: string;
-    forceMoveMarkers: boolean;
-}
-
-interface MonacoEditorInfo {
-    name: string;
-    editor: MonacoEditor;
-}
-
-interface MonacoEditor {
-    getSelection: () => number;
-    executeEdits: (action: string, data: MonacoEditorOperation[]) => void;
-}
+type MonacoEditorInfo = DotTextareaMonacoInit;
 
 @Component({
     selector: 'dot-template-advanced',
@@ -69,7 +55,7 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     @Input() didTemplateChanged!: boolean;
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
-    editor!: MonacoEditor;
+    editor!: DotTextareaMonacoInit['editor'];
     form!: UntypedFormGroup;
     actions!: DotPortletToolbarActions;
     private destroy$: Subject<boolean> = new Subject<boolean>();
@@ -114,6 +100,12 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
      */
     containerChange(container: DotContainer): void {
         const selection = this.editor.getSelection();
+
+        // `getSelection()` is null when the editor has never held focus, and `executeEdits`
+        // needs a range. The previous hand-rolled `getSelection: () => number` hid this.
+        if (!selection) {
+            return;
+        }
 
         const id = this.setContainerId(container);
 
