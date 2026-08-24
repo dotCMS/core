@@ -6,8 +6,8 @@
         // itself already passes. Drop these two lines once those are cleaned up.
         "noPropertyAccessFromIndexSignature": false,
         "noImplicitOverride": false,
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "preserve",
+        "moduleResolution": "bundler",
         "types": ["node"]
     },
     "files": [],

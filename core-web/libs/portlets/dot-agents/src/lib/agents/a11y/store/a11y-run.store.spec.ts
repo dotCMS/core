@@ -1,4 +1,5 @@
 import { patchState } from '@ngrx/signals';
+import { unprotected } from '@ngrx/signals/testing';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { concat, NEVER, Observable, of, throwError } from 'rxjs';
 
@@ -47,7 +48,7 @@ const MOCK_FIX_STREAM: A11yAgentStreamEvent[] = [
  * against `of()` would be asserting against a closed stream.
  */
 const openStream = (...events: A11yAgentStreamEvent[]): Observable<A11yAgentStreamEvent> =>
-    concat(of<A11yAgentStreamEvent>(...events), NEVER);
+    concat(of<A11yAgentStreamEvent[]>(...events), NEVER);
 
 // Two violation rules (3 + 2 = 5 error elements) + one incomplete rule (2 warnings).
 const MOCK_SCAN_RESPONSE = {
@@ -457,7 +458,7 @@ describe('A11yRunStore', () => {
 
         it('startFix returns to scanned and records the error on a terminal error event', () => {
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+                of<A11yAgentStreamEvent[]>({ type: 'error', message: 'render unreliable' })
             );
             store.runScan();
             store.startFix();
@@ -481,7 +482,7 @@ describe('A11yRunStore', () => {
             // `done`/`aborted`/`error`. Staying in `fixing` would spin the "still
             // working…" indicator forever with no way back to the results.
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>(
+                of<A11yAgentStreamEvent[]>(
                     { type: 'run', runId: 'r_test_123' },
                     { type: 'progress', progress: { baseline: 5, current: 3, cleared: 2 } }
                 )
@@ -512,7 +513,7 @@ describe('A11yRunStore', () => {
             // something that has none, which threw inside change detection and blanked the
             // score widget, footer and donut together.
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>({ type: 'aborted', result: null })
+                of<A11yAgentStreamEvent[]>({ type: 'aborted', result: null })
             );
             store.runScan();
             store.startFix();
@@ -529,7 +530,7 @@ describe('A11yRunStore', () => {
             // A run can fail AFTER writing fixes to the working version; without a bump the
             // preview and changed-files panel keep their pre-run state and hide them.
             agentService.fixStream.mockReturnValueOnce(
-                of<A11yAgentStreamEvent>({ type: 'error', message: 'render unreliable' })
+                of<A11yAgentStreamEvent[]>({ type: 'error', message: 'render unreliable' })
             );
             store.runScan();
             const before = store.previewRevision();
@@ -634,7 +635,7 @@ describe('A11yRunStore', () => {
         it('counts violations cleared by the agentic pass, which emits no fix rows', () => {
             // 20 → 2 means 18 cleared, but only one row logs a deterministic fix. Counting
             // rows would report "1 fixed"; the rescan is what knows the real number.
-            patchState(store, {
+            patchState(unprotected(store), {
                 report: {
                     ...MOCK_FIX_REPORT,
                     scan: { before: { violations: 20 }, after: { violations: 2 } },
@@ -662,7 +663,7 @@ describe('A11yRunStore', () => {
                 },
                 { ruleId: RESEARCH_RULE_ID, status: 'fixed-to-working', file: '/t.vtl' }
             ];
-            patchState(store, {
+            patchState(unprotected(store), {
                 report: {
                     ...MOCK_FIX_REPORT,
                     results: duplicated

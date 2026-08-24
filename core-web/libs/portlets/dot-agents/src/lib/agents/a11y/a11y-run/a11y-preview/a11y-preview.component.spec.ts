@@ -212,11 +212,27 @@ describe('DotA11yPreviewComponent', () => {
             };
         }
 
+        type FakeFrame = ReturnType<typeof fakeFrame>;
+
+        /**
+         * `$liveFrame`/`$previewFrame` are private `viewChild` signals. Reach them through
+         * this shape rather than `as never`, which types the spy's return as `never` and
+         * makes `mockReturnValue` unassignable under `strict`.
+         */
+        type FramesUnderTest = {
+            $liveFrame: () => FakeFrame;
+            $previewFrame: () => FakeFrame;
+        };
+
+        const framesOf = (component: DotA11yPreviewComponent): FramesUnderTest =>
+            component as unknown as FramesUnderTest;
+
         it('mirrors the live frame scroll onto the preview frame', () => {
             const live = fakeFrame(0, 0);
             const preview = fakeFrame(0, 0);
-            jest.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            jest.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
+            const frames = framesOf(spectator.component);
+            jest.spyOn(frames, '$liveFrame').mockReturnValue(live);
+            jest.spyOn(frames, '$previewFrame').mockReturnValue(preview);
 
             spectator.component.onLiveLoad();
             live.win.scrollX = 40;
@@ -229,8 +245,9 @@ describe('DotA11yPreviewComponent', () => {
         it('does not bounce back (re-entrancy guard)', () => {
             const live = fakeFrame(0, 0);
             const preview = fakeFrame(0, 0);
-            jest.spyOn(spectator.component as never, '$liveFrame').mockReturnValue(live);
-            jest.spyOn(spectator.component as never, '$previewFrame').mockReturnValue(preview);
+            const frames = framesOf(spectator.component);
+            jest.spyOn(frames, '$liveFrame').mockReturnValue(live);
+            jest.spyOn(frames, '$previewFrame').mockReturnValue(preview);
 
             // Wire BOTH directions, then scroll live once.
             spectator.component.onLiveLoad();
