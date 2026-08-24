@@ -11,8 +11,14 @@ import {
     DotAIImageContent,
     DotAIImageResponse,
     DotAiProviderConfig,
+    DotAiProviderMetadata,
+    DotAiTestConnectionResult,
     DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
+
+interface ResponseEntityView<T> {
+    entity: T;
+}
 
 export type { DotAiProviderConfig };
 
@@ -141,6 +147,44 @@ export class DotAiService {
             headers,
             params
         });
+    }
+
+    /**
+     * Lists capability and field metadata for every registered dotAI provider, so the
+     * configuration form can render dynamic provider/field UI without hardcoding provider
+     * knowledge. A new backend provider appears here automatically.
+     *
+     * @returns {Observable<DotAiProviderMetadata[]>} provider metadata list.
+     */
+    getProviders(): Observable<DotAiProviderMetadata[]> {
+        return this.#http
+            .get<ResponseEntityView<DotAiProviderMetadata[]>>(`${API_ENDPOINT}/providers`)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Tests a provider configuration for one capability by asking the backend to build the
+     * provider client and issue a minimal real request against it. Masked credential fields
+     * (`"*****"`) in `config` are resolved server-side against the value already stored for
+     * `siteId` — the real secret never has to round-trip through the browser.
+     *
+     * @param {string} capability - the capability section to test: `chat`, `embeddings`, or `image`.
+     * @param {Record<string, unknown>} config - the assembled provider config section to test.
+     * @param {string} [siteId] - site identifier (or `SYSTEM_HOST`) whose stored config resolves masked credentials.
+     * @returns {Observable<DotAiTestConnectionResult>} the test outcome.
+     */
+    testConnection(
+        capability: string,
+        config: Record<string, unknown>,
+        siteId?: string
+    ): Observable<DotAiTestConnectionResult> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http
+            .post<
+                ResponseEntityView<DotAiTestConnectionResult>
+            >(`${API_ENDPOINT}/providers/test/${capability}`, JSON.stringify(config), { headers, params })
+            .pipe(map((response) => response.entity));
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

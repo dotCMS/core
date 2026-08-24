@@ -3,11 +3,9 @@ package com.dotcms.rest.api.v1.user;
 import javax.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.NotBlank;
 import com.dotcms.rest.api.Validated;
-import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -54,7 +52,10 @@ public final class UserForm extends Validated implements LanguageSupport  {
         this.timeZoneId = builder.timeZoneId;
         this.password = builder.password;
         this.additionalInfo = builder.additionalInfo;
-        this.roles = UtilMethods.isSet(builder.roles)?builder.roles: Collections.emptyList();
+        // a null list (field absent from the payload) and an empty list (explicitly sent as [])
+        // carry different meanings on update: null = leave roles untouched, [] = remove all
+        // user-assignable roles. Do not collapse one into the other here.
+        this.roles = builder.roles;
         this.userId = builder.userId;
 
         checkValid();
@@ -112,6 +113,10 @@ public final class UserForm extends Validated implements LanguageSupport  {
         return additionalInfo;
     }
 
+    /**
+     * Role keys sent in the payload. {@code null} means the field was not sent at all;
+     * an empty list means it was explicitly sent as {@code []}.
+     */
     public List<String> getRoles() {
         return roles;
     }
