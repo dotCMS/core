@@ -139,7 +139,6 @@ interface DotToolgroupStateResponse {
     };
 }
 
-
 export interface DotUsersPaginatedParams {
     filter?: string;
     page?: number;
@@ -244,6 +243,7 @@ export class DotUsersService {
             .pipe(map((response) => response.entity ?? []));
     }
 
+    /**
      * Reads whether the `gettingstarted` layout is assigned to a user.
      * The legacy admin UI ties the "Show Getting Started" checkbox to
      * this same layout via `_addtouser` / `_removefromuser`; we mirror

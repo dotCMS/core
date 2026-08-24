@@ -20,22 +20,27 @@
                 pInputText
                 type="text"
                 class="w-full"
-                [ngModel]="availableFilter()"
+                [ngModel]="$availableFilter()"
                 (ngModelChange)="onAvailableFilter($event)"
                 [placeholder]="'users.dialog.roles.filter.placeholder' | dm"
                 data-testid="users-roles-available-filter" />
         </div>
         <div class="max-h-96 overflow-auto p-2" data-testid="users-roles-available-body">
-            @if (availableTree().length === 0) {
+            @if ($isLoading()) {
+                <p
+                    class="text-color-secondary p-2 text-sm"
+                    data-testid="users-roles-available-loading">
+                    {{ 'users.dialog.roles.loading' | dm }}
+                </p>
+            } @else if ($availableTree().length === 0) {
                 <p
                     class="text-color-secondary p-2 text-sm"
                     data-testid="users-roles-available-empty">
                     {{ 'users.dialog.roles.empty' | dm }}
                 </p>
             } @else {
-                @for (node of availableTree(); track node.role.id) {
-                    <ng-container
-                        *ngTemplateOutlet="nodeTpl; context: { $implicit: node }" />
+                @for (node of $availableTree(); track node.role.id) {
+                    <ng-container *ngTemplateOutlet="nodeTpl; context: { $implicit: node }" />
                 }
             }
         </div>
@@ -47,7 +52,7 @@
         <p-button
             severity="secondary"
             [outlined]="true"
-            [disabled]="!canGrant()"
+            [disabled]="!$canGrant()"
             (onClick)="grant()"
             [attr.aria-label]="'users.dialog.roles.grant' | dm"
             data-testid="users-roles-grant-btn">
@@ -58,7 +63,7 @@
         <p-button
             severity="secondary"
             [outlined]="true"
-            [disabled]="!canRevoke()"
+            [disabled]="!$canRevoke()"
             (onClick)="revoke()"
             [attr.aria-label]="'users.dialog.roles.revoke' | dm"
             data-testid="users-roles-revoke-btn">
@@ -75,7 +80,7 @@
             class="flex items-center justify-between border-b border-surface-200 px-3 py-2 font-medium">
             <span>{{ 'users.dialog.roles.granted' | dm }}</span>
             <span class="text-color-secondary text-xs" data-testid="users-roles-granted-count">
-                {{ 'users.dialog.roles.granted.count' | dm: [grantedCount().toString()] }}
+                {{ 'users.dialog.roles.granted.count' | dm: [$grantedCount().toString()] }}
             </span>
         </header>
         <div class="border-b border-surface-100 p-2">
@@ -83,24 +88,43 @@
                 pInputText
                 type="text"
                 class="w-full"
-                [ngModel]="grantedFilter()"
+                [ngModel]="$grantedFilter()"
                 (ngModelChange)="onGrantedFilter($event)"
                 [placeholder]="'users.dialog.roles.filter.placeholder' | dm"
                 data-testid="users-roles-granted-filter" />
         </div>
         <div class="max-h-96 overflow-auto p-2" data-testid="users-roles-granted-body">
-            @if (grantedList().length === 0) {
+            @if ($grantedList().length === 0) {
                 <p class="text-color-secondary p-2 text-sm" data-testid="users-roles-granted-empty">
                     {{ 'users.dialog.roles.granted.empty' | dm }}
                 </p>
             } @else {
-                @for (role of grantedList(); track role.roleKey) {
+                @for (role of $grantedList(); track role.id) {
+                    <!--
+                        `track role.id` because `role.id` is always
+                        unique; `role.roleKey` can be empty for
+                        keyless roles which would collide on @for
+                        (Angular NG0955). Click / data-testid use
+                        the grantIdentifier the internal
+                        `selectedGranted` state is keyed by
+                        (`roleKey || id`), and we suffix with
+                        `role.id` so keyless-role testids stay
+                        unique too.
+                    -->
                     <button
                         type="button"
                         class="flex w-full items-start gap-2 rounded-sm p-2 text-left hover:bg-surface-100"
-                        [class.bg-primary-50]="isSelectedGranted(role.roleKey)"
-                        (click)="toggleGrantedSelection(role.roleKey)"
-                        [attr.data-testid]="'users-roles-granted-item-' + role.roleKey">
+                        [class.bg-primary-50]="isSelectedGranted(grantIdentifier(role))"
+                        (click)="toggleGrantedSelection(grantIdentifier(role))"
+                        [attr.data-testid]="'users-roles-granted-item-' + role.id">
+                        <!--
+                            `text-*!` needed on every Material Symbols icon:
+                            Google's `.material-symbols-rounded { font-size: 24px }`
+                            ties tailwind's `text-*` classes on specificity,
+                            so we force with `!important` (`!` suffix) to size
+                            the icon. Same rationale applies to the other
+                            `text-base!` occurrences below.
+                        -->
                         <span
                             class="material-symbols-rounded text-base! text-surface-500"
                             aria-hidden="true">

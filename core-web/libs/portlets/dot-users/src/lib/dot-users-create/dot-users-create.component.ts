@@ -1,5 +1,3 @@
-import { forkJoin, of } from 'rxjs';
-
 import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
@@ -530,15 +528,14 @@ export class DotUsersCreateComponent {
 
         payload.additionalInfo = additionalInfo;
 
-        // Roles tab is the source of truth when the user interacted
-        // with it (currentRoleKeys is populated on every grantedChange
-        // and seeded from `store.roleKeys()` on load). Falling back to
-        // `mergeRoleKeysForSave` keeps create mode and no-Roles-tab
-        // saves working the same way as before the tab existed.
-        const currentRoleKeys = this.currentRoleKeys();
-        payload.roles = currentRoleKeys
-            ? this.filterOutgoingRoleKeys(currentRoleKeys)
-            : this.mergeRoleKeysForSave(access);
+        // Compose the outbound role list from the "base" role keys
+        // (Roles tab's Granted snapshot when the user touched it,
+        // otherwise the store's fetched roleKeys) with the current
+        // access-toggle deltas applied on top. `mergeRoleKeysForSave`
+        // strips the three access-role keys from the base and re-adds
+        // whichever toggles are ON, so an Access flip is always
+        // reflected in the payload regardless of Roles-tab state.
+        payload.roles = this.mergeRoleKeysForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
         if (access.showGettingStarted !== this.#store.gettingStarted()) {
@@ -568,22 +565,21 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Merges the cached role KEYS with the current Access toggles into
-     * the list the backend expects. Used when the Roles tab hasn't
-     * taken ownership (create mode, or the user never opened the tab).
-     * In create mode the cache is empty, so the outbound list is just
-     * whichever access toggles are ON — safe because create semantics
-     * ADD roles instead of replacing.
+     * Merges the "base" role KEYS with the current Access toggles.
+     * The base is the Roles tab's Granted snapshot (`currentRoleKeys`)
+     * when the user touched it — otherwise the store's fetched keys.
+     * We strip the three access-role slots from the base list and
+     * add back whichever toggles are ON, so an Access flip is always
+     * captured on save even when the user visited the Roles tab.
      */
     private mergeRoleKeysForSave(access: {
         cmsAdmin: boolean;
         backend: boolean;
         frontend: boolean;
     }): string[] {
+        const base = this.currentRoleKeys() ?? this.#store.roleKeys();
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
-        const nonAccess = this.#store
-            .roleKeys()
-            .filter((key) => !accessKeys.has(key));
+        const nonAccess = base.filter((key) => !accessKeys.has(key));
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);
