@@ -306,6 +306,10 @@ describe('DotCategoriesListComponent', () => {
 
             expect(confirmSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    message: 'categories.confirm.delete.message',
+                    header: 'categories.confirm.delete.header',
+                    acceptLabel: 'categories.confirm.delete.accept',
+                    rejectLabel: 'categories.cancel',
                     closable: true,
                     closeOnEscape: true
                 })
@@ -616,6 +620,8 @@ describe('DotCategoriesListComponent', () => {
                 expect.objectContaining({
                     message: 'categories.confirm.delete.message',
                     header: 'categories.confirm.delete.header',
+                    acceptLabel: 'categories.confirm.delete.accept',
+                    rejectLabel: 'categories.cancel',
                     defaultFocus: 'reject',
                     closable: true,
                     closeOnEscape: true

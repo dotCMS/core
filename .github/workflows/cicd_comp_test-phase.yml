@@ -232,7 +232,17 @@ jobs:
       # a comma-list subset like '1,2', or 'all') run every suite/phase to completion so
       # failures are attributable per phase. Derived from "phase off" rather than an
       # exact-match list so comma-list subsets are covered too.
-      fail-fast: ${{ inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0' }}
+      #
+      # The label escape hatch exists because fail-fast destroys evidence: one failing
+      # suite cancels the other ~24, and a cancelled job is indistinguishable from a
+      # failed one at a glance. When you are chasing a flake, or want to know whether a
+      # change broke one suite or twenty, label the PR "CI : No Fail Fast" and every
+      # suite runs to completion. Costs runner time, so it is opt-in per PR.
+      # On merge_group there is no pull_request in the event, contains() is false, and
+      # fast-fail stays on -- the queue should still bail early.
+      fail-fast: >-
+        ${{ (inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0')
+            && !contains(github.event.pull_request.labels.*.name, 'CI : No Fail Fast') }}
       matrix: ${{ fromJSON(needs.setup-matrix.outputs.matrix) }}
 
     steps:          
@@ -244,8 +254,13 @@ jobs:
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
       # self-skipping. Ubuntu 24.04 libvips42 bundles the pdf/heif/svg/webp/jxl delegates.
+      # Bounded so a wedged Ubuntu mirror can't burn the job timeout (#37118).
+      # 15m, not tighter: measured median 21s but max 521s on a throttled mirror
+      # (198 kB/s) that still succeeded. The hang case ran 3h+, so 15m separates
+      # the two without tripping on slow-but-alive fetches.
       - name: Install native libvips (image engine parity tests)
         if: matrix.test_type == 'jvm'
+        timeout-minutes: 15
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42 libheif-plugin-aomenc
 
       - name: Run ${{ matrix.name }}

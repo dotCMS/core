@@ -342,4 +342,14 @@
 		<scope>request</scope>
 		<class>com.dotcms.analytics.viewtool.GoogleAnalyticsTool</class>
 	</tool>
+	<tool>
+		<key>oauth</key>
+		<scope>request</scope>
+		<class>com.dotcms.auth.providers.oauth.viewtool.OAuthTool</class>
+	</tool>
+	<tool>
+		<key>oauthToken</key>
+		<scope>request</scope>
+		<class>com.dotcms.auth.providers.oauth.viewtool.OAuthTokenTool</class>
+	</tool>
 </toolbox>

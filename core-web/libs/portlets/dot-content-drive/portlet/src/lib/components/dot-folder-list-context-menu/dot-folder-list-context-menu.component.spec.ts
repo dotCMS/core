@@ -15,6 +15,7 @@ import {
     DotContentletService,
     DotCurrentUserService,
     DotFolderService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
     DotSiteService,
@@ -22,7 +23,9 @@ import {
     DotWizardService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
-    DotWorkflowsActionsService
+    DotWorkflowsActionsService,
+    AddToBundleService,
+    PushPublishService
 } from '@dotcms/data-access';
 import {
     DotCMSBaseTypesContentTypes,
@@ -93,6 +96,13 @@ describe('DotFolderListViewContextMenuComponent', () => {
             }),
             mockProvider(DotWorkflowActionsFireService, {
                 fireTo: jest.fn().mockReturnValue(of({}))
+            }),
+            // Required by the store's `withActionExecution`, which routes fire failures through it.
+            mockProvider(DotHttpErrorManagerService),
+            // Also required by `withActionExecution`, which fires Add to Bundle from the store.
+            mockProvider(AddToBundleService),
+            mockProvider(PushPublishService, {
+                getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotWorkflowEventHandlerService, {
                 open: jest.fn()

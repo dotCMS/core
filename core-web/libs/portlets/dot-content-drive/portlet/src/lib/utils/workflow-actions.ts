@@ -15,7 +15,9 @@ export const WORKFLOW_ACTION_ID = {
     COPY: 'COPY',
     MOVE: 'MOVE',
     RENAME: 'RENAME',
-    DOWNLOAD: 'DOWNLOAD'
+    DOWNLOAD: 'DOWNLOAD',
+    LOCK: 'LOCK',
+    UNLOCK: 'UNLOCK'
 } as const;
 
 export type WORKFLOW_ACTION_ID = (typeof WORKFLOW_ACTION_ID)[keyof typeof WORKFLOW_ACTION_ID];

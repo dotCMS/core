@@ -35,7 +35,7 @@
 
 <div class="dot-ema-shell__body">
     @if ($canRead()) {
-        <router-outlet />
+        <router-outlet (activate)="onRouteActivate($event)" (deactivate)="onRouteDeactivate()" />
     } @else {
         @if ($errorDisplay()?.code === 401) {
             <dot-not-license />

@@ -472,8 +472,13 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 output.contains("key:"));
         assertTrue("FIX (#36026): bucket doc counts must render with real numbers",
                 Pattern.compile("docCount:\\s*\\d+").matcher(output).find());
-        assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines",
-                output.contains("hit id:"));
+        // Match the id itself, not just the literal prefix: `hit id:` is template text that renders
+        // whenever the #foreach iterates, and `$!{...}` is quiet notation, so an unresolvable
+        // `$hit.id` renders empty and a prefix-only assertion would stay green. Requiring a value
+        // is what actually locks Velocity's introspection of the neutral hit inside a top_hits.
+        assertTrue("FIX (#36026): nested top_hits must be reachable, emitting 'hit id:' lines with a "
+                        + "resolved id ($hit.id -> getId())",
+                Pattern.compile("hit id:\\s*\\S+").matcher(output).find());
     }
 
     /**
@@ -526,8 +531,9 @@ public class ContentSearchToolTest extends IntegrationTestBase {
                 output.contains("tree key:"));
         assertTrue("raw() tree bucket doc counts must render with real numbers",
                 Pattern.compile("tree docCount:\\s*\\d+").matcher(output).find());
-        assertTrue("raw() nested top_hits must be reachable, emitting 'tree hit id:' lines",
-                output.contains("tree hit id:"));
+        assertTrue("raw() nested top_hits must be reachable, emitting 'tree hit id:' lines with a "
+                        + "resolved id ($hit.id -> getId())",
+                Pattern.compile("tree hit id:\\s*\\S+").matcher(output).find());
         assertTrue("raw() flat aggregations map must iterate, emitting 'flat key:' lines",
                 output.contains("flat key:"));
         assertTrue("raw() flat bucket doc counts must render with real numbers",

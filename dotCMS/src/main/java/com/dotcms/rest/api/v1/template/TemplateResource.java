@@ -6,6 +6,7 @@ import com.dotcms.rest.ResponseEntityBulkResultView;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.rest.api.BulkResultView;
 import com.dotcms.rest.api.FailedResultView;
 import com.dotcms.util.PaginationUtil;
@@ -22,6 +23,7 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.containers.business.ContainerAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.business.TemplateAPI;
 import com.dotmarketing.portlets.templates.business.TemplateSaveParameters;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
@@ -318,7 +320,15 @@ public class TemplateResource {
             summary = "Create a new template",
             description = "Creates a new working version of a template. The 'theme' field in the form " +
                     "corresponds to the theme folder identifier (referred to as 'themeId' in other endpoints). " +
-                    "If a layout is provided, the template is saved as a designed (drawed) template with its layout."
+                    "If a layout is provided, the template is saved as a designed (drawed) template with its layout.\n\n" +
+                    "When `drawed` is true (a layout-designer template): `body` is REQUIRED and must be non-empty " +
+                    "(a null body returns 400 'body required when drawed'), and `theme` MUST resolve to a theme " +
+                    "**folder** identifier — a host id or other non-folder id returns 400 'theme must be a folder " +
+                    "identifier'. Provide `drawedBody` (the layout JSON) as well so the template is a real drawn template.\n\n" +
+                    "For a themed drawn template, `body` is a generated compatibility shell and is not the render " +
+                    "source; rendering flows through the theme's `template.vtl` and `drawedBody`. The stored shell " +
+                    "may contain `/themes/null/` even when `theme` and `themeName` are correct. That value is benign " +
+                    "for this template kind, and PUT-updating `body` will only cause the shell to be regenerated."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -371,7 +381,14 @@ public class TemplateResource {
             summary = "Update an existing template",
             description = "Saves a new working version of an existing template. The form must contain the template " +
                     "identifier. The 'theme' field in the form corresponds to the theme folder identifier " +
-                    "(referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist."
+                    "(referred to as 'themeId' in other endpoints). Returns 404 if the template does not exist.\n\n" +
+                    "When `drawed` is true: `body` is REQUIRED and non-empty (else 400 'body required when drawed'), " +
+                    "and `theme` MUST resolve to a theme **folder** identifier (else 400 'theme must be a folder " +
+                    "identifier'). Include `drawedBody` (the layout JSON) so the template stays a real drawn template.\n\n" +
+                    "For a themed drawn template, `body` is a generated compatibility shell and is not used to " +
+                    "assemble the rendered page; the theme's `template.vtl` and `drawedBody` are authoritative. A " +
+                    "persisted `/themes/null/` reference in that shell is benign, and changing `body` does not repair " +
+                    "or affect themed drawn rendering because the server regenerates it."
     )
     @ApiResponses(value = {
             @ApiResponse(responseCode = "200",
@@ -558,7 +575,26 @@ public class TemplateResource {
         template.setHeader(templateForm.getHeader());
 
         if (templateForm.isDrawed()) {
-            final String themeHostId = APILocator.getFolderAPI().find(templateForm.getTheme(), user, respectAnonPerms).getHostId();
+
+            // Identify the failing Template in every error below so Support can trace it.
+            final String templateRef = describeTemplate(template);
+
+            // A drawn template's body is parsed by jsoup; a null body NPEs downstream.
+            if (template.getBody() == null) {
+                throw new BadRequestException("body required when drawed for " + templateRef);
+            }
+
+            // 'theme' must resolve to a theme folder; FolderAPI.find returns null for a
+            // non-folder identifier (e.g. a host id), which would NPE on getHostId().
+            final Folder themeFolder = APILocator.getFolderAPI()
+                    .find(templateForm.getTheme(), user, respectAnonPerms);
+            if (themeFolder == null || !InodeUtils.isSet(themeFolder.getInode())) {
+                throw new BadRequestException("theme must be a folder identifier; '"
+                        + templateForm.getTheme() + "' does not resolve to a folder for "
+                        + templateRef);
+            }
+
+            final String themeHostId = themeFolder.getHostId();
             final String themePath   = themeHostId.equals(site.getInode())?
                     Template.THEMES_PATH + template.getThemeName() + "/":
                     "//" + APILocator.getHostAPI().find(themeHostId, user, respectAnonPerms).getHostname()
@@ -568,6 +604,21 @@ public class TemplateResource {
                     themePath, templateForm.isHeaderCheck(), templateForm.isFooterCheck());
             template.setBody(endBody.toString());
         }
+    }
+
+    /**
+     * Renders a Template as {@code Template 'title' [id]} for error messages, so Support can
+     * tell which Template failed. A Template being created has no identifier yet, in which
+     * case only the title is reported.
+     *
+     * @param template the Template being saved
+     * @return a human-readable reference to the Template
+     */
+    private static String describeTemplate(final Template template) {
+        final String title = UtilMethods.isSet(template.getTitle()) ? template.getTitle() : "unknown";
+        return UtilMethods.isSet(template.getIdentifier())
+                ? "Template '" + title + "' [" + template.getIdentifier() + "]"
+                : "new Template '" + title + "'";
     }
 
     /**
@@ -1196,4 +1247,3 @@ public class TemplateResource {
         throw new DoesNotExistException("Working Version of the Template with Id: " + templateId + " does not exist");
     }
 }
-

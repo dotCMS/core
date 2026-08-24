@@ -235,7 +235,7 @@ export class DotCategoriesListComponent {
         this.#confirmationService.confirm({
             message: this.#dotMessageService.get('categories.confirm.delete.message', '1'),
             header: this.#dotMessageService.get('categories.confirm.delete.header'),
-            acceptLabel: this.#dotMessageService.get('categories.delete'),
+            acceptLabel: this.#dotMessageService.get('categories.confirm.delete.accept'),
             rejectLabel: this.#dotMessageService.get('categories.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',
@@ -332,7 +332,7 @@ export class DotCategoriesListComponent {
         this.#confirmationService.confirm({
             message: this.#dotMessageService.get('categories.confirm.delete.message', `${count}`),
             header: this.#dotMessageService.get('categories.confirm.delete.header'),
-            acceptLabel: this.#dotMessageService.get('categories.delete'),
+            acceptLabel: this.#dotMessageService.get('categories.confirm.delete.accept'),
             rejectLabel: this.#dotMessageService.get('categories.cancel'),
             acceptButtonStyleClass: 'p-button-primary',
             rejectButtonStyleClass: 'p-button-text',

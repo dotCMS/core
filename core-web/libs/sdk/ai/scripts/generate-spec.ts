@@ -1,289 +1,113 @@
 /* eslint-disable no-console */
-import SwaggerParser from '@apidevtools/swagger-parser';
+import { parse as parseYaml } from 'yaml';
 
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { transformSpec } from './spec-transform';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-const ALLOWED_PREFIXES = [
-    '/api/v1/contenttype',
-    '/api/v1/page',
-    '/api/v1/page-scanner/a11y/check',
-    '/api/v1/page-scanner/geo/check',
-    '/api/v1/nav',
-    '/api/v1/workflow',
-    '/api/v1/categories',
-    '/api/v2/tags',
-    '/api/v1/folder',
-    '/api/v1/site',
-    '/api/v2/languages',
-    '/api/v1/roles',
-    '/api/v1/user',
-    '/api/v1/containers',
-    '/api/v1/themes',
-    '/api/v1/templates',
-    '/api/v1/content/_search',
-    '/api/v2/assets'
-];
-
-const EXCLUDED_PATTERNS = [
-    '/api/v1/workflow/tasks/**',
-    '/api/v1/contenttype/page',
-    '/api/v1/contenttype/render/id/**',
-    '/api/v1/categories/_export',
-    '/api/v1/categories/_sort',
-    '/api/v1/folder/{id}/file-browser-selected',
-    '/api/v1/folder/siteId/{siteId}/path/{path}',
-    '/api/v1/site/{siteId}/setup_progress',
-    '/api/v1/site/thumbnails',
-    '/api/v1/site/variable/{siteId}',
-    '/api/v1/site/switch',
-    '/api/v1/languages/i18n',
-    '/api/v1/roles/{roleId}/layouts',
-    '/api/v1/roles/{roleid}/rolehierarchyanduserroles',
-    '/api/v1/roles/layouts',
-    '/api/v1/containers/{containerId}/content/{contentletId}',
-    '/api/v1/containers/{containerId}/form/{formId}',
-    '/api/v1/containers/form/{formId}',
-    '/api/v1/containers/live',
-    '/api/v1/containers/working',
-    '/api/v1/templates/_savepublish',
-    '/api/v1/templates/{templateId}/live',
-    '/api/v1/templates/{templateId}/working',
-    '/api/v1/templates/image',
-    '/api/v1/workflow/actions/separator',
-    '/api/v1/sites/{siteId}/ruleengine/'
-];
-
-const DEFAULT_SPEC_PATH = '/api/openapi.json';
-const DEFAULT_SPEC_URL = `https://dotcms-corp-headless-prod.dotcms.dev${DEFAULT_SPEC_PATH}`;
+/**
+ * The committed, auto-generated spec that ships with the backend. `swagger-maven-plugin`
+ * writes it at compile phase and CI verifies the working copy matches — so it's always
+ * present and offline, no running dotCMS instance required. This is the only source:
+ * spec generation reads this local YAML file and nothing else.
+ * Resolved relative to this script (the `generate-spec` task runs with cwd `libs/sdk/ai`).
+ */
+const LOCAL_SPEC_FILE = path.resolve(
+    __dirname,
+    '../../../../../dotCMS/src/main/webapp/WEB-INF/openapi/openapi.yaml'
+);
 
 /**
- * Matches a path against a pattern. Pattern syntax:
- *   - `{name}` or `*` — matches a single path segment (anything except `/`)
- *   - `**` — matches any number of segments
- *   - everything else is matched literally
- * Match is exact (anchored at both ends).
+ * Resolve the OpenAPI spec file to read. Defaults to the committed local `openapi.yaml`;
+ * an explicit CLI arg (`... generate-spec -- <path>`) can point at an alternate local YAML.
  */
-function matchesPattern(pathKey: string, pattern: string): boolean {
-    const regex = new RegExp(
-        '^' +
-            pattern
-                .replace(/[.+?^$()|[\]\\]/g, '\\$&')
-                .replace(/\{[^}]+\}/g, '[^/]+')
-                .replace(/\*\*/g, '.*')
-                .replace(/(?<!\.)\*/g, '[^/]+') +
-            '$'
-    );
-    return regex.test(pathKey);
+function resolveSpecFile(): string {
+    return process.argv[2] ? path.resolve(process.argv[2]) : LOCAL_SPEC_FILE;
+}
+
+/** Parse an OpenAPI YAML document into memory. */
+function parseSpec(body: string, filePath: string): Record<string, unknown> {
+    try {
+        const parsed = parseYaml(body);
+        if (!parsed || typeof parsed !== 'object') {
+            throw new Error('parsed value is not an object');
+        }
+        return parsed as Record<string, unknown>;
+    } catch (err) {
+        const detail = err instanceof Error ? err.message : String(err);
+        throw new Error(`${filePath} is not a valid OpenAPI YAML spec: ${detail}`);
+    }
 }
 
 /**
- * Resolve the OpenAPI spec source (a URL or local file path), in priority order:
- *   1. an explicit CLI arg (`... generate-spec -- <url-or-path>`)
- *   2. `DOTCMS_SPEC_URL` — env vars are inherited by the `generate-spec` task that `build`
- *      runs via `dependsOn` (CLI args are NOT), so this is what lets
- *      `DOTCMS_SPEC_URL=… nx build mcp-server` regenerate from a local instance in one command.
- *   3. `${DOTCMS_URL}/api/openapi.json` — convenience: reuse the same instance the runtime targets.
- *   4. the demo instance (so CI builds with no env set produce the committed spec).
+ * Normalize path keys to the full `/api/...` form.
+ *
+ * The committed `openapi.yaml` declares `servers: [{ url: '/' }]` and lists routes WITHOUT the
+ * `/api` prefix (e.g. `/v1/page/...`), while the routes are actually served under `/api` at
+ * runtime. `ALLOWED_PREFIXES`/`EXCLUDED_PATTERNS` are written against the full `/api/...` form,
+ * so prepend `/api` to any path key that lacks it. Idempotent: paths already under `/api` are
+ * left untouched.
  */
-function resolveSpecSource(): string {
-    if (process.argv[2]) {
-        return process.argv[2];
+function normalizeApiPrefix(spec: Record<string, unknown>): Record<string, unknown> {
+    const paths = spec.paths as Record<string, unknown> | undefined;
+    if (!paths) return spec;
+
+    const normalized: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(paths)) {
+        const newKey = key.startsWith('/api/') || key === '/api' ? key : `/api${key}`;
+        normalized[newKey] = value;
     }
-    if (process.env.DOTCMS_SPEC_URL) {
-        return process.env.DOTCMS_SPEC_URL;
-    }
-    if (process.env.DOTCMS_URL) {
-        return `${process.env.DOTCMS_URL.replace(/\/+$/, '')}${DEFAULT_SPEC_PATH}`;
-    }
-    return DEFAULT_SPEC_URL;
+    spec.paths = normalized;
+    return spec;
 }
 
-async function fetchSpec(source: string): Promise<string> {
-    const isUrl = source.startsWith('http://') || source.startsWith('https://');
-
-    if (isUrl) {
-        console.log(`[generate-spec] Fetching spec from ${source}`);
-        const response = await fetch(source);
-
-        if (!response.ok) {
-            throw new Error(
-                `Failed to fetch OpenAPI spec from ${source}\n` +
-                    `Status: ${response.status} ${response.statusText}\n\n` +
-                    `Make sure the URL is correct and the dotCMS instance is running.`
-            );
-        }
-
-        const tempPath = path.resolve('.openapi-temp.json');
-        const body = await response.text();
-
-        // Validate it's actually JSON
-        try {
-            JSON.parse(body);
-        } catch {
-            throw new Error(
-                `Response from ${source} is not valid JSON.\n` +
-                    `Make sure the URL points to a valid OpenAPI spec endpoint.`
-            );
-        }
-
-        fs.writeFileSync(tempPath, body, 'utf-8');
-        return tempPath;
-    }
-
-    // Local file path
-    const filePath = path.resolve(source);
+/** Read and parse the raw OpenAPI document from the local YAML file. */
+function loadSpec(filePath: string): Record<string, unknown> {
     if (!fs.existsSync(filePath)) {
         throw new Error(`OpenAPI spec file not found: ${filePath}`);
     }
-
     console.log(`[generate-spec] Reading spec from ${filePath}`);
-    return filePath;
+    const body = fs.readFileSync(filePath, 'utf-8');
+
+    return normalizeApiPrefix(parseSpec(body, filePath));
 }
 
-async function generateSpec() {
-    const source = resolveSpecSource();
-    const specPath = await fetchSpec(source);
+function generateSpec() {
+    const filePath = resolveSpecFile();
+    const raw = loadSpec(filePath);
 
-    try {
-        // Dereference all $ref pointers
-        const api = (await SwaggerParser.dereference(specPath)) as Record<string, unknown>;
+    const { spec, stats } = transformSpec(raw);
 
-        // Filter paths to allowed prefixes
-        const allPaths = (api.paths || {}) as Record<string, unknown>;
-        const filteredPaths: Record<string, unknown> = {};
+    // Compact JSON: this file is machine-read only (query results are re-stringified by the tool
+    // handlers). Pretty-printing would add ~270KB for zero model benefit — use `jq` to inspect.
+    const json = JSON.stringify(spec);
 
-        for (const [pathKey, pathValue] of Object.entries(allPaths)) {
-            const isAllowed = ALLOWED_PREFIXES.some((prefix) => pathKey.startsWith(prefix));
-            const isExcluded = EXCLUDED_PATTERNS.some((pattern) =>
-                matchesPattern(pathKey, pattern)
-            );
-            if (isAllowed && !isExcluded) {
-                // Strip response schemas but keep description and content types
-                const methods = pathValue as Record<string, unknown>;
-                const strippedMethods: Record<string, unknown> = {};
+    const outDir = path.resolve(__dirname, '../src/generated');
+    const outPath = path.join(outDir, 'spec.json');
 
-                for (const [method, methodValue] of Object.entries(methods)) {
-                    if (typeof methodValue !== 'object' || methodValue === null) {
-                        strippedMethods[method] = methodValue;
-                        continue;
-                    }
+    fs.mkdirSync(outDir, { recursive: true });
+    fs.writeFileSync(outPath, json, 'utf-8');
 
-                    if ((methodValue as Record<string, unknown>).deprecated === true) {
-                        continue;
-                    }
-
-                    const op = { ...(methodValue as Record<string, unknown>) };
-
-                    // Replace Jersey-autogenerated multipart schemas with a simple placeholder.
-                    // Jersey emits noisy internal types (bodyParts, contentDisposition,
-                    // messageBodyWorkers, etc.) that aren't part of the user-facing contract.
-                    const requestBody = op.requestBody as Record<string, unknown> | undefined;
-                    const requestContent = requestBody?.content as
-                        | Record<string, unknown>
-                        | undefined;
-                    if (requestContent && requestContent['multipart/form-data']) {
-                        requestContent['multipart/form-data'] = {
-                            schema: {
-                                type: 'object',
-                                description: 'Multipart form. See endpoint description for fields.',
-                                properties: {
-                                    file: { type: 'string', format: 'binary' }
-                                }
-                            }
-                        };
-                    }
-
-                    const responses = op.responses as Record<string, unknown> | undefined;
-
-                    if (responses) {
-                        const strippedResponses: Record<string, unknown> = {};
-                        for (const [status, responseValue] of Object.entries(responses)) {
-                            if (typeof responseValue !== 'object' || responseValue === null) {
-                                strippedResponses[status] = responseValue;
-                                continue;
-                            }
-                            const resp = responseValue as Record<string, unknown>;
-                            const stripped: Record<string, unknown> = {};
-                            if (resp.description) stripped.description = resp.description;
-                            if (resp.content) {
-                                // Keep standard `content` key but strip schemas — only MIME type keys remain
-                                const strippedContent: Record<string, unknown> = {};
-                                for (const mimeType of Object.keys(
-                                    resp.content as Record<string, unknown>
-                                )) {
-                                    strippedContent[mimeType] = {};
-                                }
-                                stripped.content = strippedContent;
-                            }
-                            strippedResponses[status] = stripped;
-                        }
-                        op.responses = strippedResponses;
-                    }
-
-                    strippedMethods[method] = op;
-                }
-
-                if (Object.keys(strippedMethods).length > 0) {
-                    filteredPaths[pathKey] = strippedMethods;
-                }
-            }
-        }
-
-        // Build minimal spec (no components/schemas)
-        const result: Record<string, unknown> = {
-            openapi: api.openapi,
-            info: api.info,
-            paths: filteredPaths
-        };
-
-        // Include servers if present
-        if (api.servers) {
-            result.servers = api.servers;
-        }
-
-        // Dereferenced specs can have circular refs (e.g., Category.parent -> Category).
-        // Use an ancestor-stack approach so shared references (same object appearing in
-        // multiple endpoints) are duplicated in the output, while only true ancestor
-        // cycles are replaced with "[Circular]".
-        const ancestors: object[] = [];
-        const json = JSON.stringify(
-            result,
-            function (_key, value) {
-                if (typeof value === 'object' && value !== null) {
-                    // Pop the stack back to the current parent object
-                    while (ancestors.length > 0 && ancestors[ancestors.length - 1] !== this) {
-                        ancestors.pop();
-                    }
-                    if (ancestors.includes(value)) return '[Circular]';
-                    ancestors.push(value);
-                }
-                return value;
-            },
-            2
+    const sizeKB = (Buffer.byteLength(json, 'utf-8') / 1024).toFixed(1);
+    console.log(
+        `[generate-spec] Wrote ${stats.pathCount} paths + ${stats.schemaCount} schemas ` +
+            `(${sizeKB}KB) to ${outPath}`
+    );
+    if (stats.danglingRefs.length > 0) {
+        console.warn(
+            `[generate-spec] ${stats.danglingRefs.length} dangling $ref(s) left in place ` +
+                `(not found in components.schemas): ${stats.danglingRefs.join(', ')}`
         );
-        const outDir = path.resolve(__dirname, '../src/generated');
-        const outPath = path.join(outDir, 'spec.json');
-
-        fs.mkdirSync(outDir, { recursive: true });
-        fs.writeFileSync(outPath, json, 'utf-8');
-
-        const pathCount = Object.keys(filteredPaths).length;
-        const sizeKB = (Buffer.byteLength(json, 'utf-8') / 1024).toFixed(1);
-        console.log(`[generate-spec] Wrote ${pathCount} paths (${sizeKB}KB) to ${outPath}`);
-    } finally {
-        // Clean up temp file if we fetched from URL
-        const tempPath = path.resolve('.openapi-temp.json');
-        if (fs.existsSync(tempPath)) {
-            fs.unlinkSync(tempPath);
-        }
     }
 }
 
-generateSpec().catch((err) => {
-    console.error(`[generate-spec] Failed: ${err.message}`);
+try {
+    generateSpec();
+} catch (err) {
+    console.error(`[generate-spec] Failed: ${err instanceof Error ? err.message : String(err)}`);
     process.exit(1);
-});
+}
