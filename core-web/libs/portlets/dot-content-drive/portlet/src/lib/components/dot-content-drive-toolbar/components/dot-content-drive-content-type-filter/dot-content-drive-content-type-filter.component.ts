@@ -29,7 +29,9 @@ export class DotContentDriveContentTypeFilterComponent {
     protected readonly $selectedBaseTypes = computed(() => {
         const keys = (this.#store.getFilterValue('baseType') as string[]) ?? [];
 
-        return keys.map((key) => MAP_NUMBERS_TO_BASE_TYPES[Number(key)]).filter(Boolean);
+        return keys
+            .map((key) => MAP_NUMBERS_TO_BASE_TYPES[Number(key)])
+            .filter((baseType): baseType is DotCMSBaseTypesContentTypes => !!baseType);
     });
 
     protected readonly $selectedContentTypes = computed(

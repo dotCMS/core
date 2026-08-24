@@ -219,7 +219,7 @@ export class DotSelectExistingContentComponent implements OnInit {
     // Accepts PrimeNG's `p-checkbox` `onChange` payload, which carries an `originalEvent`
     // alongside `checked`. Not typed as `CheckboxChangeEvent` because that declares
     // `checked?: any`, which would erase the only property this method reads.
-    onSelectAllChange(event: { checked: boolean; originalEvent?: Event }) {
+    onSelectAllChange(event: { checked?: boolean; originalEvent?: Event }) {
         const current = this.store.currentItems();
         const visibleInodes = new Set(this.store.filteredData().map((item) => item.inode));
         const preserved = current.filter((item) => !visibleInodes.has(item.inode));

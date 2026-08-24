@@ -53,7 +53,7 @@ export class DotMdIconSelectorComponent implements ControlValueAccessor {
      * @param {CustomEvent<string>} e
      * @memberof DotMdIconSelectorComponent
      */
-    onSelect(e: CustomEvent<string>) {
+    onSelect(e: CustomEvent<{ name: string; value: string; colorValue: string }>) {
         this.onChange((e.target as HTMLInputElement).value);
     }
 }

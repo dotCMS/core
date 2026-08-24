@@ -318,7 +318,7 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
      * and content must be set via attribute or property binding from outside Angular.
      * Inside Angular, prefer binding through ngModel or a reactive form control instead.
      */
-    readonly value = input<string>('');
+    readonly value = input<string | JSONContent>('');
 
     /**
      * DotCMS content type field definition.

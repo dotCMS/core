@@ -20,7 +20,7 @@
         <ng-container
             *ngTemplateOutlet="
                 errorTemplate;
-                context: { error: container | dotError: dragItem(), container: container }
+                context: { error: container | dotError: (dragItem() ?? undefined), container: container }
             " />
     </div>
 }

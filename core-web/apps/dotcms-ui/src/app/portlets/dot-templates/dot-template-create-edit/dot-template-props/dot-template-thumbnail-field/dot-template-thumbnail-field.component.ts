@@ -57,12 +57,12 @@ export class DotTemplateThumbnailFieldComponent implements ControlValueAccessor 
     /**
      * Handle thumbnail setup
      *
-     * @param {(CustomEvent<{ name: string; value: File | string }>)} { detail: { value } }
+     * @param {(CustomEvent<{ name: string; value: File | string | null }>)} { detail: { value } }
      * @memberof DotTemplateThumbnailFieldComponent
      */
     onThumbnailChange({
         detail: { value }
-    }: CustomEvent<{ name: string; value: File | string }>): void {
+    }: CustomEvent<{ name: string; value: File | string | null }>): void {
         if (value) {
             this.loading = true;
             this.error = '';
