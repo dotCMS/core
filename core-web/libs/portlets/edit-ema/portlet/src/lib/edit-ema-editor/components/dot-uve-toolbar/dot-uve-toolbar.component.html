@@ -33,14 +33,13 @@
             @if ($showDeviceSelector()) {
                 <dot-uve-device-selector
                     [state]="$deviceSelectorState()"
-                    [devices]="$devices()"
+                    [devices]="$devices() ?? []"
                     [isTraditionalPage]="isTraditionalPage()"
                     (stateChange)="deviceSelectorChange.emit($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
 
-            @if ($showUrlContentMap()) {
-                @let urlContentMap = $urlContentMap();
+            @if ($showUrlContentMap() && $urlContentMap(); as urlContentMap) {
                 <p-button
                     (click)="editUrlContentMap.emit(urlContentMap)"
                     [pTooltip]="
@@ -98,7 +97,7 @@
             }
             <dot-language-selector
                 #languageSelector
-                [value]="$toolbar().currentLanguage"
+                [value]="$toolbar().currentLanguage ?? null"
                 (onLanguageChange)="onLanguageSelected($event)"
                 data-testId="uve-toolbar-language-selector" />
 
