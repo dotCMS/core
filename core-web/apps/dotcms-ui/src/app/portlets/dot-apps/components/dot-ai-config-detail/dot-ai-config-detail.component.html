@@ -1,38 +1,55 @@
-@if (app(); as app) {
-    <div class="flex w-full flex-col overflow-y-auto bg-white text-sm shadow-md">
-        <div class="sticky top-0 z-1 bg-white">
-            <dot-apps-configuration-header [app]="app" />
-            <div
-                class="flex justify-between border-b border-gray-300 p-3 text-base font-semibold text-black">
-                <span class="inline-flex items-center">{{ app.sites?.[0]?.name }}</span>
-                <div class="flex gap-1">
-                    <p-button (click)="goToApps()" [label]="'Cancel' | dm" [outlined]="true" />
-                    <p-button (click)="onSubmit()" [label]="'Save' | dm" [loading]="saving()" />
-                </div>
-            </div>
+<div class="min-h-0 flex-1 overflow-y-auto bg-white p-6 [scrollbar-gutter:stable]">
+    <div class="mx-auto flex max-w-3xl flex-col gap-4">
+        <div class="mb-2">
+            <h2 class="m-0 text-xl font-semibold text-gray-900">
+                {{ 'apps.ai.config.title' | dm }}
+            </h2>
+            <p class="mt-1 mb-0 text-sm text-gray-500">
+                {{ 'apps.ai.config.subtitle' | dm }}
+            </p>
+            @if (siteName()) {
+                <p class="mt-1 mb-0 text-sm text-gray-500">
+                    {{ 'apps.ai.config.site' | dm: [siteName()] }}
+                </p>
+            }
         </div>
-        <div class="grow overflow-y-auto">
-            <div class="m-4">
-                <div class="grid grid-cols-2 items-start gap-4">
-                    <div class="flex flex-col gap-2">
-                        <h4 class="m-0 text-sm font-semibold text-black">Provider Config</h4>
-                        <textarea
-                            pTextarea
-                            [ngModel]="configJson()"
-                            (ngModelChange)="configJson.set($event)"
-                            rows="20"
-                            class="w-full resize-y font-mono text-xs"
-                            spellcheck="false"></textarea>
-                    </div>
-                    <div class="flex flex-col gap-2">
-                        <h4 class="m-0 text-sm font-semibold text-black">Example JSON</h4>
-                        <pre
-                            class="m-0 overflow-auto rounded-sm border border-gray-300 bg-gray-100 p-3 font-mono text-xs leading-relaxed whitespace-pre text-gray-700"
-                            >{{ exampleJson }}</pre
-                        >
-                    </div>
-                </div>
+
+        @if (loading()) {
+            <div class="flex items-center justify-center py-12 text-sm text-gray-400">
+                {{ 'apps.ai.loading' | dm }}
             </div>
-        </div>
+        } @else if (loadFailed()) {
+            <div class="flex items-center justify-center py-12 text-sm text-red-500">
+                {{ 'apps.ai.error.load' | dm }}
+            </div>
+        } @else {
+            @for (meta of capabilityMeta; track meta.capability) {
+                <dot-ai-capability-card
+                    [meta]="meta"
+                    [providers]="providers()"
+                    [initialValue]="initialSections()[meta.sectionKey] ?? null"
+                    [siteId]="siteId"
+                    (changed)="onAnyChanged()" />
+            }
+
+            <dot-ai-settings-card [initialValue]="initialSettings()" (changed)="onAnyChanged()" />
+        }
     </div>
-}
+</div>
+
+<div
+    class="flex shrink-0 items-center justify-end gap-4 border-t border-gray-200 bg-white px-6 py-3">
+    @if (dirty()) {
+        <span class="mr-auto text-sm text-gray-500">{{ 'apps.ai.unsaved.changes' | dm }}</span>
+        <p-button
+            [label]="'apps.ai.button.cancel' | dm"
+            [text]="true"
+            severity="secondary"
+            (onClick)="cancel()" />
+    }
+    <p-button
+        [label]="'apps.ai.button.save' | dm"
+        [loading]="saving()"
+        [disabled]="loadFailed()"
+        (onClick)="save()" />
+</div>

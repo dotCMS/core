@@ -54,7 +54,10 @@ import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { stripDocStats } from './utils/doc-stats.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
-import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
+import {
+    preserveUnknownNodesInDocument,
+    restoreUnknownBlockNodes
+} from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
@@ -128,16 +131,6 @@ function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): st
 
 function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
-}
-
-function preserveUnknownNodesInDocument(
-    parsed: JSONContent,
-    knownNodeNames: Set<string>
-): JSONContent {
-    return {
-        ...parsed,
-        content: preserveUnknownBlockNodes(parsed.content, knownNodeNames)
-    };
 }
 
 /** True when {@link parsed} represents the same document already in {@link editor}. */

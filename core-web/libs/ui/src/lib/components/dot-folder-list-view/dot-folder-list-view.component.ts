@@ -345,17 +345,19 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         });
     });
 
-    /**
-     * Rough `ch` per `rem` (16px font, ~8px advance), used ONLY to compare a fixed per-type width
-     * against a header-derived one and pick the wider. Never used to compute a rendered size, so the
-     * approximation cannot drift a column's actual width.
-     */
-    private readonly REM_TO_CH = 2;
     /** Character-count clamps for content-based (text/number) column widths, in `ch`. */
     private readonly EXTRA_COL_MIN_CH = 8;
     private readonly EXTRA_COL_MAX_CH = 32;
 
     private readonly EXTRA_COL_PAD_CH = 3;
+    /**
+     * Room a sortable header needs for its sort indicator, on top of its label. Measured in the
+     * rendered portlet: the icon plus the space before it is ~23px against a `1ch` of 8.67px in the
+     * header font, so 3 covers it. Without it, the estimate for a header like "Bool Radio" landed at
+     * 112.7px against a 113px need, short by a hair, which is all it takes to spill into the next
+     * header since nothing clips it.
+     */
+    private readonly EXTRA_COL_SORT_ICON_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
     protected readonly COLUMN_TYPE = DOT_FOLDER_LIST_VIEW_COLUMN_TYPE;
 
@@ -376,17 +378,28 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         return 'host' in item && item.host === SYSTEM_HOST_ID;
     }
 
-    /** Fixed widths per non-text column type (predictable, so no measuring needed). */
-    private readonly EXTRA_COL_TYPE_WIDTH: Partial<
-        Record<DotFolderListViewColumn['type'], string>
-    > = {
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE]: '12rem',
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: '16rem',
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME]: '9rem',
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN]: '7rem',
-        // Fixed thumbnail column — wider than the 4.5rem thumbnail box so a sortable header
-        // (label + sort icon) fits on one line; never measured from content.
-        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE]: '9rem'
+    /**
+     * Fixed floor per non-text column type (predictable, so no measuring needed), counted in `ch`:
+     * the same unit the header estimate below uses, so the two can be compared exactly.
+     *
+     * They were authored in `rem` and are converted here, which is the fix for the reported bug. A
+     * `rem` floor and a `ch` estimate cannot be compared without knowing both the root font size and
+     * the header font's advance width, and the conversion that did it (2 `ch` per `rem`) assumed a
+     * 16px root while dotCMS sets 14px. That scored a 7rem boolean column as 14ch when it is really
+     * 11.3ch, so the floor kept beating headers that did not fit inside it. One unit removes the
+     * conversion, and with it that whole class of error.
+     *
+     * The counts hold the widths the `rem` values rendered at (14px root, `1ch` of 8.67px in the
+     * header font) to within a few px: 19ch for 12rem, 26ch for 16rem, 15ch for 9rem, 11ch for 7rem.
+     */
+    private readonly EXTRA_COL_TYPE_CH: Partial<Record<DotFolderListViewColumn['type'], number>> = {
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATE]: 19,
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.DATETIME]: 26,
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.TIME]: 15,
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.BOOLEAN]: 11,
+        // Fixed thumbnail column, wider than the 4.5rem thumbnail box and never measured from
+        // content. A sortable header gets its own room from the estimate below.
+        [DOT_FOLDER_LIST_VIEW_COLUMN_TYPE.IMAGE]: 15
     };
 
     /**
@@ -579,9 +592,10 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     /**
      * Resolves an extra column's width. Explicit width wins; otherwise text/number columns size to
      * their content — the average value length across the current rows (never narrower than the
-     * header), padded and clamped, in `ch` so it scales with the cell font. Other types use a fixed
-     * per-type width. Average (not max) keeps one long outlier from blowing the column out; overflow
-     * truncates and the table scrolls horizontally.
+     * header), padded and clamped, in `ch` so it scales with the cell font. Other types keep their
+     * per-type width as a floor, widening to the header when the header needs more. Average (not max)
+     * keeps one long outlier from blowing the column out; overflow truncates in the cells and the
+     * table scrolls horizontally.
      */
     #resolveExtraColumnWidth(
         column: DotFolderListViewColumn,
@@ -600,35 +614,33 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             ? Math.round(lengths.reduce((sum, length) => sum + length, 0) / lengths.length)
             : 0;
 
-        const fixed = column.type && this.EXTRA_COL_TYPE_WIDTH[column.type];
+        const typeFloor = column.type ? this.EXTRA_COL_TYPE_CH[column.type] : undefined;
+        const hasTypeFloor = typeFloor !== undefined;
 
-        // A fixed-type column renders formatted text (a date, an icon, a thumbnail) whose width does
-        // not depend on the raw value, so it must not be measured from content — only from its
-        // header, which is the one part that can outgrow the fixed width.
-        const contentLength = fixed ? 0 : averageLength;
+        // A floored column renders formatted text (a date, an icon, a thumbnail) whose width does not
+        // depend on the raw value, so it must not be measured from content, only from its header,
+        // which is the one part that can outgrow the floor.
+        const contentLength = hasTypeFloor ? 0 : averageLength;
 
-        // Both are clamped here, and neither has to be exact: a header is guaranteed to fit by
-        // `min-width: max-content` on the header cell, which the browser measures precisely. Sizing it
-        // from a character count instead over-reserved badly — `1ch` is the width of "0", wider than
-        // the average character in a proportional font, so a 41-character label asked for ~40% more
-        // room than it needed.
-        const chars = Math.min(
+        // `1ch` is the width of "0", wider than the average character in a proportional font, so a
+        // per-character count reserves a little more than the label strictly needs. That slack is
+        // load-bearing: together with the pad it is the only room the cell padding and the sort
+        // indicator get. `min-width: max-content` on the header cell reads like the real guarantee,
+        // but it is inert under `table-layout: fixed`: measured in the rendered portlet, a 7rem header
+        // cell whose label and sort icon needed 113px was laid out at 98px, min-width and all, and the
+        // surplus drew straight over the next heading.
+        //
+        // The floor takes part in the same clamp, so the wider of the two always wins and nothing has
+        // to be converted between units.
+        return `${Math.min(
             Math.max(
-                Math.max(column.header?.length ?? 0, contentLength) + this.EXTRA_COL_PAD_CH,
-                this.EXTRA_COL_MIN_CH
+                Math.max(column.header?.length ?? 0, contentLength) +
+                    this.EXTRA_COL_PAD_CH +
+                    (column.sortable ? this.EXTRA_COL_SORT_ICON_CH : 0),
+                hasTypeFloor ? typeFloor : this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH
-        );
-
-        if (!fixed) {
-            return `${chars}ch`;
-        }
-
-        // The per-type width is a floor, not an override: a boolean column pinned at 7rem could not
-        // show a header longer than that. Resolved to whichever is wider rather than a CSS `max()`,
-        // because these widths are also summed into the table's `min-width: calc(100% + …)` and a
-        // single length keeps that expression parseable.
-        return chars > parseFloat(fixed) * this.REM_TO_CH ? `${chars}ch` : fixed;
+        )}ch`;
     }
 
     ngOnInit(): void {
