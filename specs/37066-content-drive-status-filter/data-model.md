@@ -2,10 +2,9 @@
 
 **Feature**: [spec.md](./spec.md) | **Date**: 2026-08-24
 
-> `plan.md`, `research.md` and `quickstart.md` are Spec-Kit process artifacts and are gitignored by
-> policy (`.specify/CUSTOMIZATIONS.md`), so the `research.md` references below point at files that
-> exist on the author's machine, not in this repo. Each one is summarized inline so this document
-> stands on its own.
+This document is self-contained: every decision below carries its own reasoning rather than citing
+the Spec-Kit process artifacts, which are gitignored by policy (`.specify/CUSTOMIZATIONS.md`) and so
+are not reviewable from this diff.
 
 No database schema changes. Every column this feature reads already exists on
 `contentlet_version_info` and is already indexed into the search index. This document describes the
@@ -36,7 +35,7 @@ an item is in *any* selected state, not all of them — selected statuses combin
 the Content Type and Language filters. AND was considered and rejected: under AND,
 `{ARCHIVED, UNPUBLISHED}` is redundant, `{ARCHIVED, LOCKED}` is almost always empty and all three is
 empty in practice, so only one of four combinations says anything — and the chip would be the sole
-exception in a toolbar row where every other filter widens on selection (research.md R2).
+exception in a toolbar row where every other filter widens on selection.
 
 One overlap is worth knowing even though it no longer produces a degenerate result: every archived
 item is also unpublished, because archiving removes the live version
@@ -64,10 +63,14 @@ default List<String> status() { return List.of(); }
 | Duplicates | Collapsed; the parsed result is a `Set` |
 | Unknown value | `400`, message naming the accepted values (FR-010) |
 
-**Declared as `List<String>`, not `List<ContentStatus>`** (research.md R7): a typed field would
-route an invalid value through Jackson's `InvalidFormatException`, whose mapping to a useful 400 is
-less direct than throwing one ourselves. The helper owns the parse instead, matching the
-`userSearchable` precedent already in `ContentDriveHelper`.
+**Declared as `List<String>`, not `List<ContentStatus>`.** The requirement (FR-010) is a 400 on an
+invalid value, "consistent with how `userSearchable` rejects unknown keys" — and that precedent is an
+explicit `BadRequestException` thrown inside `ContentDriveHelper.driveSearch`. Declaring the field as
+the enum would instead let the Immutables/Jackson layer reject it during deserialization, as an
+`InvalidFormatException` whose mapping to a 400 with a message naming the accepted values is not
+under this code's control. So the helper owns the parse: one error path, one message style, one
+status code, matching the filter that already does this. The typed field would read better; the
+deterministic error is worth more.
 
 ### Validation rules
 
@@ -141,9 +144,19 @@ in `toString()`.
 this.showWorking = builder.showWorking || builder.showArchived;
 ```
 
-must also be true when the selection contains `ARCHIVED` or `UNPUBLISHED`. Both states imply no live
-version, so without this `selectQuery` joins on `live_inode` — which those rows never have — and the
-filter silently returns nothing (research.md R4).
+must also be true when the selection contains `ARCHIVED` or `UNPUBLISHED`.
+
+`selectQuery` picks the joined inode column from this flag
+(`BrowserAPIImpl.java:1947`: `showWorking || showArchived ? "working_inode" : "live_inode"`), and the
+base query joins `c.inode = cvi.<that column>` (`:2043`). Archived and unpublished rows have **no
+live version by definition**, so under `live_inode` the join can never match and the filter returns
+nothing — silently, with no error. The same flag also drives `buildPureESQuery`'s `+working:true` vs
+`+live:true` (`:615`), where emitting `+live:true` alongside a `live:false` disjunct would be
+self-contradicting.
+
+The Content Drive path happens to be safe today because the form's `live()` defaults to `false`, but
+that is a coincidence in one caller, not a property of `BrowserQuery`. `LOCKED` alone does not need
+this: a locked item may well have a live version.
 
 ---
 
