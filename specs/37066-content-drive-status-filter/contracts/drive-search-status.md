@@ -21,7 +21,7 @@ Resource: `dotCMS/src/main/java/com/dotcms/rest/api/v1/drive/ContentDriveResourc
 
 | Field | Type | Required | Default | Description |
 |---|---|---|---|---|
-| `status` | `string[]` | No | `[]` | Content states to narrow by. Accepted: `ARCHIVED`, `UNPUBLISHED`, `LOCKED`. Entries combine with **AND**. |
+| `status` | `string[]` | No | `[]` | Content states to filter by. Accepted: `ARCHIVED`, `UNPUBLISHED`, `LOCKED`. Entries combine with **OR**. |
 
 ### Semantics
 
@@ -31,18 +31,20 @@ Resource: `dotCMS/src/main/java/com/dotcms/rest/api/v1/drive/ContentDriveResourc
 | `["ARCHIVED"]` | Only archived content |
 | `["UNPUBLISHED"]` | Only content with no live version, archived excluded |
 | `["LOCKED"]` | Only content with a lock held, by anyone, archived excluded |
-| `["UNPUBLISHED","LOCKED"]` | Content that is both — the driving multiselect use case |
-| `["ARCHIVED","UNPUBLISHED"]` | Same set as `["ARCHIVED"]` alone. Redundant, not an error |
-| `["ARCHIVED","LOCKED"]` | Archived content that still holds a lock. Reachable; often empty |
-| all three | Archived **and** unpublished **and** locked |
+| `["UNPUBLISHED","LOCKED"]` | Content that is unpublished **or** locked, archived excluded |
+| `["ARCHIVED","UNPUBLISHED"]` | Everything with no live version — archived **or** unpublished |
+| `["ARCHIVED","LOCKED"]` | Archived content **or** content with a lock held |
+| all three | Anything not cleanly published — archived, unpublished **or** locked |
 
-**AND, not OR.** Unlike `contentTypes`, `baseTypes` and `language` — single-valued attributes where
-an intersection is always empty — these are independent flags one item can hold at once.
+**OR, not AND.** Selecting more statuses returns *more* content, exactly like `contentTypes`,
+`baseTypes` and `language`. Adding a status can never shrink the result set.
 
-**The archived exclusion is a baseline, not a fourth value.** Every drive request already excludes
-archived content; the statuses AND on top of that, and `ARCHIVED` is the only one that lifts it.
-That is why `["UNPUBLISHED"]` means "unpublished **and not archived**" without contradicting the AND
-rule. See [../data-model.md](../data-model.md) for the per-selection predicate table.
+**The archived exclusion is a baseline, not a fourth value, and it sits outside the OR group.**
+Every drive request already excludes archived content; the selected statuses are OR-ed together and
+that group is AND-ed against the baseline, which only `ARCHIVED` lifts. That is why
+`["UNPUBLISHED"]` means "unpublished and not archived" without contradicting the OR rule. Folding
+the baseline into the group instead would make `["UNPUBLISHED","LOCKED"]` match nearly every row.
+See [../data-model.md](../data-model.md) for the per-selection predicate table.
 
 ### Side effects on other fields
 
@@ -61,7 +63,7 @@ supplies it.
 ### 200 — success
 
 Response shape is unchanged (`ResponseEntityView<PaginatedContents>`). Only the contents of `list`,
-and the counts, narrow.
+and the counts, change.
 
 ### 400 — unrecognized status value
 
@@ -119,12 +121,15 @@ CI verifies the committed file matches what the build produces.
 `DotContentDriveSearchRequest.status?: string[]` in
 `core-web/libs/dotcms-models/src/lib/dot-content-drive.model.ts`.
 
-URL round-trip via the shared filter bag, so a filtered view is shareable and survives reload
-(FR-016):
+The value lives in the shared `filters` bag rather than its own query param, so it inherits every
+navigation mechanism the other filters already use — deep link, reload, folder browsing, browser
+Back/Forward, and the legacy-editor round-trip (FR-016):
 
 ```
 …?filters=languageId:1;sharedAssets:true;status:UNPUBLISHED,LOCKED
 ```
 
 Encoding needs no new code — `encodeFilters` already comma-joins array values. Decoding is one entry
-in `decodeByFilterKey` (`status: multiSelector`).
+in `decodeByFilterKey` (`status: multiSelector`), which is **required**: without it a single-value
+URL (`status:ARCHIVED`) falls through to the comma sniff and decodes as a string rather than an
+array.

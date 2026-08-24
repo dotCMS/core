@@ -1,6 +1,11 @@
 # Phase 1 Data Model: Content Drive Status Filter
 
-**Feature**: [spec.md](./spec.md) | **Plan**: [plan.md](./plan.md) | **Date**: 2026-08-24
+**Feature**: [spec.md](./spec.md) | **Date**: 2026-08-24
+
+> `plan.md`, `research.md` and `quickstart.md` are Spec-Kit process artifacts and are gitignored by
+> policy (`.specify/CUSTOMIZATIONS.md`), so the `research.md` references below point at files that
+> exist on the author's machine, not in this repo. Each one is summarized inline so this document
+> stands on its own.
 
 No database schema changes. Every column this feature reads already exists on
 `contentlet_version_info` and is already indexed into the search index. This document describes the
@@ -24,16 +29,19 @@ A closed enum of three independent states a contentlet version can hold.
 and the browser layer must not depend on the REST layer. Sits alongside `FieldSearchCriteria`, which
 plays the same query-shaping role.
 
-**Relationships**: none. The three are orthogonal facts about one row, which is exactly why they
-combine with AND rather than OR (see [research.md R2](./research.md)).
+**Relationships**: none. The three are orthogonal facts about one row.
 
-**Not a state machine**: an item can hold any subset of the three at once. Two subsets are worth
-naming because they are user-visible oddities, not defects:
+**Not a state machine**: an item can hold any subset of the three at once. The filter asks whether
+an item is in *any* selected state, not all of them — selected statuses combine with **OR**, like
+the Content Type and Language filters. AND was considered and rejected: under AND,
+`{ARCHIVED, UNPUBLISHED}` is redundant, `{ARCHIVED, LOCKED}` is almost always empty and all three is
+empty in practice, so only one of four combinations says anything — and the chip would be the sole
+exception in a toolbar row where every other filter widens on selection (research.md R2).
 
-- `{ARCHIVED, UNPUBLISHED}` is always equivalent to `{ARCHIVED}` — archiving removes the live
-  version (`ESContentletAPIImpl.java:3833`), so every archived item is already unpublished.
-- `{ARCHIVED, LOCKED}` is reachable but rare: it needs a self-lock or a CMS-Admin archive
-  (`canLock` at `:10380`/`:10406`), and `internalArchive` never clears `locked_by`.
+One overlap is worth knowing even though it no longer produces a degenerate result: every archived
+item is also unpublished, because archiving removes the live version
+(`ESContentletAPIImpl.java:3833`). Under OR that just means `{ARCHIVED, UNPUBLISHED}` reads as
+"everything with no live version" rather than being redundant.
 
 ---
 
@@ -56,9 +64,10 @@ default List<String> status() { return List.of(); }
 | Duplicates | Collapsed; the parsed result is a `Set` |
 | Unknown value | `400`, message naming the accepted values (FR-010) |
 
-**Declared as `List<String>`, not `List<ContentStatus>`** — see [research.md R7](./research.md). The
-helper owns the parse so the 400 is thrown explicitly, matching the `userSearchable` precedent
-already in `ContentDriveHelper`.
+**Declared as `List<String>`, not `List<ContentStatus>`** (research.md R7): a typed field would
+route an invalid value through Jackson's `InvalidFormatException`, whose mapping to a useful 400 is
+less direct than throwing one ourselves. The helper owns the parse instead, matching the
+`userSearchable` precedent already in `ContentDriveHelper`.
 
 ### Validation rules
 
@@ -66,35 +75,37 @@ already in `ContentDriveHelper`.
 |---|---|---|
 | Empty is valid and means "no status filtering" | FR-001, FR-002 | `ContentDriveHelper` (block is skipped) |
 | Every element must name a `ContentStatus` | FR-010 | `ContentDriveHelper.parseStatuses` → `BadRequestException` |
-| Selection narrows (AND), never widens | FR-006 | `BrowserAPIImpl.appendContentStatusQuery` — independent `and` clauses |
-| The archived baseline stands unless `ARCHIVED` is selected | FR-004 | `BrowserAPIImpl:2006` — the exclusion is skipped only when the selection contains `ARCHIVED` |
+| Selection widens (OR), never narrows | FR-006 | `BrowserAPIImpl.appendContentStatusQuery` — one OR-ed group |
+| The archived baseline stands unless `ARCHIVED` is selected | FR-007 | `BrowserAPIImpl:2006` — the exclusion is skipped only when the selection contains `ARCHIVED` |
 | A non-empty selection excludes folders | FR-015 | `ContentDriveHelper` → `.showFolders(false)` |
 
-### The archived baseline is not a fourth flag
+### The archived baseline is not a fourth flag, and it lives outside the OR group
 
-FR-006 says the statuses combine with AND, and FR-004 says `UNPUBLISHED` excludes archived content
-unless `ARCHIVED` is also selected. Read as "a pure AND of three independent flags", those look like
-they disagree. They don't, and an implementer who misses the distinction will get `UNPUBLISHED`
-wrong.
+Excluding archived content is the drive's **pre-existing default**, not a member of this set:
+`appendExcludeArchivedQuery` already emits `cvi.deleted = false` on every request today. The status
+group is OR-ed internally and AND-ed against that baseline; `ARCHIVED` is the only status that lifts
+it.
 
-**Excluding archived content is the drive's pre-existing default, not a member of this set.**
-`appendExcludeArchivedQuery` already emits `cvi.deleted = false` on every request today. The three
-statuses are AND-ed *on top of* that baseline; `ARCHIVED` is the only one that lifts it.
-
-So the generated predicate is:
-
-| Selection | Baseline | Status clauses | Net |
+| Selection | Baseline | Status group | Net |
 |---|---|---|---|
 | `[]` | `deleted = false` | — | today's behavior |
-| `[UNPUBLISHED]` | `deleted = false` | `live_inode is null` | unpublished **and not archived** |
-| `[LOCKED]` | `deleted = false` | `locked_by is not null` | locked **and not archived** |
-| `[ARCHIVED]` | *lifted* | `deleted = true` | archived only |
-| `[ARCHIVED, LOCKED]` | *lifted* | `deleted = true` + `locked_by is not null` | archived **and** locked |
+| `[UNPUBLISHED]` | `deleted = false` | `(live_inode is null)` | unpublished, not archived |
+| `[LOCKED]` | `deleted = false` | `(locked_by is not null)` | locked, not archived |
+| `[UNPUBLISHED, LOCKED]` | `deleted = false` | `(live_inode is null or locked_by is not null)` | either, still not archived |
+| `[ARCHIVED]` | *lifted* | `(deleted = true)` | archived only |
+| `[ARCHIVED, UNPUBLISHED]` | *lifted* | `(deleted = true or live_inode is null)` | everything with no live version |
+| all three | *lifted* | `(deleted = true or live_inode is null or locked_by is not null)` | anything not cleanly published |
 
-This falls out of the code shape rather than needing special handling: the baseline is skipped only
-when the selection contains `ARCHIVED`, so `UNPUBLISHED`/`LOCKED` alone keep it automatically.
+**The bug to avoid** is folding the baseline into the group. `[UNPUBLISHED, LOCKED]` would then read
+`(deleted = false or live_inode is null or locked_by is not null)`, which matches essentially every
+row in the folder — a filter that silently stops filtering.
 
-*(Raised by the automated spec review on [#37170](https://github.com/dotCMS/core/pull/37170).)*
+Note that a single-status selection produces a one-disjunct group, so `[ARCHIVED]` is still exactly
+`cvi.deleted = true`. OR and AND only diverge from two statuses upward.
+
+*(The baseline-vs-flag distinction was raised by the automated spec review on
+[#37170](https://github.com/dotCMS/core/pull/37170); the OR semantics were settled separately during
+planning, see the OR rationale above.)*
 
 ### `LOCKED` and version scoping compose
 
@@ -131,8 +142,8 @@ this.showWorking = builder.showWorking || builder.showArchived;
 ```
 
 must also be true when the selection contains `ARCHIVED` or `UNPUBLISHED`. Both states imply no live
-version, so without this the query joins on `live_inode` and can never match. See
-[research.md R4](./research.md).
+version, so without this `selectQuery` joins on `live_inode` — which those rows never have — and the
+filter silently returns nothing (research.md R4).
 
 ---
 
