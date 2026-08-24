@@ -28,32 +28,59 @@ export function parseRepo(fullRepo: string): { owner: string; repo: string } {
   return { owner, repo };
 }
 
+/** A published standard release, and whether its notes were ever written. */
+export interface ReleaseRef {
+  tag: string;
+  /** False when the release body is empty — a cut whose pipeline died before notes. */
+  hasNotes: boolean;
+}
+
+/**
+ * List standard releases (matching vYY.MM.DD-NN pattern), newest first.
+ *
+ * Kept in sync with gather-release-data/src/github.ts: both resolve the same release
+ * boundary, and a divergence puts the QA status and the changelog on different ranges.
+ *
+ * Drafts are skipped: listReleases returns them first regardless of date, so they
+ * corrupt the ordering this function promises, and a draft may duplicate a real tag.
+ */
 export async function listStandardReleaseTags(
   octokit: Octokit,
   owner: string,
   repo: string
-): Promise<string[]> {
-  const tags: string[] = [];
+): Promise<ReleaseRef[]> {
+  const releases: ReleaseRef[] = [];
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listReleases,
     { owner, repo, per_page: 100 }
   )) {
     for (const release of response.data) {
+      if (release.draft) continue;
       if (STANDARD_RELEASE_PATTERN.test(release.tag_name)) {
-        tags.push(release.tag_name);
+        releases.push({
+          tag: release.tag_name,
+          hasNotes: (release.body ?? '').trim().length > 0,
+        });
       }
     }
   }
-  return tags;
+  return releases;
 }
 
+/**
+ * Find the previous documented release before `currentTag`.
+ *
+ * Undocumented releases are skipped: a cut whose pipeline died before writing notes
+ * never shipped a QA status either, so stopping at its tag would report on one attempt
+ * instead of the whole release.
+ */
 export function findPreviousTag(
-  tags: string[],
+  releases: ReleaseRef[],
   currentTag: string
 ): string | undefined {
-  const idx = tags.indexOf(currentTag);
+  const idx = releases.findIndex((r) => r.tag === currentTag);
   if (idx === -1) return undefined;
-  return tags[idx + 1];
+  return releases.slice(idx + 1).find((r) => r.hasNotes)?.tag;
 }
 
 export async function fetchCommitRange(

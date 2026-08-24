@@ -64,11 +64,14 @@ public class RoleResourceCountsIntegrationTest {
     }
 
     @AfterClass
-    public static void cleanUp() {
+    public static void cleanUp() throws Exception {
         usersToClean.forEach(UserDataGen::remove);
         // children were created after their parents, so remove in reverse creation order
         Collections.reverse(rolesToClean);
         rolesToClean.forEach(RoleDataGen::remove);
+        // the deletions above cleared the global role cache; resolve the back-end role again
+        // so the next suite class's REST auth check never starts against a cold cache
+        APILocator.getRoleAPI().loadBackEndUserRole();
     }
 
     private static Role track(final Role role) {

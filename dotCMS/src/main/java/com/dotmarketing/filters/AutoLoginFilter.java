@@ -9,6 +9,7 @@
  */
 package com.dotmarketing.filters;
 
+import com.dotcms.auth.providers.oauth.OAuthWebInterceptor;
 import com.dotcms.cms.login.LogoutWebInterceptor;
 import com.dotcms.filters.interceptor.AbstractWebInterceptorSupportFilter;
 import com.dotcms.filters.interceptor.WebInterceptorDelegate;
@@ -38,6 +39,7 @@ public class AutoLoginFilter extends AbstractWebInterceptorSupportFilter {
         final WebInterceptorDelegate delegate =
             this.getDelegate(config.getServletContext());
 
+        delegate.add(new OAuthWebInterceptor());
         delegate.add(new LogoutWebInterceptor());
         delegate.add(new DefaultAutoLoginWebInterceptor());
     } // addDefaultInterceptors.

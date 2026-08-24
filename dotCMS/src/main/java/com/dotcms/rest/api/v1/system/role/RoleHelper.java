@@ -337,9 +337,10 @@ public class RoleHelper {
     }
 
     /**
-     * Bulk-removes users from a role with PARTIAL-SUCCESS semantics: once the role resolves,
-     * the batch never fails as a whole — every removable direct membership is removed and every
-     * non-removable entry is reported in the result's {@code skipped} list (see #36938):
+     * Bulk-removes users from a role with PARTIAL-SUCCESS semantics: once the role resolves
+     * and passes the {@code editUsers} gate, the batch never fails as a whole — every removable
+     * direct membership is removed and every non-removable entry is reported in the result's
+     * {@code skipped} list (see #36938):
      * <ul>
      *   <li>{@code not_found} — no user matches the id</li>
      *   <li>{@code inherited} — the user is not a DIRECT member (holds the role only through
@@ -348,6 +349,13 @@ public class RoleHelper {
      *       portlet only offered checkboxes on direct rows — same outcome, now reported</li>
      *   <li>{@code error} — unexpected per-user failure, logged server-side</li>
      * </ul>
+     *
+     * Like the grant endpoint, the whole request is rejected with 403 when the role is not
+     * user-assignable ({@code editUsers = false}, see #37109): memberships of such roles — the
+     * user's individual role, system roles — are system-managed and were never removable through
+     * the legacy Roles portlet either (it hides the removal controls for them). Assignability is
+     * a property of the role, not of each user, so this is a request-level rejection rather than
+     * a per-user {@code skipped} reason.
      *
      * DELIBERATELY NOT {@code @WrapInTransaction}: partial-success semantics require per-user
      * commits — each {@code roleAPI.removeRoleFromUser} call is already transactional, and a
@@ -364,6 +372,12 @@ public class RoleHelper {
         final Role role = this.roleAPI.loadRoleById(roleId);
         if (null == role || !UtilMethods.isSet(role.getId())) {
             throw new DoesNotExistException("Role not found: " + roleId);
+        }
+
+        if (!role.isEditUsers()) {
+            throw new DotSecurityException(
+                    String.format("Users cannot be removed from role '%s' (%s): the role does not allow membership changes",
+                            role.getName(), role.getId()));
         }
 
         final List<String> removedUserIds = new ArrayList<>();
