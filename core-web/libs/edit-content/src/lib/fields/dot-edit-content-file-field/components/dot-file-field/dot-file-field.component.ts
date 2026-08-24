@@ -865,7 +865,7 @@ export class DotFileFieldComponent
         // No launcher means a legacy host, which browses without a site — so it skips the lookup
         // entirely rather than paying for a request it has no use for.
         if (!this.#assetPickerLauncher) {
-            this.#openLegacyBrowserSelector();
+            this.#releasePendingIfOpenThrows(() => this.#openLegacyBrowserSelector());
 
             return;
         }
@@ -878,7 +878,7 @@ export class DotFileFieldComponent
                     // Opening a picker that can't browse anything is worse than not opening it.
                     if (site) {
                         // Stays set until the dialog closes, so the open picker blocks a re-entry too.
-                        this.#openAssetPicker(site);
+                        this.#releasePendingIfOpenThrows(() => this.#openAssetPicker(site));
 
                         return;
                     }
@@ -890,6 +890,25 @@ export class DotFileFieldComponent
                     this.#assetPickerPending = false;
                 }
             });
+    }
+
+    /**
+     * Runs an open, releasing {@link #assetPickerPending} if it throws.
+     *
+     * Nothing else can release it in that case: the guard is cleared by the picker's `onClose`, and
+     * an open that threw never got as far as wiring one — so "Select Existing File" would stay dead
+     * for the rest of the session, with no toast and no log. The error is deliberately rethrown
+     * rather than swallowed; a button that silently does nothing is harder to diagnose than one that
+     * leaves a stack trace.
+     */
+    #releasePendingIfOpenThrows(open: () => void) {
+        try {
+            open();
+        } catch (error) {
+            this.#assetPickerPending = false;
+
+            throw error;
+        }
     }
 
     /** Opens the picker for a resolved site. Split out so the site lookup above stays readable. */

@@ -16,10 +16,11 @@ import { Editor } from '@tiptap/core';
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { ASSET_PICKER_LAUNCHER, DotBrowserSelectorComponent } from '@dotcms/ui';
+import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { EditorModalService } from './editor-modal.service';
 
-import { OVERLAY_ABOVE_FULLSCREEN_Z_INDEX } from '../config.utils';
+import { buildBrowserSelectorConfig } from '../config.utils';
 import {
     insertDotAudioFromContentlet,
     insertDotImageFromContentlet,
@@ -121,17 +122,15 @@ describe('EditorModalService — legacy Dojo host (no asset-picker launcher)', (
             expect(dialogService.open.mock.calls[0][0]).toBe(DotBrowserSelectorComponent);
         });
 
-        it('should scope the selector to its own mime types', () => {
-            expect(openedConfig().data.mimeTypes).toEqual(mimeTypes);
-        });
-
-        it('should title the dialog through PrimeNG chrome, as the legacy picker has no header of its own', () => {
-            expect(openedConfig().header).toBe(titleKey);
-        });
-
-        it('should clear the fullscreen editor shell backdrop', () => {
-            // Without this the modal renders under the shell's `z-[9998]` and is unreachable.
-            expect(openedConfig().baseZIndex).toBe(OVERLAY_ABOVE_FULLSCREEN_Z_INDEX);
+        it('should hand it the restored legacy config for this mode', () => {
+            // Whole-object rather than field-by-field: what this pins is that the service delegates
+            // to `buildBrowserSelectorConfig` with the right header and mime scoping — including
+            // the `baseZIndex` that clears the shell's `z-[9998]` backdrop. It cannot notice a
+            // field being dropped from the builder itself, since both sides would move together;
+            // `config.utils.spec.ts` is what guards that.
+            expect(openedConfig()).toEqual(
+                buildBrowserSelectorConfig({ header: titleKey, mimeTypes: [...mimeTypes] })
+            );
         });
     });
 
@@ -148,7 +147,7 @@ describe('EditorModalService — legacy Dojo host (no asset-picker launcher)', (
             ['openVideoPicker', () => insertVideo, () => [insertImage, insertAudio]],
             ['openAudioPicker', () => insertAudio, () => [insertImage, insertVideo]]
         ] as const)('should insert the node %s corresponds to', (method, expected, others) => {
-            const contentlet = { identifier: 'id-1', inode: 'inode-1' } as DotCMSContentlet;
+            const contentlet = createFakeContentlet({ identifier: 'id-1', inode: 'inode-1' });
 
             service[method](editor);
             onClose$.next(contentlet);

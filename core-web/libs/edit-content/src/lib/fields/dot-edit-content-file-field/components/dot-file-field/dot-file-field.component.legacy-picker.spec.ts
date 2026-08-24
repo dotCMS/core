@@ -169,6 +169,26 @@ describe('DotFileFieldComponent — legacy host picker (no asset-picker launcher
         expect(dialogService.open).toHaveBeenCalledTimes(2);
     });
 
+    it('should stay usable after an open throws', () => {
+        // `#assetPickerPending` is only ever cleared by the picker's `onClose`, and an open that
+        // threw wired no close handler — so without an explicit release "Select Existing File"
+        // would be dead for the rest of the session, with no toast and no log.
+        const dialogService = setup(IMAGE_FIELD_MOCK);
+        (dialogService.open as jest.Mock).mockImplementationOnce(() => {
+            throw new Error('dialog exploded');
+        });
+
+        expect(() => spectator.component.showSelectExistingFileDialog()).toThrow('dialog exploded');
+
+        (dialogService.open as jest.Mock).mockReturnValue({
+            onClose: of(null),
+            close: jest.fn()
+        });
+        spectator.component.showSelectExistingFileDialog();
+
+        expect(dialogService.open).toHaveBeenCalledTimes(2);
+    });
+
     it('should do nothing while the field is disabled', () => {
         const dialogService = setup(IMAGE_FIELD_MOCK);
         spectator.component.setDisabledState(true);

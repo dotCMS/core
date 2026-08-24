@@ -167,6 +167,28 @@ describe('DotWysiwygPluginService — legacy host (no asset-picker launcher)', (
         expect(closeSpy).toHaveBeenCalledTimes(1);
     });
 
+    it('should stay usable after an open throws', () => {
+        // The busy flag is only ever cleared by the picker's `onClose`, and an open that threw
+        // wired no close handler — so without an explicit release the toolbar button would be dead
+        // for the rest of the session.
+        jest.spyOn(dialogService, 'open').mockImplementationOnce(() => {
+            throw new Error('dialog exploded');
+        });
+
+        spectator.service.initializePlugins(editor as never);
+        const button = editor.ui.registry.getAll().buttons['dotAddImage'];
+
+        expect(() => button.onAction()).toThrow('dialog exploded');
+
+        jest.spyOn(dialogService, 'open').mockReturnValue({
+            onClose: of(undefined),
+            close: closeSpy
+        } as DynamicDialogRef);
+        button.onAction();
+
+        expect(dialogService.open).toHaveBeenCalledTimes(2);
+    });
+
     describe('teardown while a dialog is open', () => {
         /**
          * Faithful stand-in for `DynamicDialogRef`: `close()` pushes through `onClose`

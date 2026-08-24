@@ -3,16 +3,12 @@ import { createServiceFactory, mockProvider, SpectatorService } from '@openng/sp
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotSite } from '@dotcms/dotcms-models';
+import { createFakeSite } from '@dotcms/utils-testing';
 
 import { AngularAssetPickerLauncher } from './angular-asset-picker.launcher';
 import { DotAssetPickerComponent } from './dot-asset-picker.component';
 
-const SITE: DotSite = {
-    identifier: 'site-1',
-    hostname: 'dotcms.com',
-    aliases: null,
-    archived: false
-};
+const SITE: DotSite = createFakeSite({ identifier: 'site-1', hostname: 'dotcms.com' });
 
 describe('AngularAssetPickerLauncher', () => {
     let spectator: SpectatorService<AngularAssetPickerLauncher>;

@@ -48,9 +48,14 @@ export class DotWysiwygPluginService implements OnDestroy {
 
     /**
      * Present only in the Angular Edit Content, the sole host the new AssetPicker was built for.
-     * Absent in the legacy Dojo pages, where *Add image* falls back to
-     * {@link DotAssetSearchDialogComponent} — the dialog this button opened before the picker
-     * existed.
+     * Anywhere else *Add image* falls back to {@link DotAssetSearchDialogComponent}, the dialog this
+     * button opened before the picker existed.
+     *
+     * No legacy host is currently known to construct this service: the Dojo editor renders WYSIWYG
+     * as a plain textarea plus JSP-side TinyMCE, and no Angular custom element exists for the field.
+     * The fallback is therefore a consistency guard — so all three asset-selection entry points
+     * behave identically — rather than a live regression path. See the Assumptions section of
+     * `specs/37132-picker-per-host/spec.md`.
      */
     private readonly assetPickerLauncher = inject(ASSET_PICKER_LAUNCHER, { optional: true });
 
@@ -127,10 +132,10 @@ export class DotWysiwygPluginService implements OnDestroy {
      * Opens a picker scoped to images — *which* one is the host's call, not this field's.
      *
      * With {@link assetPickerLauncher} present (the Angular Edit Content) it is the shared
-     * AssetPicker, the same one the File and Image fields and the Story Block open. Without it — the
-     * legacy Dojo pages this service documents itself as constructible from — it is
-     * {@link DotAssetSearchDialogComponent}, the dialog this button opened before the AssetPicker
-     * existed. The old editor was never designed for the new one.
+     * AssetPicker, the same one the File and Image fields and the Story Block open. Without it, it
+     * is {@link DotAssetSearchDialogComponent}, the dialog this button opened before the AssetPicker
+     * existed — the old editor was never designed for the new one. See {@link assetPickerLauncher}
+     * for why that branch is a guard rather than a path any known host takes today.
      *
      * Only the AssetPicker is asynchronous: it cannot be configured without a `DotSite` and this
      * field holds none. That gap is why the busy flag exists rather than a plain "is a dialog open"
@@ -153,7 +158,9 @@ export class DotWysiwygPluginService implements OnDestroy {
         this.imagePickerBusy = true;
 
         if (!this.assetPickerLauncher) {
-            this.ngZone.run(() => this.openLegacyImageDialog(editor));
+            this.ngZone.run(() =>
+                this.releaseBusyIfOpenThrows(() => this.openLegacyImageDialog(editor))
+            );
 
             return;
         }
@@ -166,10 +173,30 @@ export class DotWysiwygPluginService implements OnDestroy {
                     return;
                 }
 
-                this.ngZone.run(() => this.openImagePicker(editor, site));
+                this.ngZone.run(() =>
+                    this.releaseBusyIfOpenThrows(() => this.openImagePicker(editor, site))
+                );
             },
             error: () => (this.imagePickerBusy = false)
         });
+    }
+
+    /**
+     * Runs an open, releasing {@link imagePickerBusy} if it throws.
+     *
+     * Nothing else can release it in that case: the flag is cleared by the picker's `onClose`, and
+     * an open that threw never got as far as wiring one — so the toolbar button would stay dead for
+     * the rest of the session. The error is deliberately rethrown rather than swallowed; a button
+     * that silently does nothing is harder to diagnose than one that leaves a stack trace.
+     */
+    private releaseBusyIfOpenThrows(open: () => void): void {
+        try {
+            open();
+        } catch (error) {
+            this.imagePickerBusy = false;
+
+            throw error;
+        }
     }
 
     /** Opens the AssetPicker for a resolved site. Split out so the lookup above stays readable. */
