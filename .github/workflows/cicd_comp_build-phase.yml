@@ -91,12 +91,18 @@ jobs:
         if: inputs.ref == ''
         with:
           fetch-depth: 0
+      # Shallow checkout (fetch-depth: 1): the build only needs the ref snapshot.
+      # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack) and
+      # cost ~19-20 min per job. buildnumber-maven-plugin (scmRevision) only reads
+      # HEAD, which works fine on a shallow clone. The `run-pr-checks` steps that
+      # need real history (git diff origin/main...HEAD, git status) are only used
+      # by the inputs.ref == '' path below, which keeps fetch-depth: 0.
       - name: Checkout code with ref ${{ inputs.ref }}
         if: inputs.ref != ''
         uses: actions/checkout@v4
         with:
           ref: ${{ inputs.ref }}
-          fetch-depth: 0
+          fetch-depth: 1
 
       # Check if .mvn/maven.config is modified in PR (only for PR checks)
       - name: Check if .mvn/maven.config is in the PR commit
