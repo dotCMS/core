@@ -112,23 +112,18 @@ export class DotRolesTreeComponent {
      */
     readonly #openNodeIds = signal(new Set<string>());
 
-    /**
-     * PassThrough config for the shared `DotFolderTreeComponent`.
-     *
-     * `[--p-tree-padding:0]` — PrimeNG's `.p-tree` selector applies
-     * `padding: var(--p-tree-padding)` which wins over a plain `p-0`
-     * class by load order. Setting the CSS variable directly via a
-     * Tailwind arbitrary property is a clean way to strip the padding
-     * without `!important` or a component stylesheet, and it stays
-     * within the PrimeNG token system.
-     *
-     * `nodeLabel` truncates long role names with an ellipsis.
-     */
+    // `pt.nodeLabel` only reaches the top-level tree — nested `<p-treenode>`
+    // instances fall back to PrimeNG defaults, so child labels don't
+    // truncate and the `+` button doesn't land at the trailing edge.
+    // Applying the label styles as a descendant selector on `root`
+    // cascades to every label regardless of depth.
     protected readonly treePt = {
         root: {
-            class: 'w-full h-full border-none overflow-y-auto [--p-tree-padding:0]'
-        },
-        nodeLabel: { class: 'overflow-hidden text-ellipsis whitespace-nowrap flex-1' }
+            class:
+                'w-full h-full border-none overflow-y-auto [--p-tree-padding:0] ' +
+                '[&_.p-tree-node-label]:flex-1 [&_.p-tree-node-label]:overflow-hidden ' +
+                '[&_.p-tree-node-label]:text-ellipsis [&_.p-tree-node-label]:whitespace-nowrap'
+        }
     };
 
     protected readonly $filterInput = computed(() => this.store.filter());
