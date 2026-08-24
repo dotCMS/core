@@ -231,8 +231,3 @@ specs/*/research.md
 specs/*/tasks.md
 specs/*/quickstart.md
 specs/*/checklists/
-
-# Per-developer pointer to the feature you are currently working on, rewritten by
-# /speckit-specify. Committing it would aim everyone else's /speckit-plan at your
-# feature, and every concurrent feature branch would collide on its single line.
-.specify/feature.json

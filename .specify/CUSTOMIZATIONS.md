@@ -52,14 +52,6 @@ Phase 1 spec — *entity name, fields, relationships, validation rules from requ
 If a feature's `data-model.md` just restates entities already obvious from `spec.md`, it's
 as ephemeral as the rest — don't commit it (same for `contracts/`).
 
-**`.specify/feature.json` is never committed either.** It is not a spec artifact — it is a
-per-developer pointer to the feature *you* are currently on, rewritten by `/speckit-specify` and
-read by `get_feature_paths()` so the downstream commands can find the spec folder without relying
-on branch naming. Committing it would aim every teammate's next `/speckit-plan` at whatever feature
-last merged, and two concurrent feature branches would conflict on its single line every time. It is
-gitignored for that reason. To point the commands at a feature explicitly, set
-`SPECIFY_FEATURE_DIRECTORY` instead — it takes precedence over the file.
-
 ## Customizations
 
 ### 1. Constitution — `.specify/memory/constitution.md` (AUTHORED)
