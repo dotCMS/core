@@ -57,7 +57,7 @@
                             [ngModelOptions]="{ standalone: true }"
                             [options]="fireOnOptions$ | async"
                             [style]="{ width: '9.5rem' }"
-                            [placeholder]="fireOnPlaceholder$ | async"
+                            [placeholder]="(fireOnPlaceholder$ | async) ?? undefined"
                             class="max-w-48 min-w-48 flex-none shrink-0"
                             appendTo="body" />
                     }
