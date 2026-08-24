@@ -91,11 +91,13 @@ jobs:
       - uses: actions/checkout@v4
         with:
           # Bounded shallow checkout: Find Build Commit walks `git log` on main
-          # back to midnight UTC (max observed on main is ~19 commits/day, so
-          # 100 commits is ~5 days of headroom; use-latest-commit only needs
-          # HEAD). fetch-depth: 0 pulled every branch ref (~2k+ branches,
-          # ~1.1 GB pack) when only main's recent history is consulted.
-          fetch-depth: 100
+          # back to midnight UTC. The window that matters is commits landing
+          # between midnight and run time (~3h); max observed is ~19 commits/day,
+          # so 1000 commits is ~52 days of volume and can't realistically overrun
+          # the midnight boundary. use-latest-commit only needs HEAD. Avoids the
+          # fetch-depth: 0 full fetch (~2k+ branches, ~1.1 GB pack) when only
+          # main's recent history is consulted.
+          fetch-depth: 1000
           ref: main
 
       - name: Find Build Commit
