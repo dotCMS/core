@@ -23,7 +23,9 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClient;
 import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeClientBuilder;
 
 import java.time.Duration;
+import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} for Amazon Bedrock, backed by LangChain4J's Bedrock modules.
@@ -84,6 +86,40 @@ class BedrockModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "bedrock";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("region", ProviderFieldType.STRING),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("accessKeyId", ProviderFieldType.SECRET,
+                            "Set together with secretAccessKey, or omit both to use the AWS default credential chain"),
+                    ProviderField.optional("secretAccessKey", ProviderFieldType.SECRET,
+                            "Set together with accessKeyId, or omit both to use the AWS default credential chain"),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> List.of(
+                    ProviderField.required("region", ProviderFieldType.STRING),
+                    ProviderField.required("model", ProviderFieldType.STRING),
+                    ProviderField.optional("accessKeyId", ProviderFieldType.SECRET,
+                            "Set together with secretAccessKey, or omit both to use the AWS default credential chain"),
+                    ProviderField.optional("secretAccessKey", ProviderFieldType.SECRET,
+                            "Set together with accessKeyId, or omit both to use the AWS default credential chain"),
+                    ProviderField.optional("embeddingInputType", ProviderFieldType.STRING,
+                            "Cohere only: search_document (default) or search_query"),
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER, "Amazon Titan only"));
+            case IMAGE -> throw new UnsupportedOperationException(
+                    "Image generation is not supported for Bedrock provider via LangChain4J");
+        };
     }
 
     @Override
