@@ -9,10 +9,12 @@
             "e2eTestRunner": "playwright",
             "linter": "eslint",
             "style": "scss",
+            "strict": true,
             "unitTestRunner": "jest"
         },
         "@nx/angular:library": {
             "linter": "eslint",
+            "strict": true,
             "unitTestRunner": "jest"
         },
         "@nx/angular:component": {

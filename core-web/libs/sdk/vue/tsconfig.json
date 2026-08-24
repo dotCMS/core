@@ -3,7 +3,6 @@
         "allowJs": true,
         "esModuleInterop": false,
         "allowSyntheticDefaultImports": true,
-        "strict": true,
         "jsx": "preserve",
         "jsxImportSource": "vue",
         "moduleResolution": "node",

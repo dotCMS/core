@@ -100,22 +100,48 @@ Always wrap form fields with this structure for consistent styling:
 
 ## TypeScript Strict Mode
 
-Strict mode is being rolled out **one project at a time** (epic #35932), bottom-up through the dependency graph. `tsconfig.base.json` stays at `"strict": false` — never flip it globally.
+The per-project rollout (epic #35932) is **done**. `tsconfig.base.json` now carries strict mode
+for the whole workspace, so **a new project needs no flags of its own** — it inherits them:
 
-To make a project strict:
-
-1. Add the flags to the **project's own** `tsconfig.json` (not `tsconfig.spec.json`, not the base):
-
-    ```json
+```json
+"compilerOptions": {
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "noImplicitOverride": true,
     "noPropertyAccessFromIndexSignature": true,
     "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true
-    ```
+},
+"angularCompilerOptions": {
+    "enableI18nLegacyMessageIdFormat": false,
+    "strictInjectionParameters": true,
+    "strictInputAccessModifiers": true,
+    "typeCheckHostBindings": true,
+    "strictTemplates": true
+}
+```
 
-2. Fix every error. No new `any` — use explicit types. To silence something unavoidable, use `@ts-expect-error` with a `// TODO(#issue):` note, never a blanket `@ts-ignore`.
+Do **not** re-declare any of these in a project tsconfig — that is the duplication the base block
+replaced. `angularCompilerOptions` lives in the base too: it is a root-level key that TypeScript
+ignores entirely, so the non-Angular projects that inherit it (`libs/sdk/react`, `libs/sdk/vue`,
+`apps/mcp-server`, …) are unaffected. Both blocks are inherited through the `extends` chain,
+verified against a deliberately broken host binding.
+
+`@nx/angular:application` and `@nx/angular:library` default to `strict: true` and `nx.json` now
+pins it explicitly, so generated projects arrive strict. The generator still writes a local copy
+of the TS flags — delete it, base already has them.
+
+Two projects opt out **narrowly**, and only from the two non-`strict` flags:
+
+| Project | Opted out of | Why |
+|---|---|---|
+| `libs/sdk/ai` | `noPropertyAccessFromIndexSignature`, `noImplicitOverride` | 56 `TS4111`/`TS4114`. `strict` itself passes. |
+| `apps/ai-evals` | same | Same errors — it compiles `sdk/ai` sources through a path mapping. |
+
+Both carry a `// TODO(#35932)`. Nothing opts out of `strict` itself.
+
+When you do hit an error: no new `any` — use explicit types. To silence something unavoidable, use
+`@ts-expect-error` with a `// TODO(#issue):` note, never a blanket `@ts-ignore`.
 
 **What enforces this:** for Rollup libs that emit declarations (`"declaration": true`), `@rollup/plugin-typescript` is in the build chain and reports type errors, so the `build` target is the gate — CI runs `nx run-many -t build` (the `build-test` execution in `core-web/pom.xml`). Do **not** add a separate `typecheck` target to those projects; it is redundant. `lint` does not catch type errors — ESLint reports lint rules, not TS diagnostics.
 

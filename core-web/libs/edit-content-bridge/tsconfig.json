@@ -1,13 +1,7 @@
 {
     "extends": "../../tsconfig.base.json",
     "compilerOptions": {
-        "strict": true,
         "module": "preserve",
-        "forceConsistentCasingInFileNames": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
         "moduleResolution": "bundler",
         "lib": ["dom", "dom.iterable", "es2022"]
     },

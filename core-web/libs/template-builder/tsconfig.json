@@ -10,22 +10,9 @@
             "path": "./tsconfig.spec.json"
         }
     ],
-    "angularCompilerOptions": {
-        "enableI18nLegacyMessageIdFormat": false,
-        "strictInjectionParameters": true,
-        "strictInputAccessModifiers": true,
-        "typeCheckHostBindings": true,
-        "strictTemplates": true
-    },
     "compilerOptions": {
         "module": "preserve",
         "moduleResolution": "bundler",
-        "lib": ["dom", "dom.iterable", "es2022"],
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true
+        "lib": ["dom", "dom.iterable", "es2022"]
     }
 }

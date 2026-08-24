@@ -14,7 +14,12 @@
         "lib": ["es2017", "es2020", "dom", "dom.iterable"],
         "skipLibCheck": true,
         "skipDefaultLibCheck": true,
-        "strict": false,
+        "forceConsistentCasingInFileNames": true,
+        "strict": true,
+        "noImplicitOverride": true,
+        "noPropertyAccessFromIndexSignature": true,
+        "noImplicitReturns": true,
+        "noFallthroughCasesInSwitch": true,
         "ignoreDeprecations": "6.0",
         "baseUrl": ".",
         "paths": {
@@ -122,6 +127,13 @@
             "@dotcms/vue": ["./libs/sdk/vue/src/index.ts"],
             "@dotcms/portlets/dot-agents/portlet": ["libs/portlets/dot-agents/src/index.ts"]
         }
+    },
+    "angularCompilerOptions": {
+        "enableI18nLegacyMessageIdFormat": false,
+        "strictInjectionParameters": true,
+        "strictInputAccessModifiers": true,
+        "typeCheckHostBindings": true,
+        "strictTemplates": true
     },
     "exclude": ["node_modules", "tmp"]
 }

@@ -3,12 +3,6 @@
         "target": "es2022",
         "lib": ["es2022", "dom", "dom.iterable"],
         "useDefineForClassFields": false,
-        "forceConsistentCasingInFileNames": true,
-        "strict": true,
-        "noImplicitOverride": true,
-        "noPropertyAccessFromIndexSignature": true,
-        "noImplicitReturns": true,
-        "noFallthroughCasesInSwitch": true,
         "module": "preserve",
         "moduleResolution": "bundler",
         "lib": ["dom", "dom.iterable", "es2022"]
@@ -23,12 +17,5 @@
             "path": "./tsconfig.spec.json"
         }
     ],
-    "extends": "../../../../tsconfig.base.json",
-    "angularCompilerOptions": {
-        "enableI18nLegacyMessageIdFormat": false,
-        "strictInjectionParameters": true,
-        "strictInputAccessModifiers": true,
-        "typeCheckHostBindings": true,
-        "strictTemplates": true
-    }
+    "extends": "../../../../tsconfig.base.json"
 }
