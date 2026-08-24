@@ -431,6 +431,93 @@ describe('TemplateBuilderComponent', () => {
             });
     });
 
+    describe('disabled input', () => {
+        it('should not render the disabled overlay by default', () => {
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeFalsy();
+        });
+
+        it('should render the disabled overlay when disabled is set to true', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeTruthy();
+        });
+
+        it('should hide the disabled overlay when disabled is set back to false', () => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('template-builder-disabled-overlay'))).toBeFalsy();
+        });
+
+        describe('grid interactions', () => {
+            let mockGrid: {
+                disable: jest.Mock;
+                enable: jest.Mock;
+                el: { querySelectorAll: jest.Mock };
+            };
+
+            beforeEach(() => {
+                mockGrid = {
+                    disable: jest.fn(),
+                    enable: jest.fn(),
+                    el: { querySelectorAll: jest.fn().mockReturnValue([]) }
+                };
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                spectator.component.grid = mockGrid as any;
+            });
+
+            it('should call grid.disable() when disabled becomes true', () => {
+                spectator.setInput('disabled', true);
+                expect(mockGrid.disable).toHaveBeenCalled();
+            });
+
+            it('should dispatch a document Escape keydown event when disabled becomes true', () => {
+                const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+                spectator.setInput('disabled', true);
+                expect(dispatchSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'keydown', key: 'Escape' })
+                );
+                dispatchSpy.mockRestore();
+            });
+
+            it('should call grid.enable() when disabled becomes false', () => {
+                spectator.setInput('disabled', true);
+                spectator.setInput('disabled', false);
+                expect(mockGrid.enable).toHaveBeenCalled();
+            });
+
+            it('should disable all subgrids when disabled becomes true', () => {
+                const subGridDisable = jest.fn();
+                const subGridEnable = jest.fn();
+                mockGrid.el.querySelectorAll.mockReturnValue([
+                    { gridstack: { disable: subGridDisable, enable: subGridEnable } }
+                ]);
+
+                spectator.setInput('disabled', true);
+                expect(subGridDisable).toHaveBeenCalled();
+            });
+
+            it('should enable all subgrids when disabled becomes false', () => {
+                const subGridDisable = jest.fn();
+                const subGridEnable = jest.fn();
+                mockGrid.el.querySelectorAll.mockReturnValue([
+                    { gridstack: { disable: subGridDisable, enable: subGridEnable } }
+                ]);
+
+                spectator.setInput('disabled', true);
+                spectator.setInput('disabled', false);
+                expect(subGridEnable).toHaveBeenCalled();
+            });
+
+            it('should not call grid methods if grid is not yet initialized', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                spectator.component.grid = undefined as any;
+                expect(() => spectator.setInput('disabled', true)).not.toThrow();
+            });
+        });
+    });
+
     describe('Scroll on Drag', () => {
         beforeEach(() => {
             spectator.component.templateContainerRef = {

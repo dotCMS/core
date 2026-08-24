@@ -224,6 +224,17 @@ describe('EditEmaLayoutComponent', () => {
             expect(store.isClientReady()).toBe(false);
         }));
 
+        it('should NOT set uveStatus to LOADING before the debounce fires', fakeAsync(() => {
+            const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
+
+            templateBuilder.templateChange.emit();
+            tick(1000); // Less than DEBOUNCE_TIME (5000 ms)
+
+            expect(setUveStatusSpy).not.toHaveBeenCalledWith(UVE_STATUS.LOADING);
+
+            tick(4000); // flush remaining timer to avoid pending-timer warning
+        }));
+
         it('should save right away if we request page leave before the 5 secs', () => {
             const saveTemplate = jest.spyOn(component, 'saveTemplate');
 
@@ -245,6 +256,35 @@ describe('EditEmaLayoutComponent', () => {
                 summary: 'Success',
                 detail: 'dot.common.message.saved'
             });
+        });
+    });
+
+    describe('LOADING guard and disabled binding', () => {
+        it('should drop templateChange events and not forbid navigation while uveStatus is LOADING', () => {
+            store.setUveStatus(UVE_STATUS.LOADING);
+
+            templateBuilder.templateChange.emit();
+
+            expect(dotRouter.forbidRouteDeactivation).not.toHaveBeenCalled();
+        });
+
+        it('should process templateChange events and forbid navigation when uveStatus is not LOADING', () => {
+            templateBuilder.templateChange.emit();
+
+            expect(dotRouter.forbidRouteDeactivation).toHaveBeenCalled();
+        });
+
+        it('should pass disabled=true to the template builder when uveStatus is LOADING', () => {
+            store.setUveStatus(UVE_STATUS.LOADING);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(true);
+        });
+
+        it('should pass disabled=false to the template builder when uveStatus is not LOADING', () => {
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
         });
     });
 });
