@@ -172,8 +172,18 @@ export class DotUveStyleEditorFormComponent {
         this.#listenToFormChanges();
     }
 
-    onAccordionChange(indices: number[]): void {
-        this.#activeTabIndices.set(indices);
+    onAccordionChange(
+        value: string | number | string[] | number[] | null | undefined
+    ): void {
+        // `p-accordion` widens its payload; this accordion is multi-mode, so anything that is
+        // not an array of indices means "nothing open".
+        if (!Array.isArray(value)) {
+            this.#activeTabIndices.set([]);
+
+            return;
+        }
+
+        this.#activeTabIndices.set(value.map(Number));
     }
 
     /**

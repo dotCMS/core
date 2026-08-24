@@ -66,7 +66,7 @@ export class IframeComponent implements OnInit, OnDestroy {
 
     $isLoading = input(false, { alias: 'isLoading' });
 
-    @Output() charge: EventEmitter<unknown> = new EventEmitter();
+    @Output() charge: EventEmitter<Event> = new EventEmitter();
 
     @Output() keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 

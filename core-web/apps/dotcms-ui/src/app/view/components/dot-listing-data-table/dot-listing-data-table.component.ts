@@ -101,7 +101,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     @Input() checkbox = false;
     @Input() mapItems!: <T = Record<string, unknown>[]>(item: T) => T;
     @Input() contextMenu = false;
-    @Output() rowWasClicked: EventEmitter<unknown> = new EventEmitter();
+    @Output() rowWasClicked: EventEmitter<Record<string, unknown>> = new EventEmitter();
     @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
     @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
 
