@@ -81,7 +81,7 @@ async function main(): Promise<void> {
 
     // Validate that toTag is visible in the release list. If it's missing,
     // the GitHub releases API hasn't indexed the newly published release yet.
-    if (!tags.includes(args.toTag)) {
+    if (!tags.some((r) => r.tag === args.toTag)) {
       process.stderr.write(
         `Error: ${args.toTag} not found in GitHub releases API. ` +
           `The release may not have been published yet, or the API has not caught up. ` +

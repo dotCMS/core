@@ -1,7 +1,7 @@
 name: "SSO - SAML"
 iconUrl: "https://static.dotcms.com/assets/icons/apps/saml.png"
 allowExtraParameters: true
-description: "SAML SSO provides users the ability to authentcate against a centralized IDP/Authentication source such as Azure AD or Google's G Suite'.  For information on how to use this App, see the [online documentation](https://dotcms.com/docs/latest/sso-saml)."
+description: "> **Heads up: SAML is now managed in the dotAuth tool** (System &rarr; dotAuth), alongside OAuth / OIDC and headless login. This classic screen still works and remains supported for existing configurations, so you can keep using it, but new setups are easier in dotAuth.\n\nSAML SSO lets users authenticate against a centralized identity provider such as Azure AD or Google Workspace. For setup help, see the [online documentation](https://dotcms.com/docs/latest/sso-saml)."
 
 
 params:

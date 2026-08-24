@@ -117,7 +117,7 @@ describe('DotAppsListComponent', () => {
     describe('Export Button State', () => {
         it('should enable export button when apps have configurations', () => {
             // appsResponse has one app with configurationsCount: 1
-            expect(spectator.component.isExportButtonDisabled()).toBe(true);
+            expect(spectator.component.hasExportableApps()).toBe(true);
         });
 
         it('should disable export button when no apps have configurations', () => {
@@ -133,7 +133,32 @@ describe('DotAppsListComponent', () => {
             spectator.component.reloadAppsData();
             spectator.detectChanges();
 
-            expect(spectator.component.isExportButtonDisabled()).toBe(false);
+            expect(spectator.component.hasExportableApps()).toBe(false);
+        });
+
+        it('should show the SAML app in the grid alongside the others', () => {
+            const appsWithSamlConfig: DotApp[] = [
+                { ...appsResponse[0], configurationsCount: 0 },
+                { ...appsResponse[1], configurationsCount: 0 },
+                {
+                    allowExtraParams: true,
+                    configurationsCount: 1,
+                    key: 'dotsaml-config',
+                    name: 'SAML',
+                    description: 'SAML config'
+                }
+            ];
+            mockDotAppsService.get.mockReturnValue(of(appsWithSamlConfig));
+
+            spectator.component.reloadAppsData();
+            spectator.detectChanges();
+
+            expect(spectator.component.hasExportableApps()).toBe(true);
+            expect(
+                spectator.component.state
+                    .displayedApps()
+                    .some((app) => app.key === 'dotsaml-config')
+            ).toBe(true);
         });
     });
 
