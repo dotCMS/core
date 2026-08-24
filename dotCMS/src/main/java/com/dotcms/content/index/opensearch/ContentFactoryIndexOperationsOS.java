@@ -32,7 +32,6 @@ import org.opensearch.client.opensearch._types.OpenSearchException;
 import org.opensearch.client.opensearch._types.SortOptions;
 import org.opensearch.client.opensearch._types.SortOrder;
 import org.opensearch.client.opensearch._types.query_dsl.FunctionScoreQuery;
-import org.opensearch.client.opensearch._types.query_dsl.MatchAllQuery;
 import org.opensearch.client.opensearch._types.query_dsl.Query;
 import org.opensearch.client.opensearch._types.query_dsl.QueryStringQuery;
 import org.opensearch.client.opensearch._types.query_dsl.RandomScoreFunction;
@@ -288,25 +287,44 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
     }
 
     /**
-     * Creates a Query object from the query string and sort parameters
+     * Creates a Query object from the query string and sort parameters.
+     *
+     * <p><strong>The Lucene query must survive every branch.</strong> The Elasticsearch
+     * counterpart ({@code ContentFactoryIndexOperationsES.createSearchSourceBuilder}) keeps it
+     * as a {@code post_filter} whenever it swaps the main query for {@code match_all}; the
+     * OpenSearch port dropped it on the {@code random} branch and never applied a post-filter at
+     * all, so a random-sorted search returned an unfiltered sample of the whole index. Callers
+     * then resolved arbitrary documents against the database: {@code IdentifierDateJob} NPE'd on
+     * inodes that do not exist and tried to INSERT phantom identifier rows, and any VTL
+     * {@code $dotcontent.pull(query, limit, "random")} returned content the query never asked
+     * for (issue #36501, D12).</p>
+     *
+     * <p>Rather than mirroring {@code post_filter}, the random branch wraps the real query inside
+     * the {@code function_score}. The hit set and its ordering are identical — {@code post_filter}
+     * is only distinguishable when aggregations are in play, and this request carries none — and
+     * filtering in query context is cheaper, since scoring only runs on matching documents.</p>
      */
-    private Query createQuery(final String query, final String sortBy) {
+    @VisibleForTesting
+    Query createQuery(final String query, final String sortBy) {
+
+        final Query queryString = Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
 
         if(IndexConfigHelper.getBoolean(OSIndexProperty.USE_FILTERS_FOR_SEARCHING, false)
                 && sortBy != null && !sortBy.toLowerCase().startsWith("score")) {
 
             if("random".equals(sortBy)){
                 return Query.of(q -> q.functionScore(FunctionScoreQuery.of(fsq -> fsq
-                        .query(Query.of(maq -> maq.matchAll(MatchAllQuery.of(ma -> ma))))
+                        .query(queryString)
                         .functions(fsf -> fsf.randomScore(RandomScoreFunction.of(rs -> rs)))
                 )));
             } else {
-                // Use match_all with post_filter (this would need to be implemented differently in OpenSearch Java client)
-                return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
+                // ES builds match_all + post_filter(query) here; querying directly yields the same
+                // hits without the extra clause, so there is nothing to port.
+                return queryString;
             }
 
         } else {
-            return Query.of(q -> q.queryString(QueryStringQuery.of(qs -> qs.query(query))));
+            return queryString;
         }
     }
 
@@ -351,13 +369,22 @@ public class ContentFactoryIndexOperationsOS implements ContentFactoryIndexOpera
         }
     }
 
+    /**
+     * Adds keyword-field sorts. The public/canonical form remains an unsuffixed field name;
+     * accepting an existing {@code _dotraw} suffix is a compatibility path and must not append a
+     * second suffix. Thus existing consumers keep the same generated field while callers that
+     * historically supplied the mapped field directly no longer target a nonexistent mapping.
+     */
     public static void addBuilderSort(@NotNull String sortBy, SearchRequest.Builder searchRequestBuilder) {
         String[] sortByArr = sortBy.split(",");
         for (String sort : sortByArr) {
             String[] x = sort.trim().split(" ");
             SortOrder order = x.length > 1 && x[1].equalsIgnoreCase("desc") ? SortOrder.Desc : SortOrder.Asc;
+            final String requestedField = x[0].toLowerCase();
+            final String field = requestedField.endsWith("_dotraw")
+                    ? requestedField : requestedField + "_dotraw";
             searchRequestBuilder.sort(SortOptions.of(so -> so.field(FieldSort.of(fs -> fs
-                    .field(x[0].toLowerCase() + "_dotraw")
+                    .field(field)
                     .order(order)
                     .unmappedType(FieldType.Keyword)))));
         }

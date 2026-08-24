@@ -1,0 +1,24 @@
+<!-- `min-w-0` is what lets the title truncate instead of pushing the window controls off the row. -->
+<div class="flex min-w-0 items-center gap-2">
+    <h2 class="m-0 truncate text-lg font-semibold" data-testid="dialog-title">{{ $title() }}</h2>
+
+    <ng-content />
+</div>
+
+<div class="flex flex-none items-center gap-1">
+    <ng-content select="[dialogHeaderActions]" />
+
+    @if ($closable()) {
+        <p-button
+            [text]="true"
+            [rounded]="true"
+            [attr.aria-label]="$closeLabel() || null"
+            [pTooltip]="$closeLabel()"
+            (onClick)="close.emit()"
+            data-testid="dialog-close-btn">
+            <ng-template #icon>
+                <i class="material-symbols-outlined text-[1.125rem]!">close</i>
+            </ng-template>
+        </p-button>
+    }
+</div>

@@ -100,4 +100,56 @@ describe('DotHighlightPipe', () => {
         pipe.transform(text, 'World');
         expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(expected);
     });
+
+    describe('untrusted text', () => {
+        /**
+         * The result is handed to `bypassSecurityTrustHtml`, which switches Angular's sanitizer
+         * off, and the text it wraps is author-supplied — content names, language variable keys,
+         * experiment names and descriptions. Anything not escaped here reaches the DOM as live
+         * markup, so these are the tests that keep this pipe from being an injection sink.
+         */
+        it('should escape markup in the text instead of emitting it', () => {
+            pipe.transform('<img src=x onerror="alert(1)">Alpha', 'Alpha');
+
+            expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(
+                '&lt;img src=x onerror=&quot;alert(1)&quot;&gt;<span class="highlight">Alpha</span>'
+            );
+        });
+
+        it('should escape markup inside the matched part too', () => {
+            pipe.transform('a <b>bold</b> word', '<b>bold</b>');
+
+            expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(
+                'a <span class="highlight">&lt;b&gt;bold&lt;/b&gt;</span> word'
+            );
+        });
+
+        it('should escape ampersands once, not double-escape them', () => {
+            pipe.transform('Tom & Jerry', 'Tom');
+
+            expect(sanitizer.bypassSecurityTrustHtml).toHaveBeenCalledWith(
+                '<span class="highlight">Tom</span> &amp; Jerry'
+            );
+        });
+    });
+});
+
+/**
+ * Separate suite because the one above instantiates a TestBed in `beforeEach`, and a pipe host
+ * template cannot be declared once that has happened.
+ */
+describe('DotHighlightPipe bound with innerHTML', () => {
+    const createPipe = createPipeFactory({ pipe: DotHighlightPipe, providers: [] });
+
+    it('should not put live nodes from the text into the DOM', () => {
+        const spectator = createPipe(`<div [innerHTML]="text | dotHighlight:search"></div>`, {
+            hostProps: {
+                text: '<img src=x onerror="alert(1)">Alpha',
+                search: 'Alpha'
+            }
+        });
+
+        expect(spectator.element.querySelector('img')).toBeNull();
+        expect(spectator.element.querySelector('span.highlight')?.textContent).toBe('Alpha');
+    });
 });

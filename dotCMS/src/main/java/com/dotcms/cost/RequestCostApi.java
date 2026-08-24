@@ -93,6 +93,20 @@ public interface RequestCostApi {
     void incrementCost(Price price, @NotNull Class clazz, @NotNull String method, @NotNull Object[] args);
 
     /**
+     * Increments the cost for the current request by {@code price * times}. Used where the work
+     * scales with the size of a result set (e.g. loading N contentlets) and charging once would
+     * make a 1-row and a 1000-row response cost the same.
+     *
+     * @param price  the unit price
+     * @param clazz  calling class
+     * @param method calling method
+     * @param args   arguments, for the HTML accounting report
+     * @param times  how many units of work were done; values &lt;= 0 are a no-op
+     */
+    void incrementCost(Price price, @NotNull Class clazz, @NotNull String method,
+            @NotNull Object[] args, int times);
+
+    /**
      * Returns the current cost for the current request.
      *
      * @return

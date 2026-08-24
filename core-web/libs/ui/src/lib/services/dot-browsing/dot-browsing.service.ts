@@ -93,6 +93,7 @@ export class DotBrowsingService {
         filter: string;
         perPage?: number;
         page?: number;
+        system?: boolean;
     }): Observable<TreeNodeItem[]> {
         return this.getSitesPage(data).pipe(map(({ sites }) => sites));
     }
@@ -104,18 +105,21 @@ export class DotBrowsingService {
      * @param {string} data.filter - Filter string to search sites
      * @param {number} [data.perPage] - Number of items per page
      * @param {number} [data.page] - Page number to fetch
+     * @param {boolean} [data.system] - Whether to include System Host. Omit to keep the API default
+     *   (included) — pass `false` for a tree whose roots must all be browsable sites.
      * @returns {Observable<{ sites: TreeNodeItem[]; pagination: DotPagination }>}
      */
     getSitesPage(data: {
         filter: string;
         perPage?: number;
         page?: number;
+        system?: boolean;
     }): Observable<{ sites: TreeNodeItem[]; pagination: DotPagination }> {
-        const { filter, perPage, page } = data;
+        const { filter, perPage, page, system } = data;
 
-        return this.#siteService.getSites({ filter, per_page: perPage, page }).pipe(
+        return this.#siteService.getSites({ filter, per_page: perPage, page, system }).pipe(
             map(({ sites, pagination }) => ({
-                sites: sites.map((site) => this.#mapSiteToTreeNodeItem(site)),
+                sites: sites.map((site) => this.mapSiteToTreeNode(site)),
                 pagination
             }))
         );
@@ -143,7 +147,17 @@ export class DotBrowsingService {
         );
     }
 
-    #mapSiteToTreeNodeItem(site: { identifier: string; hostname: string }): TreeNodeItem {
+    /**
+     * Maps a site to its tree-root node shape.
+     *
+     * Public so a consumer can produce a root for a site it already knows about without a round
+     * trip — the AssetPicker needs the site it is browsing present in the tree even when a filtered
+     * sites query left it out. Keeping this the single source of the node shape is the point.
+     *
+     * @param {Object} site - Site identifier and hostname
+     * @returns {TreeNodeItem} The site as an expandable tree root
+     */
+    mapSiteToTreeNode(site: { identifier: string; hostname: string }): TreeNodeItem {
         return {
             key: site.identifier,
             label: site.hostname,
@@ -153,8 +167,8 @@ export class DotBrowsingService {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder',
+            expandedIcon: 'pi pi-globe',
+            collapsedIcon: 'pi pi-globe',
             leaf: false
         };
     }
@@ -394,8 +408,8 @@ export class DotBrowsingService {
                     path: '',
                     type: 'site'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
+                expandedIcon: 'pi pi-globe',
+                collapsedIcon: 'pi pi-globe',
                 leaf: false
             }))
         );

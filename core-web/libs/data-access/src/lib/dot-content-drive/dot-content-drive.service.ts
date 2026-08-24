@@ -7,7 +7,9 @@ import { map } from 'rxjs/operators';
 
 import { DotContentDriveSearchRequest, DotContentDriveSearchResponse } from '@dotcms/dotcms-models';
 
-@Injectable()
+@Injectable({
+    providedIn: 'root'
+})
 export class DotContentDriveService {
     readonly #http = inject(HttpClient);
 

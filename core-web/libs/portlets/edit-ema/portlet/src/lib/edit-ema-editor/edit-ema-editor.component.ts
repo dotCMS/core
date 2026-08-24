@@ -32,6 +32,7 @@ import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { PopoverModule } from 'primeng/popover';
 import { ProgressBarModule } from 'primeng/progressbar';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TabsModule } from 'primeng/tabs';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
@@ -59,7 +60,11 @@ import {
     SeoMetaTags,
     SeoMetaTagsResult
 } from '@dotcms/dotcms-models';
-import { DotEditContentDialogComponent, EditContentDialogData } from '@dotcms/edit-content';
+import {
+    DotEditContentDialogComponent,
+    DotEditContentSidePanelComponent,
+    EditContentDialogData
+} from '@dotcms/edit-content';
 import { DotPaletteListStore, DotResultsSeoToolComponent } from '@dotcms/portlets/dot-ema/ui';
 import { GlobalStore } from '@dotcms/store';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSUVEAction, UVE_MODE } from '@dotcms/types';
@@ -118,6 +123,7 @@ import {
     deleteContentletFromContainer,
     getTargetUrl,
     insertContentletInContainer,
+    isAssetPath,
     isSamePageNavigation,
     measureCanvasAvailableSize,
     shouldNavigate
@@ -172,7 +178,9 @@ const MESSAGE_KEY = {
         PopoverModule,
         TooltipModule,
         DotMessagePipe,
-        DotUveDeviceControlsComponent
+        DotUveDeviceControlsComponent,
+        DotEditContentSidePanelComponent,
+        ProgressSpinnerModule
     ],
     providers: [
         DotPaletteListStore,
@@ -273,6 +281,22 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
     readonly host = '*';
     readonly $ogTags: WritableSignal<SeoMetaTags> = signal(undefined);
+
+    /**
+     * Drives the Edit Content side panel: the content to open (create/edit) or `null` when closed.
+     * Only used when {@link $sidePanelEnabled} is on; the template renders the panel while set.
+     */
+    protected readonly $editContentPanel = signal<EditContentDialogData | null>(null);
+
+    /**
+     * Feature flag: when on, the editor opens in the side panel; when off, it opens in the centered
+     * dialog (previous behavior). Read from the UVE store's `withFlags` slice (batch-fetched once on
+     * init, degrades to `false` on a failed config read) — defaults to `false` until it resolves, so
+     * the dialog is used meanwhile.
+     */
+    protected readonly $sidePanelEnabled = computed(
+        () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false
+    );
 
     // Component builds its own editor props locally
     protected readonly $showDialogs = computed<boolean>(() => {
@@ -768,6 +792,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Files (PDFs, images, docs…) are not pages: the Page API cannot resolve
+        // them and the editor would show "Page not found". Open them in a new tab
+        // so the author can verify the link without leaving the editor.
+        if (isAssetPath(url.pathname)) {
+            // Cancel before opening, so the page under edit stays put whatever the
+            // open does. `url` is the origin-resolved form of `href`, which can
+            // still be a raw relative attribute when the click lands on a child of
+            // the anchor.
+            e.preventDefault();
+            this.#openInNewTab(url.href);
+
+            return;
+        }
+
         // Same pathname (any hash/query): let the browser handle it (anchors, query-driven UI)
         if (isSamePageNavigation(href, this.uveStore.pageParams()?.url)) {
             return;
@@ -775,6 +813,45 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         this.uveStore.pageLoad({ url: url.pathname, ...urlQueryParams });
         e.preventDefault();
+    }
+
+    /**
+     * Opens a URL in a new tab with the opener severed.
+     *
+     * Deliberately not `window.open(url, '_blank', 'noopener')`. A windowFeatures
+     * string makes Firefox classify the call as a popup request, and the iframe
+     * raising the gesture is sandboxed without `allow-popups`, so Firefox throws
+     * "DOMException: The operation is insecure". A `rel="noopener"` anchor is an
+     * ordinary tab navigation, which the sandbox permits, and carries the same
+     * opener guarantee, including for cross-origin targets where assigning
+     * `opener = null` on the returned window would not be allowed.
+     *
+     * @param {string} href - Absolute URL to open
+     * @memberof EditEmaEditorComponent
+     */
+    #openInNewTab(href: string): void {
+        let link: HTMLAnchorElement | null = null;
+
+        try {
+            const doc = this.window.document;
+
+            link = doc.createElement('a');
+            link.href = href;
+            link.target = '_blank';
+            link.rel = 'noopener';
+
+            doc.body.appendChild(link);
+            link.click();
+        } catch {
+            // Swallow. This runs inside the RxJS subscriber that feeds the iframe
+            // click handler, so an escaping throw would complete the subscription
+            // and kill link handling for the rest of the session.
+        } finally {
+            // `click()` is the call that throws when the open is refused, so
+            // cleanup has to be unconditional or every failed attempt strands an
+            // anchor in the admin document.
+            link?.remove();
+        }
     }
 
     /**
@@ -1272,7 +1349,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
-        this.#openContentForEdit(contentlet);
+        this.openContentForEdit(contentlet);
     }
 
     /**
@@ -1319,10 +1396,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy dialog.
-     * Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision.
+     * Opens the new Angular editor if the content type has the flag enabled, otherwise the legacy
+     * dialog. Single entry point used by handleOpenFullEditor and handleEditWithCopyDecision — and,
+     * since it's public, also by DotEmaShellComponent for the "Properties" nav action (editing the
+     * page's own contentlet), captured via the router-outlet `(activate)` reference to this component.
      */
-    #openContentForEdit(contentlet: DotCMSContentlet): void {
+    openContentForEdit(contentlet: DotCMSContentlet): void {
         const contentTypeVariable = contentlet.contentType;
         if (!contentTypeVariable) {
             this.dialog?.editContentlet(contentlet);
@@ -1381,9 +1460,20 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Opens the DotEditContentDialogComponent shell with the given header and dialog data.
+     * Opens the new Edit Content editor with the given header and dialog data — in the side panel
+     * when the feature flag is on, otherwise in the centered dialog (previous behavior).
      */
     #openDotEditContentShell(header: string, dialogData: EditContentDialogData): void {
+        if (this.$sidePanelEnabled()) {
+            // Side panel: shows `title` in its header (the dialog used `header`) and fires
+            // `dialogData.onContentSaved`/`onCancel` on close — so palette-drop / edit flows work
+            // unchanged.
+            this.$editContentPanel.set({ ...dialogData, title: header });
+
+            return;
+        }
+
+        // Side panel disabled: open the centered dialog (previous behavior).
         this.dialogService.open(DotEditContentDialogComponent, {
             appendTo: 'body',
             baseZIndex: 10000,
@@ -1424,7 +1514,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
-            this.#openContentForEdit(contentlet as unknown as DotCMSContentlet);
+            this.openContentForEdit(contentlet as unknown as DotCMSContentlet);
             return;
         }
 
@@ -1447,7 +1537,7 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
                         this.uveStore.pageReload();
                     }
 
-                    this.#openContentForEdit(target);
+                    this.openContentForEdit(target);
                 },
                 error: (error: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(error);
@@ -1460,13 +1550,31 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     /**
-     * Handles the edit of a VTL file.
+     * Handles the edit of a VTL file. `VTLFile` only carries `inode`/`name` (it comes from the
+     * client's postMessage payload), not `contentType`, so `openContentForEdit`'s flag check can't
+     * run on it directly — the full contentlet is resolved by inode first. Falls back to the legacy
+     * dialog if that lookup fails (network/permissions), matching this codebase's established
+     * "swallow the error, keep editing working via the legacy editor" fallback pattern.
      *
      * @param {VTLFile} vtlFile - The VTL file to be edited.
      * @memberof EditEmaEditorComponent
      */
     handleEditVTL(vtlFile: VTLFile) {
-        this.dialog.editVTLContentlet(vtlFile);
+        this.dotContentletService
+            .getContentletByInode(vtlFile.inode)
+            .pipe(
+                take(1),
+                takeUntilDestroyed(this.destroyRef),
+                catchError(() => of(null))
+            )
+            .subscribe((contentlet) => {
+                if (!contentlet) {
+                    this.dialog?.editVTLContentlet(vtlFile);
+                    return;
+                }
+
+                this.openContentForEdit(contentlet);
+            });
     }
 
     /**

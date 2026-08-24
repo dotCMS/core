@@ -10,7 +10,8 @@ import {
     SimpleChanges,
     ViewChild,
     inject,
-    signal
+    signal,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -50,6 +51,7 @@ interface PersonaSelector {
         ChipModule,
         PaginatorModule
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './edit-ema-persona-selector.component.html'
 })
 export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges {

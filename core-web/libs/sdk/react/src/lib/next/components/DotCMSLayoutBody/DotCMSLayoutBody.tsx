@@ -10,7 +10,12 @@ import { Row } from '../Row/Row';
 export interface DotCMSLayoutBodyProps<
     TContentlet extends DotCMSBasicContentlet = DotCMSBasicContentlet
 > {
-    page: DotCMSPageAsset;
+    /**
+     * The DotCMS page asset. Can be `undefined` while `useEditableDotCMSPage` is still waiting
+     * on the UVE editor to resolve a draft/non-live page — the component renders `ErrorMessage`
+     * until it arrives.
+     */
+    page: DotCMSPageAsset | undefined;
     components: {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         [key: string]: React.ComponentType<TContentlet> | React.ComponentType<any>;

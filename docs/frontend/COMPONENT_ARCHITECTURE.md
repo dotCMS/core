@@ -2,7 +2,7 @@
 
 **Feature state**: Prefer NgRx Signal Store; see [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md). This doc focuses on component structure, file layout, and data flow.
 
-All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): signals use the `$` prefix (e.g. `$loading`, `$items`), observables use the `$` suffix (e.g. `vm$`), no `standalone: true` in decorators, and `ChangeDetectionStrategy.OnPush` where applicable.
+All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md): signals use the `$` prefix (e.g. `$loading`, `$items`), observables use the `$` suffix (e.g. `vm$`), and no `standalone: true` in decorators.
 
 ## Standalone Component Pattern (Required)
 
@@ -12,8 +12,7 @@ All code examples in this document follow [ANGULAR_STANDARDS.md](./ANGULAR_STAND
   selector: 'dot-my-feature',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
   templateUrl: './dot-my-feature.component.html',
-  styleUrls: ['./dot-my-feature.component.scss'],
-  changeDetection: ChangeDetectionStrategy.OnPush
+  styleUrls: ['./dot-my-feature.component.scss']
 })
 export class DotMyFeatureComponent {
   private readonly myService = inject(MyService);
@@ -138,8 +137,7 @@ export interface MyItem {
 @Component({
   selector: 'dot-form-component',
   imports: [CommonModule, ReactiveFormsModule],
-  templateUrl: './dot-form-component.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-form-component.component.html'
 })
 export class DotFormComponent {
   private readonly fb = inject(FormBuilder);
@@ -322,8 +320,7 @@ export class MyService {
 @Component({
   selector: 'dot-feature-container',
   imports: [CommonModule],
-  templateUrl: './dot-feature-container.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-feature-container.component.html'
 })
 export class DotFeatureContainerComponent {
   private readonly featureService = inject(FeatureService);
@@ -405,8 +402,7 @@ Template — bind to signals with `$` prefix:
 @Component({
   selector: 'dot-interactive-component',
   imports: [CommonModule],
-  templateUrl: './dot-interactive-component.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-interactive-component.component.html'
 })
 export class DotInteractiveComponent {
   // Search state ($ prefix)
@@ -514,12 +510,16 @@ Template — bind to signals with `$` prefix:
 
 ## Performance Patterns
 
-### OnPush Change Detection
+### Change Detection
+
+`OnPush` is the Angular framework default as of v22. Do **not** set `changeDetection` on new components. Components explicitly marked `ChangeDetectionStrategy.Eager` (the opt-in eager mode, renamed from `Default` in v22) keep `Eager` — do not convert them when touching a file for unrelated work. See [Angular: `changeDetectionStrategy`](https://angular.dev/guide/components/advanced-configuration#changedetectionstrategy).
+
+Performance now comes from signal-based state, not from the decorator: signal inputs, `signal()`, and `computed()` mark only the components that actually read a changed value. The decorator below — with no `changeDetection` entry — is complete.
+
 ```typescript
 @Component({
   selector: 'dot-optimized-component',
   imports: [CommonModule],
-  changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './dot-optimized-component.component.html'
 })
 export class DotOptimizedComponent {
@@ -551,8 +551,7 @@ Template:
 @Component({
   selector: 'dot-lazy-container',
   imports: [CommonModule],
-  templateUrl: './dot-lazy-container.component.html',
-  changeDetection: ChangeDetectionStrategy.OnPush
+  templateUrl: './dot-lazy-container.component.html'
 })
 export class DotLazyContainerComponent {
   readonly $activeTab = signal('overview');
@@ -665,7 +664,7 @@ describe('DotMyFeatureComponent', () => {
 ```
 
 ## See also
-- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Syntax, signals, OnPush
+- [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Syntax, signals, change detection defaults
 - [STATE_MANAGEMENT.md](./STATE_MANAGEMENT.md) — NgRx Signal Store for feature state
 - [TESTING_FRONTEND.md](./TESTING_FRONTEND.md) — Spectator, byTestId, setInput
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs

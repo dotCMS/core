@@ -1,8 +1,13 @@
 # Evergreen Tracks — Operator Runbook
 
 Procedures for the three exception operations: **taint a release**, **hold a track**, and
-**hold a single environment**. For the routine "advance standard/trailing" operation see
-[README.md](README.md).
+**hold a single environment**. Routine promotion needs no operator — `standard`/`trailing`
+advance on a daily 06:00 ET cron and `latest` moves on every GA cut; see
+[README.md](README.md) for that and for the manual break-glass dispatch.
+
+Because promotion is unattended, these exception controls are how you intervene: **taint**
+before a bad release can be picked up, **hold** to freeze or reverse a track, and the IaC
+labels to park one environment.
 
 Two systems are involved. Know which one you're touching:
 
@@ -187,7 +192,8 @@ Plus the Argo CD UI (Application = the **customer**, not the env) for Synced / H
 
 | I need to… | Where | Action |
 |---|---|---|
-| Advance standard/trailing fleet-wide | `evergreen-tracks-promote` | dispatch → approve gate |
+| Advance standard/trailing fleet-wide | `evergreen-tracks-promote` | automatic — daily 06:00 ET cron |
+| Advance them off-cycle / review a plan first | `evergreen-tracks-promote` | dispatch → approve gate (break-glass) |
 | Stop any track landing on a bad release | `evergreen-tracks-admin` | `taint` |
 | Freeze a track / pull it off a bad release | `evergreen-tracks-admin` | `hold` |
 | Resume a frozen track | `evergreen-tracks-admin` | `release-hold` |

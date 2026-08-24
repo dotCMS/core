@@ -12,7 +12,8 @@ import {
     inject,
     input,
     output,
-    viewChild
+    viewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { AbstractControl, UntypedFormBuilder, UntypedFormGroup } from '@angular/forms';
 
@@ -33,6 +34,7 @@ import { FieldPropertyService } from '../service';
     selector: 'dot-content-type-fields-properties-form',
     templateUrl: './content-type-fields-properties-form.component.html',
     standalone: false,
+    changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         class: 'block'
     }

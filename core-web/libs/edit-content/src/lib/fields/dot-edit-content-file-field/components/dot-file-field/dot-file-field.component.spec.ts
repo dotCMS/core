@@ -3,6 +3,7 @@ import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
@@ -12,7 +13,8 @@ import {
     DotMessageService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { DotGeneratedAIImage, PromptType } from '@dotcms/dotcms-models';
+import { DotGeneratedAIImage, DotSite, PromptType } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -28,6 +30,14 @@ import { FileFieldStore } from '../../store/file-field.store';
 import { DotFileFieldPreviewComponent } from '../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from '../dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from '../dot-form-file-editor/dot-form-file-editor.component';
+
+/** The AssetPicker needs a site to browse; GlobalStore supplies it. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
 
 describe('DotFileFieldComponent', () => {
     let spectator: Spectator<DotFileFieldComponent>;
@@ -45,6 +55,7 @@ describe('DotFileFieldComponent', () => {
         imports: [ReactiveFormsModule],
         componentMocks: [DotFileFieldPreviewComponent, DotFileFieldUiMessageComponent],
         providers: [
+            mockProvider(GlobalStore, { siteDetails: signal(SITE_MOCK) }),
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),

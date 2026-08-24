@@ -1,6 +1,6 @@
 import { MarkdownComponent } from 'ngx-markdown';
 
-import { Component, input, output } from '@angular/core';
+import { Component, input, output, ChangeDetectionStrategy } from '@angular/core';
 
 import { AvatarModule } from 'primeng/avatar';
 import { BadgeModule } from 'primeng/badge';
@@ -12,6 +12,7 @@ import { DotAvatarDirective, DotColorIconComponent, DotMessagePipe } from '@dotc
 @Component({
     selector: 'dot-apps-card',
     templateUrl: './dot-apps-card.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         AvatarModule,
         BadgeModule,

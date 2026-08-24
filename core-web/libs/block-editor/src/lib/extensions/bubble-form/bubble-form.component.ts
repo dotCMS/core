@@ -5,7 +5,8 @@ import {
     Output,
     QueryList,
     ViewChildren,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 
@@ -15,6 +16,7 @@ import { DynamicControl } from './model';
     selector: 'dot-bubble-form',
     templateUrl: './bubble-form.component.html',
     styleUrls: ['./bubble-form.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class BubbleFormComponent {

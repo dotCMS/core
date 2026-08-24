@@ -1,9 +1,9 @@
 <p-toolbar class="h-full justify-start gap-1 border-none! px-3">
     <div
-        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-y-4 py-3 transition-all duration-300 ease-in-out"
-        [class.gap-x-1]="!$treeExpanded()"
-        [class.gap-x-0]="$treeExpanded()">
-        <dot-content-drive-tree-toggler data-testid="tree-toggler" [style]="$togglerStyles()" />
+        class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-x-1 gap-y-4 py-3 transition-all duration-300 ease-in-out">
+        <!-- Stays put whether the tree is open or closed, the way UVE keeps its palette and
+             quick-edit toggles in the toolbar. -->
+        <dot-content-drive-tree-toggler data-testid="tree-toggler" />
 
         <div
             class="col-start-2 row-start-1 grid w-full grid-cols-[repeat(2,minmax(4.5rem,14rem))_1fr] items-center gap-1">
@@ -11,14 +11,12 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <p-button
+                    <dot-upload-button
                         animate.enter="toolbar-enter"
                         animate.leave="toolbar-leave"
-                        [label]="$uploadLabelKey() | dm"
-                        icon="pi pi-upload"
-                        [outlined]="true"
+                        [defaultBaseType]="$uploadBaseType()"
                         data-testid="upload-asset-button"
-                        (click)="$upload.emit($event)" />
+                        (upload)="$upload.emit($event)" />
 
                     <p-button
                         animate.enter="toolbar-enter"
@@ -41,10 +39,14 @@
                         data-testid="workflow-actions" />
 
                     @if ($displayActionCenter()) {
+                        <!-- Refused outright during a run: the dialog would open with every row
+                             disabled and then close itself when the run settled. -->
                         <p-button
                             animate.enter="toolbar-enter"
                             animate.leave="toolbar-leave"
                             [label]="'content-drive.action-center.header' | dm"
+                            [disabled]="!!$actionExecution()"
+                            [pTooltip]="$actionCenterTooltip() | dm"
                             data-testid="action-center-button"
                             (click)="onOpenActionCenter()" />
                     }
@@ -53,6 +55,9 @@
         </div>
 
         <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
+            <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
+                 precondition for the filters that narrow within them. -->
+            <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
@@ -74,6 +79,22 @@
                     size="small"
                     (click)="onClearAll()"
                     data-testid="clear-all-filters" />
+            }
+
+            <!-- Sits at the end of the filter row rather than beside the search box: during a run the
+                 selection still stands, so the row above is occupied by the workflow-action buttons.
+                 `ml-auto` keeps it right-aligned as filter chips come and go. -->
+            @if ($actionExecution()) {
+                <div
+                    class="ml-auto flex items-center gap-2 text-sm text-gray-700"
+                    animate.enter="toolbar-enter"
+                    animate.leave="toolbar-leave"
+                    role="status"
+                    aria-live="polite"
+                    data-testid="action-execution-indicator">
+                    <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
+                    <span [innerHTML]="$actionExecutionLabel()"></span>
+                </div>
             }
         </div>
     </div>
