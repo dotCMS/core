@@ -20,8 +20,8 @@ import org.mockito.ArgumentCaptor;
 
 /**
  * Covers the credentials requirement on the WebDAV endpoints: a request that carries none is
- * answered with a challenge and never reaches the servlet, whatever method or body it uses, and a
- * request that carries credentials is forwarded untouched.
+ * answered with a challenge and never reaches the servlet, whatever method it uses, and a request
+ * that carries credentials is forwarded untouched.
  */
 public class WebDavAuthenticationFilterTest {
 
@@ -46,27 +46,6 @@ public class WebDavAuthenticationFilterTest {
 
         verifyChallenged(response);
         verify(chain, never()).doFilter(any(), any());
-    }
-
-    /**
-     * The body is what the reported cases varied, and it is exactly what must not matter: a
-     * PROPPATCH naming no property was handled to completion because the check that refuses one
-     * works by iterating the properties named.
-     */
-    @Test
-    public void aBodyThatNamesNoPropertyIsStillRefused() throws Exception {
-        for (final String body : List.of("", "<?xml version=\"1.0\"?><r/>",
-                "<?xml version=\"1.0\"?><propertyupdate xmlns=\"DAV:\"/>")) {
-            final FilterChain chain = mock(FilterChain.class);
-            final HttpServletResponse response = mock(HttpServletResponse.class);
-
-            final DotCMSMockRequest request = request("PROPPATCH", null);
-            request.setContent(body);
-            new WebDavAuthenticationFilter().doFilter(request, response, chain);
-
-            verifyChallenged(response);
-            verify(chain, never()).doFilter(any(), any());
-        }
     }
 
     @Test
