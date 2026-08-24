@@ -26,22 +26,7 @@ export interface DotPushHistoryIframeDialogData {
 @Component({
     selector: 'dot-push-history-iframe-dialog',
     imports: [DotMessagePipe],
-    template: `
-        @let src = $iframeSrc();
-
-        @if (src) {
-            <iframe
-                [src]="src"
-                class="block w-full border-none"
-                [style.min-height]="$minHeight()"
-                [attr.title]="'publisher_push_history' | dm"
-                data-testid="push-history-iframe"></iframe>
-        } @else {
-            <p class="text-500 m-0 p-3" data-testid="push-history-empty">
-                {{ 'dot.push-history.iframe.dialog.no-asset' | dm }}
-            </p>
-        }
-    `,
+    templateUrl: './dot-push-history-iframe-dialog.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotPushHistoryIframeDialogComponent {

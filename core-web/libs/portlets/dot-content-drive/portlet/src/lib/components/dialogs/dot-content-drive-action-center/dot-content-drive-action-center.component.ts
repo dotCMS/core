@@ -25,7 +25,6 @@ import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBundle,
-    DotCMSContentlet,
     DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
@@ -925,7 +924,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /** Tracks the preview's checked rows, keeping the dialog header's count in step. */
-    protected onIncludedItemsChange(items: DotCMSContentlet[]): void {
+    protected onIncludedItemsChange(items: DotContentDriveItem[]): void {
         this.$includedItems.set(items);
 
         const quickAction = this.$pendingQuickAction();
