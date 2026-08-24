@@ -5,10 +5,10 @@
             class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
-            {{ SOCIAL_MEDIA_TILES[socialMedia]?.label }}
+            {{ tile?.label }}
         </h5>
         <span class="dot-select-seo-tool__details" data-testId="select-seo-tool-details">
-            {{ SOCIAL_MEDIA_TILES[socialMedia]?.description | dm }}
+            {{ tile?.description | dm }}
         </span>
     </div>
 } @else {
