@@ -48,6 +48,14 @@ process artifact**:
 
 The never-commit set is enforced by `.gitignore` (`specs/*/tasks.md`, `specs/*/checklists/`).
 
+**`.specify/feature.json` is never committed either.** It is not a spec artifact — it is a
+per-developer pointer to the feature *you* are currently on, rewritten by `/speckit-specify` and
+read by `get_feature_paths()` so the downstream commands can find the spec folder without relying
+on branch naming. Committing it would aim every teammate's next `/speckit-plan` at whatever feature
+last merged, and two concurrent feature branches would conflict on its single line every time. It is
+gitignored for that reason. To point the commands at a feature explicitly, set
+`SPECIFY_FEATURE_DIRECTORY` instead — it takes precedence over the file.
+
 ### Why this changed (2026-08-24)
 
 The original policy kept `plan.md`, `research.md` and `quickstart.md` local too, on the
