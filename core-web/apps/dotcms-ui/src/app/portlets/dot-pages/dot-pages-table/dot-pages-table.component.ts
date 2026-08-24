@@ -19,7 +19,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
@@ -28,6 +28,7 @@ import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
+import { TableLazyLoadEvent, TableRowSelectEvent } from 'primeng/types/table';
 
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
@@ -47,10 +48,6 @@ type LanguageOption = {
     label: string;
     /** Null on the "All" row, which is how the table spells "no language filter". */
     value: string | number | null;
-};
-
-type TableRowSelectEvent<T> = {
-    data: T;
 };
 
 @Component({
@@ -124,7 +121,7 @@ export class DotPagesTableComponent {
     /** Emits whether archived pages should be shown */
     readonly archivedChange = output<boolean>();
     /** Emits PrimeNG lazy load event (pagination + sort changes) */
-    readonly lazyLoad = output<LazyLoadEvent>();
+    readonly lazyLoad = output<TableLazyLoadEvent>();
 
     /** Whether the lazy load event has been emitted. */
     readonly #didEmitLazyLoad = signal<boolean>(false);
@@ -201,7 +198,7 @@ export class DotPagesTableComponent {
      *
      * @param {LazyLoadEvent} event - PrimeNG table lazy-load event
      */
-    loadPagesLazy(event: LazyLoadEvent): void {
+    loadPagesLazy(event: TableLazyLoadEvent): void {
         // PrimeNG emits an initial lazy-load event on init; skip the first emission
         // to avoid duplicate loads when the parent already fetches on init.
         if (!this.#didEmitLazyLoad()) {
@@ -217,7 +214,15 @@ export class DotPagesTableComponent {
      * @param {TableRowSelectEvent<DotCMSContentlet>} event - PrimeNG row select event
      */
     onRowSelect(event: TableRowSelectEvent<DotCMSContentlet>): void {
-        const data = event?.data as DotCMSContentlet & {
+        // `data` is optional and may be an array on PrimeNG's real event; single-row selection
+        // is the only mode this table uses.
+        const selected = Array.isArray(event?.data) ? event.data[0] : event?.data;
+
+        if (!selected) {
+            return;
+        }
+
+        const data = selected as DotCMSContentlet & {
             url?: string;
             urlMap?: string;
             languageId?: string | number;

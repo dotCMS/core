@@ -11,7 +11,7 @@ import {
 
 import { computed, inject } from '@angular/core';
 
-import { LazyLoadEvent } from 'primeng/api';
+import { TableLazyLoadEvent } from 'primeng/types/table';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
 import {
@@ -133,13 +133,13 @@ const withPagesBase = () =>
                 searchPages: (search: string) => {
                     fetchPages({ search, offset: 0 });
                 },
-                filterByLanguage: (languageId: number) => {
+                filterByLanguage: (languageId: number | null) => {
                     fetchPages({ languageId, offset: 0 });
                 },
                 filterByArchived: (archived: boolean) => {
                     fetchPages({ archived, offset: 0 });
                 },
-                onLazyLoad: (event: LazyLoadEvent) => {
+                onLazyLoad: (event: TableLazyLoadEvent) => {
                     const { first, sortField, sortOrder } = event;
                     const offset = Math.max(0, first ?? 0);
                     const sort = sortField

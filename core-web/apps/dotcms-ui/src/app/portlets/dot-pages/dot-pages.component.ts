@@ -12,11 +12,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TieredMenu } from 'primeng/tieredmenu';
+import { TableLazyLoadEvent } from 'primeng/types/table';
 
 import { take } from 'rxjs/operators';
 
@@ -202,7 +203,7 @@ export class DotPagesComponent {
      * @param {number} languageId
      * @memberof DotPagesComponent
      */
-    protected onLanguageChange(languageId: number): void {
+    protected onLanguageChange(languageId: number | null): void {
         this.#dotCMSPagesStore.filterByLanguage(languageId);
     }
 
@@ -219,10 +220,10 @@ export class DotPagesComponent {
     /**
      * Lazy load pages
      *
-     * @param {LazyLoadEvent} event
+     * @param {TableLazyLoadEvent} event
      * @memberof DotPagesComponent
      */
-    protected onLazyLoad(event: LazyLoadEvent): void {
+    protected onLazyLoad(event: TableLazyLoadEvent): void {
         this.#dotCMSPagesStore.onLazyLoad(event);
     }
 
