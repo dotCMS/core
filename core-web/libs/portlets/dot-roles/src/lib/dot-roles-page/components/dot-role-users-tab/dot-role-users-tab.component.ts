@@ -15,7 +15,7 @@ import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, debounceTime, distinctUntilChanged, switchMap, tap } from 'rxjs/operators';
+import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -103,10 +103,13 @@ export class DotRoleUsersTabComponent {
 
         // `catchError → of([])` keeps the outer subscription alive after a
         // failed request so the next keystroke still triggers a search.
+        // No `distinctUntilChanged` — reopening the popover pushes `''`
+        // again on purpose so the seed fetch runs every time (otherwise the
+        // pipeline stalls at the second open and the skeleton is permanent).
+        // `debounceTime` alone still coalesces keystrokes.
         this.#userSearchInput$
             .pipe(
                 debounceTime(300),
-                distinctUntilChanged(),
                 tap(() => this.$suggestionsLoading.set(true)),
                 switchMap((query) =>
                     this.#service.searchUsers(query).pipe(
@@ -132,8 +135,16 @@ export class DotRoleUsersTabComponent {
         });
     }
 
-    /** Seeds the popover with the first page of users before the admin types. */
+    // Seeds the popover with the first page of users before the admin types.
+    // `$suggestionsLoading` is flipped ON synchronously so the skeleton
+    // shows immediately — the pipeline `tap` that sets it only fires after
+    // the 300ms debounce, which would otherwise leave the empty-state
+    // flashing before the initial fetch resolves. `$userSuggestions` is
+    // reset so any leftover list from a previous open doesn't render
+    // stale rows underneath the skeleton.
     protected onGrantPanelShow(): void {
+        this.$suggestionsLoading.set(true);
+        this.$userSuggestions.set([]);
         this.#userSearchInput$.next('');
     }
 
