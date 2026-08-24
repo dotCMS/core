@@ -356,11 +356,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     private readonly EXTRA_COL_PAD_CH = 3;
     /**
-     * Room a sortable header needs for its sort indicator, on top of its label. Measured in the
-     * rendered portlet: the icon plus the space before it is ~23px against a `1ch` of 8.67px in the
-     * header font, so 3 covers it. Without it, the estimate for a header like "Bool Radio" landed at
-     * 112.7px against a 113px need, short by a hair, which is all it takes to spill into the next
-     * header since nothing clips it.
+     * Room a header needs for its sort indicator, on top of its label.
+     *
+     * Measured in the rendered portlet: the icon plus the space before it is ~23px against a `1ch` of
+     * 8.67px in the header font, so 3 covers it. Without it, the estimate for a header like "Bool
+     * Radio" landed at 112.7px against a 113px need, short by a hair, which is all it takes to spill
+     * into the next header since nothing clips it.
+     *
+     * Reserved only when the icon is actually drawn. The template gates it on
+     * `sortable && !readOnly`, so keying this off `sortable` alone reserved width nothing rendered
+     * into whenever a read-only table carried extra columns.
      */
     private readonly EXTRA_COL_SORT_ICON_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
@@ -414,10 +419,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      */
     protected readonly $sizedExtraColumns = computed<DotFolderListViewColumn[]>(() => {
         const items = this.$items();
+        // Read unconditionally so this stays a dependency even when no extra column is sortable, and
+        // resolved here rather than inside the resolver so the width is derived from what the header
+        // actually renders: the template draws a sort icon only for `sortable && !readOnly`.
+        const readOnly = this.$readOnly();
 
         return this.$safeExtraColumns().map((column) => ({
             ...column,
-            width: this.#resolveExtraColumnWidth(column, items)
+            width: this.#resolveExtraColumnWidth(column, items, !!column.sortable && !readOnly)
         }));
     });
 
@@ -608,10 +617,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * per-type width as a floor, widening to the header when the header needs more. Average (not max)
      * keeps one long outlier from blowing the column out; overflow truncates in the cells and the
      * table scrolls horizontally.
+     *
+     * `showsSortIcon` says whether this header will draw a sort indicator, so the room for one is
+     * reserved only when it will be used.
      */
     #resolveExtraColumnWidth(
         column: DotFolderListViewColumn,
-        items: DotContentDriveItem[]
+        items: DotContentDriveItem[],
+        showsSortIcon: boolean
     ): string {
         if (column.width) {
             return column.width;
@@ -648,7 +661,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             Math.max(
                 Math.max(column.header?.length ?? 0, contentLength) +
                     this.EXTRA_COL_PAD_CH +
-                    (column.sortable ? this.EXTRA_COL_SORT_ICON_CH : 0),
+                    (showsSortIcon ? this.EXTRA_COL_SORT_ICON_CH : 0),
                 hasTypeFloor ? typeFloor : this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH

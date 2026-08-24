@@ -2849,6 +2849,32 @@ describe('DotFolderListViewComponent', () => {
             expect(parseInt(width ?? '0', 10)).toBeLessThanOrEqual(32);
         });
 
+        it('should not reserve sort-indicator room when the header cannot render one', () => {
+            // The header only draws a sort icon for `column.sortable && !readOnly()`, so a read-only
+            // table reserving room for one is width nothing renders into. Reachable the moment a
+            // caller combines read-only with extra columns; today none does, which is why this is a
+            // reservation bug rather than a visible one.
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool Radio', order: 0, type: 'boolean', sortable: true }
+            ]);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(headerByLabel('Bool Radio')?.style.width).toBe('13ch');
+        });
+
+        it('should reserve sort-indicator room again once the table is not read-only', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool Radio', order: 0, type: 'boolean', sortable: true }
+            ]);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            spectator.setInput('readOnly', false);
+            spectator.detectChanges();
+
+            expect(headerByLabel('Bool Radio')?.style.width).toBe('16ch');
+        });
+
         it('should keep the compact fixed width for a short boolean header', () => {
             spectator.setInput('extraColumns', [
                 { field: 'myBool', header: 'On', order: 0, type: 'boolean' }
