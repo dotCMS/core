@@ -14,7 +14,21 @@ const SCRIPT_PATH = path.resolve(
 // Pin "now" to a fixed UTC Monday so weekday counting is deterministic
 // regardless of when the test is run. Monday 2026-05-25 13:00 UTC.
 const FIXED_NOW = Date.UTC(2026, 4, 25, 13, 0, 0);
-Date.now = () => FIXED_NOW;
+// Freeze the whole Date constructor, not just Date.now(). find-stuck-issues.js
+// reads the clock via `new Date()` (line 73), which ignores a Date.now() stub —
+// so pinning only Date.now left the fixtures frozen while the script kept using
+// the real clock, and every fixture aged past STUCK_DAYS once the real date
+// drifted past FIXED_NOW.
+const RealDate = Date;
+class MockDate extends RealDate {
+  constructor(...args) {
+    super(...(args.length ? args : [FIXED_NOW]));
+  }
+  static now() {
+    return FIXED_NOW;
+  }
+}
+global.Date = MockDate;
 const now = Date.now();
 const daysAgo = (n) => new Date(now - n * 24 * 60 * 60 * 1000).toISOString();
 
@@ -226,7 +240,8 @@ async function testTeamWithoutSlackChannelIgnored() {
   // silently ignore issues that only carry that team's label.
   const fs = require('fs');
   const os = require('os');
-  const tmp = path.join(os.tmpdir(), `triage-${Date.now()}.json`);
+  // RealDate/pid, not the frozen Date.now(), so the temp name stays unique.
+  const tmp = path.join(os.tmpdir(), `triage-${RealDate.now()}-${process.pid}.json`);
   fs.writeFileSync(
     tmp,
     JSON.stringify({
