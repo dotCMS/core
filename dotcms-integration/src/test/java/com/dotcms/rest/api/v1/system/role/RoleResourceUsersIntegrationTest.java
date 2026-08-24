@@ -15,12 +15,15 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -30,8 +33,14 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * Integration tests for {@code GET /v1/roles/{roleId}/users}: the paginated list of users
+ * Integration tests for {@code GET /v1/roles/{roleid}/users}: the paginated list of users
  * directly granted a role. See https://github.com/dotCMS/core/issues/37070
+ *
+ * Created roles and users are tracked and removed once in {@link #cleanUp()} instead of
+ * per-test: every role deletion clears the global role cache (and user deletion cascades
+ * through the user's own role), which can race the REST auth check of the next test in the
+ * class and surface as a spurious 401. Class-level cleanup leaves the suite just as clean
+ * without interleaving deletions between REST calls.
  *
  * @author hassandotcms
  */
@@ -41,12 +50,33 @@ public class RoleResourceUsersIntegrationTest {
     static RoleResource resource;
     static RoleAPI roleAPI;
 
+    private static final List<Role> rolesToClean = new ArrayList<>();
+    private static final List<User> usersToClean = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         resource = new RoleResource();
         roleAPI = APILocator.getRoleAPI();
         response = new MockHttpResponse();
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        usersToClean.forEach(UserDataGen::remove);
+        // children were created after their parents, so remove in reverse creation order
+        Collections.reverse(rolesToClean);
+        rolesToClean.forEach(RoleDataGen::remove);
+    }
+
+    private static Role track(final Role role) {
+        rolesToClean.add(role);
+        return role;
+    }
+
+    private static User track(final User user) {
+        usersToClean.add(user);
+        return user;
     }
 
     private static MockSessionRequest baseRequest() {
@@ -84,9 +114,9 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test
     public void directGrants_returnUserDetailFields() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User userA = new UserDataGen().roles(role).nextPersisted();
-        final User userB = new UserDataGen().roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User userA = track(new UserDataGen().roles(role).nextPersisted());
+        final User userB = track(new UserDataGen().roles(role).nextPersisted());
 
         final ResponseEntityPaginatedDataView view = loadUsers(role.getId(), null, 1, 40);
         assertEquals(2, view.getPagination().getTotalEntries());
@@ -104,8 +134,8 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test
     public void keylessRole_returnsUsers() throws Exception {
-        final Role keylessRole = new RoleDataGen().key(null).nextPersisted();
-        final User granted = new UserDataGen().roles(keylessRole).nextPersisted();
+        final Role keylessRole = track(new RoleDataGen().key(null).nextPersisted());
+        final User granted = track(new UserDataGen().roles(keylessRole).nextPersisted());
 
         final ResponseEntityPaginatedDataView view = loadUsers(keylessRole.getId(), null, 1, 40);
         assertEquals(1, view.getPagination().getTotalEntries());
@@ -118,9 +148,9 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test
     public void ancestorGrants_notIncluded() throws Exception {
-        final Role parent = new RoleDataGen().nextPersisted();
-        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        new UserDataGen().roles(parent).nextPersisted();
+        final Role parent = track(new RoleDataGen().nextPersisted());
+        final Role child = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        track(new UserDataGen().roles(parent).nextPersisted());
 
         final ResponseEntityPaginatedDataView view = loadUsers(child.getId(), null, 1, 40);
         assertEquals(0, view.getPagination().getTotalEntries());
@@ -133,7 +163,7 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test
     public void userRole_returnsSelfGrant() throws Exception {
-        final User user = new UserDataGen().nextPersisted();
+        final User user = track(new UserDataGen().nextPersisted());
         final Role userRole = roleAPI.getUserRole(user);
 
         final ResponseEntityPaginatedDataView view = loadUsers(userRole.getId(), null, 1, 40);
@@ -147,10 +177,10 @@ public class RoleResourceUsersIntegrationTest {
     @Test
     public void filter_matchesNameAndEmail() throws Exception {
         final String unique = "roleusers" + System.currentTimeMillis();
-        final Role role = new RoleDataGen().nextPersisted();
-        final User byName = new UserDataGen().firstName(unique + "Alpha").roles(role).nextPersisted();
-        final User byEmail = new UserDataGen()
-                .emailAddress(unique + "beta@filter.test").roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User byName = track(new UserDataGen().firstName(unique + "Alpha").roles(role).nextPersisted());
+        final User byEmail = track(new UserDataGen()
+                .emailAddress(unique + "beta@filter.test").roles(role).nextPersisted());
 
         final List<String> nameMatches = userIds(loadUsers(role.getId(), unique + "Alpha", 1, 40));
         assertEquals(List.of(byName.getUserId()), nameMatches);
@@ -166,9 +196,9 @@ public class RoleResourceUsersIntegrationTest {
     @Test
     public void direction_ordersTheListing() throws Exception {
         final String unique = "roleorder" + System.currentTimeMillis();
-        final Role role = new RoleDataGen().nextPersisted();
-        final User first = new UserDataGen().firstName("Aaa" + unique).roles(role).nextPersisted();
-        final User last = new UserDataGen().firstName("Zzz" + unique).roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User first = track(new UserDataGen().firstName("Aaa" + unique).roles(role).nextPersisted());
+        final User last = track(new UserDataGen().firstName("Zzz" + unique).roles(role).nextPersisted());
 
         final List<String> ascending = userIds(resource.loadUsersByRoleId(mockAdminRequest(),
                 new MockHttpResponse(), role.getId(), unique, 1, 40, null, "ASC"));
@@ -186,10 +216,10 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test
     public void pagination_boundaries() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        new UserDataGen().roles(role).nextPersisted();
-        new UserDataGen().roles(role).nextPersisted();
-        new UserDataGen().roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        track(new UserDataGen().roles(role).nextPersisted());
+        track(new UserDataGen().roles(role).nextPersisted());
+        track(new UserDataGen().roles(role).nextPersisted());
 
         final ResponseEntityPaginatedDataView firstPage = loadUsers(role.getId(), null, 1, 2);
         assertEquals(2, users(firstPage).size());
@@ -216,9 +246,9 @@ public class RoleResourceUsersIntegrationTest {
      */
     @Test(expected = com.dotcms.rest.exception.SecurityException.class)
     public void backendUserWithoutRolesPortlet_isRejected() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User limited = new UserDataGen()
-                .roles(roleAPI.loadBackEndUserRole()).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User limited = track(new UserDataGen()
+                .roles(roleAPI.loadBackEndUserRole()).nextPersisted());
 
         final MockSessionRequest request = baseRequest();
         request.getSession().setAttribute(

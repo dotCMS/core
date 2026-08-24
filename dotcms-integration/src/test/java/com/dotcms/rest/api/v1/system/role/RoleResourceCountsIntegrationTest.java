@@ -15,13 +15,16 @@ import com.dotmarketing.business.RoleAPI;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.liferay.portal.model.User;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
@@ -35,6 +38,12 @@ import static org.junit.Assert.assertTrue;
  * and the backing {@link RoleAPI#countUsersByRoleIds(java.util.Collection)} aggregate.
  * See https://github.com/dotCMS/core/issues/37071
  *
+ * Created roles and users are tracked and removed once in {@link #cleanUp()} instead of
+ * per-test: every role deletion clears the global role cache (and user deletion cascades
+ * through the user's own role), which can race the REST auth check of the next test in the
+ * class and surface as a spurious 401. Class-level cleanup leaves the suite just as clean
+ * without interleaving deletions between REST calls.
+ *
  * @author hassandotcms
  */
 public class RoleResourceCountsIntegrationTest {
@@ -43,12 +52,33 @@ public class RoleResourceCountsIntegrationTest {
     static RoleResource resource;
     static RoleAPI roleAPI;
 
+    private static final List<Role> rolesToClean = new ArrayList<>();
+    private static final List<User> usersToClean = new ArrayList<>();
+
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         resource = new RoleResource();
         roleAPI = APILocator.getRoleAPI();
         response = new MockHttpResponse();
+    }
+
+    @AfterClass
+    public static void cleanUp() {
+        usersToClean.forEach(UserDataGen::remove);
+        // children were created after their parents, so remove in reverse creation order
+        Collections.reverse(rolesToClean);
+        rolesToClean.forEach(RoleDataGen::remove);
+    }
+
+    private static Role track(final Role role) {
+        rolesToClean.add(role);
+        return role;
+    }
+
+    private static User track(final User user) {
+        usersToClean.add(user);
+        return user;
     }
 
     private static HttpServletRequest mockAdminRequest() {
@@ -80,10 +110,10 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void childCount_matchesDirectChildren() throws Exception {
-        final Role parent = new RoleDataGen().nextPersisted();
-        final Role childA = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        final Role childB = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        final Role childC = new RoleDataGen().parent(parent.getId()).nextPersisted();
+        final Role parent = track(new RoleDataGen().nextPersisted());
+        final Role childA = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        final Role childB = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        final Role childC = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
 
         final RoleView withChildren = loadRoleView(parent.getId(), true);
         assertEquals(3, withChildren.getChildCount());
@@ -105,9 +135,9 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void userCount_matchesDirectGrants() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User userA = new UserDataGen().roles(role).nextPersisted();
-        final User userB = new UserDataGen().roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User userA = track(new UserDataGen().roles(role).nextPersisted());
+        final User userB = track(new UserDataGen().roles(role).nextPersisted());
 
         assertNotNull(userA);
         assertNotNull(userB);
@@ -120,16 +150,16 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void userCount_excludesInheritedGrants() throws Exception {
-        final Role parent = new RoleDataGen().nextPersisted();
-        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        final User parentUser = new UserDataGen().roles(parent).nextPersisted();
+        final Role parent = track(new RoleDataGen().nextPersisted());
+        final Role child = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        final User parentUser = track(new UserDataGen().roles(parent).nextPersisted());
         assertNotNull(parentUser);
 
         assertEquals(1, loadRoleView(parent.getId(), false).getUserCount());
         assertEquals("a grant on the parent must not count for the child",
                 0, loadRoleView(child.getId(), false).getUserCount());
 
-        final User childUser = new UserDataGen().roles(child).nextPersisted();
+        final User childUser = track(new UserDataGen().roles(child).nextPersisted());
         assertNotNull(childUser);
         assertEquals("a grant on the child must not count for the parent",
                 1, loadRoleView(parent.getId(), false).getUserCount());
@@ -141,7 +171,7 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void counts_zeroForEmptyRole() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
         final RoleView view = loadRoleView(role.getId(), true);
         assertEquals(0, view.getChildCount());
         assertEquals(0, view.getUserCount());
@@ -152,10 +182,10 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void childViews_carryTheirOwnCounts() throws Exception {
-        final Role parent = new RoleDataGen().nextPersisted();
-        final Role child = new RoleDataGen().parent(parent.getId()).nextPersisted();
-        final Role grandChild = new RoleDataGen().parent(child.getId()).nextPersisted();
-        final User childUser = new UserDataGen().roles(child).nextPersisted();
+        final Role parent = track(new RoleDataGen().nextPersisted());
+        final Role child = track(new RoleDataGen().parent(parent.getId()).nextPersisted());
+        final Role grandChild = track(new RoleDataGen().parent(child.getId()).nextPersisted());
+        final User childUser = track(new UserDataGen().roles(child).nextPersisted());
         assertNotNull(grandChild);
         assertNotNull(childUser);
 
@@ -172,9 +202,9 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void loadRootRoles_carriesCounts() throws Exception {
-        final Role rootRole = new RoleDataGen().nextPersisted();
-        final Role child = new RoleDataGen().parent(rootRole.getId()).nextPersisted();
-        final User granted = new UserDataGen().roles(rootRole).nextPersisted();
+        final Role rootRole = track(new RoleDataGen().nextPersisted());
+        final Role child = track(new RoleDataGen().parent(rootRole.getId()).nextPersisted());
+        final User granted = track(new UserDataGen().roles(rootRole).nextPersisted());
         assertNotNull(child);
         assertNotNull(granted);
 
@@ -192,13 +222,14 @@ public class RoleResourceCountsIntegrationTest {
 
     /**
      * The roles-of-a-user listing carries both fields; the user's own user-role
-     * reports exactly one direct grant (the creation-time self-grant).
+     * reports exactly one direct grant (the creation-time self-grant), and roles
+     * returned by loadRolesForUser carry a hydrated childCount.
      */
     @Test
     public void loadUserRoles_carriesCounts() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        final Role child = new RoleDataGen().parent(role.getId()).nextPersisted();
-        final User user = new UserDataGen().roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final Role child = track(new RoleDataGen().parent(role.getId()).nextPersisted());
+        final User user = track(new UserDataGen().roles(role).nextPersisted());
         final Role userRole = roleAPI.getUserRole(user);
         assertNotNull(child);
 
@@ -230,24 +261,30 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void userCount_matchesVisibleUsersOnly() throws Exception {
-        final Role role = new RoleDataGen().nextPersisted();
-        final User visible = new UserDataGen().roles(role).nextPersisted();
-        final User deleting = new UserDataGen().roles(role).nextPersisted();
+        final Role role = track(new RoleDataGen().nextPersisted());
+        final User visible = track(new UserDataGen().roles(role).nextPersisted());
+        final User deleting = track(new UserDataGen().roles(role).nextPersisted());
         roleAPI.addRoleToUser(role, APILocator.systemUser());
         new DotConnect().setSQL("update user_ set delete_in_progress = "
                         + DbConnectionFactory.getDBTrue() + " where userid = ?")
                 .addParam(deleting.getUserId()).loadResult();
+        try {
+            assertEquals("hidden users must not be counted",
+                    1, loadRoleView(role.getId(), false).getUserCount());
 
-        assertEquals("hidden users must not be counted",
-                1, loadRoleView(role.getId(), false).getUserCount());
-
-        final ResponseEntityPaginatedDataView usersView = resource.loadUsersByRoleId(
-                mockAdminRequest(), new MockHttpResponse(), role.getId(),
-                null, 1, 40, null, "ASC");
-        assertEquals("the badge must equal the users listing total",
-                (long) loadRoleView(role.getId(), false).getUserCount(),
-                usersView.getPagination().getTotalEntries());
-        assertNotNull(visible);
+            final ResponseEntityPaginatedDataView usersView = resource.loadUsersByRoleId(
+                    mockAdminRequest(), new MockHttpResponse(), role.getId(),
+                    null, 1, 40, null, "ASC");
+            assertEquals("the badge must equal the users listing total",
+                    (long) loadRoleView(role.getId(), false).getUserCount(),
+                    usersView.getPagination().getTotalEntries());
+            assertNotNull(visible);
+        } finally {
+            // reset the flag so the class-level cleanup can remove this user normally
+            new DotConnect().setSQL("update user_ set delete_in_progress = "
+                            + DbConnectionFactory.getDBFalse() + " where userid = ?")
+                    .addParam(deleting.getUserId()).loadResult();
+        }
     }
 
     /**
@@ -260,8 +297,9 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void countUsersByRoleIds_hostileIdsAreInert() throws Exception {
-        final Role legit = new RoleDataGen().nextPersisted();
-        new UserDataGen().roles(legit).nextPersisted();
+        final Role legit = track(new RoleDataGen().nextPersisted());
+        final User granted = track(new UserDataGen().roles(legit).nextPersisted());
+        assertNotNull(granted);
 
         final Map<String, Integer> counts = roleAPI.countUsersByRoleIds(List.of(
                 "'; drop table users_cms_roles; --",
@@ -285,12 +323,12 @@ public class RoleResourceCountsIntegrationTest {
      */
     @Test
     public void countUsersByRoleIds_batchesCorrectly() throws Exception {
-        final Role grantedTwice = new RoleDataGen().nextPersisted();
-        final Role grantedOnce = new RoleDataGen().nextPersisted();
-        final Role neverGranted = new RoleDataGen().nextPersisted();
-        new UserDataGen().roles(grantedTwice).nextPersisted();
-        new UserDataGen().roles(grantedTwice).nextPersisted();
-        new UserDataGen().roles(grantedOnce).nextPersisted();
+        final Role grantedTwice = track(new RoleDataGen().nextPersisted());
+        final Role grantedOnce = track(new RoleDataGen().nextPersisted());
+        final Role neverGranted = track(new RoleDataGen().nextPersisted());
+        track(new UserDataGen().roles(grantedTwice).nextPersisted());
+        track(new UserDataGen().roles(grantedTwice).nextPersisted());
+        track(new UserDataGen().roles(grantedOnce).nextPersisted());
 
         final Map<String, Integer> counts = roleAPI.countUsersByRoleIds(
                 List.of(grantedTwice.getId(), grantedOnce.getId(), neverGranted.getId()));

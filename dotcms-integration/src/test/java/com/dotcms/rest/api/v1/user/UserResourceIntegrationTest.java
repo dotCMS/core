@@ -28,12 +28,14 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -45,6 +47,18 @@ public class UserResourceIntegrationTest {
     static User user;
     static Host host;
     static User adminUser;
+
+    // Fixtures from the roleKey filter tests, removed once after the class: deleting
+    // roles/users between tests clears the global role cache and can race the next
+    // test's REST auth check into a spurious 401.
+    private static final List<Role> rolesToClean = new ArrayList<>();
+    private static final List<User> usersToClean = new ArrayList<>();
+
+    @AfterClass
+    public static void cleanUpFilterFixtures() {
+        usersToClean.forEach(UserDataGen::remove);
+        rolesToClean.forEach(RoleDataGen::remove);
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -142,6 +156,9 @@ public class UserResourceIntegrationTest {
         final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
         final User granted = new UserDataGen().firstName(unique).roles(role).nextPersisted();
         final User notGranted = new UserDataGen().firstName(unique).nextPersisted();
+        rolesToClean.add(role);
+        usersToClean.add(granted);
+        usersToClean.add(notGranted);
 
         final List<String> userIds = filterUserIdsByRoleKeys(unique, List.of(role.getRoleKey()));
         assertTrue("granted user must be returned", userIds.contains(granted.getUserId()));
@@ -162,6 +179,10 @@ public class UserResourceIntegrationTest {
         final Role roleB = new RoleDataGen().key(unique + "B").nextPersisted();
         final User userA = new UserDataGen().firstName(unique).roles(roleA).nextPersisted();
         final User userB = new UserDataGen().firstName(unique).roles(roleB).nextPersisted();
+        rolesToClean.add(roleA);
+        rolesToClean.add(roleB);
+        usersToClean.add(userA);
+        usersToClean.add(userB);
 
         final List<String> userIds = filterUserIdsByRoleKeys(unique,
                 List.of(roleA.getRoleKey(), roleB.getRoleKey()));
