@@ -1,9 +1,8 @@
 {
     "compilerOptions": {
-        "baseUrl": "../..",
         "paths": {
-            "@dotcms/dotcms-models": ["libs/dotcms-models/src/index.ts"],
-            "@dotcms/dotcms-models/*": ["libs/dotcms-models/src/*"]
+            "@dotcms/dotcms-models": ["../../libs/dotcms-models/src/index.ts"],
+            "@dotcms/dotcms-models/*": ["../../libs/dotcms-models/src/*"]
         },
         "allowSyntheticDefaultImports": true,
         "allowUnreachableCode": false,
@@ -19,21 +18,10 @@
         "noPropertyAccessFromIndexSignature": true,
         "noImplicitReturns": true,
         "noFallthroughCasesInSwitch": true,
-        //
-        // Do NOT add `"ignoreDeprecations": "6.0"` here: Stencil bundles TypeScript 5.8.3, which
-        // only accepts "5.0" and fails the build with `Invalid value for '--ignoreDeprecations'`.
-        // No single value satisfies both compilers, so this stays on the CLI.
-        //
-        // ⚠️ Measuring this project WITHOUT that flag silently reports nothing. The repo's tsc
-        // is 6.0.3 and raises TS5101 (`baseUrl`) and TS5107 (`moduleResolution=node10`) for the
-        // deprecated options below — and, like TS2688 and TS6053, a config-level error aborts
-        // the compiler before semantic checking. You get 2 errors and zero type checking. Always
-        // type-check this project with:
-        //   pnpm exec tsc -p libs/dotcms-webcomponents/tsconfig.json --noEmit --ignoreDeprecations 6.0
         "esModuleInterop": true,
         "experimentalDecorators": true,
         "lib": ["dom", "es2015"],
-        "moduleResolution": "node",
+        "moduleResolution": "bundler",
         "module": "esnext",
         "target": "es2017",
         "noUnusedLocals": true,

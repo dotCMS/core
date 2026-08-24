@@ -4,8 +4,8 @@
         "esModuleInterop": true,
         "resolveJsonModule": true,
         "target": "es2017",
-        "module": "commonjs",
-        "moduleResolution": "node",
+        "module": "preserve",
+        "moduleResolution": "bundler",
         "skipLibCheck": true
     },
     "include": ["xmcp-env.d.ts", "src/**/*.ts"],

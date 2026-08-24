@@ -27,6 +27,8 @@ const DRAFT: DotAuthConfig = {
         jwksUrl: 'https://idp.example/jwks',
         userinfoUrl: 'https://idp.example/userinfo',
         logoutUrl: '',
+        revocationUrl: '',
+        groupsUrl: '',
         clientId: 'dotcms',
         clientSecret: '****',
         scopes: 'openid email profile',
@@ -47,11 +49,14 @@ const DRAFT: DotAuthConfig = {
         postLogoutRedirect: ''
     },
     saml: {
+        idpName: '',
+        spEndpointHostname: '',
         metadataUrl: '',
         entityId: '',
         ssoUrl: '',
         sloUrl: '',
         x509cert: '',
+        privateKey: '',
         signRequests: true,
         wantAssertionsSigned: true,
         wantResponseSigned: false,
@@ -64,7 +69,8 @@ const DRAFT: DotAuthConfig = {
         defaultRoles: [],
         roleBehavior: 'sync-all',
         groupMappings: [],
-        sessionTtlMinutes: 60
+        sessionTtlMinutes: 60,
+        extraProperties: []
     },
     headless: {
         enabled: true,
