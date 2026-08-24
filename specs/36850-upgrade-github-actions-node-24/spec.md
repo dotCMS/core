@@ -194,7 +194,12 @@ notes and source):
   `cd core-web && npm install` cannot work against a pnpm workspace regardless. Its `setup-node` pin
   gets bumped for consistency and nothing more; converting it to pnpm would be a functional change to
   a dead pipeline hidden inside a runtime bump. Same for `legacy-release_sbom-generator.yaml` (also
-  disabled). Separate cleanup issue to delete or resurrect them.
+  disabled). Separate cleanup issue to delete or resurrect them — and that follow-up should now lean
+  towards **deletion**: #37150 (merged into this branch 2026-08-24) deleted `core-web/libs/dotcms` and
+  stripped `npm run build:docs:dotcms` from `publish_docs.yml` itself, leaving only
+  `build:docs:dotcms-models`. Half of what that workflow existed to publish no longer exists.
+  Re-verified after the merge: `publish_docs.yml` still carries `actions/setup-node@v2-beta` with
+  `node-version: "16.13.2"`, so the in-scope pin bump is unaffected.
 - Extending `.github/filters.yaml` so `.github/**` triggers real validation, and adding
   `.github/dependabot.yml` for the `github-actions` ecosystem. Both are the *structural* fix for this
   class of drift and both are strongly recommended — as a follow-up, so this change stays a runtime bump.
