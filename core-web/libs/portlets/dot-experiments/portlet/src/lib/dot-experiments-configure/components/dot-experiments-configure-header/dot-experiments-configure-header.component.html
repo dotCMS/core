@@ -39,16 +39,11 @@
 
 <div class="flex flex-none items-center gap-2">
     @if ($showResults()) {
-        <!-- TODO: navigate to the results screen once it exists. The legacy reports screen only
-             renders inside the UVE shell (it needs the page context its guard resolves), so it
-             cannot be linked from the portlet. -->
         <p-button
             [outlined]="true"
             severity="secondary"
             [label]="'experiments.action.view.results' | dm"
-            [disabled]="true"
-            [pTooltip]="'experiments.list.action.coming-soon' | dm"
-            tooltipPosition="bottom"
+            (onClick)="onViewResults()"
             data-testid="experiments-configure-results-btn" />
     }
 

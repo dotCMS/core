@@ -6,7 +6,6 @@ import { Component, input } from '@angular/core';
 import { provideRouter, Router } from '@angular/router';
 
 import { Confirmation, ConfirmationService, MenuItem } from 'primeng/api';
-import { Tooltip } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
@@ -232,8 +231,9 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
 
     describe('view results', () => {
         it.each([DotExperimentStatus.RUNNING, DotExperimentStatus.ENDED])(
-            'should offer results for %s, disabled until the screen exists',
+            'should open the results screen for %s',
             (status) => {
+                const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
                 renderWith(status);
 
                 const button = spectator
@@ -241,14 +241,11 @@ describe('DotExperimentsConfigureHeaderComponent', () => {
                     ?.querySelector('button') as HTMLButtonElement;
 
                 expect(button).not.toBeNull();
-                expect(button.disabled).toBe(true);
-                expect(
-                    (
-                        spectator.query('[data-testid="experiments-configure-results-btn"]', {
-                            read: Tooltip
-                        }) as Tooltip
-                    ).content
-                ).toBe(COMING_SOON_COPY);
+                expect(button.disabled).toBe(false);
+
+                clickButton('experiments-configure-results-btn');
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', EXPERIMENT.id, 'results']);
             }
         );
 

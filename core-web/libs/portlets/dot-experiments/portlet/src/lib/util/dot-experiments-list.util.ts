@@ -7,7 +7,7 @@ import {
     type TrafficProportion
 } from '@dotcms/dotcms-models';
 
-import { CONFIGURATION_SEGMENT, EXPERIMENTS_URL } from '../shared/constants';
+import { CONFIGURATION_SEGMENT, EXPERIMENTS_URL, RESULTS_SEGMENT } from '../shared/constants';
 import { DotExperimentPageInfo, ExperimentListAction } from '../shared/models';
 
 /** Day-level format shared by every schedule cell of the experiments list (e.g. `Jun 25, 2026`). */
@@ -115,4 +115,17 @@ export function isAllowed(action: ExperimentListAction, status: DotExperimentSta
  */
 export function configureCommandsOf(experimentId: string): string[] {
     return [EXPERIMENTS_URL, experimentId, CONFIGURATION_SEGMENT];
+}
+
+/**
+ * Router commands for the Results screen of an experiment.
+ *
+ * Shared for the same reason as its Configure twin: the list's menu entry and the Configure
+ * header's View Results button are two ways to the same URL.
+ *
+ * @param experimentId - Identifier of the experiment to report on
+ * @returns Absolute router commands, since Results always hangs off the portlet root
+ */
+export function resultsCommandsOf(experimentId: string): string[] {
+    return [EXPERIMENTS_URL, experimentId, RESULTS_SEGMENT];
 }
