@@ -862,7 +862,7 @@ export class DotEditContentFormComponent implements OnInit {
      * @param value - The index of the active tab
      * @memberof DotEditContentFormComponent
      */
-    onActiveIndexChange(value: number | string) {
+    onActiveIndexChange(value: number | string | undefined) {
         const numberValue = Number(value);
         if (isNaN(numberValue)) {
             return;

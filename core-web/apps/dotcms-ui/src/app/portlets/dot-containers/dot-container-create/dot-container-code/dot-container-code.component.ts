@@ -109,14 +109,20 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
 
     /**
      * Handles tab change from p-tabs valueChange event
-     * @param {number} value - The new tab index value
+     * @param {string | number | undefined} value - The new tab index, as `p-tabs` types it
      * @memberof DotContentEditorComponent
      */
-    public handleTabChange(value: number): void {
-        if (value !== 0) {
-            this.updateActiveTabIndex(value);
-            this.focusCurrentEditor(value);
+    public handleTabChange(value: string | number | undefined): void {
+        const index = Number(value);
+
+        // Rejects a non-numeric or absent payload as well as tab 0, which the original
+        // `value !== 0` check already skipped.
+        if (Number.isNaN(index) || index === 0) {
+            return;
         }
+
+        this.updateActiveTabIndex(index);
+        this.focusCurrentEditor(index);
     }
 
     /**

@@ -16,7 +16,7 @@
                                         class="results-seo-tool__card"
                                         data-testId="seo-preview-mobile">
                                         <div class="results-seo-tool__card-title">
-                                            @if (noFavicon) {
+                                            @if (noFavicon || !seoOGTags?.favicon) {
                                                 <div
                                                     class="results-seo-tool__card-favicon"
                                                     data-testId="favicon-default">
@@ -25,7 +25,7 @@
                                             } @else {
                                                 <img
                                                     (error)="onFaviconError()"
-                                                    [src]="seoOGTags.favicon"
+                                                    [src]="seoOGTags?.favicon ?? ''"
                                                     class="results-seo-tool__card-favicon"
                                                     data-testId="favicon-image"
                                                     alt="favicon" />
@@ -51,7 +51,7 @@
                     }
                     @case (seoMediaTypes.TWITTER) {
                         <div>
-                            <dot-seo-image-preview [image]="mainPreview.image" />
+                            <dot-seo-image-preview [image]="mainPreview.image ?? ''" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.twitterTitle }}</h5>
@@ -61,7 +61,7 @@
                     }
                     @default {
                         <div>
-                            <dot-seo-image-preview [image]="mainPreview.image" />
+                            <dot-seo-image-preview [image]="mainPreview.image ?? ''" />
                             <div class="results-seo-tool__preview">
                                 <span data-testId="page-hostName">{{ mainPreview.hostName }}</span>
                                 <h5>{{ mainPreview.title }}</h5>
