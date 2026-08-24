@@ -111,8 +111,9 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
      */
     actionHeaderOptions!: ActionHeaderOptions & Required<Pick<ActionHeaderOptions, 'primary'>>;
     rowActions: DotActionMenuItem[] = [];
-    addToBundleIdentifier!: string;
-    addToMenuContentType!: DotCMSContentType;
+    // Null while no dialog is open — both are reset to null on cancel.
+    addToBundleIdentifier: string | null = null;
+    addToMenuContentType: DotCMSContentType | null = null;
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private dialogDestroy$: Subject<boolean> = new Subject<boolean>();
@@ -166,11 +167,12 @@ export class DotContentTypesPortletComponent implements OnInit, OnDestroy {
     /**
      * Handler to edit a content type
      *
-     * @param {DotCMSContentType} item
+     * @param {Record<string, unknown>} item - The clicked row, as `dot-listing-data-table`
+     * emits it
      * @memberof DotContentTypesPortletComponent
      */
-    editContentType(item: DotCMSContentType): void {
-        this.router.navigate([`edit/${item.id}`], {
+    editContentType(item: Record<string, unknown>): void {
+        this.router.navigate([`edit/${item['id']}`], {
             relativeTo: this.route
         });
     }

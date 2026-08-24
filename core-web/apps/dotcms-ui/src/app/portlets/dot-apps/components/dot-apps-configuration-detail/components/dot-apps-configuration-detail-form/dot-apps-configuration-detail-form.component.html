@@ -55,7 +55,7 @@
                             <ng-container
                                 *ngTemplateOutlet="warningIcon; context: { field: field }" />
                             <textarea
-                                (click)="field.hidden ? $event.target.select() : null"
+                                (click)="field.hidden && inputTextarea.select()"
                                 [id]="field.name"
                                 [formControlName]="field.name"
                                 #inputTextarea
