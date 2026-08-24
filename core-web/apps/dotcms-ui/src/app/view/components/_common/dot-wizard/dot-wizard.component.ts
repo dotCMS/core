@@ -117,7 +117,9 @@ export class DotWizardComponent implements AfterViewInit {
      * @param {KeyboardEvent} event
      * @memberof DotWizardComponent
      */
-    handleTab(event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.tab`) as the base `Event`. Nothing below needs the keyboard members.
+    handleTab(event: Event): void {
         const [form] = event
             .composedPath()
             .filter((target) => (target as Node).nodeName === 'FORM') as HTMLFieldSetElement[];

@@ -349,7 +349,9 @@ export class DotImageEditorCropOverlayComponent {
      * Intercepts Escape so the host dialog does not close while cropping; the
      * keypress instead cancels the crop selection.
      */
-    protected onEscape(event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.escape`) as the base `Event`, and only `stopPropagation()` is needed here.
+    protected onEscape(event: Event): void {
         if (!this.$isActive()) {
             return;
         }

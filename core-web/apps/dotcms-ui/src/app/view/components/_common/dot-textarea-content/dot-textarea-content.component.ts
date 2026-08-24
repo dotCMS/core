@@ -130,7 +130,9 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @param {KeyboardEvent} $event
      * @memberof DotTextareaContentComponent
      */
-    onKeyEnter($event: KeyboardEvent): void {
+    // `Event`, not `KeyboardEvent`: Angular types the payload of a key-modified binding
+    // (`keydown.enter`) as the base `Event`, and only `stopPropagation()` is needed here.
+    onKeyEnter($event: Event): void {
         /*
             This field is use in dot-dialog.component when we hit enter it triggers the "Accept"
             action in the dialog, but for this case we don't want to do that because this fields
