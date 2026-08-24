@@ -26,6 +26,15 @@ import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.stor
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
 
+/**
+ * What the designer and the code editor actually emit on save.
+ *
+ * Both send a subset of `DotTemplate` — the designer a `DotTemplateDesigner`, the advanced
+ * editor a `DotTemplateItem` — and `formatTemplateItem` below reads only these three fields.
+ * Requiring a whole `DotTemplate` claimed far more than the handlers need or receive.
+ */
+type DotTemplateSaveEvent = Partial<Pick<DotTemplate, 'layout' | 'body' | 'themeId'>>;
+
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
@@ -125,7 +134,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @param DotTemplate template
      * @memberof DotTemplateCreateEditComponent
      */
-    saveAndPublishTemplate(template: DotTemplate): void {
+    saveAndPublishTemplate(template: DotTemplateSaveEvent): void {
         this.#store.saveAndPublishTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
@@ -138,7 +147,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @param {DotTemplate} template
      * @memberof DotTemplateCreateEditComponent
      */
-    updateWorkingTemplate(template: DotTemplate): void {
+    updateWorkingTemplate(template: DotTemplateSaveEvent): void {
         this.#store.updateWorkingTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
@@ -151,7 +160,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
      * @param DotTemplate template
      * @memberof DotTemplateCreateEditComponent
      */
-    saveTemplate(template: DotTemplate): void {
+    saveTemplate(template: DotTemplateSaveEvent): void {
         this.#store.saveTemplate({
             ...this.form.value,
             ...this.formatTemplateItem(template)
@@ -255,7 +264,11 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
             });
     }
 
-    private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {
+    private formatTemplateItem({
+        layout,
+        body,
+        themeId
+    }: DotTemplateSaveEvent): DotTemplateItem {
         let value = {
             ...this.form.value,
             body

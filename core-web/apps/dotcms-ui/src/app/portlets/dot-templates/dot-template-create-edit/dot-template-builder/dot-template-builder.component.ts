@@ -18,15 +18,23 @@ import { TabsModule } from 'primeng/tabs';
 import { debounceTime, takeUntil } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotGlobalMessageComponent } from '../../../../view/components/_common/dot-global-message/dot-global-message.component';
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotTemplateAdvancedComponent } from '../dot-template-advanced/dot-template-advanced.component';
-import { DotTemplateItem } from '../store/dot-template.store';
+import { DotTemplateItem, DotTemplateItemDesign } from '../store/dot-template.store';
 
 export const AUTOSAVE_DEBOUNCE_TIME = 5000;
+
+/**
+ * What the two editors emit. The advanced editor sends a whole `DotTemplateItem`; the designer
+ * lib's `templateChange` sends a `DotTemplateDesigner` (`{ themeId, layout }`). Both end up in
+ * `lastTemplate` and are forwarded to `save`.
+ */
+type DotTemplateEditorEvent = DotTemplateItem | DotTemplateDesigner;
 
 @Component({
     selector: 'dot-template-builder',
@@ -58,16 +66,43 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     @Input() didTemplateChanged!: boolean;
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
-    @Output() save = new EventEmitter<DotTemplateItem>();
+    @Output() save = new EventEmitter<DotTemplateEditorEvent>();
     @Output() cancel = new EventEmitter();
     @Output() custom: EventEmitter<CustomEvent> = new EventEmitter();
     @ViewChild('historyIframe') historyIframe!: IframeComponent;
     permissionsUrl = '';
     historyUrl = '';
 
-    templateUpdate$ = new Subject<DotTemplateItem>();
+    templateUpdate$ = new Subject<DotTemplateEditorEvent>();
     destroy$: Subject<boolean> = new Subject<boolean>();
-    lastTemplate!: DotTemplateItem;
+    lastTemplate!: DotTemplateEditorEvent;
+
+    /**
+     * Theme id for the designer, from whichever shape `lastTemplate` currently holds.
+     *
+     * `templateChange` on the builder lib emits a `DotTemplateDesigner` (`{ themeId, layout }`),
+     * not a `DotTemplateItem`, so after the first edit `lastTemplate` carries `themeId` while the
+     * value arriving via `[item]` carries `theme`. The template read `theme ?? themeId` to cover
+     * both; this keeps that behaviour in one typed place.
+     *
+     * TODO(#37120): `lastTemplate` really does hold two unrelated shapes, and `save` emits
+     * whichever is current. Reconciling them changes what reaches the store, so it needs its
+     * own issue rather than a drive-by fix here.
+     */
+    protected get lastTemplateThemeId(): string | undefined {
+        const template = this.#lastTemplateFields;
+
+        return template.theme ?? template.themeId ?? undefined;
+    }
+
+    /** Identifier of the current template; absent on the designer's partial payload. */
+    protected get lastTemplateIdentifier(): string | undefined {
+        return this.#lastTemplateFields.identifier;
+    }
+
+    get #lastTemplateFields(): Partial<DotTemplateItemDesign & DotTemplateDesigner> {
+        return this.lastTemplate as Partial<DotTemplateItemDesign & DotTemplateDesigner>;
+    }
 
     ngOnInit() {
         this.permissionsUrl = `/html/templates/permissions.jsp?templateId=${this.item.identifier}&popup=true`;
@@ -87,7 +122,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
      * @param {DotTemplateItem} item
      * @memberof DotTemplateBuilderComponent
      */
-    onTemplateItemChange(item: DotTemplateItem) {
+    onTemplateItemChange(item: DotTemplateEditorEvent) {
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }
