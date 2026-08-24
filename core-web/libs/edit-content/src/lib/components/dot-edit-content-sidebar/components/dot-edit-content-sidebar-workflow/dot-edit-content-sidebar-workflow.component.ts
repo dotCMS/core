@@ -107,7 +107,9 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {boolean}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $resetWorkflowAction = input<DotCMSWorkflowAction | null>(null, {
+    // `| undefined` too: the store's `getResetWorkflowAction` is a `find()`, which yields
+    // undefined when no action has the reset actionlet.
+    $resetWorkflowAction = input<DotCMSWorkflowAction | null | undefined>(null, {
         alias: 'resetWorkflowAction'
     });
 

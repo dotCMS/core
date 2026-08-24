@@ -194,7 +194,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Signal that tracks whether the component has an error.
      *
@@ -573,7 +573,8 @@ export class DotRelationshipFieldComponent
      */
     readonly initialize = signalMethod<{
         field: DotCMSContentTypeField;
-        contentlet: DotCMSContentlet;
+        // Mirrors `store.initialize`, which this only forwards to: null in manual translation.
+        contentlet: DotCMSContentlet | null;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
     }>((params) => {

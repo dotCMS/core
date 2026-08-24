@@ -86,7 +86,7 @@ export class DotEditContentTextAreaComponent extends BaseWrapperField {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input.required<DotCMSContentTypeField | null>({ alias: 'field' });
+    $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
 
     /**
      * Input contentlet DotCMSContentlet

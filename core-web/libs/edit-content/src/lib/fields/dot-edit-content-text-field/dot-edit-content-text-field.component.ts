@@ -45,7 +45,7 @@ export class DotEditContentTextFieldComponent extends BaseWrapperField {
      * A signal that holds the contentlet.
      * It is used to display the contentlet in the text field component.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * A computed signal that holds the initial value of the text field.
      * It is used to display the initial value in the text field component.

@@ -25,13 +25,21 @@ import {
 } from '../../../services/models/input.model';
 import { Verify } from '../../../services/utils/verify.util';
 
+/**
+ * The input kinds this component knows how to render, mirroring the `@if` branches in the
+ * template. Literals rather than `string` so `InputOrSpacer` below discriminates: with a plain
+ * `string` on both sides of the union, `input.type === 'dropdown'` narrows nothing and every
+ * field access in the template resolves against the wrong member.
+ */
+type InputType = 'dropdown' | 'restDropdown' | 'text' | 'number' | 'datetime';
+
 interface InputConfig {
     control: UntypedFormControl;
     name: string;
     placeholder?: Observable<string>;
     required?: boolean;
     value?: string;
-    type?: string;
+    type?: InputType;
     flex?: number;
     /** `null` while no comparison has been chosen, so no argument position is known yet. */
     argIndex?: number | null;
@@ -46,7 +54,7 @@ interface InputConfig {
 
 interface SpacerConfig {
     flex: number;
-    type: string;
+    type: 'spacer';
 }
 
 type InputOrSpacer = InputConfig | SpacerConfig;
@@ -134,10 +142,6 @@ export class DotServersideConditionComponent {
             : 1;
     }
 
-    private static isComparisonParameter(input: InputOrSpacer): input is InputConfig {
-        return input && 'name' in input && input.name === 'comparison';
-    }
-
     private isConditionWithFewFields(
         inputCount: number,
         field: ServerSideFieldModel | undefined
@@ -184,13 +188,22 @@ export class DotServersideConditionComponent {
         let comparisonIdx: number | null = null;
 
         this.inputs.forEach((input, idx) => {
-            if (DotServersideConditionComponent.isComparisonParameter(input)) {
+            // Discriminate on `type` first. The old `input is InputConfig` predicate meant "is the
+            // comparison input", so its else branch narrowed to SpacerConfig and every real input
+            // had to be cast back. Splitting the two questions removes the cast.
+            if (input.type === 'spacer') {
+                return;
+            }
+
+            if (input.name === 'comparison') {
                 comparison = input;
                 this.applyRightHandSideCount(instance, comparison.value);
                 comparisonIdx = idx;
             } else if (comparisonIdx !== null && 'argIndex' in input) {
+                // `'argIndex' in input` is deliberate: only the text and datetime inputs seed
+                // `argIndex: null`, and dropdowns opt out of comparison-driven visibility.
                 if (this.rightHandArgCount !== null) {
-                    (input as InputConfig).argIndex = idx - comparisonIdx - 1;
+                    input.argIndex = idx - comparisonIdx - 1;
                 }
             }
         });
@@ -198,6 +211,27 @@ export class DotServersideConditionComponent {
         if (comparison) {
             this.applyRightHandSideCount(instance, comparison.value);
         }
+    }
+
+    /**
+     * Whether an input sits beyond the argument count of the selected comparison, and so must be
+     * hidden. Inputs with no `argIndex` are not argument-positioned and always show — only the
+     * text and datetime inputs seed `argIndex`.
+     *
+     * The template used to inline this and its negation separately, and the two disagreed for
+     * `undefined`: the input rendered while its validation message stayed hidden. Keeping one
+     * definition makes `!isArgHidden(input)` an exact complement by construction.
+     */
+    isArgHidden(input: InputConfig): boolean {
+        const argIndex = input.argIndex;
+
+        if (argIndex === null || argIndex === undefined) {
+            return false;
+        }
+
+        // `rightHandArgCount` is null until a comparison is picked; `>= 0` keeps the previous
+        // behaviour, where the old `argIndex >= null` coerced to `argIndex >= 0`.
+        return argIndex >= (this.rightHandArgCount ?? 0);
     }
 
     getErrorMessage(input: InputConfig): string {

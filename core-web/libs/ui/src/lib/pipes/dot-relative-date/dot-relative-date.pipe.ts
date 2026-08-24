@@ -13,7 +13,10 @@ export class DotRelativeDatePipe implements PipeTransform {
     transform(
         date: string | number | null | undefined,
         format = 'MM/dd/yyyy',
-        timeStampAfter = 7
+        // `null` is a supported argument, not an oversight: the body below tests
+        // `timeStampAfter !== null` to mean "always render relative, whatever the age", and the
+        // sidebar's Modified date passes exactly that. Only the signature omitted it.
+        timeStampAfter: number | null = 7
     ): string {
         const time = date || new Date().getTime();
         const isMilliseconds = !isNaN(Number(time));
@@ -40,7 +43,7 @@ export class DotRelativeDatePipe implements PipeTransform {
         );
 
         // Check if the timeStampAfter is a valid number
-        const validTimeAfter = !isNaN(timeStampAfter) && timeStampAfter !== null;
+        const validTimeAfter = timeStampAfter !== null && !isNaN(timeStampAfter);
 
         // If the diffTime is less than the timeStampAfter we show the relative time
         const showRelativeTime = validTimeAfter ? diffTime < timeStampAfter : true;

@@ -204,7 +204,7 @@ export class DotEditContentSidebarComponent {
      * Handles the active index change event from the sidebar tabs.
      * @param value - The index of the active tab
      */
-    onActiveIndexChange(value: number | string) {
+    onActiveIndexChange(value: number | string | undefined) {
         const numberValue = Number(value);
         if (isNaN(numberValue)) {
             return;

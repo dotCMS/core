@@ -19,7 +19,7 @@
                 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
             ) {
                 <dot-convert-to-block-info
-                    ($action)="scrollTo($event)"
+                    ($action)="scrollTo()"
                     [currentFieldType]="currentFieldType"
                     [currentField]="currentField" />
             }
@@ -35,7 +35,7 @@
                     'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
             ) {
                 <dot-convert-wysiwyg-to-block
-                    ($convert)="onConvertToBlock($event)"
+                    ($convert)="onConvertToBlock()"
                     [currentFieldType]="currentFieldType" />
             }
         </p-tabpanel>
@@ -86,14 +86,14 @@
                 [label]="cancelBtn.label"
                 [disabled]="cancelBtn.disabled"
                 severity="secondary"
-                (click)="cancelBtn.action()"
+                (click)="cancelBtn.action?.()"
                 data-testId="dotDialogCancelAction" />
         }
         @if (saveBtn) {
             <p-button
                 [label]="saveBtn.label"
                 [disabled]="saveBtn.disabled"
-                (click)="saveBtn.action()"
+                (click)="saveBtn.action?.()"
                 data-testId="dotDialogAcceptAction" />
         }
     </div>

@@ -45,13 +45,13 @@ export class DotEditContentJsonFieldComponent extends BaseWrapperField {
     /**
      * Input field DotCMSContentTypeField
      */
-    $field = input<DotCMSContentTypeField | null>(null, {
+    $field = input.required<DotCMSContentTypeField>({
         alias: 'field'
     });
     /**
      * Input contentlet DotCMSContentlet
      */
-    $contentlet = input.required<DotCMSContentlet>({
+    $contentlet = input.required<DotCMSContentlet | null>({
         alias: 'contentlet'
     });
 

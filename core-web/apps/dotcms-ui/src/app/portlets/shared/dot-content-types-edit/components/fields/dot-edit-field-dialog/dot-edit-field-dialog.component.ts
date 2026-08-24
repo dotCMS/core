@@ -130,9 +130,10 @@ export class DotEditFieldDialogComponent {
      * Hide or show the action buttons according to the selected tab, and restore
      * the Overview Save button state when returning to the Overview tab.
      *
-     * @param index - The newly selected tab index
+     * @param index - The newly selected tab index. `p-tabs` types its `valueChange` payload as
+     * `string | number | undefined`; the comparisons below reject anything that is not a tab index.
      */
-    handleTabChange(index: number): void {
+    handleTabChange(index: string | number | undefined): void {
         if (index === this.OVERVIEW_TAB_INDEX) {
             // Rebuild from the canonical Overview button so its action is restored —
             // a Settings tab may have swapped saveBtn (and its action) via changesDialogActions().
