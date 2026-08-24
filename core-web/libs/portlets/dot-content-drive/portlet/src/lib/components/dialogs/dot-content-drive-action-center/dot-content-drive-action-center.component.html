@@ -93,7 +93,7 @@
                                         <i
                                             class="pi pi-exclamation-triangle text-xs text-orange-500"
                                             [pTooltip]="
-                                                quickAction.warningHint
+                                                quickAction.warningHint ?? ''
                                                     | dm: [quickAction.warningCount.toString()]
                                             "
                                             [attr.data-testid]="
@@ -358,8 +358,8 @@
                             }
                             @case ('assignComment') {
                                 <dot-workflow-assign-comment
-                                    [assignable]="!!$selectedAction()?.inputs.assignable"
-                                    [commentable]="!!$selectedAction()?.inputs.commentable"
+                                    [assignable]="!!$selectedAction()?.inputs?.assignable"
+                                    [commentable]="!!$selectedAction()?.inputs?.commentable"
                                     [roleId]="$selectedAction()?.nextAssign ?? ''"
                                     [roleHierarchy]="!!$selectedAction()?.roleHierarchyForAssign"
                                     [disabled]="$executing()"
