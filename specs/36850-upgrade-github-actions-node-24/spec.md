@@ -17,9 +17,17 @@
 GitHub has deprecated the Node 20 action runtime on Actions runners. Every action pinned to a major
 whose `runs.using` is `node20` (or older) is now silently force-migrated onto Node 24 at execution
 time, and each affected job emits a deprecation annotation. dotCMS/core's CI is broadly affected:
-**124 references to 8 in-scope actions across 51 files** under `.github/workflows/**` and
+**124 executable references to 8 in-scope actions across 51 files** under `.github/workflows/**` and
 `.github/actions/**` are still on `node20`-era majors, including legacy pins as old as
 `actions/checkout@v2` and `actions/setup-node@v2-beta`.
+
+**How that number is defined**, since a raw grep reads higher: it counts `uses:` lines in
+`.yml`/`.yaml` only. A plain `rg 'actions/checkout@'` over `.github/` returns 69 rather than 62
+because it also picks up **8 documentation mentions across 7 `README.md` files** (7 `checkout`, 1
+`setup-node`) — tracked separately in Fix Scope, since a stale doc example is a different kind of
+defect from a stale executable pin. All counts are **as of 2026-08-24** and will drift as `.github/`
+changes on `main`; they are descriptive, and no acceptance criterion depends on a specific number
+(see AC-007).
 
 Two distinct harms:
 
@@ -129,8 +137,14 @@ notes and source):
   corrected `# vX.Y.Z` comment**. Eight sites are SHA-pinned, and two of them
   (`issue_autodoc.yml:100,103` vs `dotbot-review.yml:45`/`dotbot-act.yml:40`) currently pin the *same*
   `actions/checkout` SHA under *different* version comments — one is wrong today; both get fixed.
-- Update the 5 `.github/actions/**/README.md` usage examples that show `actions/checkout@v2`
-  (permitted by the issue's AC: "pin docs in action READMEs if needed").
+- Update the **8 stale action references across 7 `.github/actions/**/README.md` files** (permitted
+  by the issue's AC: "pin docs in action READMEs if needed"). Verified 2026-08-24, and broader than an
+  earlier draft of this spec claimed: four are `uses: actions/checkout@v2` code examples
+  (`maven-job`, `cleanup-runner`, `setup-java`, `prepare-runner`), one is a
+  `uses: actions/checkout@v4` example (`deploy-jfrog/README.md:37`), and three are prose references —
+  `actions/checkout@v4` in `deploy-javascript-sdk/README.md:38` and `deploy-javadoc/README.md:39`,
+  and `actions/setup-node@v4` in `deploy-javascript-sdk/README.md:41`. Prose counts: a reader copying
+  from it reintroduces the drift.
 - **Add the drift guard**: `.github/scripts/check-action-versions.sh` plus a standalone
   `cicd_pr_actions-lint.yml` job modeled on the existing `cicd_pr_skill-lint.yml`. This is the
   executable, confirmed-failing test required by Constitution Principle V, and it is the only
@@ -158,11 +172,24 @@ notes and source):
   all — `aws-actions/configure-aws-credentials` v1 → v6 needs OIDC/`role-to-assume` plus org-level
   trust-policy work, and `slackapi/slack-github-action` v1 → v2+ changes the payload format. Follow-up
   issue, split per vendor.
-- **`actions/github-script` v9.** v8 is the correct target: verified to be a pure `node24` bump (no
-  `"type": "module"`, still `@actions/github ^6.0.0` / `@octokit/core ^5.0.1`, README still documents
-  `require()`). v9 is the ESM break — `require('@actions/github')` fails and `getOctokit` becomes an
-  injected parameter. Three sites use `require()` (`cicd_comp_test-phase.yml:115`,
-  `cicd_comp_pr-area-labeler.yml:43`, `cicd_scheduled_qa-stuck-check.yml:76`), so v9 needs its own audit.
+- **`actions/github-script` v9.** v8 is the target because it is a **pure `node24` bump with no
+  behavior change** — verified: no `"type": "module"`, still `@actions/github ^6.0.0` /
+  `@octokit/core ^5.0.1`. That is the whole of what this issue needs.
+
+  **Correcting an earlier draft of this spec:** it claimed v9 "breaks `require()`". That is wrong.
+  v9 still injects `require` into the script context — `src/main.ts` passes `require: wrapRequire`
+  and `__original_require__`, and `src/wrap-require.ts` is a Proxy over `__non_webpack_require__`
+  that resolves both bare module IDs and `./`-relative paths. So the three `require()` sites here
+  (`cicd_comp_test-phase.yml:115` and `cicd_comp_pr-area-labeler.yml:43` → `require('fs')`;
+  `cicd_scheduled_qa-stuck-check.yml:76` → `require('./.github/scripts/qa-stuck-check/find-stuck-issues.js')`)
+  would keep working. Verified 2026-08-24 against tag `v9.0.0`.
+
+  What v9 **actually** changes: `@actions/github` becomes ESM-only, so `require('@actions/github')`
+  fails (**0 occurrences here**); `getOctokit` becomes an injected parameter, so a script declaring
+  `const`/`let getOctokit` is a `SyntaxError` (**0 occurrences here**); and Octokit moves
+  **v5 → v7** under 14 inline scripts. Only that last one is a real exposure, and auditing 14 scripts
+  against an Octokit major is a different review from a runtime bump — hence the deferral. v9 is
+  probably safe for this repo; it simply does not need to ride along with this change.
 - **Repairing `publish_docs.yml`.** It is `disabled_manually` with 0 runs/90d, and its
   `cd core-web && npm install` cannot work against a pnpm workspace regardless. Its `setup-node` pin
   gets bumped for consistency and nothing more; converting it to pnpm would be a functional change to
@@ -235,11 +262,21 @@ notes and source):
     Everything else is GitHub-hosted. Relatedly, checkout v6's only hard runner requirement
     (≥ 2.329.0 for Docker container actions) does not apply: there are no `container:` jobs and no
     `uses: docker://` anywhere.
-  - **`package-manager-cache` is a no-op here.** `setup-node` reads only
-    `$GITHUB_WORKSPACE/package.json`, and this repo has **no root `package.json`** (only a stray root
-    `package-lock.json`). `core-web/package.json`'s `packageManager: pnpm@10.17.1` is invisible to it,
-    and v6+ limits auto-caching to npm regardless. Auto-caching cannot fire at any of the 8 sites.
-    See AC-005 — this is a deliberate deviation from the issue's written AC.
+  - **`setup-node` dependency caching is off on both of its paths, so `package-manager-cache` is a
+    no-op here.** `setup-node` can cache in two ways, and neither is reachable:
+    1. **Explicit** — driven by the `cache:` / `cache-dependency-path` inputs. Verified 2026-08-24:
+       **neither input is set at any of the 8 call sites**, nor anywhere else under `.github/`.
+    2. **Automatic** — added in v5, driven by `packageManager` / `devEngines.packageManager` in
+       `$GITHUB_WORKSPACE/package.json`. `setup-node` reads **only** that path, and this repo has
+       **no root `package.json`** (only a stub root `package-lock.json`). `core-web/package.json`'s
+       `packageManager: pnpm@10.17.1` is invisible to it, and v6+ narrowed automatic caching to npm
+       regardless.
+
+    Both facts are needed: (1) alone would not rule out the automatic path that v5 introduced, and
+    (2) alone would not rule out someone having set `cache:` explicitly. Together they establish that
+    no `setup-node` cache can collide with the manual pnpm store cache at
+    `deploy-javascript-sdk/action.yml:123,143`. See AC-005 — this is a deliberate, documented
+    deviation from the issue's written AC.
 - **Data considerations**: **None.** No DB schema, no Elasticsearch mapping, no API contract, no
   serialized state, no data repair. Nothing here falls into any category in
   `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`. Rollback is a `git revert` of the PR — or of any single
@@ -265,8 +302,12 @@ notes and source):
   a **second** consecutive PR build (the first legitimately re-primes nothing, but a cold miss on the
   second indicates a key regression).
 - **AC-005**: Where the issue's AC calls for `package-manager-cache: false`, the change instead
-  **documents that the precondition does not exist** in this repo (no root `package.json`, so
-  `setup-node` auto-caching cannot fire) and adds no dead configuration.
+  **documents that the precondition does not exist** and adds no dead configuration. Auditable against
+  the current workflows by two checks, both of which must hold: (a) **no `setup-node` call site sets
+  `cache:` or `cache-dependency-path`** — its explicit caching path is off; and (b) **no root
+  `package.json` exists** — the automatic caching path added in v5 cannot fire, since `setup-node`
+  reads only `$GITHUB_WORKSPACE/package.json`. With both true, no `setup-node` cache can collide with
+  the manual pnpm store cache, which is the hazard the issue's AC was written to prevent.
   **Resolved 2026-08-24 (dev decision):** document the deviation, add no dead configuration. Rationale
   recorded for the reviewer — a no-op `package-manager-cache: false` would imply a hazard that does not
   exist here and would be copied by cargo-cult into workflows where it also does nothing.
@@ -274,8 +315,11 @@ notes and source):
   step that changed behavior on its new major carries an **explicit** input rather than relying on a
   default — specifically `digest-mismatch` on all 14 `download-artifact` sites. If a required input
   changed on a target major, the workflow is updated so the job still succeeds.
-- **AC-007 (the Red gate)**: `.github/scripts/check-action-versions.sh` **fails on `main`** with 124
-  violations across 51 files, and **passes** after the sweep. It asserts three properties, each
+- **AC-007 (the Red gate)**: `.github/scripts/check-action-versions.sh` **fails on `main` with a
+  non-zero violation count**, and **passes (zero violations) after the sweep**. The count itself is
+  **informational, not part of the criterion** — it was ~124 across ~51 files as of 2026-08-24 and
+  will drift as `.github/` changes on `main`, so pinning it would make this AC false even when the
+  guard behaves correctly. It asserts three properties, each
   catching a different failure class: (1) no in-scope reference below its target major; (2) every
   in-scope SHA pin is a known target SHA *and* its trailing version comment agrees; (3) every
   `download-artifact` reference declares `digest-mismatch` explicitly.
@@ -286,9 +330,9 @@ notes and source):
 - **Verification method** — no unit/integration/Postman/Jest layer exists for workflow YAML, so
   Principle V is satisfied by naming what does apply and recording, here, why the classic layers
   cannot:
-  1. **Red → Green (the primary test):** `.github/scripts/check-action-versions.sh` — exits 1 with 124
-     violations on `main`, exits 0 after the sweep. Committed, reproducible, dev-approvable. The
-     failing run is linked in the PR body.
+  1. **Red → Green (the primary test):** `.github/scripts/check-action-versions.sh` — exits **1 on
+     `main`** (non-zero violations; ~124 at time of writing, informational only), exits **0 after the
+     sweep**. Committed, reproducible, dev-approvable. The failing run is linked in the PR body.
   2. **Regression net:** `actionlint` over `.github/workflows/` — catches malformed `uses:`, broken
      `${{ }}`, invalid `needs:`/`if:` across 51 hand-edited files. Gate on **no *new* findings**
      against a baseline captured on `main`, not on zero findings. `actionlint` is deliberately *not*
