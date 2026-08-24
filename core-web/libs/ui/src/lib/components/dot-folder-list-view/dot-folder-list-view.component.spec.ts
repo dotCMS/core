@@ -2950,4 +2950,42 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.query(byTestId('item-extra-myText'))).toBeFalsy();
         });
     });
+
+    describe('non-lazy ordering', () => {
+        // The table sorts client-side when it is not lazy, and it carried a hardcoded
+        // `sortField="modDate"`. That silently re-sorted an array the caller had already ordered:
+        // in the Action Center preview it pulled folders (older modDates) to the bottom even though
+        // the grid behind the dialog listed them first.
+        it('should render a non-lazy list in the order it was given', () => {
+            const older = {
+                ...mockItems[0],
+                inode: 'older-1',
+                identifier: 'older-1',
+                title: 'a-older',
+                modDate: new Date('2019-01-01').getTime()
+            };
+            const newer = {
+                ...mockItems[0],
+                inode: 'newer-1',
+                identifier: 'newer-1',
+                title: 'z-newer',
+                modDate: new Date('2026-01-01').getTime()
+            };
+
+            // Created non-lazy from the start, the way the preview does it. Flipping `lazy` on an
+            // already-initialised table does not re-run PrimeNG's initial sort, so setting it
+            // afterwards never reproduces this.
+            spectator = createComponent({
+                props: { items: [older, newer], lazy: false, loading: false } as never
+            });
+            spectator.detectChanges();
+
+            const rendered = spectator
+                .queryAll(byTestId('item-row'))
+                .map((row) => row.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+
+            expect(rendered[0]).toContain('a-older');
+            expect(rendered[1]).toContain('z-newer');
+        });
+    });
 });
