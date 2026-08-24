@@ -42,7 +42,7 @@ export class DotIframeDialogComponent implements OnChanges {
     custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
     @Output()
-    charge: EventEmitter<unknown> = new EventEmitter();
+    charge: EventEmitter<Event> = new EventEmitter();
 
     @Output()
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
@@ -79,8 +79,9 @@ export class DotIframeDialogComponent implements OnChanges {
      * @param * $event
      * @memberof DotIframeDialogComponent
      */
-    onLoad($event: { target: HTMLIFrameElement }): void {
-        $event.target.contentWindow?.focus();
+    onLoad($event: Event): void {
+        // `Event.target` is `EventTarget | null`; only the iframe raises this event.
+        ($event.target as HTMLIFrameElement | null)?.contentWindow?.focus();
         this.charge.emit($event);
     }
 

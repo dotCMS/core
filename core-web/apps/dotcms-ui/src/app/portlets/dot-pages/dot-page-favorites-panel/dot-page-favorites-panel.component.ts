@@ -65,7 +65,8 @@ export class DotPageFavoritesPanelComponent {
      * @param {Event} event
      * @memberof DotPagesComponent
      */
-    protected onToggleChange(collapsed: boolean): void {
+    // `p-panel` types its `collapsedChange` payload as `boolean | undefined`.
+    protected onToggleChange(collapsed: boolean | undefined): void {
         if (collapsed) {
             this.collapsePanel();
         } else {
