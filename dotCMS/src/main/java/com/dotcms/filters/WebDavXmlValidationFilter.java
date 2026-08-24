@@ -1,5 +1,7 @@
 package com.dotcms.filters;
 
+import com.dotmarketing.business.portal.ThreadLocalSaxParserFactory;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
@@ -7,6 +9,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Optional;
@@ -22,10 +25,10 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.XMLConstants;
-import javax.xml.parsers.SAXParserFactory;
 import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
 import org.xml.sax.XMLReader;
+import org.xml.sax.ext.DefaultHandler2;
 import org.xml.sax.helpers.DefaultHandler;
 
 /**
@@ -41,12 +44,12 @@ import org.xml.sax.helpers.DefaultHandler;
  * happens in a static method, so supplying the library a custom parser would not cover it either.
  * A filter covers all three.
  *
- * <p>Detection is a parse with {@code disallow-doctype-decl} rather than a search of the raw bytes,
- * because a byte search is defeated by the document's encoding. It uses the same XML implementation
- * the servlet will use, on the same bytes, so the two cannot reach different conclusions.
- *
- * <p>Anything that fails to validate is refused, malformed XML included, which turns what would
- * have been a 500 into a more accurate 400.
+ * <p>Detection is a real parse rather than a search of the raw bytes, because a byte search is
+ * defeated by the document's encoding: in UTF-16 the literal "DOCTYPE" does not appear as those
+ * seven bytes. The parse only looks for the declaration, via the lexical handler, and deliberately
+ * says nothing about whether the rest of the document is well formed. The servlet tolerates
+ * malformed bodies -- a PROPFIND that fails to parse falls back to allprop and still answers 207 --
+ * so failing those here would change behaviour that has nothing to do with DTDs.
  */
 public class WebDavXmlValidationFilter implements Filter {
 
@@ -57,7 +60,11 @@ public class WebDavXmlValidationFilter implements Filter {
      * RFC 4918 property and lock bodies are tiny. Validating one means holding it in memory, so
      * this bounds how much a caller can make us buffer.
      */
-    static final int MAX_BODY_BYTES = 512 * 1024;
+    static final int MAX_BODY_BYTES =
+            Config.getIntProperty("WEBDAV_MAX_XML_BODY_BYTES", 512 * 1024);
+
+    /** Aborts the detection parse as soon as the declaration is seen. */
+    private static final SAXException DOCTYPE_SEEN = new SAXException("DOCTYPE declared");
 
     @Override
     public void init(final FilterConfig filterConfig) {
@@ -94,8 +101,8 @@ public class WebDavXmlValidationFilter implements Filter {
         }
 
         // An absent body is legal: PROPFIND with no body means allprop, and LOCK with no body is
-        // a lock refresh. Only verify when there is something to verify.
-        if (body.get().length > 0 && !isFreeOfDoctype(body.get())) {
+        // a lock refresh. Only inspect when there is something to inspect.
+        if (body.get().length > 0 && declaresDoctype(body.get())) {
             Logger.warn(this, String.format("Rejecting WebDAV %s body declaring a DOCTYPE from %s",
                     request.getMethod(), request.getRemoteAddr()));
             response.sendError(HttpServletResponse.SC_BAD_REQUEST);
@@ -125,29 +132,46 @@ public class WebDavXmlValidationFilter implements Filter {
     }
 
     /**
-     * True when the document parses and declares no DOCTYPE. Fails closed: if the hardened parser
-     * cannot be built, or the document is malformed, the answer is false. Letting a document
-     * through because we failed to inspect it would defeat the point of the filter.
+     * True when the document declares a DOCTYPE. A body that cannot be parsed at all is reported
+     * as not declaring one, because the servlet already tolerates malformed XML and this filter is
+     * not the place to change that. If a detecting parser cannot be built the answer is true: that
+     * is a systemic misconfiguration rather than something about this request, and passing bodies
+     * through unchecked would defeat the filter.
      */
-    static boolean isFreeOfDoctype(final byte[] body) {
+    static boolean declaresDoctype(final byte[] body) {
+        final XMLReader reader;
         try {
-            final SAXParserFactory factory = SAXParserFactory.newInstance();
-            factory.setNamespaceAware(true);
-            factory.setValidating(false);
-            factory.setXIncludeAware(false);
-            factory.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
-            factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
-            factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
-            factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
-
-            final XMLReader reader = factory.newSAXParser().getXMLReader();
-            reader.setContentHandler(new DefaultHandler());
+            // This factory disables external entities and external DTD loading but still reports
+            // the declaration, which is exactly what is needed to detect one safely.
+            reader = ThreadLocalSaxParserFactory.getSaxParser().getXMLReader();
+            reader.setProperty("http://xml.org/sax/properties/lexical-handler", new DefaultHandler2() {
+                @Override
+                public void startDTD(final String name, final String publicId, final String systemId)
+                        throws SAXException {
+                    throw DOCTYPE_SEEN;
+                }
+            });
             reader.setErrorHandler(new DefaultHandler());
-            reader.parse(new InputSource(new ByteArrayInputStream(body)));
+        } catch (final Exception unconfigurable) {
+            Logger.error(WebDavXmlValidationFilter.class,
+                    "Could not build a DOCTYPE-detecting XML parser; refusing the WebDAV body",
+                    unconfigurable);
             return true;
-        } catch (final Exception e) {
+        }
+
+        try {
+            reader.parse(new InputSource(new ByteArrayInputStream(body)));
+            return false;
+        } catch (final SAXException e) {
+            if (e == DOCTYPE_SEEN) {
+                return true;
+            }
             Logger.debug(WebDavXmlValidationFilter.class,
-                    () -> "WebDAV body rejected during XML verification: " + e.getMessage());
+                    () -> "WebDAV body did not parse, forwarding it unchanged: " + e.getMessage());
+            return false;
+        } catch (final IOException e) {
+            Logger.debug(WebDavXmlValidationFilter.class,
+                    () -> "Could not read the WebDAV body while inspecting it: " + e.getMessage());
             return false;
         }
     }
@@ -195,11 +219,18 @@ public class WebDavXmlValidationFilter implements Filter {
         }
 
         @Override
-        public BufferedReader getReader() {
+        public BufferedReader getReader() throws IOException {
             final String encoding = getCharacterEncoding();
-            final Charset charset = encoding == null
-                    ? StandardCharsets.UTF_8
-                    : Charset.forName(encoding);
+            // The servlet spec defaults to ISO-8859-1 when the request states no encoding, and
+            // requires a checked UnsupportedEncodingException for one it cannot honour.
+            Charset charset = StandardCharsets.ISO_8859_1;
+            if (encoding != null) {
+                try {
+                    charset = Charset.forName(encoding);
+                } catch (final IllegalArgumentException badCharset) {
+                    throw new UnsupportedEncodingException(encoding);
+                }
+            }
             return new BufferedReader(new InputStreamReader(getInputStream(), charset));
         }
     }

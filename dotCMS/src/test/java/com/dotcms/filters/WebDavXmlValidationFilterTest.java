@@ -4,18 +4,16 @@ import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 
-import java.io.ByteArrayInputStream;
+import com.dotcms.mock.request.DotCMSMockRequest;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
 import javax.servlet.FilterChain;
-import javax.servlet.ReadListener;
-import javax.servlet.ServletInputStream;
 import javax.servlet.ServletRequest;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,7 +53,7 @@ public class WebDavXmlValidationFilterTest {
         new WebDavXmlValidationFilter()
                 .doFilter(request("PROPFIND", LEGITIMATE_PROPFIND), response, chain);
 
-        verify(response, never()).sendError(org.mockito.ArgumentMatchers.anyInt());
+        verify(response, never()).sendError(anyInt());
 
         // The filter consumes the body to inspect it, so it must hand the servlet a replayable copy.
         final ArgumentCaptor<ServletRequest> forwarded = ArgumentCaptor.forClass(ServletRequest.class);
@@ -63,6 +61,23 @@ public class WebDavXmlValidationFilterTest {
         assertArrayEquals("Body was not replayed intact to the servlet",
                 LEGITIMATE_PROPFIND.getBytes(StandardCharsets.UTF_8),
                 forwarded.getValue().getInputStream().readAllBytes());
+    }
+
+    /**
+     * The servlet already tolerates a body it cannot parse: a PROPFIND whose XML is broken falls
+     * back to allprop and still answers 207. Rejecting those here would change behaviour that has
+     * nothing to do with DTDs, so a malformed body must be forwarded untouched.
+     */
+    @Test
+    public void malformedBodyIsForwardedRatherThanRejected() throws Exception {
+        final FilterChain chain = mock(FilterChain.class);
+        final HttpServletResponse response = mock(HttpServletResponse.class);
+
+        new WebDavXmlValidationFilter()
+                .doFilter(request("PROPFIND", "<propfind xmlns=\"DAV:\"><prop>"), response, chain);
+
+        verify(response, never()).sendError(anyInt());
+        verify(chain).doFilter(any(), any());
     }
 
     /** PROPFIND with no body means allprop, and LOCK with no body is a refresh. Both are legal. */
@@ -73,7 +88,7 @@ public class WebDavXmlValidationFilterTest {
 
         new WebDavXmlValidationFilter().doFilter(request("PROPFIND", ""), response, chain);
 
-        verify(response, never()).sendError(org.mockito.ArgumentMatchers.anyInt());
+        verify(response, never()).sendError(anyInt());
         verify(chain).doFilter(any(), any());
     }
 
@@ -87,7 +102,7 @@ public class WebDavXmlValidationFilterTest {
         new WebDavXmlValidationFilter().doFilter(request, response, chain);
 
         verify(chain).doFilter(request, response);
-        verify(response, never()).sendError(org.mockito.ArgumentMatchers.anyInt());
+        verify(response, never()).sendError(anyInt());
     }
 
     @Test
@@ -116,50 +131,19 @@ public class WebDavXmlValidationFilterTest {
                 + "<displayname>harmless</displayname></prop></set></propertyupdate>";
 
         for (final Charset charset : List.of(StandardCharsets.UTF_8, StandardCharsets.UTF_16)) {
-            assertFalse("A DOCTYPE slipped past verification encoded as " + charset,
-                    WebDavXmlValidationFilter.isFreeOfDoctype(DOCTYPE_BODY.getBytes(charset)));
-            assertTrue("A clean document was rejected encoded as " + charset,
-                    WebDavXmlValidationFilter.isFreeOfDoctype(clean.getBytes(charset)));
+            assertTrue("A DOCTYPE slipped past detection encoded as " + charset,
+                    WebDavXmlValidationFilter.declaresDoctype(DOCTYPE_BODY.getBytes(charset)));
+            assertFalse("A clean document was reported as declaring a DOCTYPE in " + charset,
+                    WebDavXmlValidationFilter.declaresDoctype(clean.getBytes(charset)));
         }
     }
 
     private static HttpServletRequest request(final String method, final String body) throws Exception {
-        final HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getMethod()).thenReturn(method);
-        when(request.getRemoteAddr()).thenReturn("203.0.113.7");
-        when(request.getCharacterEncoding()).thenReturn("UTF-8");
-        when(request.getInputStream())
-                .thenReturn(servletInputStream(body.getBytes(StandardCharsets.UTF_8)));
+        final DotCMSMockRequest request = new DotCMSMockRequest();
+        request.setMethod(method);
+        request.setRemoteAddr("203.0.113.7");
+        request.setCharacterEncoding("UTF-8");
+        request.setContent(body.getBytes(StandardCharsets.UTF_8));
         return request;
-    }
-
-    private static ServletInputStream servletInputStream(final byte[] content) {
-        final ByteArrayInputStream source = new ByteArrayInputStream(content);
-        return new ServletInputStream() {
-            @Override
-            public int read() {
-                return source.read();
-            }
-
-            @Override
-            public int read(final byte[] target, final int off, final int len) {
-                return source.read(target, off, len);
-            }
-
-            @Override
-            public boolean isFinished() {
-                return source.available() == 0;
-            }
-
-            @Override
-            public boolean isReady() {
-                return true;
-            }
-
-            @Override
-            public void setReadListener(final ReadListener readListener) {
-                throw new UnsupportedOperationException();
-            }
-        };
     }
 }
