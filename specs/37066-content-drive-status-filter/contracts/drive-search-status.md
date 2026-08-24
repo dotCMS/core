@@ -39,6 +39,11 @@ Resource: `dotCMS/src/main/java/com/dotcms/rest/api/v1/drive/ContentDriveResourc
 **AND, not OR.** Unlike `contentTypes`, `baseTypes` and `language` — single-valued attributes where
 an intersection is always empty — these are independent flags one item can hold at once.
 
+**The archived exclusion is a baseline, not a fourth value.** Every drive request already excludes
+archived content; the statuses AND on top of that, and `ARCHIVED` is the only one that lifts it.
+That is why `["UNPUBLISHED"]` means "unpublished **and not archived**" without contradicting the AND
+rule. See [../data-model.md](../data-model.md) for the per-selection predicate table.
+
 ### Side effects on other fields
 
 | Field | Effect when `status` is non-empty |

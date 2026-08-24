@@ -75,6 +75,8 @@ confirmed **failing** for the right reason.
 | Status value parsing; unknown value → 400 | Unit (JUnit) | `dotCMS/src/test/java/com/dotcms/rest/api/v1/drive/ContentDriveHelperStatusTest.java` | Mirrors `ContentDriveFieldFilterResolverTest`. No container needed |
 | Each status alone; each pair; all three; empty default | Integration | `dotcms-integration/src/test/java/com/dotcms/rest/api/v1/drive/ContentDriveStatusFilterTest.java` | Follows `ContentDriveWorkflowFilterTest`: dedicated site + folder + a purpose-built content type + unique id, `@AfterClass` cleanup. Never asserts against shared default content types |
 | `ARCHIVED + UNPUBLISHED` == `ARCHIVED`; `ARCHIVED + LOCKED` reachable | Integration | same class | FR-007 and the second Edge Case — asserted as documented behavior |
+| `UNPUBLISHED` alone excludes an archived item; `ARCHIVED + UNPUBLISHED` admits it | Integration | same class | FR-004's baseline carve-out. Fixture needs an item that is **both** archived and unpublished, or the assertion passes vacuously. Raised by the automated spec review on #37170 |
+| `LOCKED` composes with working-version scoping | Integration | same class | FR-005. Assert a locked item is returned under the drive's default (`live: false`), matching the legacy `+locked:true` / `+working:true` pairing (`ContentletAjax.java:1018`/`:1035`). Raised by the same review |
 | Parity with and without free text (default hybrid heuristic) | Integration | same class | FR-009 / SC-005 |
 | Parity under `BROWSE_API_HEURISTIC_TYPE=PURE_ES` | Integration | same class | Config override + restore in the test; the only coverage `buildPureESQuery` gets |
 | Status + archive-target workflow step | Integration | same class | FR-011. The regression this change is most likely to cause |

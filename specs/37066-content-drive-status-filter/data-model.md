@@ -67,7 +67,46 @@ already in `ContentDriveHelper`.
 | Empty is valid and means "no status filtering" | FR-001, FR-002 | `ContentDriveHelper` (block is skipped) |
 | Every element must name a `ContentStatus` | FR-010 | `ContentDriveHelper.parseStatuses` → `BadRequestException` |
 | Selection narrows (AND), never widens | FR-006 | `BrowserAPIImpl.appendContentStatusQuery` — independent `and` clauses |
+| The archived baseline stands unless `ARCHIVED` is selected | FR-004 | `BrowserAPIImpl:2006` — the exclusion is skipped only when the selection contains `ARCHIVED` |
 | A non-empty selection excludes folders | FR-015 | `ContentDriveHelper` → `.showFolders(false)` |
+
+### The archived baseline is not a fourth flag
+
+FR-006 says the statuses combine with AND, and FR-004 says `UNPUBLISHED` excludes archived content
+unless `ARCHIVED` is also selected. Read as "a pure AND of three independent flags", those look like
+they disagree. They don't, and an implementer who misses the distinction will get `UNPUBLISHED`
+wrong.
+
+**Excluding archived content is the drive's pre-existing default, not a member of this set.**
+`appendExcludeArchivedQuery` already emits `cvi.deleted = false` on every request today. The three
+statuses are AND-ed *on top of* that baseline; `ARCHIVED` is the only one that lifts it.
+
+So the generated predicate is:
+
+| Selection | Baseline | Status clauses | Net |
+|---|---|---|---|
+| `[]` | `deleted = false` | — | today's behavior |
+| `[UNPUBLISHED]` | `deleted = false` | `live_inode is null` | unpublished **and not archived** |
+| `[LOCKED]` | `deleted = false` | `locked_by is not null` | locked **and not archived** |
+| `[ARCHIVED]` | *lifted* | `deleted = true` | archived only |
+| `[ARCHIVED, LOCKED]` | *lifted* | `deleted = true` + `locked_by is not null` | archived **and** locked |
+
+This falls out of the code shape rather than needing special handling: the baseline is skipped only
+when the selection contains `ARCHIVED`, so `UNPUBLISHED`/`LOCKED` alone keep it automatically.
+
+*(Raised by the automated spec review on [#37170](https://github.com/dotCMS/core/pull/37170).)*
+
+### `LOCKED` and version scoping compose
+
+`LOCKED` does not constrain which version is joined, so it stacks on whatever `showWorking` already
+selected. That is the same pairing the legacy portlet uses: `ContentletAjax.java:1018` appends
+`+locked:true` and `:1035` unconditionally appends `+working:true`.
+
+One deliberate difference: legacy **always** scopes to the working version, whereas here the drive
+scopes to working because `AbstractDriveRequestForm.live()` defaults to `false`. A caller that sets
+`live: true` with `status: ["LOCKED"]` therefore gets "live content that is locked" — a coherent,
+strictly more expressive query, not a bug. Only `ARCHIVED` and `UNPUBLISHED` force working-version
+scoping, because neither state can have a live version at all.
 
 ---
 
