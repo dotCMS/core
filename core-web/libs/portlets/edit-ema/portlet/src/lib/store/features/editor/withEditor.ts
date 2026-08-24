@@ -163,7 +163,7 @@ export function withEditor() {
             });
 
             const editorCanEditStyles = computed(() => {
-                return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR;
+                return store.flags()?.FEATURE_FLAG_UVE_STYLE_EDITOR === true;
             });
 
             const editorEnableInlineEdit = computed(() => {
