@@ -41,7 +41,7 @@ export class ContentTypeFieldsTabComponent implements OnInit {
      * Trigger the editTab event to change tab label
      * @memberof ContentTypeFieldsTabComponent
      */
-    changeLabel($event: FocusEvent): void {
+    changeLabel($event: Event): void {
         $event.stopPropagation();
         $event.preventDefault();
         const label = ($event.target as HTMLElement).textContent;

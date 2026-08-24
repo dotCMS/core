@@ -250,16 +250,21 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
 
     /**
      * Opens modal for confirmation.
-     * @param {number} lastValue
+     * @param {number} [lastValue] - Value to restore if the user cancels. The Clear button
+     * passes nothing: it is only reachable while `maxContentlets` is non-zero, so there is
+     * nothing for the reject branch to put back.
      * @memberof DotContainerPropertiesComponent
      */
-    clearContentConfirmationModal(lastValue: number): void {
+    clearContentConfirmationModal(lastValue?: number): void {
         this.dotAlertConfirmService.confirm({
             accept: () => {
                 this.clearContentTypesAndCode();
             },
             reject: () => {
-                if (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets) {
+                if (
+                    lastValue !== undefined &&
+                    (this.form.value.maxContentlets === 0 || !this.form.value.maxContentlets)
+                ) {
                     this.form.controls['maxContentlets'].setValue(lastValue);
                 }
             },

@@ -34,7 +34,7 @@ export class DotAddContentletComponent implements OnInit {
     shutdown: EventEmitter<unknown> = new EventEmitter();
 
     @Output()
-    custom: EventEmitter<unknown> = new EventEmitter();
+    custom: EventEmitter<CustomEvent> = new EventEmitter();
     url$!: Observable<string>;
     header$!: Observable<string>;
 
