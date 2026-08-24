@@ -10,6 +10,7 @@
     "files": ["src/main.ts", "src/polyfills.ts"],
     "exclude": ["jest.config.ts"],
     "angularCompilerOptions": {
+        "typeCheckHostBindings": true,
         "strictTemplates": true
     }
 }
