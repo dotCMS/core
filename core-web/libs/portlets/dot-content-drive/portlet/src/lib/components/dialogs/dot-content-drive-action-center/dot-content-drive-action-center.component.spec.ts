@@ -159,6 +159,9 @@ describe('DotContentDriveActionCenterComponent', () => {
     let pushPublishEnvironments: DotEnvironment[] = [];
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
+    // The rows as the table lists them. Selection arrives in the order rows were ticked, so this is
+    // the only source of the order the user actually looked at.
+    const mockItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
@@ -180,6 +183,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             provideHttpClient(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
+                items: mockItems,
                 actionExecution: mockActionExecution,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
                 hasPushPublishEnvironments: mockHasPushPublishEnvironments,
@@ -253,6 +257,10 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     beforeEach(() => {
         mockSelectedItems.set([
+            contentlet({ inode: 'inode-1' }),
+            contentlet({ inode: 'inode-2', live: true })
+        ]);
+        mockItems.set([
             contentlet({ inode: 'inode-1' }),
             contentlet({ inode: 'inode-2', live: true })
         ]);
@@ -455,6 +463,31 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="workflow-actions-error"]')).toBeTruthy();
+        });
+    });
+
+    describe('preview ordering', () => {
+        // Selection is stored in the order rows were ticked (`setSelectedItems` keeps PrimeNG's
+        // array verbatim), so a preview built straight off it lists rows in click order. The user
+        // is confirming against what the table just showed them, so it has to match the table.
+        it('should list the preview in table order, not the order rows were ticked', () => {
+            const rows = [
+                contentlet({ inode: 'a' }),
+                contentlet({ inode: 'b' }),
+                contentlet({ inode: 'c' })
+            ];
+            mockItems.set(rows);
+            mockSelectedItems.set([rows[2], rows[0], rows[1]]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$includedItems']().map((item) => item.inode)).toEqual([
+                'a',
+                'b',
+                'c'
+            ]);
         });
     });
 

@@ -554,13 +554,37 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 ? this.$selectedItems()
                 : this.$contentlets();
 
-            return pool.filter((item) =>
-                eligible.has(supportsFolders(quickAction.id) ? item.identifier : item.inode)
+            return this.#inTableOrder(
+                pool.filter((item) =>
+                    eligible.has(supportsFolders(quickAction.id) ? item.identifier : item.inode)
+                )
             );
         }
 
-        return eligibleContentlets(this.$selectedAction(), this.$contentlets());
+        return this.#inTableOrder(eligibleContentlets(this.$selectedAction(), this.$contentlets()));
     });
+
+    /**
+     * Reorders preview rows to match the table behind the dialog.
+     *
+     * Selection is stored exactly as PrimeNG hands it over (`setSelectedItems`), which is the order
+     * rows were *ticked*, not the order they are listed in. A preview built straight off it comes
+     * out shuffled relative to the grid the user was just reading, which makes a confirmation list
+     * hard to check.
+     *
+     * Keyed on `inode`, which every row carries — folders included, since the drive-search response
+     * is backfilled at the service boundary. Anything not found in the current page keeps its
+     * relative position at the end rather than being dropped.
+     */
+    #inTableOrder<T extends DotContentDriveItem>(items: T[]): T[] {
+        const order = new Map(this.#store.items().map((item, index) => [item.inode, index]));
+
+        return [...items].sort(
+            (a, b) =>
+                (order.get(a.inode) ?? Number.MAX_SAFE_INTEGER) -
+                (order.get(b.inode) ?? Number.MAX_SAFE_INTEGER)
+        );
+    }
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
