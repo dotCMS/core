@@ -436,9 +436,9 @@ export class DotExperimentsListComponent {
     /**
      * Opens the Results screen of an experiment.
      *
-     * Ungated on purpose, unlike every kebab entry: `AllowedActionsByExperimentStatus.results`
+     * Ungated on purpose, unlike every other menu entry: `AllowedActionsByExperimentStatus.results`
      * clears RUNNING and ENDED only, but the screen renders a waiting state of its own for an
-     * experiment with nothing to count yet, so the row leads with it whatever the status (AC6).
+     * experiment with nothing to count yet, so it is offered whatever the status (AC6).
      */
     onViewResults(experiment: DotExperiment): void {
         this.#router.navigate(resultsCommandsOf(experiment.id));
@@ -458,8 +458,15 @@ export class DotExperimentsListComponent {
 
         return [
             {
-                // Leads the menu, behind the row's own View Results control: it is the only
-                // entry every status allows.
+                // Temporary home: the design leads the row with View Results as its own control,
+                // but it sits in the menu until that lands. Leads the menu because, unlike every
+                // other entry, the Results screen is reachable on any status — it renders its own
+                // waiting state for an experiment with nothing counted yet (AC6).
+                id: 'experiments-view-results',
+                label: this.#dotMessageService.get('experiments.list.actions.view-results'),
+                command: () => this.onViewResults(experiment)
+            },
+            {
                 id: 'experiments-configure',
                 label: this.#dotMessageService.get('experiments.list.action.configure'),
                 visible: isAllowed('configuration', status),
