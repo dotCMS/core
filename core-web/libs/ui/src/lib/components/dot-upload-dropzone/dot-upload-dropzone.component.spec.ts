@@ -582,4 +582,50 @@ describe('DotUploadDropzoneComponent', () => {
             expect(spectator.component.active).toBe(true);
         });
     });
+
+    describe('when disabled', () => {
+        // The host disables the zone where the user cannot add children to the target folder.
+        // Uploading creates a contentlet in it, which the server refuses (ESContentletAPIImpl:605),
+        // so accepting the drop only means the user waits for a failure they could not have
+        // predicted from the UI.
+        beforeEach(() => {
+            spectator.setInput('disabled', true);
+            spectator.detectChanges();
+        });
+
+        it('should not activate the overlay on drag enter', () => {
+            spectator.component.onDragEnter(createDragEnterEvent());
+            spectator.detectChanges();
+
+            expect(spectator.component.active).toBe(false);
+        });
+
+        it('should not announce the drag to the host', () => {
+            spectator.component.onDragEnter(createDragEnterEvent());
+            spectator.detectChanges();
+
+            expect(dragEnterSpyEmitter).not.toHaveBeenCalled();
+        });
+
+        it('should not emit an upload when files are dropped', () => {
+            const files = [new File([''], 'a.png')] as unknown as FileList;
+
+            spectator.component.onDrop(createDropEvent(files));
+            spectator.detectChanges();
+
+            expect(uploadFilesSpyEmitter).not.toHaveBeenCalled();
+        });
+
+        // Left to the browser deliberately: preventing the default here would swallow the drop
+        // silently, while letting it through means the OS shows its own "cannot drop" cursor.
+        it('should still accept drops once re-enabled', () => {
+            spectator.setInput('disabled', false);
+            spectator.detectChanges();
+
+            spectator.component.onDragEnter(createDragEnterEvent());
+            spectator.detectChanges();
+
+            expect(spectator.component.active).toBe(true);
+        });
+    });
 });

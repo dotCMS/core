@@ -289,6 +289,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // Mock the contextMenu viewChild
             const mockContextMenu = {
                 show: jest.fn(),
+                hide: jest.fn(),
                 visible: jest.fn().mockReturnValue(false)
             } as unknown as ContextMenu;
 
@@ -383,6 +384,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             it('should show context menu for folders', async () => {
                 const mockContextMenu = {
                     show: jest.fn(),
+                    hide: jest.fn(),
                     visible: jest.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
@@ -403,6 +405,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             it('should use memoized folder menu items on second call', async () => {
                 const mockContextMenu = {
                     show: jest.fn(),
+                    hide: jest.fn(),
                     visible: jest.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
@@ -436,6 +439,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             it('should not show context menu when folder has no applicable permissions', async () => {
                 const mockContextMenu = {
                     show: jest.fn(),
+                    hide: jest.fn(),
                     visible: jest.fn().mockReturnValue(false)
                 } as unknown as ContextMenu;
 
@@ -584,6 +588,32 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         })
                     );
                 });
+            });
+
+            // `getMenuItems` clears `$items` before it works out what to show, so bailing out for
+            // an item with no actions left an already-open menu on screen with nothing in it. Only
+            // reachable by opening one menu and then right-clicking something with no actions.
+            it('should close an open menu when the next item has no actions', async () => {
+                const menu = {
+                    show: jest.fn(),
+                    hide: jest.fn(),
+                    visible: jest.fn().mockReturnValue(true)
+                } as unknown as ContextMenu;
+                jest.spyOn(component, 'contextMenu').mockReturnValue(menu);
+
+                // A contentlet first, which does have actions.
+                await component.getMenuItems(mockContextMenuData);
+                expect(menu.show).toHaveBeenCalled();
+
+                // Then a folder with nothing on offer.
+                await component.getMenuItems({
+                    triggeredEvent: mockEvent,
+                    contentlet: { ...mockFolder, permissions: [] },
+                    showAddToBundle: false
+                });
+
+                expect(component.$items()).toEqual([]);
+                expect(menu.hide).toHaveBeenCalled();
             });
 
             describe('push publish', () => {

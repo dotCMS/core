@@ -23,7 +23,8 @@ import {
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
-    FeaturedFlags
+    FeaturedFlags,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { GlobalStore, withFlags } from '@dotcms/store';
 
@@ -33,6 +34,7 @@ import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
 import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
+import { withSitePermissions } from './features/site-permissions/withSitePermissions';
 
 import {
     DEFAULT_PAGE,
@@ -631,5 +633,43 @@ export const DotContentDriveStore = signalStore(
     withSidebar(),
     withDragging(),
     withActionExecution(),
-    withPushPublishEnvironments()
+    withPushPublishEnvironments(),
+    withSitePermissions(),
+    withComputed(({ selectedNode, siteCanAddChildren }) => ({
+        /**
+         * Whether the browsed folder accepts new children.
+         *
+         * Every creation affordance lands on the same server-side check: a new folder needs
+         * CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673-676`), and a new contentlet needs it on
+         * the destination folder (`ESContentletAPIImpl:605-609`) — which is what an upload and a
+         * dropped file create.
+         *
+         * Computed here rather than in each consumer because three surfaces gate on it — the New
+         * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+         * fallback would be three chances to disagree.
+         *
+         * A node with no permissions is the site root, whose parent is the host rather than a
+         * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+         * in flight, and an instance too old to report the field. Starting disabled would flicker
+         * the affordances off and on for the common case, and the server refuses the write anyway.
+         */
+        $canAddChildren: computed(() => {
+            const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
+                ?.permissions;
+
+            if (!permissions?.length) {
+                return siteCanAddChildren() !== false;
+            }
+
+            return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+        })
+    })),
+    withHooks((store) => ({
+        onInit() {
+            // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
+            // emission and `switchMap` drops the previous site's in-flight answer, so switching
+            // sites quickly can never settle the gate with the wrong site's result.
+            store.loadSitePermissions(store.currentSite);
+        }
+    }))
 );

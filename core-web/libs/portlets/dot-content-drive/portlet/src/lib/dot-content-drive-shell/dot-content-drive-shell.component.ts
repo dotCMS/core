@@ -193,6 +193,14 @@ export class DotContentDriveShellComponent {
     readonly $selectedFolder = computed(() => this.#store.selectedNode()?.data);
 
     /**
+     * Whether the browsed folder accepts new children. Disables the drop zone where it does not:
+     * an upload creates a contentlet in the target folder, so the drop would be refused server-side
+     * only after the user had already committed the gesture. Shared with the toolbar's New and
+     * Upload buttons via the store, so the three cannot disagree.
+     */
+    readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
      * narrow viewport, and clears the override on close. Purely derived from the panel's open
      * state each time it runs — no bookkeeping needed (unlike a real preference, "should the panel

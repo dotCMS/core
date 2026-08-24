@@ -237,6 +237,10 @@ export class DotFolderListViewContextMenuComponent {
             }
 
             if (!folderMenuItems.length) {
+                // `$items` was cleared above, so a menu still open from a previous right-click would
+                // otherwise sit there empty rather than closing.
+                this.contextMenu()?.hide();
+
                 return;
             }
 
@@ -307,6 +311,9 @@ export class DotFolderListViewContextMenuComponent {
         });
 
         if (!actionsMenu.length) {
+            // Same as the folder branch: close rather than leave an emptied menu on screen.
+            this.contextMenu()?.hide();
+
             return;
         }
 

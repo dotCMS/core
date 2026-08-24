@@ -211,6 +211,17 @@ export class DotContentDriveToolbarComponent {
      * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
      * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
      */
+    /**
+     * Whether the browsed folder accepts new children — the store's answer, shared with the drop
+     * zone so the three creation affordances can never disagree about the same folder.
+     */
+    protected readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
+    protected readonly $addChildrenTooltip = computed(() =>
+        this.$canAddChildren() ? '' : 'content-drive.add-new.no-add-children'
+    );
+
     protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
 

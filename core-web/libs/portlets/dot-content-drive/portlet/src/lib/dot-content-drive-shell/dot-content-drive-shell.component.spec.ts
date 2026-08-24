@@ -92,6 +92,9 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+// Module scope: both store mocks in this file read it, and they live in describes that do not
+// share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -188,6 +191,7 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     beforeEach(() => {
+        canAddChildrenSignal.set(true);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -202,6 +206,9 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: jest.fn().mockReturnValue(false),
@@ -811,6 +818,27 @@ describe('DotContentDriveShellComponent', () => {
 
             const dropzone = spectator.query('[data-testid="dropzone"]');
             expect(dropzone).toBeTruthy();
+        });
+
+        // Dropping a file creates a contentlet in the target folder, which the server refuses
+        // without CAN_ADD_CHILDREN. The zone has to refuse the gesture rather than accept it and
+        // fail after the upload has already started.
+        it('should disable the dropzone where children cannot be added', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(true);
+        });
+
+        it('should leave the dropzone enabled where children can be added', () => {
+            canAddChildrenSignal.set(true);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(false);
         });
     });
 
@@ -2933,6 +2961,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     items: jest.fn().mockReturnValue(MOCK_ITEMS),
