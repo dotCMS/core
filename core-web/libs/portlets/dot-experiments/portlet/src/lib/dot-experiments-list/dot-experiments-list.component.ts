@@ -58,6 +58,7 @@ import {
     CONFIGURATION_SEGMENT,
     EXPERIMENTS_URL,
     GOAL_LABEL_KEYS,
+    LIST_TABLE_STYLE,
     NEW_EXPERIMENT_SEGMENT,
     NO_GOAL_PLACEHOLDER,
     ROWS_PER_PAGE_OPTIONS,
@@ -129,6 +130,7 @@ export class DotExperimentsListComponent {
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
     readonly NO_GOAL_PLACEHOLDER = NO_GOAL_PLACEHOLDER;
     readonly ROWS_PER_PAGE_OPTIONS = ROWS_PER_PAGE_OPTIONS;
+    readonly TABLE_STYLE = LIST_TABLE_STYLE;
 
     /**
      * Page sizes to offer, or `null` for none.

@@ -93,6 +93,24 @@ export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
 /** Placeholder rendered in the Goal column when no goal is configured. */
 export const NO_GOAL_PLACEHOLDER = '—';
 
+/**
+ * Style of the list table.
+ *
+ * `table-layout: fixed` is what makes the per-column widths in the header authoritative, so every
+ * cell truncates instead of stretching its column. On its own that leaves the one elastic column —
+ * Name, the only `w-full` — absorbing every pixel the others do not need, and shrinking towards
+ * zero once the viewport is narrow enough. The `min-width` is the floor that stops it: below that
+ * the table stops shrinking and the scroll container takes over horizontally.
+ *
+ * The value is the sum of the fixed columns (14 + 11 + 7 + 15 + 8 + 8 + 4 = 67rem) plus the floor
+ * granted to Name (14rem). Keep it in step with the header widths — a column added or resized
+ * there without updating this number silently eats into Name's floor again.
+ */
+export const LIST_TABLE_STYLE: Record<string, string> = {
+    'table-layout': 'fixed',
+    'min-width': '81rem'
+};
+
 /** Height of the status filter's option list before it scrolls. */
 export const LISTBOX_SCROLL_HEIGHT = '320px';
 

@@ -34,9 +34,9 @@
                     autocomplete="off"
                     [(ngModel)]="$searchTerm"
                     [placeholder]="'experiments.list.search.placeholder' | dm"
-                    [attr.aria-label]="'experiments.list.search.placeholder' | dm"
+                    [attr.aria-label]="'experiments.list.search.label' | dm"
                     data-testid="experiments-search-input"
-                    class="w-80" />
+                    class="w-100" />
                 @if ($searchTerm()) {
                     <p-inputIcon
                         class="pi pi-times p-input-icon-right cursor-pointer"
@@ -69,7 +69,6 @@
             <p-button
                 class="ml-auto"
                 [label]="'experiments.list.action.new' | dm"
-                icon="pi pi-plus"
                 (onClick)="onNewExperiment()"
                 data-testid="experiments-new" />
         </div>
@@ -93,7 +92,7 @@
         } @else {
             <p-table
                 [value]="$tableValue()"
-                [tableStyle]="{ 'table-layout': 'fixed' }"
+                [tableStyle]="TABLE_STYLE"
                 [lazy]="true"
                 (onLazyLoad)="onLazyLoad($event)"
                 [paginator]="true"
@@ -115,7 +114,7 @@
                 <ng-template pTemplate="header">
                     <tr>
                         <th class="w-full" pSortableColumn="name">
-                            {{ 'experiments.list.header.experiment' | dm }}
+                            {{ 'experiments.list.header.name' | dm }}
                             <p-sortIcon field="name" />
                         </th>
                         <th class="w-56" pSortableColumn="page">
