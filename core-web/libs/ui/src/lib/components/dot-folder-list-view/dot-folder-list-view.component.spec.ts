@@ -2714,7 +2714,7 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(headerByLabel('T')?.style.width).toMatch(/ch$/);
-            expect(headerByLabel('D')?.style.width).toBe('12rem');
+            expect(headerByLabel('D')?.style.width).toBe('19ch');
         });
 
         it('should let the browser size a header so it is never cut nor over-reserved', () => {
@@ -2735,10 +2735,11 @@ describe('DotFolderListViewComponent', () => {
         });
 
         it('should keep a fixed-width column from clipping a long header', () => {
-            // The per-type width used to be an override, so a boolean column stayed pinned at 7rem
-            // however long its header was. Under `table-layout: fixed` with a `whitespace-nowrap`
-            // sortable header and no overflow clipping, the label then spilled into the next header.
-            // The type width is a floor now: wide enough for the label, never narrower than 7rem.
+            // The per-type width used to be an override, so a boolean column stayed pinned at its
+            // compact width however long its header was. Under `table-layout: fixed` with a
+            // `whitespace-nowrap` sortable header and no overflow clipping, the label then spilled
+            // into the next header. It is a floor now: wide enough for the label, never narrower than
+            // the type's own width.
             spectator.setInput('extraColumns', [
                 {
                     field: 'myBool',
@@ -2751,8 +2752,7 @@ describe('DotFolderListViewComponent', () => {
 
             const width = headerByLabel('Bool Radio With A Very Long Header Name')?.style.width;
 
-            expect(width).toMatch(/ch$/);
-            expect(width).not.toBe('7rem');
+            expect(width).toBe('32ch');
         });
 
         it('should not over-reserve width for a long header', () => {
@@ -2779,8 +2779,54 @@ describe('DotFolderListViewComponent', () => {
             ]);
             spectator.detectChanges();
 
-            // The label fits well inside 7rem, so the compact per-type width still wins.
-            expect(headerByLabel('On')?.style.width).toBe('7rem');
+            // The label fits well inside the boolean floor, so the compact per-type width wins.
+            expect(headerByLabel('On')?.style.width).toBe('11ch');
+        });
+
+        it('should widen a boolean column to the header a real True/False field carries', () => {
+            // The reported case, in the shape it was reported in: a Radio or Select field with Data
+            // Type True/False and "Show in List" on. The floor and the header estimate used to be
+            // compared by converting `rem` to `ch` at a hardcoded 2 `ch` per `rem`, which assumes a
+            // 16px root font while dotCMS sets 14px. A 7rem column was therefore scored as 14ch when
+            // it is really 11.3ch, so the floor beat this header, and the label plus its sort icon
+            // (measured at 113px in the rendered portlet) was laid out in a 98px cell and drew over
+            // the next heading. Both are counted in `ch` now, so nothing is converted.
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool Radio', order: 0, type: 'boolean', sortable: true }
+            ]);
+            spectator.detectChanges();
+
+            expect(headerByLabel('Bool Radio')?.style.width).toBe('16ch');
+        });
+
+        it('should reserve room for the sort indicator in a sortable header', () => {
+            // A sortable header renders its label AND a sort icon, and the icon is ~2.6ch of the
+            // cell. Without an allowance for it, the estimate for "Bool Radio" landed at 13ch, or
+            // 112.7px, against a measured need of 113px: short by a hair, which is all it takes to
+            // spill into the neighbouring header.
+            spectator.setInput('extraColumns', [
+                {
+                    field: 'sortable',
+                    header: 'Bool Radio',
+                    order: 0,
+                    type: 'boolean',
+                    sortable: true
+                },
+                { field: 'plain', header: 'Bool Radio', order: 1, type: 'boolean' }
+            ]);
+            spectator.detectChanges();
+
+            const [sortable] = spectator
+                .queryAll(byTestId('header-column-sortable'))
+                .filter((th) => th.textContent?.trim().startsWith('Bool Radio'))
+                .map((th) => (th as HTMLElement).style.width);
+            const [plain] = spectator
+                .queryAll(byTestId('header-column-not-sortable'))
+                .filter((th) => th.textContent?.trim() === 'Bool Radio')
+                .map((th) => (th as HTMLElement).style.width);
+
+            expect(sortable).toBe('16ch');
+            expect(plain).toBe('13ch');
         });
 
         it('should clamp a text column width to the max for very long values', () => {
