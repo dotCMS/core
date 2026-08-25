@@ -74,7 +74,8 @@ export class DotTimeComponent {
     step = '1';
 
     @State()
-    classNames!: DotFieldStatusClasses;
+    /** Only assigned by the `_dotStatusChange` listener, so it is unset on first render. */
+    classNames?: DotFieldStatusClasses;
     @State()
     errorMessageElement: any;
 

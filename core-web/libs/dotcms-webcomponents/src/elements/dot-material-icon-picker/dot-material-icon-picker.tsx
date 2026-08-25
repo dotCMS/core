@@ -19,7 +19,8 @@ import '@material/mwc-icon';
 export class DotMaterialIcon {
     @Element() element!: HTMLElement;
 
-    @State() showSuggestions!: boolean;
+    /** Never assigned before the first render; the two consumers below both treat it as falsy. */
+    @State() showSuggestions = false;
     @State() suggestionArr: string[] = [];
     /** Undefined when no suggestion is highlighted, which is what the three clears below set. */
     @State() selectedSuggestionIndex?: number;

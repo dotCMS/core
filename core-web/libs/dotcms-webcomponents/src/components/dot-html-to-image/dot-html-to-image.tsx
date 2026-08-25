@@ -27,7 +27,8 @@ export class DotHtmlToImage {
         /** A message, or the caught value itself when the failure came from a `try`/`catch`. */
         error?: unknown;
     }>;
-    @State() previewImg!: string;
+    /** Unset until the async postMessage handler resolves; `render()` branches on its absence. */
+    @State() previewImg?: string;
 
     /** Held so `disconnectedCallback` can remove the very listener `onLoad` added. */
     boundOnMessageHandler: ((event: MessageEvent) => void) | null = null;
