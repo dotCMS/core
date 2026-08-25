@@ -103,7 +103,10 @@ describe('DotRolesEditComponent', () => {
         const dialogRef = spectator.inject(DynamicDialogRef);
         spectator.detectChanges();
 
-        (spectator.component as unknown as { onSave: () => void }).onSave();
+        // The submit button carries `data-testid` on the native `<button>`
+        // (via `pButton` — not `p-button`), so a direct click hits the DOM
+        // event the template binds to.
+        spectator.click(byTestId('btn-save'));
         await Promise.resolve();
 
         expect(store.updateRole).toHaveBeenCalledWith(
@@ -118,7 +121,7 @@ describe('DotRolesEditComponent', () => {
         const dialogRef = spectator.inject(DynamicDialogRef);
         spectator.detectChanges();
 
-        (spectator.component as unknown as { onCancel: () => void }).onCancel();
+        spectator.click(byTestId('btn-cancel'));
 
         expect(store.updateRole).not.toHaveBeenCalled();
         expect(dialogRef.close).toHaveBeenCalled();
@@ -129,7 +132,7 @@ describe('DotRolesEditComponent', () => {
         const dialogRef = spectator.inject(DynamicDialogRef);
         spectator.detectChanges();
 
-        (spectator.component as unknown as { onDelete: () => void }).onDelete();
+        spectator.click(byTestId('btn-delete'));
         await Promise.resolve();
 
         expect(store.deleteRole).toHaveBeenCalledWith('r-eco');

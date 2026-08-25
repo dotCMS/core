@@ -32,7 +32,8 @@ describe('DotRolesTreeComponent', () => {
         detectChanges: false,
         componentProviders: [
             mockProvider(DotRolesStore, {
-                rootRoles: jest.fn().mockReturnValue([]),
+                roles: jest.fn().mockReturnValue([]),
+                roleTree: jest.fn().mockReturnValue([]),
                 filteredRoles: jest.fn().mockReturnValue([]),
                 filter: jest.fn().mockReturnValue(''),
                 isSearching: jest.fn().mockReturnValue(false),

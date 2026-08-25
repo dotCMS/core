@@ -82,6 +82,20 @@ describe('DotRolesStore', () => {
                 loadRoleMembersByKey: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
                 loadRoleMembersById: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
                 createRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                updateRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                deleteRole: jest
+                    .fn()
+                    .mockReturnValue(of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })),
+                grantUserToRole: jest.fn().mockReturnValue(
+                    of({
+                        granted: true,
+                        roleId: 'r-eco',
+                        user: { userId: 'u-1' }
+                    })
+                ),
+                removeUsersFromRole: jest
+                    .fn()
+                    .mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
                 searchRoles: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotHttpErrorManagerService)
@@ -98,6 +112,14 @@ describe('DotRolesStore', () => {
         service.loadRoleMembersByKey.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
         service.loadRoleMembersById.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
         service.createRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
+        service.updateRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
+        service.deleteRole.mockReturnValue(
+            of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })
+        );
+        service.grantUserToRole.mockReturnValue(
+            of({ granted: true, roleId: 'r-eco', user: { userId: 'u-1' } })
+        );
+        service.removeUsersFromRole.mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] }));
     });
 
     describe('initial state', () => {
@@ -440,9 +462,12 @@ describe('DotRolesStore', () => {
 
             await store.createRole({ ...FORM, parentRoleId: 'r-eco' });
 
-            // Full reload not triggered, targeted fetch not triggered either.
+            // Full reload not triggered. The POST response is hydrated so
+            // the store also skips the follow-up `loadRoleById(created.id)`
+            // that used to fire — see the "seed selectedRole directly"
+            // comment in `createRole`.
             expect(service.loadRootRoles).not.toHaveBeenCalled();
-            expect(service.loadRoleById).toHaveBeenCalledTimes(1);
+            expect(service.loadRoleById).not.toHaveBeenCalled();
             const categories = store.roles().find((n) => n.id === 'r-categories');
             const eco = categories?.roleChildren?.find((n) => n.id === 'r-eco');
             expect(eco?.roleChildren?.map((n) => n.id)).toContain('r-eco-child');
@@ -476,6 +501,104 @@ describe('DotRolesStore', () => {
             const result = await store.createRole(FORM);
 
             expect(errorManager.handle).toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('updateRole', () => {
+        it('should delegate to httpErrorManager and return null on failure', async () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            service.updateRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+            const result = await store.updateRole('r-eco', {
+                roleName: 'Eco',
+                roleKey: 'eco',
+                parentRoleId: null,
+                canEditUsers: true,
+                canEditPermissions: true,
+                canEditLayouts: true,
+                description: ''
+            });
+
+            expect(errorManager.handle).toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('deleteRole', () => {
+        beforeEach(() => {
+            store.loadRootRoles();
+        });
+
+        it('should delegate to httpErrorManager and return null on HTTP failure', async () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            service.deleteRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+            const result = await store.deleteRole('r-eco');
+
+            expect(errorManager.handle).toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it('should leave the tree untouched when the response reports deleted:false', async () => {
+            service.deleteRole.mockReturnValueOnce(
+                of({ deleted: false, roleId: 'r-eco', usersAffected: 0 })
+            );
+
+            const result = await store.deleteRole('r-eco');
+
+            const categories = store.roles().find((n) => n.id === 'r-categories');
+            expect(categories?.roleChildren?.map((c) => c.id)).toContain('r-eco');
+            expect(result?.deleted).toBe(false);
+        });
+    });
+
+    describe('grantUserToRole', () => {
+        beforeEach(() => {
+            store.loadRootRoles();
+            store.selectRole('r-eco');
+        });
+
+        it('should delegate to httpErrorManager and return null on failure', async () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            service.grantUserToRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+            const result = await store.grantUserToRole('u-1');
+
+            expect(errorManager.handle).toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it('should return null without hitting the endpoint when no role is selected', async () => {
+            store.selectRole(null);
+
+            const result = await store.grantUserToRole('u-1');
+
+            expect(service.grantUserToRole).not.toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+    });
+
+    describe('removeUsersFromRole', () => {
+        beforeEach(() => {
+            store.loadRootRoles();
+            store.selectRole('r-eco');
+        });
+
+        it('should delegate to httpErrorManager and return null on failure', async () => {
+            const errorManager = spectator.inject(DotHttpErrorManagerService);
+            service.removeUsersFromRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+
+            const result = await store.removeUsersFromRole(['u-1']);
+
+            expect(errorManager.handle).toHaveBeenCalled();
+            expect(result).toBeNull();
+        });
+
+        it('should short-circuit and return null when userIds is empty', async () => {
+            const result = await store.removeUsersFromRole([]);
+
+            expect(service.removeUsersFromRole).not.toHaveBeenCalled();
             expect(result).toBeNull();
         });
     });
