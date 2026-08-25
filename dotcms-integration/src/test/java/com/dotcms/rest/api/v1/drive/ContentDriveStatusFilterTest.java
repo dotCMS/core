@@ -15,6 +15,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.contentlet.model.ContentletVersionInfo;
 import com.dotmarketing.portlets.folders.model.Folder;
 import com.liferay.portal.model.User;
 import org.junit.BeforeClass;
@@ -28,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -111,13 +113,44 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
                 .nextPersisted();
     }
 
-    /** Identifiers rather than inodes: publishing, archiving and locking each mint a new version. */
-    private Set<String> driveIdentifiers(final DriveRequestForm request)
+    /**
+     * The inodes the drive returned.
+     *
+     * <p>Asserting on <b>inodes</b>, not identifiers, is deliberate. {@code selectQuery} selects
+     * {@code cvi.<working_inode|live_inode> as inode}, so which inode comes back is what proves the
+     * query joined the right <i>version</i>. An identifier is stable across versions, so an
+     * identifier-based assertion would still pass if the query joined {@code live_inode} where it
+     * should have joined {@code working_inode} — which is exactly the silent failure the
+     * {@code showWorking} rule guards against. Inodes carry the state; identifiers do not.</p>
+     */
+    private Set<String> driveInodes(final DriveRequestForm request)
             throws DotDataException, DotSecurityException {
         final PaginatedContents results = contentDriveHelper.driveSearch(request, systemUser);
         return results.list.stream()
-                .map(item -> (String) item.get("identifier"))
+                .map(item -> (String) item.get("inode"))
                 .collect(Collectors.toSet());
+    }
+
+    /**
+     * Current working inode for a contentlet, re-read from version info.
+     *
+     * <p>Must be read at assertion time rather than captured at fixture time: publishing, archiving
+     * and locking each mint a new version, so an inode held from creation is stale.</p>
+     */
+    private static String workingInode(final Contentlet contentlet) throws DotDataException {
+        return APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId())
+                .orElseThrow(() -> new AssertionError(
+                        "No version info for " + contentlet.getIdentifier()))
+                .getWorkingInode();
+    }
+
+    /** Current live inode, or null when there is no live version. Used to prove version choice. */
+    private static String liveInode(final Contentlet contentlet) throws DotDataException {
+        return APILocator.getVersionableAPI()
+                .getContentletVersionInfo(contentlet.getIdentifier(), contentlet.getLanguageId())
+                .map(ContentletVersionInfo::getLiveInode)
+                .orElse(null);
     }
 
     private DriveRequestForm.Builder baseRequest() {
@@ -141,14 +174,14 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testNoStatusReturnsEverythingButArchived()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(baseRequest().build());
+        final Set<String> inodes = driveInodes(baseRequest().build());
 
-        assertTrue("Live content must be returned", ids.contains(liveItem.getIdentifier()));
+        assertTrue("Live content must be returned", inodes.contains(workingInode(liveItem)));
         assertTrue("Unpublished content must be returned",
-                ids.contains(unpublishedItem.getIdentifier()));
-        assertTrue("Locked content must be returned", ids.contains(lockedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
+        assertTrue("Locked content must be returned", inodes.contains(workingInode(lockedItem)));
         assertFalse("Archived content must stay hidden by default",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
     }
 
     /**
@@ -159,8 +192,8 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     public void testEmptyStatusIsIdenticalToNoStatus()
             throws DotDataException, DotSecurityException {
         assertEquals("An empty status list must be a no-op",
-                driveIdentifiers(baseRequest().build()),
-                driveIdentifiers(baseRequest().status(List.of()).build()));
+                driveInodes(baseRequest().build()),
+                driveInodes(baseRequest().status(List.of()).build()));
     }
 
     // ---------------------------------------------------------------- FR-003: ARCHIVED
@@ -172,17 +205,17 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testArchivedReturnsOnlyArchivedContent()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("ARCHIVED")).build());
 
         assertTrue("The archived item must be returned",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
         assertFalse("Live content must not leak into an ARCHIVED filter",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
         assertFalse("Unpublished content must not leak into an ARCHIVED filter",
-                ids.contains(unpublishedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
         assertFalse("Locked content must not leak into an ARCHIVED filter",
-                ids.contains(lockedItem.getIdentifier()));
+                inodes.contains(workingInode(lockedItem)));
     }
 
     /**
@@ -191,11 +224,11 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testClearingArchivedRestoresDefault()
             throws DotDataException, DotSecurityException {
-        driveIdentifiers(baseRequest().status(List.of("ARCHIVED")).build());
+        driveInodes(baseRequest().status(List.of("ARCHIVED")).build());
 
-        final Set<String> ids = driveIdentifiers(baseRequest().build());
+        final Set<String> inodes = driveInodes(baseRequest().build());
         assertFalse("Archived content must be hidden again once the filter is cleared",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
     }
 
     /**
@@ -209,15 +242,55 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testArchivedCombinesWithTextSearch()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(baseRequest()
+        final Set<String> inodes = driveInodes(baseRequest()
                 .status(List.of("ARCHIVED"))
                 .filters(QueryFilters.builder().text("archived").build())
                 .build());
 
         assertTrue("The archived item matching the keyword must be returned",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
         assertFalse("A non-archived item must not be returned even if it matches the keyword",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
+    }
+
+    /**
+     * The drive returns the <b>working</b> inode for archived content, and that content has no live
+     * inode at all.
+     *
+     * <p>This is the assertion that only an inode-level check can make, and it is the direct guard
+     * for the {@code showWorking} rule: {@code selectQuery} picks its joined column as
+     * {@code showWorking || showArchived ? "working_inode" : "live_inode"}. If that derivation ever
+     * stops covering {@code ARCHIVED}, the query joins {@code live_inode} — which is null here — and
+     * returns nothing, silently. Asserting on identifiers could never see the difference, because an
+     * identifier is the same whichever version matched.</p>
+     */
+    @Test
+    public void testArchivedReturnsTheWorkingInodeNotTheLiveOne()
+            throws DotDataException, DotSecurityException {
+        assertNull("Archiving must clear the live version — otherwise this test proves nothing",
+                liveInode(archivedItem));
+
+        final Set<String> inodes = driveInodes(
+                baseRequest().status(List.of("ARCHIVED")).build());
+
+        assertTrue("The archived item's WORKING inode must be the one returned",
+                inodes.contains(workingInode(archivedItem)));
+    }
+
+    /**
+     * Same guard for {@code UNPUBLISHED}: never-published content has no live inode, so the working
+     * inode is the only one that can come back.
+     */
+    @Test
+    public void testUnpublishedReturnsTheWorkingInode()
+            throws DotDataException, DotSecurityException {
+        assertNull("A never-published item must have no live version",
+                liveInode(unpublishedItem));
+
+        final Set<String> inodes = driveInodes(
+                baseRequest().status(List.of("UNPUBLISHED")).build());
+
+        assertTrue(inodes.contains(workingInode(unpublishedItem)));
     }
 
     // ---------------------------------------------------------------- FR-004: UNPUBLISHED
@@ -232,15 +305,15 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testUnpublishedExcludesArchivedContent()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("UNPUBLISHED")).build());
 
         assertTrue("The never-published item must be returned",
-                ids.contains(unpublishedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
         assertFalse("Live content has a live version, so it must not be returned",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
         assertFalse("Archived content must stay hidden — only ARCHIVED admits it",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
     }
 
     /**
@@ -250,15 +323,15 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testArchivedPlusUnpublishedAdmitsArchivedContent()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("ARCHIVED", "UNPUBLISHED")).build());
 
         assertTrue("The archived item must now be admitted",
-                ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(archivedItem)));
         assertTrue("The unpublished item must still be returned",
-                ids.contains(unpublishedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
         assertFalse("Live content still has a live version",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
     }
 
     // ---------------------------------------------------------------- FR-005: LOCKED
@@ -273,15 +346,15 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testLockedReturnsOnlyLockedContent()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("LOCKED")).build());
 
-        assertTrue("The locked item must be returned", ids.contains(lockedItem.getIdentifier()));
+        assertTrue("The locked item must be returned", inodes.contains(workingInode(lockedItem)));
         assertFalse("Unlocked live content must not be returned",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
         assertFalse("Unlocked unpublished content must not be returned",
-                ids.contains(unpublishedItem.getIdentifier()));
-        assertFalse("Archived content must stay hidden", ids.contains(archivedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
+        assertFalse("Archived content must stay hidden", inodes.contains(workingInode(archivedItem)));
     }
 
     // ---------------------------------------------------------------- FR-006: the union
@@ -294,15 +367,15 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testUnpublishedOrLockedReturnsTheUnion()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("UNPUBLISHED", "LOCKED")).build());
 
         assertTrue("The unpublished item must be returned",
-                ids.contains(unpublishedItem.getIdentifier()));
+                inodes.contains(workingInode(unpublishedItem)));
         assertTrue("The locked item must be returned — this would fail under AND",
-                ids.contains(lockedItem.getIdentifier()));
+                inodes.contains(workingInode(lockedItem)));
         assertFalse("Content that is neither must not be returned",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
     }
 
     /**
@@ -319,9 +392,9 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
                 if (first.equals(second)) {
                     continue;
                 }
-                final Set<String> single = driveIdentifiers(
+                final Set<String> single = driveInodes(
                         baseRequest().status(List.of(first)).build());
-                final Set<String> pair = driveIdentifiers(
+                final Set<String> pair = driveInodes(
                         baseRequest().status(List.of(first, second)).build());
 
                 assertTrue(String.format(
@@ -342,14 +415,14 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     @Test
     public void testAllThreeStatusesReturnEverythingNotCleanlyPublished()
             throws DotDataException, DotSecurityException {
-        final Set<String> ids = driveIdentifiers(
+        final Set<String> inodes = driveInodes(
                 baseRequest().status(List.of("ARCHIVED", "UNPUBLISHED", "LOCKED")).build());
 
-        assertTrue(ids.contains(archivedItem.getIdentifier()));
-        assertTrue(ids.contains(unpublishedItem.getIdentifier()));
-        assertTrue(ids.contains(lockedItem.getIdentifier()));
+        assertTrue(inodes.contains(workingInode(archivedItem)));
+        assertTrue(inodes.contains(workingInode(unpublishedItem)));
+        assertTrue(inodes.contains(workingInode(lockedItem)));
         assertFalse("The clean live item is the only one that must not appear",
-                ids.contains(liveItem.getIdentifier()));
+                inodes.contains(workingInode(liveItem)));
     }
 
     // ---------------------------------------------------------------- FR-015: folders
