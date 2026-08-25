@@ -31,7 +31,16 @@ test.describe('AssetPicker sidebar — site selector', () => {
     let otherSiteId: string;
     let otherSiteHost: string;
 
-    test.beforeEach(async ({ apiHelpers, testSuffix }) => {
+    test.beforeEach(async ({ apiHelpers, testSuffix, adminPage }) => {
+        // The picker reopens on the globally remembered location. This suite creates and deletes
+        // sites, so without clearing it a test opens on a site a previous test destroyed and the
+        // tree comes back empty — an order-dependent failure that has nothing to do with what the
+        // test is asserting. (Surviving a *deleted* remembered site is FR-006's job, covered by its
+        // own story; this is about keeping these tests independent of each other.)
+        await adminPage.addInitScript(() =>
+            window.localStorage.removeItem('dotcms.asset-picker.lastPath')
+        );
+
         const contentType = await apiHelpers.createContentType(
             apiHelpers.assetPickerPayload(testSuffix)
         );
@@ -58,17 +67,6 @@ test.describe('AssetPicker sidebar — site selector', () => {
             `/zz-parent-${testSuffix}/deep-nested-${testSuffix}`
         ]);
         await apiHelpers.createFolders(otherSiteHost, [`/aaa-other-${testSuffix}`]);
-    });
-
-    test.beforeEach(async ({ adminPage }) => {
-        // The picker reopens on the globally remembered location. This suite creates and deletes
-        // sites, so without clearing it a test opens on a site a previous test destroyed and the
-        // tree comes back empty — an order-dependent failure that has nothing to do with what the
-        // test is asserting. (Surviving a *deleted* remembered site is FR-006's job, covered by its
-        // own story; this is about keeping these tests independent of each other.)
-        await adminPage.addInitScript(() =>
-            window.localStorage.removeItem('dotcms.asset-picker.lastPath')
-        );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
@@ -184,9 +182,14 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await field.openSelectExistingDialog();
         await picker.waitForVisible();
 
-        // `nested` sits in the middle of `deep-nested-<suffix>`, one level down. A prefix match or a
-        // non-recursive query would both miss it.
-        await picker.searchFolders('nested');
+        // `nested-<suffix>` sits in the middle of `deep-nested-<suffix>`, one level down: a prefix
+        // match or a non-recursive query would both miss it.
+        //
+        // The suffix is part of the *term*, not just the expected row. A shared fragment like
+        // `nested` matches every folder this suite has ever seeded — the results cap at one page
+        // (FR-020), older runs sort first, and this run's folder never makes the cut. The test then
+        // fails while the feature is working correctly, which is exactly what it did.
+        await picker.searchFolders(`nested-${testSuffix}`);
 
         await expect(picker.searchResults).toBeVisible();
         await expect(picker.folderTree).toBeHidden();
@@ -196,7 +199,7 @@ test.describe('AssetPicker sidebar — site selector', () => {
 
         // Scoped to this site: the other site's folder must not appear for a term that matches it.
         await picker.clearFolderSearch();
-        await picker.searchFolders('aaa-other');
+        await picker.searchFolders(`aaa-other-${testSuffix}`);
         await expect(picker.folderResultRows).toHaveCount(0);
     });
 
