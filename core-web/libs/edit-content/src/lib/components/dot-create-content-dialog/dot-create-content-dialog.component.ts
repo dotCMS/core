@@ -15,7 +15,7 @@ import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
 import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
-import { DotMessagePipe } from '@dotcms/ui';
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
@@ -54,7 +54,13 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
         // rendered in the template and its store. The concrete class is provided so
         // this component can read `saved$`; the layout/store see it via the token.
         OverlayEditContentHost,
-        { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost }
+        { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
+        // This is an Angular Edit Content host too — opened by UVE and by the Relationship
+        // field — so the new AssetPicker belongs here as much as in the shell and the side
+        // panel. Without it the three asset-selection entry points would silently fall back to
+        // the legacy picker in both of those flows. The launcher borrows the caller's
+        // `DialogService`, so unlike `IMAGE_EDITOR_LAUNCHER` it needs no provider of its own.
+        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
     ],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
