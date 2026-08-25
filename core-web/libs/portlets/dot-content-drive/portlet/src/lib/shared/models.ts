@@ -168,6 +168,25 @@ export interface DotContentDriveActionExecutionResult {
     successCount: number;
     skippedCount: number;
     failCount: number;
+    /**
+     * i18n key for the partial-outcome copy, when the default does not fit.
+     *
+     * The default names workflow-specific causes next to each number — permissions and locks for
+     * failures, "not on their workflow step" for skips. Those are the right causes for a bulk fire and
+     * the wrong ones for anything else, and a shortfall explained by the wrong cause sends the user off
+     * to fix something that was never the problem. An action whose failures and skips mean something
+     * different supplies its own copy rather than borrowing that one.
+     */
+    partialDetailKey?: string;
+    /**
+     * Whether this outcome arrived unprompted, from a job that finished in the background.
+     *
+     * Every other result settles a request the user is waiting on, so closing the dialog and reloading
+     * the grid is the natural next step. A backgrounded one can land at any moment — minutes later,
+     * while the user is filling in a different action's form — and doing either would throw away work
+     * they are in the middle of.
+     */
+    backgrounded?: boolean;
 }
 
 /**
