@@ -2,7 +2,5 @@
     "name": "core-web",
     "$schema": "node_modules/nx/schemas/project-schema.json",
     "targets": {},
-    "tags": [
-        "skip:typecheck"
-    ]
+    "tags": ["skip:typecheck"]
 }

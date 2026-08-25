@@ -97,13 +97,13 @@ describe('NgxTiptapDirective FormsModule', () => {
         await fixture.whenStable();
         fixture.detectChanges();
 
-        expect(component.value()).toContain('Hi.');
+        expect(component.value).toContain('Hi.');
     });
 
     it('should the model when editor is directly updated', () => {
         component.editor.chain().setContent('Hello World!').run();
         fixture.detectChanges();
-        expect(component.value()).toContain('Hello World!');
+        expect(component.value).toContain('Hello World!');
     });
 
     it('should disable the editor correctly', async () => {

@@ -28,6 +28,7 @@ import { DotDeviceSelectorSeoComponent } from './dot-device-selector-seo.compone
         <dot-device-selector-seo
             [apiLink]="apiLink"
             [currentUser]="currentUser"
+            [hideSocialMedia]="hideSocialMedia"
             #op></dot-device-selector-seo>
     `
 })
@@ -35,6 +36,7 @@ class TestHostComponent {
     apiLink = 'api/v1/page/render/an/url/test?language_id=1';
     linkToAddDevice = '/c/c_Devices';
     currentUser: { admin?: boolean } | null = { admin: true };
+    hideSocialMedia = false;
 }
 
 describe('DotDeviceSelectorSeoComponent', () => {
@@ -205,7 +207,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should hide the media tiles and show the secondary link when hideSocialMedia is true', () => {
-        fixture.componentRef.setInput('hideSocialMedia', true);
+        fixtureHost.componentInstance.hideSocialMedia = true;
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-selector-link-secondary"]'));
@@ -219,7 +221,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should use currentUser input for isCMSAdmin', () => {
-        fixture.componentRef.setInput('currentUser', { admin: true });
+        fixtureHost.componentInstance.currentUser = { admin: true };
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));
