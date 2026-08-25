@@ -151,8 +151,11 @@ export class HostFolderField {
     folderNode(name: string): Locator {
         return this.folderTree
             .locator('.p-tree-node-content', { hasText: name })
-            .or(this.folderSearchResults.getByTestId('host-folder-search-result')
-                .filter({ hasText: name }));
+            .or(
+                this.folderSearchResults
+                    .getByTestId('host-folder-search-result')
+                    .filter({ hasText: name })
+            );
     }
 
     async clickFolder(name: string) {
