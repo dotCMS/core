@@ -1,0 +1,38 @@
+@if (app(); as app) {
+    <div class="flex w-full flex-col overflow-y-auto bg-white text-sm shadow-md">
+        <div class="sticky top-0 z-1 bg-white">
+            <dot-apps-configuration-header [app]="app" />
+            <div
+                class="flex justify-between border-b border-gray-300 p-3 text-base font-semibold text-black">
+                <span class="inline-flex items-center">{{ app.sites?.[0]?.name }}</span>
+                <div class="flex gap-1">
+                    <p-button (click)="goToApps()" [label]="'Cancel' | dm" [outlined]="true" />
+                    <p-button (click)="onSubmit()" [label]="'Save' | dm" [loading]="saving()" />
+                </div>
+            </div>
+        </div>
+        <div class="grow overflow-y-auto">
+            <div class="m-4">
+                <div class="grid grid-cols-2 items-start gap-4">
+                    <div class="flex flex-col gap-2">
+                        <h4 class="m-0 text-sm font-semibold text-black">Provider Config</h4>
+                        <textarea
+                            pTextarea
+                            [ngModel]="configJson()"
+                            (ngModelChange)="configJson.set($event)"
+                            rows="20"
+                            class="w-full resize-y font-mono text-xs"
+                            spellcheck="false"></textarea>
+                    </div>
+                    <div class="flex flex-col gap-2">
+                        <h4 class="m-0 text-sm font-semibold text-black">Example JSON</h4>
+                        <pre
+                            class="m-0 overflow-auto rounded-sm border border-gray-300 bg-gray-100 p-3 font-mono text-xs leading-relaxed whitespace-pre text-gray-700"
+                            >{{ exampleJson }}</pre
+                        >
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+}

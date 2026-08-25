@@ -96,4 +96,12 @@ public interface FeatureFlagName {
      * {@code ConfigurationResource} can reference it as a constant like the others.
      */
     String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
+
+    /**
+     * Gates the redesigned dotAI provider configuration page ({@code dot-ai-config-detail}).
+     * Off by default so existing customers keep seeing the generic Apps config screen for the
+     * dotAI app until they opt in.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
+     */
+    String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
 }
