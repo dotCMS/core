@@ -10,6 +10,9 @@ export * from './lib/components/dot-api-link/dot-api-link.component';
 export * from './lib/components/dot-asset-picker/dot-asset-picker.component';
 export * from './lib/components/dot-asset-picker/asset-picker-config';
 export * from './lib/components/dot-asset-picker/asset-picker-dialog';
+// The host-capability seam that decides new AssetPicker vs. legacy picker per host.
+export * from './lib/components/dot-asset-picker/asset-picker-launcher.token';
+export * from './lib/components/dot-asset-picker/angular-asset-picker.launcher';
 export * from './lib/components/dot-asset-picker/last-asset-path';
 export * from './lib/components/dot-asset-picker/store/models';
 // Moved out of `apps/dotcms-ui` so libs can embed it without reaching back into the app
