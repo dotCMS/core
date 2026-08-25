@@ -117,23 +117,29 @@
                     </td>
                     <td data-testid="users-cell-email">{{ user.emailAddress }}</td>
                     <td data-testid="users-cell-roles">
-                        <!-- Roles column requires a per-user call to
-                             GET /api/v1/roles/users/{userIdOrEmail}.
-                             Populated in a follow-up (batch endpoint or lazy fetch). -->
-                        &mdash;
+                        @if ($rolesByUserId()[user.userId]; as roles) {
+                            <span>{{ roles.visible }}</span>
+                            @if (roles.more > 0) {
+                                <span class="text-color-secondary italic">
+                                    {{ 'users.roles.and-more' | dm: [roles.more.toString()] }}
+                                </span>
+                            }
+                        }
                     </td>
                     <td data-testid="users-cell-access">
-                        <div class="flex gap-1">
+                        <div class="flex flex-wrap gap-1">
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
                                     severity="info"
+                                    styleClass="whitespace-nowrap"
                                     data-testid="users-access-backend-chip" />
                             }
                             @if (user.frontendUser) {
                                 <p-tag
                                     [value]="'users.access.frontend' | dm"
                                     severity="success"
+                                    styleClass="whitespace-nowrap"
                                     data-testid="users-access-frontend-chip" />
                             }
                         </div>
@@ -141,8 +147,6 @@
                     <td data-testid="users-cell-last-login">
                         @if (user.lastLoginDate) {
                             {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
-                        } @else {
-                            &mdash;
                         }
                     </td>
                 </tr>
@@ -150,10 +154,10 @@
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
-            <tr class="h-full hover:bg-transparent!">
-                <td colspan="6" class="h-full border-none p-6 text-center">
+            <tr class="hover:bg-transparent!">
+                <td colspan="6" class="border-none p-0 text-center">
                     <div
-                        class="mx-auto flex max-w-100 flex-col items-center gap-4"
+                        class="mx-auto flex h-full max-w-100 flex-col items-center justify-center gap-4 p-6"
                         data-testid="users-empty-state">
                         <div class="flex size-20 items-center justify-center rounded-full">
                             <span
@@ -177,4 +181,54 @@
     </p-table>
 </div>
 
-<p-confirmDialog [draggable]="false" [position]="'center'" [style]="{ width: '500px' }" />
+<p-dialog
+    [visible]="$bulkDeleteVisible()"
+    (visibleChange)="$bulkDeleteVisible.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    [header]="'users.confirm.delete.header' | dm"
+    data-testid="users-bulk-delete-dialog">
+    <div class="flex flex-col gap-4">
+        <p class="m-0 text-color">
+            {{ 'users.confirm.delete.message' | dm: [store.selectedUsers().length.toString()] }}
+        </p>
+        <div class="field flex flex-col gap-2">
+            <label for="users-bulk-delete-replacement-picker">
+                {{ 'users.dialog.delete-confirm.replacement-label' | dm }}
+                <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <dot-users-replacement-picker
+                inputId="users-bulk-delete-replacement-picker"
+                [value]="$bulkReplacementUser()"
+                [excludedUserIds]="$bulkExcludedIds()"
+                [invalid]="!!$bulkReplacementError()"
+                (selectionChange)="onBulkReplacementSelect($event)"
+                data-testid="users-bulk-delete-replacement-picker" />
+            @if ($bulkReplacementError(); as key) {
+                <small class="text-red-600" data-testid="users-bulk-delete-replacement-error">
+                    {{ key | dm }}
+                </small>
+            } @else {
+                <small class="text-color-secondary">
+                    {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+                </small>
+            }
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="closeBulkDelete()"
+            data-testid="users-bulk-delete-cancel-btn" />
+        <p-button
+            [label]="'users.delete' | dm"
+            severity="danger"
+            (onClick)="confirmBulkDelete()"
+            data-testid="users-bulk-delete-confirm-btn" />
+    </ng-template>
+</p-dialog>
