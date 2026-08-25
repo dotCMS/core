@@ -82,6 +82,7 @@ jobs:
             echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
             echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
             echo "link_method=development_section" >> "$GITHUB_OUTPUT"
+            echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
           else
             pr_body=$(echo "$pr_details" | jq -r '.body // ""')
 
@@ -98,6 +99,7 @@ jobs:
               echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
               echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
               echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+              echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
 
             else
               # ── Cross-repo: owner/repo#NUMBER ───────────────────────────────
@@ -123,6 +125,7 @@ jobs:
                   echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
                   echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 else
                   echo "Found cross-repo reference: $cross_owner_repo#$cross_issue_num"
                   echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
@@ -130,6 +133,7 @@ jobs:
                   echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
                   echo "link_method=cross_repo_body" >> "$GITHUB_OUTPUT"
+                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 fi
 
               elif [[ -n "$cross_url_match" ]]; then
@@ -144,6 +148,7 @@ jobs:
                   echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
                   echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
+                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 else
                   echo "Found cross-repo URL: $cross_owner_repo#$cross_issue_num"
                   echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
@@ -151,13 +156,71 @@ jobs:
                   echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
                   echo "link_method=cross_repo_url" >> "$GITHUB_OUTPUT"
+                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 fi
 
               else
-                echo "No linked issues found in Development section or PR body"
-                echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
-                echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
-                echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                # ── Non-closing reference: "Refs #N", "Part of org/repo#N", full URL ──
+                # A PR can belong to an issue without resolving it: a Spec-Kit PR 1
+                # carries the spec for an issue that PR 2 actually answers, and a closing
+                # keyword there would retire the issue the moment the spec merges. These
+                # forms satisfy the linking requirement but set is_closing_link=false,
+                # which suppresses the "This PR fixes: #N" body PATCH further down.
+                # Reached only after every closing form above has failed, so an explicit
+                # "Fixes #N" always outranks a "Refs #N" elsewhere in the same body.
+                ref_kw='(refs?|references?|related to|part of|contributes to)'
+
+                ref_same_repo=$(echo "$pr_body" | grep -oiE \
+                  "${ref_kw}(:)?[[:space:]]+#[0-9]+" | grep -oE '[0-9]+' | head -1)
+                ref_cross_match=$(echo "$pr_body" | grep -oiE \
+                  "${ref_kw}(:)?[[:space:]]+[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+" | head -1)
+                ref_url_match=$(echo "$pr_body" | grep -oiE \
+                  "${ref_kw}(:)?[[:space:]]+https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/issues/[0-9]+" | head -1)
+
+                if [[ -n "$ref_same_repo" ]]; then
+                  echo "Found same-repo non-closing reference in PR body: $ref_same_repo"
+                  echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$ref_same_repo" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                  echo "link_method=pr_body_reference" >> "$GITHUB_OUTPUT"
+                  echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
+
+                elif [[ -n "$ref_cross_match" || -n "$ref_url_match" ]]; then
+                  if [[ -n "$ref_cross_match" ]]; then
+                    ref_owner_repo_num=$(echo "$ref_cross_match" | grep -oE '[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+')
+                    ref_owner_repo=$(echo "$ref_owner_repo_num" | cut -d'#' -f1)
+                    ref_issue_num=$(echo "$ref_owner_repo_num" | cut -d'#' -f2)
+                  else
+                    ref_url=$(echo "$ref_url_match" | grep -oE 'https://github\.com/[^ ]+')
+                    ref_owner_repo=$(echo "$ref_url" | sed 's|https://github.com/||;s|/issues/.*||')
+                    ref_issue_num=$(echo "$ref_url" | grep -oE 'issues/[0-9]+' | grep -oE '[0-9]+')
+                  fi
+
+                  # Same self-reference normalisation as the closing paths above.
+                  if [[ "${ref_owner_repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
+                    echo "Non-closing reference resolves to same repo ($ref_owner_repo) — treating as same-repo link"
+                    echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                    echo "linked_issue_number=$ref_issue_num" >> "$GITHUB_OUTPUT"
+                    echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                    echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                    echo "link_method=pr_body_reference" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "Found cross-repo non-closing reference: $ref_owner_repo#$ref_issue_num"
+                    echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                    echo "linked_issue_number=$ref_issue_num" >> "$GITHUB_OUTPUT"
+                    echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
+                    echo "cross_repo_owner_repo=$ref_owner_repo" >> "$GITHUB_OUTPUT"
+                    echo "link_method=cross_repo_reference" >> "$GITHUB_OUTPUT"
+                  fi
+                  echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
+
+                else
+                  echo "No linked issues found in Development section or PR body"
+                  echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
+                  echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                  echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                fi
               fi
             fi
           fi
@@ -169,9 +232,14 @@ jobs:
           issue_number=""
 
           # Try multiple patterns to extract issue number (more flexible but specific)
-          if [[ "$branch_name" =~ ^([0-9]+)- ]]; then
-            issue_number="${BASH_REMATCH[1]}"
-            echo "Found issue number at start of branch: $issue_number"
+          # The leading (^|/) also covers worktree-style branches, where the issue number
+          # follows a namespace segment instead of starting the ref — "nicobytes/36850-foo",
+          # "oidacra/37132-bar". Those are the dominant layout on this repo and the old
+          # ^([0-9]+)- anchor missed every one of them. Digits must directly follow the
+          # slash, so "gh-readonly-queue/main/pr-37131-<sha>" still does not match.
+          if [[ "$branch_name" =~ (^|/)([0-9]+)- ]]; then
+            issue_number="${BASH_REMATCH[2]}"
+            echo "Found issue number at start of branch or worktree segment: $issue_number"
           elif [[ "$branch_name" =~ ^issue-([0-9]+)- ]]; then
             issue_number="${BASH_REMATCH[1]}"
             echo "Found issue number with 'issue-' prefix: $issue_number"
@@ -192,6 +260,7 @@ jobs:
           LINK_METHOD: ${{ steps.check_existing_issues.outputs.link_method }}
           IS_CROSS_REPO: ${{ steps.check_existing_issues.outputs.is_cross_repo }}
           CROSS_REPO_OWNER_REPO: ${{ steps.check_existing_issues.outputs.cross_repo_owner_repo }}
+          IS_CLOSING_LINK: ${{ steps.check_existing_issues.outputs.is_closing_link }}
           BRANCH_ISSUE_NUMBER: ${{ steps.extract_issue_number.outputs.issue_number }}
         run: |
           # Priority:
@@ -200,10 +269,16 @@ jobs:
           #      the regex misses (e.g. "fixes [#123](url)"). This must outrank branch-name
           #      heuristics — author intent in the PR body should win over a branch pattern.
           #   3) Branch name extraction: heuristic of last resort.
+          # is_closing_link tells the body-patch step below whether this PR is expected to
+          # close the issue on merge. Only a non-closing body reference sets it to false;
+          # every other path (keyword, sidebar link, GraphQL, branch name) closes as before.
+          is_closing_link=true
+
           if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
             final_issue_number="$LINKED_ISSUE_NUMBER"
             link_method="$LINK_METHOD"
-            echo "Using linked issue: $final_issue_number (via $link_method)"
+            is_closing_link="${IS_CLOSING_LINK:-true}"
+            echo "Using linked issue: $final_issue_number (via $link_method, closing=$is_closing_link)"
           else
             pr_number=$(echo "$PR_URL" | grep -o '[0-9]*$')
             closing_issue=""
@@ -237,13 +312,15 @@ jobs:
               echo "::error::Please link an issue using one of these methods:"
               echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
               echo "::error::2. Add 'fixes #123' (same repo), 'fixes org/repo#123' (cross-repo), or a full GitHub issue URL to PR body"
-              echo "::error::3. Use branch naming like 'issue-123-feature' or '123-feature'"
+              echo "::error::3. Add 'refs #123' / 'part of #123' if this PR relates to the issue but must NOT close it"
+              echo "::error::4. Use branch naming like 'issue-123-feature', '123-feature' or 'user/123-feature'"
               echo "failure_detected=true" >> "$GITHUB_OUTPUT"
               exit 1
             fi
           fi
 
           echo "final_issue_number=$final_issue_number" >> "$GITHUB_OUTPUT"
+          echo "is_closing_link=$is_closing_link" >> "$GITHUB_OUTPUT"
           echo "is_cross_repo=${IS_CROSS_REPO:-false}" >> "$GITHUB_OUTPUT"
           echo "cross_repo_owner_repo=$CROSS_REPO_OWNER_REPO" >> "$GITHUB_OUTPUT"
 
@@ -481,7 +558,12 @@ jobs:
       - name: Link PR to issue
         # Skip for cross-repo: the reference already exists in the PR body as owner/repo#N.
         # Adding a bare #N would create a broken same-repo link.
-        if: steps.determine_issue.outputs.is_cross_repo != 'true'
+        #
+        # Skip for non-closing references too. The author wrote "Refs #N" precisely so the
+        # issue survives this PR's merge; patching "This PR fixes: #N" into the body would
+        # convert their reference into a closing one behind their back. The PR-list comment
+        # on the issue thread still runs, so the link is tracked either way.
+        if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.determine_issue.outputs.is_closing_link != 'false'
         env:
           ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
         run: |
@@ -575,29 +657,54 @@ jobs:
             exit 0
           fi
 
-          comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
-            "## ❌ Issue Linking Required" \
-            "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes." \
-            "### How to fix this:" \
-            "**Option 1: Add keyword to PR body** (Recommended - auto-removes this comment)" \
-            "Edit this PR description and add one of these lines:" \
-            "- \`Fixes #123\` or \`Closes #123\` — same-repo issue" \
-            "- \`Fixes org/repo#123\` or \`Closes org/repo#123\` — cross-repo or private issue" \
-            "- \`Closes https://github.com/org/repo/issues/123\` — full GitHub URL" \
-            "- Other supported keywords: \`fix\`, \`fixed\`, \`close\`, \`closed\`, \`resolve\`, \`resolved\`" \
-            "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)" \
-            "1. Go to the PR → Development section (right sidebar)" \
-            "2. Click \"Link issue\" and select an existing issue" \
-            "3. Push a new commit or re-run the workflow to clear the failed check" \
-            "**Option 3: Use branch naming**" \
-            "Create a new branch with one of these patterns:" \
-            "- \`123-feature-description\` (number at start)" \
-            "- \`issue-123-feature-description\` (issue-number at start)" \
-            "- \`feature-issue-123\` (issue-number anywhere)" \
-            "### Why is this required?" \
-            "Issue linking ensures proper tracking, documentation, and helps maintain project history. It connects your code changes to the problem they solve." \
-            "---" \
-            "*This comment was automatically generated by the issue linking workflow*")
+          # Built as an array rather than a printf format string: the previous format
+          # carried 21 "%s" for 22 arguments, so bash restarted the format and the closing
+          # line rendered out of place. An array has nothing to keep in sync.
+          comment_lines=(
+            "## ❌ Issue Linking Required"
+            ""
+            "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes."
+            ""
+            "### How to fix this:"
+            ""
+            "**Option 1: Add a keyword to the PR body** (Recommended - auto-removes this comment)"
+            ""
+            "Edit this PR description and add one of these lines."
+            ""
+            "*Closing links — the issue is closed when this PR merges:*"
+            "- \`Fixes #123\` or \`Closes #123\` — same-repo issue"
+            "- \`Fixes org/repo#123\` or \`Closes org/repo#123\` — cross-repo or private issue"
+            "- \`Closes https://github.com/org/repo/issues/123\` — full GitHub URL"
+            "- Other supported keywords: \`fix\`, \`fixed\`, \`close\`, \`closed\`, \`resolve\`, \`resolved\`"
+            ""
+            "*Non-closing links — the issue stays open after this PR merges:*"
+            "- \`Refs #123\` or \`Part of #123\` — use this when the PR advances an issue that a later"
+            "  PR actually resolves (e.g. a Spec-Kit PR 1 carrying the spec, where PR 2 does the work)."
+            "- Also accepted: \`references\`, \`related to\`, \`contributes to\`, plus the \`org/repo#123\`"
+            "  and full-URL forms."
+            ""
+            "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)"
+            ""
+            "1. Go to the PR → Development section (right sidebar)"
+            "2. Click \"Link issue\" and select an existing issue"
+            "3. Push a new commit or re-run the workflow to clear the failed check"
+            ""
+            "**Option 3: Use branch naming**"
+            ""
+            "Create a new branch with one of these patterns:"
+            "- \`123-feature-description\` (number at start)"
+            "- \`user/123-feature-description\` (worktree style: number after the namespace segment)"
+            "- \`issue-123-feature-description\` (issue-number at start)"
+            "- \`feature-issue-123\` (issue-number anywhere)"
+            ""
+            "### Why is this required?"
+            ""
+            "Issue linking ensures proper tracking, documentation, and helps maintain project history. It connects your code changes to the problem they solve."
+            ""
+            "---"
+            "*This comment was automatically generated by the issue linking workflow*"
+          )
+          comment_body=$(printf '%s\n' "${comment_lines[@]}")
 
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
