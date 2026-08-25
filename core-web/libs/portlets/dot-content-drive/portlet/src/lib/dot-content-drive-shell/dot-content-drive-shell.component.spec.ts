@@ -226,7 +226,11 @@ describe('DotContentDriveShellComponent', () => {
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    contextMenu: jest.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
@@ -3064,7 +3068,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
                     pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
                     selectedItems: jest.fn().mockReturnValue([]),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    contextMenu: jest.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: signal(undefined),
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     userSearchableFields: jest.fn().mockReturnValue([]),
