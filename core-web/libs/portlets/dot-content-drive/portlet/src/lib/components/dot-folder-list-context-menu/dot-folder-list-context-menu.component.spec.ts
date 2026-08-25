@@ -1,5 +1,4 @@
 import { describe, expect, it } from '@jest/globals';
-import { patchState } from '@ngrx/signals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -817,7 +816,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 beforeEach(() => {
                     alertConfirmService = spectator.inject(DotAlertConfirmService);
                     folderService = spectator.inject(DotFolderService);
-                    folderService.deleteFolder = jest.fn().mockReturnValue(of(true));
+                    folderService.deleteFolder.mockReturnValue(of(true));
                     // The delete path is built from the browsed site, so it has to be a real one
                     // rather than the store's SYSTEM_HOST default.
                     store.initContentDrive({
@@ -894,7 +893,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // A confirmed destructive action that does nothing at all, with no message, is worse
                 // than an error. Narrow (there is normally a browsed site) but it must not be silent.
                 it('should report rather than silently skip when no site is resolved', async () => {
-                    patchState(store, { currentSite: undefined } as never);
+                    store.currentSite.mockReturnValue(undefined);
                     jest.spyOn(messageService, 'add');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -908,9 +907,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
                     jest.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -936,9 +933,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not reload the drive when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
                     jest.spyOn(store, 'reloadContentDrive');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -993,9 +988,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // `handle(error)` call entirely would keep them green while the delete failed in
                 // total silence. This is the AC clause that says a failure reaches the user.
                 it('should surface a failed delete through the HTTP error handler', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);

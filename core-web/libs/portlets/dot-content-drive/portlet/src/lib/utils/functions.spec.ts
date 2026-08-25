@@ -8,9 +8,14 @@ import {
     DotContentDriveItem,
     DotPagination,
     FolderSearchView,
-    isTreeNodeContentData,
-    PERMISSIONS_TYPE
+    PERMISSIONS_TYPE,
+    PermissionType,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
+import {
+    DotFolderTreeNodeContentData,
+    DotFolderTreeNodeData
+} from '@dotcms/portlets/content-drive/ui';
 import {
     createFakeCheckboxField,
     createFakeDateField,
@@ -1856,13 +1861,13 @@ describe('mergeFolderNodePage', () => {
 // the API view a folder search returns, through `folderSearchViewToDotFolder` and `createTreeNode`,
 // into the gate.
 describe('canAddChildrenTo, over a node built the way the tree builds them', () => {
-    const realNode = (permissions: string[]) =>
+    const realNode = (permissions: PermissionType[]) =>
         createTreeNode(
             folderSearchViewToDotFolder(
                 createFakeFolderSearchView({ name: 'blog', path: '/', permissions }),
                 'demo.dotcms.com'
             )
-        ).data;
+        ).data as DotFolderTreeNodeContentData;
 
     it('should carry the folder permissions onto the node', () => {
         expect(realNode(['READ', 'CAN_ADD_CHILDREN']).permissions).toEqual([
@@ -1883,7 +1888,7 @@ describe('canAddChildrenTo, over a node built the way the tree builds them', () 
 });
 
 describe('canAddChildrenTo', () => {
-    const node = (permissions?: string[]) =>
+    const node = (permissions?: PermissionType[]) =>
         ({ type: 'folder', path: '/x/', permissions }) as unknown as DotFolderTreeNodeData;
 
     it('should allow a folder that grants CAN_ADD_CHILDREN', () => {

@@ -2225,6 +2225,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report a denied folder as a failure rather than dropping it', () => {
             addToBundleService.addToBundle.mockReturnValue(
                 of({
+                    _body: null,
                     total: 2,
                     errors: 1,
                     errorMessages: ['User does not have permission to publish folder'],
@@ -2359,6 +2360,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report a denied folder as a failure rather than dropping it', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(
                 of({
+                    _body: null,
                     total: 2,
                     errors: 1,
                     errorMessages: ['User does not have permission to publish folder'],
