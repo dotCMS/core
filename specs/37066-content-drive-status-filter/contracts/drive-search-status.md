@@ -55,8 +55,14 @@ See [../data-model.md](../data-model.md) for the per-selection predicate table.
 
 | Field | Effect when `status` is non-empty |
 |---|---|
-| `showFolders` | Forced to `false`. Folders carry no status (FR-015), consistent with the workflow filter |
+| `showFolders` | **Unaffected.** The endpoint honours whatever the caller sent |
 | `archived` | Unaffected and unchanged. The legacy inclusive flag keeps its meaning (FR-008) |
+
+**`status` has no side effects on other fields.** Folders carry no status, so the Content Drive UI
+sends `showFolders: false` once a status is selected (FR-015) — but that is the client's decision.
+Overriding an explicit `showFolders: true` server-side would make the response stop matching the
+request, and would leave `folderCursor` / `hasMoreFolders` describing a folder query the caller never
+received. A caller that wants folders alongside a status gets them.
 
 The Content Drive UI stops sending `archived: false` altogether (FR-019); the server default already
 supplies it.
