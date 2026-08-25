@@ -14,7 +14,11 @@ import {
     DotUploadFileService
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
-import { DotAssetPickerComponent } from '@dotcms/ui';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotAssetPickerComponent
+} from '@dotcms/ui';
 import { EMPTY_CONTENTLET } from '@dotcms/utils-testing';
 
 import { DotWysiwygPluginService } from './dot-wysiwyg-plugin.service';
@@ -121,7 +125,10 @@ describe('DotWysiwygPluginService', () => {
             {
                 provide: DotEditContentStore,
                 useValue: { currentLocale: signal({ id: LOCALE_ID }) }
-            }
+            },
+            // Angular Edit Content host: the launcher is what makes the new picker the picker.
+            // Its legacy counterpart lives in `dot-wysiwyg-plugin.service.legacy-host.spec.ts`.
+            { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
         ]
     });
 
