@@ -1,6 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { NgStyle } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ChangeDetectorRef, Component } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -45,7 +44,6 @@ describe('TemplateBuilderRowComponent', () => {
     beforeEach(async () => {
         await TestBed.configureTestingModule({
             imports: [
-                NgStyle,
                 ButtonModule,
                 TemplateBuilderRowComponent,
                 RemoveConfirmDialogComponent,

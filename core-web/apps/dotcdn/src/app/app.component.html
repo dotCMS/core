@@ -34,7 +34,7 @@
                         <dot-spinner
                             [size]="'4rem'"
                             [borderSize]="'3px'"
-                            [ngStyle]="{ height: chartHeight }" />
+                            [style.height]="chartHeight" />
                     } @else {
                         <h3 class="dot-cdn__tab-content-label">Bandwidth Served</h3>
                         <p-chart
@@ -51,7 +51,7 @@
                         <dot-spinner
                             [size]="'4rem'"
                             [borderSize]="'3px'"
-                            [ngStyle]="{ height: chartHeight }" />
+                            [style.height]="chartHeight" />
                     } @else {
                         <h3 class="dot-cdn__tab-content-label">Requests Served</h3>
                         <p-chart

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgClass, AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
+import { AsyncPipe, DatePipe, TitleCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -30,7 +30,6 @@ import { DotExperimentsConfigurationSchedulingAddComponent } from '../dot-experi
         TooltipModule,
         AsyncPipe,
         DatePipe,
-        NgClass,
         TitleCasePipe
     ],
     templateUrl: './dot-experiments-configuration-scheduling.component.html',

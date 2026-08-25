@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgClass, AsyncPipe } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -32,8 +32,7 @@ import { DotExperimentsConfigurationTrafficSplitAddComponent } from '../dot-expe
         CardModule,
         ButtonModule,
         TooltipModule,
-        AsyncPipe,
-        NgClass
+        AsyncPipe
     ],
     templateUrl: './dot-experiments-configuration-traffic.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

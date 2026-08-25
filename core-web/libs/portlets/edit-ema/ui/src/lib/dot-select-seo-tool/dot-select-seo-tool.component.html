@@ -1,7 +1,7 @@
 @if (socialMedia) {
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
-            [ngClass]="socialMediaIconClass"
+            [class]="socialMediaIconClass"
             class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">
@@ -14,7 +14,7 @@
 } @else {
     <div class="dot-select-seo-tool__item" data-testId="select-seo-tool-item">
         <i
-            [ngClass]="device?.icon"
+            [class]="device?.icon"
             class="dot-select-seo-tool__icon"
             data-testId="select-seo-tool-icon"></i>
         <h5 class="dot-select-seo-tool__title" data-testId="select-seo-tool-title">

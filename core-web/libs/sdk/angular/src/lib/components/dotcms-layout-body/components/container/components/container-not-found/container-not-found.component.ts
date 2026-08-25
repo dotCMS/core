@@ -1,4 +1,3 @@
-import { NgStyle } from '@angular/common';
 import { Component, inject, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
 
 import { EMPTY_CONTAINER_STYLE_ANGULAR } from '@dotcms/uve/internal';
@@ -14,11 +13,10 @@ import { DotCMSStore } from '../../../../../../store/dotcms.store';
  */
 @Component({
     selector: 'dotcms-container-not-found',
-    imports: [NgStyle],
     changeDetection: ChangeDetectionStrategy.Eager,
     template: `
         @if ($isDevMode()) {
-            <div [attr.data-testid]="'container-not-found'" [ngStyle]="emptyContainerStyle">
+            <div [attr.data-testid]="'container-not-found'" [style]="emptyContainerStyle">
                 This container with identifier {{ identifier }} was not found.
             </div>
         }

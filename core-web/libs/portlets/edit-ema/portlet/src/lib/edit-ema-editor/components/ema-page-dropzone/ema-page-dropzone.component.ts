@@ -1,4 +1,4 @@
-import { NgStyle, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -26,7 +26,7 @@ const DROP_INDICATOR_HEIGHT_PX = 3;
 
 @Component({
     selector: 'dot-ema-page-dropzone',
-    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgStyle, NgTemplateOutlet],
+    imports: [DotPositionPipe, DotErrorPipe, DotMessagePipe, NgTemplateOutlet],
     templateUrl: './ema-page-dropzone.component.html',
     styleUrls: ['./ema-page-dropzone.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

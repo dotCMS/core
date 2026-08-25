@@ -40,10 +40,10 @@
         <div>
             <h2
                 class="m-0 text-lg font-bold"
-                [ngClass]="expanded.has(index) ? 'text-gray-900' : 'text-gray-800'">
+                [class]="expanded.has(index) ? 'text-gray-900' : 'text-gray-800'">
                 {{ item.$title() }}
             </h2>
-            <p class="m-0" [ngClass]="expanded.has(index) ? 'text-gray-900' : 'text-gray-700'">
+            <p class="m-0" [class]="expanded.has(index) ? 'text-gray-900' : 'text-gray-700'">
                 {{ item.$detail() }}
             </p>
         </div>

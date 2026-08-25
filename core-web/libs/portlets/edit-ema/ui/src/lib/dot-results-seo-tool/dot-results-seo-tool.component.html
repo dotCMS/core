@@ -85,7 +85,7 @@
         <ul class="results-seo-tool__result-card-list">
             @for (item of result.items; track item) {
                 <li data-testId="seo-tag">
-                    <i [ngClass]="[item.color, item.itemIcon]" class="pi"></i>
+                    <i [class]="[item.color, item.itemIcon]" class="pi"></i>
                     <span [innerHTML]="item.message | safeHtml"></span>
                 </li>
             }

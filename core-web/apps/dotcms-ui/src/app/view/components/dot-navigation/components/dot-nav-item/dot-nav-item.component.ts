@@ -1,4 +1,3 @@
-import { NgClass, NgStyle } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -23,7 +22,7 @@ import { DotSubNavComponent } from '../dot-sub-nav/dot-sub-nav.component';
     selector: 'dot-nav-item',
     templateUrl: './dot-nav-item.component.html',
     styleUrls: ['./dot-nav-item.component.scss'],
-    imports: [DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe, NgClass, NgStyle],
+    imports: [DotSubNavComponent, DotNavIconComponent, DotRandomIconPipe],
     changeDetection: ChangeDetectionStrategy.Eager,
     host: {
         '[class.dot-nav-item__collapsed]': '$collapsed()'

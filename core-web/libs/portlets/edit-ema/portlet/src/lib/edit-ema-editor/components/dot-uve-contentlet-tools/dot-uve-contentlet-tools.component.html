@@ -7,7 +7,7 @@
     @let hoverDragItem = hoverDragPayload();
     @let hoverIsEmpty = isContainerEmpty();
 
-    <div [ngStyle]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover">
+    <div [style]="hoverBoundsStyles()" class="bounds hover" data-testId="bounds-hover">
         @let hoveredContentType = contentletArea()?.payload?.contentlet?.contentType;
         @if (hoveredContentType) {
             <span class="hover-label" data-testId="bounds-hover-label">
@@ -145,7 +145,7 @@
      while the side panel is open. Tools live exclusively on the hover
      overlay; this overlay never shows actions or add buttons. -->
 @if (showSelectedOverlay()) {
-    <div [ngStyle]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
+    <div [style]="selectedBoundsStyles()" class="bounds selected" data-testId="bounds-selected">
         @let selectedContentType = selected()?.payload?.contentlet?.contentType;
         @if (selectedContentType) {
             <span class="hover-label" data-testId="bounds-selected-label">
