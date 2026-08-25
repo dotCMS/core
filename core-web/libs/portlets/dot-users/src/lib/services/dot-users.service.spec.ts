@@ -1,9 +1,11 @@
 import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
-import { DotUserListItem, DotUsersService } from './dot-users.service';
+import { DotUsersService } from './dot-users.service';
 
-const MOCK_USERS: DotUserListItem[] = [
-    {
+import { createFakeUser } from '../testing/dot-user.mock';
+
+const MOCK_USERS = [
+    createFakeUser({
         userId: 'dotcms.org.1',
         id: 'dotcms.org.1',
         firstName: 'Admin',
@@ -12,15 +14,10 @@ const MOCK_USERS: DotUserListItem[] = [
         name: 'Admin User',
         emailAddress: 'admin@dotcms.com',
         gravitar: 'abc123',
-        active: true,
         admin: true,
-        backendUser: true,
-        frontendUser: false,
-        hasConsoleAccess: true,
         lastLoginDate: 1717977600000,
-        lastLoginIP: '10.0.0.1',
-        failedLoginAttempts: 0
-    }
+        lastLoginIP: '10.0.0.1'
+    })
 ];
 
 describe('DotUsersService', () => {
