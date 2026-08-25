@@ -428,11 +428,16 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     // ---------------------------------------------------------------- FR-015: folders
 
     /**
-     * Folders carry no status, so any status selection must drop them while an unfiltered request
-     * keeps them (FR-015).
+     * A status selection must NOT override an explicit {@code showFolders} (FR-015).
+     *
+     * <p>Folders carry no status, so the Content Drive UI stops requesting them once a status is
+     * selected — but that is the client's decision. The endpoint honours what it is asked for.
+     * Silently forcing {@code showFolders} to false here would make the response stop matching the
+     * request, and would leave {@code folderCursor}/{@code hasMoreFolders} describing a folder query
+     * the caller never received.</p>
      */
     @Test
-    public void testFoldersSuppressedWhenStatusFilterActive()
+    public void testStatusDoesNotOverrideExplicitShowFolders()
             throws DotDataException, DotSecurityException {
         new FolderDataGen().name("driveStatusChild_" + System.nanoTime())
                 .parent(testFolder).nextPersisted();
@@ -441,9 +446,15 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
                 baseRequest().showFolders(true).build(), systemUser);
         assertTrue("Unfiltered request should list folders", unfiltered.folderCount > 0);
 
-        final PaginatedContents filtered = contentDriveHelper.driveSearch(
+        final PaginatedContents withStatus = contentDriveHelper.driveSearch(
                 baseRequest().showFolders(true).status(List.of("ARCHIVED")).build(), systemUser);
-        assertEquals("A status filter must suppress folders", 0, filtered.folderCount);
+        assertTrue("An explicit showFolders:true must still be honoured alongside a status",
+                withStatus.folderCount > 0);
+
+        final PaginatedContents withoutFolders = contentDriveHelper.driveSearch(
+                baseRequest().showFolders(false).status(List.of("ARCHIVED")).build(), systemUser);
+        assertEquals("showFolders:false must still suppress folders",
+                0, withoutFolders.folderCount);
     }
 
     // ---------------------------------------------------------------- FR-010: rejection

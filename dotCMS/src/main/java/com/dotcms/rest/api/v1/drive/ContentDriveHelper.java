@@ -229,11 +229,15 @@ public class ContentDriveHelper {
         // Status filter — the selected states are OR'd together server-side (see
         // BrowserAPIImpl#appendContentStatusQuery). Empty means no status filtering at all, which
         // is the path every pre-existing caller takes.
+        //
+        // Deliberately does NOT touch showFolders. Folders carry no status, so the Content Drive UI
+        // stops asking for them when a status is selected — but that is the caller's decision to
+        // make, not ours. Overriding an explicit showFolders:true here would be a silent side
+        // effect: the response would stop matching the request, and folderCursor/hasMoreFolders
+        // would report on a folder query the caller never got.
         final Set<ContentStatus> contentStatuses = parseStatuses(requestForm.status());
         if (!contentStatuses.isEmpty()) {
-            builder.withContentStatuses(contentStatuses)
-                    // Folders carry no status — drop them when filtering by status.
-                    .showFolders(false);
+            builder.withContentStatuses(contentStatuses);
         }
 
         // Build once and log the query itself: flags such as showLinks and showFolders can be
