@@ -10,8 +10,10 @@ import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.ExperimentVariant;
+import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.mock.request.MockHeaderRequest;
 import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
@@ -24,6 +26,9 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.liferay.portal.model.User;
 import com.liferay.util.Base64;
+import java.time.Instant;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 import javax.servlet.http.HttpServletRequest;
@@ -210,6 +215,33 @@ public class ExperimentsResourceIntegrationTest {
                 patchPageId(draftWithVariant, draftWithVariant.pageId()).pageId());
     }
 
+    /**
+     * Method to test: {@link ExperimentsResource#update(HttpServletRequest, HttpServletResponse, String, ExperimentForm)}
+     * Given Scenario: The remaining non-DRAFT statuses — SCHEDULED, ENDED and ARCHIVED — each PATCHed
+     *                 with a different Page.
+     * ExpectedResult: All refused. FR-002 permits the change in DRAFT only, so every other status has
+     *                 to say no; testing RUNNING alone would leave three quarters of that rule
+     *                 unguarded. SCHEDULED matters most: #37214 proposes allowing it later, and this
+     *                 is what will make that change announce itself instead of slipping through.
+     */
+    @Test
+    public void patchPageId_onEveryOtherNonDraftStatus_shouldBeRefused() throws Exception {
+        final HTMLPageAsset newPage = createPage();
+
+        for (final Experiment experiment : List.of(scheduled(), ended(), archived())) {
+            final Status status = experiment.status();
+
+            final IllegalArgumentException refusal = assertThrows(
+                    "A " + status + " Experiment must refuse a Page change",
+                    IllegalArgumentException.class,
+                    () -> patchPageId(experiment, newPage.getIdentifier()));
+
+            assertTrue("The refusal for a " + status + " Experiment should name the status rule, was: "
+                            + refusal.getMessage(),
+                    refusal.getMessage().toUpperCase(Locale.ROOT).contains("DRAFT"));
+        }
+    }
+
     // ---------------------------------------------------------------------------------------------
     // Helpers
     // ---------------------------------------------------------------------------------------------
@@ -262,6 +294,39 @@ public class ExperimentsResourceIntegrationTest {
         final Template template = new TemplateDataGen().nextPersisted();
         final HTMLPageAsset page = new HTMLPageDataGen(host, template).nextPersisted();
         return APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.publish(page));
+    }
+
+    /**
+     * A SCHEDULED Experiment: started with a start date in the future, which is what
+     * {@code start()} turns into SCHEDULED rather than RUNNING.
+     */
+    private Experiment scheduled() {
+        return ExperimentDataGen.start(new ExperimentDataGen()
+                .addVariant("Test Green Button")
+                .scheduling(Scheduling.builder()
+                        .startDate(Instant.now().plus(2, ChronoUnit.DAYS))
+                        .endDate(Instant.now().plus(9, ChronoUnit.DAYS))
+                        .build())
+                .nextPersisted());
+    }
+
+    /** An ENDED Experiment. {@code ExperimentDataGen.end} returns void, so it is re-read. */
+    private Experiment ended() throws Exception {
+        final Experiment running = new ExperimentDataGen()
+                .addVariant("Test Green Button")
+                .nextPersistedAndStart();
+
+        ExperimentDataGen.end(running);
+
+        return APILocator.getExperimentsAPI()
+                .find(running.id().orElseThrow(), adminUser)
+                .orElseThrow();
+    }
+
+    /** An ARCHIVED Experiment. Archiving is only allowed from ENDED. */
+    private Experiment archived() throws Exception {
+        return APILocator.getExperimentsAPI()
+                .archive(ended().id().orElseThrow(), adminUser);
     }
 
     private HttpServletRequest getHttpRequest() {
