@@ -19,12 +19,12 @@ const props = defineProps<{
     isDevMode?: boolean;
 }>();
 
-const caption = computed(() => props.attrs?.caption || undefined);
-const ariaLabel = computed(() => props.attrs?.ariaLabel || undefined);
-const ariaLabelledby = computed(() => props.attrs?.ariaLabelledby || undefined);
+const caption = computed(() => props.attrs?.['caption'] || undefined);
+const ariaLabel = computed(() => props.attrs?.['ariaLabel'] || undefined);
+const ariaLabelledby = computed(() => props.attrs?.['ariaLabelledby'] || undefined);
 
-const colSpan = (node: BlockEditorNode) => Number(node.attrs?.colspan || 1);
-const rowSpan = (node: BlockEditorNode) => Number(node.attrs?.rowspan || 1);
+const colSpan = (node: BlockEditorNode) => Number(node.attrs?.['colspan'] || 1);
+const rowSpan = (node: BlockEditorNode) => Number(node.attrs?.['rowspan'] || 1);
 </script>
 
 <template>
@@ -41,7 +41,7 @@ const rowSpan = (node: BlockEditorNode) => Number(node.attrs?.rowspan || 1);
                         v-if="cellNode.type === 'tableHeader'"
                         :colspan="colSpan(cellNode)"
                         :rowspan="rowSpan(cellNode)"
-                        :scope="cellNode.attrs?.scope || undefined">
+                        :scope="cellNode.attrs?.['scope'] || undefined">
                         <BlockEditorBlock
                             :content="cellNode.content ?? []"
                             :custom-renderers="customRenderers"

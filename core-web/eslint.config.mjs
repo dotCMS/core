@@ -41,7 +41,11 @@ export default [
                 {
                     allowCircularSelfDependency: false,
                     enforceBuildableLibDependency: true,
-                    allow: [],
+                    // `virtual:sdk-version` is a rollup-generated module, not a library. Its
+                    // declaration lives in `types/` so SDK consumers compiling `@dotcms/client`
+                    // sources through a path mapping can see it, which makes Nx read the import
+                    // as buildable -> non-buildable. There is no real dependency to enforce.
+                    allow: ['virtual:sdk-version'],
                     depConstraints: [
                         {
                             sourceTag: '*',

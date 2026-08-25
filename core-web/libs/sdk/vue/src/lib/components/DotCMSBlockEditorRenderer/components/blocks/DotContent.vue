@@ -20,7 +20,7 @@ const props = defineProps<{
     isDevMode?: boolean;
 }>();
 
-const data = computed(() => props.node.attrs?.data as { contentType?: string } | undefined);
+const data = computed(() => props.node.attrs?.['data'] as { contentType?: string } | undefined);
 const contentType = computed(() => data.value?.contentType ?? 'Unknown Content Type');
 const component = computed(() => props.customRenderers?.[contentType.value]);
 
