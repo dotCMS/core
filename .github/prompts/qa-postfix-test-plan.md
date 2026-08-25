@@ -31,7 +31,9 @@ The related-issue set below was already resolved and validated by the workflow.
 - Merge commit SHA: **{{MERGE_SHA}}** — copy this into the marker's `merge-sha` field
   **exactly as given, all 40 characters**. Abbreviating it silently breaks both the
   duplicate-post guard and the post-run verification.
-- Related issues: **{{ISSUES_CSV}}**
+- Related issues (the plan must cover **all** of these): **{{ISSUES_CSV}}**
+- Post the finished comment to (may be a subset — the rest already have this plan):
+  **{{POST_TO_CSV}}**
 - Plan revision: **{{REVISION}}**
 
 Read the merged change with:
@@ -71,7 +73,13 @@ issue:
 gh issue comment <number> --repo {{REPO}} --body-file /tmp/test-plan.md
 ```
 
-Post to each of: **{{ISSUES_CSV}}**
+Post to each of: **{{POST_TO_CSV}}** — and **only** those.
+
+This is usually every related issue. When it is a subset, the remainder already carry this exact
+plan from an earlier run of this workflow; posting to them again would put a second identical
+comment on a live issue. Do not "helpfully" post to the full related-issue list. The plan's content
+and its `issues:` marker field still name **all** of {{ISSUES_CSV}} — one consolidated plan,
+narrower delivery.
 
 Use `--body-file`, never an inline `--body` — the plan is kilobytes of markdown and will not survive
 shell quoting. If one post fails, continue with the remaining issues and report which succeeded.

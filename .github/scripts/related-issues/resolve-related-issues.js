@@ -59,7 +59,7 @@ function issuesFromBranch(branch) {
 }
 
 /**
- * Issue references inside `This PR fixes` statements only.
+ * Issue references inside `This PR fixes` statements only, scoped to one repository.
  *
  * Scoped to that one statement on purpose (rock spec §5.2): `Fixes #N`, `Closes #N`, `Resolves #N`,
  * a bare `#N`, and `Related: #N` are all ignored here.
@@ -70,21 +70,40 @@ function issuesFromBranch(branch) {
  * This source therefore under-reports multi-issue PRs by design; the union with Development is what
  * makes the set complete.
  *
+ * A reference can name another repository, and a bare number lifted out of `dotCMS/private-issues#671`
+ * would be looked up here as core#671 — the same collision the branch source is guarded against.
+ * So qualified `owner/repo#N` references and issue URLs are honoured only when they point at the
+ * target repo, and are stripped before bare `#N` scanning so their numbers cannot leak through.
+ *
  * Matching is line-scoped so a statement cannot swallow issue numbers from the following line.
  */
-function issuesFromBody(body) {
-  if (!body) return [];
-  const out = [];
-  // One statement per match, running to end of line.
+function issuesFromBody(body, target) {
+  if (!body) return { numbers: [], foreign: [] };
+  const numbers = [];
+  const foreign = [];
   const stmt = /this\s+pr\s+fixes\b[^\n]*/gi;
   let s;
   while ((s = stmt.exec(body)) !== null) {
-    const text = s[0];
-    // `#123` and the target of a markdown link to an issue.
-    for (const m of text.matchAll(/#(\d+)/g)) out.push(Number(m[1]));
-    for (const m of text.matchAll(/\/issues\/(\d+)/g)) out.push(Number(m[1]));
+    let text = s[0];
+
+    // Issue URLs — keep only this repo's.
+    for (const m of text.matchAll(/github\.com\/([\w.-]+\/[\w.-]+)\/issues\/(\d+)/gi)) {
+      if (m[1].toLowerCase() === target.toLowerCase()) numbers.push(Number(m[2]));
+      else foreign.push({ number: Number(m[2]), repo: m[1] });
+    }
+    text = text.replace(/github\.com\/[\w.-]+\/[\w.-]+\/issues\/\d+/gi, ' ');
+
+    // Qualified owner/repo#N — keep only this repo's, then remove so the bare scan cannot see them.
+    for (const m of text.matchAll(/([\w.-]+\/[\w.-]+)#(\d+)/g)) {
+      if (m[1].toLowerCase() === target.toLowerCase()) numbers.push(Number(m[2]));
+      else foreign.push({ number: Number(m[2]), repo: m[1] });
+    }
+    text = text.replace(/[\w.-]+\/[\w.-]+#\d+/g, ' ');
+
+    // Whatever bare `#N` remains is unqualified, so it means this repo.
+    for (const m of text.matchAll(/#(\d+)/g)) numbers.push(Number(m[1]));
   }
-  return out;
+  return { numbers, foreign };
 }
 
 /**
@@ -181,7 +200,8 @@ module.exports = async ({ github, core }) => {
   if (!Number.isInteger(prNumber)) throw new Error('PR_NUMBER is required');
 
   const fromBranch = issuesFromBranch(branch);
-  const fromBody = issuesFromBody(body);
+  const bodyRes = issuesFromBody(body, `${owner}/${repo}`);
+  const fromBody = bodyRes.numbers;
   const dev = await issuesFromDevelopment(github, owner, repo, prNumber);
 
   // A branch or body reference carries no repository, so `issue-671-...` is indistinguishable from
@@ -189,7 +209,9 @@ module.exports = async ({ github, core }) => {
   // Development: the reference is to that repo's issue, and a same-numbered item here is a
   // coincidence. Without this, PR #37167 (`issue-671-...` -> dotCMS/private-issues#671) is one
   // unlucky number away from posting a security test plan onto an unrelated 2012 ticket.
-  const foreignByNumber = new Map(dev.foreign.map((f) => [f.number, f.repo]));
+  const foreignByNumber = new Map(
+    [...dev.foreign, ...bodyRes.foreign].map((f) => [f.number, f.repo]),
+  );
 
   const union = [...new Set([...fromBranch, ...fromBody, ...dev.numbers])]
     .filter((n) => n !== prNumber)
@@ -221,8 +243,8 @@ module.exports = async ({ github, core }) => {
     `- Branch \`${branch}\` → ${show(fromBranch)}`,
     `- \`This PR fixes\` → ${show(fromBody)}`,
     `- Development → ${show(dev.numbers)}${dev.error ? ` _(lookup failed: ${dev.error})_` : ''}`,
-    ...(dev.foreign.length
-      ? [`- Development links outside \`${owner}/${repo}\` (ignored) → ${dev.foreign.map((f) => `\`${f.repo}#${f.number}\``).join(', ')}`]
+    ...(dev.foreign.length || bodyRes.foreign.length
+      ? [`- References outside \`${owner}/${repo}\` (ignored) → ${[...dev.foreign, ...bodyRes.foreign].map((f) => `\`${f.repo}#${f.number}\``).join(', ')}`]
       : []),
     '',
   ];
