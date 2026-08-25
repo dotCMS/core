@@ -139,11 +139,11 @@ describe('DotRoleUsersTabComponent', () => {
         (store.members as jest.Mock).mockReturnValue([member]);
         spectator.detectChanges();
 
-        (
-            spectator.component as unknown as {
-                onRemoveMember: (m: typeof member) => void;
-            }
-        ).onRemoveMember(member);
+        // Click the row-level trash — PrimeNG wraps the button, so we
+        // reach through to the inner native <button>.
+        const removeBtn = spectator.query(byTestId('member-remove-u-1'))?.querySelector('button');
+        expect(removeBtn).toBeTruthy();
+        spectator.click(removeBtn as HTMLElement);
         await Promise.resolve();
 
         expect(store.removeUsersFromRole).toHaveBeenCalledWith(['u-1']);

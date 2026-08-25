@@ -75,6 +75,28 @@ describe('DotRolesAddComponent', () => {
 
         expect(dialogRef.close).toHaveBeenCalled();
     });
+
+    it('should set the inline error and keep the dialog open when createRole returns null', async () => {
+        const store = spectator.inject(DotRolesStore);
+        const dialogRef = spectator.inject(DynamicDialogRef);
+        // The `mockProvider` factory reuses the same `jest.fn()` across
+        // tests in this suite — clear before asserting so we only see
+        // calls from this test.
+        (dialogRef.close as jest.Mock).mockClear();
+        (store.createRole as jest.Mock).mockResolvedValueOnce(null);
+
+        spectator.detectChanges();
+        spectator.typeInElement('New Role', byTestId('input-role-name'));
+        spectator.detectChanges();
+
+        spectator.click(byTestId('btn-save'));
+        await Promise.resolve();
+        spectator.detectChanges();
+
+        expect(store.createRole).toHaveBeenCalled();
+        expect(dialogRef.close).not.toHaveBeenCalled();
+        expect(spectator.query(byTestId('add-error'))).toBeTruthy();
+    });
 });
 
 describe('DotRolesAddComponent (opened from inline +)', () => {

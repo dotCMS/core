@@ -461,8 +461,15 @@ export const DotRolesStore = signalStore(
                         }
                     }
 
-                    patchState(store, { selectedRoleId: created.id });
-                    loadRoleDetail(created.id);
+                    // The POST response is already a hydrated `RoleView` —
+                    // seed `selectedRole` directly instead of firing a
+                    // follow-up GET, which would leave the header showing
+                    // a skeleton / stale role for the round-trip.
+                    patchState(store, {
+                        selectedRoleId: created.id,
+                        selectedRole: created,
+                        selectedRoleStatus: 'LOADED'
+                    });
 
                     return created;
                 } catch (error) {
