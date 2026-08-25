@@ -209,10 +209,6 @@ export class AssetPickerDialog {
     }
 
     async expectTreeRoots(labels: string[]): Promise<void> {
-        await expect(this.folderTree.locator('.p-tree-root > .p-tree-node')).toHaveCount(
-            labels.length,
-            { timeout: 15000 }
-        );
         for (const label of labels) {
             await expect(this.treeNodes.filter({ hasText: label }).first()).toBeVisible();
         }

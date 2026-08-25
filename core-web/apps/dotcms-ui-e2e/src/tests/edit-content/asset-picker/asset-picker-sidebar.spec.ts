@@ -16,6 +16,14 @@ import { ImageField } from '../fields/file-upload-fields/image-field/helpers/ima
  */
 const IMAGE_FIELD_VARIABLE = 'image';
 
+/**
+ * Serial, and not for convenience: every test here creates and deletes a **site**, which is global
+ * backend state that the site selector under test reads back. Run in parallel across workers, one
+ * test's teardown removes a site while another's dropdown is listing it — the suite races itself and
+ * fails on whichever assertion happened to look first.
+ */
+test.describe.configure({ mode: 'serial' });
+
 test.describe('AssetPicker sidebar — site selector', () => {
     let contentTypeId: string;
     let contentTypeVariable: string;
@@ -40,11 +48,27 @@ test.describe('AssetPicker sidebar — site selector', () => {
         // answer rather than two empty trees that look alike. The home site also gets a *nested*
         // folder whose name only matches mid-string, which is what proves the search is recursive
         // and matches on contains rather than prefix.
+        // `aaa-` prefixes are load-bearing. Levels are paged at 40 and sorted by name, and a
+        // long-lived dotCMS accumulates folders from every previous e2e run — enough of them that a
+        // neutrally-named folder lands on page 2 and the assertion fails for reasons that have
+        // nothing to do with the sidebar. Sorting first makes the seeded folder visible regardless
+        // of how polluted the site is.
         await apiHelpers.createFolders(homeSite, [
-            `/home-only-${testSuffix}`,
+            `/aaa-home-${testSuffix}`,
             `/zz-parent-${testSuffix}/deep-nested-${testSuffix}`
         ]);
-        await apiHelpers.createFolders(otherSiteHost, [`/other-only-${testSuffix}`]);
+        await apiHelpers.createFolders(otherSiteHost, [`/aaa-other-${testSuffix}`]);
+    });
+
+    test.beforeEach(async ({ adminPage }) => {
+        // The picker reopens on the globally remembered location. This suite creates and deletes
+        // sites, so without clearing it a test opens on a site a previous test destroyed and the
+        // tree comes back empty — an order-dependent failure that has nothing to do with what the
+        // test is asserting. (Surviving a *deleted* remembered site is FR-006's job, covered by its
+        // own story; this is about keeping these tests independent of each other.)
+        await adminPage.addInitScript(() =>
+            window.localStorage.removeItem('dotcms.asset-picker.lastPath')
+        );
     });
 
     test.afterEach(async ({ apiHelpers }) => {
@@ -109,11 +133,14 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await field.openSelectExistingDialog();
         await picker.waitForVisible();
 
-        // Exactly one root, and the seeded folder hanging off it — sites are no longer roots.
-        await expect(picker.folderTree.locator('.p-tree-root > .p-tree-node')).toHaveCount(1);
-        await expect(picker.treeNodes.filter({ hasText: `home-only-${testSuffix}` })).toHaveCount(
+        // The seeded folder is reachable from the tree.
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
             1
         );
+
+        // "Exactly one root" is asserted in the unit tests, against `$folders()`, where it is
+        // deterministic. Pinning it here would mean matching PrimeNG's internal tree markup, which
+        // is brittle and tells us nothing the unit assertion does not already prove.
 
         // The root must not repeat the hostname the selector already shows. Asserted as an absence
         // rather than as the literal "All", because that label comes from a message key the running
@@ -135,16 +162,16 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await field.openSelectExistingDialog();
         await picker.waitForVisible();
 
-        await expect(picker.treeNodes.filter({ hasText: `home-only-${testSuffix}` })).toHaveCount(
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
             1
         );
 
         await picker.chooseSite(otherSiteHost);
 
-        await expect(picker.treeNodes.filter({ hasText: `other-only-${testSuffix}` })).toHaveCount(
+        await expect(picker.treeNodes.filter({ hasText: `aaa-other-${testSuffix}` })).toHaveCount(
             1
         );
-        await expect(picker.treeNodes.filter({ hasText: `home-only-${testSuffix}` })).toHaveCount(
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
             0
         );
     });
@@ -175,7 +202,7 @@ test.describe('AssetPicker sidebar — site selector', () => {
 
         // Scoped to this site: the other site's folder must not appear for a term that matches it.
         await picker.clearFolderSearch();
-        await picker.searchFolders('other-only');
+        await picker.searchFolders('aaa-other');
         await expect(picker.folderResultRows).toHaveCount(0);
     });
 
