@@ -152,12 +152,19 @@ export const DotContentDriveStore = signalStore(
                             folderCursor: page.folderCursor ?? 0,
                             maxResults: paginationSignal?.limit,
                             sortBy: sort()?.field + ':' + sort()?.order,
-                            archived: false,
+                            // Sent only when non-empty: an absent key leaves the request
+                            // byte-identical to one that never mentioned status, which is what
+                            // keeps the unfiltered drive exactly as it was. The `archived: false`
+                            // pin that used to sit here is gone — the endpoint already defaults it,
+                            // and pinning it would contradict an Archived selection.
+                            status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
                                 !filters()?.workflow?.length &&
+                                // Folders carry no status, so any status selection hides them.
+                                !filters()?.status?.length &&
                                 // A field-based filter narrows to content, so hide folders too —
                                 // consistent with the other filters above.
                                 !userSearchable

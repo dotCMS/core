@@ -60,6 +60,10 @@
             <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
+            <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
+                 goes after rather than before, because the workflow filter derives its scheme list
+                 from the content-type selection and the two must stay adjacent. -->
+            <dot-content-drive-status-filter data-testid="status-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
 
             @for (field of $activeFieldFilters(); track field.variable) {

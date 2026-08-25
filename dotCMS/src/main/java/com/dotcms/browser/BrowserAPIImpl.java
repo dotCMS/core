@@ -614,7 +614,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         query.append("+systemType:false ");
         query.append("-contentType:forms ");
         query.append("-contentType:Host ");
-        query.append("+deleted:false ");
+        appendContentStatusESQuery(query, browserQuery.getContentStatuses());
 
         // Working/live content filter
         if (browserQuery.showWorking) {
@@ -2035,14 +2035,21 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
         // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
-        // Skipped when showArchived is true: everything archived already shows, so the archive-step
-        // logic must not run (it would force cvi.deleted='false' on the live branch and hide the
-        // archived content the caller explicitly asked for). See spec §3.5.
-        final Set<String> archiveStepIds = browserQuery.showArchived
+        // Skipped when archived rows are already admitted, so the archive-step logic must not run
+        // (it would force cvi.deleted='false' on the live branch and hide the archived content the
+        // caller explicitly asked for). See spec §3.5.
+        //
+        // An explicit ARCHIVED status gets identical treatment to showArchived: without it, the
+        // status group would say cvi.deleted='true' while appendWorkflowQuery's live branch says
+        // 'false', and the two would contradict each other into an empty result.
+        final boolean admitsArchived = browserQuery.showArchived
+                || browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED);
+        final Set<String> archiveStepIds = admitsArchived
                 ? Set.of()
                 : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
                 browserQuery.workflowStepIds, archiveStepIds, parameters);
+        appendContentStatusQuery(selectQuery, browserQuery.getContentStatuses());
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -2064,7 +2071,12 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Suppress the global archived exclusion ONLY when an archive-target step is present; in
         // that case appendWorkflowQuery owns cvi.deleted per branch. Otherwise (no archive step,
         // or showArchived) the generated SQL is byte-identical to before.
-        if (!browserQuery.showArchived && archiveStepIds.isEmpty()) {
+        // The status group owns cvi.deleted when ARCHIVED is selected; emitting the baseline too
+        // would AND deleted=false against a group containing deleted=true and return nothing.
+        // Any selection WITHOUT ARCHIVED keeps the baseline, which is what makes UNPUBLISHED and
+        // LOCKED exclude archived content for free.
+        if (!browserQuery.showArchived && archiveStepIds.isEmpty()
+                && !browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED)) {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
@@ -2555,6 +2567,111 @@ public class BrowserAPIImpl implements BrowserAPI {
      */
     private void appendShowOnMenuQuery(StringBuilder sqlQuery) {
         sqlQuery.append(" and c.show_on_menu = ").append(DbConnectionFactory.getDBTrue());
+    }
+
+    /**
+     * Appends the Content Drive status filter: the selected states OR'd together inside <b>one</b>
+     * group.
+     * <p>
+     * They are deliberately not separate {@code and} clauses — that would be AND, and these
+     * combine with OR so that selecting more statuses returns more content, matching the
+     * content-type and language filters. A single selection degenerates to a one-disjunct group,
+     * so {@code [ARCHIVED]} is still exactly {@code cvi.deleted = true}.
+     * <p>
+     * The archived baseline ({@link #appendExcludeArchivedQuery}) stays <b>outside</b> this group
+     * and is AND'd against it; only {@link ContentStatus#ARCHIVED} suppresses it. Folding the
+     * baseline in would make {@code [UNPUBLISHED, LOCKED]} read
+     * {@code (deleted = false or ...)}, which matches essentially every row — a filter that
+     * silently stops filtering.
+     * <p>
+     * <b>No-ops on an empty set</b>, rather than opening a group it has nothing to fill: {@code and
+     * ( )} is a syntax error, and an empty selection must leave the generated SQL byte-identical to
+     * a request that never mentioned status at all. That is the path every pre-existing caller
+     * takes.
+     * <p>
+     * All values come from a closed enum validated upstream, so nothing here is interpolated from
+     * user input.
+     *
+     * @param sqlQuery        The StringBuilder representing the SQL query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusQuery(final StringBuilder sqlQuery,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            return;
+        }
+
+        final List<String> disjuncts = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    disjuncts.add(" cvi.deleted = " + DbConnectionFactory.getDBTrue() + " ");
+                    break;
+                case UNPUBLISHED:
+                    disjuncts.add(" cvi.live_inode is null ");
+                    break;
+                case LOCKED:
+                    disjuncts.add(" cvi.locked_by is not null ");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        sqlQuery.append(" and (").append(String.join(" or ", disjuncts)).append(") ");
+    }
+
+    /**
+     * Appends the status terms for the index-only ({@code PURE_ES}) path, plus the archived
+     * baseline they replace.
+     * <p>
+     * <b>The statuses go in ONE explicit group.</b> In Lucene a leading {@code +} means REQUIRED, so
+     * emitting {@code +deleted:true +live:false} would be an <b>AND</b> — the opposite of this
+     * feature, and a silent one: the query stays valid and simply returns almost nothing. They must
+     * be written as {@code +(deleted:true OR live:false)}. This mirrors the grouping the host filter
+     * in this same method already uses ({@code +(conhost:… OR conhost:SYSTEM_HOST)}).
+     * <p>
+     * The archived baseline stays a separate required clause AND'd against that group, and only
+     * {@link ContentStatus#ARCHIVED} suppresses it — the same shape as the SQL path, so both
+     * heuristics answer identically.
+     * <p>
+     * With no statuses selected this degrades to exactly the previous behaviour, the bare
+     * {@code +deleted:false}.
+     *
+     * @param query           The StringBuilder representing the ES query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusESQuery(final StringBuilder query,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            query.append("+deleted:false ");
+            return;
+        }
+
+        if (!contentStatuses.contains(ContentStatus.ARCHIVED)) {
+            query.append("+deleted:false ");
+        }
+
+        final List<String> terms = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    terms.add("deleted:true");
+                    break;
+                case UNPUBLISHED:
+                    terms.add("live:false");
+                    break;
+                case LOCKED:
+                    terms.add("locked:true");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        query.append("+(").append(String.join(" OR ", terms)).append(") ");
     }
 
     /**

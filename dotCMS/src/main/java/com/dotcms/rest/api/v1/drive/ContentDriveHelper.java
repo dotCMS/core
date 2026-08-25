@@ -4,6 +4,7 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.browser.ContentStatus;
 import com.dotcms.browser.FieldSearchCriteria;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
@@ -24,7 +25,9 @@ import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
 
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -229,6 +232,16 @@ public class ContentDriveHelper {
         // all three cursors and the filters.
         final BrowserQuery browserQuery = builder.build();
 
+        // Status filter — the selected states are OR'd together server-side (see
+        // BrowserAPIImpl#appendContentStatusQuery). Empty means no status filtering at all, which
+        // is the path every pre-existing caller takes.
+        final Set<ContentStatus> contentStatuses = parseStatuses(requestForm.status());
+        if (!contentStatuses.isEmpty()) {
+            builder.withContentStatuses(contentStatuses)
+                    // Folders carry no status — drop them when filtering by status.
+                    .showFolders(false);
+        }
+
         Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
                 user.getUserId(), assetPath, browserQuery));
 
@@ -314,6 +327,60 @@ public class ContentDriveHelper {
             Logger.warn(ContentDriveHelper.class, "Unable to retrieve excluded content types: " + e.getMessage(), e);
             return Set.of(); // Return empty set as fallback
         }
+    }
+
+    /**
+     * Parses the raw {@code status} values of a drive-search request into {@link ContentStatus}.
+     * <p>
+     * Declared on the form as strings rather than the enum so this rejection stays an explicit
+     * {@link BadRequestException} — the deterministic 400 the contract asks for — rather than a
+     * Jackson deserialization failure whose status mapping is not under our control. Mirrors how
+     * {@code userSearchable} rejects unknown keys.
+     * <p>
+     * Matching is case-insensitive and duplicates collapse (the result is a Set), so a repeated
+     * value cannot widen the generated OR group. An unrecognized or blank value is rejected rather
+     * than skipped: silently dropping it would return a <b>wider</b> result set than the caller
+     * asked for, which is worse than failing.
+     *
+     * @param statuses raw status values from the request; may be empty, never null
+     * @return the parsed statuses; empty means no status filtering
+     * @throws BadRequestException if any value does not name a {@link ContentStatus}
+     */
+    static Set<ContentStatus> parseStatuses(final List<String> statuses) {
+        if (!UtilMethods.isSet(statuses)) {
+            return Set.of();
+        }
+
+        final Set<ContentStatus> parsed = new LinkedHashSet<>();
+        for (final String status : statuses) {
+            if (!UtilMethods.isSet(status)) {
+                throw invalidStatus(status);
+            }
+            try {
+                parsed.add(ContentStatus.valueOf(status.trim().toUpperCase()));
+            } catch (final IllegalArgumentException e) {
+                throw invalidStatus(status);
+            }
+        }
+
+        return parsed;
+    }
+
+    /**
+     * Builds the 400 for an unusable status value, naming both the offending value and every
+     * accepted one.
+     * <p>
+     * The offending value is passed as a format <b>argument</b>, never concatenated into the format
+     * string: {@code HttpStatusCodeException} runs {@link String#format} over the message it is
+     * given, so a pre-formatted string carrying user input would blow up on a stray {@code %} — a
+     * request for {@code "50%"} would raise UnknownFormatConversionException and surface as a 500
+     * instead of the 400 this method exists to produce.
+     */
+    private static BadRequestException invalidStatus(final String status) {
+        return new BadRequestException("Invalid status '%s'. Accepted values are: %s.",
+                String.valueOf(status),
+                Arrays.stream(ContentStatus.values()).map(Enum::name)
+                        .collect(Collectors.joining(", ")));
     }
 
     /**

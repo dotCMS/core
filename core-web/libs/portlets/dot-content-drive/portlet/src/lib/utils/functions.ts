@@ -130,6 +130,12 @@ export const decodeByFilterKey: Record<
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
     workflow: multiSelector,
+    // MUST be listed explicitly. Unknown keys fall through to the comma sniff in
+    // `decodeFilterValue`, so a single selected status (`status:ARCHIVED`) would decode to the
+    // STRING 'ARCHIVED' while two would decode to an array. Every consumer checks
+    // `filters()?.status?.length`, which is 8 for that string — the filter would appear to work
+    // right up until someone selected exactly one status.
+    status: multiSelector,
     sharedAssets: singleSelector
 };
 
