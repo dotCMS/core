@@ -3975,7 +3975,7 @@
   color: #ffffff;
 }
 .dijitButtonDanger.dijitButtonHover {
-  background-color: #b02023;
+  background-color: rgb(175.6812749004, 32.3187250996, 34.8047808765);
 }
 .dijitButtonAction {
   border: solid 1px transparent;
@@ -4016,7 +4016,7 @@
   color: #ffffff;
 }
 .fakeDojoButtonDanger:hover {
-  background-color: #b02023;
+  background-color: rgb(175.6812749004, 32.3187250996, 34.8047808765);
   color: #ffffff;
 }
 
@@ -4486,10 +4486,10 @@
 
 .dijitTitlePane {
   border-radius: 1px;
-  box-shadow: 0px 2px 8px 0px hsla(230deg, 13%, 9%, 0.02);
+  box-shadow: 0px 2px 8px 0px hsla(230, 13%, 9%, 0.02);
 }
 .dijitTitlePaneHover {
-  box-shadow: 0px 4px 8px 0px hsla(230deg, 13%, 9%, 0.06);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitTitlePaneHover .dijitTitlePaneContentOuter {
   border: none;
@@ -4545,7 +4545,7 @@
   background-color: #ffffff;
   border-radius: 0px;
   border: none;
-  box-shadow: 0px 4px 8px 0px hsla(230deg, 13%, 9%, 0.06);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
 }
 .dijitDialogCloseIcon {
   width: 17px;
@@ -4597,7 +4597,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 10px 18px 0px hsla(230deg, 13%, 9%, 0.1);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -5162,7 +5162,7 @@
   color: #14151a;
   border: 0 none;
   border-radius: 0.375rem;
-  box-shadow: 0px 10px 18px 0px hsla(230deg, 13%, 9%, 0.1);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 0.5rem;
   margin-top: 0.5rem;
 }
@@ -10479,7 +10479,7 @@ a.category_higlighted, a.tag_higlighted {
 }
 
 .context-menu {
-  box-shadow: 0px 4px 8px 0px hsla(230deg, 13%, 9%, 0.06);
+  box-shadow: 0px 4px 8px 0px hsla(230, 13%, 9%, 0.06);
   position: absolute;
   background: #ffffff;
   border: 1px solid var(--gray-400);
@@ -11324,7 +11324,7 @@ dialog:modal {
   margin: 0;
   border: none;
   border-radius: 0.375rem;
-  box-shadow: 0px 10px 18px 0px hsla(230deg, 13%, 9%, 0.1);
+  box-shadow: 0px 10px 18px 0px hsla(230, 13%, 9%, 0.1);
   padding: 1.5rem;
 }
 dialog:modal::backdrop {
