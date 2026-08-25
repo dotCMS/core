@@ -164,6 +164,14 @@ export const DotContentDriveStore = signalStore(
                                 !filters()?.contentType?.length &&
                                 !filters()?.workflow?.length &&
                                 // Folders carry no status, so any status selection hides them.
+                                //
+                                // This rule lives HERE, not in the endpoint. `POST /drive/search`
+                                // honours whatever `showFolders` it is sent — deliberately, so the
+                                // response always matches the request and the folder cursors never
+                                // describe a query the caller did not make. Keeping the policy on
+                                // the client also means that if we ever add a control for folder
+                                // visibility, honouring it is a change to this line and nothing
+                                // else: no backend refactor, no API contract change.
                                 !filters()?.status?.length &&
                                 // A field-based filter narrows to content, so hide folders too —
                                 // consistent with the other filters above.
