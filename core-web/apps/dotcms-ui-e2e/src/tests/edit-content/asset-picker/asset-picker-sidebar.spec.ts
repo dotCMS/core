@@ -134,9 +134,7 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await picker.waitForVisible();
 
         // The seeded folder is reachable from the tree.
-        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
-            1
-        );
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(1);
 
         // "Exactly one root" is asserted in the unit tests, against `$folders()`, where it is
         // deterministic. Pinning it here would mean matching PrimeNG's internal tree markup, which
@@ -162,18 +160,14 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await field.openSelectExistingDialog();
         await picker.waitForVisible();
 
-        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
-            1
-        );
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(1);
 
         await picker.chooseSite(otherSiteHost);
 
         await expect(picker.treeNodes.filter({ hasText: `aaa-other-${testSuffix}` })).toHaveCount(
             1
         );
-        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(
-            0
-        );
+        await expect(picker.treeNodes.filter({ hasText: `aaa-home-${testSuffix}` })).toHaveCount(0);
     });
 
     test('finds a nested folder by a mid-name fragment, scoped to this site @critical', async ({
