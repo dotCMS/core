@@ -6,8 +6,10 @@ import com.dotcms.analytics.listener.ContentAnalyticsAppListener;
 import com.dotcms.config.DotInitializer;
 import com.dotcms.content.elasticsearch.business.event.ContentletCheckinEvent;
 import com.dotcms.graphql.listener.ContentTypeAndFieldsModsListeners;
+import com.dotcms.jobs.business.api.events.JobCompletedEvent;
 import com.dotcms.publishing.listener.PushPublishKeyResetEventListener;
 import com.dotcms.rendering.velocity.services.MacroCacheRefresherJob;
+import com.dotcms.rest.api.v1.content.bulkrefresh.BulkRefreshCompletionListener;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.dotcms.security.apps.AppSecretSavedEvent;
 import com.dotcms.security.apps.AppsKeyResetEventListener;
@@ -73,6 +75,12 @@ public class LocalSystemEventSubscribersInitializer implements DotInitializer {
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AnalyticsAppListener.Instance.get());
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, AIAppListener.Instance.get());
         APILocator.getLocalSystemEventsAPI().subscribe(AppSecretSavedEvent.class, ContentAnalyticsAppListener.Instance.get());
+
+        // Tells whoever submitted a bulk content reindex that it finished. Registered here rather than
+        // self-subscribing from a CDI @PostConstruct: nothing injects that class, and CDI beans are lazy,
+        // so it would never have been constructed and completion would never have been reported.
+        APILocator.getLocalSystemEventsAPI().subscribe(JobCompletedEvent.class,
+                new BulkRefreshCompletionListener());
 
         this.initDotVelocityMacrosVtlFiles();
     }

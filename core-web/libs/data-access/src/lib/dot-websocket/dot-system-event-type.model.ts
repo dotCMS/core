@@ -15,7 +15,9 @@ export enum DotSystemEventType {
     DELETE_SITE = 'DELETE_SITE',
     SWITCH_SITE = 'SWITCH_SITE',
     UPDATE_SITE_PERMISSIONS = 'UPDATE_SITE_PERMISSIONS',
-    UPDATE_PORTLET_LAYOUTS = 'UPDATE_PORTLET_LAYOUTS'
+    UPDATE_PORTLET_LAYOUTS = 'UPDATE_PORTLET_LAYOUTS',
+    /** A bulk content reindex finished; the payload carries the run's counters. */
+    BULK_REFRESH_COMPLETED = 'BULK_REFRESH_COMPLETED'
 }
 
 /**

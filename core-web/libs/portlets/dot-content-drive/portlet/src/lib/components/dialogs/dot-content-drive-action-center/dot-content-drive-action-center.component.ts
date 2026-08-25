@@ -11,6 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
+import { MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -51,6 +52,7 @@ import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
     PUSH_PUBLISH_ACTION_ID,
+    REFRESH_ACTION_ID,
     DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
@@ -79,9 +81,10 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * Two sections:
  *
  * 1. **Quick Actions** — the bulk operations the old search toolbar offered outside its workflow
- *    dropdown: Lock, Unlock, Add to Bundle, and placeholders for Push Publish and Refresh. Lock and
+ *    dropdown: Lock, Unlock, Add to Bundle, Refresh, and a placeholder for Push Publish. Lock and
  *    Unlock fire over the whole eligible selection in one request via
- *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
+ *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`; Refresh goes to its own job-backed
+ *    `POST /api/v1/content/_bulkrefresh`, and its completion is pushed over the websocket. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
@@ -169,6 +172,11 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    /**
+     * Resolves to the shell's instance, so a toast added here survives this dialog closing immediately
+     * afterwards.
+     */
+    readonly #messageService = inject(MessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
     readonly #pushPublishService = inject(PushPublishService);
 
@@ -710,6 +718,32 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
+        // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
+        // endpoint rather than the system-action fire, so it branches here rather than falling through.
+        if (quickAction.id === REFRESH_ACTION_ID) {
+            const actionName = this.#dotMessageService.get(quickAction.name);
+            this.#store.executeRefresh(actionName, inodes);
+
+            // The only feedback for a reindex until it finishes. It gets no "Applying ..." indicator,
+            // because it runs for minutes and the endpoint reports no progress — so saying up front
+            // that it is backgrounded is the honest substitute, and it is why the Action Center is left
+            // usable rather than locked.
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.action-center.toast.reindex-started'
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.action-center.toast.reindex-started-detail',
+                    actionName,
+                    String(inodes.length)
+                )
+            });
+            this.handOffToToolbar();
+
+            return;
+        }
+
         this.#store.executeQuickAction(
             quickAction.id,
             this.#dotMessageService.get(quickAction.name),
@@ -774,12 +808,21 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * it is modal, so it dims the toolbar that is reporting the run, and it blocks the grid while
      * work happens that no longer needs the dialog to be alive. Closing here is what makes the
      * toolbar indicator observable — otherwise the only window to see it is the milliseconds between
-     * the user manually closing the dialog and the request settling.
+     * the user manually closing the dialog and the request settling. Refresh is the exception: it shows
+     * no indicator at all, having already said by toast that it runs in the background.
      *
      * Counts are also stale from this point on: the contentlets are moving to a new step, so the
      * numbers this dialog is showing no longer hold.
      */
     private handOffToToolbar(): void {
+        // The selection has served its purpose the moment an action is fired, and leaving the rows
+        // ticked invited firing a second action over content already being changed. Cleared here rather
+        // than after the run settles, because the settle path never runs on an error or a timeout — and
+        // for a reindex it is minutes away, so the boxes would sit checked for the whole job.
+        //
+        // Deliberately only on hand-off: dismissing the dialog with X, ESC or the mask keeps the
+        // selection, because the user may still be building it.
+        this.#store.setSelectedItems([]);
         this.#store.closeDialog();
     }
 
