@@ -69,7 +69,7 @@
             </p-table>
         } @else if (store.membersStatus() === 'ERROR') {
             <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
-                {{ 'error.load-failed' | dm }}
+                {{ 'roles.error.load-failed' | dm }}
             </p>
         } @else if (store.members().length === 0) {
             <div

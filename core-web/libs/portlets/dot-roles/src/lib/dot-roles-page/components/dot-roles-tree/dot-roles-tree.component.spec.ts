@@ -20,7 +20,7 @@ const MESSAGES = {
     'roles.action.add-child': 'Add child',
     'roles.tree.empty': 'No roles',
     loading: 'Loading',
-    'error.load-failed': 'Failed'
+    'roles.error.load-failed': 'Failed'
 };
 
 describe('DotRolesTreeComponent', () => {

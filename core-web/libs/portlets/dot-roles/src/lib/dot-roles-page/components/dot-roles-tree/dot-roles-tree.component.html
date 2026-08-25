@@ -33,11 +33,11 @@
 
 @if (store.status() === 'LOADING') {
     <p class="text-color-secondary m-0 text-sm" data-testid="tree-loading">
-        {{ 'loading' | dm }}
+        {{ 'roles.status.loading' | dm }}
     </p>
 } @else if (store.status() === 'ERROR') {
     <p class="m-0 text-sm text-red-700" data-testid="tree-error">
-        {{ 'error.load-failed' | dm }}
+        {{ 'roles.error.load-failed' | dm }}
     </p>
 } @else {
     @if ($treeNodes().length > 0) {
