@@ -18,6 +18,8 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentTypeField, DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
     DotAssetPickerComponent,
     DotAssetPickerConfig,
     DotDropZoneComponent,
@@ -104,7 +106,11 @@ describe('DotFileFieldComponent', () => {
             }),
             mockProvider(DotAiService, {
                 checkPluginInstallation: jest.fn().mockReturnValue(of(true))
-            })
+            }),
+            // Angular Edit Content host: the launcher is what makes "Select Existing File" open the
+            // AssetPicker. Its legacy-host counterpart is
+            // `components/dot-file-field/dot-file-field.component.legacy-picker.spec.ts`.
+            { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
         ]
     });
 
