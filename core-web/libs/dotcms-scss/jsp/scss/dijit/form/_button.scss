@@ -1,3 +1,5 @@
+@use "sass:color";
+
 .dijitButton,
 .dijitToggleButton {
     height: $field-height-md;
@@ -498,7 +500,7 @@
         color: $white;
 
         &.dijitButtonHover {
-            background-color: darken($red, 10%);
+            background-color: color.adjust($red, $lightness: -10%);
         }
     }
 
@@ -550,7 +552,7 @@
     color: $white;
 
     &:hover {
-        background-color: darken($red, 10%);
+        background-color: color.adjust($red, $lightness: -10%);
         color: $white;
     }
 }
