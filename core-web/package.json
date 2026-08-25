@@ -314,7 +314,7 @@
         "rollup": "4.14.0",
         "rollup-plugin-postcss": "4.0.2",
         "rollup-plugin-preserve-directives": "^0.4.0",
-        "sass": "1.101.0",
+        "sass": "1.56.2",
         "source-map": "^0.7.6",
         "ts-jest": "29.4.6",
         "ts-node": "10.9.2",

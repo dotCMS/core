@@ -1,5 +1,3 @@
-@use "sass:math";
-
 .dijit {
     &SliderBarH,
     &SliderBumperH {
@@ -114,7 +112,7 @@
             background-color: $slider-handle-normal-bgcolor;
             border: $slider-handle-normal-border;
             height: $slider-handle-size;
-            top: math.ceil(-(calc($slider-handle-size / 2)) + $field-border-size);
+            top: ceil(-(calc($slider-handle-size / 2)) + $field-border-size);
             width: $slider-handle-size;
         }
 
