@@ -2,8 +2,12 @@
 
 The only contract this feature changes. Everything not listed is unchanged.
 
-**Resource**: `com.dotcms.rest.api.v1.experiments.ExperimentsResource#update` (L129-154)
+**Entry point**: `com.dotcms.rest.api.v1.experiments.ExperimentsResource#update`
 **Body**: `ExperimentForm` · **Response**: `ResponseEntitySingleExperimentView`
+
+The eligibility rule is enforced in `ExperimentsAPIImpl.save()`, not in the resource, so it holds
+for every caller rather than only for requests arriving through this endpoint. The resource just
+carries the submitted `pageId` across.
 
 ## What changes
 

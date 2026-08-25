@@ -213,6 +213,7 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         if (existingExperiment.isPresent()
                 && !existingExperiment.get().pageId().equals(experimentToSave.pageId())) {
+            validatePageChange(existingExperiment.get());
             experimentToSave = experimentToSave.withTrafficProportion(
                     regenerateControlVariantUrl(experimentToSave));
         }
@@ -1010,6 +1011,48 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         multiTreeAPI.copyMultiTree(experimentPage.getIdentifier(), multiTreesByVariant,
                 experimentVariant.id());
+    }
+
+    /**
+     * Refuses a Page change the Experiment is not allowed to make.
+     *
+     * <p>The Page may only change while the Experiment is a {@link Status#DRAFT} whose only Variant
+     * is the control. Every other Variant holds a copy of the current Page's layout — see
+     * {@link #copyMultiTrees} — so repointing the Experiment would orphan it. The control is exempt
+     * from that copy: it holds no duplicated layout because it <em>is</em> the Page.
+     *
+     * <p>Checked here rather than in the REST layer so it holds for every caller. Only a changed
+     * Page reaches this method, so the saves that keep their Page — {@code addVariant},
+     * {@code deleteVariant}, {@code promoteVariant}, {@code start}, {@code end} — never pay for it.
+     *
+     * @param persistedExperiment the Experiment as currently stored, which is the state the rule
+     *                            is about
+     */
+    private void validatePageChange(final Experiment persistedExperiment) {
+
+        DotPreconditions.isTrue(persistedExperiment.status() == Status.DRAFT,
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment can only be changed while it is in DRAFT status. "
+                        + "This Experiment is " + persistedExperiment.status() + ".");
+
+        DotPreconditions.isTrue(hasOnlyTheControlVariant(persistedExperiment),
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment cannot be changed once it has Variants other than "
+                        + "the control, because each one holds a copy of the current Page's layout. "
+                        + "Delete them before changing the Page.");
+    }
+
+    /**
+     * Whether the control is the Experiment's only Variant.
+     *
+     * <p>Identified by its id rather than by its {@code Original} description: the id is what
+     * {@link #addVariant} keys off when it decides whether to copy the Page's layout, so matching
+     * on it covers exactly the Variants that hold a copy.
+     */
+    private boolean hasOnlyTheControlVariant(final Experiment experiment) {
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        return variants.size() == 1 && DEFAULT_VARIANT.name().equals(variants.first().id());
     }
 
     /**
