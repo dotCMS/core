@@ -99,8 +99,8 @@ public interface FeatureFlagName {
 
     /**
      * Gates the redesigned dotAI provider configuration page ({@code dot-ai-config-detail}).
-     * Off by default so existing customers keep seeing the generic Apps config screen for the
-     * dotAI app until they opt in.
+     * Off by default so existing customers keep seeing the restored pre-redesign dotAI config
+     * screen ({@code dot-ai-config-detail-legacy}) until they opt in.
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
      */
     String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";

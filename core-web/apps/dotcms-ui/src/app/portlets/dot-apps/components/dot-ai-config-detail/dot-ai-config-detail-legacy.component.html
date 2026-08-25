@@ -1,4 +1,8 @@
-@if (app(); as app) {
+@if ($loading()) {
+    <div class="flex w-full items-center justify-center bg-white text-sm text-gray-400">
+        {{ 'dot.common.message.loading' | dm }}
+    </div>
+} @else if ($app(); as app) {
     <div class="flex w-full flex-col overflow-y-auto bg-white text-sm shadow-md">
         <div class="sticky top-0 z-1 bg-white">
             <dot-apps-configuration-header [app]="app" />
@@ -7,7 +11,7 @@
                 <span class="inline-flex items-center">{{ app.sites?.[0]?.name }}</span>
                 <div class="flex gap-1">
                     <p-button (click)="goToApps()" [label]="'Cancel' | dm" [outlined]="true" />
-                    <p-button (click)="onSubmit()" [label]="'Save' | dm" [loading]="saving()" />
+                    <p-button (click)="onSubmit()" [label]="'Save' | dm" [loading]="$saving()" />
                 </div>
             </div>
         </div>
@@ -18,8 +22,8 @@
                         <h4 class="m-0 text-sm font-semibold text-black">Provider Config</h4>
                         <textarea
                             pTextarea
-                            [ngModel]="configJson()"
-                            (ngModelChange)="configJson.set($event)"
+                            [ngModel]="$configJson()"
+                            (ngModelChange)="$configJson.set($event)"
                             rows="20"
                             class="w-full resize-y font-mono text-xs"
                             spellcheck="false"></textarea>
@@ -34,5 +38,9 @@
                 </div>
             </div>
         </div>
+    </div>
+} @else {
+    <div class="flex w-full items-center justify-center bg-white text-sm text-red-500">
+        {{ 'dot.common.message.error' | dm }}
     </div>
 }

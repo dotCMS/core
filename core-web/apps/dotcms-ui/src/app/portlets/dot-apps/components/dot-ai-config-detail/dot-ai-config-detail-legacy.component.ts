@@ -66,6 +66,7 @@ const EXAMPLE_CONFIG = {
 @Component({
     selector: 'dot-ai-config-detail-legacy',
     templateUrl: './dot-ai-config-detail-legacy.component.html',
+    styleUrls: ['./dot-ai-config-detail-legacy.component.scss'],
     host: { class: 'flex h-full p-4 bg-gray-200 shadow-md' },
     changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
@@ -86,9 +87,10 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
 
     private readonly siteId = this.route.snapshot.paramMap.get('id') ?? undefined;
 
-    readonly app = signal<DotApp | null>(null);
-    readonly configJson = signal('');
-    readonly saving = signal(false);
+    readonly $loading = signal(true);
+    readonly $app = signal<DotApp | null>(null);
+    readonly $configJson = signal('');
+    readonly $saving = signal(false);
     readonly exampleJson = JSON.stringify(EXAMPLE_CONFIG, null, 2);
 
     ngOnInit(): void {
@@ -98,7 +100,8 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
                 takeUntilDestroyed(this.destroyRef)
             )
             .subscribe((app: DotApp) => {
-                this.app.set(app);
+                this.$app.set(app);
+                this.$loading.set(false);
             });
 
         this.dotAiService
@@ -108,11 +111,11 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
                 next: (config) => {
                     if (config?.providerConfig) {
                         try {
-                            this.configJson.set(
+                            this.$configJson.set(
                                 JSON.stringify(JSON.parse(config.providerConfig), null, 2)
                             );
                         } catch {
-                            this.configJson.set(config.providerConfig);
+                            this.$configJson.set(config.providerConfig);
                         }
                     }
                 },
@@ -131,7 +134,7 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
 
     onSubmit(): void {
         try {
-            JSON.parse(this.configJson());
+            JSON.parse(this.$configJson());
         } catch {
             this.dotMessageDisplayService.push({
                 life: 5000,
@@ -143,13 +146,13 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
             return;
         }
 
-        this.saving.set(true);
+        this.$saving.set(true);
         this.dotAiService
-            .saveConfig(this.configJson(), this.siteId)
+            .saveConfig(this.$configJson(), this.siteId)
             .pipe(takeUntilDestroyed(this.destroyRef))
             .subscribe({
                 next: () => {
-                    this.saving.set(false);
+                    this.$saving.set(false);
                     this.dotMessageDisplayService.push({
                         life: 3000,
                         message: this.dotMessageService.get('dot.common.message.saved'),
@@ -158,7 +161,7 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
                     });
                 },
                 error: (err) => {
-                    this.saving.set(false);
+                    this.$saving.set(false);
                     const detail =
                         err?.error?.error ?? err?.message ?? 'Failed to save AI configuration';
                     this.dotMessageDisplayService.push({
@@ -172,7 +175,7 @@ export class DotAiConfigDetailLegacyComponent implements OnInit {
     }
 
     goToApps(): void {
-        const key = this.app()?.key ?? 'dotAI';
+        const key = this.$app()?.key ?? 'dotAI';
         this.dotRouterService.goToAppsConfiguration(key);
     }
 }
