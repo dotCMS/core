@@ -155,11 +155,22 @@ jobs:
           COMMIT_SHAS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...main" --paginate \
             --jq '.commits[].sha' || true)
 
-          PR_NUMBERS=$(
-            for sha in ${COMMIT_SHAS}; do
-              gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[].number' 2>/dev/null || true
-            done | sort -un
-          )
+          # Fix for PR #37219 review feedback (sfreudenthaler + Claude bot, High): a bare
+          # `2>/dev/null || true` here would make a genuine API failure (rate limit,
+          # transient 5xx, network blip) indistinguishable from "this commit has no PR" —
+          # silently dropping that commit's PR from the count re-introduces the same
+          # silent-pass failure this gate exists to prevent. So each lookup is checked
+          # explicitly: a real failure fails the step loudly and by name, instead of being
+          # swallowed like a normal empty result.
+          PR_NUMBERS_FILE=$(mktemp)
+          for sha in ${COMMIT_SHAS}; do
+            if ! gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[].number' >> "${PR_NUMBERS_FILE}"; then
+              echo "::error::Failed to look up the PR(s) associated with commit ${sha} (repos/${REPO}/commits/${sha}/pulls) — likely a transient GitHub API error or rate limit, not the absence of a PR. Re-run the release; if this keeps failing, check GitHub API status/rate limits before assuming this commit has no associated PR."
+              exit 1
+            fi
+          done
+          PR_NUMBERS=$(sort -un "${PR_NUMBERS_FILE}")
+          rm -f "${PR_NUMBERS_FILE}"
 
           BREAKING_PRS=()
           for pr in ${PR_NUMBERS}; do
