@@ -151,7 +151,7 @@
                          them and this target is their only gate.
 
                          The root `core-web` project carries skip:typecheck: its target is
-                         `tsc --noEmit -p tsconfig.base.json`, which compiles the whole workspace
+                         `tsc -p tsconfig.base.json` with no emit, which compiles the whole workspace
                          as one program (specs and scripts included) and reports ~2570 errors. It
                          has never passed and is not a per-project gate. -->
                     <execution>
