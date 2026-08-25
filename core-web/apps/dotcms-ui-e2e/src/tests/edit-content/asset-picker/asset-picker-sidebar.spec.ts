@@ -69,10 +69,17 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await apiHelpers.createFolders(otherSiteHost, [`/aaa-other-${testSuffix}`]);
     });
 
-    test.afterEach(async ({ apiHelpers }) => {
+    test.afterEach(async ({ apiHelpers, testSuffix }) => {
         await apiHelpers.deleteContentType(contentTypeId);
         // A leaked site stays in every later run's selector and silently changes what it shows.
         await apiHelpers.deleteSite(otherSiteId);
+        // The other site's folders go with it. The ones seeded on the *shared* demo site do not,
+        // so they are removed explicitly — otherwise they pile up run after run until the tree's
+        // first page no longer holds the folder the next run seeds.
+        await apiHelpers.deleteFolders(homeSite, [
+            `/aaa-home-${testSuffix}`,
+            `/zz-parent-${testSuffix}`
+        ]);
     });
 
     test('names the site being browsed, above the folder search @critical', async ({

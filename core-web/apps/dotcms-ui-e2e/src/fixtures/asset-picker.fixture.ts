@@ -6,7 +6,7 @@ import {
     createFakeContentType,
     deleteContentType
 } from '../requests/contentType';
-import { createFolders } from '../requests/folders';
+import { createFolders, deleteFolders } from '../requests/folders';
 import { createSite, deleteSite, getDefaultSite, type Site } from '../requests/sites';
 import {
     createFakePayloadImageField,
@@ -59,6 +59,7 @@ export const test = base.extend<{
         createContentType: (payload: CreateContentTypePayload) => Promise<ContentType>;
         deleteContentType: (id: string) => Promise<void>;
         createFolders: (siteName: string, paths: string[]) => ReturnType<typeof createFolders>;
+        deleteFolders: (siteName: string, paths: string[]) => Promise<void>;
         createSite: (hostname: string) => ReturnType<typeof createSite>;
         deleteSite: (identifier: string) => Promise<void>;
         getDefaultSite: () => Promise<Site>;
@@ -70,6 +71,7 @@ export const test = base.extend<{
             createContentType: (payload) => createFakeContentType(request, payload),
             deleteContentType: (id) => deleteContentType(request, id),
             createFolders: (siteName, paths) => createFolders(request, siteName, paths),
+            deleteFolders: (siteName, paths) => deleteFolders(request, siteName, paths),
             createSite: (hostname) => createSite(request, hostname),
             deleteSite: (identifier) => deleteSite(request, identifier),
             getDefaultSite: () => getDefaultSite(request),
