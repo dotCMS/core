@@ -73,7 +73,7 @@ jobs:
   build-and-test:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v5
 
       - name: Run Maven Job
         uses: ./.github/actions/core-cicd/maven-job

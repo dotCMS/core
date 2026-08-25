@@ -92,7 +92,7 @@ jobs:
 
       - name: 'Upload artifacts'
         id: upload-artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
           name: ${{ env.STARTER_TYPE }}-starter
           path: |
@@ -111,7 +111,7 @@ jobs:
     steps:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -126,7 +126,7 @@ jobs:
           echo "::endgroup::"
           
       - name: 'Download artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@37930b1c2abaa49bbe596cd826c3c89aef350131 # v7
         with:
           github-token: ${{ github.token }}
           name: ${{ env.STARTER_TYPE }}-starter
@@ -212,7 +212,7 @@ jobs:
     if: always() && github.event.inputs.dry-run == 'false'
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Compose Message
         id: compose-message
