@@ -156,7 +156,6 @@ export async function resolvePRNumbers(
       }
     });
 
-    // Promise.all preserves input order, so the returned array is deterministic.
     const batchResults = await Promise.all(promises);
     for (const numbers of batchResults) {
       for (const n of numbers) prNumbers.add(n);

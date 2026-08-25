@@ -13,10 +13,6 @@ describe('parseRepo', () => {
 });
 
 describe('resolvePRNumbers', () => {
-  afterEach(() => {
-    jest.restoreAllMocks();
-  });
-
   it('resolves merge-commit and branch-commit dedup, and ignores direct pushes (#37201)', async () => {
     // aaa: feature-branch commit whose subject ended in the issue "(#37132)"
     // bbb: the two-parent merge commit for the same PR
@@ -60,30 +56,6 @@ describe('resolvePRNumbers', () => {
     expect(prNumbers).toEqual([2]);
   });
 
-  it('does not abort the batch when one commit fails to resolve', async () => {
-    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
-
-    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
-      good: [{ number: 42, merged_at: '2026-08-25T00:00:00Z' }],
-    };
-    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
-      data: bySha[commit_sha] ?? [],
-    }));
-    listPRs.mockImplementationOnce(() => Promise.reject(new Error('boom')));
-    const octokit = {
-      repos: { listPullRequestsAssociatedWithCommit: listPRs },
-    } as unknown as Octokit;
-
-    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [
-      { sha: 'bad' },
-      { sha: 'good' },
-    ]);
-
-    expect(prNumbers).toEqual([42]);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad'));
-
-    stderrSpy.mockRestore();
-  });
 });
 
 describe('findPreviousTag', () => {

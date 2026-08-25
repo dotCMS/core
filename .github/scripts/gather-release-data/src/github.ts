@@ -135,14 +135,10 @@ export async function fetchCommitRange(
 }
 
 /**
- * Resolve the merged PRs that introduced each commit in the range.
- *
- * Uses GET /repos/{owner}/{repo}/commits/{sha}/pulls rather than parsing "(#N)"
- * out of commit subjects. Under merge commits, feature-branch commits land on
- * main verbatim, and a subject ending in "(#N)" is often an ISSUE the author
- * typed — feeding that to pulls.get 404s and drops a real PR. The API resolves
- * a merged PR's branch commits AND its merge commit to the same PR, so the Set
- * dedupes them for free, and returns [] for direct pushes.
+ * Resolve merged PRs per commit via GET /repos/{owner}/{repo}/commits/{sha}/pulls.
+ * Commit subjects ending in "(#N)" are often an ISSUE number under merge commits,
+ * and pulls.get 404s on those; the API also maps a PR's branch commits and its
+ * merge commit to the same PR (Set dedupes) and returns [] for direct pushes.
  */
 export async function resolvePRNumbers(
   octokit: Octokit,
@@ -175,7 +171,6 @@ export async function resolvePRNumbers(
       }
     });
 
-    // Promise.all preserves input order, so the returned array is deterministic.
     const batchResults = await Promise.all(promises);
     for (const numbers of batchResults) {
       for (const n of numbers) prNumbers.add(n);
