@@ -1048,7 +1048,7 @@ describe('DotContentDriveShellComponent', () => {
             const listView = spectator.query(DotFolderListViewComponent);
 
             expect(listView).toBeTruthy();
-            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+            expect(listView!.$selection()).toEqual([MOCK_ITEMS[0]]);
 
             // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
             // signal, so changing its return value cannot notify change detection. What matters is
