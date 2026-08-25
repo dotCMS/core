@@ -27,7 +27,7 @@ const MESSAGES = {
     'roles.users.column.email': 'Email',
     'roles.users.column.granted-from': 'Granted From',
     loading: 'Loading',
-    'error.load-failed': 'Failed'
+    'roles.error.load-failed': 'Failed'
 };
 
 describe('DotRoleUsersTabComponent', () => {
