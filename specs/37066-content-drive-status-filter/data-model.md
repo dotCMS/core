@@ -87,7 +87,21 @@ deterministic error is worth more.
 | Every element must name a `ContentStatus` | FR-010 | `ContentDriveHelper.parseStatuses` → `BadRequestException` |
 | Selection widens (OR), never narrows | FR-006 | `BrowserAPIImpl.appendContentStatusQuery` — one OR-ed group |
 | The archived baseline stands unless `ARCHIVED` is selected | FR-007 | `BrowserAPIImpl:2006` — the exclusion is skipped only when the selection contains `ARCHIVED` |
-| A non-empty selection excludes folders | FR-015 | `ContentDriveHelper` → `.showFolders(false)` |
+| A non-empty selection excludes folders **in the UI** | FR-015 | the store's `$request`, not the endpoint — see below |
+
+### Folders are the client's call, not the endpoint's
+
+Folders carry no status, so the Content Drive UI drops them once a status is selected — the
+`showFolders` conjunction in the store's `$request` already does this alongside `baseType`,
+`contentType` and `workflow`.
+
+The **endpoint deliberately does not enforce it.** Forcing `showFolders` to false server-side would
+be a silent side effect: the response would stop matching the request, and `folderCursor` /
+`hasMoreFolders` would report on a folder query the caller never received. A caller that asks for
+folders alongside a status receives them.
+
+*(Note: the pre-existing workflow filter still forces `showFolders(false)` in `ContentDriveHelper`.
+The two filters therefore differ. Reconciling that is outside this feature.)*
 
 ### The archived baseline is not a fourth flag, and it lives outside the OR group
 

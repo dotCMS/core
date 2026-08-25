@@ -235,7 +235,12 @@ selection and the results are the same at every step.
   convention already used by the other filters.
 - **FR-014**: The active selection MUST be reflected as a chip, consistent with the other toolbar
   filters, and MUST be clearable from that chip.
-- **FR-015**: Folders MUST be excluded from the results whenever any status is selected.
+- **FR-015**: Folders MUST be excluded from the Content Drive results whenever any status is
+  selected. This is a **client-side** rule: folders carry no status, so the Content Drive UI stops
+  requesting them. The search capability itself MUST NOT override an explicitly requested
+  folder setting — a caller that asks for folders alongside a status MUST receive them. Silently
+  overriding it would make the response stop matching the request, and would leave the folder
+  pagination describing a query the caller never received.
 - **FR-016**: A status selection MUST persist across navigation exactly as every other Content Drive
   filter does: deep link, page reload, browsing between folders, browser Back/Forward, and opening
   an item in the editor and returning.
