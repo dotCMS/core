@@ -1,0 +1,64 @@
+<ul class="m-0 flex list-none flex-col gap-0.5 p-0" [attr.data-testid]="$listTestId()">
+    @for (node of $rows(); track node.key) {
+        <li class="min-w-0">
+            <!-- A real button, so Enter and Space activate the row and the focus ring comes for
+                 free. `min-w-0` on every level of the flex chain is what lets `truncate` below
+                 actually clip: without it the text sets the row's minimum width and a long path
+                 widens the whole sidebar instead of ellipsing. -->
+            <button
+                type="button"
+                class="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent p-2 text-left transition-none hover:bg-gray-100"
+                [class.bg-primary-50]="isSelected(node)"
+                [class.hover:bg-primary-50]="isSelected(node)"
+                [attr.aria-current]="isSelected(node) ? 'true' : null"
+                [attr.data-testid]="$rowTestId()"
+                (click)="resultSelect.emit(node)">
+                <i
+                    class="pi pi-folder flex-none text-sm text-gray-600"
+                    data-testid="folder-search-result-icon"></i>
+
+                <span class="flex min-w-0 flex-auto flex-col gap-1 overflow-hidden">
+                    <span
+                        class="block w-full min-w-0 truncate leading-normal font-semibold"
+                        [class.text-primary-500]="isSelected(node)"
+                        data-testid="folder-search-result-name">
+                        {{ node.label | dotFolderName }}
+                    </span>
+                    <span
+                        class="block w-full min-w-0 truncate text-sm leading-normal text-surface-500"
+                        data-testid="folder-search-result-path">
+                        {{ formatPath(node) }}
+                    </span>
+                </span>
+            </button>
+        </li>
+    }
+
+    @if ($loadMoreNode(); as loadMoreNode) {
+        <li class="min-w-0">
+            <button
+                type="button"
+                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-2 text-left text-sm font-normal text-primary-500 hover:underline"
+                data-testid="folder-search-load-more"
+                [disabled]="loadMoreNode.loading"
+                (click)="loadMore.emit(loadMoreNode)">
+                @if (loadMoreNode.loading) {
+                    <i class="pi pi-spinner pi-spin text-xs"></i>
+                } @else {
+                    <i class="pi pi-plus-circle"></i>
+                }
+                {{ $loadMoreLabelKey() | dm }}
+            </button>
+        </li>
+    }
+</ul>
+
+@if ($loading()) {
+    <!-- Sits below the rows rather than replacing them: a search that is refining its results
+         should not blank what the user is already reading. -->
+    <div
+        class="flex items-center justify-center gap-2 p-2 text-surface-500"
+        data-testid="folder-search-results-loading">
+        <i class="pi pi-spin pi-spinner text-sm text-surface-400"></i>
+    </div>
+}

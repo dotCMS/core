@@ -550,6 +550,52 @@ describe('DotSiteComponent', () => {
             spectator.detectChanges();
         });
 
+        // Added for the AssetPicker sidebar (#37208), whose design shows a globe inside the closed
+        // control. Additive and off by default: every existing consumer must be unaffected.
+        /**
+         * The icon rides inside `p-select`'s *closed* label, which this harness never renders: even
+         * without the template, asserting the plain hostname in `.p-select-label` fails here — the
+         * label comes out as the empty placeholder. So what can be checked at this layer is the
+         * contract (the input exists, and nothing appears unless it is set); that the glyph actually
+         * paints is asserted in the AssetPicker sidebar e2e, which runs a real browser.
+         */
+        describe('icon', () => {
+            it('should default to no icon', () => {
+                expect(spectator.component.icon()).toBe('');
+            });
+
+            it('should render no icon element when unset', () => {
+                spectator.component.value.set('site1');
+                spectator.flushEffects();
+                spectator.detectChanges();
+
+                expect(spectator.query('[data-testid="dot-site-icon"]')).toBeNull();
+            });
+
+            it('should accept an icon class', () => {
+                spectator.setInput('icon', 'pi pi-globe');
+                spectator.detectChanges();
+
+                expect(spectator.component.icon()).toBe('pi pi-globe');
+            });
+        });
+
+        // The overlay is appended to `body`, so a consumer cannot reach it from its own styles —
+        // the class has to travel through the component. Added for the AssetPicker sidebar, whose
+        // dropdown sat flush against the trigger with no gap.
+        describe('panelStyleClass', () => {
+            it('should default to no class', () => {
+                expect(spectator.component.panelStyleClass()).toBe('');
+            });
+
+            it('should pass the class through to the overlay panel', () => {
+                spectator.setInput('panelStyleClass', 'mt-1');
+                spectator.detectChanges();
+
+                expect(spectator.query(Select).panelStyleClass).toBe('mt-1');
+            });
+        });
+
         it('should update value model signal', () => {
             const testValue = 'site1';
             spectator.component.value.set(testValue);
