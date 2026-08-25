@@ -56,6 +56,20 @@ than this one. And in practice a scheduled experiment is very unlikely to qualif
 one requires more than the control variant, so the eligibility rule below would refuse it on the
 variants condition even if status allowed it.
 
+There is a sharper reason still, and it belongs to the platform rather than to this change. When a
+scheduled experiment's start time arrives, the path that fires it re-checks only permissions and
+that the status is still SCHEDULED. It does not re-check that the experiment still has a variant to
+test, still has a goal, or still has a conflict-free page — all of those were settled when it was
+scheduled. So a scheduled experiment is a *promise already validated*, and every rule that made it
+valid was evaluated against the state it had then. Changing its page after the fact edits one of
+those inputs with nothing downstream to catch it.
+
+That same gap is reachable today without any page change: deleting a scheduled experiment's variants
+is permitted, and the experiment will still fire — becoming a running A/B test with nothing to test.
+That is a pre-existing defect rather than something this work introduces, and it is filed separately.
+It is called out here because it is the clearest evidence for where this feature's boundary belongs:
+this change deliberately does not add a second way to invalidate an already-validated promise.
+
 ---
 
 ## User Scenarios & Testing *(mandatory)*
@@ -135,6 +149,9 @@ and assert the control is disabled and carries exactly that explanation.
    **Then** the page selection control is enabled.
 2. **Given** a draft experiment with at least one non-control variant, **When** the page card
    renders, **Then** the control is disabled and explains that variants must be deleted first.
+3. **Given** that same experiment, **When** the editor deletes its last non-control variant,
+   **Then** the page selection control becomes enabled — the message told them what to do and
+   doing it works.
 
 ---
 
@@ -164,6 +181,11 @@ assert the read-only reason is the one shown.
 
 - **Submitting the unchanged page.** Always a no-op, never an error, whatever the status or variant
   count. This is what keeps clients that echo the whole experiment back on every save working.
+- **Deleting the variants, then changing the page.** In scope, and it is the whole point of the
+  message in FR-009. Eligibility is evaluated against the experiment's state at the moment of the
+  request, never against its history: once the last non-control variant is gone, a draft holds only
+  the control and qualifies like any other. An experiment that *used to* have variants is not
+  penalised for having had them — the orphaned-layout risk left with the copies.
 - **Both rules fail at once** (non-draft *and* has variants). The refusal still names a blocking
   condition; the read-only reason is what the UI shows.
 - **The UI's view is stale.** A variant was added, or the experiment started, since the editor
