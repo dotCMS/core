@@ -241,6 +241,9 @@ selection and the results are the same at every step.
   folder setting — a caller that asks for folders alongside a status MUST receive them. Silently
   overriding it would make the response stop matching the request, and would leave the folder
   pagination describing a query the caller never received.
+- **FR-015a**: Because the rule is client-side, changing it MUST remain a client-side change. If
+  folder visibility is later exposed as its own control, honouring it MUST NOT require altering the
+  search capability or its contract.
 - **FR-016**: A status selection MUST persist across navigation exactly as every other Content Drive
   filter does: deep link, page reload, browsing between folders, browser Back/Forward, and opening
   an item in the editor and returning.
