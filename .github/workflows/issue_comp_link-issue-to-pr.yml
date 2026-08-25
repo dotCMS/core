@@ -66,23 +66,11 @@ jobs:
             "https://api.github.com/repos/${{ github.repository }}/pulls/$pr_number")
 
           # Check for issues linked via GitHub's Development section (timeline events).
-          # Paginated: the endpoint defaults to 30 events per page, and on a PR with any
-          # review history the "connected" event sits well past that boundary. Missing it
-          # made the workflow report a sidebar-linked PR as unlinked — and, once
-          # is_closing_link existed, report an issue as surviving the merge when GitHub
-          # was going to close it. Seen on #37193, where the event was 33rd of 37.
-          gh_err=$(mktemp)
-          if connected_events=$(gh api --paginate \
-            -H "X-GitHub-Api-Version: 2022-11-28" \
+          # Paginated: the endpoint returns 30 events per page and on #37193 the
+          # "connected" event was the 33rd of 37, so the link went unseen.
+          connected_issue=$(gh api --paginate \
             "repos/${{ github.repository }}/issues/$pr_number/timeline" \
-            --jq '.[] | select(.event == "connected") | .source.issue.number' 2>"$gh_err"); then
-            connected_issue=$(echo "$connected_events" | head -1)
-          else
-            echo "::warning::timeline lookup failed; falling back to PR body parsing:"
-            cat "$gh_err"
-            connected_issue=""
-          fi
-          rm -f "$gh_err"
+            --jq '.[] | select(.event == "connected") | .source.issue.number' 2>/dev/null | head -1)
 
           if [[ -n "$connected_issue" && "$connected_issue" != "null" ]]; then
             echo "Found manually linked issue via Development section: $connected_issue"
@@ -164,12 +152,9 @@ jobs:
 
               else
                 # ── Non-closing reference: "Refs #N", "Part of #N" ───────────────
-                # A PR can belong to an issue without resolving it: a Spec-Kit PR 1
-                # carries the spec for an issue that PR 2 actually answers, and a closing
-                # keyword there would retire the issue the moment the spec merges. This
-                # sets is_closing_link=false, which suppresses the "This PR fixes: #N"
-                # body PATCH further down. Reached only after every closing form above
-                # has failed, so an explicit "Fixes #N" always outranks a "Refs #N".
+                # For a PR that advances an issue a later PR resolves. is_closing_link=false
+                # suppresses the "This PR fixes: #N" body PATCH below. Reached only after
+                # every closing form failed, so "Fixes #N" always outranks "Refs #N".
                 ref_issue=$(echo "$pr_body" | grep -oiE \
                   '(refs?|references?|related to|part of|contributes to)(:)?[[:space:]]+#[0-9]+' \
                   | grep -oE '[0-9]+' | head -1)
@@ -199,12 +184,9 @@ jobs:
           branch_name="$PR_BRANCH"
           issue_number=""
 
-          # Try multiple patterns to extract issue number (more flexible but specific)
-          # The leading (^|/) also covers worktree-style branches, where the issue number
-          # follows a namespace segment instead of starting the ref — "nicobytes/36850-foo",
-          # "oidacra/37132-bar". Those are the dominant layout on this repo and the old
-          # ^([0-9]+)- anchor missed every one of them. Digits must directly follow the
-          # slash, so "gh-readonly-queue/main/pr-37131-<sha>" still does not match.
+          # Try multiple patterns to extract issue number (more flexible but specific).
+          # The (^|/) also matches worktree branches ("nicobytes/36850-foo"). Digits must
+          # follow the slash directly, so "gh-readonly-queue/main/pr-N-<sha>" does not.
           if [[ "$branch_name" =~ (^|/)([0-9]+)- ]]; then
             issue_number="${BASH_REMATCH[2]}"
             echo "Found issue number at start of branch or worktree segment: $issue_number"
@@ -237,9 +219,8 @@ jobs:
           #      the regex misses (e.g. "fixes [#123](url)"). This must outrank branch-name
           #      heuristics — author intent in the PR body should win over a branch pattern.
           #   3) Branch name extraction: heuristic of last resort.
-          # is_closing_link tells the body-patch step below whether this PR is expected to
-          # close the issue on merge. Only a non-closing body reference sets it to false;
-          # every other path (keyword, sidebar link, GraphQL, branch name) closes as before.
+          # Only a non-closing body reference sets is_closing_link=false; every other
+          # path closes the issue on merge as before.
           is_closing_link=true
 
           if [[ "$HAS_LINKED_ISSUES" == "true" ]]; then
@@ -526,11 +507,9 @@ jobs:
       - name: Link PR to issue
         # Skip for cross-repo: the reference already exists in the PR body as owner/repo#N.
         # Adding a bare #N would create a broken same-repo link.
-        #
-        # Skip for non-closing references too. The author wrote "Refs #N" precisely so the
-        # issue survives this PR's merge; patching "This PR fixes: #N" into the body would
-        # convert their reference into a closing one behind their back. The PR-list comment
-        # on the issue thread still runs, so the link is tracked either way.
+        # Skip for non-closing references: "Refs #N" was written so the issue survives
+        # the merge, and patching the body would silently make it closing. The PR-list
+        # comment on the issue thread still runs, so the link is tracked either way.
         if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.determine_issue.outputs.is_closing_link != 'false'
         env:
           ISSUE_NUMBER: ${{ steps.determine_issue.outputs.final_issue_number }}
@@ -625,53 +604,31 @@ jobs:
             exit 0
           fi
 
-          # Built as an array rather than a printf format string: the previous format
-          # carried 21 "%s" for 22 arguments, so bash restarted the format and the closing
-          # line rendered out of place. An array has nothing to keep in sync.
-          comment_lines=(
-            "## ❌ Issue Linking Required"
-            ""
-            "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes."
-            ""
-            "### How to fix this:"
-            ""
-            "**Option 1: Add a keyword to the PR body** (Recommended - auto-removes this comment)"
-            ""
-            "Edit this PR description and add one of these lines."
-            ""
-            "*Closing links — the issue is closed when this PR merges:*"
-            "- \`Fixes #123\` or \`Closes #123\` — same-repo issue"
-            "- \`Fixes org/repo#123\` or \`Closes org/repo#123\` — cross-repo or private issue"
-            "- \`Closes https://github.com/org/repo/issues/123\` — full GitHub URL"
-            "- Other supported keywords: \`fix\`, \`fixed\`, \`close\`, \`closed\`, \`resolve\`, \`resolved\`"
-            ""
-            "*Non-closing links — the issue stays open after this PR merges:*"
-            "- \`Refs #123\` or \`Part of #123\` — use this when the PR advances an issue that a later"
-            "  PR actually resolves (e.g. a Spec-Kit PR 1 carrying the spec, where PR 2 does the work)."
-            "- Also accepted: \`references\`, \`related to\`, \`contributes to\`. Same-repo \`#123\` only."
-            ""
-            "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)"
-            ""
-            "1. Go to the PR → Development section (right sidebar)"
-            "2. Click \"Link issue\" and select an existing issue"
-            "3. Push a new commit or re-run the workflow to clear the failed check"
-            ""
-            "**Option 3: Use branch naming**"
-            ""
-            "Create a new branch with one of these patterns:"
-            "- \`123-feature-description\` (number at start)"
-            "- \`user/123-feature-description\` (worktree style: number after the namespace segment)"
-            "- \`issue-123-feature-description\` (issue-number at start)"
-            "- \`feature-issue-123\` (issue-number anywhere)"
-            ""
-            "### Why is this required?"
-            ""
-            "Issue linking ensures proper tracking, documentation, and helps maintain project history. It connects your code changes to the problem they solve."
-            ""
-            "---"
-            "*This comment was automatically generated by the issue linking workflow*"
-          )
-          comment_body=$(printf '%s\n' "${comment_lines[@]}")
+          comment_body=$(printf "%s\n\n%s\n\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n\n%s\n%s\n%s\n%s\n%s\n%s\n\n%s\n%s\n\n%s\n%s" \
+            "## ❌ Issue Linking Required" \
+            "This PR could not be linked to an issue. **All PRs must be linked to an issue** for tracking purposes." \
+            "### How to fix this:" \
+            "**Option 1: Add keyword to PR body** (Recommended - auto-removes this comment)" \
+            "Edit this PR description and add one of these lines:" \
+            "- \`Fixes #123\` or \`Closes #123\` — same-repo issue" \
+            "- \`Fixes org/repo#123\` or \`Closes org/repo#123\` — cross-repo or private issue" \
+            "- \`Closes https://github.com/org/repo/issues/123\` — full GitHub URL" \
+            "- Other supported keywords: \`fix\`, \`fixed\`, \`close\`, \`closed\`, \`resolve\`, \`resolved\`" \
+            "- \`Refs #123\` or \`Part of #123\` — links the issue without closing it on merge (same-repo only)" \
+            "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)" \
+            "1. Go to the PR → Development section (right sidebar)" \
+            "2. Click \"Link issue\" and select an existing issue" \
+            "3. Push a new commit or re-run the workflow to clear the failed check" \
+            "**Option 3: Use branch naming**" \
+            "Create a new branch with one of these patterns:" \
+            "- \`123-feature-description\` (number at start)" \
+            "- \`user/123-feature-description\` (worktree style: number after the namespace)" \
+            "- \`issue-123-feature-description\` (issue-number at start)" \
+            "- \`feature-issue-123\` (issue-number anywhere)" \
+            "### Why is this required?" \
+            "Issue linking ensures proper tracking, documentation, and helps maintain project history. It connects your code changes to the problem they solve." \
+            "---" \
+            "*This comment was automatically generated by the issue linking workflow*")
 
           curl -X POST \
             -H "Accept: application/vnd.github+json" \
