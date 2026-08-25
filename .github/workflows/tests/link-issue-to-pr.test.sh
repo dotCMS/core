@@ -68,18 +68,15 @@ fail=0
 # $3 is the expected `key=value` set, space separated, sorted by key.
 body_case() {
   local desc="$1" body="$2" expect="$3"
+  export FIXTURE_CONNECTED="${4:-}"
   local out; out="$(mktemp)"
   (
     export FIXTURE_BODY="$body" GITHUB_OUTPUT="$out"
-    # Stub the two API calls the step makes: PR details and the issue timeline.
-    curl() {
-      local url="${!#}"
-      if [[ "$url" == */timeline ]]; then
-        echo '[]'
-      else
-        jq -n --arg b "$FIXTURE_BODY" '{body:$b}'
-      fi
-    }
+    # Stub the two API calls the step makes: PR details over curl, the paginated
+    # timeline over gh. FIXTURE_CONNECTED is the issue number a Development-section
+    # link would yield — empty for every case that exercises body parsing.
+    curl() { jq -n --arg b "$FIXTURE_BODY" '{body:$b}'; }
+    gh() { [[ -n "${FIXTURE_CONNECTED:-}" ]] && echo "$FIXTURE_CONNECTED"; return 0; }
     # shellcheck disable=SC1090
     source "$WORKDIR/step_body.sh"
   ) >/dev/null 2>&1
@@ -160,6 +157,18 @@ body_case "Refs #1 alongside Fixes #2" \
   "Refs #1
 Fixes #2" \
   "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=2"
+
+echo "== Development section: a sidebar link outranks the body and closes on merge =="
+# Regression guard for the unpaginated timeline lookup: the "connected" event on
+# PR #37193 was the 33rd of 37, past the endpoint's 30-per-page default, so the
+# workflow read a sidebar-linked PR as unlinked and reported is_closing_link=false
+# for an issue GitHub was about to close. gh api --paginate is what fixes it.
+body_case "sidebar link beats a non-closing body reference" "Refs #36850" \
+  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=development_section linked_issue_number=36850" \
+  "36850"
+body_case "sidebar link with an unrelated body" "No references at all here." \
+  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=development_section linked_issue_number=42" \
+  "42"
 
 echo "== PR body: bare mentions are still not a link =="
 body_case "prose mention only" "Parent issue: #36850 and follow-up #37194" \
