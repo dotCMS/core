@@ -72,7 +72,10 @@
     // (`createNewLayout` -> `initializePortletInfoList(createNewLayout)`
     // -> `createNewLayout` -> ...).
     //
-    // `buildRolesTree` covers both the initial tree build AND the dijit
+    // `window.buildRolesTree` covers both the initial tree build AND the dijit
     // `roleTreeMenu.bindDomNode(...)` call inside `initializeRolesTreeWidget`.
-    buildRolesTree = function () {};
+    // Explicit `window.` (not a bare assignment) so this stays a shared-global
+    // contract with `view_roles_js_inc.jsp` even if that file is ever refactored
+    // to strict-mode / ES modules and loses its implicit globals.
+    window.buildRolesTree = function () {};
 </script>

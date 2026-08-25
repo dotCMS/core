@@ -196,8 +196,11 @@
             url: '/api/role/loadbyid/id/' + encodeURIComponent(_roleId),
             handleAs: 'json',
             load: function (role) {
-                currentRoleId = _roleId;
-                currentRole = role;
+                // Explicit `window.` (not bare assignments) so the shared-global
+                // contract with `view_roles_js_inc.jsp` survives any future
+                // strict-mode / ES-module refactor of that file.
+                window.currentRoleId = _roleId;
+                window.currentRole = role;
                 // Populate the `.view-roles__heading` h3 manually — the
                 // shared `setRoleName` also touches `displayRoleName1/2`
                 // which don't exist in this wrapper (they're in the full
@@ -231,8 +234,14 @@
                     }
                 }, 100);
             },
-            error: function (err) {
-                console.error('Failed to load role for iframe wrapper', err);
+            error: function () {
+                // A blank iframe leaves admins guessing when the role fetch
+                // fails (network blip, 403, BE down). Surface a visible
+                // fallback in the same slot the happy path fills.
+                var nameEl = dojo.byId('displayRoleName3');
+                if (nameEl) {
+                    nameEl.textContent = 'Failed to load role — refresh to retry.';
+                }
             }
         });
         <% } %>

@@ -67,4 +67,6 @@ export interface DotRoleMember {
 
 export type DotRoleTab = 'users' | 'permissions' | 'tools';
 
-export type DotRolesStatus = 'init' | 'loading' | 'loaded' | 'error';
+// Re-export the shared component-status union so this portlet's status
+// fields stay compatible with the rest of the codebase (CLAUDE.md rule).
+export type { ComponentStatus as DotRolesStatus } from '@dotcms/dotcms-models';

@@ -36,14 +36,24 @@ export interface RoleHierarchyEntry {
 }
 
 /**
+ * Matches a UUID-shape id with underscores where a real UUID would have
+ * dashes — that's the exact wire form the legacy Dojo serializer produces
+ * (`r.getId().replace('-', '_')` in `RoleResource.buildFilteredJsonTree`).
+ * Restricting the reverse-replace to this shape avoids mangling user role
+ * keys that legitimately contain underscores (e.g. `DOTCMS_BACK_END_USER`).
+ */
+const LEGACY_UUID_WITH_UNDERSCORES =
+    /^[a-fA-F0-9]{8}_[a-fA-F0-9]{4}_[a-fA-F0-9]{4}_[a-fA-F0-9]{4}_[a-fA-F0-9]{12}$/;
+
+/**
  * Adapt a `LegacyRoleSearchNode` into the modern `DotRoleNode` shape.
- * The legacy payload underscores dashes in the id (Dojo tree DnD artifact —
- * `r.getId().replace('-', '_')` in `RoleResource.buildFilteredJsonTree`);
- * reverse that so consumers keep receiving proper UUIDs.
+ * The legacy payload underscores dashes in the id — we only reverse the
+ * substitution when the id actually matches the UUID-with-underscores
+ * shape, so ids that legitimately contain underscores are preserved.
  */
 export function unwrapLegacySearchNode(node: LegacyRoleSearchNode): DotRoleNode {
     return {
-        id: node.id.replace(/_/g, '-'),
+        id: LEGACY_UUID_WITH_UNDERSCORES.test(node.id) ? node.id.replace(/_/g, '-') : node.id,
         name: node.name,
         locked: node.locked,
         roleChildren: (node.children ?? []).map(unwrapLegacySearchNode)

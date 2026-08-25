@@ -7,6 +7,14 @@ import { DotRoleNode } from '../../models/dot-roles.models';
  */
 
 /**
+ * Upper bound on ancestor-chain length. Matches the semantic cap that the
+ * Java `RoleAPI.findRoleHierarchy` code path assumes; if the BE ever bumps
+ * this it must be raised here too. Also guards against pathological cycles
+ * that would otherwise loop forever inside `collectAncestorChain`.
+ */
+export const MAX_ROLE_DEPTH = 20;
+
+/**
  * Immutably splice `newChildren` into the tree under the node with `id`.
  * Returns a new tree; unchanged branches are shared by reference.
  */
@@ -114,9 +122,8 @@ export function collectAncestorChain(
     };
     const chain: DotRoleNode[] = [start];
     let cursor: DotRoleNode | null = start;
-    // Guard against pathological data — hierarchies deeper than 20 aren't
-    // realistic in practice, and this stops any accidental cycles cold.
-    for (let i = 0; i < 20; i++) {
+    // Guard against pathological data — see `MAX_ROLE_DEPTH` doc.
+    for (let i = 0; i < MAX_ROLE_DEPTH; i++) {
         const parentId = cursor.parent;
         if (!parentId || parentId === cursor.id) {
             break;
@@ -130,6 +137,41 @@ export function collectAncestorChain(
     }
 
     return chain;
+}
+
+/**
+ * Merge two role trees at the root level so lookups can reach any node in
+ * either. When the same id appears in both, prefer the copy that carries a
+ * `parent` — search-result nodes lose that field
+ * (`unwrapLegacySearchNode` only keeps id/name/locked), and
+ * `collectAncestorChain` needs `parent` to climb.
+ *
+ * Only dedupes at the roots; child branches are not merged deeply because
+ * both trees are self-consistent hierarchies rooted at different depths.
+ */
+export function mergeTreesPreferParent(
+    primary: DotRoleNode[],
+    fallback: DotRoleNode[]
+): DotRoleNode[] {
+    if (fallback.length === 0) {
+        return primary;
+    }
+    const seen = new Map<string, DotRoleNode>();
+    for (const node of primary) {
+        seen.set(node.id, node);
+    }
+    for (const node of fallback) {
+        const prior = seen.get(node.id);
+        if (!prior) {
+            seen.set(node.id, node);
+        } else if (!prior.parent && node.parent) {
+            // Fallback carries a `parent`; primary doesn't — prefer the
+            // fallback so the ancestor walk can actually climb.
+            seen.set(node.id, node);
+        }
+    }
+
+    return Array.from(seen.values());
 }
 
 /** Walk the tree looking for a node id. Returns the node or `null`. */

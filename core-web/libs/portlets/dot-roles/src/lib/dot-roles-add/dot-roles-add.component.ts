@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 
+import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
@@ -17,8 +18,6 @@ interface ParentOption {
     label: string;
     value: string | null;
 }
-
-const ROOT_PARENT: ParentOption = { label: 'None (top level)', value: null };
 
 /**
  * Add Role dialog. POST /v1/roles already exists so this form is fully
@@ -37,13 +36,15 @@ const ROOT_PARENT: ParentOption = { label: 'None (top level)', value: null };
         SelectModule,
         DotMessagePipe
     ],
-    templateUrl: './dot-roles-add.component.html'
+    templateUrl: './dot-roles-add.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRolesAddComponent {
     readonly #store = inject(DotRolesStore);
     readonly #fb = inject(FormBuilder);
     readonly #ref = inject(DynamicDialogRef);
     readonly #config = inject(DynamicDialogConfig);
+    readonly #messageService = inject(DotMessageService);
 
     protected readonly $submitting = signal(false);
     protected readonly $error = signal<string | null>(null);
@@ -59,7 +60,7 @@ export class DotRolesAddComponent {
     });
 
     protected readonly $parentOptions = computed<ParentOption[]>(() => [
-        ROOT_PARENT,
+        { label: this.#messageService.get('roles.form.parent.root'), value: null },
         ...this.#flattenRoles(this.#store.roleTree())
     ]);
 

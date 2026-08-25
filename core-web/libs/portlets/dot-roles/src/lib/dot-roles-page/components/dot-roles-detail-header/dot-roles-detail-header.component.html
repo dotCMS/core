@@ -1,6 +1,6 @@
 @let role = store.selectedRole();
 
-@if (store.selectedRoleStatus() === 'loading' && !role) {
+@if (store.selectedRoleStatus() === 'LOADING' && !role) {
     <!--
         Skeleton mirrors the real header layout: icon + two-line text
         block on the left, Edit Role button on the right. Same heights

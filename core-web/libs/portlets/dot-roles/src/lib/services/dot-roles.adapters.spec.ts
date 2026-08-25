@@ -12,13 +12,13 @@ describe('dot-roles.adapters', () => {
     describe('unwrapLegacySearchNode', () => {
         it('restores dashes in the id (Dojo tree DnD artifact)', () => {
             const legacy: LegacyRoleSearchNode = {
-                id: 'abc_123_def_456',
+                id: 'abc1a2b3_c4d5_e6f7_8899_aabbccddeeff',
                 name: 'Editor'
             };
 
             const result = unwrapLegacySearchNode(legacy);
 
-            expect(result.id).toBe('abc-123-def-456');
+            expect(result.id).toBe('abc1a2b3-c4d5-e6f7-8899-aabbccddeeff');
         });
 
         it('preserves name and locked flag', () => {
@@ -42,21 +42,23 @@ describe('dot-roles.adapters', () => {
 
         it('adapts nested children recursively', () => {
             const legacy: LegacyRoleSearchNode = {
-                id: 'parent_1',
+                id: 'aaaaaaaa_1111_1111_1111_111111111111',
                 name: 'Parent',
                 children: [
                     {
-                        id: 'child_a_1',
+                        id: 'bbbbbbbb_2222_2222_2222_222222222222',
                         name: 'Child A',
-                        children: [{ id: 'grand_a_1', name: 'Grand A' }]
+                        children: [{ id: 'cccccccc_3333_3333_3333_333333333333', name: 'Grand A' }]
                     }
                 ]
             };
 
             const result = unwrapLegacySearchNode(legacy);
 
-            expect(result.roleChildren?.[0].id).toBe('child-a-1');
-            expect(result.roleChildren?.[0].roleChildren?.[0].id).toBe('grand-a-1');
+            expect(result.roleChildren?.[0].id).toBe('bbbbbbbb-2222-2222-2222-222222222222');
+            expect(result.roleChildren?.[0].roleChildren?.[0].id).toBe(
+                'cccccccc-3333-3333-3333-333333333333'
+            );
         });
 
         it('normalizes missing children to an empty array', () => {

@@ -42,13 +42,13 @@ describe('DotRolePermissionsIframeComponent', () => {
 
     it('should render an iframe pointing at the wrapper JSP when a role is selected', () => {
         const store = spectator.inject(DotRolesStore, true);
-        (store.selectedRoleId as jest.Mock).mockReturnValue('r-eco');
+        (store.selectedRoleId as jest.Mock).mockReturnValue('a1b2c3d4-e5f6-7788-99aa-bbccddeeff00');
         spectator.detectChanges();
 
         const iframe = spectator.query(byTestId('permissions-iframe')) as HTMLIFrameElement;
         expect(iframe).toBeTruthy();
         expect(iframe.getAttribute('src')).toContain(
-            '/html/portlet/ext/roleadmin/view_role_permissions_wrapper.jsp?roleId=r-eco'
+            '/html/portlet/ext/roleadmin/view_role_permissions_wrapper.jsp?roleId=a1b2c3d4-e5f6-7788-99aa-bbccddeeff00'
         );
     });
 });

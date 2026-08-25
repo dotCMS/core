@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
@@ -15,7 +15,8 @@ import { DotRolesStore } from '../../store/dot-roles.store';
     imports: [ButtonModule, DynamicDialogModule, SkeletonModule, DotMessagePipe],
     providers: [DialogService],
     templateUrl: './dot-roles-detail-header.component.html',
-    host: { class: 'block' }
+    host: { class: 'block' },
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRolesDetailHeaderComponent {
     protected readonly store = inject(DotRolesStore);

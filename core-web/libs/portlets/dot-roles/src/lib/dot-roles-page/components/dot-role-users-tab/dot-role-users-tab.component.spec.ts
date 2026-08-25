@@ -41,7 +41,7 @@ describe('DotRoleUsersTabComponent', () => {
         componentProviders: [
             mockProvider(DotRolesStore, {
                 members: jest.fn().mockReturnValue([]),
-                membersStatus: jest.fn().mockReturnValue('loaded'),
+                membersStatus: jest.fn().mockReturnValue('LOADED'),
                 selectedRole: jest.fn().mockReturnValue({
                     id: 'r-eco',
                     name: 'Eco Role',
@@ -49,7 +49,7 @@ describe('DotRoleUsersTabComponent', () => {
                     editUsers: true
                 }),
                 selectedRoleId: jest.fn().mockReturnValue('r-eco'),
-                selectedRoleStatus: jest.fn().mockReturnValue('loaded'),
+                selectedRoleStatus: jest.fn().mockReturnValue('LOADED'),
                 canGrantUsers: jest.fn().mockReturnValue(true),
                 loadMembers: jest.fn(),
                 grantUserToRole: jest.fn().mockResolvedValue(null),
