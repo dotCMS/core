@@ -41,6 +41,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
     private final String logoutUrl;
     private final String groupsClaim;
     private final String groupsUrl;
+    private final String groupsResponsePath;
 
     public GenericOAuth2Provider(final String clientId,
                                  final char[] clientSecret,
@@ -50,7 +51,8 @@ public class GenericOAuth2Provider implements OAuthProvider {
                                  final String revocationUrl,
                                  final String logoutUrl,
                                  final String groupsClaim,
-                                 final String groupsUrl) {
+                                 final String groupsUrl,
+                                 final String groupsResponsePath) {
         if (!UtilMethods.isSet(authorizationUrl) || !UtilMethods.isSet(tokenUrl) || !UtilMethods.isSet(userinfoUrl)) {
             throw new DotRuntimeException("GenericOAuth2Provider requires authorizationUrl, tokenUrl, and userinfoUrl");
         }
@@ -63,6 +65,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
         this.logoutUrl        = logoutUrl;
         this.groupsClaim      = groupsClaim;
         this.groupsUrl        = groupsUrl;
+        this.groupsResponsePath = groupsResponsePath;
     }
 
     @Override
@@ -168,41 +171,7 @@ public class GenericOAuth2Provider implements OAuthProvider {
         // Failures propagate — the caller must be able to tell "endpoint down" from "user has
         // no groups", otherwise an IdP outage silently strips roles during the role rebuild.
         if (UtilMethods.isSet(groupsUrl)) {
-            try {
-                return fetchGroupsFromUrl(accessToken);
-            } catch (final DotRuntimeException e) {
-                throw e;
-            } catch (final Exception e) {
-                throw new DotRuntimeException("OAuth2 groups fetch failed: " + e.getMessage(), e);
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    private Collection<String> fetchGroupsFromUrl(final String accessToken) throws Exception {
-        final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
-                .setUrl(groupsUrl)
-                .setMethod(CircuitBreakerUrl.Method.GET)
-                .setHeaders(ImmutableMap.of(
-                        "Authorization", "Bearer " + accessToken,
-                        "Accept", "application/json"))
-                .setTimeout(5000)
-                .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
-                .build()
-                .doResponse();
-        if (resp == null) {
-            // CircuitBreakerUrl.doResponse() maps transport failures (DNS, refused, timeout) to null
-            throw new DotRuntimeException("OAuth2 groups endpoint unreachable: " + groupsUrl);
-        }
-        if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            throw new DotRuntimeException("OAuth2 groups endpoint returned HTTP " + resp.getStatusCode());
-        }
-        final Object parsed = MAPPER.readValue(resp.getResponse(), Object.class);
-        if (parsed instanceof List) {
-            return toStringList(parsed);
-        }
-        if (parsed instanceof Map) {
-            return toStringList(((Map<?, ?>) parsed).get("groups"));
+            return OAuthGroupsFetcher.fetch(groupsUrl, groupsResponsePath, accessToken, userInfo, "OAuth2");
         }
         return Collections.emptyList();
     }

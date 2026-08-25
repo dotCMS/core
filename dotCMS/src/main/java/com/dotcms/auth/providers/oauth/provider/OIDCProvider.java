@@ -106,6 +106,7 @@ public class OIDCProvider implements OAuthProvider {
 
     private final String groupsClaim;
     private final String groupsUrl;
+    private final String groupsResponsePath;
 
     private final Set<JWSAlgorithm> idTokenAllowedAlgs;
 
@@ -113,7 +114,8 @@ public class OIDCProvider implements OAuthProvider {
                         final String clientId,
                         final char[] clientSecret,
                         final String groupsClaim,
-                        final String groupsUrl) {
+                        final String groupsUrl,
+                        final String groupsResponsePath) {
         if (!UtilMethods.isSet(issuerUrl)) {
             throw new DotRuntimeException("OIDC issuerUrl is required");
         }
@@ -122,6 +124,7 @@ public class OIDCProvider implements OAuthProvider {
         this.clientSecret = clientSecret == null ? new char[0] : clientSecret;
         this.groupsClaim  = groupsClaim;
         this.groupsUrl    = groupsUrl;
+        this.groupsResponsePath = groupsResponsePath;
 
         final Map<String, Object> discovery = discover(this.issuerUrl);
         verifyDiscoveryIssuer(discovery, this.issuerUrl);
@@ -550,46 +553,12 @@ public class OIDCProvider implements OAuthProvider {
         if (UtilMethods.isSet(groupsClaim) && userInfo != null && userInfo.containsKey(groupsClaim)) {
             return toStringList(userInfo.get(groupsClaim));
         }
-        // Fall back to a separate groups endpoint if configured. Failures propagate — the
-        // caller must be able to tell "endpoint down" from "user has no groups", otherwise
-        // an IdP outage silently strips the user's roles during the role rebuild.
+        // Fall back to a separate groups endpoint if configured (Google Workspace, GitHub —
+        // IdPs that cannot emit groups in claims). Failures propagate — the caller must be
+        // able to tell "endpoint down" from "user has no groups", otherwise an IdP outage
+        // silently strips the user's roles during the role rebuild.
         if (UtilMethods.isSet(groupsUrl)) {
-            try {
-                return fetchGroupsFromUrl(accessToken);
-            } catch (final DotRuntimeException e) {
-                throw e;
-            } catch (final Exception e) {
-                throw new DotRuntimeException("OIDC groups fetch failed: " + e.getMessage(), e);
-            }
-        }
-        return Collections.emptyList();
-    }
-
-    private Collection<String> fetchGroupsFromUrl(final String accessToken) throws Exception {
-        final CircuitBreakerUrl.Response<String> resp = CircuitBreakerUrl.builder()
-                .setUrl(groupsUrl)
-                .setMethod(CircuitBreakerUrl.Method.GET)
-                .setHeaders(ImmutableMap.of(
-                        "Authorization", "Bearer " + accessToken,
-                        "Accept", "application/json"))
-                .setTimeout(5000)
-                .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
-                .build()
-                .doResponse();
-        if (resp == null) {
-            // CircuitBreakerUrl.doResponse() maps transport failures (DNS, refused, timeout) to null
-            throw new DotRuntimeException("OIDC groups endpoint unreachable: " + groupsUrl);
-        }
-        if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
-            throw new DotRuntimeException("OIDC groups endpoint returned HTTP " + resp.getStatusCode());
-        }
-        // Accept either a JSON array of strings, or a JSON object with a "groups" array.
-        final Object parsed = MAPPER.readValue(resp.getResponse(), Object.class);
-        if (parsed instanceof List) {
-            return toStringList(parsed);
-        }
-        if (parsed instanceof Map) {
-            return toStringList(((Map<?, ?>) parsed).get("groups"));
+            return OAuthGroupsFetcher.fetch(groupsUrl, groupsResponsePath, accessToken, userInfo, "OIDC");
         }
         return Collections.emptyList();
     }
