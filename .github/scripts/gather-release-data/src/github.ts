@@ -123,10 +123,7 @@ export async function fetchCommitRange(
     });
 
     for (const c of response.data.commits) {
-      commits.push({
-        sha: c.sha,
-        message: c.commit.message.split('\n')[0], // first line only
-      });
+      commits.push({ sha: c.sha });
     }
 
     // If we got fewer than perPage, we've reached the end
@@ -138,17 +135,55 @@ export async function fetchCommitRange(
 }
 
 /**
- * Extract PR numbers from commit messages.
- * Looks for patterns like "(#12345)" at the end of the first line.
+ * Resolve the merged PRs that introduced each commit in the range.
+ *
+ * Uses GET /repos/{owner}/{repo}/commits/{sha}/pulls rather than parsing "(#N)"
+ * out of commit subjects. Under merge commits, feature-branch commits land on
+ * main verbatim, and a subject ending in "(#N)" is often an ISSUE the author
+ * typed — feeding that to pulls.get 404s and drops a real PR. The API resolves
+ * a merged PR's branch commits AND its merge commit to the same PR, so the Set
+ * dedupes them for free, and returns [] for direct pushes.
  */
-export function extractPRNumbers(commits: CommitInfo[]): number[] {
+export async function resolvePRNumbers(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  commits: CommitInfo[]
+): Promise<number[]> {
   const prNumbers = new Set<number>();
-  for (const commit of commits) {
-    const match = commit.message.match(/\(#(\d+)\)\s*$/);
-    if (match) {
-      prNumbers.add(parseInt(match[1], 10));
+  const BATCH_SIZE = 15;
+
+  for (let i = 0; i < commits.length; i += BATCH_SIZE) {
+    const batch = commits.slice(i, i + BATCH_SIZE);
+
+    const promises = batch.map(async (commit) => {
+      try {
+        const { data } = await octokit.repos.listPullRequestsAssociatedWithCommit({
+          owner,
+          repo,
+          commit_sha: commit.sha,
+        });
+        // Only merged PRs: for commits not reachable from the default branch the
+        // endpoint also returns open PRs.
+        return data.filter((pr) => pr.merged_at).map((pr) => pr.number);
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        process.stderr.write(
+          `Warning: could not resolve PR for commit ${commit.sha}: ${errMsg}\n`
+        );
+        return [];
+      }
+    });
+
+    // Promise.all preserves input order, so the returned array is deterministic.
+    const batchResults = await Promise.all(promises);
+    for (const numbers of batchResults) {
+      for (const n of numbers) prNumbers.add(n);
     }
+
+    if (i + BATCH_SIZE < commits.length) await sleep(500);
   }
+
   return Array.from(prNumbers);
 }
 

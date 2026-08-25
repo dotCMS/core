@@ -1,5 +1,6 @@
-import { extractPRNumbers, findPreviousTag, extractLinkedIssues, parseRepo } from './github';
+import { resolvePRNumbers, findPreviousTag, extractLinkedIssues, parseRepo } from './github';
 import { CommitInfo } from './types';
+import type { Octokit } from '@octokit/rest';
 
 describe('parseRepo', () => {
   it('parses owner/repo format', () => {
@@ -11,30 +12,77 @@ describe('parseRepo', () => {
   });
 });
 
-describe('extractPRNumbers', () => {
-  it('extracts PR numbers from standard merge commits', () => {
-    const commits: CommitInfo[] = [
-      { sha: 'abc', message: 'fix(SiteSearch): resolve timeout (#34879)' },
-      { sha: 'def', message: 'feat: add new widget (#34880)' },
-      { sha: 'ghi', message: 'chore: no PR reference here' },
-    ];
-
-    const prNumbers = extractPRNumbers(commits);
-    expect(prNumbers).toEqual(expect.arrayContaining([34879, 34880]));
-    expect(prNumbers).toHaveLength(2);
+describe('resolvePRNumbers', () => {
+  afterEach(() => {
+    jest.restoreAllMocks();
   });
 
-  it('deduplicates PR numbers', () => {
-    const commits: CommitInfo[] = [
-      { sha: 'abc', message: 'first commit (#100)' },
-      { sha: 'def', message: 'second commit (#100)' },
-    ];
+  it('resolves merge-commit and branch-commit dedup, and ignores direct pushes (#37201)', async () => {
+    // aaa: feature-branch commit whose subject ended in the issue "(#37132)"
+    // bbb: the two-parent merge commit for the same PR
+    // ccc: a direct push, unassociated with any PR
+    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
+      aaa: [{ number: 37196, merged_at: '2026-08-25T00:00:00Z' }],
+      bbb: [{ number: 37196, merged_at: '2026-08-25T00:00:00Z' }],
+      ccc: [],
+    };
+    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
+      data: bySha[commit_sha] ?? [],
+    }));
+    const octokit = {
+      repos: { listPullRequestsAssociatedWithCommit: listPRs },
+    } as unknown as Octokit;
 
-    expect(extractPRNumbers(commits)).toEqual([100]);
+    const commits: CommitInfo[] = [{ sha: 'aaa' }, { sha: 'bbb' }, { sha: 'ccc' }];
+
+    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', commits);
+
+    expect(prNumbers).toEqual([37196]);
+    expect(listPRs).toHaveBeenCalledTimes(3);
   });
 
-  it('handles empty commits', () => {
-    expect(extractPRNumbers([])).toEqual([]);
+  it('filters out unmerged PRs', async () => {
+    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
+      abc: [
+        { number: 1, merged_at: null },
+        { number: 2, merged_at: '2026-08-25T00:00:00Z' },
+      ],
+    };
+    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
+      data: bySha[commit_sha] ?? [],
+    }));
+    const octokit = {
+      repos: { listPullRequestsAssociatedWithCommit: listPRs },
+    } as unknown as Octokit;
+
+    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [{ sha: 'abc' }]);
+
+    expect(prNumbers).toEqual([2]);
+  });
+
+  it('does not abort the batch when one commit fails to resolve', async () => {
+    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
+      good: [{ number: 42, merged_at: '2026-08-25T00:00:00Z' }],
+    };
+    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
+      data: bySha[commit_sha] ?? [],
+    }));
+    listPRs.mockImplementationOnce(() => Promise.reject(new Error('boom')));
+    const octokit = {
+      repos: { listPullRequestsAssociatedWithCommit: listPRs },
+    } as unknown as Octokit;
+
+    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [
+      { sha: 'bad' },
+      { sha: 'good' },
+    ]);
+
+    expect(prNumbers).toEqual([42]);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad'));
+
+    stderrSpy.mockRestore();
   });
 });
 
