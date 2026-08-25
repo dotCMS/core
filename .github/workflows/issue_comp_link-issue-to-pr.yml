@@ -91,7 +91,6 @@ jobs:
             echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
             echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
             echo "link_method=development_section" >> "$GITHUB_OUTPUT"
-            echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
           else
             pr_body=$(echo "$pr_details" | jq -r '.body // ""')
 
@@ -108,7 +107,6 @@ jobs:
               echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
               echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
               echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
-              echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
 
             else
               # ── Cross-repo: owner/repo#NUMBER ───────────────────────────────
@@ -134,7 +132,6 @@ jobs:
                   echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
                   echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
-                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 else
                   echo "Found cross-repo reference: $cross_owner_repo#$cross_issue_num"
                   echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
@@ -142,7 +139,6 @@ jobs:
                   echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
                   echo "link_method=cross_repo_body" >> "$GITHUB_OUTPUT"
-                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 fi
 
               elif [[ -n "$cross_url_match" ]]; then
@@ -157,7 +153,6 @@ jobs:
                   echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
                   echo "link_method=pr_body" >> "$GITHUB_OUTPUT"
-                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 else
                   echo "Found cross-repo URL: $cross_owner_repo#$cross_issue_num"
                   echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
@@ -165,63 +160,27 @@ jobs:
                   echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=$cross_owner_repo" >> "$GITHUB_OUTPUT"
                   echo "link_method=cross_repo_url" >> "$GITHUB_OUTPUT"
-                  echo "is_closing_link=true" >> "$GITHUB_OUTPUT"
                 fi
 
               else
-                # ── Non-closing reference: "Refs #N", "Part of org/repo#N", full URL ──
+                # ── Non-closing reference: "Refs #N", "Part of #N" ───────────────
                 # A PR can belong to an issue without resolving it: a Spec-Kit PR 1
                 # carries the spec for an issue that PR 2 actually answers, and a closing
-                # keyword there would retire the issue the moment the spec merges. These
-                # forms satisfy the linking requirement but set is_closing_link=false,
-                # which suppresses the "This PR fixes: #N" body PATCH further down.
-                # Reached only after every closing form above has failed, so an explicit
-                # "Fixes #N" always outranks a "Refs #N" elsewhere in the same body.
-                ref_kw='(refs?|references?|related to|part of|contributes to)'
+                # keyword there would retire the issue the moment the spec merges. This
+                # sets is_closing_link=false, which suppresses the "This PR fixes: #N"
+                # body PATCH further down. Reached only after every closing form above
+                # has failed, so an explicit "Fixes #N" always outranks a "Refs #N".
+                ref_issue=$(echo "$pr_body" | grep -oiE \
+                  '(refs?|references?|related to|part of|contributes to)(:)?[[:space:]]+#[0-9]+' \
+                  | grep -oE '[0-9]+' | head -1)
 
-                ref_same_repo=$(echo "$pr_body" | grep -oiE \
-                  "${ref_kw}(:)?[[:space:]]+#[0-9]+" | grep -oE '[0-9]+' | head -1)
-                ref_cross_match=$(echo "$pr_body" | grep -oiE \
-                  "${ref_kw}(:)?[[:space:]]+[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+" | head -1)
-                ref_url_match=$(echo "$pr_body" | grep -oiE \
-                  "${ref_kw}(:)?[[:space:]]+https://github\.com/[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+/issues/[0-9]+" | head -1)
-
-                if [[ -n "$ref_same_repo" ]]; then
-                  echo "Found same-repo non-closing reference in PR body: $ref_same_repo"
+                if [[ -n "$ref_issue" ]]; then
+                  echo "Found non-closing reference in PR body: $ref_issue"
                   echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
-                  echo "linked_issue_number=$ref_same_repo" >> "$GITHUB_OUTPUT"
+                  echo "linked_issue_number=$ref_issue" >> "$GITHUB_OUTPUT"
                   echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
                   echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
                   echo "link_method=pr_body_reference" >> "$GITHUB_OUTPUT"
-                  echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
-
-                elif [[ -n "$ref_cross_match" || -n "$ref_url_match" ]]; then
-                  if [[ -n "$ref_cross_match" ]]; then
-                    ref_owner_repo_num=$(echo "$ref_cross_match" | grep -oE '[a-zA-Z0-9_.-]+/[a-zA-Z0-9_.-]+#[0-9]+')
-                    ref_owner_repo=$(echo "$ref_owner_repo_num" | cut -d'#' -f1)
-                    ref_issue_num=$(echo "$ref_owner_repo_num" | cut -d'#' -f2)
-                  else
-                    ref_url=$(echo "$ref_url_match" | grep -oE 'https://github\.com/[^ ]+')
-                    ref_owner_repo=$(echo "$ref_url" | sed 's|https://github.com/||;s|/issues/.*||')
-                    ref_issue_num=$(echo "$ref_url" | grep -oE 'issues/[0-9]+' | grep -oE '[0-9]+')
-                  fi
-
-                  # Same self-reference normalisation as the closing paths above.
-                  if [[ "${ref_owner_repo,,}" == "${GITHUB_REPOSITORY,,}" ]]; then
-                    echo "Non-closing reference resolves to same repo ($ref_owner_repo) — treating as same-repo link"
-                    echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
-                    echo "linked_issue_number=$ref_issue_num" >> "$GITHUB_OUTPUT"
-                    echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
-                    echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
-                    echo "link_method=pr_body_reference" >> "$GITHUB_OUTPUT"
-                  else
-                    echo "Found cross-repo non-closing reference: $ref_owner_repo#$ref_issue_num"
-                    echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
-                    echo "linked_issue_number=$ref_issue_num" >> "$GITHUB_OUTPUT"
-                    echo "is_cross_repo=true" >> "$GITHUB_OUTPUT"
-                    echo "cross_repo_owner_repo=$ref_owner_repo" >> "$GITHUB_OUTPUT"
-                    echo "link_method=cross_repo_reference" >> "$GITHUB_OUTPUT"
-                  fi
                   echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
 
                 else
@@ -689,8 +648,7 @@ jobs:
             "*Non-closing links — the issue stays open after this PR merges:*"
             "- \`Refs #123\` or \`Part of #123\` — use this when the PR advances an issue that a later"
             "  PR actually resolves (e.g. a Spec-Kit PR 1 carrying the spec, where PR 2 does the work)."
-            "- Also accepted: \`references\`, \`related to\`, \`contributes to\`, plus the \`org/repo#123\`"
-            "  and full-URL forms."
+            "- Also accepted: \`references\`, \`related to\`, \`contributes to\`. Same-repo \`#123\` only."
             ""
             "**Option 2: Link via GitHub UI** (Note: won't clear the failed check)"
             ""

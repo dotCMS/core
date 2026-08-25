@@ -50,6 +50,9 @@ the merge otherwise. Put one of these in the PR body:
 | `Fixes org/repo#123`, or the full issue URL | Cross-repo issue is closed |
 | `Refs #123`, `Part of #123`, `Related to #123`, `Contributes to #123` | Issue **stays open** |
 
+Non-closing forms take a same-repo `#123` only — the cross-repo and full-URL variants exist
+for closing keywords.
+
 Use a non-closing form when the PR advances an issue that a *later* PR actually resolves — a
 Spec-Kit PR 1 carries the spec for an issue that PR 2 does the work for, so a closing keyword
 there would retire the issue while the implementation is still unwritten. A closing keyword

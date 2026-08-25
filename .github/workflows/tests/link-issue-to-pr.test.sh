@@ -117,17 +117,17 @@ echo "== PR body: closing keywords close the issue on merge =="
 body_case "Fixes #123" \
   "Some description
 Fixes #123" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=123"
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=123"
 body_case "Closes #456" "Closes #456" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=456"
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=456"
 body_case "resolved: #789" "resolved: #789" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=789"
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=789"
 body_case "cross-repo 'Fixes org/repo#42'" "Fixes dotCMS/private-issues#42" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=true link_method=cross_repo_body linked_issue_number=42"
+  "has_linked_issues=true is_cross_repo=true link_method=cross_repo_body linked_issue_number=42"
 body_case "cross-repo full URL" "Closes https://github.com/dotCMS/private-issues/issues/99" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=true link_method=cross_repo_url linked_issue_number=99"
+  "has_linked_issues=true is_cross_repo=true link_method=cross_repo_url linked_issue_number=99"
 body_case "owner/repo form pointing at this repo" "Closes dotCMS/core#77" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=77"
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=77"
 
 echo "== PR body: non-closing references link without closing =="
 body_case "Refs #36850" \
@@ -145,18 +145,21 @@ body_case "contributes to #103" "contributes to #103" \
   "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_body_reference linked_issue_number=103"
 body_case "ref: #104" "ref: #104" \
   "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_body_reference linked_issue_number=104"
-body_case "cross-repo 'Refs org/repo#55'" "Refs dotCMS/private-issues#55" \
-  "has_linked_issues=true is_closing_link=false is_cross_repo=true link_method=cross_repo_reference linked_issue_number=55"
-body_case "cross-repo reference by URL" "Part of https://github.com/dotCMS/private-issues/issues/66" \
-  "has_linked_issues=true is_closing_link=false is_cross_repo=true link_method=cross_repo_reference linked_issue_number=66"
-body_case "reference to this repo via owner/repo" "Refs dotCMS/core#88" \
-  "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_body_reference linked_issue_number=88"
+
+echo "== PR body: non-closing references are same-repo only, by design =="
+# Cross-repo and full-URL forms are supported for *closing* keywords only. Nobody has
+# needed a non-closing cross-repo link, and each extra form is another branch in a
+# merge gate. These stay unlinked until someone actually needs them.
+body_case "cross-repo reference does not link" "Refs dotCMS/private-issues#55" \
+  "has_linked_issues=false is_cross_repo=false"
+body_case "reference by full URL does not link" "Part of https://github.com/dotCMS/core/issues/66" \
+  "has_linked_issues=false is_cross_repo=false"
 
 echo "== PR body: a closing keyword always outranks a reference =="
 body_case "Refs #1 alongside Fixes #2" \
   "Refs #1
 Fixes #2" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=pr_body linked_issue_number=2"
+  "has_linked_issues=true is_cross_repo=false link_method=pr_body linked_issue_number=2"
 
 echo "== Development section: a sidebar link outranks the body and closes on merge =="
 # Regression guard for the unpaginated timeline lookup: the "connected" event on
@@ -164,10 +167,10 @@ echo "== Development section: a sidebar link outranks the body and closes on mer
 # workflow read a sidebar-linked PR as unlinked and reported is_closing_link=false
 # for an issue GitHub was about to close. gh api --paginate is what fixes it.
 body_case "sidebar link beats a non-closing body reference" "Refs #36850" \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=development_section linked_issue_number=36850" \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=36850" \
   "36850"
 body_case "sidebar link with an unrelated body" "No references at all here." \
-  "has_linked_issues=true is_closing_link=true is_cross_repo=false link_method=development_section linked_issue_number=42" \
+  "has_linked_issues=true is_cross_repo=false link_method=development_section linked_issue_number=42" \
   "42"
 
 echo "== PR body: bare mentions are still not a link =="
