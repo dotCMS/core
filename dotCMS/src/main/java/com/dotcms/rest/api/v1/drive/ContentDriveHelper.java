@@ -226,12 +226,6 @@ public class ContentDriveHelper {
             }
         }
 
-        // Build once and log the query itself: flags such as showLinks and showFolders can be
-        // overridden by the workflow and userSearchable branches above, so logging the locals
-        // would misreport what actually ran. BrowserQuery.toString() carries the effective flags,
-        // all three cursors and the filters.
-        final BrowserQuery browserQuery = builder.build();
-
         // Status filter — the selected states are OR'd together server-side (see
         // BrowserAPIImpl#appendContentStatusQuery). Empty means no status filtering at all, which
         // is the path every pre-existing caller takes.
@@ -241,6 +235,18 @@ public class ContentDriveHelper {
                     // Folders carry no status — drop them when filtering by status.
                     .showFolders(false);
         }
+
+        // Build once and log the query itself: flags such as showLinks and showFolders can be
+        // overridden by the workflow, status and userSearchable branches above, so logging the
+        // locals would misreport what actually ran. BrowserQuery.toString() carries the effective
+        // flags, all three cursors and the filters.
+        //
+        // ⚠ EVERY builder mutation MUST go ABOVE this line. build() snapshots the builder, so a
+        // `builder.withX(...)` placed after it is silently discarded — the request succeeds and the
+        // filter simply does nothing. That is exactly how the status filter shipped broken once:
+        // the block was anchored on the Logger.debug below, and a refactor that hoisted build()
+        // above the log moved it to the wrong side without any compile or test failure.
+        final BrowserQuery browserQuery = builder.build();
 
         Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
                 user.getUserId(), assetPath, browserQuery));
