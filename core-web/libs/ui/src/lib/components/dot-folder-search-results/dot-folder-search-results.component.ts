@@ -74,6 +74,14 @@ export class DotFolderSearchResultsComponent {
     /** @alias rowTestId */
     readonly $rowTestId = input('folder-search-result', { alias: 'rowTestId' });
 
+    /**
+     * Test id for the paging row. Overridable because the Site/Folder field already has one its
+     * suites address (`host-folder-load-more`), and adopting this component must not move it.
+     *
+     * @alias loadMoreTestId
+     */
+    readonly $loadMoreTestId = input('folder-search-load-more', { alias: 'loadMoreTestId' });
+
     /** A row was activated. Never emitted for the paging row. */
     readonly resultSelect = output<TreeNodeItem>();
 

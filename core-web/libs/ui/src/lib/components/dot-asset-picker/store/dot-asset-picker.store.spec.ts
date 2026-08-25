@@ -822,6 +822,91 @@ describe('DotAssetPickerStore', () => {
             });
         });
 
+        describe('reopening on a remembered location (US4)', () => {
+            const REMEMBERED = {
+                identifier: OTHER_SITE.identifier,
+                hostname: OTHER_SITE.hostname
+            };
+
+            it('should open on the remembered site when it still resolves', () => {
+                store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: REMEMBERED });
+
+                expect(store.browsingSite()).toEqual(REMEMBERED);
+                expect(store.folders()[0].data?.id).toBe(REMEMBERED.identifier);
+            });
+
+            describe('when the remembered site is gone', () => {
+                beforeEach(() => {
+                    // A site the editor can no longer browse — deleted, archived, or permissions
+                    // revoked — fails the folder load rather than returning an empty tree.
+                    let firstCall = true;
+                    folderService.searchFolders.mockImplementation(() => {
+                        if (firstCall) {
+                            firstCall = false;
+
+                            return throwError(() => new HttpErrorResponse({ status: 404 }));
+                        }
+
+                        return of(EMPTY_FOLDERS);
+                    });
+
+                    // With a remembered *folder* too, so "drop the folder" is a real assertion
+                    // rather than one that passes because there was never a path.
+                    store.initPicker({
+                        ...FILE_FIELD_CONFIG,
+                        browseSite: REMEMBERED,
+                        path: '/images/'
+                    });
+                });
+
+                it('should fall back to the site the editor is actually on', () => {
+                    expect(store.browsingSite()).toEqual({
+                        identifier: SITE.identifier,
+                        hostname: SITE.hostname
+                    });
+                    expect(store.folders()[0].data?.id).toBe(SITE.identifier);
+                });
+
+                it('should drop the remembered folder along with the site it belonged to', () => {
+                    // `/images/` on a dead site says nothing about where to land on the live one.
+                    expect(store.path()).toBeUndefined();
+                });
+
+                it('should not surface an error for something the editor did not do', () => {
+                    // Reopening somewhere sensible is the correct outcome, not a failure to report.
+                    expect(store.requestError()).toBeNull();
+                    expect(store.foldersStatus()).toBe(ComponentStatus.LOADED);
+                });
+            });
+
+            it('should still report a failure when the entry site itself cannot load', () => {
+                // No remembered site to fall back from — this one is a real error, and retrying the
+                // same site forever would hide it.
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.initPicker(FILE_FIELD_CONFIG);
+
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+                expect(store.requestError()).toEqual({
+                    messageKey: ASSET_PICKER_ERROR_KEYS.folders
+                });
+            });
+
+            it('should try the fallback only once, even if it fails too', () => {
+                folderService.searchFolders.mockReturnValue(
+                    throwError(() => new HttpErrorResponse({ status: 500 }))
+                );
+
+                store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: REMEMBERED });
+
+                // Remembered attempt, then one fallback. Never a loop.
+                expect(folderService.searchFolders).toHaveBeenCalledTimes(2);
+                expect(store.foldersStatus()).toBe(ComponentStatus.ERROR);
+            });
+        });
+
         describe('per-level paging (US3)', () => {
             // Removing the sites level must not have touched folder-level paging: it is the same
             // `loadMore` method, and the sites branch used to sit in front of this one.

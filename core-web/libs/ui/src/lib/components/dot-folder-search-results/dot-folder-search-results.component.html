@@ -7,14 +7,14 @@
                  widens the whole sidebar instead of ellipsing. -->
             <button
                 type="button"
-                class="flex w-full min-w-0 cursor-pointer items-center gap-2 rounded-sm border-0 bg-transparent p-2 text-left transition-none hover:bg-gray-100"
+                class="flex w-full min-w-0 cursor-pointer items-start gap-2 rounded-sm border-0 bg-transparent p-2 text-left transition-none hover:bg-gray-100"
                 [class.bg-primary-50]="isSelected(node)"
                 [class.hover:bg-primary-50]="isSelected(node)"
                 [attr.aria-current]="isSelected(node) ? 'true' : null"
                 [attr.data-testid]="$rowTestId()"
                 (click)="resultSelect.emit(node)">
                 <i
-                    class="pi pi-folder flex-none text-sm text-gray-600"
+                    class="pi pi-folder mt-0.5 flex-none text-sm text-gray-600"
                     data-testid="folder-search-result-icon"></i>
 
                 <span class="flex min-w-0 flex-auto flex-col gap-1 overflow-hidden">
@@ -39,7 +39,7 @@
             <button
                 type="button"
                 class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-2 text-left text-sm font-normal text-primary-500 hover:underline"
-                data-testid="folder-search-load-more"
+                [attr.data-testid]="$loadMoreTestId()"
                 [disabled]="loadMoreNode.loading"
                 (click)="loadMore.emit(loadMoreNode)">
                 @if (loadMoreNode.loading) {

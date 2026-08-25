@@ -299,6 +299,86 @@ export function withAssetFolderTree() {
                 )
             );
 
+            /**
+             * Loads the tree for `site`, falling back to the site the editor is actually on when a
+             * *remembered* site turns out to be unreachable.
+             *
+             * The check cannot happen earlier: nothing short of asking tells you whether a site
+             * still exists and is still visible to this user. So the picker opens optimistically on
+             * the remembered site and repairs itself here.
+             *
+             * `allowFallback` is what keeps that from looping — the retry runs with it off, so a
+             * genuinely broken backend surfaces as an error after exactly one extra attempt instead
+             * of ping-ponging between two sites forever.
+             *
+             * A dead remembered site is not an error the editor caused or can act on, so the
+             * fallback is silent. A failure on the entry site itself is reported.
+             */
+            const loadTree = (
+                site: DotAssetPickerSite,
+                path: string | undefined,
+                allowFallback: boolean
+            ): void => {
+                patchState(store, { foldersStatus: ComponentStatus.LOADING });
+
+                // The success work lives in `tap`, BEFORE `catchError`, so a failure can never
+                // reach it. Handling it in `subscribe` instead would run it for the error fallback
+                // too, patching LOADED back over ERROR and making a failed load indistinguishable
+                // from a successfully loaded empty tree.
+                hydrateBrowsingSite(site, path, browsingService)
+                    .pipe(
+                        take(1),
+                        tap(({ folders, selectedNode }) =>
+                            patchState(store, {
+                                folders,
+                                // Spread only when the loader actually decided on a node.
+                                // `patchState` merges with `{...current, ...partial}`, so an absent
+                                // key destructured to `undefined` would still be present in the
+                                // partial and would wipe the highlight — exactly what
+                                // `TreeLoadResult` says must not happen.
+                                ...(selectedNode !== undefined ? { selectedNode } : {}),
+                                foldersStatus: ComponentStatus.LOADED
+                            })
+                        ),
+                        catchError(() => {
+                            const entrySite = store.config()?.site;
+                            const canFallBack =
+                                allowFallback &&
+                                !!entrySite &&
+                                entrySite.identifier !== site.identifier;
+
+                            if (canFallBack) {
+                                const fallback = {
+                                    identifier: entrySite.identifier,
+                                    hostname: entrySite.hostname
+                                };
+
+                                // The remembered folder goes with the site it belonged to:
+                                // `/images/` on a dead site says nothing about the live one.
+                                patchState(store, {
+                                    browsingSite: fallback,
+                                    path: undefined,
+                                    selectedNode: null
+                                });
+
+                                loadTree(fallback, undefined, false);
+
+                                return EMPTY;
+                            }
+
+                            patchState(store, {
+                                foldersStatus: ComponentStatus.ERROR,
+                                requestError: { messageKey: ASSET_PICKER_ERROR_KEYS.folders }
+                            });
+
+                            // EMPTY, not `of([])`: there is nothing meaningful to emit, and a
+                            // fallback value would only give the success path something to run on.
+                            return EMPTY;
+                        })
+                    )
+                    .subscribe();
+            };
+
             const methods = {
                 /**
                  * Loads the tree: the browsed site's root, expanded down to `path`.
@@ -309,46 +389,9 @@ export function withAssetFolderTree() {
                 loadFolders: (): void => {
                     const site = store.browsingSite();
 
-                    if (!site) {
-                        return;
+                    if (site) {
+                        loadTree(site, store.path(), true);
                     }
-
-                    patchState(store, { foldersStatus: ComponentStatus.LOADING });
-
-                    // The success work lives in `tap`, BEFORE `catchError`, so a failure can
-                    // never reach it. Handling it in `subscribe` instead would run it for the
-                    // error fallback too, patching LOADED back over ERROR and making a failed
-                    // load indistinguishable from a successfully loaded empty tree.
-                    hydrateBrowsingSite(site, store.path(), browsingService)
-                        .pipe(
-                            take(1),
-                            tap(({ folders, selectedNode }) =>
-                                patchState(store, {
-                                    folders,
-                                    // Spread only when the loader actually decided on a node.
-                                    // `patchState` merges with `{...current, ...partial}`, so an
-                                    // absent key destructured to `undefined` would still be
-                                    // present in the partial and would wipe the highlight —
-                                    // exactly what `TreeLoadResult` says must not happen.
-                                    ...(selectedNode !== undefined ? { selectedNode } : {}),
-                                    foldersStatus: ComponentStatus.LOADED
-                                })
-                            ),
-                            catchError(() => {
-                                patchState(store, {
-                                    foldersStatus: ComponentStatus.ERROR,
-                                    requestError: {
-                                        messageKey: ASSET_PICKER_ERROR_KEYS.folders
-                                    }
-                                });
-
-                                // EMPTY, not `of([])`: there is nothing meaningful to emit, and
-                                // a fallback value would only give the success path something
-                                // to run on.
-                                return EMPTY;
-                            })
-                        )
-                        .subscribe();
                 },
 
                 /**

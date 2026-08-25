@@ -27,7 +27,12 @@ import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotFolderTreeComponent, DotFolderNamePipe, DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFolderSearchResultsComponent,
+    DotFolderTreeComponent,
+    DotFolderNamePipe,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
@@ -50,6 +55,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         ScrollerModule,
         SkeletonModule,
         DotFolderTreeComponent,
+        DotFolderSearchResultsComponent,
         ButtonModule,
         TooltipModule,
         IconFieldModule,
@@ -238,6 +244,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
+     * Stages a folder picked from the flat search results.
+     *
+     * Separate from {@link onFolderSelect} only because the shared list emits the node directly,
+     * while `p-tree` wraps it in a select event. Same effect.
+     */
+    onSearchResultSelect(node: TreeNodeItem): void {
+        this.store.setPendingNode(node);
+    }
+
+    /**
      * Lazily loads a folder's children the first time it's expanded.
      */
     onFolderExpand(event: TreeNodeSelectItem): void {
@@ -341,21 +357,6 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Formats a search-result folder node as a human-readable breadcrumb for the
      * secondary label line (hostname + folder segments joined with ` / `).
      */
-    protected formatSearchNodePath(node: TreeNodeItem): string {
-        const hostname = node.data?.hostname?.replace('//', '') ?? '';
-        const path = node.data?.path;
-
-        if (!path || path === '/') {
-            return hostname;
-        }
-
-        const segments = path
-            .replace(/^\/+|\/+$/g, '')
-            .split('/')
-            .filter(Boolean);
-
-        return [hostname, ...segments].join(' / ');
-    }
 
     /**
      * Loads the next page for the level owning the "Load more" sentinel node clicked.

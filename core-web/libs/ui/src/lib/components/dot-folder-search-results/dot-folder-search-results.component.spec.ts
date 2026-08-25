@@ -90,6 +90,14 @@ describe('DotFolderSearchResultsComponent', () => {
             expect(rows()[0].getAttribute('type')).toBe('button');
         });
 
+        it('aligns the icon with the first line, not centred across both', () => {
+            // Two-line rows: centring the icon between the name and the path leaves it floating in
+            // the gap. The design puts it on the name's line, and so does the Site/Folder field,
+            // which renders the same row today via `!items-start`.
+            expect(rows()[0].className).toContain('items-start');
+            expect(rows()[0].className).not.toContain('items-center');
+        });
+
         it('renders a folder icon on every row', () => {
             expect(spectator.queryAll(byTestId('folder-search-result-icon'))).toHaveLength(3);
         });
