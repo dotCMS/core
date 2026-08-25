@@ -126,8 +126,19 @@ jobs:
           gh pr view "$PR_NUMBER" --repo "$REPO" \
             --json number,title,body,headRefName,mergeCommit,author > /tmp/pr.json
 
+          # The merge SHA is half the idempotency key, so an empty one is not survivable: the
+          # marker line degenerates to `merge-sha: `, the dedupe regex to `^merge-sha: $`, and every
+          # empty-SHA plan then matches every other. GitHub can briefly report a null mergeCommit on
+          # the closed event before the merge commit is populated, so fail loudly rather than post
+          # plans under a collapsed key.
+          MERGE_SHA=$(jq -r '.mergeCommit.oid // ""' /tmp/pr.json)
+          if [ -z "$MERGE_SHA" ]; then
+            echo "::error::PR #$PR_NUMBER reports no merge commit SHA yet — refusing to generate a plan under an empty idempotency key. Re-run this workflow via workflow_dispatch once the merge commit is populated."
+            exit 1
+          fi
+
           {
-            echo "merge_sha=$(jq -r '.mergeCommit.oid // ""' /tmp/pr.json)"
+            echo "merge_sha=$MERGE_SHA"
             echo "branch=$(jq -r '.headRefName' /tmp/pr.json)"
             echo "author=$(jq -r '.author.login' /tmp/pr.json)"
             echo "title=$(jq -r '.title' /tmp/pr.json)"
