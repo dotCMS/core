@@ -1843,6 +1843,38 @@ describe('mergeFolderNodePage', () => {
     });
 });
 
+// Every other test in this block hand-builds its node, which cannot catch a node shape that stops
+// carrying `permissions` — the gate would silently fall back to the site answer for every folder,
+// and the folder-level gate would be dead code that still looked tested. These drive the real chain:
+// the API view a folder search returns, through `folderSearchViewToDotFolder` and `createTreeNode`,
+// into the gate.
+describe('canAddChildrenTo, over a node built the way the tree builds them', () => {
+    const realNode = (permissions: string[]) =>
+        createTreeNode(
+            folderSearchViewToDotFolder(
+                createFakeFolderSearchView({ name: 'blog', path: '/', permissions }),
+                'demo.dotcms.com'
+            )
+        ).data;
+
+    it('should carry the folder permissions onto the node', () => {
+        expect(realNode(['READ', 'CAN_ADD_CHILDREN']).permissions).toEqual([
+            'READ',
+            'CAN_ADD_CHILDREN'
+        ]);
+    });
+
+    // The site answer is the opposite of the folder's in both directions, so a node that lost its
+    // permissions on the way through would produce the site's answer and fail here.
+    it('should allow a permitted folder inside a site that denies', () => {
+        expect(canAddChildrenTo(realNode(['READ', 'CAN_ADD_CHILDREN']), false)).toBe(true);
+    });
+
+    it('should deny a restricted folder inside a site that allows', () => {
+        expect(canAddChildrenTo(realNode(['READ']), true)).toBe(false);
+    });
+});
+
 describe('canAddChildrenTo', () => {
     const node = (permissions?: string[]) =>
         ({ type: 'folder', path: '/x/', permissions }) as unknown as DotFolderTreeNodeData;

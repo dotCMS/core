@@ -1466,14 +1466,19 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole())
                 .nextPersisted();
 
-        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user), PermissionAPI.PERMISSION_READ);
+        try {
+            grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
+                    PermissionAPI.PERMISSION_READ);
 
-        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                getHttpRequest(user.getEmailAddress(), password),
-                response, host.getIdentifier(), 1, 40).getEntity();
+            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                    getHttpRequest(user.getEmailAddress(), password),
+                    response, host.getIdentifier(), 1, 40).getEntity();
 
-        assertNotNull("Response entity should not be null", view);
-        assertFalse("READ alone must not allow adding children", view.canAddChildren());
+            assertNotNull("Response entity should not be null", view);
+            assertFalse("READ alone must not allow adding children", view.canAddChildren());
+        } finally {
+            UserDataGen.remove(user);
+        }
     }
 
     /**
@@ -1495,15 +1500,20 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole())
                 .nextPersisted();
 
-        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        try {
+            grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
+                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
 
-        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                getHttpRequest(user.getEmailAddress(), password),
-                response, host.getIdentifier(), 1, 40).getEntity();
+            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                    getHttpRequest(user.getEmailAddress(), password),
+                    response, host.getIdentifier(), 1, 40).getEntity();
 
-        assertNotNull("Response entity should not be null", view);
-        assertTrue("An explicit CAN_ADD_CHILDREN grant must be honoured", view.canAddChildren());
+            assertNotNull("Response entity should not be null", view);
+            assertTrue("An explicit CAN_ADD_CHILDREN grant must be honoured",
+                    view.canAddChildren());
+        } finally {
+            UserDataGen.remove(user);
+        }
     }
 
     /**
@@ -1532,16 +1542,21 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole(), groupRole)
                 .nextPersisted();
 
-        // Granted to the shared role, never to the user's own role.
-        grantOnHost(host, groupRole,
-                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        try {
+            // Granted to the shared role, never to the user's own role.
+            grantOnHost(host, groupRole,
+                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
 
-        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                getHttpRequest(user.getEmailAddress(), password),
-                response, host.getIdentifier(), 1, 40).getEntity();
+            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                    getHttpRequest(user.getEmailAddress(), password),
+                    response, host.getIdentifier(), 1, 40).getEntity();
 
-        assertNotNull("Response entity should not be null", view);
-        assertTrue("A grant held through a group role must count",
-                view.canAddChildren());
+            assertNotNull("Response entity should not be null", view);
+            assertTrue("A grant held through a group role must count", view.canAddChildren());
+        } finally {
+            // The host is left behind: `SiteDataGen` exposes no `remove`, unlike these two.
+            UserDataGen.remove(user);
+            RoleDataGen.remove(groupRole);
+        }
     }
 }
