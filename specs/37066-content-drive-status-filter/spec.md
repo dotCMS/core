@@ -180,10 +180,10 @@ selection and the results are the same at every step.
 - **An unrecognized status value** submitted directly to the search endpoint is rejected with a
   clear client error naming the accepted values, rather than being silently ignored (which would
   return a wider result set than the caller asked for).
-- **Status combined with a workflow filter.** Content Drive can already filter by workflow, including
-  steps that archive content. A status selection combined with such a workflow filter must return a
-  coherent result, not an empty one caused by two rules contradicting each other about archived
-  content.
+- **Status combined with a workflow filter.** The two combine with AND: *governed by that workflow*
+  **and** *in any selected state*. Content Drive can already filter by workflow, including steps that
+  archive content, so the pairing must return a coherent result rather than an empty one caused by
+  two rules contradicting each other about archived content.
 - **Text search plus status.** The drive uses different search strategies depending on whether a
   keyword is present and how the environment is configured. Every strategy must apply the status
   filter identically, so the same selection never returns different results because of a
@@ -198,7 +198,9 @@ selection and the results are the same at every step.
 - **FR-001**: The drive search capability MUST accept a set of content statuses drawn from
   Archived, Unpublished and Locked, defaulting to an empty set.
 - **FR-002**: An empty set MUST preserve today's behavior exactly: archived content excluded, all
-  other content returned.
+  other content returned. The status filter MUST be **skipped entirely** in that case, not
+  translated into a vacuous "matches anything" condition — every search that exists today sends no
+  status, so this is the default path, not an edge case.
 - **FR-003**: Archived alone MUST return only archived content, never archived content in addition
   to everything else.
 - **FR-004**: Unpublished alone MUST return only content with no live version, and MUST exclude
@@ -207,6 +209,10 @@ selection and the results are the same at every step.
   it, and MUST exclude archived content.
 - **FR-006**: Multiple selected statuses MUST combine with **OR** — the result is content holding
   *any* of the selected states. Adding a status MUST never reduce the result set.
+- **FR-006a**: OR applies **within** the status filter only. Status MUST still combine with every
+  other filter by **AND**, as the existing filters already do with each other. Selecting a workflow
+  and two statuses means *governed by that workflow* **and** *in either of those states* — adding a
+  status MUST never loosen another filter.
 - **FR-007**: Archived MUST be the only status that admits archived content into the results.
   Selecting it alongside others widens the results to include archived content as well as content in
   the other selected states.
@@ -250,6 +256,18 @@ selection and the results are the same at every step.
   widens the result set.
 
 ## Success Criteria *(mandatory)*
+
+> **How these are verified.** This specification stays technology-agnostic by convention, so the
+> concrete test types live in the plan: **unit** for status parsing and the 400, **integration** for
+> the semantics matrix (each status, each pair, all three, the empty default, the never-shrinks
+> property, `PURE_ES` parity, and the archive-step regression), and **Jest/Spectator** for the chip,
+> the request payload and the URL round-trip. Postman is deliberately not used here — the behavior
+> needs seeded archived/locked fixtures that a collection cannot construct against a shared
+> environment, and the integration tests cover the same endpoint more precisely.
+>
+> Per Constitution Principle V these are non-negotiable and land **before** implementation:
+> `/speckit-tasks` orders every user story as tests → developer-approval gate → confirmed-failing
+> (Red) gate → implementation.
 
 ### Measurable Outcomes
 

@@ -39,6 +39,11 @@ Resource: `dotCMS/src/main/java/com/dotcms/rest/api/v1/drive/ContentDriveResourc
 **OR, not AND.** Selecting more statuses returns *more* content, exactly like `contentTypes`,
 `baseTypes` and `language`. Adding a status can never shrink the result set.
 
+**OR applies *within* `status` only. Separate filters still AND with each other**, exactly as they
+do today: `{"workflow": [...], "status": ["UNPUBLISHED","LOCKED"]}` means *governed by that workflow*
+**and** *(unpublished **or** locked)*. Each filter appends its own `and ( … )` clause server-side
+(`BrowserAPIImpl:2338` for workflow), so adding `status` never loosens another filter.
+
 **The archived exclusion is a baseline, not a fourth value, and it sits outside the OR group.**
 Every drive request already excludes archived content; the selected statuses are OR-ed together and
 that group is AND-ed against the baseline, which only `ARCHIVED` lifts. That is why
@@ -93,6 +98,31 @@ environment runs (FR-009 / SC-005). Both paths are in scope:
 |---|---|---|
 | `HYBRID_SINGLE_CHUNKED_QUERY_ES` (**default**) | `BrowserAPIImpl.selectQuery` supplies the candidate set; the index only narrows by text | SQL clauses — so they apply with **and** without a keyword |
 | `PURE_ES` | `BrowserAPIImpl.buildPureESQuery` | Index terms, replacing the hardcoded `+deleted:false` |
+
+### An empty `status` MUST be ignored entirely
+
+An omitted or empty `status` changes **nothing** on either path — the field is skipped, not
+translated into a vacuous clause. Both builders MUST return early on an empty set rather than
+opening a group they have nothing to fill: `and ( )` is a SQL syntax error and `+()` is invalid
+Lucene. This is what makes FR-002's "byte-identical to today" literally true, and it is the case to
+assert first, because every existing caller of drive search sends no `status`.
+
+### Multiple statuses MUST be one explicit OR group
+
+In Lucene, `+` means REQUIRED. Emitting `+deleted:true +live:false` is an **AND** — the opposite of
+this contract. Multiple statuses go in one explicit group, with the archived baseline left outside
+it as its own required clause:
+
+| Selection | Index query |
+|---|---|
+| `[]` | *(no status terms at all)* |
+| `["UNPUBLISHED"]` | `+deleted:false +(live:false)` |
+| `["UNPUBLISHED","LOCKED"]` | `+deleted:false +(live:false OR locked:true)` |
+| `["ARCHIVED"]` | `+(deleted:true)` |
+| `["ARCHIVED","LOCKED"]` | `+(deleted:true OR locked:true)` |
+
+This is already the convention in the method being changed — `BrowserAPIImpl:630` writes
+`+(conhost:<id> OR conhost:SYSTEM_HOST)`.
 
 Aligned with [ADR-0018](https://github.com/dotCMS/platform-adrs/blob/main/decisions/0018-database-first-content-drive-search-with-index-deferred-text-filtering.md),
 which routes version-info flags (archived/deleted) to the **database**. `PURE_ES` is patched not to

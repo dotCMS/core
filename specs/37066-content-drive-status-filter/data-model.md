@@ -20,9 +20,16 @@ A closed enum of three independent states a contentlet version can hold.
 
 | Constant | Meaning | Backing column (`contentlet_version_info`) | Index term |
 |---|---|---|---|
-| `ARCHIVED` | Removed from circulation, recoverable | `deleted = true` | `+deleted:true` |
-| `UNPUBLISHED` | No live version exists | `live_inode is null` | `+live:false` |
-| `LOCKED` | A lock is held, by anyone | `locked_by is not null` | `+locked:true` |
+| `ARCHIVED` | Removed from circulation, recoverable | `deleted = true` | `deleted:true` |
+| `UNPUBLISHED` | No live version exists | `live_inode is null` | `live:false` |
+| `LOCKED` | A lock is held, by anyone | `locked_by is not null` | `locked:true` |
+
+> **The index terms above are bare on purpose — do not prefix them with `+`.** In Lucene syntax `+`
+> means REQUIRED, so emitting `+deleted:true +live:false` is an **AND**, which is the exact opposite
+> of this feature's semantics. Multiple statuses MUST be wrapped in one explicit group:
+> `+(deleted:true OR live:false)`. This is already the convention in the method being changed —
+> `BrowserAPIImpl:630` writes `+(conhost:<id> OR conhost:SYSTEM_HOST)`. See the composed forms under
+> [Query shape](#query-shape-browserquerycontentstatuses).
 
 **Placement**: `com.dotcms.browser` rather than the REST package — `BrowserQuery` is the consumer,
 and the browser layer must not depend on the REST layer. Sits alongside `FieldSearchCriteria`, which
@@ -99,6 +106,29 @@ it.
 | `[ARCHIVED, UNPUBLISHED]` | *lifted* | `(deleted = true or live_inode is null)` | everything with no live version |
 | all three | *lifted* | `(deleted = true or live_inode is null or locked_by is not null)` | anything not cleanly published |
 
+### Composed query forms
+
+The SQL group and the index group are the same shape: the selected statuses OR-ed inside one group,
+AND-ed against the archived baseline that sits outside it.
+
+| Selection | SQL | Index |
+|---|---|---|
+| `[]` | *(no status clause at all)* | *(no status clause at all)* |
+| `[UNPUBLISHED]` | `and cvi.deleted = false and ( cvi.live_inode is null )` | `+deleted:false +(live:false)` |
+| `[UNPUBLISHED, LOCKED]` | `and cvi.deleted = false and ( cvi.live_inode is null or cvi.locked_by is not null )` | `+deleted:false +(live:false OR locked:true)` |
+| `[ARCHIVED]` | `and ( cvi.deleted = true )` | `+(deleted:true)` |
+| `[ARCHIVED, LOCKED]` | `and ( cvi.deleted = true or cvi.locked_by is not null )` | `+(deleted:true OR locked:true)` |
+
+**An empty selection must emit nothing at all** — not an empty group. `and ( )` is a SQL syntax
+error and `+()` is invalid Lucene, so both builders MUST return early on an empty set rather than
+opening a group they then have nothing to fill. This is what makes FR-002's "byte-identical to
+today" literally true.
+
+**Filters AND with each other; only values within one filter OR.** A status selection combined with
+the workflow filter means *governed by that workflow* **and** *in any of the selected states* — each
+filter appends its own `and ( … )` clause (`BrowserAPIImpl:2338` for workflow), exactly as content
+type and locale already compose today.
+
 **The bug to avoid** is folding the baseline into the group. `[UNPUBLISHED, LOCKED]` would then read
 `(deleted = false or live_inode is null or locked_by is not null)`, which matches essentially every
 row in the folder — a filter that silently stops filtering.
@@ -114,7 +144,9 @@ planning, see the OR rationale above.)*
 
 `LOCKED` does not constrain which version is joined, so it stacks on whatever `showWorking` already
 selected. That is the same pairing the legacy portlet uses: `ContentletAjax.java:1018` appends
-`+locked:true` and `:1035` unconditionally appends `+working:true`.
+`+locked:true` and `:1035` unconditionally appends `+working:true`. (Those legacy terms carry `+`
+because legacy genuinely does AND its status flags — do **not** copy that form here; see the note
+under the enum table.)
 
 One deliberate difference: legacy **always** scopes to the working version, whereas here the drive
 scopes to working because `AbstractDriveRequestForm.live()` defaults to `false`. A caller that sets
