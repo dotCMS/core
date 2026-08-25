@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.LicenseTestUtil;
 import com.dotcms.datagen.ExperimentDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.SiteDataGen;
@@ -59,6 +60,10 @@ public class ExperimentsResourceIntegrationTest {
     @BeforeClass
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        // Experiments are license-gated end to end — save, start, cancel and archive all go
+        // through hasValidLicense() — so the suite installs the repository's built-in trial
+        // license rather than depending on one being present on the machine.
+        LicenseTestUtil.getLicense();
 
         resource = new ExperimentsResource();
         adminUser = TestUserUtils.getAdminUser();
