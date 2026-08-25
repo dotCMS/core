@@ -1,6 +1,6 @@
 # Feature Specification: Changing the Page of a Draft Experiment
 
-**Feature Branch**: `issue-37176-draft-experiment-page-change`
+**Feature Branch**: `oidacra/allow-changing-the-page-of-a-draft-experiment-th`
 
 **Created**: 2026-08-24
 
