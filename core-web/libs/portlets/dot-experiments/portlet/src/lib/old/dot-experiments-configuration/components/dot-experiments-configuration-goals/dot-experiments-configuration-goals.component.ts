@@ -1,6 +1,6 @@
 import { Observable, Subject } from 'rxjs';
 
-import { NgClass, AsyncPipe, LowerCasePipe } from '@angular/common';
+import { AsyncPipe, LowerCasePipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -40,8 +40,7 @@ import { DotExperimentsConfigurationGoalSelectComponent } from '../dot-experimen
         TooltipModule,
         ConfirmPopupModule,
         AsyncPipe,
-        LowerCasePipe,
-        NgClass
+        LowerCasePipe
     ],
     templateUrl: './dot-experiments-configuration-goals.component.html',
     providers: [DotMessagePipe],

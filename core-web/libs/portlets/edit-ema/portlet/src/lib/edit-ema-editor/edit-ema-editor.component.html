@@ -26,8 +26,8 @@
 <div
     class="editor-content bg-gray-100"
     #editorContent
-    [ngStyle]="$editorContentStyles()"
-    [ngClass]="{ 'editor-content-preview': $mode() === UVE_MODE.PREVIEW }"
+    [style]="$editorContentStyles()"
+    [class.editor-content-preview]="$mode() === UVE_MODE.PREVIEW"
     data-testId="editor-content">
     <p-toolbar
         class="browser-toolbar"
@@ -165,13 +165,11 @@
         </div>
     }
     <div class="canvas-viewport" #canvasViewport>
-        <div class="canvas-outer" #zoomContainer [ngStyle]="$viewCanvasOuterStyles()">
+        <div class="canvas-outer" #zoomContainer [style]="$viewCanvasOuterStyles()">
             <dot-uve-iframe-resize-handles data-testid="iframe-resize-handles" />
-            <div class="canvas-inner" [ngStyle]="$viewCanvasInnerStyles()">
+            <div class="canvas-inner" [style]="$viewCanvasInnerStyles()">
                 <div
-                    [ngClass]="{
-                        'iframe-wrapper--device': !uveStore.$viewIsResponsiveMode()
-                    }"
+                    [class.iframe-wrapper--device]="!uveStore.$viewIsResponsiveMode()"
                     class="iframe-wrapper transition-all duration-300">
                     @if (uveStore.uveStatus() === UVE_STATUS.ERROR) {
                         <dot-uve-page-version-not-found />

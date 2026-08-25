@@ -4,7 +4,6 @@ import {
     MonacoStandaloneCodeEditor
 } from '@materia-ui/ngx-monaco-editor';
 
-import { NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -40,7 +39,7 @@ export interface DotTextareaMonacoInit {
         }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [FormsModule, SelectButtonModule, MonacoEditorModule, NgStyle]
+    imports: [FormsModule, SelectButtonModule, MonacoEditorModule]
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     private sanitizer = inject(DomSanitizer);
@@ -85,7 +84,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
     /**
      * TODO(#37120): this has never produced valid CSS. `styles` is an object, so the host ends
      * up with `style="[object Object]"` and nothing is applied — the width/height already reach
-     * the textarea and the editor through `[ngStyle]`. Making it emit real CSS would newly style
+     * the textarea and the editor through `[style]`. Making it emit real CSS would newly style
      * the host element, so it is left as-is and needs its own issue.
      */
     @HostBinding('style')

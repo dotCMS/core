@@ -23,14 +23,14 @@
             (click)="toggleHandler($event, data)">
             <i
                 class="dot-nav__item-arrow pi"
-                [ngClass]="data.isOpen ? 'pi-chevron-up' : 'pi-chevron-down'"
+                [class]="data.isOpen ? 'pi-chevron-up' : 'pi-chevron-down'"
                 aria-hidden="true"></i>
         </div>
     </div>
 </div>
 <dot-sub-nav
     (itemClick)="handleItemClick($event)"
-    [ngStyle]="customStyles"
+    [style]="customStyles"
     [data]="data"
     [collapsed]="collapsed"
     #subnav />

@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgClass, AsyncPipe, DecimalPipe } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -53,8 +53,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         AutoFocusModule,
         DotExperimentsInlineEditTextComponent,
         AsyncPipe,
-        DecimalPipe,
-        NgClass
+        DecimalPipe
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush

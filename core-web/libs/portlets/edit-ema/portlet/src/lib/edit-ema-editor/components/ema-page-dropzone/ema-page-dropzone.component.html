@@ -1,7 +1,7 @@
 @for (container of containers(); track $index) {
     <div
         (dragover)="onDragover($event)"
-        [ngStyle]="container | dotPosition"
+        [style]="container | dotPosition"
         [attr.data-payload]="container.payload"
         [attr.data-dropzone]="true"
         [attr.data-empty]="true"
@@ -10,7 +10,7 @@
             <div
                 (dragover)="onDragover($event)"
                 [attr.data-payload]="contentlet.payload"
-                [ngStyle]="contentlet | dotPosition"
+                [style]="contentlet | dotPosition"
                 [attr.data-dropzone]="true"
                 [attr.data-position]="$positionData().position"
                 [attr.data-empty]="false"
@@ -29,12 +29,12 @@
 }
 
 @if (containers().length > 0) {
-    <div [ngStyle]="pointerPosition" class="pointer"></div>
+    <div [style]="pointerPosition" class="pointer"></div>
 }
 
 <ng-template #errorTemplate let-error="error" let-container="container">
     @if (error.message.length) {
-        <div [ngStyle]="container | dotPosition: true" class="drop-zone_error">
+        <div [style]="container | dotPosition: true" class="drop-zone_error">
             <span [innerHTML]="error.message | dm: error.args"></span>
         </div>
     }

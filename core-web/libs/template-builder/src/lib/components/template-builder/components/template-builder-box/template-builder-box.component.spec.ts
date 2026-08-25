@@ -1,6 +1,6 @@
 import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
-import { NgClass, NgFor, NgIf } from '@angular/common';
+import { NgFor, NgIf } from '@angular/common';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ConfirmationService } from 'primeng/api';
@@ -42,7 +42,6 @@ describe('TemplateBuilderBoxComponent', () => {
     const createHost = createHostFactory({
         component: TemplateBuilderBoxComponent,
         imports: [
-            NgClass,
             NgIf,
             NgFor,
             ButtonModule,

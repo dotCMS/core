@@ -8,6 +8,7 @@ import eslintPluginBan from 'eslint-plugin-ban';
 import stylisticEslintPlugin from '@stylistic/eslint-plugin';
 import eslintPluginBetterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import angularEslintTemplateParser from '@angular-eslint/template-parser';
+import angularEslintTemplatePlugin from '@angular-eslint/eslint-plugin-template';
 
 const compat = new FlatCompat({
     baseDirectory: dirname(fileURLToPath(import.meta.url)),
@@ -236,7 +237,18 @@ export default [
         })),
     {
         files: ['**/*.html'],
+        plugins: {
+            '@angular-eslint/template': angularEslintTemplatePlugin
+        },
         rules: {
+            '@angular-eslint/template/prefer-class-binding': 'error',
+            'no-restricted-syntax': [
+                'error',
+                {
+                    selector: "BoundAttribute[name='ngStyle'], TextAttribute[name='ngStyle']",
+                    message: 'NgStyle is deprecated. Use [style] or [style.prop] bindings instead.'
+                }
+            ],
             'better-tailwindcss/enforce-consistent-variable-syntax': [
                 'error',
                 {

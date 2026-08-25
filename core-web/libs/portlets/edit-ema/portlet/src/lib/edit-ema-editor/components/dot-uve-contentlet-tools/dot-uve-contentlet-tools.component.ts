@@ -1,6 +1,6 @@
 import { signalMethod } from '@ngrx/signals';
 
-import { JsonPipe, NgStyle } from '@angular/common';
+import { JsonPipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -32,15 +32,7 @@ import { ContentletArea } from '../ema-page-dropzone/types';
  */
 @Component({
     selector: 'dot-uve-contentlet-tools',
-    imports: [
-        NgStyle,
-        ButtonModule,
-        MenuModule,
-        TieredMenuModule,
-        JsonPipe,
-        TooltipModule,
-        DotMessagePipe
-    ],
+    imports: [ButtonModule, MenuModule, TieredMenuModule, JsonPipe, TooltipModule, DotMessagePipe],
     templateUrl: './dot-uve-contentlet-tools.component.html',
     styleUrls: ['./dot-uve-contentlet-tools.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,6 +1,6 @@
 import { EMPTY, Observable } from 'rxjs';
 
-import { AsyncPipe, NgClass, TitleCasePipe } from '@angular/common';
+import { AsyncPipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,7 +30,6 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
 @Component({
     selector: 'dot-results-seo-tool',
     imports: [
-        NgClass,
         CardModule,
         TitleCasePipe,
         AsyncPipe,

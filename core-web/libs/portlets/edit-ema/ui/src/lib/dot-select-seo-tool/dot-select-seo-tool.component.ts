@@ -1,4 +1,4 @@
-import { DecimalPipe, NgClass } from '@angular/common';
+import { DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, Input, OnChanges } from '@angular/core';
 
 import { DotDeviceListItem, SEO_MEDIA_TYPES, SEO_TILES } from '@dotcms/dotcms-models';
@@ -6,7 +6,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 @Component({
     selector: 'dot-select-seo-tool',
-    imports: [NgClass, DecimalPipe, DotMessagePipe],
+    imports: [DecimalPipe, DotMessagePipe],
     templateUrl: './dot-select-seo-tool.component.html',
     styleUrls: ['./dot-select-seo-tool.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush

@@ -1,4 +1,3 @@
-import { NgClass } from '@angular/common';
 import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -39,7 +38,6 @@ describe('DotAppsConfigurationListComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             imports: [
-                NgClass,
                 ButtonModule,
                 DotAppsConfigurationItemComponent,
                 HttpClientTestingModule,
