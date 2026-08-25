@@ -1,6 +1,6 @@
 import { DragulaModule } from 'ng2-dragula';
 
-import { Component, inject, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, inject, OnInit, signal, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { filter, mergeMap, take, toArray } from 'rxjs/operators';
 
@@ -24,7 +24,7 @@ import { FieldType } from '..';
     imports: [DragulaModule]
 })
 export class ContentTypesFieldsListComponent implements OnInit {
-    @Input() baseType!: string;
+    readonly baseType = input<string>();
 
     $fieldTypes = signal<{ clazz: string; name: string }[]>([]);
     fieldIcons = FIELD_ICONS;
@@ -67,7 +67,7 @@ export class ContentTypesFieldsListComponent implements OnInit {
                 let fieldsFiltered = mappedFields.filter(
                     (field) => field.clazz !== DotCMSClazzes.LINE_DIVIDER
                 );
-                if (this.baseType === 'FORM') {
+                if (this.baseType() === 'FORM') {
                     fieldsFiltered = fieldsFiltered.filter((field) => this.isFormField(field));
                 }
 

@@ -96,7 +96,7 @@ describe('IframeComponent', () => {
         jest.spyOn(dotUiColorsService, 'setColors');
 
         fixture.componentRef.setInput('isLoading', false);
-        comp.src = 'etc/etc?hello=world';
+        fixture.componentRef.setInput('src', 'etc/etc?hello=world');
         fixture.detectChanges();
         iframeEl = de.query(By.css('iframe'));
     });

@@ -45,9 +45,14 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
 export class DotContentCompareTableComponent {
     private dotMessageService = inject(DotMessageService);
 
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() data!: DotContentCompareTableData;
     // Defaults true, matching DotContentCompareStore's initial state and the `dotDiff`
     // pipe's own default; `false` would silently disable diffing for unbound consumers.
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() showDiff = true;
     $showActions = input<boolean>(true, { alias: 'showActions' });
     /**

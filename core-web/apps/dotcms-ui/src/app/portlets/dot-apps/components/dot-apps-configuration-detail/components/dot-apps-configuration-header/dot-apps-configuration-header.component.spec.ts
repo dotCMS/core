@@ -149,7 +149,7 @@ describe('DotAppsConfigurationHeaderComponent', () => {
         expect(size).toBe('large');
 
         expect(dotCopy.label).toBe(component.app.key);
-        expect(dotCopy.copy).toBe(component.app.key);
+        expect(dotCopy.copy()).toBe(component.app.key);
     });
 
     it('should redirect to detail configuration list page when app Card clicked', () => {

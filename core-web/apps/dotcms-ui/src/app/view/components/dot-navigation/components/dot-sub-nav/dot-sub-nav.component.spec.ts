@@ -46,24 +46,25 @@ describe('DotSubNavComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent();
-        spectator.component.data = data;
+        // `data` and `collapsed` are required inputs: they must exist before the first
+        // change-detection pass, so they go in at creation rather than via setInput.
+        spectator = createComponent({ props: { data, collapsed: false } });
     });
 
     it('should have two menu links when expanded', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         expect(spectator.debugElement.queryAll(By.css('.dot-nav-sub li')).length).toBe(2);
     });
 
     it('should have three list items when collapsed (group header + 2 menu items)', () => {
-        spectator.component.collapsed = true;
+        spectator.setInput('collapsed', true);
         spectator.detectChanges();
         expect(spectator.debugElement.queryAll(By.css('.dot-nav-sub li')).length).toBe(3);
     });
 
     it('should NOT show group name when expanded', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         const groupName = spectator.debugElement.query(
             By.css('[data-testid="nav-sub-group-name"]')
@@ -72,7 +73,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should show group name when collapsed', () => {
-        spectator.component.collapsed = true;
+        spectator.setInput('collapsed', true);
         spectator.detectChanges();
         const groupName = spectator.debugElement.query(
             By.css('[data-testid="nav-sub-group-name"]')
@@ -82,7 +83,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should have group name element with proper styling when collapsed', () => {
-        spectator.component.collapsed = true;
+        spectator.setInput('collapsed', true);
         spectator.detectChanges();
         const groupName = spectator.debugElement.query(
             By.css('[data-testid="nav-sub-group-name"]')
@@ -93,7 +94,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should set <li> correctly when expanded', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         const items = spectator.debugElement.queryAll(By.css('.dot-nav-sub li'));
 
@@ -103,7 +104,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should have group header when collapsed', () => {
-        spectator.component.collapsed = true;
+        spectator.setInput('collapsed', true);
         spectator.detectChanges();
         const items = spectator.debugElement.queryAll(By.css('.dot-nav-sub li'));
         const groupHeader = items.find((item) =>
@@ -113,7 +114,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should set <a> correctly', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         const links = spectator.debugElement.queryAll(By.css('.dot-nav-sub li a'));
 
@@ -131,7 +132,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should emit event on link click', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         const link = spectator.debugElement.query(By.css('.dot-nav-sub li a'));
 
@@ -146,7 +147,7 @@ describe('DotSubNavComponent', () => {
     });
 
     it('should NOT have collapsed class', () => {
-        spectator.component.collapsed = false;
+        spectator.setInput('collapsed', false);
         spectator.detectChanges();
         expect(spectator.debugElement.query(By.css('.dot-nav-sub__collapsed'))).toBeNull();
     });
@@ -154,12 +155,12 @@ describe('DotSubNavComponent', () => {
     describe('dot-sub-nav', () => {
         describe('is Open', () => {
             beforeEach(() => {
-                spectator.component.data = { ...data, isOpen: true };
+                spectator.setInput('data', { ...data, isOpen: true });
             });
 
             describe('menu collapsed', () => {
                 beforeEach(() => {
-                    spectator.component.collapsed = true;
+                    spectator.setInput('collapsed', true);
                     spectator.detectChanges();
                 });
 
@@ -183,7 +184,7 @@ describe('DotSubNavComponent', () => {
 
             describe('menu expanded', () => {
                 beforeEach(() => {
-                    spectator.component.collapsed = false;
+                    spectator.setInput('collapsed', false);
                     spectator.detectChanges();
                 });
 
@@ -195,12 +196,12 @@ describe('DotSubNavComponent', () => {
 
         describe('is Close', () => {
             beforeEach(() => {
-                spectator.component.data = { ...data, isOpen: false };
+                spectator.setInput('data', { ...data, isOpen: false });
             });
 
             describe('menu collapsed', () => {
                 beforeEach(() => {
-                    spectator.component.collapsed = true;
+                    spectator.setInput('collapsed', true);
                     spectator.detectChanges();
                 });
 
@@ -211,7 +212,7 @@ describe('DotSubNavComponent', () => {
 
             describe('menu expanded', () => {
                 beforeEach(() => {
-                    spectator.component.collapsed = false;
+                    spectator.setInput('collapsed', false);
                     spectator.detectChanges();
                 });
 

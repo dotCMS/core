@@ -121,6 +121,22 @@ for the whole workspace, so **a new project needs no flags of its own** — it i
 }
 ```
 
+`angularCompilerOptions.extendedDiagnostics` now carries `"defaultCategory": "error"`, which
+escalates **all 18** Angular extended diagnostics (NG81xx) from warning to build error — including
+`optionalChainNotNullable` (NG8107) and `nullishCoalescingNotNullable` (NG8102). Angular merges
+`angularCompilerOptions` across the `extends` chain, so this reaches every project, even ones that
+redeclare that block (verified against `libs/block-editor/tsconfig.lib.json`).
+
+> **An `ng update` can silently undo this.** `@angular/core` v22 ships a migration named
+> `strict-safe-navigation-narrow` whose entire job is to write
+> `extendedDiagnostics.checks.{nullishCoalescingNotNullable,optionalChainNotNullable}: "suppress"`
+> into **every project tsconfig** — unconditionally, overwriting whatever is there. It cannot reach
+> this repo today only because it discovers projects through `getWorkspace()`, which reads
+> `angular.json`/`workspace.json`; an Nx workspace has neither, which is also why `npx ng generate`
+> fails here with *"outside a workspace"*. Do not treat that as a guarantee — after any Angular
+> upgrade, re-read `extendedDiagnostics` in `tsconfig.base.json` **and** check that no project
+> tsconfig has grown an `extendedDiagnostics.checks` block downgrading those two.
+
 Do **not** re-declare any of these in a project tsconfig — that is the duplication the base block
 replaced. `angularCompilerOptions` lives in the base too: it is a root-level key that TypeScript
 ignores entirely, so the non-Angular projects that inherit it (`libs/sdk/react`, `libs/sdk/vue`,

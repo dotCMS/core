@@ -325,10 +325,10 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should set data correctly', () => {
-            expect(subNavDe?.componentInstance?.data).toEqual(
+            expect(subNavDe?.componentInstance?.data()).toEqual(
                 expect.objectContaining({ id: '123', label: 'Name' })
             );
-            expect(subNavDe?.componentInstance?.collapsed).toBe(false);
+            expect(subNavDe?.componentInstance?.collapsed()).toBe(false);
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
@@ -356,7 +356,7 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should set data correctly on sub-nav', () => {
-            expect(subNavDe?.componentInstance?.collapsed).toBe(true);
+            expect(subNavDe?.componentInstance?.collapsed()).toBe(true);
         });
     });
 });

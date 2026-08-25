@@ -9,7 +9,8 @@ import {
     OnInit,
     Output,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -55,6 +56,8 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
 
     private _item!: DotTemplateItem;
 
+    // TODO: Skipped for migration because:
+    //  Accessor inputs cannot be migrated as they are too complex.
     @Input()
     set item(value: DotTemplateItem) {
         this._item = value;
@@ -63,7 +66,7 @@ export class DotTemplateBuilderComponent implements OnInit, OnDestroy {
     get item(): DotTemplateItem {
         return this._item;
     }
-    @Input() didTemplateChanged!: boolean;
+    readonly didTemplateChanged = input<boolean>();
     @Output() saveAndPublish = new EventEmitter<DotTemplateItem>();
     @Output() updateTemplate = new EventEmitter<DotTemplateItem>();
     @Output() save = new EventEmitter<DotTemplateEditorEvent>();

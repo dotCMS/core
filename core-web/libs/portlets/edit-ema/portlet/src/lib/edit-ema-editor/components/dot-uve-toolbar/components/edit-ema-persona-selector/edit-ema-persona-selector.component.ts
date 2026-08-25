@@ -11,7 +11,8 @@ import {
     ViewChild,
     inject,
     signal,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -73,7 +74,10 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         itemsPerPage: 0
     });
 
-    @Input() pageId!: string;
+    readonly pageId = input.required<string>();
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() value!: DotCMSViewAsPersona;
 
     @Output() selected: EventEmitter<DotCMSViewAsPersona & { pageId: string }> = new EventEmitter();
@@ -117,7 +121,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
             return;
         }
 
-        this.selected.emit({ ...value, pageId: this.pageId });
+        this.selected.emit({ ...value, pageId: this.pageId() });
     }
 
     /**
@@ -142,7 +146,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
         this.despersonalize.emit({
             ...persona,
             selected,
-            pageId: this.pageId
+            pageId: this.pageId()
         });
     }
 
@@ -154,7 +158,7 @@ export class EditEmaPersonaSelectorComponent implements AfterViewInit, OnChanges
     fetchPersonas(page = 0) {
         this.pageApiService
             .getPersonas({
-                pageId: this.pageId,
+                pageId: this.pageId(),
                 perPage: 5000,
                 page
             })

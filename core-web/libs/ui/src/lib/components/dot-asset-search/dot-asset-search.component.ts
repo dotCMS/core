@@ -8,11 +8,11 @@ import {
     DestroyRef,
     ElementRef,
     EventEmitter,
-    Input,
     OnInit,
     Output,
     ViewChild,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -41,8 +41,8 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
     @ViewChild('input') input!: ElementRef;
     @Output() addAsset = new EventEmitter<DotCMSContentlet>();
 
-    @Input() languageId = '*';
-    @Input() type!: EditorAssetTypes;
+    readonly languageId = input('*');
+    readonly type = input.required<EditorAssetTypes>();
 
     private currentSearch = '';
     private readonly store = inject(DotAssetSearchStore);
@@ -87,9 +87,9 @@ export class DotAssetSearchComponent implements OnInit, AfterViewInit {
 
     private searchParams() {
         return {
-            languageId: this.languageId || '',
+            languageId: this.languageId() || '',
             search: this.currentSearch,
-            assetType: this.type,
+            assetType: this.type(),
             offset: this.offset$.value || 0
         };
     }

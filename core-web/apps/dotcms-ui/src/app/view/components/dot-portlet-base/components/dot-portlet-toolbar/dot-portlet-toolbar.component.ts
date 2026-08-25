@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
@@ -16,12 +16,18 @@ import { DotPortletToolbarActions } from '../../../../../shared/models/dot-portl
     imports: [ToolbarModule, ButtonModule, MenuModule, DotMessagePipe]
 })
 export class DotPortletToolbarComponent {
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() title!: string;
 
-    @Input() cancelButtonLabel!: string;
+    readonly cancelButtonLabel = input<string>();
 
-    @Input() actionsButtonLabel!: string;
+    readonly actionsButtonLabel = input<string>();
 
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() actions?: DotPortletToolbarActions;
 
     /**

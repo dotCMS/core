@@ -79,7 +79,10 @@ describe('DotNewRelationshipsComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({ detectChanges: false });
+        spectator = createComponent({
+            detectChanges: false,
+            props: { cardinality: 0, editing: false }
+        });
         contentTypeService = spectator.inject(DotContentTypeService, true);
         contentTypeService.getContentTypesWithPagination.mockReturnValue(
             of({
@@ -353,7 +356,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const contentTypeComponent = spectator.query('dot-content-type');
             expect(contentTypeComponent).toBeTruthy();
-            expect(spectator.component.editing).toBe(true);
+            expect(spectator.component.editing()).toBe(true);
         });
 
         it('should pass disabled prop to dot-cardinality-selector when editing', () => {
@@ -362,7 +365,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const cardinalitySelector = spectator.query('dot-cardinality-selector');
             expect(cardinalitySelector).toBeTruthy();
-            expect(spectator.component.editing).toBe(true);
+            expect(spectator.component.editing()).toBe(true);
         });
 
         it('should pass cardinality value to dot-cardinality-selector', () => {
@@ -371,7 +374,7 @@ describe('DotNewRelationshipsComponent', () => {
 
             const cardinalitySelector = spectator.query('dot-cardinality-selector');
             expect(cardinalitySelector).toBeTruthy();
-            expect(spectator.component.cardinality).toBe(2);
+            expect(spectator.component.cardinality()).toBe(2);
         });
     });
 

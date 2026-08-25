@@ -3,12 +3,12 @@ import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 import { trigger, transition, style, animate } from '@angular/animations';
 import {
     Component,
-    Input,
     OnChanges,
     OnInit,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormArray, FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -62,8 +62,8 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() fg!: FormGroup;
-    @Input() contentTypes!: DotCMSContentType[];
+    readonly fg = input.required<FormGroup>();
+    readonly contentTypes = input.required<DotCMSContentType[]>();
 
     menuItems: MenuItem[] = [];
     activeTabIndex = 0;
@@ -72,8 +72,9 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     contentTypeNamesById: Record<string, string> = {};
 
     ngOnInit() {
-        if (this.contentTypes && this.contentTypes.length > 0) {
-            this.contentTypes.forEach(({ id, name }: DotCMSContentType) => {
+        const contentTypes = this.contentTypes();
+        if (contentTypes && contentTypes.length > 0) {
+            contentTypes.forEach(({ id, name }: DotCMSContentType) => {
                 this.contentTypeNamesById[id] = name;
             });
         }
@@ -104,7 +105,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      * @memberof DotContentEditorComponent
      */
     get getcontainerStructures(): FormArray {
-        return this.fg.get('containerStructures') as FormArray;
+        return this.fg().get('containerStructures') as FormArray;
     }
 
     /**
@@ -151,7 +152,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     removeItem(index: number | null = null): void {
         // The default is `null`, which names no tab to remove.
-        if (index !== null && this.contentTypes.length > 0) {
+        if (index !== null && this.contentTypes().length > 0) {
             this.getcontainerStructures.removeAt(index - 1);
             const currentTabIndex = this.findCurrentTabIndex(index);
             this.updateActiveTabIndex(currentTabIndex);
@@ -248,7 +249,7 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
      */
     monacoInit(monacoEditor: { name: string; editor: MonacoStandaloneCodeEditor }) {
         this.monacoEditors[monacoEditor.name] = monacoEditor.editor;
-        if (this.contentTypes.length === 0) {
+        if (this.contentTypes().length === 0) {
             this.monacoEditors[monacoEditor.name].updateOptions({ readOnly: true });
         }
 
@@ -256,14 +257,15 @@ export class DotContentEditorComponent implements OnInit, OnChanges {
     }
 
     private init(): void {
-        this.menuItems = this.getMenuItems(this.contentTypes || []);
+        this.menuItems = this.getMenuItems(this.contentTypes() || []);
 
         // default content type if content type does not exist
-        if (this.getcontainerStructures.length === 0 && this.contentTypes?.length > 0) {
+        const contentTypes = this.contentTypes();
+        if (this.getcontainerStructures.length === 0 && contentTypes?.length > 0) {
             this.getcontainerStructures.push(
                 new FormGroup({
                     code: new FormControl(''),
-                    structureId: new FormControl(this.contentTypes[0].id, [Validators.required])
+                    structureId: new FormControl(contentTypes[0].id, [Validators.required])
                 })
             );
         }

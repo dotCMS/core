@@ -62,7 +62,11 @@ export class SuggestionsComponent implements OnInit {
     @ViewChild('list', { static: false, read: ElementRef }) listElement!: ElementRef;
 
     // Set imperatively by ActionsMenu before the first change detection pass.
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() onSelectContentlet!: (props: SuggestionsCommandProps) => void;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() items: DotMenuItem[] = [];
 
     get sortedItems() {
@@ -75,10 +79,20 @@ export class SuggestionsComponent implements OnInit {
             return 1;
         });
     }
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() title = 'Select a block';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() noResultsMessage = 'No Results';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() currentLanguage = DEFAULT_LANG_ID;
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() allowedContentTypes = '';
+    // TODO: Skipped for migration because:
+    //  Your application code writes to the input. This prevents migration.
     @Input() contentletIdentifier = '';
 
     private itemsLoaded = ItemsType.BLOCK;

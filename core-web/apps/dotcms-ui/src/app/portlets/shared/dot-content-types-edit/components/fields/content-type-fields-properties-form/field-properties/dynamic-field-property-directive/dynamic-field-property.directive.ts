@@ -1,12 +1,12 @@
 import {
     ComponentRef,
     Directive,
-    Input,
     OnChanges,
     OnDestroy,
     SimpleChanges,
     ViewContainerRef,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
@@ -26,9 +26,9 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     private previousField: DotCMSContentTypeField | null = null;
     private previousPropertyName: string | null = null;
 
-    @Input() propertyName!: string;
-    @Input() field!: DotCMSContentTypeField;
-    @Input() group!: UntypedFormGroup;
+    readonly propertyName = input.required<string>();
+    readonly field = input.required<DotCMSContentTypeField>();
+    readonly group = input.required<UntypedFormGroup>();
 
     ngOnChanges(changes: SimpleChanges): void {
         const fieldChanged = changes['field'];
@@ -45,7 +45,7 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
                 groupChanged?.firstChange ||
                 groupChanged?.previousValue !== groupChanged?.currentValue)
         ) {
-            const currentPropertyName = this.propertyName;
+            const currentPropertyName = this.propertyName();
 
             // Recreate the inner component whenever the field identity changes.
             // Comparing field references (not just id) is required because new
@@ -54,13 +54,13 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
             // the previous field into the next.
             const shouldRecreate =
                 !this.componentRef ||
-                this.previousField !== this.field ||
+                this.previousField !== this.field() ||
                 this.previousPropertyName !== currentPropertyName;
 
             if (shouldRecreate) {
                 this.destroyComponent();
-                this.createComponent(this.propertyName);
-                this.previousField = this.field;
+                this.createComponent(this.propertyName());
+                this.previousField = this.field();
                 this.previousPropertyName = currentPropertyName;
             } else {
                 // Update existing component instance if field or group changed but same field/property
@@ -86,19 +86,20 @@ export class DynamicFieldPropertyDirective implements OnChanges, OnDestroy {
     }
 
     private updateComponent(): void {
-        if (!this.componentRef || !this.field) {
+        const field = this.field();
+        if (!this.componentRef || !field) {
             return;
         }
 
         this.componentRef.instance.property = {
-            field: this.field,
-            name: this.propertyName,
-            value: this.field[this.propertyName as keyof DotCMSContentTypeField]
+            field: field,
+            name: this.propertyName(),
+            value: field[this.propertyName() as keyof DotCMSContentTypeField]
         };
 
-        this.componentRef.instance.group = this.group;
+        this.componentRef.instance.group = this.group();
         this.componentRef.instance.helpText =
-            this.fieldPropertyService.getFieldType(this.field.clazz)?.helpText ?? '';
+            this.fieldPropertyService.getFieldType(field.clazz)?.helpText ?? '';
     }
 
     private destroyComponent(): void {

@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { IframeComponent } from '../../../../view/components/_common/iframe/iframe-component/iframe.component';
 import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
@@ -11,9 +11,9 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerPermissionsComponent implements OnInit {
-    @Input() containerId!: string;
+    readonly containerId = input<string>();
     permissionsUrl = '/html/containers/permissions.jsp';
     ngOnInit() {
-        this.permissionsUrl = `/html/containers/permissions.jsp?containerId=${this.containerId}&popup=true`;
+        this.permissionsUrl = `/html/containers/permissions.jsp?containerId=${this.containerId()}&popup=true`;
     }
 }

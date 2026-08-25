@@ -46,7 +46,7 @@ describe('ContainerPermissionsComponent', () => {
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;
         hostComponent = fixture.componentInstance;
-        hostComponent.containerId = '123';
+        fixture.componentRef.setInput('containerId', '123');
         fixture.detectChanges();
     });
 
@@ -56,7 +56,7 @@ describe('ContainerPermissionsComponent', () => {
 
     describe('permissions', () => {
         it('should set iframe permissions url', () => {
-            hostComponent.containerId = '123';
+            fixture.componentRef.setInput('containerId', '123');
             fixture.detectChanges();
             const permissions = de.query(By.css('[data-testId="permissionsIframe"]'));
             expect(permissions.componentInstance.src).toBe(

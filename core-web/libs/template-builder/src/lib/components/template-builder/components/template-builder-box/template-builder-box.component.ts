@@ -6,10 +6,10 @@ import {
     Component,
     ElementRef,
     EventEmitter,
-    Input,
     OnChanges,
     Output,
-    inject
+    inject,
+    input
 } from '@angular/core';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -58,10 +58,10 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     deleteColumn: EventEmitter<void> = new EventEmitter<void>();
     @Output()
     deleteColumnRejected: EventEmitter<void> = new EventEmitter<void>();
-    @Input() items: DotTemplateBuilderContainer[] = [];
-    @Input() width = 1;
-    @Input() containerMap!: DotContainerMap;
-    @Input() actions = ['add', 'delete', 'edit'];
+    readonly items = input<DotTemplateBuilderContainer[]>([]);
+    readonly width = input(1);
+    readonly containerMap = input.required<DotContainerMap>();
+    readonly actions = input(['add', 'delete', 'edit']);
 
     /**
      * Title of the container behind `identifier`, falling back to the raw identifier.
@@ -70,7 +70,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
      * referenced by the layout but missing from the map is a real runtime case, hence the guard.
      */
     getContainerTitle(identifier: string): string {
-        return this.containerMap[identifier]?.title || identifier;
+        return this.containerMap()[identifier]?.title || identifier;
     }
     dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
@@ -90,7 +90,7 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     }
 
     ngOnChanges(): void {
-        this.boxVariant = getBoxVariantByWidth(this.width);
+        this.boxVariant = getBoxVariantByWidth(this.width());
         this._dropdownLabel = this.dotMessage.get('dot.template.builder.add.container');
     }
 

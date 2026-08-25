@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, Input, ViewEncapsulation } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ViewEncapsulation, input } from '@angular/core';
 
 import { DotRelativeDatePipe } from '@dotcms/ui';
 
@@ -11,5 +11,5 @@ import { DotRelativeDatePipe } from '@dotcms/ui';
     imports: [DotRelativeDatePipe]
 })
 export class CustomTimeComponent {
-    @Input() time!: string;
+    readonly time = input<string>();
 }

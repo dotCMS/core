@@ -152,7 +152,7 @@ describe('DotIframeDialogComponent', () => {
                 });
 
                 it('should set src attr', () => {
-                    expect(dotIframeComponent.src).toBe('hello/world');
+                    expect(dotIframeComponent.src()).toBe('hello/world');
                 });
 
                 it('should focus in the iframe window on dot-iframe load', () => {

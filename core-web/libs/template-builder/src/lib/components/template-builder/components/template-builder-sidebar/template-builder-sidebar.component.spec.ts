@@ -48,9 +48,10 @@ describe('TemplateBuilderSidebarComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-sidebar [sidebarProperties]="sidebarProperties"></dotcms-template-builder-sidebar>`,
+            `<dotcms-template-builder-sidebar [sidebarProperties]="sidebarProperties" [containerMap]="containerMap"></dotcms-template-builder-sidebar>`,
             {
                 hostProps: {
+                    containerMap: {},
                     sidebarProperties: {
                         location: 'left',
                         width: 'medium',

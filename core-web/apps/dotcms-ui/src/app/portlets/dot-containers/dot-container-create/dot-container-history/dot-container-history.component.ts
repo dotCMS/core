@@ -1,10 +1,10 @@
 import {
     Component,
     inject,
-    Input,
     OnChanges,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 
 import { DotRouterService } from '@dotcms/data-access';
@@ -20,14 +20,14 @@ import { DotPortletBoxComponent } from '../../../../view/components/dot-portlet-
     imports: [DotPortletBoxComponent, IframeComponent]
 })
 export class DotContainerHistoryComponent implements OnChanges {
-    @Input() containerId!: string;
+    readonly containerId = input<string>();
     @ViewChild('historyIframe') historyIframe!: IframeComponent;
 
     protected historyUrl = '/html/containers/push_history.jsp';
     private readonly dotRouterService = inject(DotRouterService);
 
     ngOnChanges(): void {
-        this.historyUrl = `/html/containers/push_history.jsp?containerId=${this.containerId}&popup=true`;
+        this.historyUrl = `/html/containers/push_history.jsp?containerId=${this.containerId()}&popup=true`;
         if (this.historyIframe) {
             this.historyIframe.iframeElement.nativeElement.contentWindow.location.reload();
         }

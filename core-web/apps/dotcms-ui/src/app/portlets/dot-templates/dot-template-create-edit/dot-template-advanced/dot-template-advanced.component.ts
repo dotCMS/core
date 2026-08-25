@@ -3,14 +3,14 @@ import { Subject } from 'rxjs';
 import {
     Component,
     EventEmitter,
-    Input,
     OnChanges,
     OnDestroy,
     OnInit,
     Output,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -54,8 +54,8 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     @Output() save = new EventEmitter<DotTemplateItem>();
     @Output() cancel = new EventEmitter();
 
-    @Input() body!: string;
-    @Input() didTemplateChanged!: boolean;
+    readonly body = input<string>();
+    readonly didTemplateChanged = input<boolean>();
 
     // `any` because the type of the editor in the ngx-monaco-editor package is not typed
     editor!: DotTextareaMonacoInit['editor'];
@@ -64,13 +64,13 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit(): void {
-        this.form = this.fb.group({ body: this.body });
+        this.form = this.fb.group({ body: this.body() });
 
         this.form.valueChanges
             .pipe(takeUntil(this.destroy$))
             .subscribe(() => this.updateTemplate.emit(this.form.value));
 
-        this.actions = this.getActions(!this.didTemplateChanged);
+        this.actions = this.getActions(!this.didTemplateChanged());
     }
 
     ngOnChanges(changes: SimpleChanges) {

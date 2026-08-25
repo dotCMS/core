@@ -2,20 +2,20 @@
     <ng-template #header>
         <div class="thumbnail-container">
             <dot-content-thumbnail
-                [contentlet]="contentlet"
+                [contentlet]="contentlet()"
                 iconSize="72px"
                 data-testId="dot-contentlet-thumbnail" />
         </div>
     </ng-template>
     <ng-template #title>
         <h2 class="title" data-testId="dot-card-title">
-            {{ contentlet['fileName'] || contentlet.title }}
+            {{ contentlet()['fileName'] || contentlet().title }}
         </h2>
     </ng-template>
     <ng-template #footer>
         <div class="state">
             <p-tag severity="info" [value]="languageLabel" data-testId="dot-card-language" />
-            <dot-contentlet-status-badge [state]="contentlet" />
+            <dot-contentlet-status-badge [state]="contentlet()" />
         </div>
     </ng-template>
 </p-card>

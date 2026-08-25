@@ -54,7 +54,7 @@ describe('DotCopyLinkComponent', () => {
             });
         });
 
-        component.copy = 'Text to copy';
+        fixture.componentRef.setInput('copy', 'Text to copy');
     });
 
     describe('with label', () => {

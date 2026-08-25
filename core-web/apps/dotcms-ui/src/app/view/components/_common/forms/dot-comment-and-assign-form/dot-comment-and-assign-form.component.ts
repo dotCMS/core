@@ -72,6 +72,9 @@ export class DotCommentAndAssignFormComponent
     private readonly cdr = inject(ChangeDetectorRef);
     fb = inject(UntypedFormBuilder);
 
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() data!: DotCommentAndAssignData;
     @Output() value = new EventEmitter<DotCommentAndAssignValue>();
     @Output() valid = new EventEmitter<boolean>();

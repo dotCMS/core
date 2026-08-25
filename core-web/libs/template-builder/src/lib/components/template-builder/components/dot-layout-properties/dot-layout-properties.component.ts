@@ -1,4 +1,4 @@
-import { Component, Input, ViewEncapsulation, ChangeDetectionStrategy } from '@angular/core';
+import { Component, ViewEncapsulation, ChangeDetectionStrategy, input } from '@angular/core';
 import { ReactiveFormsModule, UntypedFormGroup } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
@@ -26,5 +26,5 @@ import { DotLayoutSidebarComponent } from './dot-layout-property-sidebar/dot-lay
     ]
 })
 export class DotLayoutPropertiesComponent {
-    @Input() group!: UntypedFormGroup;
+    readonly group = input.required<UntypedFormGroup>();
 }

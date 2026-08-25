@@ -38,7 +38,7 @@ describe('FloatingMenuDirective', () => {
             extensions: [StarterKit]
         });
 
-        component.editor = editor;
+        fixture.componentRef.setInput('editor', editor);
         fixture.detectChanges();
     });
 

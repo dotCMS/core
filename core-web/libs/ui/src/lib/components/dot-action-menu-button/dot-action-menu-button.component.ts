@@ -1,4 +1,4 @@
-import { Component, Input, OnInit, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, OnInit, signal, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -29,26 +29,26 @@ interface DotActionMenuClickEvent {
 export class DotActionMenuButtonComponent implements OnInit {
     filteredActions: CustomMenuItem[] = [];
 
-    @Input() item!: Record<string, unknown>;
+    readonly item = input.required<Record<string, unknown>>();
 
     // Always has a default, so it is never undefined — the `?` made it `string | undefined`
     // and broke every consumer that types `icon` as `string`.
-    @Input() icon = 'pi pi-ellipsis-v';
+    readonly icon = input('pi pi-ellipsis-v');
 
-    @Input() actions?: DotActionMenuItem[];
+    readonly actions = input<DotActionMenuItem[]>();
 
     $hasIcon = signal(false);
 
     ngOnInit() {
-        this.filteredActions = (this.actions ?? [])
+        this.filteredActions = (this.actions() ?? [])
             .filter((action: DotActionMenuItem) =>
-                action.shouldShow ? action.shouldShow(this.item) : true
+                action.shouldShow ? action.shouldShow(this.item()) : true
             )
             .map((action: DotActionMenuItem) => {
                 return {
                     ...action.menuItem,
                     command: ($event: DotActionMenuClickEvent) => {
-                        action.menuItem.command?.(this.item);
+                        action.menuItem.command?.(this.item());
 
                         $event?.originalEvent?.stopPropagation();
                     }

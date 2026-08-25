@@ -363,7 +363,7 @@ describe('DotContentEditorComponent', () => {
 
         it('should disable add content type button when content types is empty', () => {
             // remove all content types
-            comp.contentTypes = [];
+            hostComponent.contentTypes = [];
             // Use detectChanges(false) to skip checkNoChanges which causes ExpressionChangedAfterItHasBeenCheckedError
             hostFixture.detectChanges(false);
             const addButton = de.query(By.css('[data-testId="add-content-type-button"]'));
@@ -464,8 +464,14 @@ describe('DotContentEditorComponent', () => {
                 editor: mockEditor
             } as unknown as { name: string; editor: MonacoStandaloneCodeEditor };
 
-            comp.contentTypes = [];
-            comp.monacoInit(monacoInstance);
+            // `contentTypes` is a signal input, so drive it through the component's own
+            // ComponentRef rather than mutating a host property.
+            const emptyFixture = TestBed.createComponent(DotContentEditorComponent);
+            emptyFixture.componentRef.setInput('contentTypes', []);
+            emptyFixture.componentRef.setInput('fg', hostComponent.form);
+            emptyFixture.detectChanges();
+
+            emptyFixture.componentInstance.monacoInit(monacoInstance);
             tick(16); // Simulate one frame (16ms)
 
             expect(mockEditor.updateOptions).toHaveBeenCalledWith({ readOnly: true });

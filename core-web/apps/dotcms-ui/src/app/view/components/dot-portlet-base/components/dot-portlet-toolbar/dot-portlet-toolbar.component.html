@@ -17,7 +17,7 @@
             @if (actions) {
                 <button
                     (click)="onCancelClick($event)"
-                    [label]="cancelButtonLabel || ('cancel' | dm)"
+                    [label]="cancelButtonLabel() || ('cancel' | dm)"
                     class="p-button-outlined"
                     data-testId="actionsCancelButton"
                     pButton></button>
@@ -34,7 +34,7 @@
                 } @else {
                     <button
                         (click)="menu.toggle($event)"
-                        [label]="actionsButtonLabel || ('actions' | dm)"
+                        [label]="actionsButtonLabel() || ('actions' | dm)"
                         data-testId="actionsMenuButton"
                         pButton
                         icon="pi pi-chevron-down"

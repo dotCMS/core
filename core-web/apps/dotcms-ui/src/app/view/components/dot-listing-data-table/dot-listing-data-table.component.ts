@@ -16,7 +16,8 @@ import {
     signal,
     TemplateRef,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { RouterModule } from '@angular/router';
@@ -87,20 +88,25 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     loggerService = inject(LoggerService);
     paginatorService = inject(PaginatorService);
 
-    @Input() columns!: DataTableColumn[];
-    @Input() url!: string;
-    @Input() actionHeaderOptions!: ActionHeaderOptions;
-    @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder!: string;
-    @Input() sortField!: string;
-    @Input() multipleSelection = false;
-    @Input() paginationPerPage = 40;
-    @Input() paginatorExtraParams: { [key: string]: string } = {};
+    readonly columns = input.required<DataTableColumn[]>();
+    readonly url = input.required<string>();
+    readonly actionHeaderOptions = input.required<ActionHeaderOptions>();
+    readonly buttonActions = input<ButtonAction[]>([]);
+    readonly sortOrder = input.required<string>();
+    readonly sortField = input.required<string>();
+    readonly multipleSelection = input(false);
+    readonly paginationPerPage = input(40);
+    readonly paginatorExtraParams = input<{
+        [key: string]: string;
+    }>({});
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() actions: DotActionMenuItem[] = [];
-    @Input() dataKey = '';
-    @Input() checkbox = false;
-    @Input() mapItems!: <T = Record<string, unknown>[]>(item: T) => T;
-    @Input() contextMenu = false;
+    readonly dataKey = input('');
+    readonly checkbox = input(false);
+    readonly mapItems = input<<T = Record<string, unknown>[]>(item: T) => T>();
+    readonly contextMenu = input(false);
     @Output() rowWasClicked: EventEmitter<Record<string, unknown>> = new EventEmitter();
     @Output() selectedItems: EventEmitter<unknown> = new EventEmitter();
     @Output() contextMenuSelect: EventEmitter<unknown> = new EventEmitter();
@@ -120,7 +126,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
 
     // Computed signal for context menu component
     readonly contextMenuComponent = computed(() => {
-        const hasContextMenu = this.contextMenu;
+        const hasContextMenu = this.contextMenu();
         const ref = this.contextMenuRefSignal();
         return hasContextMenu && ref ? ref : null;
     });
@@ -140,14 +146,10 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     maxLinksPage!: number;
     totalRecords!: number;
 
-    constructor() {
-        this.paginatorService.url = this.url;
-    }
-
     ngOnInit(): void {
         this.globalSearch.nativeElement.focus();
         this.paginationSetUp();
-        this.dateColumns = this.columns.filter((column) => column.format === this.DATE_FORMAT);
+        this.dateColumns = this.columns().filter((column) => column.format === this.DATE_FORMAT);
     }
 
     ngAfterViewInit(): void {
@@ -260,7 +262,7 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
      */
     loadCurrentPage(): void {
         this.loading = true;
-        if (this.columns) {
+        if (this.columns()) {
             this.paginatorService
                 .getCurrentPage<unknown[]>()
                 .pipe(take(1))
@@ -309,7 +311,8 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
         // Defer state updates to avoid NG0100 ExpressionChangedAfterItHasBeenCheckedError
         // This is needed because p-table with lazy loading triggers onLazyLoad during initialization
         setTimeout(() => {
-            this.items = this.mapItems === undefined ? items : this.mapItems(items);
+            const mapItems = this.mapItems();
+            this.items = mapItems === undefined ? items : mapItems(items);
             this.loading = false;
             this.maxLinksPage = this.paginatorService.maxLinksPage;
             this.totalRecords = this.paginatorService.totalRecords;
@@ -325,8 +328,8 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
 
     private setSortParams(sortFieldParam?: string, sortOrderParam?: OrderDirection) {
         return {
-            sortField: sortFieldParam || this.sortField,
-            sortOrder: sortOrderParam || this.sortOrder
+            sortField: sortFieldParam || this.sortField(),
+            sortOrder: sortOrderParam || this.sortOrder()
         };
     }
 
@@ -338,10 +341,11 @@ export class DotListingDataTableComponent implements OnInit, AfterViewInit {
     }
 
     private paginationSetUp(): void {
-        this.paginatorService.url = this.url;
-        this.paginatorService.paginationPerPage = this.paginationPerPage;
-        if (this.paginatorExtraParams) {
-            Object.entries(this.paginatorExtraParams).forEach(([key, value]) =>
+        this.paginatorService.url = this.url();
+        this.paginatorService.paginationPerPage = this.paginationPerPage();
+        const paginatorExtraParams = this.paginatorExtraParams();
+        if (paginatorExtraParams) {
+            Object.entries(paginatorExtraParams).forEach(([key, value]) =>
                 this.paginatorService.setExtraParams(key, value)
             );
         }

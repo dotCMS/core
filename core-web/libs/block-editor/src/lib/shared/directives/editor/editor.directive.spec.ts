@@ -16,7 +16,6 @@ class TestComponent {
 }
 
 describe('NgxTiptapDirective', () => {
-    let component: TestComponent;
     let fixture: ComponentFixture<TestComponent>;
 
     beforeEach(async () => {
@@ -28,13 +27,12 @@ describe('NgxTiptapDirective', () => {
         await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestComponent);
-        component = fixture.componentInstance;
 
         const editor = new Editor({
             extensions: [StarterKit]
         });
 
-        component.editor = editor;
+        fixture.componentRef.setInput('editor', editor);
         fixture.detectChanges();
     });
 
@@ -77,7 +75,7 @@ describe('NgxTiptapDirective FormsModule', () => {
             extensions: [StarterKit]
         });
 
-        component.editor = editor;
+        fixture.componentRef.setInput('editor', editor);
 
         directiveEl = fixture.debugElement.query(By.directive(EditorDirective));
         directiveInstance = directiveEl.injector.get(EditorDirective);
@@ -99,13 +97,13 @@ describe('NgxTiptapDirective FormsModule', () => {
         await fixture.whenStable();
         fixture.detectChanges();
 
-        expect(component.value).toContain('Hi.');
+        expect(component.value()).toContain('Hi.');
     });
 
     it('should the model when editor is directly updated', () => {
         component.editor.chain().setContent('Hello World!').run();
         fixture.detectChanges();
-        expect(component.value).toContain('Hello World!');
+        expect(component.value()).toContain('Hello World!');
     });
 
     it('should disable the editor correctly', async () => {

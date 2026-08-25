@@ -1,10 +1,10 @@
 import {
     Component,
     EventEmitter,
-    Input,
     NgModule,
     Output,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 
 @Component({
@@ -21,10 +21,10 @@ import {
 export class SplitButtonMockComponent {
     // eslint-disable-next-line @angular-eslint/no-output-on-prefix
     @Output() onClick = new EventEmitter();
-    @Input() styleClass!: string;
-    @Input() model!: [];
-    @Input() label!: string;
-    @Input() disabled!: boolean;
+    readonly styleClass = input<string>();
+    readonly model = input<[]>();
+    readonly label = input<string>();
+    readonly disabled = input<boolean>();
 }
 
 @NgModule({

@@ -1,12 +1,12 @@
 import {
     Component,
     EventEmitter,
-    Input,
     OnChanges,
     Output,
     SimpleChanges,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -32,11 +32,11 @@ import { DotRelationshipsPropertyValue } from '../model/dot-relationships-proper
 export class DotNewRelationshipsComponent implements OnChanges {
     private contentTypeService = inject(DotContentTypeService);
 
-    @Input() cardinality!: number;
+    readonly cardinality = input.required<number>();
 
-    @Input() velocityVar!: string;
+    readonly velocityVar = input<string>();
 
-    @Input() editing!: boolean;
+    readonly editing = input.required<boolean>();
 
     @Output() switch: EventEmitter<DotRelationshipsPropertyValue> = new EventEmitter();
 
@@ -82,7 +82,7 @@ export class DotNewRelationshipsComponent implements OnChanges {
     triggerChanged(): void {
         this.switch.emit({
             velocityVar:
-                this.velocityVar || (this.contentType ? this.contentType.variable : undefined),
+                this.velocityVar() || (this.contentType ? this.contentType.variable : undefined),
             cardinality: this.currentCardinalityIndex
         });
     }

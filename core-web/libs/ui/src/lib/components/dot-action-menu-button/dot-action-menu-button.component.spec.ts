@@ -28,7 +28,8 @@ describe('ActionMenuButtonComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent({
-            detectChanges: false
+            detectChanges: false,
+            props: { item: {} }
         });
     });
 

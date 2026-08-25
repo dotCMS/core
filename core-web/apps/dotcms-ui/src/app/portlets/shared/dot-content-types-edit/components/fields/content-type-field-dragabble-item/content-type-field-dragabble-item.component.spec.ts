@@ -100,7 +100,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         fixture.detectChanges();
 
         const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
-        expect(copyButton.componentInstance.copy).toBe('test');
+        expect(copyButton.componentInstance.copy()).toBe('test');
         expect(copyButton.componentInstance.label).toBe('test');
     });
 

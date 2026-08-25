@@ -4,10 +4,10 @@ import {
     ElementRef,
     EventEmitter,
     HostBinding,
-    Input,
     Output,
     ViewChild,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
@@ -42,15 +42,15 @@ import { DotMenuItem, MenuGroup } from '@dotcms/dotcms-models';
 export class DotSubNavComponent {
     @ViewChild('ul', { static: true }) ul!: ElementRef;
 
-    @Input() data!: MenuGroup;
+    readonly data = input.required<MenuGroup>();
 
     @Output()
     itemClick: EventEmitter<{ originalEvent: MouseEvent; data: DotMenuItem }> = new EventEmitter();
 
-    @Input() collapsed!: boolean;
+    readonly collapsed = input.required<boolean>();
 
     @HostBinding('@expandAnimation') get getAnimation(): string {
-        return !this.collapsed && this.data.isOpen ? 'expanded' : 'collapsed';
+        return !this.collapsed() && this.data().isOpen ? 'expanded' : 'collapsed';
     }
 
     /**

@@ -4,13 +4,13 @@ import { AsyncPipe } from '@angular/common';
 import {
     Component,
     forwardRef,
-    Input,
     OnChanges,
     OnInit,
     SimpleChanges,
     ViewChild,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -46,7 +46,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
     );
 
     @ViewChild('dropdown') dropdown!: Select;
-    @Input() workflows!: DotCMSWorkflow[];
+    readonly workflows = input.required<DotCMSWorkflow[]>();
 
     actions$!: Observable<SelectItemGroup[]>;
     disabled = false;
@@ -62,7 +62,7 @@ export class DotWorkflowsActionsSelectorFieldComponent
                 }
             })
         );
-        this.dotWorkflowsActionsSelectorFieldService.load(this.workflows);
+        this.dotWorkflowsActionsSelectorFieldService.load(this.workflows());
     }
 
     ngOnChanges(changes: SimpleChanges) {

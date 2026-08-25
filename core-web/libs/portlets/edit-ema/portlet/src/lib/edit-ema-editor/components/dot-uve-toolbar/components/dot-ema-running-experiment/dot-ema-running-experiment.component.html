@@ -1,8 +1,8 @@
 <p-tag
     [routerLink]="[
         '/edit-page/experiments/',
-        runningExperiment.pageId,
-        runningExperiment.id,
+        runningExperiment().pageId,
+        runningExperiment().id,
         'reports'
     ]"
     [value]="
@@ -10,7 +10,7 @@
         ' ' +
         ('dot.common.until' | dm) +
         ' ' +
-        (runningExperiment.scheduling?.endDate | date: runningUntilDateFormat)
+        (runningExperiment().scheduling?.endDate | date: runningUntilDateFormat)
     "
     class="p-tag-success sm cursor-pointer"
     data-testId="runningExperimentTag"

@@ -4,7 +4,8 @@ import {
     Input,
     OnInit,
     Output,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
@@ -17,12 +18,21 @@ import { ButtonModule } from 'primeng/button';
     imports: [ButtonModule]
 })
 export class DotEmptyStateComponent implements OnInit {
-    @Input() rows!: number;
-    @Input() colsTextWidth: number[] = [];
+    readonly rows = input<number>();
+    readonly colsTextWidth = input<number[]>([]);
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() icon!: string;
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() title!: string;
+    // TODO: Skipped for migration because:
+    //  This input is used in a control flow expression (e.g. `@if` or `*ngIf`)
+    //  and migrating would break narrowing currently.
     @Input() content!: string;
-    @Input() buttonLabel!: string;
+    readonly buttonLabel = input<string>();
     @Output() buttonClick = new EventEmitter<void>();
 
     columnWidth!: string;
@@ -38,7 +48,7 @@ export class DotEmptyStateComponent implements OnInit {
      * @memberof DotEmptyStateComponent
      */
     numberOfRows(): number[] {
-        return Array(this.rows).fill(0);
+        return Array(this.rows()).fill(0);
     }
     /**
      *  Emits event to navigate later to a Portlet
@@ -50,6 +60,6 @@ export class DotEmptyStateComponent implements OnInit {
     }
 
     private getColumnWidth(): string {
-        return `${(100 - this.checkBoxWidth) / this.colsTextWidth.length}%`;
+        return `${(100 - this.checkBoxWidth) / this.colsTextWidth().length}%`;
     }
 }

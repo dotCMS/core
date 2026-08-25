@@ -36,9 +36,12 @@ describe('DotEmptyStateComponent', () => {
 
         component.title = dotMessageService.get('message.template.empty.title');
         component.content = dotMessageService.get('message.template.empty.content');
-        component.buttonLabel = dotMessageService.get('message.template.empty.button.label');
-        component.rows = 10;
-        component.colsTextWidth = [60, 50, 60, 80];
+        fixture.componentRef.setInput(
+            'buttonLabel',
+            dotMessageService.get('message.template.empty.button.label')
+        );
+        fixture.componentRef.setInput('rows', 10);
+        fixture.componentRef.setInput('colsTextWidth', [60, 50, 60, 80]);
         component.columnWidth = `${
             (100 - component.checkBoxWidth) / component.colsTextWidth.length
         }%`;

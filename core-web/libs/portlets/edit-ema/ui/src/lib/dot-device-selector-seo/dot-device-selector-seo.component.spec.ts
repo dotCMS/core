@@ -205,7 +205,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should hide the media tiles and show the secondary link when hideSocialMedia is true', () => {
-        component.hideSocialMedia = true;
+        fixture.componentRef.setInput('hideSocialMedia', true);
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-selector-link-secondary"]'));
@@ -219,7 +219,7 @@ describe('DotDeviceSelectorSeoComponent', () => {
     });
 
     it('should use currentUser input for isCMSAdmin', () => {
-        component.currentUser = { admin: true };
+        fixture.componentRef.setInput('currentUser', { admin: true });
         fixtureHost.detectChanges();
 
         const link = de.query(By.css('[data-testId="dot-device-link-add"]'));

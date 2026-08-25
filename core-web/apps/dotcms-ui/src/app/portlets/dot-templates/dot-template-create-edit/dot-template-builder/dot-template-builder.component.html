@@ -19,7 +19,7 @@
                         (updateTemplate)="updateTemplate.emit($event)"
                         (save)="save.emit($event)"
                         (cancel)="cancel.emit()"
-                        [didTemplateChanged]="didTemplateChanged"
+                        [didTemplateChanged]="didTemplateChanged()"
                         [body]="item.body" />
                 }
                 @case ('design') {

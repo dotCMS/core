@@ -386,9 +386,9 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
-                        const cellValue = item[comp.columns[cellIndex].fieldName];
+                        const cellValue = item[comp.columns()[cellIndex].fieldName];
                         const itemContent =
-                            comp.columns[cellIndex].format === 'date'
+                            comp.columns()[cellIndex].format === 'date'
                                 ? // A `date` column is seeded with a timestamp; `boolean` is only
                                   // in the row's index signature for `disableInteraction`.
                                   new Date(cellValue as number).toLocaleDateString('en-US', {

@@ -24,16 +24,49 @@ export type toJSONFn = (this: { node: ProseMirrorNode }) => Record<string, unkno
     standalone: false
 })
 export class AngularNodeViewComponent implements NodeViewProps {
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() editor!: NodeViewProps['editor'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() node!: NodeViewProps['node'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() decorations!: readonly DecorationWithType[];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() selected!: NodeViewProps['selected'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() extension!: NodeViewProps['extension'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() getPos!: NodeViewProps['getPos'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() updateAttributes!: NodeViewProps['updateAttributes'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() deleteNode!: NodeViewProps['deleteNode'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() view!: NodeViewProps['view'];
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() innerDecorations!: DecorationSource;
+    // TODO: Skipped for migration because:
+    //  This input overrides a field from a superclass, while the superclass field
+    //  is not migrated.
     @Input() HTMLAttributes!: NodeViewProps['HTMLAttributes'];
 }
 
