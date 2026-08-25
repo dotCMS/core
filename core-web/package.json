@@ -229,7 +229,7 @@
         "@nx/workspace": "23.1.1",
         "@nxext/stencil": "21.0.0",
         "@openng/spectator": "1.0.1",
-        "@playwright/test": "1.36.0",
+        "@playwright/test": "1.62.1",
         "@schematics/angular": "22.1.2",
         "@stencil/core": "4.39.0",
         "@stencil/sass": "3.2.3",
