@@ -7,21 +7,28 @@ import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotSystemConfigService } from '@dotcms/data-access';
-import { DotMenu } from '@dotcms/dotcms-models';
+import { MenuGroup } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotSubNavComponent } from './dot-sub-nav.component';
 
 import { dotMenuMock } from '../../services/dot-navigation.service.spec';
 
-const data: DotMenu = {
+const data: MenuGroup = {
     ...dotMenuMock(),
+    icon: 'apps',
     menuItems: [
         {
-            ...dotMenuMock().menuItems[0]
+            ...dotMenuMock().menuItems[0],
+            parentMenuId: '123',
+            parentMenuLabel: 'Name',
+            parentMenuIcon: 'apps'
         },
         {
             ...dotMenuMock().menuItems[1],
+            parentMenuId: '123',
+            parentMenuLabel: 'Name',
+            parentMenuIcon: 'apps',
             active: true
         }
     ]

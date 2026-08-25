@@ -3,7 +3,8 @@
     "compilerOptions": {
         "isolatedModules": true,
         "target": "es2022",
-        "module": "preserve"
+        "module": "preserve",
+        "lib": ["dom", "dom.iterable", "es2022"]
     },
     "files": [],
     "include": [],

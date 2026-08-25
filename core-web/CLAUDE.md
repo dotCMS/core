@@ -249,6 +249,14 @@ Also check `tsconfig.spec.json` — the flags live in `tsconfig.json`, which the
 >
 > **Nx silently runs a subset when a project name is wrong.** `nx run-many -t test -p edit-ema-portlet edit-ema-ui` ran only `edit-ema-ui` and exited **0** — the real name is `portlets-edit-ema-portlet`. There is no warning about the name that matched nothing. Confirm the summary names every project you asked for; `nx show projects | grep <fragment>` gets the real names.
 >
+`tools/plugins/typecheck-spec.plugin.mjs` closes that hole: it infers a `typecheck` target
+(`tsc -p tsconfig.spec.json --noEmit`) for every project that ships specs, and `typecheck-test`
+in `pom.xml` runs it against the affected set before lint. The target is **inferred rather than
+declared** in each `project.json` on purpose — the gap it closes was created by a project being
+missed, and a per-project declaration would let the next one slip the same way. Projects with a
+`vite.config.*` keep the `typecheck` that `@nx/vite/plugin` infers for them; the plugin steps
+aside there. The root `core-web` project is tagged `skip:typecheck` (see the strict-mode section).
+
 > **`nx run <project>:test` does not type-check — anywhere.** `jest-preset-angular` runs on ts-jest, and ts-jest copies TypeScript's `isolatedModules` into its own transpile-only switch (`config-set.js:229`), which stops it from building the language-service host it needs for diagnostics (`ts-compiler.js:74`). Since the Jest guidance below requires `isolatedModules: true` in every `tsconfig.spec.json`, **passing tests are never evidence that specs type-check.** `libs/data-access` proved it: 84 `tsc` errors alongside 754 green tests. Always verify specs with `tsc -p <projectRoot>/tsconfig.spec.json --noEmit`.
 
 ## Portlet Development

@@ -435,7 +435,7 @@ describe('DotContentTypesEditComponent', () => {
 
             it('should bind save button disabled attribute to canSave property from the form', () => {
                 form.triggerEventHandler('$valid', true);
-                expect(comp.dialogActions.accept!.disabled).toBe(false);
+                expect(comp.dialogActions?.accept!.disabled).toBe(false);
             });
 
             it('should submit form when save button is clicked', fakeAsync(() => {
@@ -443,7 +443,7 @@ describe('DotContentTypesEditComponent', () => {
                 tick();
                 fixture.detectChanges();
                 // Call accept action directly via component
-                comp.dialogActions.accept!.action!();
+                comp.dialogActions?.accept!.action!();
                 expect(form.componentInstance.submitForm).toHaveBeenCalledTimes(1);
             }));
         });

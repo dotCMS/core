@@ -23,7 +23,7 @@ import {
 
 describe('ContainerSelectorComponent', () => {
     let spectator: Spectator<DotContainerSelectorComponent>;
-    let searchableDropdownComponent: SearchableDropdownComponent | null;
+    let searchableDropdownComponent: SearchableDropdownComponent<DotContainer> | null;
     let containers: DotContainer[];
     let paginatorService: PaginatorService;
 
@@ -123,7 +123,7 @@ describe('ContainerSelectorComponent', () => {
             By.css('dot-searchable-dropdown')
         ).componentInstance as SearchableDropdownComponent<DotContainer>;
 
-        searchableDropdownComponent.pageChange.emit({
+        searchableDropdownComponent?.pageChange.emit({
             filter: filter,
             first: 10,
             page: page,
@@ -147,7 +147,7 @@ describe('ContainerSelectorComponent', () => {
             By.css('dot-searchable-dropdown')
         ).componentInstance as SearchableDropdownComponent<DotContainer>;
 
-        searchableDropdownComponent.filterChange.emit(filter);
+        searchableDropdownComponent?.filterChange.emit(filter);
 
         tick();
         spectator.fixture.detectChanges(false);

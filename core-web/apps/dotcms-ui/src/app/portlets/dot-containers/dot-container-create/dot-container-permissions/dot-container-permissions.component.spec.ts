@@ -28,8 +28,8 @@ class DotTestHostComponent {
 }
 
 describe('ContainerPermissionsComponent', () => {
-    let hostComponent: DotTestHostComponent;
-    let fixture: ComponentFixture<DotTestHostComponent>;
+    let component: DotContainerPermissionsComponent;
+    let fixture: ComponentFixture<DotContainerPermissionsComponent>;
     let de: DebugElement;
 
     beforeEach(async () => {
@@ -45,13 +45,13 @@ describe('ContainerPermissionsComponent', () => {
 
         fixture = TestBed.createComponent(DotContainerPermissionsComponent);
         de = fixture.debugElement;
-        hostComponent = fixture.componentInstance;
+        component = fixture.componentInstance;
         fixture.componentRef.setInput('containerId', '123');
         fixture.detectChanges();
     });
 
     it('should create', () => {
-        expect(hostComponent).toBeTruthy();
+        expect(component).toBeTruthy();
     });
 
     describe('permissions', () => {

@@ -1,5 +1,6 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
 import { createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { CommonModule } from '@angular/common';
@@ -236,7 +237,8 @@ describe('DotTextareaContentComponent', () => {
     });
 
     it('should init editor with the correct value', () => {
-        const mockEditor = { test: 'editor' };
+        // `onInit` only forwards the instance, so the stub stands in for the full editor.
+        const mockEditor = { test: 'editor' } as unknown as MonacoStandaloneCodeEditor;
         spectator.setInput('editorName', 'testName');
         jest.spyOn(component.monacoInit, 'emit');
         spectator.detectChanges();

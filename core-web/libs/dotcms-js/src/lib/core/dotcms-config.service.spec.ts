@@ -42,6 +42,10 @@ describe('DotcmsConfigService', () => {
                 primary: '#BB30E1'
             },
             emailRegex: 'emailRegex',
+            logos: {
+                loginScreen: '/dA/login.png',
+                navBar: '/dA/navbar.png'
+            },
             i18nMessagesMap: {
                 relativeTime: '',
                 notifications_dismissall: 'Dismiss All',
@@ -117,8 +121,9 @@ describe('DotcmsConfigService', () => {
                 colors: configParams.config.colors,
                 emailRegex: configParams.config['emailRegex'],
                 license: configParams.config.license,
-                menu: undefined,
-                logos: undefined,
+                menu: [],
+                logos: configParams.config.logos,
+                systemTimezone: configParams.config.systemTimezone,
                 paginatorLinks: configParams.config['dotcms.paginator.links'],
                 paginatorRows: configParams.config['dotcms.paginator.rows'],
                 releaseInfo: configParams.config.releaseInfo,

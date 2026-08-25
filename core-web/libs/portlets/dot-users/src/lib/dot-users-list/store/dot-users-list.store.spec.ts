@@ -11,7 +11,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersListStore } from './dot-users-list.store';
 
-import { DotUsersService } from '../../services/dot-users.service';
+import { DotUserDetail, DotUsersService } from '../../services/dot-users.service';
 import { createFakeUser } from '../../testing/dot-user.mock';
 
 const MESSAGES = {
@@ -50,6 +50,21 @@ const MOCK_USERS = [
         lastLoginIP: '10.0.0.2'
     })
 ];
+
+/** `createUser`/`updateUser` return the detail shape, not the list one. */
+const MOCK_USER_DETAIL: DotUserDetail = {
+    ...MOCK_USERS[0],
+    birthday: null,
+    middleName: null,
+    nickname: null,
+    languageId: null,
+    timeZoneId: null,
+    male: null,
+    female: null,
+    additionalInfo: null,
+    createDate: null,
+    modificationDate: null
+};
 
 const MOCK_RESPONSE = {
     entity: MOCK_USERS,
@@ -91,8 +106,8 @@ describe('DotUsersListStore', () => {
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
         usersService.getUserRoles.mockReturnValue(of([]));
         usersService.deleteUser.mockReturnValue(of({}));
-        usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
-        usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
+        usersService.createUser.mockReturnValue(of(MOCK_USER_DETAIL));
+        usersService.updateUser.mockReturnValue(of(MOCK_USER_DETAIL));
     });
 
     it('loadUsers passes the current state as query params', () => {

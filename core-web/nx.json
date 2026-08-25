@@ -322,7 +322,8 @@
                 "libs/sdk/types/**/*",
                 "libs/sdk/uve/**/*"
             ]
-        }
+        },
+        "./tools/plugins/typecheck-spec.plugin.mjs"
     ],
     "defaultBase": "main",
     "ignorePatterns": [

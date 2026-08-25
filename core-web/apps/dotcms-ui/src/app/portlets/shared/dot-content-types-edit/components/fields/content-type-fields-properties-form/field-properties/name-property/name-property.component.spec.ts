@@ -111,7 +111,7 @@ describe('NamePropertyComponent', () => {
 
         const copyEl = copySpectator.debugElement.query(By.css('dot-copy-link'));
         expect(copyEl).toBeTruthy();
-        const copyComp = copyEl.componentInstance as { copy: string; label: string };
+        const copyComp = copyEl.componentInstance as { copy: () => string; label: string };
         expect(copyComp.copy()).toBe('thisIsAVar');
         expect(copyComp.label).toBe('thisIsAVar');
     });
