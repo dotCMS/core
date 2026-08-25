@@ -156,14 +156,14 @@ notes and source):
 - `.nvmrc`, `core-web`, Angular, and app/tooling Node versions — delivered by #36838. **No application
   code in this change.**
 - `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` or any equivalent opt-out, in any form.
-- **The 4 first-party JS actions still on `runs.using: 'node16'`** —
+- **The 4 first-party JS actions still on `runs.using: 'node16'`** (tracked in #37194) —
   `.github/actions/issues/issue-fetcher`, `issues/issue-labeler`,
   `legacy-release/changelog-report`, `legacy-release/rc-changelog`. These are not YAML edits: each
   requires a `dist/index.js` rebuild via `.github/actions/buildActions.sh` plus TypeScript/`@types/node`/
   `@actions/core`/`ncc`/`eslint` upgrades. A regenerated bundle cannot be diff-reviewed the way YAML
   can, so mixing it in would make this change unreviewable. **File as the immediate next issue** —
   `node16` is more deprecated than `node20`.
-- The remaining `node20`/`node16`/`node12` third-party actions on release/nightly/scheduled/issue-only
+- The remaining `node20`/`node16`/`node12` third-party actions (tracked in #37194) on release/nightly/scheduled/issue-only
   paths (`docker/setup-buildx-action`, `docker/build-push-action`, `docker/metadata-action`,
   `docker/setup-qemu-action`, `astral-sh/setup-uv`, `actions/stale`, `actions/setup-python`,
   `slackapi/slack-github-action`, `peter-evans/*`, `jfrog/setup-jfrog-cli`,
@@ -202,7 +202,7 @@ notes and source):
   `node-version: "16.13.2"`, so the in-scope pin bump is unaffected.
 - Extending `.github/filters.yaml` so `.github/**` triggers real validation, and adding
   `.github/dependabot.yml` for the `github-actions` ecosystem. Both are the *structural* fix for this
-  class of drift and both are strongly recommended — as a follow-up, so this change stays a runtime bump.
+  class of drift and both are strongly recommended — tracked in #37194, so this change stays a runtime bump.
 - Dead code noticed in passing and deliberately left alone: the `runner.os == 'Windows'` branches in
   `maven-job/action.yml` (no Windows runner exists in any matrix), and `.github/main.workflow`
   (Actions-v1 HCL, never executed).
@@ -293,8 +293,8 @@ notes and source):
 - **AC-001**: A pull-request run of `cicd_1-pr.yml` completes with **no Node-runtime deprecation
   annotation** on any of its jobs — `initialize`, `label-pr`, **`build` / Initial Artifact Build**,
   `publish-test-image`, `test`, `finalize`. Residual annotations from the deliberately deferred
-  out-of-scope actions must be **enumerated in the PR body** and attributable to a named follow-up
-  issue, so the remainder is documented rather than looking like a miss.
+  out-of-scope actions must be **enumerated in the PR body** and attributable to follow-up issue **#37194**,
+  so the remainder is documented rather than looking like a miss.
 - **AC-002**: No occurrence of `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` (or equivalent) anywhere in
   the repository.
 - **AC-003**: Every reference to the 8 in-scope actions under `.github/` is at or above its target
