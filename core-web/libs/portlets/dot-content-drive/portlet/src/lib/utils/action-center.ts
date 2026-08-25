@@ -38,8 +38,19 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
 /**
  * Reindex the selection — the old search toolbar's "Refresh", backed by `_bulkrefresh`.
  *
- * Placeholder: rendered but not wired. The endpoint streams progress over SSE and is not job-backed,
- * so it cannot reuse the synchronous `bulkFire` path the other quick actions run on.
+ * Clears each contentlet's cache entry and rewrites every version of it to the index. Useful when
+ * content is right in the database but stale or missing from search results. **Not** a full index
+ * rebuild: that is `POST /api/v1/esindex/reindex`, a different operation over the whole index.
+ *
+ * The only quick action that is job-backed rather than synchronous — the endpoint answers `202` with a
+ * job id, and completion is pushed back over the websocket. So it does not share the `bulkFire` path the
+ * workflow quick actions use, but it reports through the same result toast.
+ *
+ * Unlike the others, eligibility does not depend on row state: reindexing applies to live, archived and
+ * locked content alike, because none of those affect whether the index copy is correct.
+ *
+ * Not gated client-side, though the endpoint requires CMS Power User or CMS Administrator — see
+ * {@link QUICK_ACTIONS}.
  */
 export const REFRESH_ACTION_ID = 'REFRESH';
 
@@ -57,8 +68,14 @@ export interface DotActionCenterQuickAction {
     /** Material Symbols glyph name. */
     icon: string;
     /**
-     * Inodes the action will fire on. Built with {@link count} in one pass so the badge
-     * and the payload cannot diverge.
+     * The ids the action will fire on. Built with {@link count} in one pass so the badge and the
+     * payload cannot diverge.
+     *
+     * **Inodes for the contentlet-only actions**, which is what pins the version and therefore the
+     * step a fire lands on, so one contentlet sitting on two steps contributes two entries.
+     * **Identifiers for the folder-capable ones** (Add to Bundle, Push Publish), which send the
+     * asset rather than a version and accept a folder, and a folder has no inode. Same asymmetry
+     * `executeAddToBundle` already documents on the store side.
      */
     eligibleInodes: string[];
     /** Eligible contentlets. `0` = shown but not selectable. */
@@ -116,16 +133,34 @@ interface DotActionCenterQuickActionDef {
      */
     nameKey: string;
     icon: string;
-    /** Row-state heuristic — not a permission check. Counted items can still fail at fire. */
-    eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** Among eligible items; feeds `warningCount`. */
-    warnWhen?: (item: DotCMSContentlet, context: DotActionCenterContext) => boolean;
+    /**
+     * Row-state heuristic — not a permission check. Counted items can still fail at fire.
+     *
+     * Takes the union, not `DotCMSContentlet`, because a `supportsFolders` action's rows include
+     * folders. That makes the compiler hold the invariant a comment used to: a predicate reading a
+     * contentlet-only field has to narrow first, so adding `supportsFolders` to an action whose
+     * predicate reads `locked` or `contentType` fails to build instead of silently reading
+     * `undefined` off a folder.
+     */
+    eligibleWhen: (item: DotContentDriveItem) => boolean;
+    /** Among eligible items; feeds `warningCount`. Takes the union for the same reason as
+     * {@link DotActionCenterQuickActionDef.eligibleWhen}. */
+    warnWhen?: (item: DotContentDriveItem, context: DotActionCenterContext) => boolean;
     /** Required whenever `warnWhen` is set. */
     warningHint?: string;
     /** Rendered but disabled — see {@link DotActionCenterQuickAction.comingSoon}. */
     comingSoon?: boolean;
     /** Needs at least one push publish environment before it can run. */
     requiresEnvironments?: boolean;
+    /**
+     * Runs on folders as well as contentlets.
+     *
+     * Only for actions that send the *asset* by identifier and whose `eligibleWhen` ignores row
+     * state, since a folder has none of it. The bulk endpoints behind everything else take
+     * contentlet inodes, and folders have no workflow, so they are contentlet-only by nature
+     * rather than by omission.
+     */
+    supportsFolders?: boolean;
 }
 
 /**
@@ -139,9 +174,9 @@ interface DotActionCenterQuickActionDef {
  *   while `canLock` allows it. Hint says "may require" for that reason.
  */
 export const isLockedByAnotherUser = (
-    item: DotCMSContentlet,
+    item: DotContentDriveItem,
     { isAdmin }: DotActionCenterContext
-): boolean => !isAdmin && !!item.locked && !item.contentEditable;
+): boolean => !isAdmin && !isFolder(item) && !!item.locked && !item.contentEditable;
 
 /**
  * Quick actions in display order (fixed — rows never reshuffle).
@@ -160,8 +195,8 @@ export const isLockedByAnotherUser = (
  * Publish and Refresh.
  *
  * Lock/Unlock fire through the system-action endpoint; Add to Bundle posts to the legacy bundle
- * servlet and collects a target first. Push Publish and Refresh are placeholders — see
- * {@link DotActionCenterQuickAction.comingSoon}.
+ * servlet and collects a target first. Refresh is job-backed and reports completion by push. Push Publish is
+ * still a placeholder — see {@link DotActionCenterQuickAction.comingSoon}.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
@@ -170,13 +205,15 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         icon: 'lock',
         // UX filter only: locking archived content has no upside and can block delete
         // (`canLock` is a delete precondition). Server still allows it.
-        eligibleWhen: (item) => !item.locked && !item.archived
+        // `isFolder` narrows the union rather than guarding at runtime: Lock has no
+        // `supportsFolders`, so it never receives one.
+        eligibleWhen: (item) => !isFolder(item) && !item.locked && !item.archived
     },
     {
         id: WORKFLOW_ACTION_ID.UNLOCK,
         nameKey: 'content-drive.context-menu.unlock',
         icon: 'lock_open',
-        eligibleWhen: (item) => !!item.locked && !item.archived,
+        eligibleWhen: (item) => !isFolder(item) && !!item.locked && !item.archived,
         // Warn, don't filter — only the server knows if unlock will succeed.
         warnWhen: isLockedByAnotherUser,
         warningHint: 'content-drive.action-center.unlock.locked-by-others'
@@ -187,7 +224,8 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         icon: 'inventory_2',
         // Every contentlet can go in a bundle: no row state disqualifies one. Coverage is the whole
         // selection, minus the identifier collapse the configuration step explains.
-        eligibleWhen: () => true
+        eligibleWhen: () => true,
+        supportsFolders: true
     },
     {
         id: PUSH_PUBLISH_ACTION_ID,
@@ -196,16 +234,33 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         // No contentlet state disqualifies a push; the environment does, and that is not a per-row
         // question. Counted over the whole selection so the row reports what it would send.
         eligibleWhen: () => true,
-        requiresEnvironments: true
+        requiresEnvironments: true,
+        supportsFolders: true
     },
     {
         id: REFRESH_ACTION_ID,
         nameKey: 'Refresh',
         icon: 'refresh',
-        eligibleWhen: () => true,
-        comingSoon: true
+        // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
+        // the index copy of a contentlet is stale, which is the only thing this fixes.
+        //
+        // Deliberately not role-gated here either, even though the endpoint requires CMS Power User or
+        // CMS Administrator. The client knows whether the user is an admin but has no idea whether they
+        // are a Power User, so the only gate available would hide Refresh from exactly the users the
+        // legacy button was written for. A visible action that answers 403 is a better failure than a
+        // capability silently withheld from people who have it.
+        eligibleWhen: () => true
     }
 ];
+
+/**
+ * Whether a quick action runs on folders as well as contentlets.
+ *
+ * Read from the same registry the rows are built from, so the dialog cannot disagree with
+ * {@link getQuickActions} about which key an action's `eligibleInodes` holds.
+ */
+export const supportsFolders = (id: DotActionCenterQuickActionId): boolean =>
+    !!QUICK_ACTIONS.find((quickAction) => quickAction.id === id)?.supportsFolders;
 
 /** Drops folders from a selection (bulk endpoints are contentlet-only). */
 export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[] =>
@@ -219,8 +274,8 @@ export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[]
  * it here as well is what lets the dialog say how many assets it is really about to add, instead of
  * promising a row count the result will silently undercut.
  */
-export const toDistinctIdentifiers = (contentlets: DotCMSContentlet[]): string[] => [
-    ...new Set(contentlets.map((item) => item.identifier).filter(Boolean))
+export const toDistinctIdentifiers = (items: DotContentDriveItem[]): string[] => [
+    ...new Set(items.map((item) => item.identifier).filter(Boolean))
 ];
 
 /** Contentlet inodes for bulk endpoints (folders dropped). */
@@ -239,16 +294,31 @@ export const getQuickActions = (
     items: DotContentDriveItem[],
     context: DotActionCenterContext = { isAdmin: false }
 ): DotActionCenterQuickAction[] => {
-    const contentlets = excludeFolders(items);
-
-    if (!contentlets.length) {
+    if (!items.length) {
         return [];
     }
 
-    return QUICK_ACTIONS.map((quickAction) => {
-        // One pass → count and fired inodes stay aligned.
-        const eligible = contentlets.filter(quickAction.eligibleWhen);
-        const eligibleInodes = eligible.map((item) => item.inode);
+    const contentlets = excludeFolders(items);
+
+    return QUICK_ACTIONS.flatMap((quickAction) => {
+        // Folder-capable actions see the whole selection; everything else sees contentlets only.
+        const scoped = quickAction.supportsFolders ? items : contentlets;
+
+        // Dropped rather than shown with a count of `0`: a folder-only selection is not "no eligible
+        // rows", it is an action that does not apply to what is selected, and a disabled Lock row
+        // over a folder selection is noise rather than information.
+        if (!scoped.length) {
+            return [];
+        }
+
+        // No cast: `eligibleWhen` takes the union, so the contentlet-only predicates narrow inside
+        // themselves and the compiler enforces what this used to assert in prose.
+        const eligible = scoped.filter(quickAction.eligibleWhen);
+        // One pass → count and fired ids stay aligned. See `eligibleInodes` for why the key differs
+        // by action.
+        const eligibleInodes = eligible.map((item) =>
+            quickAction.supportsFolders ? item.identifier : item.inode
+        );
         const { warnWhen } = quickAction;
         const warningCount = warnWhen
             ? eligible.filter((item) => warnWhen(item, context)).length

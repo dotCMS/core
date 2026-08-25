@@ -23,8 +23,8 @@ import type { SlashMenuService } from '../components/slash-menu/slash-menu.servi
  * JSON is intact.
  */
 describe('createEditorExtensions', () => {
-    // `allowedBlocks: ['link']` keeps DotLink but excludes table/codeBlock/image/etc., so the
-    // injector is never touched during assembly — a bare stub is enough.
+    // A restricted list keeps table/codeBlock/image out, so the injector is never touched
+    // during assembly — a bare stub is enough.
     const injector = { get: jest.fn() } as unknown as Injector;
     const menuService = {} as SlashMenuService;
     const messageService = { get: (key: string) => key } as unknown as DotMessageService;
@@ -105,5 +105,87 @@ describe('createEditorExtensions', () => {
         const doc = PMNode.fromJSON(schema, legacyDoc);
 
         expect(doc.textContent).toBe('Good Credit History:');
+    });
+
+    /**
+     * #37175 — `link`, `emoji` and `youtube` are gated by `has()` but are not offered as
+     * Allowed Blocks options, so every restricted field dropped them. `link` is a mark, and a
+     * missing mark aborts `Node.fromJSON` for the whole document; `emoji`/`youtube` are nodes,
+     * so they resurfaced as `Unsupported block (…)`. All three now register unconditionally and
+     * gate their authoring paths instead.
+     */
+    describe('extensions gated by keys Allowed Blocks never offers (#37175)', () => {
+        /** Mirrors what the settings UI produces — it cannot contain link/emoji/youtube. */
+        const RESTRICTED = ['bulletList', 'orderedList', 'codeBlock'];
+
+        const restricted = () =>
+            createEditorExtensions(menuService, RESTRICTED, injector, messageService);
+        const unrestricted = () =>
+            createEditorExtensions(menuService, undefined, injector, messageService);
+        const byName = (extensions: ReturnType<typeof restricted>, name: string) =>
+            flattenExtensions(extensions).find((ext) => ext.name === name);
+
+        it.each(['link', 'emoji', 'youtube'])('registers "%s" on a restricted field', (name) => {
+            const names = flattenExtensions(restricted()).map((ext) => ext.name);
+
+            expect(names.filter((registered) => registered === name)).toHaveLength(1);
+        });
+
+        it('deserializes a document containing link marks on a restricted field', () => {
+            const schema = getSchema(restricted());
+            const storedDoc = {
+                type: 'doc',
+                content: [
+                    {
+                        type: 'paragraph',
+                        content: [
+                            {
+                                type: 'text',
+                                marks: [{ type: 'link', attrs: { href: 'https://dotcms.com' } }],
+                                text: 'Getting started'
+                            }
+                        ]
+                    }
+                ]
+            };
+
+            // Threw `RangeError: There is no mark type link in this schema` before the fix.
+            const doc = PMNode.fromJSON(schema, storedDoc);
+
+            expect(doc.textContent).toBe('Getting started');
+            expect(doc.firstChild?.firstChild?.marks[0].type.name).toBe('link');
+        });
+
+        it('renders a stored emoji instead of an unsupported-block placeholder', () => {
+            const schema = getSchema(restricted());
+            const storedDoc = {
+                type: 'doc',
+                content: [
+                    { type: 'paragraph', content: [{ type: 'emoji', attrs: { name: 'smile' } }] }
+                ]
+            };
+
+            const doc = PMNode.fromJSON(schema, storedDoc);
+
+            expect(doc.firstChild?.firstChild?.type.name).toBe('emoji');
+        });
+
+        // The schema keeps the extensions so stored content loads; these flags are what
+        // actually enforce the restriction, alongside the toolbar's `@if (isAllowed(...))`.
+        it('disables the implicit authoring paths when the block is not allowed', () => {
+            const extensions = restricted();
+
+            expect(byName(extensions, 'link')?.options.autolink).toBe(false);
+            expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(false);
+            expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(false);
+        });
+
+        it('keeps the implicit authoring paths on an unrestricted field', () => {
+            const extensions = unrestricted();
+
+            expect(byName(extensions, 'link')?.options.autolink).toBe(true);
+            expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(true);
+            expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(true);
+        });
     });
 });

@@ -9,10 +9,14 @@ import { NEVER, of, Subject, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { fakeAsync, tick } from '@angular/core/testing';
 import { ActivatedRoute } from '@angular/router';
 
 import {
     AddToBundleService,
+    DotBulkRefreshService,
+    DotEventsSocket,
+    DotMessageService,
     PushPublishService,
     DotContentDriveService,
     DotLanguagesService,
@@ -24,6 +28,7 @@ import {
 } from '@dotcms/data-access';
 import {
     DotAjaxActionResponseView,
+    DotBulkRefreshCompletedEvent,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotCurrentUser,
@@ -95,7 +100,10 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -992,7 +1000,10 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1061,7 +1072,10 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
             mockProvider(DotPropertiesService, {
@@ -1203,7 +1217,7 @@ describe('DotContentDriveStore - default language resolution', () => {
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
@@ -1307,7 +1321,10 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
+            mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
             mockProvider(Location, {
@@ -1578,6 +1595,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
     let store: InstanceType<typeof DotContentDriveStore>;
     let fireService: jest.Mocked<DotWorkflowActionsFireService>;
     let httpErrorManager: jest.Mocked<DotHttpErrorManagerService>;
+    let bulkRefreshService: jest.Mocked<DotBulkRefreshService>;
+    /** Declared outside the factory so a test can push into the hook's subscription. */
+    const bulkRefreshEvents$ = new Subject<DotBulkRefreshCompletedEvent>();
 
     const createService = createServiceFactory({
         service: DotContentDriveStore,
@@ -1602,7 +1622,19 @@ describe('DotContentDriveStore - withActionExecution', () => {
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
-            mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
+            // `getEnvironments` on top of main's stub: `withPushPublishEnvironments` looks the
+            // environments up on init, so an unstubbed one returns undefined for the observable.
+            mockProvider(PushPublishService, {
+                pushPublishAssets: jest.fn(),
+                getEnvironments: jest.fn(() => of([]))
+            }),
+            // Refresh is the one quick action that is job-backed: the service submits and returns, so
+            // the store only ever sees a single-emission observable.
+            mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
+            // The completion event is pushed, so the socket is the seam the run settles through.
+            // A Subject lets the tests below emit one without a server.
+            mockProvider(DotEventsSocket, { on: jest.fn(() => bulkRefreshEvents$) }),
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
             // The store subscribes to Location (popstate re-hydration); stub so it is inert here.
             mockProvider(Location, {
@@ -1641,6 +1673,315 @@ describe('DotContentDriveStore - withActionExecution', () => {
             of({ results: [], summary: { affected: 2, successCount: 2, failCount: 0, time: 1 } })
         );
         fireService.bulkFire.mockReturnValue(of({ successCount: 2, skippedCount: 0, fails: [] }));
+
+        bulkRefreshService = spectator.inject(
+            DotBulkRefreshService
+        ) as jest.Mocked<DotBulkRefreshService>;
+        bulkRefreshService.refresh.mockReturnValue(of({ jobId: 'job-1', submitted: 1 }));
+    });
+
+    describe('executeRefresh', () => {
+        it('should not publish a running action, because the reindex is backgrounded', () => {
+            // actionExecution drives the toolbar's "Applying ... to N item(s)" indicator and locks the
+            // Action Center. A reindex reports itself by toast at trigger and again by push at the end,
+            // so an indicator it cannot update, and a lock lasting minutes, are both wrong for it.
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should let a second reindex be fired', () => {
+            // No in-flight guard: the only thing it could protect against is a double-fire, and firing
+            // clears the selection, so a second run takes a deliberate re-selection. Guarding it needed
+            // a timeout to un-wedge the flag when a completion event went missing, and that timeout was
+            // the larger cost - a 504 minutes later, about a job that had most likely succeeded, with
+            // nothing on screen waiting for it.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeRefresh('Refresh', ['inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledTimes(2);
+        });
+
+        it('should not block the other actions while a reindex runs', () => {
+            // The whole point of backgrounding it: a reindex takes minutes and shares nothing with
+            // these, so locking them out for its duration was the bug.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+            expect(fireService.fireDefaultAction).toHaveBeenCalled();
+
+            store.executeWorkflowAction('wf-1', 'Publish', ['inode-3']);
+            expect(fireService.bulkFire).toHaveBeenCalled();
+        });
+
+        it('should send the inodes to the bulk refresh service', () => {
+            store.executeRefresh('Refresh', ['inode-1', 'inode-2']);
+
+            expect(bulkRefreshService.refresh).toHaveBeenCalledWith(['inode-1', 'inode-2']);
+        });
+
+        it('should not settle on the submit response', () => {
+            // The 202 says accepted, not done. Settling here is what would produce the misleading
+            // success this endpoint exists to remove.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not fire when there are no inodes', () => {
+            store.executeRefresh('Refresh', []);
+
+            expect(bulkRefreshService.refresh).not.toHaveBeenCalled();
+        });
+
+        it('should report a submit that fails outright', () => {
+            // The one failure a client can see directly: no job was created, so no completion event is
+            // ever coming and the error toast is the only report the user gets.
+            bulkRefreshService.refresh.mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 403 }))
+            );
+
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should leave nothing waiting on a timer', fakeAsync(() => {
+            // There is no completion deadline. A reindex is reported by push, and by a notification the
+            // server writes whether or not the socket delivered - so a client-side deadline could only
+            // ever invent a failure for a run it has no information about.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            tick(60 * 60 * 1000);
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        }));
+    });
+
+    describe('bulk refresh completion push', () => {
+        it('should settle the run when the completion event arrives on the socket', () => {
+            // Proves the wiring, not just the reporter: without the hook subscribing, a finished run
+            // would leave the reindex marked in flight forever and never toast.
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            bulkRefreshEvents$.next({
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                backgrounded: true
+            });
+        });
+    });
+
+    describe('reportRefreshCompleted', () => {
+        it('should ignore a run this store never submitted', () => {
+            // The event is scoped to the user, not the tab. Without correlating on jobId a reindex
+            // fired in another tab, another window or a Login-As session toasts counts here for
+            // content this grid never selected, and reloads it for no reason.
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'somebody-elses-job',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not clear an unrelated action that is still in flight on the success path', () => {
+            // The early-return branches were careful not to touch actionExecution; the settle path was
+            // not, because it shares onSettled with the synchronous actions. Firing Lock after a
+            // backgrounded reindex and letting the reindex land wiped Lock's indicator and reopened
+            // the replay guard, so Lock could be fired again over rows already being changed.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecutionResult()).toBeDefined();
+        });
+
+        it('should mark the outcome as backgrounded', () => {
+            // How the shell knows this one arrived unprompted and must not close a dialog the user is
+            // working in.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            });
+
+            expect(store.actionExecutionResult()?.backgrounded).toBe(true);
+        });
+
+        it('should settle a given run only once', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            const event = {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 1,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 1
+            };
+            store.reportRefreshCompleted('Refresh', event);
+            store.clearActionExecutionResult();
+
+            store.reportRefreshCompleted('Refresh', event);
+
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should not clear an unrelated action that is still in flight', () => {
+            // Now that a reindex no longer locks the dialog, another action can genuinely be running
+            // when the reindex event lands. Blanket-clearing actionExecution here would un-gate that
+            // action early and let a second one fire over the same rows.
+            fireService.fireDefaultAction.mockReturnValue(NEVER);
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
+
+            const lockInFlight = store.actionExecution();
+            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(store.actionExecution()).toBe(lockInFlight);
+        });
+
+        it('should report an unusable outcome rather than settling on it', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should settle with the pushed counters and its own partial copy', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 4,
+                successCount: 2,
+                failedCount: 1,
+                skippedCount: 1,
+                versionsIndexed: 3
+            });
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Refresh',
+                successCount: 2,
+                skippedCount: 1,
+                failCount: 1,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                backgrounded: true
+            });
+        });
+
+        it('should still report a cancelled run, whose counters do account for every item', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'CANCELED',
+                total: 4,
+                successCount: 1,
+                failedCount: 0,
+                skippedCount: 3,
+                versionsIndexed: 1
+            });
+
+            expect(httpErrorManager.handle).not.toHaveBeenCalled();
+            expect(store.actionExecutionResult()?.skippedCount).toBe(3);
+        });
+
+        it('should report an error, not a success toast, when the job failed', () => {
+            // A job that died mid-run still carries the counters it had reached, so an all-zero result
+            // from FAILED_PERMANENTLY is indistinguishable from a clean run over nothing unless the
+            // state is checked.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'FAILED_PERMANENTLY',
+                total: 0,
+                successCount: 0,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 0
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the counters do not account for every item', () => {
+            // A run that stopped after 3 of 10 reports successCount 3 with nothing failed or skipped.
+            // Settling on that would silently drop the 7 never attempted.
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', {
+                jobId: 'job-1',
+                state: 'SUCCESS',
+                total: 10,
+                successCount: 3,
+                failedCount: 0,
+                skippedCount: 0,
+                versionsIndexed: 3
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
+
+        it('should report an error when the event carried no counters at all', () => {
+            store.executeRefresh('Refresh', ['inode-1']);
+            store.reportRefreshCompleted('Refresh', { jobId: 'job-1', state: 'SUCCESS' });
+
+            expect(httpErrorManager.handle).toHaveBeenCalled();
+            expect(store.actionExecutionResult()).toBeUndefined();
+        });
     });
 
     describe('executeQuickAction', () => {
@@ -1863,6 +2204,33 @@ describe('DotContentDriveStore - withActionExecution', () => {
             });
         });
 
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
         it('should never report a negative success count', () => {
             // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
             addToBundleService.addToBundle.mockReturnValue(
@@ -1959,6 +2327,32 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecutionResult()).toEqual({
                 actionName: 'Push Publish',
                 successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Push Publish',
+                successCount: 1,
                 skippedCount: 0,
                 failCount: 1
             });
