@@ -1415,6 +1415,23 @@ public class PermissionResourceIntegrationTest {
 
     // ==================== GET Asset Permissions: canAddChildren ====================
 
+    /*
+     * These four deliberately do NOT remove the users, roles or hosts they persist, which is worth
+     * stating because the omission looks like an oversight and was once "fixed".
+     *
+     * Wrapping them in try/finally with `UserDataGen.remove` / `RoleDataGen.remove` was tried on
+     * this PR and broke the suite: MainSuite2b went from green on this class to 1 failure and 13
+     * errors, every one of them a later test in this same file failing with
+     *
+     *     SecurityException: User Admin User:admin@dotcms.com
+     *         lacks one of the required role [DOTCMS_BACK_END_USER]
+     *
+     * Deleting a user assigned `TestUserUtils.getBackendRole()`, or a role the suite shares,
+     * disturbs role state the rest of the suite depends on. The class already leaves its
+     * `@BeforeClass` users and hosts behind for the same reason, and `SiteDataGen` exposes no
+     * `remove()` at all. `UserDataGen` timestamp-suffixes emails, so the leftovers do not collide.
+     */
+
     /**
      * Grants {@code permission} on {@code host} to {@code role}, as the individual (non-inheritable)
      * permission on the asset itself.
@@ -1466,19 +1483,14 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole())
                 .nextPersisted();
 
-        try {
-            grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
-                    PermissionAPI.PERMISSION_READ);
+        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user), PermissionAPI.PERMISSION_READ);
 
-            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                    getHttpRequest(user.getEmailAddress(), password),
-                    response, host.getIdentifier(), 1, 40).getEntity();
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
 
-            assertNotNull("Response entity should not be null", view);
-            assertFalse("READ alone must not allow adding children", view.canAddChildren());
-        } finally {
-            UserDataGen.remove(user);
-        }
+        assertNotNull("Response entity should not be null", view);
+        assertFalse("READ alone must not allow adding children", view.canAddChildren());
     }
 
     /**
@@ -1500,20 +1512,15 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole())
                 .nextPersisted();
 
-        try {
-            grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
-                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        grantOnHost(host, APILocator.getRoleAPI().getUserRole(user),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
 
-            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                    getHttpRequest(user.getEmailAddress(), password),
-                    response, host.getIdentifier(), 1, 40).getEntity();
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
 
-            assertNotNull("Response entity should not be null", view);
-            assertTrue("An explicit CAN_ADD_CHILDREN grant must be honoured",
-                    view.canAddChildren());
-        } finally {
-            UserDataGen.remove(user);
-        }
+        assertNotNull("Response entity should not be null", view);
+        assertTrue("An explicit CAN_ADD_CHILDREN grant must be honoured", view.canAddChildren());
     }
 
     /**
@@ -1542,21 +1549,16 @@ public class PermissionResourceIntegrationTest {
                 .roles(TestUserUtils.getBackendRole(), groupRole)
                 .nextPersisted();
 
-        try {
-            // Granted to the shared role, never to the user's own role.
-            grantOnHost(host, groupRole,
-                    PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
+        // Granted to the shared role, never to the user's own role.
+        grantOnHost(host, groupRole,
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_CAN_ADD_CHILDREN);
 
-            final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
-                    getHttpRequest(user.getEmailAddress(), password),
-                    response, host.getIdentifier(), 1, 40).getEntity();
+        final AssetPermissionsView view = (AssetPermissionsView) resource.getAssetPermissions(
+                getHttpRequest(user.getEmailAddress(), password),
+                response, host.getIdentifier(), 1, 40).getEntity();
 
-            assertNotNull("Response entity should not be null", view);
-            assertTrue("A grant held through a group role must count", view.canAddChildren());
-        } finally {
-            // The host is left behind: `SiteDataGen` exposes no `remove`, unlike these two.
-            UserDataGen.remove(user);
-            RoleDataGen.remove(groupRole);
-        }
+        assertNotNull("Response entity should not be null", view);
+        assertTrue("A grant held through a group role must count",
+                view.canAddChildren());
     }
 }
