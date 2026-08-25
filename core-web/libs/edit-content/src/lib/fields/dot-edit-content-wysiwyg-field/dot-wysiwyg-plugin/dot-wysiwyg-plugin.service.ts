@@ -1,10 +1,10 @@
-import { Observable, defer, shareReplay } from 'rxjs';
+import { Observable, Subscription, defer, shareReplay } from 'rxjs';
 import { Editor } from 'tinymce';
 
-import { DestroyRef, Injectable, NgZone, inject } from '@angular/core';
+import { DestroyRef, Injectable, NgZone, OnDestroy, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { filter, take } from 'rxjs/operators';
 
@@ -16,10 +16,9 @@ import {
 } from '@dotcms/data-access';
 import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import {
+    ASSET_PICKER_LAUNCHER,
     ASSET_PICKER_TITLE_KEYS,
-    DotAssetPickerComponent,
-    buildAssetPickerConfig,
-    buildAssetPickerDialogConfig
+    DotAssetSearchDialogComponent
 } from '@dotcms/ui';
 
 import { DEFAULT_IMAGE_URL_PATTERN, formatDotImageNode } from './utils/editor.utils';
@@ -33,7 +32,7 @@ import { DotEditContentStore } from '../../../store/edit-content.store';
  * @class DotWysiwygPluginService
  */
 @Injectable()
-export class DotWysiwygPluginService {
+export class DotWysiwygPluginService implements OnDestroy {
     private readonly dialogService: DialogService = inject(DialogService);
     private readonly dotUploadFileService: DotUploadFileService = inject(DotUploadFileService);
     private readonly dotPropertiesService: DotPropertiesService = inject(DotPropertiesService);
@@ -46,6 +45,32 @@ export class DotWysiwygPluginService {
      * that are not the Edit Content shell (legacy Dojo pages), where the store does not exist.
      */
     private readonly editContentStore = inject(DotEditContentStore, { optional: true });
+
+    /**
+     * Present only in the Angular Edit Content, the sole host the new AssetPicker was built for.
+     * Anywhere else *Add image* falls back to {@link DotAssetSearchDialogComponent}, the dialog this
+     * button opened before the picker existed.
+     *
+     * No legacy host is currently known to construct this service: the Dojo editor renders WYSIWYG
+     * as a plain textarea plus JSP-side TinyMCE, and no Angular custom element exists for the field.
+     * The fallback is therefore a consistency guard — so all three asset-selection entry points
+     * behave identically — rather than a live regression path. See the Assumptions section of
+     * `specs/37132-picker-per-host/spec.md`.
+     */
+    private readonly assetPickerLauncher = inject(ASSET_PICKER_LAUNCHER, { optional: true });
+
+    /**
+     * Live ref for whichever picker is open, so the field can close it on teardown. PrimeNG does not
+     * do this for us — `DialogService` has no `ngOnDestroy` — so without this a dialog outlives the
+     * field that opened it.
+     */
+    private pickerRef: DynamicDialogRef | null = null;
+
+    /**
+     * Subscription to the live picker's `onClose`, held so teardown can cancel it *before* closing
+     * the dialog — see {@link ngOnDestroy}.
+     */
+    private pickerCloseSub: Subscription | null = null;
 
     private IMAGE_URL_PATTERN = DEFAULT_IMAGE_URL_PATTERN;
 
@@ -104,13 +129,19 @@ export class DotWysiwygPluginService {
     }
 
     /**
-     * Opens the shared asset picker, scoped to images — the same picker the Edit Content File and
-     * Image fields and the Story Block use, so browsing for an asset looks the same everywhere.
+     * Opens a picker scoped to images — *which* one is the host's call, not this field's.
      *
-     * The site lookup makes this asynchronous: `DotAssetPickerComponent` cannot be configured
-     * without a `DotSite` and this field holds none. That gap is why the busy flag exists rather than
-     * a plain "is a dialog open" check — the ref does not exist yet while the lookup is running, so
-     * two fast clicks on the toolbar button would otherwise stack two dialogs.
+     * With {@link assetPickerLauncher} present (the Angular Edit Content) it is the shared
+     * AssetPicker, the same one the File and Image fields and the Story Block open. Without it, it
+     * is {@link DotAssetSearchDialogComponent}, the dialog this button opened before the AssetPicker
+     * existed — the old editor was never designed for the new one. See {@link assetPickerLauncher}
+     * for why that branch is a guard rather than a path any known host takes today.
+     *
+     * Only the AssetPicker is asynchronous: it cannot be configured without a `DotSite` and this
+     * field holds none. That gap is why the busy flag exists rather than a plain "is a dialog open"
+     * check — the ref does not exist yet while the lookup is running, so two fast clicks on the
+     * toolbar button would otherwise stack two dialogs. The flag guards the legacy path too, which
+     * needs no site and so never pays for the lookup.
      *
      * If the site cannot be resolved, nothing opens: a picker that can't browse anything is worse
      * than no picker.
@@ -126,6 +157,14 @@ export class DotWysiwygPluginService {
 
         this.imagePickerBusy = true;
 
+        if (!this.assetPickerLauncher) {
+            this.ngZone.run(() =>
+                this.releaseBusyIfOpenThrows(() => this.openLegacyImageDialog(editor))
+            );
+
+            return;
+        }
+
         this.currentSite$.pipe(takeUntilDestroyed(this.destroyRef$)).subscribe({
             next: (site) => {
                 if (!site) {
@@ -134,35 +173,91 @@ export class DotWysiwygPluginService {
                     return;
                 }
 
-                this.ngZone.run(() => this.openImagePicker(editor, site));
+                this.ngZone.run(() =>
+                    this.releaseBusyIfOpenThrows(() => this.openImagePicker(editor, site))
+                );
             },
             error: () => (this.imagePickerBusy = false)
         });
     }
 
-    /** Opens the picker for a resolved site. Split out so the lookup above stays readable. */
+    /**
+     * Runs an open, releasing {@link imagePickerBusy} if it throws.
+     *
+     * Nothing else can release it in that case: the flag is cleared by the picker's `onClose`, and
+     * an open that threw never got as far as wiring one — so the toolbar button would stay dead for
+     * the rest of the session. The error is deliberately rethrown rather than swallowed; a button
+     * that silently does nothing is harder to diagnose than one that leaves a stack trace.
+     */
+    private releaseBusyIfOpenThrows(open: () => void): void {
+        try {
+            open();
+        } catch (error) {
+            this.imagePickerBusy = false;
+
+            throw error;
+        }
+    }
+
+    /** Opens the AssetPicker for a resolved site. Split out so the lookup above stays readable. */
     private openImagePicker(editor: Editor, site: DotSite): void {
-        const ref = this.dialogService.open(
-            DotAssetPickerComponent,
-            // Dialog flags live with the picker — they are its contract, not this field's taste.
-            buildAssetPickerDialogConfig(
-                buildAssetPickerConfig({
+        this.trackImagePicker(
+            editor,
+            this.assetPickerLauncher?.open(
+                // The launcher borrows this service's `DialogService` so the picker stays scoped to
+                // this field — see `ASSET_PICKER_LAUNCHER`.
+                this.dialogService,
+                {
                     mode: 'image',
                     site,
                     title: this.dotMessageService.get(ASSET_PICKER_TITLE_KEYS.image),
                     languageId: this.pickerLanguageId()
-                })
+                }
             )
         );
+    }
 
+    /**
+     * Opens the pre-AssetPicker image search dialog — what the legacy hosts have always shown.
+     * Synchronous, because it browses without a `DotSite`.
+     */
+    private openLegacyImageDialog(editor: Editor): void {
+        this.trackImagePicker(
+            editor,
+            this.dialogService.open(DotAssetSearchDialogComponent, {
+                header: 'Insert Image',
+                width: '800px',
+                height: '500px',
+                contentStyle: { padding: 0 },
+                closable: true,
+                closeOnEscape: true,
+                dismissableMask: true,
+                data: {
+                    assetType: 'image'
+                }
+            })
+        );
+    }
+
+    /**
+     * Holds the live ref and inserts whatever the dialog closes with. Shared by both pickers: they
+     * differ in what the user browses, not in what a selection means.
+     */
+    private trackImagePicker(editor: Editor, ref: DynamicDialogRef | null | undefined): void {
+        // `DialogService.open` returns `null` when it refuses to open a duplicate of a component it
+        // already has open. Nothing is tracked in that case, so the busy flag has to be released
+        // here — no `onClose` will ever fire to do it.
         if (!ref) {
             this.imagePickerBusy = false;
 
             return;
         }
 
-        ref.onClose.subscribe((asset: DotCMSContentlet) => {
+        this.pickerRef = ref;
+
+        this.pickerCloseSub = ref.onClose.subscribe((asset: DotCMSContentlet) => {
             this.imagePickerBusy = false;
+            this.pickerRef = null;
 
             if (asset) {
                 editor.insertContent(formatDotImageNode(this.IMAGE_URL_PATTERN, asset));
@@ -172,6 +267,26 @@ export class DotWysiwygPluginService {
             // X, Esc or overlay mask) so the user is never left without focus.
             editor.focus();
         });
+    }
+
+    /**
+     * Closes an open picker when the field is torn down. PrimeNG's `DialogService` has no
+     * `ngOnDestroy`, so nothing else would.
+     *
+     * The unsubscribe has to come **first**. `DynamicDialogRef.close()` pushes through `onClose`
+     * synchronously (`_onClose.next(result)` — the close animation only gates `destroy()`), so
+     * leaving the subscription live would run the close handler inline, right here, and call
+     * `editor.focus()` on a TinyMCE instance `DotWysiwygTinymceComponent.ngOnDestroy` may already
+     * have `remove()`d. `takeUntilDestroyed` would not fix that: it makes no ordering guarantee
+     * against this hook. Suppressing the handler also means nothing else clears the busy flag, so
+     * teardown does it.
+     */
+    ngOnDestroy(): void {
+        this.pickerCloseSub?.unsubscribe();
+        this.pickerCloseSub = null;
+        this.imagePickerBusy = false;
+        this.pickerRef?.close();
+        this.pickerRef = null;
     }
 
     /**
