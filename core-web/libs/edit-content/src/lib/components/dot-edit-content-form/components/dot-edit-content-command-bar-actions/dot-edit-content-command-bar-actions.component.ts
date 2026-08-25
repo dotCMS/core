@@ -15,7 +15,7 @@ import { MenuModule } from 'primeng/menu';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
-import { DotPermissionsIframeDialogComponent, DotPermissionsIframeDialogData } from '@dotcms/ui';
+import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui';
 
 import { DotReferencesDialogData } from '../../../../models/dot-edit-content.model';
 import { DotEditContentSidebarReferencesDialogComponent } from '../../../dot-edit-content-sidebar/components/dot-edit-content-sidebar-information/dot-edit-content-sidebar-references-dialog/dot-edit-content-sidebar-references-dialog.component';
@@ -125,13 +125,16 @@ export class DotEditContentCommandBarActionsComponent {
         const langId = this.languageId();
         if (!id || !langId) return;
 
-        const permissionsRef = this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+        const permissionsRef = this.#dialogService.open(DotJspIframeDialogComponent, {
             header: this.#dotMessageService.get('edit.content.sidebar.permissions.title'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
-                url: this.#buildPermissionsUrl(id, langId)
-            } satisfies DotPermissionsIframeDialogData,
+                url: this.#buildPermissionsUrl(id, langId),
+                titleKey: 'Permissions',
+                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                testIdPrefix: 'permissions'
+            } satisfies DotJspIframeDialogData,
             modal: true,
             appendTo: 'body',
             closeOnEscape: true,

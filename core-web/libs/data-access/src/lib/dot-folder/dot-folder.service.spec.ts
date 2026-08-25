@@ -388,4 +388,42 @@ describe('DotFolderService', () => {
             req.flush({ entity: savedFolder });
         });
     });
+
+    describe('deleteFolder', () => {
+        it('should delete the folder at the given path', () => {
+            let result: boolean | undefined;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe((r) => {
+                result = r;
+            });
+
+            const req = spectator.expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST);
+
+            // The endpoint keys on the path, not the id, and the trailing slash is required.
+            expect(req.request.body).toEqual({ assetPath: '//demo.dotcms.com/old-projects/' });
+            req.flush({ entity: true });
+
+            expect(result).toBe(true);
+        });
+
+        // The consumer routes this to `httpErrorManager.handle` and skips both reloads, so the
+        // observable has to actually error rather than complete quietly. Without this, a change
+        // that swallowed the failure here would keep the consumer's tests green too, since those
+        // only assert the reloads did *not* happen.
+        it('should error when the delete fails', () => {
+            let errored = false;
+
+            spectator.service.deleteFolder('//demo.dotcms.com/old-projects/').subscribe({
+                error: () => {
+                    errored = true;
+                }
+            });
+
+            spectator
+                .expectOne('/api/v1/assets/folders/_delete', HttpMethod.POST)
+                .flush({ message: 'Folder not found' }, { status: 404, statusText: 'Not Found' });
+
+            expect(errored).toBe(true);
+        });
+    });
 });

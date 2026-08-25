@@ -292,6 +292,65 @@ describe('Sidebar Utils', () => {
             ]
         ];
 
+        // The tree is rebuilt from scratch after a folder is created, so the parent it was created
+        // in has to come back expandable. Marking it a leaf while attaching its children hides
+        // PrimeNG's toggler, and the new folder is in the model but unreachable — which reads as
+        // "the tree did not reload".
+        it('should keep an on-path folder expandable when its children were fetched', () => {
+            const levels: DotFolder[][] = [
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog',
+                        path: '/blog/'
+                    }
+                ],
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog-child',
+                        path: '/blog/just-created/'
+                    }
+                ]
+            ];
+
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: levels,
+                targetPath: '/blog/',
+                rootNode: SITE_NODE
+            });
+
+            const blog = result.rootNodes[0];
+
+            expect(blog.children).toHaveLength(1);
+            expect(blog.leaf).toBe(false);
+        });
+
+        // The other half of the same rule: nothing below it, so the toggler would open on nothing.
+        it('should mark an on-path folder a leaf when no children came back', () => {
+            const levels: DotFolder[][] = [
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog',
+                        path: '/blog/'
+                    }
+                ],
+                []
+            ];
+
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: levels,
+                targetPath: '/blog/',
+                rootNode: SITE_NODE
+            });
+
+            expect(result.rootNodes[0].leaf).toBe(true);
+        });
+
         it('should handle empty folder hierarchy', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: [],

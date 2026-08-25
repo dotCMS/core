@@ -1,7 +1,7 @@
 import { describe, it, expect } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, Subject } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
@@ -198,6 +198,58 @@ describe('withSidebar', () => {
                     expect(store.folders()).toContainEqual(siteNodeWithChildren());
                     done();
                 }, 0);
+            });
+
+            // Two triggers can call this concurrently on a cold load: the feature's own `onInit`
+            // and the sidebar component's `currentSite` effect. Without cancellation both writes
+            // land and the one that *resolves* last wins, so a slower earlier request overwrites a
+            // newer complete one — the tree shows the wrong folders until the next reload.
+            describe('when a second load starts before the first resolves', () => {
+                const viewNamed = (name: string) =>
+                    createFakeFolderSearchView({
+                        id: `folder-${name}`,
+                        name,
+                        path: '/',
+                        addChildrenAllowed: true
+                    });
+
+                const labelsInTree = () =>
+                    (store.folders()[0]?.children ?? []).map((child) => child.label);
+
+                it('should keep the newer result when the older one resolves last', (done) => {
+                    const stale = new Subject<{
+                        folders: FolderSearchView[];
+                        pagination: DotPagination;
+                    }>();
+
+                    folderService.searchFolders.mockReturnValue(stale);
+                    store.loadFolders();
+
+                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
+                    store.loadFolders();
+
+                    // The first request answers only now, after the second already has.
+                    stale.next({ folders: [viewNamed('stale')], pagination: EMPTY_PAGINATION });
+                    stale.complete();
+
+                    setTimeout(() => {
+                        expect(labelsInTree()).toEqual(['/fresh/']);
+                        done();
+                    }, 0);
+                });
+
+                it('should settle loading once, on the newer result', (done) => {
+                    folderService.searchFolders.mockReturnValue(NEVER);
+                    store.loadFolders();
+
+                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
+                    store.loadFolders();
+
+                    setTimeout(() => {
+                        expect(store.sidebarLoading()).toBe(false);
+                        done();
+                    }, 0);
+                });
             });
         });
 

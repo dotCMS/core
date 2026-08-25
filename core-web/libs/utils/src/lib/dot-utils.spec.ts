@@ -11,6 +11,7 @@ import {
     ellipsizeText,
     getRunnableLink,
     hasValidValue,
+    isSameOriginRelativeUrl,
     mapQueryParamsToCDParams,
     mapParamsFromEditContentlet
 } from './dot-utils';
@@ -578,6 +579,51 @@ describe('Dot Utils', () => {
             expect(snippet).toContain(`credentials: 'include'`);
             expect(snippet).toContain(`"query": "+live:true"`);
             expect(snippet).toContain(`"limit": 20`);
+        });
+    });
+});
+
+describe('isSameOriginRelativeUrl', () => {
+    describe('accepts same-origin relative paths', () => {
+        it.each([
+            '/html/portlet/ext/folders/push_history.jsp?folderIdentifier=abc&popup=true',
+            '/html/portlet/ext/folders/permissions.jsp?folderIdentifier=abc&popup=true',
+            '/html/portlet/ext/categories/permissions.jsp?categoryInode=inode-123&popup=true',
+            '/normal/path',
+            '/'
+        ])('should accept %s', (url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(true);
+        });
+
+        it('should accept an encoded double slash, which stays on this origin', () => {
+            expect(isSameOriginRelativeUrl('/%2f%2fevil.example.com')).toBe(true);
+        });
+    });
+
+    describe('rejects anything that is not a same-origin relative path', () => {
+        it.each([
+            ['empty string', ''],
+            ['absolute http URL', 'http://evil.example.com/x'],
+            ['absolute https URL', 'https://evil.example.com/x'],
+            ['protocol-relative URL', '//evil.example.com'],
+            ['javascript: scheme', 'javascript:alert(1)'],
+            ['data: scheme', 'data:text/html,<script>alert(1)</script>'],
+            ['path not starting with a slash', 'html/portlet/ext/folders/push_history.jsp']
+        ])('should reject %s', (_label, url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(false);
+        });
+
+        // Browsers normalize backslashes and strip control characters before parsing, so each of
+        // these resolves cross-origin despite starting with a single slash. A guard that only
+        // rejects a leading `//` lets them through.
+        it.each([
+            ['a backslash in the authority position', '/\\evil.example.com'],
+            ['a backslash followed by a slash', '/\\/evil.example.com'],
+            ['a tab', '/\t/evil.example.com'],
+            ['a newline', '/\n/evil.example.com'],
+            ['a carriage return', '/\r/evil.example.com']
+        ])('should reject %s', (_label, url) => {
+            expect(isSameOriginRelativeUrl(url)).toBe(false);
         });
     });
 });

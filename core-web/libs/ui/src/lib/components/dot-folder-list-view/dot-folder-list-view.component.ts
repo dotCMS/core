@@ -33,7 +33,12 @@ import {
     DotLanguage
 } from '@dotcms/dotcms-models';
 
-import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from './constants';
+import {
+    DOT_DRAG_ITEM,
+    DotFolderListViewFixedColumn,
+    HEADER_COLUMNS,
+    rescaleToWidthBudget
+} from './constants';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
@@ -351,11 +356,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     private readonly EXTRA_COL_PAD_CH = 3;
     /**
-     * Room a sortable header needs for its sort indicator, on top of its label. Measured in the
-     * rendered portlet: the icon plus the space before it is ~23px against a `1ch` of 8.67px in the
-     * header font, so 3 covers it. Without it, the estimate for a header like "Bool Radio" landed at
-     * 112.7px against a 113px need, short by a hair, which is all it takes to spill into the next
-     * header since nothing clips it.
+     * Room a header needs for its sort indicator, on top of its label.
+     *
+     * Measured in the rendered portlet: the icon plus the space before it is ~23px against a `1ch` of
+     * 8.67px in the header font, so 3 covers it. Without it, the estimate for a header like "Bool
+     * Radio" landed at 112.7px against a 113px need, short by a hair, which is all it takes to spill
+     * into the next header since nothing clips it.
+     *
+     * Reserved only when the icon is actually drawn. The template gates it on
+     * `sortable && !readOnly`, so keying this off `sortable` alone reserved width nothing rendered
+     * into whenever a read-only table carried extra columns.
      */
     private readonly EXTRA_COL_SORT_ICON_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
@@ -411,10 +421,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      */
     protected readonly $sizedExtraColumns = computed<DotFolderListViewColumn[]>(() => {
         const items = this.$items();
+        // Read unconditionally so this stays a dependency even when no extra column is sortable, and
+        // resolved here rather than inside the resolver so the width is derived from what the header
+        // actually renders: the template draws a sort icon only for `sortable && !readOnly`.
+        const readOnly = this.$readOnly();
 
         return this.$safeExtraColumns().map((column) => ({
             ...column,
-            width: this.#resolveExtraColumnWidth(column, items)
+            width: this.#resolveExtraColumnWidth(column, items, !!column.sortable && !readOnly)
         }));
     });
 
@@ -427,16 +441,23 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
      * list, so display order stays the table's.
      *
-     * No width bookkeeping is needed when a column drops out: `title` is unsized (see
-     * `HEADER_COLUMNS`) and soaks up whatever the remaining sized columns leave over.
+     * Whatever is rendered has its percentages rescaled to the budget the full set carries; see
+     * {@link rescaleToWidthBudget} for why the leftover cannot just be left unclaimed. The full set
+     * with actions passes through untouched, since its percentages already add up to that total.
      */
     protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
-        const fixed = requested.length
-            ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
-            : HEADER_COLUMNS;
+        const shown = (
+            requested.length
+                ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
+                : HEADER_COLUMNS
+        ).filter((column) => this.$showActions() || column.field !== 'actions');
 
-        return this.$showActions() ? fixed : fixed.filter((column) => column.field !== 'actions');
+        // Keyed off what is actually rendered rather than off whether a subset was requested: the
+        // full set with the actions column hidden totals 91%, not the budget, and would hand the
+        // leftover to the checkbox column just like a subset does. `rescaleToWidthBudget` is a
+        // no-op when the total already matches, so the full set with actions passes through.
+        return rescaleToWidthBudget(shown);
     });
 
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
@@ -598,10 +619,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * per-type width as a floor, widening to the header when the header needs more. Average (not max)
      * keeps one long outlier from blowing the column out; overflow truncates in the cells and the
      * table scrolls horizontally.
+     *
+     * `showsSortIcon` says whether this header will draw a sort indicator, so the room for one is
+     * reserved only when it will be used.
      */
     #resolveExtraColumnWidth(
         column: DotFolderListViewColumn,
-        items: DotContentDriveItem[]
+        items: DotContentDriveItem[],
+        showsSortIcon: boolean
     ): string {
         if (column.width) {
             return column.width;
@@ -638,7 +663,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             Math.max(
                 Math.max(column.header?.length ?? 0, contentLength) +
                     this.EXTRA_COL_PAD_CH +
-                    (column.sortable ? this.EXTRA_COL_SORT_ICON_CH : 0),
+                    (showsSortIcon ? this.EXTRA_COL_SORT_ICON_CH : 0),
                 hasTypeFloor ? typeFloor : this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH
