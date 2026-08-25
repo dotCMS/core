@@ -232,6 +232,16 @@ export class DotContentDriveShellComponent {
      */
     protected readonly $activeDialog = signal<DotContentDriveDialog | undefined>(undefined);
 
+    /**
+     * The grid's checked rows, driven from the store.
+     *
+     * Passing this puts `dot-folder-list-view` in its controlled mode, which is what makes clearing the
+     * store actually uncheck the boxes. Left uncontrolled, the grid keeps its own selection and only
+     * drops it when the `items` reference changes — so a selection cleared on action hand-off stayed
+     * visibly ticked until the next search returned.
+     */
+    protected readonly $selectedItems = this.#store.selectedItems;
+
     /** Folder payload for the folder dialog (narrowed from the dialog payload union by type). */
     readonly $folderPayload = computed(() => {
         const dialog = this.$activeDialog();
@@ -511,7 +521,14 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        const { actionName, successCount, skippedCount, failCount } = result;
+        const {
+            actionName,
+            successCount,
+            skippedCount,
+            failCount,
+            partialDetailKey,
+            backgrounded
+        } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
         // can skip items whose scheme does not own the action *and* be refused on items that are
@@ -526,7 +543,9 @@ export class DotContentDriveShellComponent {
 
         const detail = isPartial
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.toast.executed-partial',
+                  // Actions whose failures and skips mean something other than permissions, locks and
+                  // workflow steps say so themselves — see `partialDetailKey`.
+                  partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
                   actionName,
                   String(successCount),
                   String(failCount),
@@ -548,12 +567,25 @@ export class DotContentDriveShellComponent {
         });
 
         untracked(() => {
-            // Contentlets have moved step, so the grid is stale; `loadItems` also drops the selection
-            // the run consumed.
-            this.#store.loadItems();
-            // A no-op when the user already closed the dialog, which is the common path now that
-            // firing hands off to the toolbar.
-            this.#store.closeDialog();
+            // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
+            // doing when it lands. Every other result settles a request they are waiting on.
+            const dialogIsOpen = !!this.$activeDialog();
+
+            if (!backgrounded || !dialogIsOpen) {
+                // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
+                // selection the run consumed. Skipped for a backgrounded result while a dialog is
+                // open, because reloading pulls the rows out from under the form being filled in.
+                this.#store.loadItems();
+            }
+
+            if (!backgrounded) {
+                // A no-op when the user already closed the dialog, which is the common path now that
+                // firing hands off to the toolbar. Never done for a backgrounded result: it can land
+                // minutes later, while the user is mid-way through configuring a different action,
+                // and closing the dialog throws that input away.
+                this.#store.closeDialog();
+            }
+
             this.#store.clearActionExecutionResult();
         });
     });

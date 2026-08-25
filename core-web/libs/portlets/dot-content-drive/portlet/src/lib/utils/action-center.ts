@@ -38,8 +38,19 @@ export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
 /**
  * Reindex the selection — the old search toolbar's "Refresh", backed by `_bulkrefresh`.
  *
- * Placeholder: rendered but not wired. The endpoint streams progress over SSE and is not job-backed,
- * so it cannot reuse the synchronous `bulkFire` path the other quick actions run on.
+ * Clears each contentlet's cache entry and rewrites every version of it to the index. Useful when
+ * content is right in the database but stale or missing from search results. **Not** a full index
+ * rebuild: that is `POST /api/v1/esindex/reindex`, a different operation over the whole index.
+ *
+ * The only quick action that is job-backed rather than synchronous — the endpoint answers `202` with a
+ * job id, and completion is pushed back over the websocket. So it does not share the `bulkFire` path the
+ * workflow quick actions use, but it reports through the same result toast.
+ *
+ * Unlike the others, eligibility does not depend on row state: reindexing applies to live, archived and
+ * locked content alike, because none of those affect whether the index copy is correct.
+ *
+ * Not gated client-side, though the endpoint requires CMS Power User or CMS Administrator — see
+ * {@link QUICK_ACTIONS}.
  */
 export const REFRESH_ACTION_ID = 'REFRESH';
 
@@ -184,8 +195,8 @@ export const isLockedByAnotherUser = (
  * Publish and Refresh.
  *
  * Lock/Unlock fire through the system-action endpoint; Add to Bundle posts to the legacy bundle
- * servlet and collects a target first. Push Publish and Refresh are placeholders — see
- * {@link DotActionCenterQuickAction.comingSoon}.
+ * servlet and collects a target first. Refresh is job-backed and reports completion by push. Push Publish is
+ * still a placeholder — see {@link DotActionCenterQuickAction.comingSoon}.
  */
 const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
@@ -230,8 +241,15 @@ const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
         id: REFRESH_ACTION_ID,
         nameKey: 'Refresh',
         icon: 'refresh',
-        eligibleWhen: () => true,
-        comingSoon: true
+        // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
+        // the index copy of a contentlet is stale, which is the only thing this fixes.
+        //
+        // Deliberately not role-gated here either, even though the endpoint requires CMS Power User or
+        // CMS Administrator. The client knows whether the user is an admin but has no idea whether they
+        // are a Power User, so the only gate available would hide Refresh from exactly the users the
+        // legacy button was written for. A visible action that answers 403 is a better failure than a
+        // capability silently withheld from people who have it.
+        eligibleWhen: () => true
     }
 ];
 

@@ -120,6 +120,10 @@ public class ContentDriveHelper {
         final boolean showFiles = isShowFile(types);
         final boolean showDotAssets = isShowDotAsset(types);
         final boolean showFolders = requestForm.showFolders();
+        // A Link carries no file MIME type, and the paginated path does not run the mimeType
+        // filter, so links would otherwise leak through a mimeType-narrowed search unfiltered.
+        final boolean showLinks = requestForm.showLinks()
+                && !UtilMethods.isSet(requestForm.mimeTypes());
         if (null != requestForm.mimeTypes()){
             builder.showMimeTypes(requestForm.mimeTypes());
         }
@@ -129,6 +133,7 @@ public class ContentDriveHelper {
             .respectFrontEndRoles(false)
             .contentCursor(requestForm.contentCursor())
             .folderCursor(requestForm.folderCursor())
+            .linkCursor(requestForm.linkCursor())
             //These are not always present
             .withContentTypes(
                 contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
@@ -144,7 +149,7 @@ public class ContentDriveHelper {
             .showArchived(showArchived)
             .showWorking(!live)
             .showFolders(showFolders)
-            .showLinks(false)
+            .showLinks(showLinks)
             .showContent(!baseContentTypes.isEmpty())
             .withLanguageIds(langIds)
             .offset(requestForm.offset())
@@ -184,7 +189,9 @@ public class ContentDriveHelper {
             }
             final List<FieldSearchCriteria> fieldCriteria =
                     fieldFilterResolver.parse(requestForm.userSearchable(), contentTypes.get(0));
-            builder.withFieldCriteria(fieldCriteria);
+            // Field filters are resolved against a single content type; links have no fields, so
+            // they could never satisfy one — drop them as folders already are elsewhere.
+            builder.withFieldCriteria(fieldCriteria).showLinks(false);
             final boolean hasIndexCriteria = fieldCriteria.stream()
                     .anyMatch(criteria ->
                             criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
@@ -209,17 +216,23 @@ public class ContentDriveHelper {
             if (!workflowSchemeIds.isEmpty() || !workflowStepIds.isEmpty()) {
                 builder.withWorkflowSchemeIds(workflowSchemeIds)
                         .withWorkflowStepIds(workflowStepIds)
-                        // Folders carry no workflow state — drop them when filtering by workflow.
-                        .showFolders(false);
+                        // Folders and links carry no workflow state — drop them when filtering
+                        // by workflow.
+                        .showFolders(false)
+                        .showLinks(false);
             }
         }
 
-        Logger.debug(this, String.format(
-                "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s, MIME Types: %s",
-                user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters(),
-                requestForm.mimeTypes()));
+        // Build once and log the query itself: flags such as showLinks and showFolders can be
+        // overridden by the workflow and userSearchable branches above, so logging the locals
+        // would misreport what actually ran. BrowserQuery.toString() carries the effective flags,
+        // all three cursors and the filters.
+        final BrowserQuery browserQuery = builder.build();
 
-        return browserAPI.getPaginatedContents(builder.build());
+        Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
+                user.getUserId(), assetPath, browserQuery));
+
+        return browserAPI.getPaginatedContents(browserQuery);
     }
 
     /**

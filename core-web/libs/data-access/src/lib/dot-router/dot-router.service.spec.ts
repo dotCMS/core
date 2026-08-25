@@ -336,6 +336,12 @@ describe('DotRouterService', () => {
         );
     });
 
+    it('should resolve the /users URL slug to the users-beta portlet ID', () => {
+        expect(service.getPortletId('/users')).toBe('users-beta');
+        expect(service.getPortletId('/c/users')).toBe('users-beta');
+        expect(service.getPortletId('#/users?test=value')).toBe('users-beta');
+    });
+
     it('should navigate replacing URL params', () => {
         const params = { id: 'content' };
         service.replaceQueryParams(params);

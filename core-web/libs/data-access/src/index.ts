@@ -7,6 +7,7 @@ export * from './lib/dot-auth/dot-auth.service';
 export * from './lib/dot-analytics-search/dot-analytics-search.service';
 export * from './lib/dot-analytics-tracker/dot-analytics-tracker.service';
 export * from './lib/dot-apps/dot-apps.service';
+export * from './lib/dot-bulk-refresh/dot-bulk-refresh.service';
 export * from './lib/dot-categories/dot-categories.service';
 export * from './lib/dot-containers/dot-containers.service';
 export * from './lib/dot-content-drive/dot-content-drive.service';

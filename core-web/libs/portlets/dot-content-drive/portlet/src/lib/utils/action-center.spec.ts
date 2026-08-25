@@ -440,12 +440,43 @@ describe('action-center utils', () => {
             }
         });
 
-        it('should flag Refresh as coming soon', () => {
+        it('should offer Refresh as a wired action', () => {
             const byId = new Map(
                 getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
             );
 
-            expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(true);
+            expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(false);
+        });
+
+        it('should offer Refresh regardless of live, archived or locked state', () => {
+            // The one quick action whose eligibility owes nothing to row state: none of these
+            // affect whether the index copy of a contentlet is stale, which is all a reindex fixes.
+            const items = [
+                contentlet({ inode: 'a', live: true }),
+                contentlet({ inode: 'b', archived: true }),
+                contentlet({ inode: 'c', locked: true }),
+                contentlet({ inode: 'd', live: true, locked: true })
+            ];
+
+            const refresh = getQuickActions(items).find(
+                (action) => action.id === REFRESH_ACTION_ID
+            );
+
+            expect(refresh?.count).toBe(4);
+            expect(refresh?.eligibleInodes).toEqual(['a', 'b', 'c', 'd']);
+        });
+
+        it('should drop folders from the Refresh selection', () => {
+            // The endpoint takes contentlet inodes only; a folder inode would come back as a
+            // per-item failure and make the count the dialog promised a lie.
+            const refresh = getQuickActions([
+                contentlet({ inode: 'a' }),
+                folder('f1'),
+                contentlet({ inode: 'b' })
+            ]).find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(refresh?.count).toBe(2);
+            expect(refresh?.eligibleInodes).toEqual(['a', 'b']);
         });
 
         it('should block Push Publish on the environments, not on coming-soon', () => {
@@ -505,6 +536,7 @@ describe('action-center utils', () => {
             expect(byId.get(WORKFLOW_ACTION_ID.LOCK)?.comingSoon).toBe(false);
             expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)?.comingSoon).toBe(false);
             expect(byId.get(ADD_TO_BUNDLE_ACTION_ID)?.comingSoon).toBe(false);
+            expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(false);
         });
 
         it('should count the coming-soon actions over the whole selection', () => {
