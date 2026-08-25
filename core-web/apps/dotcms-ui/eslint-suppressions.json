@@ -1,0 +1,172 @@
+{
+  "src/app/portlets/dot-containers/dot-container-create/dot-loop-editor/dot-loop-editor.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/portlets/dot-templates/dot-template-create-edit/dot-template-builder/dot-template-builder.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/portlets/shared/dot-content-types-edit/components/fields/content-type-fields-properties-form/field-properties/dot-relationships-property/dot-cardinality-selector/dot-cardinality-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/shared/directives/dot-show-hide-feature/dot-show-hide-feature.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/_common/dot-autocomplete-tags/dot-autocomplete-tags.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/_common/dot-empty-state/dot-empty-state.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/app/view/components/_common/dot-inline-edit/dot-inline-edit.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/_common/dot-page-selector/dot-page-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/_common/dot-textarea-content/dot-textarea-content.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 8
+    }
+  },
+  "src/app/view/components/_common/forms/dot-comment-and-assign-form/dot-comment-and-assign-form.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/_common/forms/dot-push-publish-form/dot-push-publish-form.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/_common/iframe/dot-loading-indicator/dot-loading-indicator.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/_common/searchable-dropdown/component/searchable-dropdown.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 17
+    }
+  },
+  "src/app/view/components/dot-add-persona-dialog/dot-add-persona-dialog.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/dot-add-persona-dialog/dot-create-persona-form/dot-create-persona-form.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-container-selector/dot-container-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-contentlet-editor/components/dot-contentlet-wrapper/dot-contentlet-wrapper.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/dot-contentlet-editor/components/dot-edit-contentlet/dot-edit-contentlet.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-contentlet-editor/components/dot-reorder-menu/dot-reorder-menu.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-copy-link/dot-copy-link.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/dot-device-selector/dot-device-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-iframe-dialog/dot-iframe-dialog.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/dot-language-selector/dot-language-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/app/view/components/dot-link/dot-link.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/app/view/components/dot-listing-data-table/dot-listing-data-table.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-navigation/components/dot-nav-icon/dot-nav-icon.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/components/dot-persona-selected-item/dot-persona-selected-item.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 4
+    }
+  },
+  "src/app/view/components/dot-persona-selector-option/dot-persona-selector-option.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/app/view/components/dot-persona-selector/dot-persona-selector.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 3
+    }
+  },
+  "src/app/view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 2
+    }
+  },
+  "src/app/view/components/dot-portlet-base/dot-portlet-base.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/app/view/directives/dot-maxlength/dot-maxlength.directive.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  },
+  "src/stories/primeng/messages/Toast.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 6
+    }
+  },
+  "src/stories/primeng/misc/Defer.component.ts": {
+    "@angular-eslint/prefer-signals": {
+      "count": 1
+    }
+  }
+}

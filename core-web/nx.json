@@ -107,7 +107,11 @@
         },
         "lint": {
             "cache": true,
-            "inputs": ["default", "{workspaceRoot}/eslint.config.mjs"]
+            "inputs": [
+                "default",
+                "{workspaceRoot}/eslint.config.mjs",
+                "{projectRoot}/eslint-suppressions.json"
+            ]
         },
         "@nx/jest:jest": {
             "inputs": ["default", "^production", "{workspaceRoot}/karma.conf.js"],

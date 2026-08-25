@@ -9,6 +9,7 @@ import stylisticEslintPlugin from '@stylistic/eslint-plugin';
 import eslintPluginBetterTailwindcss from 'eslint-plugin-better-tailwindcss';
 import angularEslintTemplateParser from '@angular-eslint/template-parser';
 import angularEslintTemplatePlugin from '@angular-eslint/eslint-plugin-template';
+import angularEslintPlugin from '@angular-eslint/eslint-plugin';
 
 const compat = new FlatCompat({
     baseDirectory: dirname(fileURLToPath(import.meta.url)),
@@ -235,6 +236,30 @@ export default [
                 '@typescript-eslint/no-non-null-assertion': 'off'
             }
         })),
+    {
+        // New components must declare inputs with `input()` / `input.required()`.
+        // `@Input() x!: T` is the worst of the legacy forms: the `!` asserts a value the
+        // compiler never checks, so an unbound input is undefined with nothing to catch it.
+        // The 221 pre-existing decorators are recorded in eslint-suppressions.json rather
+        // than annotated inline; regenerate with:
+        //   pnpm exec eslint --suppress-rule '@angular-eslint/prefer-signals' <paths>
+        // and drop entries as they get migrated with `--prune-suppressions`.
+        files: ['**/*.ts'],
+        ignores: ['**/*.spec.ts'],
+        plugins: {
+            '@angular-eslint': angularEslintPlugin
+        },
+        rules: {
+            '@angular-eslint/prefer-signals': [
+                'error',
+                {
+                    preferInputSignals: true,
+                    preferQuerySignals: false,
+                    preferReadonlySignalProperties: false
+                }
+            ]
+        }
+    },
     {
         files: ['**/*.html'],
         plugins: {

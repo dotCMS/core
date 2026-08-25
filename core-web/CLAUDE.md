@@ -65,6 +65,27 @@ Is this component/service used by multiple portlets?
 // Inputs/Outputs
 data = input<string>();                      // NOT @Input()
 onChange = output<string>();                  // NOT @Output()
+```
+
+`@angular-eslint/prefer-signals` enforces the input half as an **error**, so a new `@Input()`
+fails `nx lint`. The 219 pre-existing decorators are not annotated inline — they live in a
+per-project `eslint-suppressions.json` baseline (ESLint 9.24+), which `nx lint` picks up
+automatically because it runs with the project root as its cwd. To re-baseline after migrating
+a batch:
+
+```bash
+cd <projectRoot> && pnpm exec eslint . --suppress-rule '@angular-eslint/prefer-signals'
+pnpm exec eslint . --prune-suppressions   # drop entries that no longer apply
+```
+
+Two things to know. Suppressions are **counted per file**, so adding an input to a file that
+already has suppressed ones reports every occurrence in that file, not just the new one — the
+build fails either way, but the extra lines are not new violations. And a handful of `@Input()`s
+**must not** be migrated: `NodeViewRenderer`, `asset-form` and `suggestions` receive their values
+through `AngularRenderer.updateProps`, which does `instance[key] = value` and would overwrite a
+signal. Moving that helper to `componentRef.setInput` is the prerequisite for converting them.
+
+```typescript
 
 // Testing selectors
 <button data-testid="submit-btn">Submit</button>
