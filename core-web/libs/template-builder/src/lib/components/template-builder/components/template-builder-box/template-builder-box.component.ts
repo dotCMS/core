@@ -62,6 +62,16 @@ export class TemplateBuilderBoxComponent implements OnChanges {
     @Input() width = 1;
     @Input() containerMap!: DotContainerMap;
     @Input() actions = ['add', 'delete', 'edit'];
+
+    /**
+     * Title of the container behind `identifier`, falling back to the raw identifier.
+     *
+     * `DotContainerMap` is an index signature, so TS types every lookup as present; a container
+     * referenced by the layout but missing from the map is a real runtime case, hence the guard.
+     */
+    getContainerTitle(identifier: string): string {
+        return this.containerMap[identifier]?.title || identifier;
+    }
     dialogVisible = false;
     boxVariant = TemplateBuilderBoxSize.small;
     formControl = new FormControl(null); // used to programmatically set dropdown value, so that the same value can be selected twice consecutively

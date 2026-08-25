@@ -84,8 +84,7 @@
                 <div
                     class="mx-4 my-2 flex h-10 items-center justify-between pr-2 pl-4 first:mt-3 last:mb-4">
                     <p class="truncate" data-testId="container-title">
-                        @let identifier = item.identifier;
-                        {{ containerMap?.[identifier]?.title || identifier }}
+                        {{ getContainerTitle(item.identifier) }}
                     </p>
                     <dotcms-remove-confirm-dialog
                         (deleteConfirmed)="deleteContainer.emit($index)"

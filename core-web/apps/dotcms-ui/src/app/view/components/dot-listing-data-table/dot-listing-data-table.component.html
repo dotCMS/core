@@ -37,7 +37,7 @@
     #dataTable
     loadingIcon="pi pi-spin pi-spinner">
     <ng-template let-columns pTemplate="header">
-        @if (items?.length) {
+        @if (items.length) {
             <tr data-testClass="testHeadTableRow">
                 @if (checkbox) {
                     <th scope="col" style="width: 5%">

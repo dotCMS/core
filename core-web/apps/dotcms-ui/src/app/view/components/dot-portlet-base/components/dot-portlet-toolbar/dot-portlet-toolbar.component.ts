@@ -22,7 +22,7 @@ export class DotPortletToolbarComponent {
 
     @Input() actionsButtonLabel!: string;
 
-    @Input() actions!: DotPortletToolbarActions;
+    @Input() actions?: DotPortletToolbarActions;
 
     /**
      * Handle cancel button click
@@ -32,7 +32,7 @@ export class DotPortletToolbarComponent {
      */
     onCancelClick($event: MouseEvent): void {
         try {
-            this.actions.cancel($event);
+            this.actions?.cancel($event);
         } catch (error) {
             console.error(error);
         }
@@ -48,7 +48,7 @@ export class DotPortletToolbarComponent {
         try {
             // Only reachable from the primary button, which the template renders behind
             // `@if (actions?.primary?.length)`.
-            this.actions.primary?.[0].command?.({ originalEvent: $event });
+            this.actions?.primary?.[0].command?.({ originalEvent: $event });
         } catch (error) {
             console.error(error);
         }

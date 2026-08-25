@@ -78,7 +78,7 @@ export class DotContentTypesEditComponent implements OnInit {
      * `accept` is required here even though `DotDialogActions` declares it optional: this component
      * always builds one with a label, and updates its `disabled` flag by spreading it.
      */
-    dialogActions!: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
+    dialogActions?: DotDialogActions & Required<Pick<DotDialogActions, 'accept'>>;
     layout: DotCMSContentTypeLayoutRow[] = [];
     show = signal(false);
     templateInfo = {
@@ -198,6 +198,10 @@ export class DotContentTypesEditComponent implements OnInit {
      * @memberof DotContentTypesEditComponent
      */
     setDialogOkButtonState(formIsValid: boolean): void {
+        if (!this.dialogActions) {
+            return;
+        }
+
         this.dialogActions = {
             ...this.dialogActions,
             accept: {

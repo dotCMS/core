@@ -6,7 +6,7 @@
         <ng-container
             [ngTemplateOutletContext]="{ $implicit: item, index: i }"
             [ngTemplateOutlet]="defaultHeader" />
-        @if (item?.content) {
+        @if (item.content) {
             <div
                 [attr.data-testId]="'dot-options-item-content_' + item.$value()"
                 [class.pb-4]="expanded.has(i)"
@@ -14,8 +14,8 @@
                 [class.dot-option-content--expanded]="expanded.has(i)"
                 [class.dot-option-content--collapsed]="!expanded.has(i)">
                 <div class="dot-option-content__inner flex grow flex-col">
-                    @if (expanded.has(i) && item?.content?.templateRef) {
-                        <ng-container *ngTemplateOutlet="item?.content?.templateRef" />
+                    @if (expanded.has(i) && item.content.templateRef) {
+                        <ng-container *ngTemplateOutlet="item.content.templateRef" />
                     }
                 </div>
             </div>

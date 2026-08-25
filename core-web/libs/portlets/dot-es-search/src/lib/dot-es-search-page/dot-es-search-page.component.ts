@@ -282,6 +282,15 @@ export class DotEsSearchPageComponent {
         };
     }
 
+    /**
+     * Sub-columns of a bucket aggregation, read off the first bucket.
+     *
+     * Indexing is typed as always-present, but an aggregation can come back with no buckets.
+     */
+    subColsOf(agg: ParsedAggregation): string[] {
+        return agg.buckets[0]?.subCols ?? [];
+    }
+
     private splitAggKey(key: string): { type: string; name: string } {
         const idx = key.indexOf('#');
         if (idx === -1) return { type: '', name: key };

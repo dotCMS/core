@@ -50,22 +50,22 @@
                     }">
                     <p-button
                         (onClick)="store.updateActiveIndex((vm.activeIndex ?? 0) - 1)"
-                        [disabled]="vm.activeIndex === 0 || vm.generatedContent?.length === 0"
+                        [disabled]="vm.activeIndex === 0 || vm.generatedContent.length === 0"
                         variant="text"
                         size="small"
                         [rounded]="true"
                         icon="pi pi-chevron-left"
                         type="button" />
                     <span>
-                        {{ vm.generatedContent?.length ? (vm.activeIndex ?? 0) + 1 : 0 }}
+                        {{ vm.generatedContent.length ? (vm.activeIndex ?? 0) + 1 : 0 }}
                         {{ 'of' | dm }}
-                        {{ vm.generatedContent?.length }}
+                        {{ vm.generatedContent.length }}
                     </span>
                     <p-button
                         (onClick)="store.updateActiveIndex((vm.activeIndex ?? 0) + 1)"
                         [disabled]="
-                            vm.activeIndex === vm.generatedContent?.length - 1 ||
-                            vm.generatedContent?.length === 0
+                            vm.activeIndex === vm.generatedContent.length - 1 ||
+                            vm.generatedContent.length === 0
                         "
                         variant="text"
                         size="small"
@@ -96,7 +96,7 @@
                     "
                     [disabled]="
                         vm.status === ComponentStatus.LOADING ||
-                        !vm.generatedContent?.length ||
+                        !vm.generatedContent.length ||
                         vm.generatedContent[vm.activeIndex ?? -1]?.error
                     "
                     [label]="'block-editor.extension.ai-image.insert' | dm"

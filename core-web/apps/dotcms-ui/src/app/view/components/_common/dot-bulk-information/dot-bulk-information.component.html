@@ -5,7 +5,7 @@
 <div class="bulk-information__fail-container">
     <p class="bulk-information__fail-message">
         <span class="material-symbols-outlined">error_outline</span>
-        <span data-testId="fails">{{ data.fails?.length }} {{ 'failed' | dm }}</span>
+        <span data-testId="fails">{{ data.fails.length }} {{ 'failed' | dm }}</span>
     </p>
     @for (item of data.fails; track item) {
         <div class="bulk-information__fail-item">

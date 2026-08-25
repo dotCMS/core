@@ -56,7 +56,7 @@ export class ContentTypeFieldsPropertiesFormComponent implements OnChanges, OnIn
     readonly valid = output<boolean>();
 
     /** Input data for the form field being edited */
-    readonly $formFieldData = input<DotCMSContentTypeField>(undefined, { alias: 'formFieldData' });
+    readonly $formFieldData = input.required<DotCMSContentTypeField>({ alias: 'formFieldData' });
 
     /** Signal containing the content type information */
     readonly $contentType = input.required<DotCMSContentType>({ alias: 'contentType' });

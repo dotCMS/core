@@ -12,7 +12,7 @@ import { DotIconComponent } from '@dotcms/ui';
 })
 export class DotRelationshipTreeComponent implements OnChanges {
     @Input() velocityVar!: string;
-    @Input() contentType!: DotCMSContentType;
+    @Input() contentType?: DotCMSContentType;
     @Input() isParentField!: boolean;
 
     child!: string;
@@ -28,7 +28,7 @@ export class DotRelationshipTreeComponent implements OnChanges {
      */
     setValues(): void {
         const [relatedContentType] = this.velocityVar?.split('.') || '';
-        const contentTypeName = this.contentType?.name;
+        const contentTypeName = this.contentType?.name ?? '';
 
         this.child = this.isParentField ? relatedContentType : contentTypeName;
         this.parent = this.isParentField ? contentTypeName : relatedContentType;

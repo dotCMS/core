@@ -24,7 +24,7 @@
     <div class="flex items-center gap-3">
         <p-button
             (click)="actionsMenu.toggle($event)"
-            [disabled]="!$state.selectedTemplates()?.length"
+            [disabled]="!$state.selectedTemplates().length"
             [label]="'Actions' | dm"
             severity="secondary"
             [outlined]="true"

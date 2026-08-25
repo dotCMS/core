@@ -103,7 +103,7 @@
                 <p-button
                     (click)="deleteContent.emit(hoverContext)"
                     [disabled]="!allowContentDelete()"
-                    [pTooltip]="deleteButtonTooltip() ?? '' | dm"
+                    [pTooltip]="deleteButtonTooltip() | dm"
                     tooltipPosition="bottom"
                     [escape]="false"
                     data-testId="hover-delete-button"

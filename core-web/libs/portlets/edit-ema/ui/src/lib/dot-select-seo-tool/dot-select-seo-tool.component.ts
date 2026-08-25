@@ -13,7 +13,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 })
 export class DotSelectSeoToolComponent implements OnChanges {
     @Input() socialMedia = '';
-    @Input() device!: DotDeviceListItem;
+    @Input() device?: DotDeviceListItem;
     socialMediaIconClass = '';
 
     /**

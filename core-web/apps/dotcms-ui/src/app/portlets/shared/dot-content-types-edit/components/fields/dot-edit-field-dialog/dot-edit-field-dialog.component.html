@@ -3,19 +3,19 @@
         <p-tab [value]="0">
             {{ 'contenttypes.dropzone.tab.overview' | dm }}
         </p-tab>
-        @if (!!currentField?.id && isFieldWithSettings) {
-            <p-tab [value]="1" [disabled]="!currentField?.id">
+        @if (!!currentField.id && isFieldWithSettings) {
+            <p-tab [value]="1" [disabled]="!currentField.id">
                 {{ 'contenttypes.dropzone.tab.settings' | dm }}
             </p-tab>
         }
-        <p-tab [value]="variablesTabIndex" [disabled]="!currentField?.id">
+        <p-tab [value]="variablesTabIndex" [disabled]="!currentField.id">
             {{ 'contenttypes.dropzone.tab.variables' | dm }}
         </p-tab>
     </p-tablist>
     <p-tabpanels>
         <p-tabpanel [value]="0">
             @if (
-                currentFieldType?.clazz ===
+                currentFieldType.clazz ===
                 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
             ) {
                 <dot-convert-to-block-info
@@ -30,8 +30,8 @@
                 [contentType]="contentType"
                 #fieldPropertiesForm />
             @if (
-                !!currentField?.id &&
-                currentFieldType?.clazz ===
+                !!currentField.id &&
+                currentFieldType.clazz ===
                     'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
             ) {
                 <dot-convert-wysiwyg-to-block
@@ -39,9 +39,9 @@
                     [currentFieldType]="currentFieldType" />
             }
         </p-tabpanel>
-        @if (!!currentField?.id && isFieldWithSettings) {
+        @if (!!currentField.id && isFieldWithSettings) {
             <p-tabpanel [value]="1">
-                @switch (this.currentFieldType?.clazz) {
+                @switch (this.currentFieldType.clazz) {
                     @case ('com.dotcms.contenttype.model.field.ImmutableStoryBlockField') {
                         <dot-block-editor-settings
                             ($changeControls)="changesDialogActions($event)"
@@ -66,7 +66,7 @@
                             [field]="currentField"
                             [isVisible]="activeTab === 1"
                             [renderMode]="
-                                fieldPropertiesForm.form?.get('newRenderMode')?.value
+                                fieldPropertiesForm.form.get('newRenderMode')?.value
                             "></dot-custom-field-settings>
                     }
                 }

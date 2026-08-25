@@ -159,7 +159,7 @@
             <label class="p-label-input-required" for="users-delete-confirm-input">
                 {{ 'users.dialog.delete-confirm.confirm-label' | dm }}
                 @if (user?.emailAddress) {
-                    <span class="font-mono text-sm">&mdash; {{ user?.emailAddress }}</span>
+                    <span class="font-mono text-sm">&mdash; {{ user.emailAddress }}</span>
                 }
             </label>
             <input

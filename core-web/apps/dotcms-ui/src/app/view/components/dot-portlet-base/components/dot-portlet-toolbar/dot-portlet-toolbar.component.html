@@ -24,11 +24,11 @@
             }
 
             @if (actions?.primary?.length) {
-                @if (actions?.primary?.length === 1) {
+                @if (actions.primary.length === 1) {
                     <button
                         (click)="onPrimaryClick($event)"
-                        [label]="actions?.primary[0]?.label || ('save' | dm)"
-                        [disabled]="actions?.primary[0]?.disabled"
+                        [label]="actions.primary[0].label || ('save' | dm)"
+                        [disabled]="actions.primary[0].disabled"
                         data-testId="actionsPrimaryButton"
                         pButton></button>
                 } @else {
@@ -41,7 +41,7 @@
                         iconPos="right"></button>
                     <p-menu
                         [popup]="true"
-                        [model]="actions?.primary"
+                        [model]="actions.primary"
                         #menu
                         data-testId="actionsMenu" />
                 }

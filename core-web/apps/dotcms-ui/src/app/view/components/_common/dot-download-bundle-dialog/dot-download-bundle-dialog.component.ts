@@ -68,7 +68,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
     downloadOptions: SelectItem[] = [];
     filterOptions: SelectItem[] = [];
-    dialogActions!: DotDialogActions;
+    dialogActions?: DotDialogActions;
     form!: UntypedFormGroup;
     showDialog = false;
     errorMessage = '';
@@ -139,7 +139,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
 
             // `accept` and `cancel` are optional on `DotDialogActions`; this component sets both in
             // `setDialogActions`, so the guard only covers the interval before the dialog is built.
-            if (this.dialogActions.accept && this.dialogActions.cancel) {
+            if (this.dialogActions?.accept && this.dialogActions.cancel) {
                 this.dialogActions.accept.disabled = true;
                 this.dialogActions.accept.label = this.dotMessageService.get(
                     'download.bundle.downloading'

@@ -8,7 +8,7 @@
                 dotDynamicFieldProperty />
         </div>
     }
-    @if (formFieldData?.relationships) {
+    @if (formFieldData.relationships) {
         <dot-relationship-tree
             [contentType]="$contentType()"
             [isParentField]="formFieldData.relationships.isParentField"
