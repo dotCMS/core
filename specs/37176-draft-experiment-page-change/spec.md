@@ -1,6 +1,6 @@
 # Feature Specification: Changing the Page of a Draft Experiment
 
-**Feature Branch**: `oidacra/allow-changing-the-page-of-a-draft-experiment-th`
+**Feature Branch**: `issue-37176-draft-experiment-page-change`
 
 **Created**: 2026-08-24
 
@@ -35,6 +35,26 @@ experiment is still a draft and the control is its only variant.
 This spec covers that situation and the honest refusal of every other one. It does **not** cover
 migrating variant content between pages, nor changing the page of a running, scheduled, ended, or
 archived experiment.
+
+**Why DRAFT and not also SCHEDULED.** A scheduled experiment has not started and has collected no
+data, so it looks like it should qualify. It does not, and the reason is not about data — it is
+about a clearance that has already been granted. Starting an experiment validates that its page is
+free of overlapping experiments, and it validates that against *the page the experiment had at that
+moment*. A scheduled experiment has passed that gate and is committed to starting on its own. Let it
+move to a different page and the clearance is silently stale: the new page may already host a
+scheduled or running experiment with an overlapping window, and nothing re-checks before the
+experiment fires.
+
+That is exactly why FR-007 can say schedule conflicts are not re-validated here. For a draft the
+rule is safe, because a draft has never been cleared and will be checked when it starts. For a
+scheduled experiment it would not be. DRAFT is the last state in which the page is still
+un-cleared, which is what makes it the boundary.
+
+Two consequences worth stating plainly. Admitting SCHEDULED would mean either accepting that hole or
+re-validating conflicts on the page change — the second contradicts FR-007 and is a larger change
+than this one. And in practice a scheduled experiment is very unlikely to qualify anyway: starting
+one requires more than the control variant, so the eligibility rule below would refuse it on the
+variants condition even if status allowed it.
 
 ---
 
@@ -247,6 +267,7 @@ assert the read-only reason is the one shown.
   page. No separate permission rule is introduced.
 - **Only the control's preview URL is derived from the page.** Nothing else stored on the experiment
   (goals, targeting, traffic split) is re-derived on a page change.
-- **Out of scope**: changing the page of a running, scheduled, ended, or archived experiment;
-  migrating variant content between pages; relaxing the variants rule by moving or re-copying
-  layouts.
+- **Out of scope**: changing the page of a running, scheduled, ended, or archived experiment —
+  scheduled included, for the clearance reason given in the Scope Note, not merely because it is
+  "already started"; migrating variant content between pages; relaxing the variants rule by moving
+  or re-copying layouts.
