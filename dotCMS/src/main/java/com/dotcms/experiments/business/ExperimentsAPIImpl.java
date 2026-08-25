@@ -211,6 +211,12 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
                     Optional.of(validateScheduling(experimentToSave.scheduling().get())));
         }
 
+        if (existingExperiment.isPresent()
+                && !existingExperiment.get().pageId().equals(experimentToSave.pageId())) {
+            experimentToSave = experimentToSave.withTrafficProportion(
+                    regenerateControlVariantUrl(experimentToSave));
+        }
+
         factory.save(experimentToSave);
 
         Logger.info(this, "Saving experiment with id: " + experimentToSave.id().get() + ", and status:"
@@ -1004,6 +1010,35 @@ public class ExperimentsAPIImpl implements ExperimentsAPI, EventSubscriber<Syste
 
         multiTreeAPI.copyMultiTree(experimentPage.getIdentifier(), multiTreesByVariant,
                 experimentVariant.id());
+    }
+
+    /**
+     * Rebuilds the control Variant's stored {@code url} from the Experiment's current Page.
+     *
+     * <p>{@link #createExperimentVariant} bakes the Page's URI into every Variant at the moment it
+     * is created, the control included, and nothing recomputes it on read. So when an Experiment
+     * changes Page the control keeps handing back a link to the previous one — which is what the
+     * "copy preview URL" action would give the user.
+     *
+     * <p>Only the control is rewritten. A non-control Variant's url belongs to the Page its layout
+     * was copied from, and an Experiment carrying one cannot change Page in the first place.
+     */
+    private TrafficProportion regenerateControlVariantUrl(final Experiment experiment)
+            throws DotDataException {
+
+        final Contentlet pageContentlet = contentletAPI
+                .findContentletByIdentifierAnyLanguage(experiment.pageId(), false);
+        final HTMLPageAsset page = pageAssetAPI.fromContentlet(pageContentlet);
+        final String controlUrl = page.getURI() + "?variantName=" + DEFAULT_VARIANT.name();
+
+        final TrafficProportion trafficProportion = experiment.trafficProportion();
+        final TreeSet<ExperimentVariant> variants = trafficProportion.variants().stream()
+                .map(variant -> DEFAULT_VARIANT.name().equals(variant.id())
+                        ? ExperimentVariant.builder().from(variant).url(controlUrl).build()
+                        : variant)
+                .collect(Collectors.toCollection(TreeSet::new));
+
+        return trafficProportion.withVariants(variants);
     }
 
     private ExperimentVariant createExperimentVariant(final Experiment experiment,

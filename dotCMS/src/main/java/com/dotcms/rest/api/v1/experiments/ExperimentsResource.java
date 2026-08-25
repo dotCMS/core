@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.experiments;
 
+import static com.dotcms.variant.VariantAPI.DEFAULT_VARIANT;
+
 import com.dotcms.analytics.app.AnalyticsApp;
 import com.dotcms.analytics.helper.AnalyticsHelper;
 import com.dotcms.experiments.business.ExperimentFilter;
@@ -8,6 +10,7 @@ import com.dotcms.experiments.business.ExperimentsAPI.Health;
 import com.dotcms.experiments.business.result.ExperimentResults;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
+import com.dotcms.experiments.model.ExperimentVariant;
 import com.dotcms.experiments.model.Scheduling;
 import com.dotcms.experiments.model.TargetingCondition;
 import com.dotcms.http.CircuitBreakerUrl;
@@ -33,6 +36,7 @@ import io.vavr.control.Try;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.SortedSet;
 import java.util.Optional;
 import java.util.Set;
 import javax.servlet.http.HttpServletRequest;
@@ -574,6 +578,10 @@ public class ExperimentsResource {
 
         final Experiment.Builder builder = Experiment.builder().from(experimentToUpdate);
 
+        if(experimentForm.getPageId()!=null) {
+            applyPageId(builder, experimentToUpdate, experimentForm.getPageId());
+        }
+
         if(experimentForm.getName()!=null) {
             builder.name(experimentForm.getName());
         }
@@ -607,6 +615,57 @@ public class ExperimentsResource {
         }
 
         return builder.build();
+    }
+
+    /**
+     * Applies a submitted Page to the Experiment being patched, or refuses it.
+     *
+     * <p>The Page may only change while the Experiment is a {@link Status#DRAFT} whose only Variant
+     * is the control. Every other Variant holds a copy of the current Page's layout — see
+     * {@code ExperimentsAPIImpl.copyMultiTrees} — so repointing the Experiment would orphan it. The
+     * control is exempt from that copy: it holds no duplicated layout because it <em>is</em> the
+     * Page.
+     *
+     * <p>A Page that fails either condition is refused rather than dropped. Silently discarding it
+     * was the defect this closes, and it is the more dangerous half: a caller was told its change
+     * had succeeded when it had not.
+     */
+    private void applyPageId(final Experiment.Builder builder,
+            final Experiment experimentToUpdate, final String pageId) {
+
+        // An unchanged Page is a no-op whatever the status or the Variants. This comparison has to
+        // come before the eligibility checks, not after: clients that echo the whole Experiment
+        // back on every save send the pageId they already have, and they must not start seeing
+        // errors because of it.
+        if (pageId.equals(experimentToUpdate.pageId())) {
+            return;
+        }
+
+        DotPreconditions.isTrue(experimentToUpdate.status() == Status.DRAFT,
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment can only be changed while it is in DRAFT status. "
+                        + "This Experiment is " + experimentToUpdate.status() + ".");
+
+        DotPreconditions.isTrue(hasOnlyTheControlVariant(experimentToUpdate),
+                IllegalArgumentException.class,
+                () -> "The Page of an Experiment cannot be changed once it has Variants other than "
+                        + "the control, because each one holds a copy of the current Page's layout. "
+                        + "Delete them before changing the Page.");
+
+        builder.pageId(pageId);
+    }
+
+    /**
+     * Whether the control is the Experiment's only Variant.
+     *
+     * <p>Identified by its id rather than by its {@code Original} description: the id is what
+     * {@code ExperimentsAPIImpl.addVariant} keys off when it decides whether to copy the Page's
+     * layout, so matching on it covers exactly the Variants that hold a copy.
+     */
+    private boolean hasOnlyTheControlVariant(final Experiment experiment) {
+        final SortedSet<ExperimentVariant> variants = experiment.trafficProportion().variants();
+
+        return variants.size() == 1 && DEFAULT_VARIANT.name().equals(variants.first().id());
     }
 
     private InitDataObject getInitData(@Context HttpServletRequest request,
