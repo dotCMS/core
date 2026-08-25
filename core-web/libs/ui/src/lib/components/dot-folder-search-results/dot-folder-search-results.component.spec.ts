@@ -90,6 +90,13 @@ describe('DotFolderSearchResultsComponent', () => {
             expect(rows()[0].getAttribute('type')).toBe('button');
         });
 
+        it('insets the row so its icon lines up with the search input above it', () => {
+            // Both sit inside the same `px-4` panel, so the row's own horizontal padding has to
+            // match the input's (`--p-inputtext-padding-x`, 0.75rem) or the folder icon sits a few
+            // pixels left of the magnifier and the column reads as two misaligned groups.
+            expect(rows()[0].className).toContain('px-3');
+        });
+
         it('aligns the icon with the first line, not centred across both', () => {
             // Two-line rows: centring the icon between the name and the path leaves it floating in
             // the gap. The design puts it on the name's line, and so does the Site/Folder field,

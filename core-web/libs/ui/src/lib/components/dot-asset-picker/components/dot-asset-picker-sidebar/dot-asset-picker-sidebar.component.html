@@ -11,7 +11,7 @@
         (siteChange)="onSiteChange($event)" />
 </div>
 
-<div class="px-4 py-2">
+<div class="px-4 pt-3 pb-2">
     <dot-search-input
         data-testid="asset-picker-folder-search"
         testId="asset-picker-folder-search-input"
@@ -23,7 +23,17 @@
 @if (store.isSearchingFolders()) {
     <!-- Replaces the tree rather than sitting beside it: two folder views at once would give two
          different answers to "where am I browsing". -->
-    @if (store.showResultsEmptyState()) {
+    @if ($searchFailed()) {
+        <!-- Distinct from the empty state on purpose (FR-018). The empty state is gated on a
+             LOADED search, so without this branch a failure fell through to a result list of `[]`
+             and rendered nothing — a blank panel that looks like "no matches". -->
+        <div
+            class="flex min-h-0 flex-col items-center justify-center gap-2 px-4 pb-4 text-red-600"
+            data-testid="asset-picker-search-error">
+            <i class="pi pi-exclamation-triangle text-2xl"></i>
+            <span class="text-sm">{{ 'dot.asset.picker.error.folders' | dm }}</span>
+        </div>
+    } @else if (store.showResultsEmptyState()) {
         <div
             class="flex min-h-0 flex-col items-center justify-center gap-2 px-4 pb-4 text-surface-500"
             data-testid="asset-picker-search-empty">

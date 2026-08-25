@@ -98,7 +98,12 @@ test.describe('AssetPicker sidebar — site selector', () => {
         await picker.expectBrowsingSite(homeSite);
         // The globe from the design. Asserted here rather than in Jest: it renders inside
         // `p-select`'s closed label, which the unit harness does not paint at all.
-        await expect(picker.siteSelector.getByTestId('dot-site-icon')).toBeVisible();
+        const globe = picker.siteSelector.getByTestId('dot-site-icon');
+        await expect(globe).toBeVisible();
+        // `[class]` replaces the class attribute, so the layout classes have to ride inside the
+        // binding. Asserting only the glyph would pass with `flex-none` and the colour dropped.
+        await expect(globe).toHaveClass(/flex-none/);
+        await expect(globe).toHaveClass(/text-surface-500/);
         await expect(picker.folderSearch).toBeVisible();
         await expect(picker.folderTree).toBeVisible();
     });

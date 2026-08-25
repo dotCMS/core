@@ -52,9 +52,10 @@
     <ng-template let-site #selectedItem>
         <span class="flex min-w-0 items-center gap-2">
             @if (icon(); as iconClass) {
+                <!-- Concatenated, not two attributes: `[class]` REPLACES the class attribute, so
+                     a static `class="…"` beside it is silently dropped at runtime. -->
                 <i
-                    class="flex-none text-surface-500"
-                    [class]="iconClass"
+                    [class]="'flex-none text-surface-500 ' + iconClass"
                     data-testid="dot-site-icon"></i>
             }
             <span class="min-w-0 truncate">{{ site.hostname }}</span>

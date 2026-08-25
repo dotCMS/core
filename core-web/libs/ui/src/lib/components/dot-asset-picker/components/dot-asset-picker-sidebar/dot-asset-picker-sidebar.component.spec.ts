@@ -258,6 +258,19 @@ describe('DotAssetPickerSidebarComponent', () => {
             expect(spectator.query(byTestId('asset-picker-search-refine'))).toBeTruthy();
         });
 
+        it('should say the search failed rather than leaving the panel blank', () => {
+            // FR-018: a failure and an empty result must be distinguishable. The empty state is
+            // gated on LOADED, so on ERROR the sidebar fell through to a results list of `[]` and
+            // rendered nothing at all — the exact bug this feature set out to remove.
+            store.isSearchingFolders.set(true);
+            store.displayedResults.set([]);
+            store.showResultsEmptyState.set(false);
+            store.searchStatus.set(ComponentStatus.ERROR);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('asset-picker-search-error'))).toBeTruthy();
+        });
+
         it('should not show the empty state when the search failed', () => {
             // A failure and an empty result read differently; the old sidebar collapsed them.
             store.isSearchingFolders.set(true);

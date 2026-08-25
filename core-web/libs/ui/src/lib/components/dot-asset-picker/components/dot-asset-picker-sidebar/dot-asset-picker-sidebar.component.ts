@@ -48,6 +48,10 @@ export class DotAssetPickerSidebarComponent {
         () => this.store.searchStatus() === ComponentStatus.LOADING
     );
 
+    protected readonly $searchFailed = computed(
+        () => this.store.searchStatus() === ComponentStatus.ERROR
+    );
+
     protected readonly treePt = {
         // `p-0!` is required, not stylistic: `p-tree` ships its own padding from an unlayered
         // stylesheet, which beats Tailwind utilities in `@layer utilities`. Without the modifier

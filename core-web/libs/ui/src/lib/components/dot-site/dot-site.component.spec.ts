@@ -572,6 +572,11 @@ describe('DotSiteComponent', () => {
                 expect(spectator.query('[data-testid="dot-site-icon"]')).toBeNull();
             });
 
+            // The classes on the icon element cannot be asserted here: it lives inside
+            // `p-select`'s closed label, which this harness never renders (see the note above).
+            // `[class]` replaces the class attribute, so the layout classes had to be folded into
+            // the binding — that they survive is asserted in the AssetPicker sidebar e2e.
+
             it('should accept an icon class', () => {
                 spectator.setInput('icon', 'pi pi-globe');
                 spectator.detectChanges();
