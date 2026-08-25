@@ -11,7 +11,7 @@ the marker, and humans navigate by the fixed headings.
 <!-- dotcms-post-merge-test-plan
 pr: 12345
 issues: 31904,31905
-merge-sha: abcdef1
+merge-sha: 4f9a2c1e8b7d3a5f6c0e9b2d4a8f1c3e5b7d9a0f
 generator-version: v1
 -->
 
@@ -57,11 +57,18 @@ Line 1 of the comment, always. Fields, in order:
 |---|---|
 | `pr` | Source pull request number |
 | `issues` | Comma-separated, ascending, no spaces. Never empty. |
-| `merge-sha` | The merge commit SHA — short form is fine, but be consistent |
+| `merge-sha` | The merge commit SHA, **in full — all 40 characters, never abbreviated** |
 | `generator-version` | `v1`. Bump only on a breaking format change. |
 
 `pr` + `merge-sha` together are the **idempotency key**: the same plan is posted to several issues,
 so deduplicate previous plans on that pair, and never post twice for the same pair.
+
+> **The SHA must be the full 40 characters.** Both consumers match it anchored and whole — the
+> workflow's idempotency check (`^merge-sha: <sha>$`) and its post-run verification grep — and both
+> only ever hold the full `mergeCommit.oid`. An abbreviated SHA matches neither, and the two
+> failures compound: idempotency silently stops recognising the plan, so a re-run posts a **duplicate
+> onto every related issue**, while verification reports every issue as missing and fails the run.
+> Copy `{{MERGE_SHA}}` through exactly as given.
 
 ### The summary table
 
@@ -147,6 +154,7 @@ Before posting, confirm all of the following. If any fails, fix it and re-check 
 never post a plan that fails a check, and never post nothing instead.
 
 - The marker is on line 1 and every field is populated.
+- `merge-sha` is the full 40-character SHA, copied verbatim — not abbreviated.
 - `issues` is non-empty, and every listed issue is named in the `Issues:` field of at least one case.
 - The summary table row count equals the number of cases in the full plan.
 - Case IDs run `TC-001`, `TC-002`, … with no gaps or repeats.

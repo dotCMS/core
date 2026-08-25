@@ -28,7 +28,9 @@ The related-issue set below was already resolved and validated by the workflow.
 
 - Source PR: **#{{PR_NUMBER}}** — {{PR_TITLE}}
 - PR author (becomes the Plan Reviewer): **@{{PR_AUTHOR}}**
-- Merge commit SHA: **{{MERGE_SHA}}**
+- Merge commit SHA: **{{MERGE_SHA}}** — copy this into the marker's `merge-sha` field
+  **exactly as given, all 40 characters**. Abbreviating it silently breaks both the
+  duplicate-post guard and the post-run verification.
 - Related issues: **{{ISSUES_CSV}}**
 - Plan revision: **{{REVISION}}**
 
