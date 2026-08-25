@@ -164,7 +164,8 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `dotImage` | `image.extension.ts` | Image (modal picker) | Insert image, wrap-left/right (node-scoped), align, image properties popover (node-scoped) | `image` |
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `dotAudio` | `audio.extension.ts` | Audio (modal picker) | Insert audio | `audio` |
-| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | `youtube` |
+| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | none — always registered. `youtube` is not an Allowed Blocks option, so gating it only dropped stored embeds on restricted fields (#37175). Insertion is gated in the UI via `showAssetByUrl()`. |
+| `emoji` | `@tiptap/extension-emoji` | — (toolbar popover, gated by `emoji`) | — | none — always registered, same reason as `youtube` (#37175). Authoring is gated: toolbar button behind `@if (isAllowed('emoji'))`, `:)` input rule behind `enableEmoticons: has('emoji')`. |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
@@ -183,7 +184,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `superscript` | `@tiptap/extension-superscript` | Sup | any text |
 | `subscript` | `@tiptap/extension-subscript` | Sub | any text |
 | `highlight` | `@tiptap/extension-highlight` | — (schema only; the legacy editor has no button either) | any text |
-| `link` | `@tiptap/extension-link` | Link popover | any text (gated by `link` allowed-block) |
+| `link` | `@tiptap/extension-link` | Link popover — hidden when `link` is not in allowed blocks | any text. Always in the schema; `allowedBlocks` gates only the authoring paths (button, autolink, link-on-paste). Gating the *registration* blanked every restricted field (#37175) — a missing mark aborts `Node.fromJSON` for the whole document, and `link` is not even offered as an Allowed Blocks option. |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
 
 ### Special / node-scoped commands
