@@ -37,7 +37,7 @@ describe('DotRolesTreeComponent', () => {
                 filter: jest.fn().mockReturnValue(''),
                 isSearching: jest.fn().mockReturnValue(false),
                 selectedRoleId: jest.fn().mockReturnValue(null),
-                status: jest.fn().mockReturnValue('loaded'),
+                status: jest.fn().mockReturnValue('LOADED'),
                 setFilter: jest.fn(),
                 selectRole: jest.fn(),
                 deleteRole: jest.fn().mockResolvedValue(null)

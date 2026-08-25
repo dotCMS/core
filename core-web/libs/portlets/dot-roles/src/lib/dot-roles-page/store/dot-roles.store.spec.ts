@@ -104,7 +104,7 @@ describe('DotRolesStore', () => {
         it('should start with an empty roles list + init status', () => {
             expect(store.roles()).toEqual([]);
             expect(store.roleTree()).toEqual([]);
-            expect(store.status()).toBe('init');
+            expect(store.status()).toBe('INIT');
             expect(store.selectedRoleId()).toBeNull();
             expect(store.activeTab()).toBe('users');
             expect(store.filter()).toBe('');
@@ -117,7 +117,7 @@ describe('DotRolesStore', () => {
 
             expect(service.loadRootRoles).toHaveBeenCalledWith(true);
             expect(store.roles()).toEqual(MOCK_NESTED_ROLES);
-            expect(store.status()).toBe('loaded');
+            expect(store.status()).toBe('LOADED');
         });
 
         it('should expose the nested response verbatim via roleTree', () => {
@@ -135,7 +135,7 @@ describe('DotRolesStore', () => {
 
             store.loadRootRoles();
 
-            expect(store.status()).toBe('error');
+            expect(store.status()).toBe('ERROR');
             expect(errorManager.handle).toHaveBeenCalled();
         });
     });
@@ -145,7 +145,7 @@ describe('DotRolesStore', () => {
             store.loadRootRoles();
         });
 
-        it('should splice fetched children into the state tree', () => {
+        it('should splice fetched children into the state tree', async () => {
             service.loadRoleById.mockReturnValueOnce(
                 of({
                     id: 'r-eco',
@@ -162,7 +162,7 @@ describe('DotRolesStore', () => {
                 })
             );
 
-            store.loadRoleChildren('r-eco');
+            await store.loadRoleChildren('r-eco');
 
             const categories = store.roles().find((n) => n.id === 'r-categories');
             const eco = categories?.roleChildren?.find((n) => n.id === 'r-eco');
@@ -205,7 +205,7 @@ describe('DotRolesStore', () => {
             expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('eco');
             expect(service.loadRoleMembersById).not.toHaveBeenCalled();
             expect(store.members()).toHaveLength(2);
-            expect(store.membersStatus()).toBe('loaded');
+            expect(store.membersStatus()).toBe('LOADED');
         });
 
         it('should fall back to the roleId path when the role has no roleKey', () => {
@@ -270,7 +270,7 @@ describe('DotRolesStore', () => {
             // tab: the store surfaces the error via the http manager but
             // still resolves to `loaded` with whatever succeeded.
             expect(errorManager.handle).toHaveBeenCalled();
-            expect(store.membersStatus()).toBe('loaded');
+            expect(store.membersStatus()).toBe('LOADED');
         });
     });
 
@@ -310,7 +310,7 @@ describe('DotRolesStore', () => {
             expect(service.searchRoles).toHaveBeenCalledWith('eco');
             expect(store.isSearching()).toBe(true);
             expect(store.filteredRoles()).toEqual(matchedTree);
-            expect(store.searchStatus()).toBe('loaded');
+            expect(store.searchStatus()).toBe('LOADED');
         });
 
         it('should return an empty result when the search returns nothing', () => {

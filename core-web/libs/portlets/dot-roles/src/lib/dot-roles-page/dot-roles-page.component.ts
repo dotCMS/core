@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
 
 import { SplitterModule } from 'primeng/splitter';
 import { TabsModule } from 'primeng/tabs';
@@ -13,7 +13,6 @@ import { DotRolesTreeComponent } from './components/dot-roles-tree/dot-roles-tre
 import { DotRolesStore } from './store/dot-roles.store';
 
 import { DotRoleTab } from '../models/dot-roles.models';
-import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
 
 @Component({
     selector: 'dot-roles-page',
@@ -28,9 +27,10 @@ import { DotRolesPortletService } from '../services/dot-roles-portlet.service';
         DotRolePermissionsIframeComponent,
         DotRoleToolsIframeComponent
     ],
-    providers: [DotRolesPortletService, DotRolesStore],
+    providers: [DotRolesStore],
     templateUrl: './dot-roles-page.component.html',
-    host: { class: 'flex flex-1 min-h-0 block' }
+    host: { class: 'flex flex-1 min-h-0 block' },
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRolesPageComponent implements OnInit {
     protected readonly store = inject(DotRolesStore);

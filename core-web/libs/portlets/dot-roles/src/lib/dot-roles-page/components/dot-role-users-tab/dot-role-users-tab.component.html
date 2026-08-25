@@ -37,7 +37,7 @@
         or resize the tab.
     -->
     <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
-        @if (store.membersStatus() === 'loading' || store.selectedRoleStatus() === 'loading') {
+        @if (store.membersStatus() === 'LOADING' || store.selectedRoleStatus() === 'LOADING') {
             <!--
                 Skeleton table — matches the real column layout (Name + Email
                 + Granted From + row action). Five rows is enough visual
@@ -67,7 +67,7 @@
                     </tr>
                 </ng-template>
             </p-table>
-        } @else if (store.membersStatus() === 'error') {
+        } @else if (store.membersStatus() === 'ERROR') {
             <p class="m-0 px-6 text-sm text-red-700" data-testid="members-error">
                 {{ 'error.load-failed' | dm }}
             </p>

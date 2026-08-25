@@ -85,7 +85,11 @@ interface LegacyRoleSearchResponse {
  * out in the individual methods; they resolve to the dedicated v1 endpoints
  * once #36936, #36937, #36938, #36939 land.
  */
-@Injectable()
+// `providedIn: 'root'` — the service is stateless (an HTTP-client wrapper),
+// so a singleton is safe and lets other portlets / tests inject it without
+// having to add it to their `providers` array. Previously component-scoped,
+// which worked as long as consumers always rendered under `dot-roles-page`.
+@Injectable({ providedIn: 'root' })
 export class DotRolesPortletService {
     #http = inject(HttpClient);
 

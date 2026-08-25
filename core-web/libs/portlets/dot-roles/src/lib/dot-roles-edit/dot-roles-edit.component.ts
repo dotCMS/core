@@ -1,4 +1,4 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
@@ -21,8 +21,6 @@ interface ParentOption {
     label: string;
     value: string | null;
 }
-
-const ROOT_PARENT: ParentOption = { label: 'None (top level)', value: null };
 
 /**
  * Edit Role dialog. Wired to PUT /v1/roles/{roleId} via the store (#36936).
@@ -50,7 +48,8 @@ const ROOT_PARENT: ParentOption = { label: 'None (top level)', value: null };
         DotMessagePipe
     ],
     providers: [ConfirmationService],
-    templateUrl: './dot-roles-edit.component.html'
+    templateUrl: './dot-roles-edit.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRolesEditComponent {
     readonly #store = inject(DotRolesStore);
@@ -78,11 +77,20 @@ export class DotRolesEditComponent {
     });
 
     protected readonly $parentOptions = computed<ParentOption[]>(() => {
+        // Defensive: the dialog can theoretically be opened without
+        // `data.role` (misconfigured caller) — bail out with an empty list
+        // instead of crashing on `this.role.id`.
+        if (!this.role) {
+            return [];
+        }
         const exclude = new Set<string>();
         this.#collectDescendantIds(this.#findInTree(this.#store.roleTree(), this.role.id), exclude);
         exclude.add(this.role.id);
 
-        return [ROOT_PARENT, ...this.#flattenRoles(this.#store.roleTree(), exclude)];
+        return [
+            { label: this.#messageService.get('roles.form.parent.root'), value: null },
+            ...this.#flattenRoles(this.#store.roleTree(), exclude)
+        ];
     });
 
     constructor() {
@@ -134,7 +142,7 @@ export class DotRolesEditComponent {
             message: this.#messageService.get('roles.confirm.delete.message', this.role.name),
             header: this.#messageService.get('roles.confirm.delete.header'),
             // Plain "Delete" (not "Delete Role") — the header already names the object.
-            acceptLabel: this.#messageService.get('Delete'),
+            acceptLabel: this.#messageService.get('roles.action.delete'),
             rejectLabel: this.#messageService.get('roles.action.cancel'),
             // Default (primary) styling — no red — per UX guidance for this
             // confirm even though the action is destructive.
@@ -149,9 +157,15 @@ export class DotRolesEditComponent {
                     this.$submitting.set(false);
                     if (result?.deleted) {
                         this.#ref.close({ deleted: true, ...result });
-                    } else {
+                    } else if (result && result.deleted === false) {
+                        // Server-side rejection with a 200 (e.g. hierarchy
+                        // constraint) — no toast was fired, surface the
+                        // inline banner as the only feedback.
                         this.$error.set('roles.delete.error');
                     }
+                    // result === null → HTTP error already surfaced by
+                    // `DotHttpErrorManagerService.handle` inside the store.
+                    // Don't double up.
                 });
             }
         });
@@ -177,8 +191,10 @@ export class DotRolesEditComponent {
             if (exclude.has(node.id)) {
                 return acc;
             }
+            // Non-breaking spaces so the select renderer doesn't collapse
+            // leading whitespace and lose the hierarchy hint.
             acc.push({
-                label: `${' '.repeat(depth * 2)}${node.name}`,
+                label: `${'  '.repeat(depth)}${node.name}`,
                 value: node.id
             });
             if (node.roleChildren?.length) {

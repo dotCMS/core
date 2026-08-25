@@ -1,6 +1,15 @@
 import { Subject, of } from 'rxjs';
 
-import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    DestroyRef,
+    computed,
+    effect,
+    inject,
+    signal,
+    untracked
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -55,7 +64,8 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
-    host: { class: 'block h-full' }
+    host: { class: 'block h-full' },
+    changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);
@@ -81,6 +91,8 @@ export class DotRoleUsersTabComponent {
 
     protected readonly $highlightUserId = signal<string | null>(null);
     #highlightTimeout: ReturnType<typeof setTimeout> | null = null;
+    /** Flipped by `#destroyRef.onDestroy` to gate writes from stale `.then`s. */
+    #destroyed = false;
 
     // Server-side search: client-side `p-listbox [filter]` only narrows the
     // page the server returned, so we refetch on every keystroke. `switchMap`
@@ -129,6 +141,7 @@ export class DotRoleUsersTabComponent {
             .subscribe((users) => this.$userSuggestions.set(users));
 
         this.#destroyRef.onDestroy(() => {
+            this.#destroyed = true;
             if (this.#highlightTimeout !== null) {
                 clearTimeout(this.#highlightTimeout);
             }
@@ -157,7 +170,10 @@ export class DotRoleUsersTabComponent {
     protected onGrantUser(user: DotRoleUserFilterResult, panel: Popover): void {
         panel.hide();
         this.store.grantUserToRole(user.userId).then((result) => {
-            if (!result?.granted) {
+            // If the user navigated away between the click and the response,
+            // don't touch signals on a torn-down component — the effect that
+            // consumes them is gone.
+            if (this.#destroyed || !result?.granted) {
                 return;
             }
             this.$highlightUserId.set(user.userId);

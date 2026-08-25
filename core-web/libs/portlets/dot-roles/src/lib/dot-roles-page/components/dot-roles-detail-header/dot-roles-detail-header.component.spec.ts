@@ -29,7 +29,7 @@ describe('DotRolesDetailHeaderComponent', () => {
         componentProviders: [
             mockProvider(DotRolesStore, {
                 selectedRole: jest.fn().mockReturnValue(null),
-                selectedRoleStatus: jest.fn().mockReturnValue('init'),
+                selectedRoleStatus: jest.fn().mockReturnValue('INIT'),
                 selectedRoleIsParent: jest.fn().mockReturnValue(false),
                 memberCount: jest.fn().mockReturnValue(0),
                 isSystemRole: jest.fn().mockReturnValue(false),
