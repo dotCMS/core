@@ -827,7 +827,7 @@ ports:
 - JMX authentication is disabled for development
 
 **3. Wrong JConsole Version**
-- Use JConsole from same JDK version as dotCMS (Java 21)
+- Use JConsole from same JDK version as dotCMS (Java 25)
 - Avoid mixing different Java versions
 
 **4. Base Image Issues**
