@@ -1,4 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -42,7 +43,11 @@ import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/util
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
-import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
+import {
+    DotContentDriveContextMenu,
+    DotContentDriveState,
+    DotContentDriveStatus
+} from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
@@ -893,7 +898,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // A confirmed destructive action that does nothing at all, with no message, is worse
                 // than an error. Narrow (there is normally a browsed site) but it must not be silent.
                 it('should report rather than silently skip when no site is resolved', async () => {
-                    store.currentSite.mockReturnValue(undefined);
+                    // `store` is typed `SpyObject<...>`, whose mocked members no longer match
+                    // `WritableStateSource` structurally. The instance is the real store, so
+                    // cast back to the state source `patchState` expects.
+                    patchState(store as unknown as WritableStateSource<DotContentDriveState>, {
+                        currentSite: undefined
+                    });
                     jest.spyOn(messageService, 'add');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
