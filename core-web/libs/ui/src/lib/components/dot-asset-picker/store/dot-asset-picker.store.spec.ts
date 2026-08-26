@@ -578,7 +578,11 @@ describe('DotAssetPickerStore', () => {
                                 hasChildren: false
                             })
                         ],
-                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 } as DotPagination
+                        pagination: {
+                            currentPage: 1,
+                            perPage: 40,
+                            totalEntries: 1
+                        } as DotPagination
                     })
                 );
             });
@@ -976,7 +980,11 @@ describe('DotAssetPickerStore', () => {
                                 hasChildren: false
                             })
                         ],
-                        pagination: { currentPage: 2, perPage: 40, totalEntries: 2 } as DotPagination
+                        pagination: {
+                            currentPage: 2,
+                            perPage: 40,
+                            totalEntries: 2
+                        } as DotPagination
                     })
                 );
 
