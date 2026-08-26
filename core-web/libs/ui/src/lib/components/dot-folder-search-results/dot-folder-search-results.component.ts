@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
 
@@ -32,7 +32,6 @@ import { DotFolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.p
 @Component({
     selector: 'dot-folder-search-results',
     templateUrl: './dot-folder-search-results.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotMessagePipe, DotFolderNamePipe],
     host: { class: 'block min-w-0 overflow-y-auto' }
 })
