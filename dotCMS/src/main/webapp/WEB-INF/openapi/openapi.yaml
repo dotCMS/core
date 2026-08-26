@@ -6221,6 +6221,38 @@ paths:
       summary: Copies a container to the current host
       tags:
       - Containers
+  /v1/content/_bulkrefresh:
+    post:
+      description: "Clears the contentlet cache and reindexes every selected contentlet,\
+        \ all versions of each. Returns a job id. This is accepted work, not finished\
+        \ work: completion is pushed to the submitting user over the websocket. Not\
+        \ a full index rebuild."
+      operationId: bulkRefreshContent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkRefreshForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkRefreshSubmitView"
+          description: Accepted - reindex job enqueued
+        "400":
+          description: Bad request - empty selection or over the configured item cap
+        "401":
+          description: Unauthorized - no backend user session
+        "403":
+          description: Forbidden - not a CMS Power User or CMS Administrator
+        "415":
+          description: Unsupported Media Type
+        "500":
+          description: Internal Server Error - the job could not be created
+      summary: Reindex a selection of contentlets
+      tags:
+      - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
       description: Checks if the contentlet specified by its inode or identifier can
@@ -15986,6 +16018,75 @@ paths:
       summary: Remove users from a role
       tags:
       - Roles
+    get:
+      description: "Returns the paginated list of users directly granted the given\
+        \ role, using the standard user serialization (email address included). Grants\
+        \ inherited through the role hierarchy are not included."
+      operationId: loadUsersByRoleId
+      parameters:
+      - description: Id of the role to list users for
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      - description: "Filter matching user id, first name, last name, email or full\
+          \ name"
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: Page number for pagination
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Number of items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      - description: Column name for sorting results
+        in: query
+        name: orderby
+        schema:
+          type: string
+      - description: "Sorting direction: ASC or DESC"
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Users retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination or sorting parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - roles portlet access required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Get the users directly granted a role
+      tags:
+      - Roles
   /v1/roles/{roleid}/users/{userId}:
     post:
       description: "Grants the role to the user as a DIRECT membership. The operation\
@@ -25142,6 +25243,10 @@ components:
           - CATEGORY
           - RULE
           example: FOLDER
+        canAddChildren:
+          type: boolean
+          description: Whether the requesting user can add children to this asset
+          example: true
         canEdit:
           type: boolean
           description: Whether the requesting user can edit this asset
@@ -25181,6 +25286,7 @@ components:
       required:
       - assetId
       - assetType
+      - canAddChildren
       - canEdit
       - canEditPermissions
       - inheritanceMode
@@ -25493,6 +25599,29 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkRefreshForm:
+      type: object
+      properties:
+        contentletIds:
+          type: array
+          items:
+            type: string
+          maxItems: 2147483647
+          minItems: 1
+        includeDependencies:
+          type: boolean
+        includeItemResults:
+          type: boolean
+      required:
+      - contentletIds
+    BulkRefreshSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkResultView:
       type: object
       properties:
@@ -32925,6 +33054,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityBulkRefreshSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkRefreshSubmitResponse"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityBulkResultView:
       type: object
       properties:
@@ -37217,6 +37369,12 @@ components:
     RoleView:
       type: object
       properties:
+        childCount:
+          type: integer
+          format: int32
+          description: "Number of direct child roles, independent of children hydration"
+          example: 3
+          minimum: 0
         dbfqn:
           type: string
         description:
@@ -37245,6 +37403,17 @@ components:
           type: string
         system:
           type: boolean
+        userCount:
+          type: integer
+          format: int32
+          description: "Number of users directly granted this role, matching the totals\
+            \ of the role users listing: inherited grants and hidden users (system,\
+            \ anonymous, default, flagged for deletion) are not included"
+          example: 12
+          minimum: 0
+      required:
+      - childCount
+      - userCount
     RowField:
       type: object
       allOf:

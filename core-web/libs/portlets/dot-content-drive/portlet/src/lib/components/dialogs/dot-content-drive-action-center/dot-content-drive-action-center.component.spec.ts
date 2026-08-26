@@ -5,6 +5,8 @@ import { of, throwError } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
+import { MessageService } from 'primeng/api';
+
 import {
     AddToBundleService,
     DotCurrentUserService,
@@ -157,15 +159,20 @@ describe('DotContentDriveActionCenterComponent', () => {
     let workflowsActionsService: SpyObject<DotWorkflowsActionsService>;
     /** What the push publish environments lookup answers; see the `mockProvider` below. */
     let pushPublishEnvironments: DotEnvironment[] = [];
-    /** When true the lookup errors instead, for the fails-closed case. */
-    let pushPublishEnvironmentsFail = false;
 
     const mockSelectedItems = signal<DotContentDriveItem[]>([]);
+    // The rows as the table lists them. Selection arrives in the order rows were ticked, so this is
+    // the only source of the order the user actually looked at.
+    const mockItems = signal<DotContentDriveItem[]>([]);
     // Owned by the store now, so the dialog reads it rather than tracking its own executing flag.
     const mockActionExecution = signal<DotContentDriveActionExecution | undefined>(undefined);
     // Resolved once on portlet init, so the dialog reads it rather than fetching per open. `false`
     // is both the non-admin case and the still-loading one — see `isLockedByAnotherUser`.
     const mockCurrentUserIsAdmin = signal<boolean>(false);
+    // Also resolved once on portlet init, for the same reason and because the folder context menu
+    // gates on it too. `undefined` is "not looked up yet" and reads as disabled; the mapping from a
+    // lookup (empty list, or a failure) onto this flag is asserted in `withPushPublishEnvironments`.
+    const mockHasPushPublishEnvironments = signal<boolean | undefined>(undefined);
     // Where Content Drive is browsing. Only the hostname and path matter to this dialog.
     const mockCurrentSite = signal<{ hostname: string } | undefined>({
         hostname: 'demo.dotcms.com'
@@ -178,8 +185,10 @@ describe('DotContentDriveActionCenterComponent', () => {
             provideHttpClient(),
             mockProvider(DotContentDriveStore, {
                 selectedItems: mockSelectedItems,
+                items: mockItems,
                 actionExecution: mockActionExecution,
                 currentUserIsAdmin: mockCurrentUserIsAdmin,
+                hasPushPublishEnvironments: mockHasPushPublishEnvironments,
                 // The folder being browsed, which seeds the move destination picker.
                 currentSite: mockCurrentSite,
                 path: mockPath,
@@ -192,8 +201,12 @@ describe('DotContentDriveActionCenterComponent', () => {
                 executeQuickAction: jest.fn(),
                 executeWorkflowAction: jest.fn(),
                 executeAddToBundle: jest.fn(),
-                executePushPublish: jest.fn()
+                executePushPublish: jest.fn(),
+                executeRefresh: jest.fn()
             }),
+            // The trigger toast for a backgrounded reindex goes through PrimeNG's MessageService,
+            // which in the app resolves to the shell's instance so the toast outlives this dialog.
+            mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
                 get: jest.fn().mockImplementation((key: string) => key)
             }),
@@ -211,11 +224,7 @@ describe('DotContentDriveActionCenterComponent', () => {
                 // test: `mockProvider` builds this `jest.fn` once for the whole file, and the
                 // `afterEach` `clearAllMocks` drops any `mockReturnValue` set on it, so only the
                 // first test in a block would see one. A closure over a mutable answer is immune.
-                getEnvironments: jest.fn(() =>
-                    pushPublishEnvironmentsFail
-                        ? throwError(() => new Error('environments lookup failed'))
-                        : of(pushPublishEnvironments)
-                ),
+                getEnvironments: jest.fn(() => of(pushPublishEnvironments)),
                 lastEnvironmentPushed: null
             }),
             mockProvider(DotRolesService, { get: jest.fn(() => of([])) }),
@@ -257,10 +266,14 @@ describe('DotContentDriveActionCenterComponent', () => {
             contentlet({ inode: 'inode-1' }),
             contentlet({ inode: 'inode-2', live: true })
         ]);
+        mockItems.set([
+            contentlet({ inode: 'inode-1' }),
+            contentlet({ inode: 'inode-2', live: true })
+        ]);
         mockActionExecution.set(undefined);
         mockCurrentUserIsAdmin.set(false);
+        mockHasPushPublishEnvironments.set(false);
         pushPublishEnvironments = [];
-        pushPublishEnvironmentsFail = false;
         mockCurrentSite.set({ hostname: 'demo.dotcms.com' });
         mockPath.set('/blogs');
 
@@ -459,19 +472,62 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
     });
 
+    describe('preview ordering', () => {
+        // Selection is stored in the order rows were ticked (`setSelectedItems` keeps PrimeNG's
+        // array verbatim), so a preview built straight off it lists rows in click order. The user
+        // is confirming against what the table just showed them, so it has to match the table.
+        it('should list the preview in table order, not the order rows were ticked', () => {
+            const rows = [
+                contentlet({ inode: 'a' }),
+                contentlet({ inode: 'b' }),
+                contentlet({ inode: 'c' })
+            ];
+            mockItems.set(rows);
+            mockSelectedItems.set([rows[2], rows[0], rows[1]]);
+
+            spectator.detectChanges();
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$includedItems']().map((item) => item.inode)).toEqual([
+                'a',
+                'b',
+                'c'
+            ]);
+        });
+    });
+
     describe('folders in the selection', () => {
-        it('should warn that folders are ignored', () => {
+        it('should say which actions the folders are limited to', () => {
             mockSelectedItems.set([contentlet({ inode: 'inode-1' }), folder('folder-1')]);
 
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeTruthy();
+            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeTruthy();
         });
 
-        it('should not warn when the selection has no folders', () => {
+        it('should not show the notice when the selection has no folders', () => {
             spectator.detectChanges();
 
-            expect(spectator.query('[data-testid="folders-ignored-message"]')).toBeFalsy();
+            expect(spectator.query('[data-testid="folders-limited-message"]')).toBeFalsy();
+        });
+
+        it('should send folders and contentlets in one Add to Bundle call', () => {
+            // Folder identifiers resolve server-side to PusheableAsset.FOLDER, so a mixed selection
+            // is one call rather than a contentlet call plus a folder call.
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                folder('folder-1')
+            ]);
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="quick-action-ADD_TO_BUNDLE"]');
+            spectator.detectChanges();
+
+            expect(spectator.component['$includedItems']().map((item) => item.identifier)).toEqual([
+                'id-1',
+                'folder-1'
+            ]);
         });
 
         it('should render the notice statically, with no entrance animation', () => {
@@ -483,7 +539,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
             spectator.detectChanges();
 
-            const notice = spectator.query('[data-testid="folders-ignored-message"]');
+            const notice = spectator.query('[data-testid="folders-limited-message"]');
 
             expect(notice).toBeTruthy();
             expect(notice?.classList.contains('no-enter-motion')).toBe(true);
@@ -535,7 +591,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         });
 
-        it('should render Refresh as a disabled placeholder', () => {
+        it('should render Refresh as a selectable action', () => {
             spectator.detectChanges();
 
             const row = spectator.query(
@@ -543,10 +599,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             ) as HTMLButtonElement;
 
             expect(row).toBeTruthy();
-            expect(row.disabled).toBe(true);
-            expect(
-                spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')
-            ).toBeTruthy();
+            expect(row.disabled).toBe(false);
+            expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
         });
 
         it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
@@ -568,18 +622,115 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             // Disabled, so a real click cannot land — called directly to prove the guard holds if
-            // one ever does. Both blocked states are covered: Refresh is a placeholder, Push
-            // Publish has nowhere to send to.
-            for (const id of ['REFRESH', 'PUSH_PUBLISH']) {
-                spectator.component['onSelectQuickAction'](
-                    spectator.component['$quickActions']().find((action) => action.id === id)!
-                );
-            }
+            // one ever does. Push Publish has nowhere to send to; Refresh is no longer blocked.
+            spectator.component['onSelectQuickAction'](
+                spectator.component['$quickActions']().find(
+                    (action) => action.id === 'PUSH_PUBLISH'
+                )!
+            );
 
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
             expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        it('should execute Refresh through its own store method, not the workflow fire', () => {
+            // Refresh speaks inodes like Lock and Unlock but goes to a job-backed endpoint of its
+            // own, so routing it through `executeQuickAction` would fire a system action that does
+            // not exist.
+            executeQuickAction('REFRESH');
+
+            expect(store.executeRefresh).toHaveBeenCalledWith(expect.any(String), [
+                'inode-1',
+                'inode-2'
+            ]);
+            expect(store.executeQuickAction).not.toHaveBeenCalled();
+        });
+
+        it('should send only the rows left checked in the Refresh preview', () => {
+            openQuickActionPreview('REFRESH');
+            toggleRow(0);
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            const [, inodes] = (store.executeRefresh as unknown as jest.Mock).mock.calls[0];
+
+            expect(inodes).toEqual(['inode-2']);
+        });
+
+        it('should not ask for configuration before refreshing', () => {
+            // Nothing to collect: a reindex takes no assignee, no destination and no environments,
+            // so it goes straight to the preview like Lock and Unlock do.
+            openQuickActionPreview('REFRESH');
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeTruthy();
+        });
+
+        it('should toast at trigger that the reindex runs in the background', () => {
+            // The only feedback the user gets now: there is no "Applying ..." indicator for a reindex,
+            // because it runs for minutes and cannot report progress.
+            const messageService = spectator.inject(MessageService);
+
+            executeQuickAction('REFRESH');
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'info',
+                    summary: 'content-drive.action-center.toast.reindex-started'
+                })
+            );
+        });
+
+        it('should not claim a reindex started when nothing was submitted', () => {
+            // Toasting with nothing submitted tells the user their reindex is running when it is not,
+            // and the hand-off clears their selection on the way out, so they lose the rows too. With
+            // the in-flight guard gone, an emptied preview is the remaining way to reach that.
+            const messageService = spectator.inject(MessageService);
+
+            openQuickActionPreview('REFRESH');
+            toggleRow(0);
+            toggleRow(1);
+            spectator.click('[data-testid="action-preview-execute"]');
+            spectator.detectChanges();
+
+            expect(store.executeRefresh).not.toHaveBeenCalled();
+            expect(messageService.add).not.toHaveBeenCalled();
+            expect(store.setSelectedItems).not.toHaveBeenCalled();
+        });
+
+        it('should not toast at trigger for the synchronous actions', () => {
+            // They settle in seconds and report through the toolbar indicator, so a "runs in the
+            // background" toast would be both wrong and noisy.
+            const messageService = spectator.inject(MessageService);
+
+            executeQuickAction('LOCK');
+
+            expect(messageService.add).not.toHaveBeenCalled();
+        });
+
+        it('should clear the grid selection when an action is handed off', () => {
+            // Once an action is fired the selection has served its purpose, and leaving the boxes
+            // ticked invited firing a second action over rows already being changed.
+            executeQuickAction('LOCK');
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+        });
+
+        it('should clear the grid selection when a reindex is handed off', () => {
+            // Matters most here: a reindex runs for minutes, so without this the rows stay ticked for
+            // the whole run.
+            executeQuickAction('REFRESH');
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+        });
+
+        it('should keep the selection when the dialog is merely dismissed', () => {
+            // Dismissing is not firing. Clearing here would lose a selection the user is still
+            // building.
+            openQuickActionPreview('LOCK');
+
+            expect(store.setSelectedItems).not.toHaveBeenCalled();
         });
 
         it('should keep Add to Bundle selectable', () => {
@@ -1613,15 +1764,16 @@ describe('DotContentDriveActionCenterComponent', () => {
         /**
          * Renders as if an environment were reachable.
          *
-         * Sets the resolved signal rather than the service answer. The lookup fires once from
-         * `ngOnInit`, and re-programming a `mockProvider` method per test proved unreliable here —
-         * the value only took for the first test in the block. The service-to-signal wiring is
-         * covered on its own by the two tests that exercise the real lookup (no environments, and
-         * the failing lookup); everything below is about what the dialog does *given* an answer.
+         * Drives the store signal the dialog reads. The lookup itself moved to
+         * `withPushPublishEnvironments`, which owns the mapping from a service answer (a list, an
+         * empty list, or a failure) onto this flag; everything below is about what the dialog does
+         * *given* an answer.
          */
         const withEnvironments = (): void => {
-            spectator.detectChanges();
-            spectator.component['$hasPushPublishEnvironments'].set(true);
+            mockHasPushPublishEnvironments.set(true);
+            // The service still backs the environment selector embedded in the push publish step,
+            // so give it something to list even though the gate no longer comes from it.
+            pushPublishEnvironments = ENVIRONMENTS;
             spectator.detectChanges();
         };
 
@@ -1633,8 +1785,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         };
 
         it('should enable the row once an environment is reachable', () => {
-            // Through the real lookup, so the service-to-signal wiring is covered.
-            pushPublishEnvironments = ENVIRONMENTS;
+            withEnvironments();
 
             spectator.detectChanges();
 
@@ -1731,6 +1882,31 @@ describe('DotContentDriveActionCenterComponent', () => {
             );
         });
 
+        // The mirror of the Add to Bundle case: allowing folders into the selection is only worth
+        // anything if they reach the payload, because a folder the user lacks PUBLISH on comes back
+        // from `PublisherAPIImpl` as a counted per-asset error. Dropped before the call, it would
+        // never be counted and the user would never learn it did not go.
+        it('should send folders and contentlets in one Push Publish call', () => {
+            mockSelectedItems.set([
+                contentlet({ inode: 'inode-1', identifier: 'id-1' }),
+                folder('folder-1')
+            ]);
+            withEnvironments();
+            spectator.click('[data-testid="quick-action-PUSH_PUBLISH"]');
+            spectator.detectChanges();
+            fillPushPublishForm();
+            spectator.click('[data-testid="action-configure-continue"]');
+            spectator.detectChanges();
+
+            spectator.click('[data-testid="action-preview-execute"]');
+
+            expect(store.executePushPublish).toHaveBeenCalledWith(
+                expect.any(String),
+                ['id-1', 'folder-1'],
+                PUSH_PUBLISH_SETTINGS
+            );
+        });
+
         it('should not push without settings', () => {
             // Refused here as well as by the disabled Continue: the servlet answers 200 having sent
             // nothing anywhere, which would read as a success.
@@ -1743,10 +1919,12 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(store.executePushPublish).not.toHaveBeenCalled();
         });
 
-        it('should disable the row when the environments lookup fails', () => {
-            // Fails closed: offering a push with nowhere to go fails at the servlet with a message
-            // the user cannot act on.
-            pushPublishEnvironmentsFail = true;
+        it('should disable the row when no environment is reachable', () => {
+            // The dialog's half of failing closed: offering a push with nowhere to go fails at the
+            // servlet with a message the user cannot act on. That a failed *lookup* resolves to
+            // `false` rather than being treated as "probably fine" is asserted in
+            // `withPushPublishEnvironments`, which now owns the lookup.
+            mockHasPushPublishEnvironments.set(false);
 
             spectator.detectChanges();
 

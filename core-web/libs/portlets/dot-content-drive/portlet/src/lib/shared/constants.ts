@@ -65,6 +65,15 @@ export const DEFAULT_TREE_EXPANDED = true;
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
 
+/**
+ * The site root as a browsable path.
+ *
+ * Distinct from {@link DEFAULT_PATH}: that is the *absence* of a path in the URL, while this is an
+ * explicit "go to the root" the drive can be sent to — used when the folder being browsed stops
+ * existing.
+ */
+export const ROOT_PATH = '/';
+
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
     hasMoreFolders: true,

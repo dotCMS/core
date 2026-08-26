@@ -24,7 +24,6 @@ jobs:
       - name: Run NX Commands
         run: |
           cd core-web
-          npm run build:docs:dotcms
           npm run build:docs:dotcms-models
       - name: Deploy to GitHub Pages
         uses: JamesIves/github-pages-deploy-action@4.1.0

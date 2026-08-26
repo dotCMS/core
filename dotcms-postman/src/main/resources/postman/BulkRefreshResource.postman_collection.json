@@ -1,0 +1,412 @@
+{
+  "info": {
+    "_postman_id": "8f2c1a44-6b3d-4f01-9a5c-2e7d4b9c1f30",
+    "name": "BulkRefreshResource",
+    "description": "Exercises POST /api/v1/content/_bulkrefresh over HTTP.\n\nCompletion is reported by push — a BULK_REFRESH_COMPLETED system event over the admin UI's websocket — so there is no status endpoint to poll and no completion assertion possible here. That is covered by BulkRefreshResourceIntegrationTest instead.\n\nThis endpoint is NOT a full index rebuild. POST /api/v1/esindex/reindex is a different operation and is not touched here.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          "   ",
+          "if(!pm.collectionVariables.get('jwt')){",
+          "    console.log(\"generating....\")",
+          "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
+          "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
+          "        const password = pm.environment.get(\"password\") || pm.collectionVariables.get('password');",
+          "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "        const requestOptions = {",
+          "            url: apiUrl,",
+          "            method: \"POST\",",
+          "            header: {",
+          "                \"accept\": \"*/*\",",
+          "                \"content-type\": \"application/json\",",
+          "                \"Authorization\": `Basic ${basicAuth}`",
+          "            },",
+          "            body: {",
+          "                mode: \"raw\",",
+          "                raw: JSON.stringify({",
+          "                    \"expirationSeconds\": 7200,",
+          "                    \"userId\": \"dotcms.org.1\",",
+          "                    \"network\": \"0.0.0.0/0\",",
+          "                    \"claims\": {\"label\": \"postman-tests\"}",
+          "                })",
+          "            }",
+          "        };",
+          "",
+          "        pm.sendRequest(requestOptions, function (err, response) {",
+          "            if (err) {",
+          "                console.log(err);",
+          "            } else {",
+          "                const jwt = response.json().entity.jwt;",
+          "                pm.collectionVariables.set('jwt', jwt);",
+          "                console.log(\"Successfully got a jwt :\" + jwt);",
+          "            }",
+          "        });    ",
+          "}           "
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "pre-execution-scripts",
+      "description": "Finds a real contentlet to reindex, so the tests operate on live content.",
+      "item": [
+        {
+          "name": "Find a Contentlet to Refresh",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/content/_search",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "content",
+                "_search"
+              ]
+            },
+            "description": "Any working contentlet will do; the endpoint is not type-specific.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"query\": \"+baseType:1 +working:true +deleted:false\",\n  \"limit\": 1,\n  \"sort\": \"modDate desc\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Search returns a contentlet to work with', function () {",
+                  "    pm.response.to.have.status(200);",
+                  "    const results = pm.response.json().entity.jsonObjectView.contentlets;",
+                  "    pm.expect(results).to.be.an('array').that.is.not.empty;",
+                  "    pm.collectionVariables.set('inode', results[0].inode);",
+                  "    pm.collectionVariables.set('identifier', results[0].identifier);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Test Bulk Refresh Happy Path",
+      "item": [
+        {
+          "name": "Submit Bulk Refresh Expect Accepted",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "description": "202 rather than 200: the work is accepted, not finished. A client must not be able to read this response as 'reindexed'.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentletIds\": [\"{{inode}}\"],\n  \"includeItemResults\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Responds 202 Accepted', function () {",
+                  "    pm.response.to.have.status(202);",
+                  "});",
+                  "",
+                  "pm.test('Hands back the accepted job id', function () {",
+                  "    const entity = pm.response.json().entity;",
+                  "    pm.expect(entity.jobId).to.be.a('string').and.not.empty;",
+                  "    pm.expect(entity.submitted).to.eql(1);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Test Request Validations",
+      "item": [
+        {
+          "name": "Submit Empty Selection Expect Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "description": "An empty selection is a client bug, not a no-op job: enqueuing one would hand back a job id that can only ever report zero work.",
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"contentletIds\": []\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Without contentletIds Expect Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"includeItemResults\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Over The Item Cap Expect Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "description": "Synchronous indexing over an unbounded selection is a self-inflicted full reindex, which is the one thing this endpoint must never become.",
+            "body": {
+              "mode": "raw",
+              "raw": "{{oversizedSelection}}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            }
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// One past the documented default cap of 500. If CONTENT_BULK_REFRESH_MAX_ITEMS is raised",
+                  "// above this in an environment, this request stops being over the cap - and the test says so",
+                  "// rather than failing mysteriously.",
+                  "const ids = [];",
+                  "for (let i = 0; i <= 500; i++) {",
+                  "    ids.push('00000000-0000-0000-0000-' + String(i).padStart(12, '0'));",
+                  "}",
+                  "pm.collectionVariables.set('oversizedSelection', JSON.stringify({contentletIds: ids}));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Rejected with 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Submit Without A Body Expect Bad Request",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{serverURL}}/api/v1/content/_bulkrefresh",
+              "host": [
+                "{{serverURL}}"
+              ],
+              "path": [
+                "api",
+                "v1",
+                "content",
+                "_bulkrefresh"
+              ]
+            },
+            "description": "No body at all. Jersey hands the resource a null form, bean validation never runs on it, and the documented 400 has to come from an explicit check rather than from an NPE."
+          },
+          "response": [],
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "// Jersey hands the resource a null form for an absent body, and bean validation never runs",
+                  "// on it. Without an explicit check the first dereference NPEs into RuntimeExceptionMapper",
+                  "// and answers 500, contradicting the documented 400.",
+                  "pm.test('Status code is 400', function () {",
+                  "    pm.response.to.have.status(400);",
+                  "});"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "variable": [
+    {
+      "key": "inode",
+      "value": ""
+    },
+    {
+      "key": "oversizedSelection",
+      "value": ""
+    }
+  ]
+}
