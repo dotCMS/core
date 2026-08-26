@@ -1012,16 +1012,27 @@ public class UserResource implements Serializable {
 			user.setAdditionalInfo(createUserForm.getAdditionalInfo());
 		}
 
-		final List<String> roleKeys = UtilMethods.isSet(createUserForm.getRoles())?
+		// absent OR empty roles → legacy default (Front-end User); entries are role keys or role IDs
+		final List<String> roleEntries = UtilMethods.isSet(createUserForm.getRoles())?
 				createUserForm.getRoles():list(Role.DOTCMS_FRONT_END_USER);
 
 		this.userAPI.save(user, modUser, false);
 		Logger.debug(this,  ()-> USER_WITH_USER_ID_MSG + userId + "' and email '" +
 				createUserForm.getEmail() + "' has been created.");
 
-		for (final String roleKey : roleKeys) {
+		// same semantics UserHelper#addRole(user, key, false, false) had: unknown → ignored,
+		// already held → skipped, non-assignable (editUsers=false) → addRoleToUser throws and the
+		// whole create rolls back. UserHelper itself is left untouched — SAML provisioning uses it.
+		for (final String roleEntry : roleEntries) {
 
-			UserHelper.getInstance().addRole(user, roleKey, false	, false);
+			final Role role = this.resolveRole(roleEntry);
+			if (null == role) {
+				Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
+				continue;
+			}
+			if (!this.roleAPI.doesUserHaveRole(user, role)) {
+				this.roleAPI.addRoleToUser(role, user);
+			}
 		}
 
 		return user;
@@ -1385,6 +1396,17 @@ public class UserResource implements Serializable {
 	}
 
     /**
+     * Resolves a {@code roles} payload entry to a {@link Role}: by key first (legacy precedence),
+     * then by ID. Returns {@code null} when neither matches. Roles created in the Roles portlet may
+     * have no key, so the ID form is the only way to reference them (#37209).
+     */
+    private Role resolveRole(final String keyOrId) throws DotDataException {
+
+        final Role byKey = this.roleAPI.loadRoleByKey(keyOrId);
+        return null != byKey ? byKey : this.roleAPI.loadRoleById(keyOrId);
+    }
+
+    /**
      * Reconciles the user's role memberships against the {@code roles} key list sent in the
      * payload, mirroring the legacy Users portlet behavior (DWR {@code UserAjax#updateUserRoles}):
      * only user-assignable roles ({@code editUsers = true}) are added or removed. System-managed
@@ -1392,13 +1414,14 @@ public class UserResource implements Serializable {
      *
      * A {@code null} list (field absent from the payload) leaves roles untouched; an empty list
      * removes all of the user's user-assignable roles; a non-empty list becomes the user's
-     * complete user-assignable role set. Keys that resolve to no role are ignored; null or
-     * blank entries are rejected with 400.
+     * complete user-assignable role set. Each entry is a role key or a role ID (#37209 — roles
+     * created in the Roles portlet may have no key); entries that resolve to no role are ignored;
+     * null or blank entries are rejected with 400.
      */
     private void processRoles(final UserForm updateUserForm, final User userToSave) throws DotDataException {
 
-        final List<String> roleKeys = updateUserForm.getRoles();
-        if (null == roleKeys) {
+        final List<String> roleEntries = updateUserForm.getRoles();
+        if (null == roleEntries) {
 
             Logger.debug(this, ()-> "Not roles sent at all, nothing has been modified in terms of roles");
             return;
@@ -1408,18 +1431,18 @@ public class UserResource implements Serializable {
         // front (400) like RoleUsersForm does on the role-side membership endpoints, instead of
         // silently treating garbage as an unknown key. Thrown inside @WrapInTransaction, so the
         // whole update rolls back.
-        if (roleKeys.stream().anyMatch(key -> !UtilMethods.isSet(key))) {
+        if (roleEntries.stream().anyMatch(entry -> !UtilMethods.isSet(entry))) {
             throw new BadRequestException("roles must not contain null or blank entries");
         }
 
         final List<Role> desiredRoles = new ArrayList<>();
-        for (final String roleKey : roleKeys) {
+        for (final String roleEntry : roleEntries) {
 
-            final Role role = this.roleAPI.loadRoleByKey(roleKey);
+            final Role role = this.resolveRole(roleEntry);
             if (null != role) {
                 desiredRoles.add(role);
             } else {
-                Logger.debug(this, ()-> "Role with key '" + roleKey + "' does NOT exist in dotCMS. Ignoring it...");
+                Logger.debug(this, ()-> "Role '" + roleEntry + "' (key or id) does NOT exist in dotCMS. Ignoring it...");
             }
         }
 

@@ -56,6 +56,7 @@ describe('DotUsersCreateComponent', () => {
                         { id: 'role-personal', roleKey: 'user-42' }
                     ])
                 ),
+                getAllRoles: jest.fn().mockReturnValue(of([])),
                 getGettingStartedState: jest.fn().mockReturnValue(of(false)),
                 setGettingStarted: jest.fn().mockReturnValue(of({})),
                 getUsersPaginated: jest.fn().mockReturnValue(
@@ -236,6 +237,28 @@ describe('DotUsersCreateComponent', () => {
                 payload: { roles: string[] };
             };
             expect(call.payload.roles).not.toContain('user-42');
+        });
+
+        it('should send an empty `roles: []` when the Roles tab clears every grant and access toggles are off', () => {
+            // Simulate the Roles tab clearing everything.
+            spectator.component['onGrantedRolesChange']([]);
+            spectator.component.form.controls.access.patchValue({
+                cmsAdmin: false,
+                backend: false,
+                frontend: false
+            });
+
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+                payload: { roles: string[] };
+            };
+            // Backend fix #37109 lets us send `roles: []` to actually
+            // clear the user's membership. The FE relies on that being
+            // included in the payload (not omitted) — otherwise the
+            // backend still reads it as "don't touch".
+            expect(call.payload.roles).toEqual([]);
         });
 
         it('should emit `gettingStartedChange: add` when the toggle flips ON', () => {
