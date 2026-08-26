@@ -20,22 +20,23 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     AddToBundleService,
-    PushPublishService,
+    DotAlertConfirmService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFolderService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
+    DotUploadFileService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService,
-    DotLanguagesService,
-    DotFolderService,
-    DotUploadFileService,
-    DotMessageService,
-    DotPropertiesService
+    PushPublishService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -91,6 +92,12 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+// Module scope: both store mocks in this file read it, and they live in describes that do not
+// share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
+// The site-level answer the drop guard falls back to at the root. Module scope for the same reason
+// as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
+const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -126,6 +133,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -161,8 +170,9 @@ describe('DotContentDriveShellComponent', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
@@ -184,6 +194,8 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     beforeEach(() => {
+        canAddChildrenSignal.set(true);
+        siteCanAddChildrenSignal.set(undefined);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -198,6 +210,10 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: jest.fn().mockReturnValue(false),
@@ -225,6 +241,9 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
+                    // Resolved on portlet init; `false` disables Push Publish everywhere it
+                    // is gated, which is all the shell's own tests need.
+                    hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
@@ -808,16 +827,16 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
-        it('should exclude folders from the sub-header count', () => {
+        it('should count folders in the sub-header, since actions now take them', () => {
             store.selectedItems.mockReturnValue([
                 MOCK_ITEMS[0],
-                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
         it('should retitle the header to the drilled-into action', () => {
@@ -900,6 +919,36 @@ describe('DotContentDriveShellComponent', () => {
 
             const dropzone = spectator.query('[data-testid="dropzone"]');
             expect(dropzone).toBeTruthy();
+        });
+
+        // Dropping a file creates a contentlet in the target folder, which the server refuses
+        // without CAN_ADD_CHILDREN. The zone refuses the upload rather than failing after it has
+        // started, and carries the reason so it does not just read as a broken drop target.
+        it('should disable the dropzone where children cannot be added', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(true);
+        });
+
+        it('should tell the dropzone why the upload is refused', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabledMessage()).toBeTruthy();
+        });
+
+        it('should leave the dropzone enabled where children can be added', () => {
+            canAddChildrenSignal.set(true);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(false);
         });
     });
 
@@ -1745,6 +1794,100 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
             workflowService = spectator.inject(DotWorkflowActionsFireService);
             messageService.add.mockClear();
+        });
+
+        // Dropping onto a tree folder is a third route into that folder, alongside the New menu and
+        // the grid drop zone. Creating a folder and moving a contentlet are both refused server-side
+        // without this permission (`FolderAPIImpl:673`, `ESContentletAPIImpl:607`), so an ungated
+        // drop hands the user a failure they had no way to predict — and the upload path, which the
+        // server does *not* refuse, would otherwise quietly allow what the other two forbid.
+        describe('dropping on a folder that refuses content', () => {
+            // `defaultBaseType` matters: without it an upload opens the type selector instead of
+            // uploading, so an assertion that no upload fired would pass with or without the gate.
+            const deniedFolder = {
+                id: 'folder-1',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/',
+                type: 'folder',
+                defaultBaseType: 'FILEASSET',
+                permissions: ['READ', 'EDIT']
+            } as unknown as DotFolderTreeNodeData;
+
+            const allowedFolder = {
+                ...deniedFolder,
+                permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+            } as unknown as DotFolderTreeNodeData;
+
+            const dropFiles = (targetFolder: DotFolderTreeNodeData) => {
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'uploadFiles', {
+                    files: [new File([''], 'a.png')] as unknown as FileList,
+                    targetFolder
+                });
+            };
+
+            const dropItems = (targetFolder: DotFolderTreeNodeData) => {
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder });
+            };
+
+            it('should refuse a move onto it', () => {
+                dropItems(deniedFolder);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
+            it('should say why the move was refused', () => {
+                dropItems(deniedFolder);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+            });
+
+            it('should refuse an upload onto it', () => {
+                dropFiles(deniedFolder);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should upload onto a folder that accepts content', () => {
+                dropFiles({
+                    ...allowedFolder,
+                    defaultBaseType: 'FILEASSET'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should still allow a move onto a folder that accepts content', () => {
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                dropItems(allowedFolder);
+
+                expect(workflowService.bulkFire).toHaveBeenCalled();
+            });
+
+            // The site root carries no permissions of its own, so the store's site-level answer is
+            // what decides there.
+            it('should refuse a move onto the site root when the site refuses content', () => {
+                siteCanAddChildrenSignal.set(false);
+
+                dropItems({
+                    id: 'site-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'folder'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
         });
 
         describe('onMoveItems', () => {
@@ -2973,6 +3116,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -3004,8 +3149,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             LoggerService,
             StringUtils,
             mockProvider(PushPublishService, {
-                // The Action Center gates its Push Publish row on this; an empty answer disables it,
-                // which is all the shell's own tests need.
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
                 getEnvironments: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(AddToBundleService, {
@@ -3039,6 +3185,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     items: jest.fn().mockReturnValue(MOCK_ITEMS),

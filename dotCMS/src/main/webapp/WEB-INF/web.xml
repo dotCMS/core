@@ -27,6 +27,11 @@
 		<filter-class>com.dotcms.filters.NormalizationFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
+	<filter>
+		<filter-name>WebDavXmlValidationFilter</filter-name>
+		<filter-class>com.dotcms.filters.WebDavXmlValidationFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
     <filter>
         <filter-name>RequestCostFilter</filter-name>
         <filter-class>com.dotcms.cost.RequestCostFilter</filter-class>
@@ -146,6 +151,13 @@
 	<filter-mapping>
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Runs early and only on /webdav/*: validates XML request bodies before the WebDAV servlet
+	     parses them. Covers all four /webdav/ servlet mappings. -->
+	<filter-mapping>
+		<filter-name>WebDavXmlValidationFilter</filter-name>
+		<url-pattern>/webdav/*</url-pattern>
 	</filter-mapping>
 
     <filter-mapping>
