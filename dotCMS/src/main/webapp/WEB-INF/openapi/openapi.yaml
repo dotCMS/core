@@ -25174,6 +25174,10 @@ components:
           - CATEGORY
           - RULE
           example: FOLDER
+        canAddChildren:
+          type: boolean
+          description: Whether the requesting user can add children to this asset
+          example: true
         canEdit:
           type: boolean
           description: Whether the requesting user can edit this asset
@@ -25213,6 +25217,7 @@ components:
       required:
       - assetId
       - assetType
+      - canAddChildren
       - canEdit
       - canEditPermissions
       - inheritanceMode
