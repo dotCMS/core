@@ -10,7 +10,8 @@ package com.dotcms.browser;
  * set.
  * <p>
  * <b>Excluding archived content is not a member of this set.</b> It is the browse query's standing
- * default ({@code appendExcludeArchivedQuery}), applied on every request today. The selected
+ * default ({@code appendExcludeArchivedQuery}), applied unless something explicitly lifts it —
+ * {@link BrowserQuery#showArchived}, an archive-target workflow step, or {@link #ARCHIVED} below. The selected
  * statuses are OR'd into one group and that group is AND'd against the baseline; {@link #ARCHIVED}
  * is the only status that lifts it. Folding the baseline into the group would make
  * {@code [UNPUBLISHED, LOCKED]} read {@code (deleted = false or ...)}, which matches nearly every
@@ -28,7 +29,16 @@ public enum ContentStatus {
     /** Archived (soft-deleted but recoverable): {@code cvi.deleted = true}, indexed as {@code deleted:true}. */
     ARCHIVED,
 
-    /** No live version exists: {@code cvi.live_inode is null}, indexed as {@code live:false}. */
+    /**
+     * No live version exists: {@code cvi.live_inode is null}.
+     * <p>
+     * <b>The index term {@code live:false} is not the same predicate.</b> The SQL condition is
+     * identifier-scoped ("this content has no live version at all"), while {@code live} is indexed
+     * per VERSION ({@code ESMappingAPIImpl}), so the working document of a published-but-edited
+     * item carries {@code live:false} and would match. The two paths therefore differ for that
+     * case; see {@code ContentDriveStatusFilterTest#publishedThenEditedItem}. This enum's
+     * definition is the identifier-scoped one.
+     */
     UNPUBLISHED,
 
     /** A lock is held, by anyone: {@code cvi.locked_by is not null}, indexed as {@code locked:true}. */

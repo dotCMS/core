@@ -70,6 +70,12 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     /** Locked by the system user, and left live. */
     private static Contentlet lockedItem;
     /**
+     * Live and unarchived, but titled so it MATCHES the keyword used by the status-plus-text test.
+     * Its only job is to make that intersection observable — see
+     * {@link #testArchivedCombinesWithTextSearch()}.
+     */
+    private static Contentlet liveItemMatchingKeyword;
+    /**
      * Published, then edited — so it HAS a live version and also a newer working one.
      *
      * <p>The discriminating fixture for what {@code UNPUBLISHED} means. The SQL path asks
@@ -114,6 +120,11 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
 
         lockedItem = ContentletDataGen.publish(newContentlet("locked"));
         APILocator.getContentletAPI().lock(lockedItem, systemUser, false);
+
+        // Live, but its TITLE contains the keyword the archived-plus-text test searches for. Without
+        // it that test passes trivially: every other live item fails the text filter on its own, so
+        // dropping the status clause entirely would still look correct.
+        liveItemMatchingKeyword = ContentletDataGen.publish(newContentlet("archived-decoy"));
 
         // Published, then given a newer working version via checkin. Still has a live version.
         publishedThenEditedItem = ContentletDataGen.publish(newContentlet("publishedThenEdited"));
@@ -268,8 +279,12 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
 
         assertTrue("The archived item matching the keyword must be returned",
                 inodes.contains(workingInode(archivedItem)));
-        assertFalse("A non-archived item must not be returned even if it matches the keyword",
-                inodes.contains(workingInode(liveItem)));
+        // The load-bearing assertion: this item DOES match the keyword and is NOT archived, so it
+        // can only be excluded by the status clause. Asserting against `liveItem` instead would
+        // pass even if the status clause were dropped whenever a keyword is present, because
+        // `liveItem` fails the text filter on its own.
+        assertFalse("A keyword-matching item that is not archived must still be excluded",
+                inodes.contains(workingInode(liveItemMatchingKeyword)));
     }
 
     /**

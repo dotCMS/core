@@ -58,8 +58,8 @@ public class ContentDriveResource {
                      "the result set. Archived content is excluded by default and only `ARCHIVED` " +
                      "admits it, so `[\"UNPUBLISHED\"]` means \"unpublished and not archived\". " +
                      "An empty or omitted array applies no status filtering at all; an " +
-                     "unrecognized value is rejected with a 400. A non-empty selection also " +
-                     "excludes folders, which carry no status.",
+                     "unrecognized value is rejected with a 400. It has no side effects on other " +
+                     "fields \u2014 `showFolders` is honoured as sent.",
         tags = {"Internal APIs"}
     )
     @ApiResponses(value = {

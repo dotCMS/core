@@ -327,6 +327,13 @@ public interface AbstractDriveRequestForm {
      *   <li><strong>Working:</strong> Draft/unpublished content in progress</li>
      * </ul>
      *
+     * <p>
+     * <b>Interaction with {@link #status()}:</b> selecting {@code ARCHIVED} or {@code UNPUBLISHED}
+     * forces the query onto the working version, because neither state has a live one. That choice
+     * applies to the whole query, so combining {@code live: true} with either of those statuses
+     * returns working-version fields despite the request for live content. Not reachable from the
+     * Content Drive UI, which leaves this at its default.
+     *
      * @return true to include only live content, false to include working content (default)
      */
     @JsonProperty("live")
@@ -374,7 +381,10 @@ public interface AbstractDriveRequestForm {
      * that rejection stays an explicit {@code BadRequestException} rather than a Jackson
      * deserialization error.
      * <p>
-     * A non-empty selection also drops folders from the results — folders carry no status.
+     * Has <b>no side effects on other fields</b>. In particular it does not touch
+     * {@link #showFolders()}: folders carry no status, so the Content Drive UI stops asking for
+     * them once a status is selected, but that is the caller's decision and this endpoint honours
+     * whatever it is sent.
      *
      * @return content states to filter by, defaults to an empty list (no status filtering)
      */

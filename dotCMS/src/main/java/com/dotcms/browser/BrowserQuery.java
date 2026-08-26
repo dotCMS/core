@@ -166,6 +166,13 @@ public class BrowserQuery {
         // ARCHIVED and UNPUBLISHED rows have no live version by definition, so the working inode
         // must be the one joined (see selectQuery) or the join can never match and the filter
         // silently returns nothing. LOCKED does not need this — a locked item may well be live.
+        //
+        // Note the join is chosen for the WHOLE query, not per disjunct. So a mixed request such as
+        // {live: true, status: [LOCKED, ARCHIVED]} resolves the LOCKED disjunct against
+        // working_inode as well, and a live locked item with pending edits comes back carrying its
+        // working version's fields rather than the live ones the caller asked for. Unreachable from
+        // the Content Drive UI (the form's live() defaults to false); it only affects direct API
+        // callers who combine live:true with ARCHIVED or UNPUBLISHED.
         this.showWorking = builder.showWorking || builder.showArchived
                 || builder.contentStatuses.contains(ContentStatus.ARCHIVED)
                 || builder.contentStatuses.contains(ContentStatus.UNPUBLISHED);

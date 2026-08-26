@@ -242,8 +242,9 @@ public class ContentDriveHelper {
         }
 
         // Build once and log the query itself: flags such as showLinks and showFolders can be
-        // overridden by the workflow, status and userSearchable branches above, so logging the
-        // locals would misreport what actually ran. BrowserQuery.toString() carries the effective
+        // overridden by the workflow and userSearchable branches above, so logging the locals would
+        // misreport what actually ran. (The status branch is deliberately not in that list — it
+        // sets no flags, see the comment above it.) BrowserQuery.toString() carries the effective
         // flags, all three cursors and the filters.
         //
         // ⚠ EVERY builder mutation MUST go ABOVE this line. build() snapshots the builder, so a
