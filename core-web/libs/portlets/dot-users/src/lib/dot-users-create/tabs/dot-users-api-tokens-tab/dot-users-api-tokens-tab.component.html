@@ -1,4 +1,4 @@
-@if (!hasUser()) {
+@if (!$hasUser()) {
     <div
         class="text-color-secondary rounded-lg border border-surface-200 bg-surface-50 p-6 text-sm"
         data-testid="users-api-tokens-create-mode-hint">
@@ -21,7 +21,7 @@
                 <p-checkbox
                     inputId="users-api-tokens-show-inactive"
                     [binary]="true"
-                    [ngModel]="showRevoked()"
+                    [ngModel]="$showRevoked()"
                     (ngModelChange)="onShowRevokedChange($event)"
                     data-testid="users-api-tokens-show-inactive" />
                 {{ 'users.dialog.tokens.show-inactive' | dm }}
@@ -35,9 +35,9 @@
     </header>
 
     <p-table
-        [value]="tokens()"
+        [value]="$tokens()"
         [rowHover]="true"
-        [loading]="isLoading()"
+        [loading]="$isLoading()"
         dataKey="id"
         styleClass="border border-surface-200 rounded-lg overflow-hidden"
         data-testid="users-api-tokens-table">
@@ -59,8 +59,14 @@
                 [class.cursor-pointer]="!isInactive"
                 [class.text-surface-400]="isInactive"
                 [class.opacity-60]="isInactive"
+                [attr.role]="!isInactive ? 'button' : null"
+                [attr.tabindex]="!isInactive ? 0 : null"
+                [attr.aria-label]="
+                    !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
+                "
                 [attr.title]="!isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null"
                 (click)="onRowClick(token)"
+                (keydown)="onRowKeydown(token, $event)"
                 [attr.data-testid]="'users-api-tokens-row-' + token.id">
                 <td class="font-mono text-sm" [title]="token.id">{{ shortId(token.id) }}</td>
                 <td>{{ token.claims?.label || '—' }}</td>
@@ -83,19 +89,19 @@
                 </td>
                 <td>
                     @if (!isInactive) {
-                        <button
-                            type="button"
-                            class="cursor-pointer border-0 bg-transparent p-0 text-sm font-medium text-red-500 hover:underline"
-                            (click)="revoke(token, $event)"
-                            [attr.data-testid]="'users-api-tokens-revoke-' + token.id">
-                            {{ 'users.dialog.tokens.revoke' | dm }}
-                        </button>
+                        <p-button
+                            [label]="'users.dialog.tokens.revoke' | dm"
+                            severity="danger"
+                            [text]="true"
+                            size="small"
+                            (onClick)="revoke(token, $event)"
+                            [attr.data-testid]="'users-api-tokens-revoke-' + token.id" />
                     } @else {
-                        <span
-                            class="inline-block rounded-md bg-surface-100 px-2 py-1 text-xs text-surface-400"
-                            [attr.data-testid]="'users-api-tokens-revoked-pill-' + token.id">
-                            {{ 'users.dialog.tokens.revoked' | dm }}
-                        </span>
+                        <p-tag
+                            [value]="statusLabelKey(status) | dm"
+                            severity="secondary"
+                            [rounded]="true"
+                            [attr.data-testid]="'users-api-tokens-status-pill-' + token.id" />
                     }
                 </td>
             </tr>
@@ -103,11 +109,33 @@
         <ng-template pTemplate="emptymessage">
             <tr class="hover:bg-transparent!">
                 <td colspan="7" class="border-none p-0">
-                    <div
-                        class="flex items-center justify-center p-6 text-sm text-surface-400 italic"
-                        data-testid="users-api-tokens-empty">
-                        {{ 'users.dialog.tokens.empty' | dm }}
-                    </div>
+                    @if ($loadError()) {
+                        <div
+                            class="flex flex-col items-center justify-center gap-3 p-6 text-sm"
+                            data-testid="users-api-tokens-error">
+                            <span class="text-red-600">
+                                {{ 'users.dialog.tokens.error' | dm }}
+                            </span>
+                            <p-button
+                                [label]="'users.dialog.tokens.retry' | dm"
+                                severity="secondary"
+                                [outlined]="true"
+                                size="small"
+                                (onClick)="retryLoad()"
+                                data-testid="users-api-tokens-retry-btn" />
+                        </div>
+                    } @else {
+                        <div
+                            class="flex items-center justify-center p-6 text-sm text-surface-400 italic"
+                            data-testid="users-api-tokens-empty">
+                            {{
+                                ($showRevoked()
+                                    ? 'users.dialog.tokens.empty-all'
+                                    : 'users.dialog.tokens.empty'
+                                ) | dm
+                            }}
+                        </div>
+                    }
                 </td>
             </tr>
         </ng-template>
@@ -119,8 +147,8 @@
         data-testid="users-api-tokens-confirm-dialog" />
 
     <p-dialog
-        [visible]="revealVisible()"
-        (visibleChange)="revealVisible.set($event)"
+        [visible]="$revealVisible()"
+        (visibleChange)="$revealVisible.set($event)"
         [modal]="true"
         [closable]="true"
         [closeOnEscape]="true"
@@ -133,22 +161,23 @@
             <p class="text-color-secondary m-0 text-sm">
                 {{ 'users.dialog.tokens.reveal.description' | dm }}
             </p>
-            @if (revealJwt(); as jwt) {
+            @if ($revealJwt(); as jwt) {
                 <div class="flex items-center gap-2">
                     <input
                         pInputText
+                        #revealInput
                         class="flex-1 font-mono text-xs"
                         [value]="jwt"
                         readonly
                         data-testid="users-api-tokens-reveal-input" />
                     <p-button
                         [label]="
-                            (copied()
+                            ($copied()
                                 ? 'users.dialog.tokens.reveal.copied'
                                 : 'users.dialog.tokens.reveal.copy'
                             ) | dm
                         "
-                        [outlined]="!copied()"
+                        [outlined]="!$copied()"
                         (onClick)="copyJwt()"
                         data-testid="users-api-tokens-reveal-copy" />
                 </div>
@@ -156,7 +185,18 @@
                 <div
                     class="text-color-secondary flex items-center gap-2 text-sm"
                     data-testid="users-api-tokens-reveal-loading">
-                    <i class="pi pi-spinner pi-spin"></i>
+                    <!--
+                        Portlet-wide icon font is Google Material Symbols
+                        (see the profile tab / list). `progress_activity`
+                        is the equivalent of `pi pi-spinner` under that
+                        family; `animate-spin` from Tailwind gives the
+                        rotation.
+                    -->
+                    <span
+                        class="material-symbols-rounded animate-spin text-base!"
+                        aria-hidden="true">
+                        progress_activity
+                    </span>
                     {{ 'users.dialog.tokens.reveal.loading' | dm }}
                 </div>
             }

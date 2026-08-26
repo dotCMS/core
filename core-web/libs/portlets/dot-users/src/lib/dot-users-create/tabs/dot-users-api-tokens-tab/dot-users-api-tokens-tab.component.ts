@@ -1,13 +1,15 @@
 import { DatePipe } from '@angular/common';
 import {
-    ChangeDetectionStrategy,
     Component,
     DestroyRef,
+    ElementRef,
     computed,
     effect,
     inject,
     input,
-    signal
+    signal,
+    untracked,
+    viewChild
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
@@ -20,6 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
+import { TagModule } from 'primeng/tag';
 
 import { take } from 'rxjs/operators';
 
@@ -36,25 +39,24 @@ import {
 
 /**
  * Row state derived from the three backend flags. Drives the row tag
- * and which action button is available — valid tokens can be revoked
- * and reveal their JWT, revoked/expired ones can only be deleted.
+ * and which action is available — valid rows can be revoked and
+ * reveal their JWT; revoked/expired rows are read-only.
  */
 type TokenStatus = 'valid' | 'revoked' | 'expired';
 
 /**
  * API Tokens tab. Matches the legacy admin's contract:
  *
- * - Clicking a valid row (or Reveal button) fetches a FRESH JWT via
- *   `GET /api/v1/apitoken/{id}/jwt`. Each call mints a new signed
- *   value on the backend — the token record is unchanged, so there
- *   is no "reveal only once" limitation to worry about.
- * - Revoke (soft) keeps the row visible for audit; Delete purges it,
- *   and the button is only present for revoked/expired rows.
- * - The Show revoked toggle mirrors the legacy checkbox.
+ * - Clicking a valid row (or pressing Enter/Space on it) fetches a
+ *   FRESH JWT via `GET /api/v1/apitoken/{id}/jwt`. Each call mints a
+ *   new signed value on the backend — the token record is unchanged,
+ *   so there is no "reveal only once" limitation.
+ * - Revoke (soft) keeps the row visible for audit; the row's Revoke
+ *   button is only present on valid rows.
+ * - The Show inactive toggle mirrors the legacy checkbox.
  */
 @Component({
     selector: 'dot-users-api-tokens-tab',
-    standalone: true,
     imports: [
         DatePipe,
         FormsModule,
@@ -64,21 +66,21 @@ type TokenStatus = 'valid' | 'revoked' | 'expired';
         DialogModule,
         InputTextModule,
         TableModule,
+        TagModule,
         DotMessagePipe
     ],
     templateUrl: './dot-users-api-tokens-tab.component.html',
     styleUrl: './dot-users-api-tokens-tab.component.scss',
     providers: [DialogService, ConfirmationService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'flex flex-col gap-4 block' }
+    host: { class: 'flex flex-col gap-4' }
 })
 export class DotUsersApiTokensTabComponent {
-    private readonly dialogService = inject(DialogService);
-    private readonly confirmationService = inject(ConfirmationService);
-    private readonly messageService = inject(DotMessageService);
-    private readonly usersService = inject(DotUsersService);
-    private readonly httpErrorManager = inject(DotHttpErrorManagerService);
-    private readonly destroyRef = inject(DestroyRef);
+    readonly #dialogService = inject(DialogService);
+    readonly #confirmationService = inject(ConfirmationService);
+    readonly #messageService = inject(DotMessageService);
+    readonly #usersService = inject(DotUsersService);
+    readonly #httpErrorManager = inject(DotHttpErrorManagerService);
+    readonly #destroyRef = inject(DestroyRef);
 
     /**
      * User whose tokens we're managing. Missing on create mode (the
@@ -87,38 +89,54 @@ export class DotUsersApiTokensTabComponent {
      */
     readonly userId = input<string | null>(null);
 
-    protected readonly tokens = signal<DotApiToken[]>([]);
-    protected readonly showRevoked = signal(false);
-    protected readonly isLoading = signal(false);
+    protected readonly $tokens = signal<DotApiToken[]>([]);
+    protected readonly $showRevoked = signal(false);
+    protected readonly $isLoading = signal(false);
+    protected readonly $loadError = signal(false);
 
     /**
      * The reveal dialog's state. `jwt === null` means "still fetching",
      * a string means "ready to copy". Populated on-demand via row
      * click or after a create — the backend re-mints on every call.
      */
-    protected readonly revealVisible = signal(false);
-    protected readonly revealJwt = signal<string | null>(null);
-    protected readonly revealTokenId = signal<string>('');
-    protected readonly copied = signal(false);
+    protected readonly $revealVisible = signal(false);
+    protected readonly $revealJwt = signal<string | null>(null);
+    protected readonly $revealTokenId = signal<string>('');
+    protected readonly $copied = signal(false);
 
-    protected readonly hasUser = computed(() => !!this.userId());
+    protected readonly $hasUser = computed(() => !!this.userId());
+
+    /**
+     * Native ref to the reveal input so the clipboard fallback can
+     * select the field without a `document.querySelector` lookup by
+     * `data-testid` — renaming the test id would silently break the
+     * fallback path. Angular's signal-query APIs don't allow ES
+     * private (`#`) fields, so this stays TS-private.
+     */
+    protected readonly $revealInput = viewChild<ElementRef<HTMLInputElement>>('revealInput');
 
     constructor() {
         effect(() => {
             const id = this.userId();
-            const showRevoked = this.showRevoked();
-            if (!id) {
-                this.tokens.set([]);
+            const showRevoked = this.$showRevoked();
+            // The load path writes back to the same signals this effect
+            // reads (isLoading, tokens, loadError). Wrap the call so
+            // Angular doesn't re-run us on those writes.
+            untracked(() => {
+                if (!id) {
+                    this.$tokens.set([]);
+                    this.$loadError.set(false);
 
-                return;
-            }
+                    return;
+                }
 
-            this.loadTokens(id, showRevoked);
+                this.loadTokens(id, showRevoked);
+            });
         });
     }
 
     protected onShowRevokedChange(value: boolean): void {
-        this.showRevoked.set(value);
+        this.$showRevoked.set(value);
     }
 
     /**
@@ -137,6 +155,16 @@ export class DotUsersApiTokensTabComponent {
         return 'valid';
     }
 
+    /**
+     * i18n key for the read-only tag on inactive rows. Revoked and
+     * expired share the tag shape (surface-100 background) but the
+     * label distinguishes them so an aged-out token doesn't read as
+     * manually revoked.
+     */
+    protected statusLabelKey(status: TokenStatus): string {
+        return status === 'expired' ? 'users.dialog.tokens.expired' : 'users.dialog.tokens.revoked';
+    }
+
     protected shortId(id: string): string {
         const dash = id.indexOf('-');
 
@@ -146,23 +174,23 @@ export class DotUsersApiTokensTabComponent {
     /**
      * Opens the reveal dialog for a token id and fetches a fresh JWT.
      * Backend refuses revoked/expired tokens with a 400 — we gate the
-     * caller (`onRowClick`, template button) to valid rows only so
-     * this never fires for those.
+     * caller (`onRowClick`, `onRowKeydown`) to valid rows only so this
+     * never fires for those.
      */
     protected reveal(tokenId: string): void {
-        this.revealTokenId.set(tokenId);
-        this.revealJwt.set(null);
-        this.copied.set(false);
-        this.revealVisible.set(true);
+        this.$revealTokenId.set(tokenId);
+        this.$revealJwt.set(null);
+        this.$copied.set(false);
+        this.$revealVisible.set(true);
 
-        this.usersService
+        this.#usersService
             .getApiTokenJwt(tokenId)
-            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
-                next: (jwt) => this.revealJwt.set(jwt),
+                next: (jwt) => this.$revealJwt.set(jwt),
                 error: (error) => {
-                    this.revealVisible.set(false);
-                    this.httpErrorManager.handle(error);
+                    this.$revealVisible.set(false);
+                    this.#httpErrorManager.handle(error);
                 }
             });
     }
@@ -175,30 +203,46 @@ export class DotUsersApiTokensTabComponent {
         this.reveal(token.id);
     }
 
+    /**
+     * Keyboard mirror of `onRowClick`. Space/Enter both open reveal to
+     * match the button-like affordance the row's `role="button"`
+     * advertises — Space needs `preventDefault` so the page doesn't
+     * scroll.
+     */
+    protected onRowKeydown(token: DotApiToken, event: KeyboardEvent): void {
+        if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+        }
+
+        if (this.statusOf(token) !== 'valid') {
+            return;
+        }
+
+        event.preventDefault();
+        this.reveal(token.id);
+    }
+
     protected closeReveal(): void {
-        this.revealVisible.set(false);
-        this.revealJwt.set(null);
-        this.revealTokenId.set('');
-        this.copied.set(false);
+        this.$revealVisible.set(false);
+        this.$revealJwt.set(null);
+        this.$revealTokenId.set('');
+        this.$copied.set(false);
     }
 
     protected async copyJwt(): Promise<void> {
-        const jwt = this.revealJwt();
+        const jwt = this.$revealJwt();
         if (!jwt) {
             return;
         }
 
         try {
             await navigator.clipboard.writeText(jwt);
-            this.copied.set(true);
+            this.$copied.set(true);
         } catch {
             // Clipboard API can be blocked (insecure context, permission
             // policy). Fall back to selecting the field so the admin can
             // Cmd+C manually.
-            const el = document.querySelector<HTMLInputElement>(
-                '[data-testid="users-api-tokens-reveal-input"]'
-            );
-            el?.select();
+            this.$revealInput()?.nativeElement.select();
         }
     }
 
@@ -208,15 +252,18 @@ export class DotUsersApiTokensTabComponent {
             return;
         }
 
-        const ref: DynamicDialogRef = this.dialogService.open(DotUsersRequestTokenDialogComponent, {
-            header: this.messageService.get('users.dialog.tokens.request.header'),
-            width: '500px',
-            closable: true,
-            closeOnEscape: true,
-            draggable: false,
-            position: 'center',
-            data: { userId: id }
-        });
+        const ref: DynamicDialogRef = this.#dialogService.open(
+            DotUsersRequestTokenDialogComponent,
+            {
+                header: this.#messageService.get('users.dialog.tokens.request.header'),
+                width: '500px',
+                closable: true,
+                closeOnEscape: true,
+                draggable: false,
+                position: 'center',
+                data: { userId: id }
+            }
+        );
 
         ref.onClose.pipe(take(1)).subscribe((result: DotApiTokenCreateResult | undefined) => {
             if (!result) {
@@ -226,37 +273,41 @@ export class DotUsersApiTokensTabComponent {
             // Prepend so the new row is visible even before the refetch
             // resolves — the follow-up refetch replaces the whole list
             // with server-authoritative data.
-            this.tokens.update((current) => [result.token, ...current]);
+            this.$tokens.update((current) => [result.token, ...current]);
             this.reloadTokens();
 
             // Show the JWT the create call already returned; skips one
             // round-trip and keeps a single reveal-dialog surface.
-            this.revealTokenId.set(result.token.id);
-            this.revealJwt.set(result.jwt);
-            this.copied.set(false);
-            this.revealVisible.set(true);
+            this.$revealTokenId.set(result.token.id);
+            this.$revealJwt.set(result.jwt);
+            this.$copied.set(false);
+            this.$revealVisible.set(true);
         });
     }
 
     protected revoke(token: DotApiToken, event: MouseEvent): void {
         event.stopPropagation();
-        this.confirmationService.confirm({
-            header: this.messageService.get('users.dialog.tokens.revoke.confirm.header'),
-            message: this.messageService.get('users.dialog.tokens.revoke.confirm.message'),
-            acceptLabel: this.messageService.get('users.dialog.tokens.revoke'),
-            rejectLabel: this.messageService.get('users.cancel'),
+        this.#confirmationService.confirm({
+            header: this.#messageService.get('users.dialog.tokens.revoke.confirm.header'),
+            message: this.#messageService.get('users.dialog.tokens.revoke.confirm.message'),
+            acceptLabel: this.#messageService.get('users.dialog.tokens.revoke'),
+            rejectLabel: this.#messageService.get('users.cancel'),
             acceptButtonProps: { severity: 'danger' },
             rejectButtonProps: { severity: 'secondary', text: true },
             accept: () => {
-                this.usersService
+                this.#usersService
                     .revokeApiToken(token.id)
-                    .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+                    .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
                     .subscribe({
                         next: () => this.reloadTokens(),
-                        error: (error) => this.httpErrorManager.handle(error)
+                        error: (error) => this.#httpErrorManager.handle(error)
                     });
             }
         });
+    }
+
+    protected retryLoad(): void {
+        this.reloadTokens();
     }
 
     private reloadTokens(): void {
@@ -265,22 +316,25 @@ export class DotUsersApiTokensTabComponent {
             return;
         }
 
-        this.loadTokens(id, this.showRevoked());
+        this.loadTokens(id, this.$showRevoked());
     }
 
     private loadTokens(userId: string, showRevoked: boolean): void {
-        this.isLoading.set(true);
-        this.usersService
+        this.$isLoading.set(true);
+        this.$loadError.set(false);
+        this.#usersService
             .getApiTokens(userId, showRevoked)
-            .pipe(take(1), takeUntilDestroyed(this.destroyRef))
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe({
                 next: (tokens) => {
-                    this.tokens.set(tokens);
-                    this.isLoading.set(false);
+                    this.$tokens.set(tokens);
+                    this.$isLoading.set(false);
                 },
                 error: (error) => {
-                    this.isLoading.set(false);
-                    this.httpErrorManager.handle(error);
+                    this.$isLoading.set(false);
+                    this.$loadError.set(true);
+                    this.$tokens.set([]);
+                    this.#httpErrorManager.handle(error);
                 }
             });
     }
