@@ -156,10 +156,13 @@ describe('Utility Functions', () => {
         });
 
         it('should handle multiselector with a wrong value', () => {
-            const result = decodeFilters('contentType:Blog,;status:published,draft');
+            // `owner` is a stand-in for an unknown multi-value key. It used to be `status`, which
+            // is now a real, validated key — the values below are not valid statuses and would be
+            // sanitized away, which is not what this test is about.
+            const result = decodeFilters('contentType:Blog,;owner:jane,sam');
             expect(result).toEqual({
                 contentType: ['Blog'],
-                status: ['published', 'draft']
+                owner: ['jane', 'sam']
             });
         });
     });
@@ -317,6 +320,21 @@ describe('Utility Functions', () => {
                 'UNPUBLISHED',
                 'LOCKED'
             ]);
+        });
+
+        it('should drop a status value that is not a real status', () => {
+            // A stale or hand-edited URL must degrade to "no status filter" rather than reaching
+            // the endpoint, which rejects an unknown status with a 400 — and that 400 surfaces as a
+            // stopped spinner over a stale grid.
+            expect(decodeByFilterKey.status('ARCHIVED,BOGUS')).toEqual(['ARCHIVED']);
+        });
+
+        it('should drop the key entirely when no status survives sanitizing', () => {
+            // Not an empty array: that would round-trip back into the URL as a bare `status:`.
+            expect(decodeFilters('status:BOGUS')).toEqual({});
+            expect(decodeFilters('contentType:Blog;status:BOGUS')).toEqual({
+                contentType: ['Blog']
+            });
         });
 
         it('should decode a SINGLE status as an array, not a string', () => {
