@@ -650,6 +650,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 : 'content-drive.action-center.no-environments';
         }
 
+        if (quickAction.missingAdminRole) {
+            // Names the requirement rather than the refusal: the row is out of reach because of who
+            // is asking, and nothing about the selection will change that.
+            return 'content-drive.action-center.requires-admin';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -663,9 +669,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // Guarded here as well as by the disabled row: a placeholder has no preview to open, and a
-        // push with no environment has nowhere to go, so a stray call must not reach the preview.
-        if (!quickAction.count || quickAction.comingSoon || quickAction.missingEnvironments) {
+        // Guarded here as well as by the disabled row: a placeholder has no preview to open, a push
+        // with no environment has nowhere to go, and a reindex the endpoint would refuse should not
+        // get as far as a confirmation screen. A stray call must not reach the preview.
+        if (
+            !quickAction.count ||
+            quickAction.comingSoon ||
+            quickAction.missingEnvironments ||
+            quickAction.missingAdminRole
+        ) {
             return;
         }
 
