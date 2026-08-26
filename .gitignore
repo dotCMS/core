@@ -231,3 +231,8 @@ specs/*/research.md
 specs/*/tasks.md
 specs/*/quickstart.md
 specs/*/checklists/
+
+# Machine-local pointer to the active feature dir, rewritten by every /speckit-specify
+# run. Spec-Kit 0.16.1 ships this rule in a managed .specify/.gitignore; this repo is
+# pinned to 0.12.4, so it lives here until the upgrade.
+.specify/feature.json
