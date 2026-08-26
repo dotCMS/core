@@ -212,26 +212,50 @@ export class DotFolderListViewContextMenuComponent {
             });
         }
 
-        workflowActions
-            .filter(
-                (action) =>
-                    action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
-            )
-            .map((action) => {
-                const menuItem = {
-                    label: `${this.#dotMessageService.get(action.name)}`,
-                    command: () => this.#executeWorkflowActions(action, contentlet)
-                };
-
-                actionsMenu.push(menuItem);
-            });
-
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
             command: () => {
                 this.#store.setShowAddToBundle(true);
             }
         });
+
+        // Workflow actions get their own labelled section. "Workflows" is a real dotCMS concept, so
+        // it reads as a name rather than an invented category — which matters because the actions
+        // themselves carry no groupable intent: the API exposes no actionlet class names, no
+        // category and no tag, `order` is a within-scheme sort index and `icon` is admin-authored
+        // free text. Any finer grouping would be guesswork that breaks on custom schemes.
+        //
+        // Archive is the one exception, split off below.
+        const selectableActions = workflowActions.filter(
+            (action) => action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+        );
+
+        // hasArchiveActionlet is computed from the action's actual sub-actionlets, not its name, so
+        // a scheme's "Retire this blog" still reports true. Name- and locale-independent, which a
+        // label match or a hardcoded id would not be.
+        const archiveActions = selectableActions.filter((action) => action.hasArchiveActionlet);
+        const otherActions = selectableActions.filter((action) => !action.hasArchiveActionlet);
+
+        const toMenuItem = (action: DotCMSWorkflowAction): MenuItem => ({
+            label: this.#dotMessageService.get(action.name),
+            command: () => this.#executeWorkflowActions(action, contentlet)
+        });
+
+        if (otherActions.length) {
+            // A real nested submenu, so PrimeNG renders the label, the chevron and the flyout
+            // natively — and the group is announced as a submenu rather than as a disabled
+            // menuitem, which is what a caption item would have been.
+            actionsMenu.push({
+                label: this.#dotMessageService.get('content-drive.context-menu.workflows'),
+                items: otherActions.map(toMenuItem)
+            });
+        }
+
+        // Separated rather than merely last: archiving is the destructive one, and a separator is
+        // what stops it being clicked by momentum after the action above it.
+        if (archiveActions.length) {
+            actionsMenu.push({ separator: true }, ...archiveActions.map(toMenuItem));
+        }
 
         if (!actionsMenu.length) {
             return;
