@@ -219,3 +219,33 @@ export function mapParamsFromEditContentlet(cdParams: URLSearchParams): Record<s
             {} as Record<string, string>
         );
 }
+
+/**
+ * Whether a URL is a relative path that stays on the current origin, and is therefore safe to
+ * load into an iframe.
+ *
+ * Resolution is delegated to the URL parser rather than checked with string comparisons, because
+ * browsers normalize backslashes into the authority position and strip tab, newline, and carriage
+ * return before parsing. That makes `/\evil.com`, `/\/evil.com`, and `/<tab>/evil.com` all resolve
+ * cross-origin even though none of them starts with `//`. Comparing the resolved origin catches
+ * every such form; a hand-rolled prefix check does not.
+ *
+ * Narrows to `string` so callers holding an optional url can use the value directly once it
+ * passes.
+ *
+ * @param url - The URL to check
+ * @returns True when `url` is a relative path resolving to the current origin
+ */
+export function isSameOriginRelativeUrl(url: string | null | undefined): url is string {
+    // Absolute URLs are rejected outright, even same-origin ones: callers are expected to pass
+    // relative paths, so anything carrying its own scheme or authority is not what we asked for.
+    if (!url || !url.startsWith('/')) {
+        return false;
+    }
+
+    try {
+        return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+        return false;
+    }
+}

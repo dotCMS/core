@@ -1,6 +1,12 @@
 <!-- `paginatorDropdownAppendTo="body"`: the paginator lives inside the table's own scroll container,
      so an inline overlay is clipped by it — the rows-per-page panel opened cut off, with only the
-     first option reachable. Rendering it in the body takes it out of every clipping ancestor. -->
+     first option reachable. Rendering it in the body takes it out of every clipping ancestor.
+
+     `sortField` is seeded only when `lazy`, i.e. when the server is doing the sorting. Without
+     `lazy` PrimeNG sorts the array itself, which silently overrides an order the caller already
+     resolved: the Action Center preview hands rows over in the grid's own order and had them
+     re-sorted by date, pulling folders to the bottom. Column sorting is disabled in that mode
+     anyway (`readOnly`), so there is nothing to seed. -->
 <p-table
     #dataTable
     [value]="$items()"
@@ -25,7 +31,7 @@
     [dataKey]="$dataKey()"
     sortMode="single"
     [selectionMode]="$selectionMode()"
-    sortField="modDate"
+    [sortField]="$lazy() ? 'modDate' : undefined"
     [sortOrder]="-1"
     data-testId="table"
     scrollHeight="flex"

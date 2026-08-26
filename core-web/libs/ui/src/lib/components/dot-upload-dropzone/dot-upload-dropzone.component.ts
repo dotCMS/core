@@ -1,4 +1,5 @@
 import {
+    booleanAttribute,
     ChangeDetectionStrategy,
     Component,
     ElementRef,
@@ -61,6 +62,37 @@ export class DotUploadDropzoneComponent {
      */
     readonly $targetFolder = input<TreeNodeData | undefined>(undefined, { alias: 'targetFolder' });
 
+    /**
+     * Refuses the upload, without hiding the zone.
+     *
+     * Set where the user cannot add content to the target folder. The host owns why: in Content
+     * Drive it is the same CAN_ADD_CHILDREN gate the New menu and the folder tree use, so one route
+     * into a folder cannot quietly allow what the others forbid.
+     *
+     * The overlay still appears on drag, carrying {@link $disabledMessage} instead of the usual
+     * prompt: a zone that goes quiet reads as a broken drop target, while one that explains itself
+     * tells the user what to ask an administrator for.
+     *
+     * @type {boolean}
+     * @alias disabled
+     */
+    readonly $disabled = input<boolean, unknown>(false, {
+        alias: 'disabled',
+        transform: booleanAttribute
+    });
+
+    /**
+     * Shown in the overlay in place of the usual prompt while {@link $disabled} is set. Already
+     * translated by the host, which owns the wording for why its own uploads are refused.
+     *
+     * Empty falls back to the default prompt, so a host that disables without explaining still
+     * renders something coherent.
+     *
+     * @type {string}
+     * @alias disabledMessage
+     */
+    readonly $disabledMessage = input<string>('', { alias: 'disabledMessage' });
+
     /** Emitted once files are dropped on the zone. */
     readonly uploadFiles = output<DotUploadFiles>();
 
@@ -108,7 +140,8 @@ export class DotUploadDropzoneComponent {
         event.stopPropagation();
         event.preventDefault();
 
-        // Dragging rows around inside the host is not an upload.
+        // Dragging rows around inside the host is not an upload. `$disabled` is deliberately absent
+        // here: the overlay is how the refusal gets explained, so it still has to open.
         if (
             this.state() === DROPZONE_STATE.INTERNAL_DRAG ||
             event.dataTransfer?.types.includes(DOT_DRAG_ITEM)
@@ -172,7 +205,7 @@ export class DotUploadDropzoneComponent {
 
         this.state.set(DROPZONE_STATE.INACTIVE);
 
-        if (files?.length) {
+        if (!this.$disabled() && files?.length) {
             this.uploadFiles.emit({ files, targetFolder: this.$targetFolder() });
         }
     }
