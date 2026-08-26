@@ -73,6 +73,8 @@ public class SerializationHelperTest {
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users")));
             assertTrue("PortletList should contain 'users-beta' portlet",
                     portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("users-beta")));
+            assertTrue("PortletList should contain 'roles-beta' portlet",
+                    portletList.getPortlets().stream().anyMatch(p -> p.getPortletId().equals("roles-beta")));
 
             // Check the Angular categories portlet
             Optional<DotPortlet> categoriesPortlet = portletList.getPortlets().stream()

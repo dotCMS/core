@@ -1,0 +1,94 @@
+<header class="flex items-center justify-between">
+    <span class="text-color-secondary text-xs font-semibold tracking-wider uppercase">
+        {{ 'roles.panel.title' | dm }}
+    </span>
+    <button
+        pButton
+        type="button"
+        (click)="onAddRole()"
+        data-testid="new-role-btn"
+        [attr.aria-label]="'roles.action.new' | dm"
+        [outlined]="true"
+        size="small">
+        {{ 'roles.action.new' | dm }}
+    </button>
+</header>
+
+<div class="w-full">
+    <p-iconfield>
+        <p-inputicon>
+            <span class="material-symbols-outlined text-base! leading-none!">search</span>
+        </p-inputicon>
+        <input
+            pInputText
+            type="text"
+            class="w-full"
+            [ngModel]="$filterInput()"
+            (ngModelChange)="onFilterChange($event)"
+            [placeholder]="'roles.filter.placeholder' | dm"
+            data-testid="filter-input"
+            [attr.aria-label]="'roles.filter.placeholder' | dm" />
+    </p-iconfield>
+</div>
+
+@if (store.status() === 'LOADING') {
+    <p class="text-color-secondary m-0 text-sm" data-testid="tree-loading">
+        {{ 'roles.status.loading' | dm }}
+    </p>
+} @else if (store.status() === 'ERROR') {
+    <p class="m-0 text-sm text-red-700" data-testid="tree-error">
+        {{ 'roles.error.load-failed' | dm }}
+    </p>
+} @else {
+    @if ($treeNodes().length > 0) {
+        <dot-folder-tree
+            [folders]="$treeNodes()"
+            [selectedNode]="$selectedNode()"
+            selectionMode="single"
+            [pt]="treePt"
+            [contextMenu]="rolesCtxMenu"
+            treeTestId="roles-tree-view"
+            (onNodeSelect)="onNodeSelect($event)"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+            (onNodeContextMenuSelect)="onNodeContextMenu($event)">
+            <ng-template #folderTreeNodeLabel let-node>
+                @let data = node.data;
+                @let isLeaf = node.leaf === true;
+                <!-- Do NOT swap the `+` for `<button pButton>` — PrimeNG's
+                     ~40px min-height pushes the row past 50px. -->
+                <span class="group flex w-full items-center gap-2">
+                    <span
+                        class="material-symbols-outlined text-color-secondary text-base leading-none"
+                        [attr.data-testid]="'node-icon-' + data.id">
+                        {{ isLeaf ? 'shield' : 'folder' }}
+                    </span>
+                    <span class="flex-1 truncate">{{ node.label }}</span>
+                    <button
+                        type="button"
+                        class="text-color-secondary inline-flex size-5 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-100 hover:text-color"
+                        (click)="onAddRole(data.id); $event.stopPropagation()"
+                        [attr.aria-label]="'roles.action.add-child' | dm">
+                        <span class="material-symbols-outlined text-base leading-none">add</span>
+                    </button>
+                </span>
+            </ng-template>
+        </dot-folder-tree>
+    } @else {
+        <div
+            class="text-color-secondary flex flex-col items-center gap-2 pt-8 text-center"
+            data-testid="tree-empty">
+            <span class="material-symbols-outlined text-3xl opacity-40">search_off</span>
+            <p class="m-0 text-sm">{{ 'roles.tree.empty' | dm }}</p>
+        </div>
+    }
+}
+
+<!-- Kept as siblings so they stay available regardless of the tree's
+     loading / empty state and don't inherit the parent's gap/flex layout. -->
+<p-contextMenu #rolesCtxMenu [model]="$contextMenuItems()" appendTo="body" />
+
+<p-confirmDialog
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    data-testid="tree-delete-confirm-dialog" />
