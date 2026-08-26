@@ -391,6 +391,12 @@ public class UserResourceIntegrationTest {
         assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
 
         final User created = APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false);
-        assertTrue(roleAPI.doesUserHaveRole(created, roleAPI.loadFrontEndUserRole()));
+        // Assert by KEY on a fresh load, not against roleAPI.loadFrontEndUserRole(): that method
+        // memoizes a Role instance for the JVM's lifetime (RoleAPIImpl.LOGGEDIN_SITE_USER), and a
+        // prior test in the shard may replace the DOTCMS_FRONT_END_USER row (Task05170...RolesTest
+        // renames it via SQL and the upgrade task inserts a new one), leaving the memo stale.
+        final List<Role> directRoles = roleAPI.loadRolesForUser(created.getUserId(), false);
+        assertTrue("new user must receive the default Front-end User role",
+                directRoles.stream().anyMatch(role -> Role.DOTCMS_FRONT_END_USER.equals(role.getRoleKey())));
     }
 }
