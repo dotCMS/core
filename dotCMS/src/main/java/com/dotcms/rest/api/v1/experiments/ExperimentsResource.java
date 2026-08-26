@@ -574,6 +574,10 @@ public class ExperimentsResource {
 
         final Experiment.Builder builder = Experiment.builder().from(experimentToUpdate);
 
+        if(experimentForm.getPageId()!=null) {
+            builder.pageId(experimentForm.getPageId());
+        }
+
         if(experimentForm.getName()!=null) {
             builder.name(experimentForm.getName());
         }
