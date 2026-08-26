@@ -219,7 +219,19 @@ selection and the results are the same at every step.
 - **FR-008**: The existing inclusive "show archived" behavior relied on by the legacy Site Browser
   MUST be left unchanged; the exclusive Archived behavior is added alongside it.
 - **FR-009**: A status selection MUST produce identical results whether or not a keyword search is
-  active, and under every supported search strategy the environment can be configured to use.
+  active, under the default search strategy.
+- **FR-009a**: Under the index-only strategy (`PURE_ES`, opt-in and not the default), *Unpublished*
+  MAY additionally return content that has a live version alongside newer unpublished edits. This is
+  an accepted divergence, not a defect: *Unpublished* means "no live version exists", which is a
+  question about the content as a whole, while the index records that flag per version — so a
+  published item's draft version reads as not-live. The identifier-scoped meaning is the definition;
+  the index cannot express it in a single-document query.
+  - This follows [ADR-0018](https://github.com/dotCMS/platform-adrs/blob/main/decisions/0018-database-first-content-drive-search-with-index-deferred-text-filtering.md),
+    which routes structural predicates to the database precisely because the index cannot answer
+    them reliably, and states that the index-only strategy forfeits that guarantee for *every*
+    criterion and must not become the default. This is one instance of a limitation that decision
+    already accepted, not a new one introduced here.
+  - Every other status is unaffected, and the default strategy is unaffected.
 - **FR-010**: An unrecognized status value MUST be rejected with a client error, consistent with how
   the drive already rejects unknown field-filter keys.
 - **FR-011**: A status selection MUST NOT conflict with a workflow filter that also constrains
@@ -288,7 +300,8 @@ selection and the results are the same at every step.
 - **SC-004**: With no status selected, result counts and ordering are identical to those produced
   before the filter existed, for the same folder and filters.
 - **SC-005**: The same status selection returns the same result set with and without a keyword
-  search, and under every supported search strategy.
+  search under the default strategy. Under the opt-in index-only strategy, parity holds for every
+  status except the *Unpublished* case described in FR-009a.
 - **SC-006**: A status-filtered view reproduces the same selection and results after a reload, a
   folder change, a Back/Forward, an editor round-trip, and when opened by a second user from a
   shared link.

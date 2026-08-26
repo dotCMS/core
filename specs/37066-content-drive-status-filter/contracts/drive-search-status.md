@@ -135,6 +135,29 @@ which routes version-info flags (archived/deleted) to the **database**. `PURE_ES
 promote it, but because it is a supported configuration where the filter would otherwise silently
 no-op.
 
+### One accepted divergence under `PURE_ES`
+
+`UNPUBLISHED` does **not** mean quite the same thing on the two paths, and the difference is
+accepted rather than fixed.
+
+| Path | Predicate | Question it answers |
+|---|---|---|
+| SQL (default) | `cvi.live_inode is null` | does this **content** have a live version anywhere? |
+| Index (`PURE_ES`) | `live:false` | is **this version** the live one? |
+
+The index stores `live` per version, so a published item that also has newer unpublished edits has a
+working document carrying `live:false` — which the index query matches and the SQL query does not.
+Under `PURE_ES`, `UNPUBLISHED` therefore returns that item as well.
+
+**The identifier-scoped meaning is the definition** (see `ContentStatus.UNPUBLISHED`). The index
+simply cannot express it: "does any version of this identifier have `live:true`?" is not answerable
+from a single document.
+
+This is not a new limitation. ADR-0018 routes structural predicates to the database precisely
+because the index cannot answer them reliably, and states that `PURE_ES` forfeits that guarantee for
+*every* criterion and must not become the default. `PURE_ES` is opt-in and is not set in any config
+in the repository. `ARCHIVED` and `LOCKED` are unaffected, as is the default path.
+
 ---
 
 ## OpenAPI
