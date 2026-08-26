@@ -31,6 +31,8 @@
 
 <dot-upload-dropzone
     data-testid="dropzone"
+    [disabled]="!$canAddChildren()"
+    [disabledMessage]="'content-drive.add-new.no-add-children' | dm"
     [targetFolder]="$selectedFolder()"
     (uploadFiles)="onRequestUpload($event)"
     (dragEnter)="onDropzoneDragEnter()"

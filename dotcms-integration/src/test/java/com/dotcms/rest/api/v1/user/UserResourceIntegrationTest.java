@@ -3,12 +3,12 @@ package com.dotcms.rest.api.v1.user;
 import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TestUserUtils;
-import com.dotmarketing.business.Role;
+import com.dotcms.datagen.UserDataGen;
 import com.dotmarketing.business.RoleAPI;
 import com.liferay.portal.ejb.UserTestUtil;
 import java.util.Collections;
-import java.util.List;
 import com.dotcms.rest.ErrorResponseHelper;
+import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.util.PaginationUtil;
@@ -24,15 +24,21 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.Status;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.List;
+import java.util.Map;
+import java.util.stream.Collectors;
 import static org.junit.Assert.*;
 
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -44,6 +50,21 @@ public class UserResourceIntegrationTest {
     static User user;
     static Host host;
     static User adminUser;
+
+    // Fixtures from the roleKey filter tests, removed once after the class: deleting
+    // roles/users between tests clears the global role cache and can race the next
+    // test's REST auth check into a spurious 401.
+    private static final List<Role> rolesToClean = new ArrayList<>();
+    private static final List<User> usersToClean = new ArrayList<>();
+
+    @AfterClass
+    public static void cleanUpFilterFixtures() throws Exception {
+        usersToClean.forEach(UserDataGen::remove);
+        rolesToClean.forEach(RoleDataGen::remove);
+        // the deletions above cleared the global role cache; resolve the back-end role again
+        // so the next suite class's REST auth check never starts against a cold cache
+        APILocator.getRoleAPI().loadBackEndUserRole();
+    }
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -116,6 +137,63 @@ public class UserResourceIntegrationTest {
         assertEquals(adminUser.getUserId(),request.getSession().getAttribute(WebKeys.USER_ID));
         assertNull(request.getSession().getAttribute(WebKeys.USER));
         assertNull(request.getSession().getAttribute(WebKeys.PRINCIPAL_USER_ID));
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<String> filterUserIdsByRoleKeys(final String filter, final List<String> roleKeys) {
+        final Response resourceResponse = resource.filter(mockRequest(), response, filter, 0, 40,
+                null, "ASC", false, false, null, 0, roleKeys);
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        final List<Map<String, Object>> userMaps = (List<Map<String, Object>>)
+                ((ResponseEntityView<Object>) resourceResponse.getEntity()).getEntity();
+        return userMaps.stream().map(map -> map.get("userId").toString())
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: A role with a roleKey has one user directly granted to it; another user
+     * with the same name prefix is not granted. The endpoint is called with that roleKey.
+     * ExpectedResult: Only the granted user is returned.
+     */
+    @Test
+    public void test_filter_byRoleKey_returnsOnlyGrantedUsers() throws Exception {
+        final String unique = "rkFilter" + System.currentTimeMillis();
+        final Role role = new RoleDataGen().key(unique + "Key").nextPersisted();
+        final User granted = new UserDataGen().firstName(unique).roles(role).nextPersisted();
+        final User notGranted = new UserDataGen().firstName(unique).nextPersisted();
+        rolesToClean.add(role);
+        usersToClean.add(granted);
+        usersToClean.add(notGranted);
+
+        final List<String> userIds = filterUserIdsByRoleKeys(unique, List.of(role.getRoleKey()));
+        assertTrue("granted user must be returned", userIds.contains(granted.getUserId()));
+        assertFalse("user without the role must not be returned",
+                userIds.contains(notGranted.getUserId()));
+    }
+
+    /**
+     * Method to test: {@link UserResource#filter}
+     * Given Scenario: Two roles with roleKeys hold one granted user each, sharing a name prefix.
+     * The endpoint is called with both roleKeys.
+     * ExpectedResult: Users holding any of the roles are returned.
+     */
+    @Test
+    public void test_filter_byMultipleRoleKeys_returnsUnion() throws Exception {
+        final String unique = "rkUnion" + System.currentTimeMillis();
+        final Role roleA = new RoleDataGen().key(unique + "A").nextPersisted();
+        final Role roleB = new RoleDataGen().key(unique + "B").nextPersisted();
+        final User userA = new UserDataGen().firstName(unique).roles(roleA).nextPersisted();
+        final User userB = new UserDataGen().firstName(unique).roles(roleB).nextPersisted();
+        rolesToClean.add(roleA);
+        rolesToClean.add(roleB);
+        usersToClean.add(userA);
+        usersToClean.add(userB);
+
+        final List<String> userIds = filterUserIdsByRoleKeys(unique,
+                List.of(roleA.getRoleKey(), roleB.getRoleKey()));
+        assertTrue(userIds.contains(userA.getUserId()));
+        assertTrue(userIds.contains(userB.getUserId()));
     }
 
     // ==================== PUT /v1/users — roles reconcile (#37109) ====================
