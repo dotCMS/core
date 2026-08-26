@@ -324,7 +324,7 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('openPermissionsDialog', () => {
-        it('should open dialog with DotPermissionsIframeDialogComponent and correct config', () => {
+        it('should open dialog with DotJspIframeDialogComponent and correct config', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
 

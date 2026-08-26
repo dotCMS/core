@@ -96,7 +96,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
+          # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
+          fetch-depth: 1
         
       - name: Parse test configuration
         id: parse-config
@@ -249,7 +251,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Shallow checkout: test jobs run Maven suites against the checked-out
+          # snapshot only — no git history is read anywhere in this job or in the
+          # maven-job action (buildnumber-maven-plugin reads HEAD, which works on
+          # a shallow clone). fetch-depth: 0 pulled every branch ref (~2k+
+          # branches, ~1.1 GB pack) at ~19-20 min per matrix job.
+          fetch-depth: 1
 
       # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
       # against origin/main (core-web/pom.xml git.origin.branch). The shallow

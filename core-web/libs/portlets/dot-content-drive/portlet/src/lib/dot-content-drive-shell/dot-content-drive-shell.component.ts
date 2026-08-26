@@ -91,8 +91,7 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { excludeFolders } from '../utils/action-center';
-import { encodeFilters, isFolder } from '../utils/functions';
+import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -192,6 +191,14 @@ export class DotContentDriveShellComponent {
      * from here rather than the dropzone reaching into the store itself.
      */
     readonly $selectedFolder = computed(() => this.#store.selectedNode()?.data);
+
+    /**
+     * Whether the browsed folder accepts new children. Disables the drop zone where it does not:
+     * an upload creates a contentlet in the target folder, so the drop would be refused server-side
+     * only after the user had already committed the gesture. Shared with the toolbar's New and
+     * Upload buttons via the store, so the three cannot disagree.
+     */
+    readonly $canAddChildren = this.#store.$canAddChildren;
 
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
@@ -316,12 +323,13 @@ export class DotContentDriveShellComponent {
     );
 
     /**
-     * Contentlets in the current selection, for the Action Center's header sub-line. Folders are
-     * excluded because every bulk endpoint ignores them.
+     * Items in the current selection, for the Action Center's header sub-line.
+     *
+     * Counts folders as well as contentlets: Add to Bundle and Push Publish both act on a folder, so
+     * excluding them would under-report what the dialog is about to operate on. Which individual
+     * actions apply to which rows is the action list's job to say, not the header's.
      */
-    readonly $actionCenterSelectionCount = computed(
-        () => excludeFolders(this.#store.selectedItems()).length
-    );
+    readonly $actionCenterSelectionCount = computed(() => this.#store.selectedItems().length);
 
     /**
      * Action Center title. Swaps to the drilled-into screen's title (the selected workflow action)
@@ -813,7 +821,49 @@ export class DotContentDriveShellComponent {
      * type, upload the files directly; otherwise open the type menu (anchored to the content area)
      * and carry the files into the payload to upload right after the user picks.
      */
+    /**
+     * Refuses a drop onto a folder the user cannot add content to, and says so.
+     *
+     * A drag onto a tree folder is a third route into that folder, alongside the New menu and the
+     * grid drop zone, and it is the one that bypassed the gate. Creating a folder and moving a
+     * contentlet are both refused server-side without this permission (`FolderAPIImpl:673`,
+     * `ESContentletAPIImpl:607`), so an ungated drop hands the user a failure they could not have
+     * predicted from the UI. An upload is *not* refused server-side — the contentlet checkin path
+     * does not check it — which is the stronger reason to gate it here rather than the weaker one:
+     * otherwise one route into a folder quietly allows what the other two forbid.
+     *
+     * A toast rather than a refused drop target, because the drag is over a tree node with no room
+     * to explain itself, and a gesture that simply does nothing reads as a broken UI.
+     *
+     * @param {DotFolderTreeNodeData} [targetFolder] - The folder dropped on
+     * @returns {boolean} Whether the drop may proceed
+     */
+    #canDropInto(targetFolder?: DotFolderTreeNodeData): boolean {
+        if (canAddChildrenTo(targetFolder, this.#store.siteCanAddChildren())) {
+            return true;
+        }
+
+        const isSiteRoot = !(targetFolder as { permissions?: string[] })?.permissions?.length;
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('content-drive.no-permission.title'),
+            detail: this.#dotMessageService.get(
+                isSiteRoot
+                    ? 'content-drive.no-permission.add-to-site'
+                    : 'content-drive.no-permission.add-to-folder'
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        return false;
+    }
+
     protected onRequestUpload({ files, targetFolder }: DotContentDriveUploadFiles) {
+        if (!this.#canDropInto(targetFolder)) {
+            return;
+        }
+
         const contentData =
             targetFolder && targetFolder.type !== LOAD_MORE_NODE_TYPE
                 ? (targetFolder as DotFolderTreeNodeContentData)
@@ -1075,6 +1125,10 @@ export class DotContentDriveShellComponent {
      * @param {DotContentDriveMoveItems} event - The move items event
      */
     protected onMoveItems(event: DotContentDriveMoveItems): void {
+        if (!this.#canDropInto(event.targetFolder)) {
+            return;
+        }
+
         const { folderName, pathToMove, dragItems } = this.getMoveMetadata(event);
 
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
