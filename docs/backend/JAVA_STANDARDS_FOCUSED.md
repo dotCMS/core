@@ -1,9 +1,9 @@
 # Java Development Standards
 
 ## Runtime vs Syntax Compatibility
-- **Runtime Environment**: Java 21 (production)
-- **Syntax Requirement**: Java 11 compatible (core modules)
-- **CLI Tools Exception**: Java 21 features allowed in `tools/dotcms-cli` only
+- **Runtime Environment**: Java 25
+- **Syntax Requirement**: Java 25 (core modules — `dotcms.core.compiler.release`, see root `CLAUDE.md`)
+- **CLI Tools Exception**: `tools/dotcms-cli` targets Java 11 (`maven.compiler.release`) — the most conservative target in the repo, kept for portability, not an exception for newer syntax
 
 ## Core Development Patterns
 
