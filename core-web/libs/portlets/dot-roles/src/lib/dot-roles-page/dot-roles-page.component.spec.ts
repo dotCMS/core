@@ -2,7 +2,11 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAlertConfirmService,
+    DotHttpErrorManagerService,
+    DotMessageService
+} from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesPageComponent } from './dot-roles-page.component';
@@ -76,7 +80,8 @@ describe('DotRolesPageComponent', () => {
         componentProviders: [baseStoreMock(), mockProvider(DotRolesPortletService)],
         providers: [
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
-            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
+            mockProvider(DotHttpErrorManagerService, { handle: jest.fn() }),
+            mockProvider(DotAlertConfirmService, { alert: jest.fn() })
         ]
     });
 

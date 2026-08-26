@@ -6,7 +6,7 @@ import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotRolesTreeComponent } from './dot-roles-tree.component';
@@ -49,7 +49,8 @@ describe('DotRolesTreeComponent', () => {
                 requireConfirmation$: EMPTY,
                 accept: EMPTY,
                 reject: EMPTY
-            })
+            }),
+            mockProvider(DotAlertConfirmService, { alert: jest.fn() })
         ],
         providers: [{ provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) }]
     });
