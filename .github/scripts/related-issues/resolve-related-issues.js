@@ -7,6 +7,8 @@
 //
 //   1. Branch name  — consecutive leading numeric tokens, with or without an
 //                     `issue-` prefix:  ^(issue-)?\d+(-\d+)*-
+//                     Tokens below MIN_ISSUE_NUMBER are discarded, so date-like
+//                     prefixes (`2024-01-15-...`) yield nothing.
 //                     `issue-37085-bouncycastle-185` -> [37085]   (185 is a
 //                     library version, not an issue). `36937-36938-roles-api`
 //                     -> [36937, 36938].
@@ -48,14 +50,28 @@
  *   nicobytes/36950-remove-dead-core-web-libs-impl    -> []       author prefix: by design, the
  *                                                                 Development source recovers it
  *   issue-xmllint-apt-hang                            -> []       no number at all
+ *   2024-01-15-hotfix-something                       -> []       date prefix: components are all
+ *                                                                 below MIN_ISSUE_NUMBER, and a
+ *                                                                 bare year/month/day must never be
+ *                                                                 mistaken for an issue reference
  * Only the run of numbers at the very start counts; anything after a non-numeric token is data,
  * not an issue reference. Every survivor is still validated against the API before it is used.
  */
+
+// dotCMS/core passed issue #10000 in 2018, while every component of a date prefix
+// (`2024-01-15-...`) is ≤ 9999 by construction. Without this floor the regex above turns a
+// date-prefixed branch into candidates [2024, 1, 15] — and validate() cannot save us, because
+// old low-numbered issues like core#15 really do exist, so a plan would land on an unrelated
+// decade-old ticket. The floor applies to the `issue-`-prefixed form too on purpose: explicit
+// or not, `issue-671-...` is exactly how PR #37167 pointed at private-issues#671, and no real
+// dotCMS/core work references anything below the floor anymore.
+const MIN_ISSUE_NUMBER = 10000;
+
 function issuesFromBranch(branch) {
   if (!branch) return [];
   const m = /^(?:issue-)?(\d+(?:-\d+)*)-/.exec(branch.trim());
   if (!m) return [];
-  return m[1].split('-').map(Number);
+  return m[1].split('-').map(Number).filter((n) => n >= MIN_ISSUE_NUMBER);
 }
 
 /**
