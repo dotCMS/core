@@ -267,11 +267,24 @@ public class ContentDriveWorkflowArchiveStepTest extends IntegrationTestBase {
     }
 
     /**
-     * The complement: an {@code UNPUBLISHED} status alongside the same archive-step filter keeps the
-     * archived baseline, because only {@code ARCHIVED} lifts it. Archived content stays out.
+     * An {@code UNPUBLISHED} status alongside the same archive-step filter still returns the
+     * archived content, because archived content <em>is</em> unpublished and the archive-step
+     * branch admits it.
+     *
+     * <p>The first version of this test asserted the opposite, reasoning that only {@code ARCHIVED}
+     * lifts the archived baseline. That is true of the <em>global</em> baseline and false here: an
+     * archive-target step makes {@code appendWorkflowQuery} admit {@code cvi.deleted = true} rows
+     * within that branch on its own, with no status involved at all — which is what
+     * {@link #testMixedFilterScopesArchivedToArchiveBranch()} already pins. {@code archive()}
+     * unpublishes, so the row also satisfies {@code cvi.live_inode is null}: both clauses match,
+     * and returning it is correct. Asking for a step and getting what is at that step is the whole
+     * point of the filter.</p>
+     *
+     * <p>See {@link #testUnpublishedStatusKeepsTheGlobalArchivedBaseline()} for the case that does
+     * guard the baseline.</p>
      */
     @Test
-    public void testUnpublishedStatusWithArchiveStepExcludesArchivedContent()
+    public void testUnpublishedStatusWithArchiveStepStillReturnsArchivedContent()
             throws DotDataException, DotSecurityException {
         final Set<String> inodes = driveInodes(baseRequest()
                 .workflow(List.of(WorkflowFilterForm.builder()
@@ -279,8 +292,29 @@ public class ContentDriveWorkflowArchiveStepTest extends IntegrationTestBase {
                 .status(List.of("UNPUBLISHED"))
                 .build());
 
-        assertFalse("Only ARCHIVED admits archived content, whatever the workflow filter says",
+        assertTrue("Archived content at the archive step is unpublished, so UNPUBLISHED keeps it",
                 inodes.contains(archivedAtArchiveStep.getInode()));
+    }
+
+    /**
+     * The real complement: with no archive-target step selected, nothing lifts the global archived
+     * baseline, so an {@code UNPUBLISHED} status must not drag archived content in.
+     *
+     * <p>{@code archivedInPlaceAtNormalStep} is the discriminating fixture — archived, therefore
+     * unpublished, but sitting at a normal step. If {@code UNPUBLISHED} were resolved without the
+     * baseline still applying, this row would come back.</p>
+     */
+    @Test
+    public void testUnpublishedStatusKeepsTheGlobalArchivedBaseline()
+            throws DotDataException, DotSecurityException {
+        final Set<String> inodes = driveInodes(baseRequest()
+                .workflow(List.of(WorkflowFilterForm.builder()
+                        .scheme(scheme.getId()).step(normalStep.getId()).build()))
+                .status(List.of("UNPUBLISHED"))
+                .build());
+
+        assertFalse("UNPUBLISHED must not lift the archived baseline on a non-archive step",
+                inodes.contains(archivedInPlaceAtNormalStep.getInode()));
     }
 
     @Test
