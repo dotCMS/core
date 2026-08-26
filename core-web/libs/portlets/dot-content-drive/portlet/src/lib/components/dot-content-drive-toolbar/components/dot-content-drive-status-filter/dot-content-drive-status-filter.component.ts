@@ -1,12 +1,6 @@
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    effect,
-    inject,
-    linkedSignal,
-    untracked
-} from '@angular/core';
+import { signalMethod } from '@ngrx/signals';
+
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -106,18 +100,7 @@ export class DotContentDriveStatusFilterComponent {
     }
 
     constructor() {
-        // The selection is the single source of truth: whenever it changes, the filter bag follows.
-        // Handlers just set the signal, so there is no way to update the selection and forget to
-        // persist it — the failure mode two explicit #syncStore() calls invited.
-        //
-        // Safe against the obvious circularity (effect writes store → store feeds $selection →
-        // effect) because $selection compares by value: a write that does not change the selection
-        // produces no notification. untracked keeps the store writes out of the dependency set.
-        effect(() => {
-            const selection = this.$selection();
-
-            untracked(() => this.#syncStore(selection));
-        });
+        this.#syncStore(this.$selection);
     }
 
     /**
@@ -133,7 +116,22 @@ export class DotContentDriveStatusFilterComponent {
         this.$selection.set([]);
     }
 
-    #syncStore(selection: string[]): void {
+    /**
+     * Persists the selection to the filter bag whenever it changes.
+     *
+     * A `signalMethod` rather than an `effect`: it takes the signal directly, and runs its body
+     * outside the reactive context, so the store writes cannot become dependencies of the very
+     * thing that triggers them — no manual `untracked` to remember. Matches how the analytics
+     * filters and the UVE palette do this.
+     *
+     * The selection is the single source of truth: handlers only `set()` it, so there is no way to
+     * change the selection and forget to persist it.
+     *
+     * The write feeds back into `$selection` (it reads the filter bag), which is why that signal
+     * compares by value — a write that does not change the selection produces no notification, so
+     * the cycle cannot start.
+     */
+    readonly #syncStore = signalMethod<string[]>((selection) => {
         if (selection.length) {
             this.#store.patchFilters({ [STATUS_FILTER_KEY]: selection });
 
@@ -143,5 +141,5 @@ export class DotContentDriveStatusFilterComponent {
         // removeFilter rather than patching an empty array: an empty array would linger in the URL
         // and keep folders suppressed for a filter that is no longer doing anything.
         this.#store.removeFilter(STATUS_FILTER_KEY);
-    }
+    });
 }
