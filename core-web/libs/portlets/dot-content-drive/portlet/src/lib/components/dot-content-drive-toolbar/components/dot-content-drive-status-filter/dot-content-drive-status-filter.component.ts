@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    effect,
+    inject,
+    linkedSignal,
+    untracked
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -67,11 +75,22 @@ export class DotContentDriveStatusFilterComponent {
      * would mean the URL decoder lost the array shape — see the explicit `status` entry in
      * `decodeByFilterKey`.
      */
-    readonly $selection = linkedSignal<string[]>(() => {
-        const raw = this.#store.getFilterValue(STATUS_FILTER_KEY);
+    readonly $selection = linkedSignal<string[]>(
+        () => {
+            const raw = this.#store.getFilterValue(STATUS_FILTER_KEY);
 
-        return Array.isArray(raw) ? raw : [];
-    });
+            return Array.isArray(raw) ? raw : [];
+        },
+        {
+            // Compare by VALUE, not reference. This is what makes the reactive sync below safe
+            // rather than merely lucky: the effect writes to the store, the store feeds this
+            // signal, and without value equality every write that minted a new array — a
+            // `[...selection]` spread, or the fresh `[]` produced when the key is absent — would
+            // notify, re-run the effect and write again. With it, a write that does not change
+            // the selection is inert and the cycle cannot start.
+            equal: (a, b) => a.length === b.length && a.every((value, i) => value === b[i])
+        }
+    );
 
     /** Resolved labels for the chip, in the control's display order rather than click order. */
     protected readonly $chipSelections = computed(() => {
@@ -86,6 +105,21 @@ export class DotContentDriveStatusFilterComponent {
         return this.$selection().includes(value);
     }
 
+    constructor() {
+        // The selection is the single source of truth: whenever it changes, the filter bag follows.
+        // Handlers just set the signal, so there is no way to update the selection and forget to
+        // persist it — the failure mode two explicit #syncStore() calls invited.
+        //
+        // Safe against the obvious circularity (effect writes store → store feeds $selection →
+        // effect) because $selection compares by value: a write that does not change the selection
+        // produces no notification. untracked keeps the store writes out of the dependency set.
+        effect(() => {
+            const selection = this.$selection();
+
+            untracked(() => this.#syncStore(selection));
+        });
+    }
+
     /**
      * Selection changed in the listbox. In multiple mode it hands back the full array of selected
      * values, so this replaces rather than toggles — which also means clicking anywhere on a row,
@@ -93,17 +127,13 @@ export class DotContentDriveStatusFilterComponent {
      */
     protected onSelectionChange(selection: string[]): void {
         this.$selection.set(selection ?? []);
-        this.#syncStore();
     }
 
     protected onClearAll(): void {
         this.$selection.set([]);
-        this.#syncStore();
     }
 
-    #syncStore(): void {
-        const selection = this.$selection();
-
+    #syncStore(selection: string[]): void {
         if (selection.length) {
             this.#store.patchFilters({ [STATUS_FILTER_KEY]: selection });
 
