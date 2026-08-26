@@ -53,6 +53,16 @@ import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { isFolder } from '../../utils/functions';
 
+/**
+ * Caption treatment for a context-menu group label. Mirrors the section-label styling already used
+ * elsewhere in this portlet, plus `pointer-events-none` so the caption cannot be clicked or hovered.
+ */
+// `opacity-100!` cancels the `p-disabled` dimming PrimeNG applies from the `disabled` flag. The flag
+// is there to keep the caption out of keyboard navigation, not to make it look unavailable, and
+// dimming an already-muted colour leaves it barely legible.
+const GROUP_LABEL_STYLE_CLASS =
+    'pointer-events-none text-[10px] font-bold tracking-widest text-surface-400 uppercase opacity-100!';
+
 @Component({
     selector: 'dot-folder-list-context-menu',
     templateUrl: './dot-folder-list-context-menu.component.html',
@@ -227,10 +237,19 @@ export class DotFolderListViewContextMenuComponent {
             // a contributor who would confirm the destructive dialog and only then be refused.
             // Ordered after everything else because it is the one entry here that destroys something.
             if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT) && canEditPermissions) {
-                folderMenuItems.push({
-                    label: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
-                    command: () => this.#confirmDeleteFolder(contentlet)
-                });
+                // Separated rather than merely last, matching how the destructive workflow actions
+                // are split off on a contentlet: the separator is what stops Delete being clicked by
+                // momentum after the item above it. Never a leading separator — Delete's gate is
+                // strictly narrower than Edit Folder's, so Edit Folder is always already in the list.
+                folderMenuItems.push(
+                    { separator: true },
+                    {
+                        label: this.#dotMessageService.get(
+                            'content-drive.context-menu.delete-folder'
+                        ),
+                        command: () => this.#confirmDeleteFolder(contentlet)
+                    }
+                );
             }
 
             if (!folderMenuItems.length) {
@@ -293,42 +312,47 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
-        // Workflow actions get their own labelled section. "Workflows" is a real dotCMS concept, so
-        // it reads as a name rather than an invented category — which matters because the actions
-        // themselves carry no groupable intent: the API exposes no actionlet class names, no
-        // category and no tag, `order` is a within-scheme sort index and `icon` is admin-authored
-        // free text. Any finer grouping would be guesswork that breaks on custom schemes.
+        // Workflow actions get a labelled section rather than a flyout. "Workflows" is a real
+        // dotCMS concept, so it reads as a name rather than an invented category — which matters
+        // because the actions themselves carry no groupable intent: the API exposes no actionlet
+        // class names, no category and no tag, `order` is a within-scheme sort index and `icon` is
+        // admin-authored free text. Any finer grouping would be guesswork that breaks on custom
+        // schemes.
         //
-        // Archive is the one exception, split off below.
+        // The destructive ones are split off below.
         const selectableActions = workflowActions.filter(
             (action) => action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
         );
 
-        // hasArchiveActionlet is computed from the action's actual sub-actionlets, not its name, so
-        // a scheme's "Retire this blog" still reports true. Name- and locale-independent, which a
-        // label match or a hardcoded id would not be.
-        const archiveActions = selectableActions.filter((action) => action.hasArchiveActionlet);
-        const otherActions = selectableActions.filter((action) => !action.hasArchiveActionlet);
+        // Split on the action's actual sub-actionlets, not on its name, so a scheme's "Retire this
+        // blog" or "Purge" still lands in the destructive group. Name- and locale-independent,
+        // which a label match or a hardcoded id would not be.
+        const isDestructive = (action: DotCMSWorkflowAction) =>
+            action.hasArchiveActionlet || action.hasDeleteActionlet || action.hasDestroyActionlet;
+
+        const destructiveActions = selectableActions.filter(isDestructive);
+        const otherActions = selectableActions.filter((action) => !isDestructive(action));
 
         const toMenuItem = (action: DotCMSWorkflowAction): MenuItem => ({
             label: this.#dotMessageService.get(action.name),
             command: () => this.#executeWorkflowActions(action, contentlet)
         });
 
+        // The separator earns its place here as a boundary rather than a guard: the caption alone
+        // read as if it belonged to the item above it. `actionsMenu` is never empty at this point
+        // (Edit Content is pushed unconditionally), so this cannot open the menu.
         if (otherActions.length) {
-            // A real nested submenu, so PrimeNG renders the label, the chevron and the flyout
-            // natively — and the group is announced as a submenu rather than as a disabled
-            // menuitem, which is what a caption item would have been.
-            actionsMenu.push({
-                label: this.#dotMessageService.get('content-drive.context-menu.workflows'),
-                items: otherActions.map(toMenuItem)
-            });
+            actionsMenu.push(
+                { separator: true },
+                this.#buildGroupLabel('content-drive.context-menu.workflows'),
+                ...otherActions.map(toMenuItem)
+            );
         }
 
-        // Separated rather than merely last: archiving is the destructive one, and a separator is
-        // what stops it being clicked by momentum after the action above it.
-        if (archiveActions.length) {
-            actionsMenu.push({ separator: true }, ...archiveActions.map(toMenuItem));
+        // Separated rather than merely last: these are the entries that destroy something, and the
+        // separator is what stops one being clicked by momentum after the action above it.
+        if (destructiveActions.length) {
+            actionsMenu.push({ separator: true }, ...destructiveActions.map(toMenuItem));
         }
 
         if (!actionsMenu.length) {
@@ -549,6 +573,23 @@ export class DotFolderListViewContextMenuComponent {
      * from `tooltipOptions` alone, so a plain `tooltip` is ignored on top of that. A suffixed label
      * needs neither hover nor click.
      */
+    /**
+     * Builds a non-interactive caption that names the group of items following it.
+     *
+     * `p-contextMenu` has no submenu-header template — only `p-menu` does — so the caption is a
+     * regular item made inert two ways: `disabled` keeps it out of keyboard navigation
+     * (PrimeNG's `isValidItem` skips disabled items), and `pointer-events-none` stops it taking a
+     * click, which would otherwise close the menu, or a hover highlight, which would make it look
+     * clickable.
+     */
+    #buildGroupLabel(messageKey: string): MenuItem {
+        return {
+            label: this.#dotMessageService.get(messageKey),
+            disabled: true,
+            styleClass: GROUP_LABEL_STYLE_CLASS
+        };
+    }
+
     #buildPushPublishItem(identifier: string): MenuItem {
         const hasEnvironments = this.#store.hasPushPublishEnvironments();
         const label = this.#dotMessageService.get('contenttypes.content.push_publish');

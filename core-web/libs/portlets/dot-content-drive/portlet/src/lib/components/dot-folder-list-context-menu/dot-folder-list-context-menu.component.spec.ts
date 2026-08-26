@@ -47,8 +47,8 @@ import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
- * Finds a menu entry by label at any depth. Index-free and depth-free, so neither regrouping nor
- * nesting the workflow actions under a submenu can silently retarget these assertions.
+ * Finds a menu entry by label at any depth. Index-free and depth-free, so regrouping the workflow
+ * actions cannot silently retarget these assertions.
  */
 const find = (items: MenuItem[], label: string): MenuItem | undefined => {
     for (const item of items) {
@@ -65,6 +65,17 @@ const find = (items: MenuItem[], label: string): MenuItem | undefined => {
 
     return undefined;
 };
+
+/**
+ * The menu as an ordered list of labels, with separators rendered as `SEPARATOR`.
+ *
+ * Separators carry grouping meaning here — they are what holds the destructive actions apart from
+ * the rest — so they belong in the assertion rather than being filtered out, and a bare
+ * `.map(item => item.label)` would render them as an unreadable `undefined`.
+ */
+const SEPARATOR = '\u2014 separator \u2014';
+const labels = (items: MenuItem[]): string[] =>
+    items.map((item) => (item.separator ? SEPARATOR : item.label));
 
 /** Invokes a menu entry by label, wherever it lives in the tree. */
 const invoke = (items: MenuItem[], label: string) => {
@@ -245,9 +256,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            // Edit + Lock/Unlock + Push Publish + Add to Bundle + the Workflows submenu
-            // (the workflow actions themselves are nested inside it)
-            expect(component.$items()).toHaveLength(5);
+            // Edit + Lock/Unlock + Push Publish + Add to Bundle, then a separator, the Workflows
+            // caption and the 3 non-Move actions from the fixture inline beneath it.
+            expect(component.$items()).toHaveLength(9);
         });
 
         it('should fetch canLock data when building menu items', async () => {
@@ -264,28 +275,29 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // order, so the positions have to stay pinned, but an inserted item then fails once
             // with the whole list in the diff instead of pointing at whichever index shifted.
             //
-            // Built-in items stay top level; every workflow action now lives under the Workflows
-            // submenu asserted separately below.
-            expect(items.map((item) => item.label)).toEqual([
+            // Built-in items first, then the Workflows caption with its actions inline beneath it.
+            expect(labels(items)).toEqual([
                 'content-drive.context-menu.edit-content',
                 'content-drive.context-menu.lock',
                 // Suffixed, because the default fixture has no reachable environment.
                 'content-drive.context-menu.push-publish.no-environment',
                 'contenttypes.content.add_to_bundle',
-                'content-drive.context-menu.workflows'
+                SEPARATOR,
+                'content-drive.context-menu.workflows',
+                'Assign Workflow',
+                'Save',
+                'Save / Publish'
             ]);
 
             const workflows = items.find(
                 (item) => item.label === 'content-drive.context-menu.workflows'
             );
 
-            // A submenu, not a command: PrimeNG renders the flyout from `items`.
+            // A caption, not an entry: it names the group, so it must not be invocable and must not
+            // open a flyout. `disabled` is what keeps it out of keyboard navigation.
             expect(workflows?.command).toBeUndefined();
-            expect(workflows?.items?.map((item) => item.label)).toEqual([
-                'Assign Workflow',
-                'Save',
-                'Save / Publish'
-            ]);
+            expect(workflows?.items).toBeUndefined();
+            expect(workflows?.disabled).toBe(true);
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -346,8 +358,63 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            // Edit + Lock/Unlock + Push Publish + Add to Bundle + the Workflows submenu
-            expect(component.$items()).toHaveLength(5);
+            // Edit + Lock/Unlock + Push Publish + Add to Bundle + separator + caption + 3 actions
+            expect(component.$items()).toHaveLength(9);
+        });
+
+        it.each([
+            ['hasArchiveActionlet' as const, 'Retire this blog'],
+            ['hasDeleteActionlet' as const, 'Send to trash'],
+            ['hasDestroyActionlet' as const, 'Purge']
+        ])('should hold a %s action apart from the Workflows group', async (flag, actionName) => {
+            // Named nothing like "Archive" or "Delete" on purpose: the split reads the action's
+            // actual sub-actionlets, so a custom scheme's wording must not decide the grouping.
+            // `mockReturnValueOnce`, not `mockReturnValue`: the spy is shared, `getByInode` is
+            // called once per `getMenuItems`, and a persistent override leaks this fixture into
+            // every test that runs after this one.
+            workflowsActionsService.getByInode.mockReturnValueOnce(
+                of([
+                    { ...mockWorkflowActions[0], id: 'keep', name: 'Save' },
+                    {
+                        ...mockWorkflowActions[0],
+                        id: 'destructive',
+                        name: actionName,
+                        [flag]: true
+                    }
+                ])
+            );
+
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+
+            expect(labels(items).slice(-5)).toEqual([
+                SEPARATOR,
+                'content-drive.context-menu.workflows',
+                'Save',
+                SEPARATOR,
+                actionName
+            ]);
+
+            // The separator is the whole point: it is what stops the destructive action being
+            // clicked by momentum after the one above it.
+            expect(items.at(-2)?.separator).toBe(true);
+        });
+
+        it('should not open a separator-led menu when every action is destructive', async () => {
+            workflowsActionsService.getByInode.mockReturnValueOnce(
+                of([{ ...mockWorkflowActions[0], name: 'Purge', hasDestroyActionlet: true }])
+            );
+
+            await component.getMenuItems(mockContextMenuData);
+
+            const items = component.$items();
+
+            // With no non-destructive action there is no Workflows caption, so the separator must
+            // still land after the built-in items rather than opening the menu.
+            expect(find(items, 'content-drive.context-menu.workflows')).toBeUndefined();
+            expect(items[0]?.separator).toBeFalsy();
+            expect(labels(items).slice(-2)).toEqual([SEPARATOR, 'Purge']);
         });
 
         it('should not include move to folder workflow action', async () => {
@@ -1062,12 +1129,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         showAddToBundle: false
                     });
 
-                    expect(component.$items().map((item) => item.label)).toEqual([
+                    expect(labels(component.$items())).toEqual([
                         'content-drive.context-menu.edit-folder',
                         'Edit-Permissions',
                         'contenttypes.content.push_publish',
                         'contenttypes.content.add_to_bundle',
                         'content-drive.context-menu.push-history',
+                        // Delete is held apart, the same way the destructive workflow actions are.
+                        SEPARATOR,
                         'content-drive.context-menu.delete-folder'
                     ]);
                 });
@@ -1128,8 +1197,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
 
                 expect(lockItem).toBeUndefined();
-                // Edit + Push Publish + Add to Bundle + the Workflows submenu (no lock/unlock)
-                expect(items).toHaveLength(4);
+                // Edit + Push Publish + Add to Bundle + separator + caption + 3 actions, no lock
+                expect(items).toHaveLength(8);
             });
 
             it('should call lockContent when lock action is triggered on unlocked content', async () => {
