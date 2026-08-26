@@ -54,14 +54,28 @@ import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { isFolder } from '../../utils/functions';
 
 /**
- * Caption treatment for a context-menu group label. Mirrors the section-label styling already used
- * elsewhere in this portlet, plus `pointer-events-none` so the caption cannot be clicked or hovered.
+ * Caption treatment for a context-menu group label.
+ *
+ * `p-menu-submenu-label` is PrimeNG's own class for exactly this, so the caption picks up the
+ * theme's `menu.submenu.label.*` tokens rather than a hand-tuned approximation of them. It lives on
+ * `p-menu` rather than `p-contextMenu`, which has no group-label class at all — the toolbar's
+ * `p-menu` is what loads the rule on this page.
+ *
+ * The three utilities that follow it each cancel one thing the surrounding context-menu styles would
+ * otherwise impose:
+ * - `p-0!` drops the label's own padding, so the caption lines up on `.p-contextmenu-item-link`'s
+ *   padding and sits flush with the items it names instead of being inset twice.
+ * - `pointer-events-none` stops it taking a click, which would close the menu, or a hover highlight,
+ *   which would make it look clickable. `disabled` alone does not do this: the theme overrides
+ *   `.p-disabled` to `opacity: 1` and never sets `pointer-events`.
+ * - `text-inherit` on the content wrapper lets the label's colour through; `.p-contextmenu-item-content`
+ *   sets `color` on a descendant and would otherwise win.
  */
-// `opacity-100!` cancels the `p-disabled` dimming PrimeNG applies from the `disabled` flag. The flag
-// is there to keep the caption out of keyboard navigation, not to make it look unavailable, and
-// dimming an already-muted colour leaves it barely legible.
+/** Names the group of built-in entries, on both a folder and a contentlet. */
+const ACTIONS_LABEL_KEY = 'content-drive.context-menu.actions';
+
 const GROUP_LABEL_STYLE_CLASS =
-    'pointer-events-none text-[10px] font-bold tracking-widest text-surface-400 uppercase opacity-100!';
+    'p-menu-submenu-label p-0! pointer-events-none [&_.p-contextmenu-item-content]:text-inherit';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
@@ -260,6 +274,11 @@ export class DotFolderListViewContextMenuComponent {
                 return;
             }
 
+            // Named after the fact rather than pushed first: every entry above is conditional, so
+            // this is the only point where the group is known to have something in it. A caption
+            // over an empty group would be worse than no caption.
+            folderMenuItems.unshift(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
+
             this.$items.set(folderMenuItems);
             this.$memoizedMenuItems.set({
                 ...this.$memoizedMenuItems(),
@@ -281,6 +300,10 @@ export class DotFolderListViewContextMenuComponent {
 
         const label =
             contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ? 'page' : 'content';
+
+        // The built-in entries are a group like any other, so they get named too. Unconditional,
+        // unlike the folder branch: Edit Content is pushed immediately below with no gate.
+        actionsMenu.push(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
 
         actionsMenu.push({
             label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),

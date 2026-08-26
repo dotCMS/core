@@ -256,9 +256,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 mockContentlet.inode,
                 DotRenderMode.LISTING
             );
-            // Edit + Lock/Unlock + Push Publish + Add to Bundle, then a separator, the Workflows
-            // caption and the 3 non-Move actions from the fixture inline beneath it.
-            expect(component.$items()).toHaveLength(9);
+            // Actions caption + Edit + Lock/Unlock + Push Publish + Add to Bundle, then a
+            // separator, the Workflows caption and the fixture's 3 non-Move actions beneath it.
+            expect(component.$items()).toHaveLength(10);
         });
 
         it('should fetch canLock data when building menu items', async () => {
@@ -277,6 +277,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             //
             // Built-in items first, then the Workflows caption with its actions inline beneath it.
             expect(labels(items)).toEqual([
+                'content-drive.context-menu.actions',
                 'content-drive.context-menu.edit-content',
                 'content-drive.context-menu.lock',
                 // Suffixed, because the default fixture has no reachable environment.
@@ -298,6 +299,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(workflows?.command).toBeUndefined();
             expect(workflows?.items).toBeUndefined();
             expect(workflows?.disabled).toBe(true);
+            // PrimeNG's own group-label class, not a local approximation of it. Asserted by name
+            // because swapping it for bespoke styling is the regression worth catching here; the
+            // utilities alongside it are free to change.
+            expect(workflows?.styleClass).toContain('p-menu-submenu-label');
         });
 
         it('should build correct menu items for Pages contentlet', async () => {
@@ -310,14 +315,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(pageContextMenuData);
 
             const items = component.$items();
-            expect(items[0].label).toBe('content-drive.context-menu.edit-page');
+            expect(find(items, 'content-drive.context-menu.edit-page')).toBeTruthy();
         });
 
         it('should call navigation service when edit action is triggered', async () => {
             await component.getMenuItems(mockContextMenuData);
 
             const items = component.$items();
-            items[0].command?.({} as unknown as MenuItemCommandEvent);
+            invoke(items, 'content-drive.context-menu.edit-content');
 
             expect(navigationService.editContent).toHaveBeenCalledWith(mockContentlet);
         });
@@ -358,8 +363,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
             await component.getMenuItems(mockContextMenuData);
 
             expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-            // Edit + Lock/Unlock + Push Publish + Add to Bundle + separator + caption + 3 actions
-            expect(component.$items()).toHaveLength(9);
+            // Both captions + Edit + Lock/Unlock + Push Publish + Add to Bundle + separator + 3
+            expect(component.$items()).toHaveLength(10);
         });
 
         it.each([
@@ -413,7 +418,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             // With no non-destructive action there is no Workflows caption, so the separator must
             // still land after the built-in items rather than opening the menu.
             expect(find(items, 'content-drive.context-menu.workflows')).toBeUndefined();
-            expect(items[0]?.separator).toBeFalsy();
+            expect(labels(items)[0]).toBe('content-drive.context-menu.actions');
             expect(labels(items).slice(-2)).toEqual([SEPARATOR, 'Purge']);
         });
 
@@ -462,7 +467,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 // Delete needs EDIT_PERMISSIONS too, matching `FolderAPIImpl.delete`.
-                expect(component.$items().map((item) => item.label)).toEqual([
+                expect(labels(component.$items())).toEqual([
+                    'content-drive.context-menu.actions',
                     'content-drive.context-menu.edit-folder'
                 ]);
             });
@@ -484,7 +490,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 const items = component.$items();
-                items[0].command?.({} as unknown as MenuItemCommandEvent);
+                invoke(items, 'content-drive.context-menu.edit-folder');
 
                 expect(store.setDialog).toHaveBeenCalledWith({
                     type: DIALOG_TYPE.FOLDER,
@@ -511,7 +517,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(component.$memoizedMenuItems()[mockFolder.identifier]).toBeDefined();
-                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(1);
+                // The Actions caption plus the one permitted entry.
+                expect(component.$memoizedMenuItems()[mockFolder.identifier]).toHaveLength(2);
             });
 
             it('should use memoized folder menu items on second call', async () => {
@@ -531,7 +538,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockFolderContextMenuData);
 
                 expect(workflowsActionsService.getByInode).toHaveBeenCalledTimes(firstCallCount);
-                expect(component.$items()).toHaveLength(1);
+                // The Actions caption plus the one permitted entry.
+                expect(component.$items()).toHaveLength(2);
             });
 
             it('should build empty menu when folder has no permissions', async () => {
@@ -1130,6 +1138,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     });
 
                     expect(labels(component.$items())).toEqual([
+                        'content-drive.context-menu.actions',
                         'content-drive.context-menu.edit-folder',
                         'Edit-Permissions',
                         'contenttypes.content.push_publish',
@@ -1197,8 +1206,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
 
                 expect(lockItem).toBeUndefined();
-                // Edit + Push Publish + Add to Bundle + separator + caption + 3 actions, no lock
-                expect(items).toHaveLength(8);
+                // Both captions + Edit + Push Publish + Add to Bundle + separator + 3, no lock
+                expect(items).toHaveLength(9);
             });
 
             it('should call lockContent when lock action is triggered on unlocked content', async () => {
