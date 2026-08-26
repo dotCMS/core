@@ -3,7 +3,7 @@
 ## System Architecture
 dotCMS is a monorepo with clear separation between backend and frontend:
 
-- **Backend**: Java 21 runtime with Java 11 bytecode compatibility
+- **Backend**: Java 25 (core modules compile to Java 25; `tools/dotcms-cli` targets Java 11)
 - **Frontend**: Angular 18.2.3 with Nx workspace
 - **Build System**: Maven with centralized dependency management
 - **Database**: PostgreSQL with Elasticsearch for search
@@ -13,7 +13,7 @@ dotCMS is a monorepo with clear separation between backend and frontend:
 ```
 ├── dotCMS/                 # Core Java backend
 ├── core-web/               # Angular frontend with Nx
-├── tools/dotcms-cli/       # CLI tool (full Java 21 features)
+├── tools/dotcms-cli/       # CLI tool (Java 11 target — most conservative in the repo)
 ├── docker/                 # Docker configurations
 ├── e2e/                    # End-to-end testing
 ├── bom/                    # Bill of Materials for dependencies
