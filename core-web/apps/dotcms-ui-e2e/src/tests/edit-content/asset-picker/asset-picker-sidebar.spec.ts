@@ -21,8 +21,15 @@ const IMAGE_FIELD_VARIABLE = 'image';
  * backend state that the site selector under test reads back. Run in parallel across workers, one
  * test's teardown removes a site while another's dropdown is listing it — the suite races itself and
  * fails on whichever assertion happened to look first.
+ *
+ * The raised timeout is about the **hooks**, not the assertions. Playwright bills `beforeEach` and
+ * `afterEach` against the same budget as the test body, and every site state change here waits on a
+ * dotCMS index commit that measures ~6s on CI: create, publish, unpublish, archive, delete. Those
+ * five alone spend ~30s of the default 60s before the browser has done anything, and the suite
+ * timed out mid-`afterEach` with the site's DELETE still in flight — a green test reported as a
+ * failure, and, under `serial`, every test after it skipped.
  */
-test.describe.configure({ mode: 'serial' });
+test.describe.configure({ mode: 'serial', timeout: 180_000 });
 
 test.describe('AssetPicker sidebar — site selector', () => {
     let contentTypeId: string;
