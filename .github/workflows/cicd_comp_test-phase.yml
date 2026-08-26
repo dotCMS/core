@@ -258,6 +258,13 @@ jobs:
           # branches, ~1.1 GB pack) at ~19-20 min per matrix job.
           fetch-depth: 1
 
+      # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
+      # against origin/main (core-web/pom.xml git.origin.branch). The shallow
+      # checkout above has no origin/main ref, so fetch just that ref, shallow.
+      - name: Fetch origin/main for Nx affected
+        if: contains(matrix.maven_args, '-Pvalidate')
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
+
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
       # self-skipping. Ubuntu 24.04 libvips42 bundles the pdf/heif/svg/webp/jxl delegates.
