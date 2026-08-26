@@ -32,7 +32,6 @@ import { GlobalStore } from '@dotcms/store';
 import { DotChipFilterComponent } from '@dotcms/ui';
 import { MockDotMessageService, mockLocales } from '@dotcms/utils-testing';
 
-
 import { DotContentDriveStatusFilterComponent } from './dot-content-drive-status-filter.component';
 
 import { CONTENT_STATUS, STATUS_FILTER_KEY } from '../../../../shared/constants';
