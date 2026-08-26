@@ -114,7 +114,7 @@ if (!form.isValid()) {
 }
 
 // Business rule validation
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Access denied")
     );
@@ -289,7 +289,7 @@ if (user == null || !user.isLoggedIn()) {
 ### Permission Validation
 ```java
 // Check specific permissions
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Read permission required")
     );
@@ -306,7 +306,7 @@ if (!user.isAdmin()) {
 ### Input Sanitization
 ```java
 // Sanitize user input
-String sanitizedInput = HTMLUtils.htmlEscape(userInput);
+String sanitizedInput = Xss.encodeForHTML(userInput);
 
 // Validate against patterns
 if (!userInput.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
