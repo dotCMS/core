@@ -29,6 +29,7 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -68,6 +69,16 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
     private static Contentlet archivedItem;
     /** Locked by the system user, and left live. */
     private static Contentlet lockedItem;
+    /**
+     * Published, then edited — so it HAS a live version and also a newer working one.
+     *
+     * <p>The discriminating fixture for what {@code UNPUBLISHED} means. The SQL path asks
+     * {@code cvi.live_inode is null} (the identifier has no live version at all), so this item is
+     * excluded. An index query of {@code +working:true +(live:false)} would <b>match</b> it, because
+     * {@code live} is a per-version flag ({@code ESMappingAPIImpl:523}) and this item's working
+     * version is not the live one. Without this item in the fixture the two paths look identical.</p>
+     */
+    private static Contentlet publishedThenEditedItem;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -103,6 +114,14 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
 
         lockedItem = ContentletDataGen.publish(newContentlet("locked"));
         APILocator.getContentletAPI().lock(lockedItem, systemUser, false);
+
+        // Published, then given a newer working version via checkin. Still has a live version.
+        publishedThenEditedItem = ContentletDataGen.publish(newContentlet("publishedThenEdited"));
+        final Contentlet checkout = APILocator.getContentletAPI()
+                .checkout(publishedThenEditedItem.getInode(), systemUser, false);
+        checkout.setProperty("title", "publishedThenEdited-v2");
+        publishedThenEditedItem = APILocator.getContentletAPI()
+                .checkin(checkout, systemUser, false);
     }
 
     private static Contentlet newContentlet(final String title) {
@@ -332,6 +351,27 @@ public class ContentDriveStatusFilterTest extends IntegrationTestBase {
                 inodes.contains(workingInode(unpublishedItem)));
         assertFalse("Live content still has a live version",
                 inodes.contains(workingInode(liveItem)));
+    }
+
+    /**
+     * A published item with newer working edits still HAS a live version, so {@code UNPUBLISHED}
+     * must not return it (FR-004, and {@code ContentStatus.UNPUBLISHED} — "no live version exists").
+     *
+     * <p>This is the case that distinguishes "has no live version" from "this version is not the
+     * live one". They are different questions, and only the first is what this filter promises.</p>
+     */
+    @Test
+    public void testUnpublishedExcludesPublishedContentWithWorkingEdits()
+            throws DotDataException, DotSecurityException {
+        assertNotNull("The fixture must actually have a live version, or this proves nothing",
+                liveInode(publishedThenEditedItem));
+
+        final Set<String> inodes = driveInodes(
+                baseRequest().status(List.of("UNPUBLISHED")).build());
+
+        assertFalse("Published content with pending edits still has a live version, so it is not "
+                        + "unpublished",
+                inodes.contains(workingInode(publishedThenEditedItem)));
     }
 
     // ---------------------------------------------------------------- FR-005: LOCKED

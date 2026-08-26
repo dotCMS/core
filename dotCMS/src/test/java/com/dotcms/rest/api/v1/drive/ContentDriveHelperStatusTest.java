@@ -5,6 +5,7 @@ import com.dotcms.rest.exception.BadRequestException;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
@@ -70,6 +71,25 @@ public class ContentDriveHelperStatusTest {
     public void test_parseStatuses_isCaseInsensitive() {
         assertEquals(Set.of(ContentStatus.ARCHIVED),
                 ContentDriveHelper.parseStatuses(List.of("archived")));
+    }
+
+    /**
+     * Given a Turkish default locale, When a lowercase status is parsed, Then it still resolves.
+     *
+     * <p>Regression guard: {@code "unpublished".toUpperCase()} under {@code tr-TR} produces
+     * {@code "UNPUBLİSHED"} with a dotted capital I, which {@code valueOf} rejects — turning a valid
+     * value into a 400 for Turkish-locale servers only. The uppercase must be locale-independent.</p>
+     */
+    @Test
+    public void test_parseStatuses_isLocaleIndependent() {
+        final Locale original = Locale.getDefault();
+        try {
+            Locale.setDefault(new Locale("tr", "TR"));
+            assertEquals(Set.of(ContentStatus.UNPUBLISHED),
+                    ContentDriveHelper.parseStatuses(List.of("unpublished")));
+        } finally {
+            Locale.setDefault(original);
+        }
     }
 
     /**

@@ -28,6 +28,7 @@ import io.vavr.control.Try;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -367,7 +368,10 @@ public class ContentDriveHelper {
                 throw invalidStatus(status);
             }
             try {
-                parsed.add(ContentStatus.valueOf(status.trim().toUpperCase()));
+                // Locale.ROOT, not the JVM default: under a Turkish locale
+                // "unpublished".toUpperCase() yields "UNPUBLİSHED" (dotted capital I), which fails
+                // valueOf and turns a perfectly valid lowercase value into a 400.
+                parsed.add(ContentStatus.valueOf(status.trim().toUpperCase(Locale.ROOT)));
             } catch (final IllegalArgumentException e) {
                 throw invalidStatus(status);
             }
