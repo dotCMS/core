@@ -7,9 +7,9 @@
 dotcms-root/
 ├── parent/                    # Global properties, plugin management
 ├── bom/                      # Centralized dependency management
-├── dotCMS/                   # Core Java backend (Java 21 runtime, Java 11 compatibility)
+├── dotCMS/                   # Core Java backend (compiles to Java 25)
 ├── core-web/                 # Angular 18.2.3 frontend with Nx
-├── tools/dotcms-cli/         # CLI tools (full Java 21 features)
+├── tools/dotcms-cli/         # CLI tools (Java 11 target — most conservative in the repo)
 ├── dotcms-integration/       # Integration tests
 ├── dotcms-postman/          # API testing
 ├── e2e/                     # End-to-end testing
