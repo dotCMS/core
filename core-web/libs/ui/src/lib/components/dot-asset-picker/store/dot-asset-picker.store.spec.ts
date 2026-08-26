@@ -14,10 +14,14 @@ import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcm
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
+    DotContentDriveItem,
     DotContentDriveSearchResponse,
+    DotPagination,
     DotSite,
+    FolderSearchView,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
+import { createFakeFolderSearchView } from '@dotcms/utils-testing';
 
 import { ASSET_PICKER_ERROR_KEYS, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
 import { DotAssetPickerStore } from './dot-asset-picker.store';
@@ -62,7 +66,10 @@ const SITES_RESPONSE = {
     pagination: { currentPage: 1, perPage: 40, totalEntries: 2 }
 };
 
-const EMPTY_FOLDERS = { folders: [], pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } };
+const EMPTY_FOLDERS = {
+    folders: [] as FolderSearchView[],
+    pagination: { currentPage: 1, perPage: 40, totalEntries: 0 } as DotPagination
+};
 
 /** The only two base types that carry an asset — the boundary both entry points impose. */
 const ASSET_BASE_TYPES = [
@@ -112,9 +119,9 @@ describe('DotAssetPickerStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        contentDriveService = spectator.inject(DotContentDriveService, true);
-        folderService = spectator.inject(DotFolderService, true);
-        siteService = spectator.inject(DotSiteService, true);
+        contentDriveService = spectator.inject(DotContentDriveService);
+        folderService = spectator.inject(DotFolderService);
+        siteService = spectator.inject(DotSiteService);
 
         // `mockProvider` builds one mock per file and `clearAllMocks` only clears calls, not
         // implementations — so re-seed the defaults here or a test that overrides a return value
@@ -404,7 +411,10 @@ describe('DotAssetPickerStore', () => {
     });
 
     describe('paginator row count', () => {
-        const page = (list: unknown[], hasMoreContent: boolean) => ({
+        const page = (
+            list: DotContentDriveItem[],
+            hasMoreContent: boolean
+        ): DotContentDriveSearchResponse => ({
             ...EMPTY_RESPONSE,
             list,
             contentCount: list.length,
@@ -415,7 +425,9 @@ describe('DotAssetPickerStore', () => {
         it('should claim a page beyond the current one while there is more content', () => {
             // `contentCount` is the size of THIS page, so a full page looks like the last one and
             // PrimeNG disables "next". Claiming one page beyond is what keeps the arrow clickable.
-            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(20).fill({} as DotContentDriveItem), true))
+            );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
@@ -424,7 +436,9 @@ describe('DotAssetPickerStore', () => {
         });
 
         it('should report the exact total once the last page is on screen', () => {
-            contentDriveService.search.mockReturnValue(of(page(Array(7).fill({}), false)));
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(7).fill({} as DotContentDriveItem), false))
+            );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
@@ -432,12 +446,16 @@ describe('DotAssetPickerStore', () => {
         });
 
         it('should count the pages already behind it on a later page', () => {
-            contentDriveService.search.mockReturnValue(of(page(Array(20).fill({}), true)));
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(20).fill({} as DotContentDriveItem), true))
+            );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
 
             // Page 2 comes back short and with nothing after it: 20 behind + 5 on screen.
-            contentDriveService.search.mockReturnValue(of(page(Array(5).fill({}), false)));
+            contentDriveService.search.mockReturnValue(
+                of(page(Array(5).fill({} as DotContentDriveItem), false))
+            );
             store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
             spectator.flushEffects();
 
@@ -553,14 +571,14 @@ describe('DotAssetPickerStore', () => {
                 folderService.searchFolders.mockReturnValue(
                     of({
                         folders: [
-                            {
+                            createFakeFolderSearchView({
                                 id: 'folder-1',
                                 name: 'images',
                                 path: '/',
                                 hasChildren: false
-                            }
+                            })
                         ],
-                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 } as DotPagination
                     })
                 );
             });
@@ -686,10 +704,20 @@ describe('DotAssetPickerStore', () => {
             // result list addressable without a tree to walk up.
             const results = {
                 folders: [
-                    { id: 'f1', name: 'images', path: '/', hasChildren: false },
-                    { id: 'f2', name: 'thumbnails', path: '/images/', hasChildren: false }
+                    createFakeFolderSearchView({
+                        id: 'f1',
+                        name: 'images',
+                        path: '/',
+                        hasChildren: false
+                    }),
+                    createFakeFolderSearchView({
+                        id: 'f2',
+                        name: 'thumbnails',
+                        path: '/images/',
+                        hasChildren: false
+                    })
                 ],
-                pagination: { currentPage: 1, perPage: 40, totalEntries: 2 }
+                pagination: { currentPage: 1, perPage: 40, totalEntries: 2 } as DotPagination
             };
 
             beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
@@ -940,8 +968,15 @@ describe('DotAssetPickerStore', () => {
 
                 folderService.searchFolders.mockReturnValue(
                     of({
-                        folders: [{ id: 'b', name: 'b', path: '/docs/', hasChildren: false }],
-                        pagination: { currentPage: 2, perPage: 40, totalEntries: 2 }
+                        folders: [
+                            createFakeFolderSearchView({
+                                id: 'b',
+                                name: 'b',
+                                path: '/docs/',
+                                hasChildren: false
+                            })
+                        ],
+                        pagination: { currentPage: 2, perPage: 40, totalEntries: 2 } as DotPagination
                     })
                 );
 

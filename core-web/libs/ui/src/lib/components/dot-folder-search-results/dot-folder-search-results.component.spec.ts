@@ -51,7 +51,8 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('rendering rows', () => {
         beforeEach(() => {
-            spectator = createComponent({ props: { results: RESULTS } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
             spectator.detectChanges();
         });
 
@@ -112,7 +113,9 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('selection', () => {
         it('marks exactly the row whose key matches selectedKey', () => {
-            spectator = createComponent({ props: { results: RESULTS, selectedKey: 'f2' } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
+            spectator.setInput('selectedKey', 'f2');
             spectator.detectChanges();
 
             const selected = rows().filter((row) => row.getAttribute('aria-current') === 'true');
@@ -122,14 +125,18 @@ describe('DotFolderSearchResultsComponent', () => {
         });
 
         it('marks nothing when selectedKey is null', () => {
-            spectator = createComponent({ props: { results: RESULTS, selectedKey: null } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
+            spectator.setInput('selectedKey', null);
             spectator.detectChanges();
 
             expect(rows().filter((r) => r.getAttribute('aria-current') === 'true')).toHaveLength(0);
         });
 
         it('selects by key, not by object reference, so a re-published clone keeps the highlight', () => {
-            spectator = createComponent({ props: { results: RESULTS, selectedKey: 'f2' } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
+            spectator.setInput('selectedKey', 'f2');
             spectator.detectChanges();
 
             // A consumer re-publishing its results hands over a fresh object graph.
@@ -142,7 +149,8 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('emitting selections', () => {
         beforeEach(() => {
-            spectator = createComponent({ props: { results: RESULTS } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
             spectator.detectChanges();
         });
 
@@ -169,43 +177,35 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('load-more row (consumer-owned paging, FR-028)', () => {
         it('renders no load-more row when loadMoreLabelKey is empty — the picker caps at one page', () => {
-            spectator = createComponent({ props: { results: RESULTS } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('folder-search-load-more'))).toBeNull();
         });
 
         it('renders the load-more row when a consumer supplies a label key', () => {
-            spectator = createComponent({
-                props: {
-                    results: [...RESULTS, LOAD_MORE],
-                    loadMoreLabelKey: 'dot.file.field.host.folder.action.load.more'
-                }
-            });
+            spectator = createComponent();
+            spectator.setInput('results', [...RESULTS, LOAD_MORE]);
+            spectator.setInput('loadMoreLabelKey', 'dot.file.field.host.folder.action.load.more');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('folder-search-load-more'))).not.toBeNull();
         });
 
         it('does not count the load-more sentinel as a result row', () => {
-            spectator = createComponent({
-                props: {
-                    results: [...RESULTS, LOAD_MORE],
-                    loadMoreLabelKey: 'dot.file.field.host.folder.action.load.more'
-                }
-            });
+            spectator = createComponent();
+            spectator.setInput('results', [...RESULTS, LOAD_MORE]);
+            spectator.setInput('loadMoreLabelKey', 'dot.file.field.host.folder.action.load.more');
             spectator.detectChanges();
 
             expect(rows()).toHaveLength(3);
         });
 
         it('emits loadMore — not resultSelect — when the sentinel is activated', () => {
-            spectator = createComponent({
-                props: {
-                    results: [...RESULTS, LOAD_MORE],
-                    loadMoreLabelKey: 'dot.file.field.host.folder.action.load.more'
-                }
-            });
+            spectator = createComponent();
+            spectator.setInput('results', [...RESULTS, LOAD_MORE]);
+            spectator.setInput('loadMoreLabelKey', 'dot.file.field.host.folder.action.load.more');
             spectator.detectChanges();
 
             const onLoadMore = jest.fn();
@@ -224,7 +224,8 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('empty and loading', () => {
         it('renders nothing at all for an empty result set — the empty state belongs to the consumer', () => {
-            spectator = createComponent({ props: { results: [] } });
+            spectator = createComponent();
+            spectator.setInput('results', []);
             spectator.detectChanges();
 
             expect(rows()).toHaveLength(0);
@@ -232,7 +233,9 @@ describe('DotFolderSearchResultsComponent', () => {
         });
 
         it('shows the loading affordance without blanking the rows already on screen', () => {
-            spectator = createComponent({ props: { results: RESULTS, loading: true } });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
+            spectator.setInput('loading', true);
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('folder-search-results-loading'))).not.toBeNull();
@@ -242,9 +245,10 @@ describe('DotFolderSearchResultsComponent', () => {
 
     describe('test ids are overridable, because consumers render more than one list per screen', () => {
         it('applies the supplied listTestId and rowTestId', () => {
-            spectator = createComponent({
-                props: { results: RESULTS, listTestId: 'my-list', rowTestId: 'my-row' }
-            });
+            spectator = createComponent();
+            spectator.setInput('results', RESULTS);
+            spectator.setInput('listTestId', 'my-list');
+            spectator.setInput('rowTestId', 'my-row');
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('my-list'))).not.toBeNull();
