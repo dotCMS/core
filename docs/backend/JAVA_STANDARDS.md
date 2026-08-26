@@ -1,46 +1,14 @@
 # Java Development Standards
 
 ## Runtime vs Syntax Compatibility
-- **Runtime Environment**: Java 21 (production)
-- **Syntax Requirement**: Java 11 compatible (core modules)
-- **CLI Tools Exception**: Java 21 features allowed in `tools/dotcms-cli` only
+- **Runtime Environment**: Java 25
+- **Syntax Requirement**: Java 25 (core modules — `dotcms.core.compiler.release`, see root `CLAUDE.md`)
+- **CLI Tools Exception**: `tools/dotcms-cli` targets Java 11 (`maven.compiler.release`) — the most conservative target in the repo, kept for portability, not an exception for newer syntax
 
-## ✅ Use Java 11 Syntax in Core Modules
+## ✅ Modern Java Syntax (Core Modules — compile to Java 25)
 ```java
-// Java 11 compatible patterns
-var users = userAPI.findActiveUsers();
-var contentTypes = contentTypeAPI.findAll();
-
-// Java 11 compatible Optional and Stream operations
-Optional<String> value = getValue();
-String result = value.orElse("default");
-
-List<String> names = users.stream()
-    .map(User::getName)
-    .filter(Objects::nonNull)
-    .collect(Collectors.toList());
-
-// Traditional string concatenation or String.format()
-String query = "SELECT c.identifier, c.title FROM contentlet c " +
-               "WHERE c.structure_inode = ?";
-
-// Traditional switch statements
-String status;
-switch (contentlet.getBaseType()) {
-    case CONTENT:
-        status = "Content";
-        break;
-    case HTMLPAGE:
-        status = "Page";
-        break;
-    default:
-        status = "Unknown";
-}
-```
-
-## ✅ Java 21 Syntax (CLI/Tools Modules Only)
-```java
-// ONLY in tools/dotcms-cli and test modules
+// Records, switch expressions, and text blocks are all available now that
+// core modules compile to Java 25 by default
 var query = """
     SELECT c.identifier, c.title FROM contentlet c 
     WHERE c.structure_inode = ?
@@ -53,6 +21,37 @@ var status = switch (contentlet.getBaseType()) {
 };
 
 public record UserInfo(String id, String email, String name) {}
+```
+
+## ⚠️ Java 11-Compatible Syntax Required (tools/dotcms-cli only)
+```java
+// tools/dotcms-cli targets Java 11 (maven.compiler.release=11) — avoid
+// records, switch expressions, and text blocks here
+var users = userAPI.findActiveUsers();
+var contentTypes = contentTypeAPI.findAll();
+
+Optional<String> value = getValue();
+String result = value.orElse("default");
+
+List<String> names = users.stream()
+    .map(User::getName)
+    .filter(Objects::nonNull)
+    .collect(Collectors.toList());
+
+String query = "SELECT c.identifier, c.title FROM contentlet c " +
+               "WHERE c.structure_inode = ?";
+
+String status;
+switch (contentlet.getBaseType()) {
+    case CONTENT:
+        status = "Content";
+        break;
+    case HTMLPAGE:
+        status = "Page";
+        break;
+    default:
+        status = "Unknown";
+}
 ```
 
 ## Core Development Patterns
