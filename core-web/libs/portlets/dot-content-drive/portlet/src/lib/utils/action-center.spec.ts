@@ -40,6 +40,13 @@ const contentlet = (
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
 
+/**
+ * A folder in the shape the sidebar tree actually passes: an identifier and **no inode**.
+ * Used where the point is that nothing reads `.inode` off a folder.
+ */
+const actionableFolder = (identifier: string): DotContentDriveItem =>
+    ({ type: 'folder', identifier }) as unknown as DotContentDriveItem;
+
 /** An action that fires straight from the selection. */
 const NO_INPUTS = {
     moveable: false,
@@ -166,8 +173,50 @@ describe('action-center utils', () => {
             expect(getQuickActions([])).toEqual([]);
         });
 
-        it('should return no actions for a folder-only selection', () => {
-            expect(getQuickActions([folder('f1')])).toEqual([]);
+        it('should offer only the folder-capable actions for a folder-only selection', () => {
+            // Add to Bundle and Push Publish both resolve a folder identifier server-side; the rest
+            // are contentlet-only, so a folder-only selection must not offer them.
+            const ids = getQuickActions([actionableFolder('f1')]).map((action) => action.id);
+
+            expect(ids).toEqual([ADD_TO_BUNDLE_ACTION_ID, PUSH_PUBLISH_ACTION_ID]);
+        });
+
+        it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
+            const items = [contentlet({ inode: 'a', identifier: 'id-a' }), actionableFolder('f1')];
+
+            const bundle = getQuickActions(items).find(
+                (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
+            );
+
+            expect(bundle?.eligibleInodes).toEqual(['id-a', 'f1']);
+            expect(bundle?.count).toBe(2);
+        });
+
+        it('should keep excluding folders from the contentlet-only actions', () => {
+            const items = [contentlet({ inode: 'a', locked: false }), actionableFolder('f1')];
+
+            const actions = getQuickActions(items);
+            const lock = actions.find((action) => action.id === WORKFLOW_ACTION_ID.LOCK);
+            const refresh = actions.find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(lock?.eligibleInodes).toEqual(['a']);
+            expect(refresh?.eligibleInodes).toEqual(['a']);
+        });
+
+        // An inode pins a version, so a contentlet sitting on two steps contributes two entries.
+        // That is why the contentlet-only actions key on inode and must keep doing so.
+        it('should keep keying Lock on inodes, so two steps of one contentlet both count', () => {
+            const items = [
+                contentlet({ inode: 'step-1', identifier: 'same-id' }),
+                contentlet({ inode: 'step-2', identifier: 'same-id' })
+            ];
+
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
+            );
+
+            expect(lock?.eligibleInodes).toEqual(['step-1', 'step-2']);
+            expect(lock?.count).toBe(2);
         });
 
         it('should not offer the workflow state actions as quick actions', () => {
@@ -342,8 +391,8 @@ describe('action-center utils', () => {
             expect(addToBundle?.count).toBe(1);
         });
 
-        it('should count Add to Bundle against every selected contentlet', () => {
-            // A bundle accepts any asset, so state does not narrow it.
+        it('should count Add to Bundle against every selected item, folders included', () => {
+            // A bundle accepts any asset, so neither row state nor being a folder narrows it.
             const items = [
                 contentlet({ inode: 'a', archived: true }),
                 contentlet({ inode: 'b', live: true }),
@@ -354,7 +403,7 @@ describe('action-center utils', () => {
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.count).toBe(2);
+            expect(addToBundle?.count).toBe(3);
         });
 
         it('should offer the same set of actions regardless of the selection', () => {
@@ -501,7 +550,9 @@ describe('action-center utils', () => {
 
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
-            expect(byId.get(PUSH_PUBLISH_ACTION_ID)).toBe(2);
+            // Push Publish takes folders, so it counts all three; Refresh is contentlet-only.
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)).toBe(3);
+            expect(byId.get(REFRESH_ACTION_ID)).toBe(2);
         });
     });
 
