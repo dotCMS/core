@@ -65,7 +65,9 @@ jobs:
           # "Area : Backend" with spaces around the colon. Verified via
           # `gh api repos/dotCMS/core/labels`. A gate written without the
           # spaces matches nothing.
-          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json merged -q .merged)
+          # `--json merged` is not a valid field for `gh pr view` (gh lists mergedAt/mergedBy/state
+          # but no bare `merged`), and under `set -e` that aborts this step on every run. Use state.
+          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state -q '.state == "MERGED"')
           LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
 
           echo "PR #$PR_NUMBER merged=$MERGED"
