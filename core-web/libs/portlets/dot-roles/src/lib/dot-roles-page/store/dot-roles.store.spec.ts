@@ -291,6 +291,45 @@ describe('DotRolesStore', () => {
         });
     });
 
+    describe('edit gates match the backend contract', () => {
+        const select = (role: Partial<DotRoleDetail>) => {
+            service.getById.mockReturnValue(
+                of({ id: 'r-x', name: 'Role X', ...role } as DotRoleDetail)
+            );
+            store.selectRole('r-x');
+        };
+
+        it('allows user + tool edits on a system role — CMS Administrator is one', () => {
+            // RoleHelper gates grants on `editUsers` only, and layouts on
+            // nothing at all. Blocking system roles here made the Beta stricter
+            // than both the backend and the legacy portlet.
+            select({ system: true, locked: true, editUsers: true, editLayouts: true });
+
+            expect(store.canEditRoleUsers()).toBe(true);
+            expect(store.canEditRoleLayouts()).toBe(true);
+        });
+
+        it('still blocks updating or deleting a system role', () => {
+            select({ system: true, editUsers: true, editLayouts: true });
+
+            expect(store.canModifyRole()).toBe(false);
+        });
+
+        it('honours the per-domain flags when they are false', () => {
+            select({ editUsers: false, editLayouts: false });
+
+            expect(store.canEditRoleUsers()).toBe(false);
+            expect(store.canEditRoleLayouts()).toBe(false);
+        });
+
+        it('treats an absent flag as permissive', () => {
+            select({});
+
+            expect(store.canEditRoleUsers()).toBe(true);
+            expect(store.canEditRoleLayouts()).toBe(true);
+        });
+    });
+
     describe('saveToolGroups', () => {
         const TOOL_GROUPS = [
             { id: 'tg-1', name: 'Site' },

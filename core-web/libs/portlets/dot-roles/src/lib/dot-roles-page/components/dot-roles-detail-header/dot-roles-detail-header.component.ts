@@ -23,7 +23,7 @@ export class DotRolesDetailHeaderComponent {
     readonly #dialogService = inject(DialogService);
 
     protected readonly $icon = computed(() =>
-        this.store.selectedRoleIsParent() ? 'folder' : 'shield'
+        this.store.selectedRoleIsParent() ? 'folder' : 'shield_person'
     );
 
     protected onEditRole(): void {

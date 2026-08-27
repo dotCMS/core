@@ -147,25 +147,38 @@ export const DotRolesStore = signalStore(
             return !!role && !role.system && !role.locked;
         }),
 
-        /** True when the selected role allows editing users assignments. */
+        /**
+         * Grant / revoke users on this role.
+         *
+         * Gated on `editUsers` ALONE, matching `RoleHelper` — the backend
+         * rejects those calls only when the flag is false, and says nothing
+         * about `system` or `locked`. Adding those here disabled the tab for
+         * roles the backend (and the legacy portlet) happily accept, CMS
+         * Administrator among them.
+         *
+         * `system` / `locked` DO gate updating and deleting the role itself —
+         * that is `canModifyRole`, a different contract.
+         */
         canEditRoleUsers: computed(() => {
             const role = selectedRole();
 
-            return !!role && !role.system && !role.locked && (role.editUsers ?? true);
+            return !!role && (role.editUsers ?? true);
         }),
 
-        /** True when the selected role allows editing its permissions. */
-        canEditRolePermissions: computed(() => {
-            const role = selectedRole();
-
-            return !!role && !role.system && !role.locked && (role.editPermissions ?? true);
-        }),
-
-        /** True when the selected role allows editing its layouts / tool groups. */
+        /**
+         * Grant / revoke tool groups on this role.
+         *
+         * `POST /v1/roles/layouts` places no restriction on the target role at
+         * all — its only gate is that the CALLER holds the CMS Admin role, which
+         * surfaces as a 403 if unmet. The legacy portlet still greys the grid
+         * out on `editLayouts`, so that check is kept as the UI contract; the
+         * `system` / `locked` conditions that were here are not, since neither
+         * the backend nor the legacy screen applies them.
+         */
         canEditRoleLayouts: computed(() => {
             const role = selectedRole();
 
-            return !!role && !role.system && !role.locked && (role.editLayouts ?? true);
+            return !!role && (role.editLayouts ?? true);
         }),
 
         /** True when the selected role can accept user grants. */
