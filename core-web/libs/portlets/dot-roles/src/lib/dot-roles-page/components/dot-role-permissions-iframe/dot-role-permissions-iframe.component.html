@@ -1,0 +1,11 @@
+@if ($iframeUrl(); as url) {
+    <iframe
+        class="size-full border-0"
+        [src]="url"
+        data-testid="permissions-iframe"
+        [title]="'roles.tab.permissions' | dm"></iframe>
+} @else {
+    <p class="text-color-secondary m-0 px-6 py-4" data-testid="permissions-empty">
+        {{ 'roles.permissions.select-role' | dm }}
+    </p>
+}

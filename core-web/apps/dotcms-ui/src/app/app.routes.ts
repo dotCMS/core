@@ -217,6 +217,14 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-users/portlet').then((m) => m.dotUsersRoutes)
     },
     {
+        path: 'roles-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
+    },
+    {
         path: 'query-tool',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],

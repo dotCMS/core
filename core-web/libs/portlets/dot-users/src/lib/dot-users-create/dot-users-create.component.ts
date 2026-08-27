@@ -26,6 +26,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
 import { DotUsersCreateStore } from './store/dot-users-create.store';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
+import { DotUsersRolesTabComponent } from './tabs/dot-users-roles-tab/dot-users-roles-tab.component';
 
 import { DotUsersReplacementPickerComponent } from '../components/dot-users-replacement-picker/dot-users-replacement-picker.component';
 import { DotUserFormPayload, DotUserListItem } from '../services/dot-users.service';
@@ -78,10 +79,9 @@ const ACCESS_ROLE_KEYS = {
  * (create vs edit), and orchestrates each tab as a standalone
  * presentational sub-component.
  *
- * Scope for issue #36717 — only the Profile tab is real. Roles,
- * Permissions, and API Tokens render "Coming soon" placeholders and
- * are delivered by their sibling issues (#36718, #36719, #36720),
- * each of which swaps its placeholder for the real tab component.
+ * Scope for issue #36718 — Profile + Roles tabs are real; Permissions
+ * and API Tokens render "Coming soon" placeholders and are delivered
+ * by #36719 and #36720.
  */
 @Component({
     selector: 'dot-users-create',
@@ -98,7 +98,8 @@ const ACCESS_ROLE_KEYS = {
         TagModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
-        DotUsersProfileTabComponent
+        DotUsersProfileTabComponent,
+        DotUsersRolesTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',
@@ -237,6 +238,20 @@ export class DotUsersCreateComponent {
     );
 
     protected readonly $isSaveDisabled = computed(() => !this.$dataReady());
+
+    /**
+     * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
+     * from `getUserRoles` on edit-mode open; stays empty in create
+     * mode.
+     */
+    protected readonly initialGrantedRoleKeys = signal<string[]>([]);
+
+    /**
+     * Latest snapshot from the Roles tab. Populated on every
+     * `grantedChange` emission and used to build the outbound
+     * `roles` field on save.
+     */
+    private readonly currentRoleKeys = signal<string[] | null>(null);
 
     /**
      * ID list handed to the replacement picker so the user being
@@ -414,7 +429,8 @@ export class DotUsersCreateComponent {
         if (!detail) {
             return;
         }
-        const roleKeySet = new Set(this.#store.roleKeys());
+        const roleKeys = this.#store.roleKeys();
+        const roleKeySet = new Set(roleKeys);
         const additionalInfo = this.#store.additionalInfo();
 
         this.form.patchValue({
@@ -439,6 +455,16 @@ export class DotUsersCreateComponent {
             }
         });
         this.form.markAsPristine();
+
+        // Seed the Roles-tab integration signals so the Granted panel
+        // opens with the user's current membership, and save picks up
+        // the same list if the user never touches the tab.
+        this.initialGrantedRoleKeys.set(roleKeys);
+        this.currentRoleKeys.set(roleKeys);
+    }
+
+    protected onGrantedRolesChange(keys: string[]): void {
+        this.currentRoleKeys.set(keys);
     }
 
     private enableCreatePasswordValidators(): void {
@@ -455,11 +481,12 @@ export class DotUsersCreateComponent {
      * Builds the backend {@link DotUserFormPayload} plus a
      * `gettingStartedChange` instruction for the store to chain.
      *
-     * Roles are computed as: cached role-key list → strip the three
-     * access-role keys → add back whichever access toggles are ON.
-     * The result replaces the user's full role membership on the
-     * backend (`UserResource#processRoles`), so leaving out the
-     * non-access role keys would silently wipe them.
+     * When the Roles tab has taken ownership of role membership (via
+     * `grantedChange`, tracked in `currentRoleKeys`), its snapshot is
+     * the source of truth for `payload.roles`. Otherwise we fall back
+     * to `mergeRoleKeysForSave`, which composes the outbound list
+     * from cached role keys + access-toggle deltas — safe when the
+     * user never opened the Roles tab.
      *
      * Password and additionalInfo are omitted when empty so the
      * backend keeps their existing values.
@@ -501,6 +528,13 @@ export class DotUsersCreateComponent {
 
         payload.additionalInfo = additionalInfo;
 
+        // Compose the outbound role list from the "base" role keys
+        // (Roles tab's Granted snapshot when the user touched it,
+        // otherwise the store's fetched roleKeys) with the current
+        // access-toggle deltas applied on top. `mergeRoleKeysForSave`
+        // strips the three access-role keys from the base and re-adds
+        // whichever toggles are ON, so an Access flip is always
+        // reflected in the payload regardless of Roles-tab state.
         payload.roles = this.mergeRoleKeysForSave(access);
 
         let gettingStartedChange: 'add' | 'remove' | undefined;
@@ -512,42 +546,46 @@ export class DotUsersCreateComponent {
     }
 
     /**
-     * Merges the cached role KEYS with the current Access toggles into
-     * the list the backend expects. In create mode the cache is empty,
-     * so the outbound list is just whichever access toggles are ON —
-     * safe because create semantics ADD roles instead of replacing.
-     *
-     * The user's implicit personal role (roleKey === userId) is
-     * filtered out because `UserResource#processRoles` first calls
+     * Strips the user's implicit personal role (roleKey === userId)
+     * from the outbound list. `UserResource#processRoles` first calls
      * `removeAllRolesFromUser` (no `editUsers` guard) and then tries
      * to re-add every key in the payload. Re-adding the personal role
      * fails at `RoleAPIImpl.addRoleToUser` because it has
      * `editUsers=false`, and the exception rolls the whole save back
      * with `"Cannot alter users on this role"`. Leaving that key out
      * of the payload keeps the save from tripping the guard.
-     *
-     * The trade-off: the backend still removes the personal role in
-     * step 1, so after the save the user is missing that link. In
-     * practice most permissions live on the well-known roles above,
-     * not the personal role — but this needs a proper backend fix
-     * (add an `editUsers` guard to `removeAllRolesFromUser`).
+     */
+    private filterOutgoingRoleKeys(keys: readonly string[]): string[] {
+        const personalRoleKey = this.user?.userId ?? '';
+        if (!personalRoleKey) {
+            return [...keys];
+        }
+
+        return keys.filter((key) => key !== personalRoleKey);
+    }
+
+    /**
+     * Merges the "base" role KEYS with the current Access toggles.
+     * The base is the Roles tab's Granted snapshot (`currentRoleKeys`)
+     * when the user touched it — otherwise the store's fetched keys.
+     * We strip the three access-role slots from the base list and
+     * add back whichever toggles are ON, so an Access flip is always
+     * captured on save even when the user visited the Roles tab.
      */
     private mergeRoleKeysForSave(access: {
         cmsAdmin: boolean;
         backend: boolean;
         frontend: boolean;
     }): string[] {
+        const base = this.currentRoleKeys() ?? this.#store.roleKeys();
         const accessKeys = new Set<string>(Object.values(ACCESS_ROLE_KEYS));
-        const personalRoleKey = this.user?.userId ?? '';
-        const nonAccess = this.#store
-            .roleKeys()
-            .filter((key) => !accessKeys.has(key) && key !== personalRoleKey);
+        const nonAccess = base.filter((key) => !accessKeys.has(key));
         const merged = new Set(nonAccess);
 
         if (access.cmsAdmin) merged.add(ACCESS_ROLE_KEYS.cmsAdmin);
         if (access.backend) merged.add(ACCESS_ROLE_KEYS.backend);
         if (access.frontend) merged.add(ACCESS_ROLE_KEYS.frontend);
 
-        return Array.from(merged);
+        return this.filterOutgoingRoleKeys(Array.from(merged));
     }
 }

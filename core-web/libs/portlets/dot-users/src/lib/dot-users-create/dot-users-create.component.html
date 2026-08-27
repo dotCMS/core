@@ -79,10 +79,22 @@
                     </div>
                 </p-tabpanel>
                 <p-tabpanel [value]="1" class="block min-h-0 flex-1 overflow-auto">
-                    <div
-                        class="text-color-secondary px-7 pt-6 pb-7 text-sm"
-                        data-testid="users-dialog-roles-tab-placeholder">
-                        {{ 'users.dialog.tabs.coming-soon' | dm }}
+                    <div class="px-7 pt-6 pb-7">
+                        <!--
+                            Defer the roles tab until the user actually
+                            opens it — otherwise `loadRoles()` fires on
+                            every dialog open (including plain profile
+                            edits) since PrimeNG keeps every p-tabpanel
+                            in the DOM. `@defer (when …)` triggers once
+                            and doesn't retract, so subsequent tab
+                            switches keep the loaded tree.
+                        -->
+                        @defer (when $activeTab() === 1) {
+                            <dot-users-roles-tab
+                                [initialGrantedKeys]="initialGrantedRoleKeys()"
+                                (grantedChange)="onGrantedRolesChange($event)"
+                                data-testid="users-dialog-roles-tab" />
+                        }
                     </div>
                 </p-tabpanel>
                 <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">
