@@ -43,6 +43,7 @@ import {
 import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
+import { ACTION_CENTER_FOLDER_NOTICE_PT } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
@@ -259,6 +260,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * with nowhere to send it is worse than one disabled row.
      */
     protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
+
+    /** @see ACTION_CENTER_FOLDER_NOTICE_PT */
+    protected readonly folderNoticePt = ACTION_CENTER_FOLDER_NOTICE_PT;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**

@@ -301,6 +301,27 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     padding: '0'
 } as const;
 
+/**
+ * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
+ * spans the dialog edge to edge instead of sitting inset like the sections around it.
+ *
+ * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
+ * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
+ * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
+ * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
+ *
+ * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
+ * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
+ * at equal specificity it lands after Tailwind's and wins.
+ *
+ * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
+ * the dialog header and the sections below it.
+ */
+export const ACTION_CENTER_FOLDER_NOTICE_PT = {
+    root: { class: '-mx-6 rounded-none!' },
+    content: { class: 'px-6!' }
+} as const;
+
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
 /**
