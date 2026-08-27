@@ -1,5 +1,10 @@
 import { DotRole, DotToolGroup } from '@dotcms/dotcms-models';
 
+// `DotRoleFormValue` moved to `@dotcms/dotcms-models` when create/update moved
+// to the shared service. Re-exported so this portlet's call sites keep a
+// single import for role types.
+export type { DotRoleFormValue } from '@dotcms/dotcms-models';
+
 /**
  * A node of the roles tree. Alias of the shared {@link DotRole} — the wire
  * shape is identical and there is one role model for the workspace.
@@ -16,21 +21,6 @@ export type DotRoleNode = DotRole;
 
 /** Detail of the selected role. Same shape — see {@link DotRoleNode}. */
 export type DotRoleDetail = DotRole;
-
-/**
- * Payload for POST /v1/roles (RoleForm).
- * Also the shape the Angular Edit Role dialog collects; it PUTs the same
- * body against /v1/roles/{roleId} once the endpoint ships (see #36936).
- */
-export interface DotRoleFormValue {
-    roleName: string;
-    roleKey?: string;
-    parentRoleId?: string | null;
-    canEditUsers: boolean;
-    canEditPermissions: boolean;
-    canEditLayouts: boolean;
-    description?: string;
-}
 
 /**
  * User row rendered in the Users tab table.

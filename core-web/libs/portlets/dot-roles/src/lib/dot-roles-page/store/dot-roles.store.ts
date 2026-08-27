@@ -6,7 +6,13 @@ import { computed, inject } from '@angular/core';
 
 import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotRoleDeletionResult,
+    DotRolesService,
+    DotRoleUserGrantResult,
+    DotRoleUsersRemovalResult
+} from '@dotcms/data-access';
 
 import {
     appendChildToParent,
@@ -27,12 +33,6 @@ import {
     DotRolesStatus,
     DotRoleToolGroupRow
 } from '../../models/dot-roles.models';
-import {
-    DotRoleDeletionResult,
-    DotRolesPortletService,
-    DotRoleUserGrantResult,
-    DotRoleUsersRemovalResult
-} from '../../services/dot-roles-portlet.service';
 
 export interface DotRolesState {
     /**
@@ -179,7 +179,6 @@ export const DotRolesStore = signalStore(
     })),
 
     withMethods((store) => {
-        const service = inject(DotRolesPortletService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const rolesService = inject(DotRolesService);
 
@@ -187,7 +186,7 @@ export const DotRolesStore = signalStore(
             pipe(
                 tap(() => patchState(store, { status: 'LOADING', error: null })),
                 switchMap(() =>
-                    service.loadRootRoles(true).pipe(
+                    rolesService.getRoots(true).pipe(
                         tap((roles) => {
                             patchState(store, { roles, status: 'LOADED' });
                         }),
@@ -206,7 +205,7 @@ export const DotRolesStore = signalStore(
             pipe(
                 tap(() => patchState(store, { selectedRoleStatus: 'LOADING' })),
                 switchMap((roleId) =>
-                    service.loadRoleById(roleId, true).pipe(
+                    rolesService.getById(roleId, true).pipe(
                         tap((selectedRole) =>
                             patchState(store, { selectedRole, selectedRoleStatus: 'LOADED' })
                         ),
@@ -241,7 +240,7 @@ export const DotRolesStore = signalStore(
                     }
                     patchState(store, { searchStatus: 'LOADING' });
 
-                    return service.searchRoles(q).pipe(
+                    return rolesService.searchTree(q).pipe(
                         tap((results) => {
                             patchState(store, {
                                 searchResults: results,
@@ -286,7 +285,7 @@ export const DotRolesStore = signalStore(
                     }
 
                     const requests = chain.map((node) =>
-                        service.loadRoleMembers(node.id).pipe(
+                        rolesService.getUsers(node.id).pipe(
                             map((users) =>
                                 users.map<DotRoleMember>((u) => ({
                                     userId: u.userId,
@@ -348,9 +347,16 @@ export const DotRolesStore = signalStore(
          * grant always wins over an inherited one and the Granted From chip
          * names the role the admin has to edit to revoke it.
          */
-        const loadToolGroups = rxMethod<{ id: string }>(
+        const loadToolGroups = rxMethod<{ id: string; silent?: boolean }>(
             pipe(
-                tap(() => patchState(store, { toolGroupsStatus: 'LOADING' })),
+                // `silent` reconciles in the background after a grant/revoke.
+                // Flipping to LOADING there would swap the whole table for the
+                // skeleton on every checkbox click — the flicker users see.
+                tap(({ silent }) => {
+                    if (!silent) {
+                        patchState(store, { toolGroupsStatus: 'LOADING' });
+                    }
+                }),
                 switchMap((role) => {
                     const searchTree = store.isSearching() ? (store.searchResults() ?? []) : [];
                     const chain = collectAncestorChain(
@@ -363,7 +369,7 @@ export const DotRolesStore = signalStore(
                             ? of<Array<{ node: DotRoleNode; ids: Set<string> }>>([])
                             : forkJoin(
                                   chain.map((node) =>
-                                      rolesService.getToolGroupsForRole(node.id).pipe(
+                                      rolesService.getToolGroups(node.id).pipe(
                                           map((groups) => ({
                                               node,
                                               ids: new Set(groups.map((group) => group.id))
@@ -378,7 +384,7 @@ export const DotRolesStore = signalStore(
                               );
 
                     return forkJoin({
-                        catalog: rolesService.getToolGroups(),
+                        catalog: rolesService.getAllToolGroups(),
                         grants: grants$
                     }).pipe(
                         tap(({ catalog, grants }) => {
@@ -497,18 +503,54 @@ export const DotRolesStore = signalStore(
                     return false;
                 }
 
-                patchState(store, { toolGroupsSaving: true });
+                const previous = store.toolGroups();
+                const wanted = new Set(toolGroupIds);
+                const selectedRoleName = store.selectedRole()?.name ?? null;
+
+                // Paint the toggle immediately. The row already knows enough to
+                // show the right thing: a checked group is granted by the role
+                // we are editing. Un-checking a group an ancestor ALSO grants
+                // is the one case we cannot resolve locally — the row only
+                // keeps its closest source — so the reconcile below restores
+                // the inherited chip a moment later.
+                patchState(store, {
+                    toolGroupsSaving: true,
+                    toolGroups: previous.map((group) => {
+                        if (wanted.has(group.id)) {
+                            return {
+                                ...group,
+                                granted: true,
+                                grantedFromRoleId: roleId,
+                                grantedFromRoleName: selectedRoleName
+                            };
+                        }
+
+                        return group.grantedFromRoleId === roleId
+                            ? {
+                                  ...group,
+                                  granted: false,
+                                  grantedFromRoleId: null,
+                                  grantedFromRoleName: null
+                              }
+                            : group;
+                    })
+                });
+
                 try {
                     await firstValueFrom(
-                        rolesService.saveToolGroupsForRole(roleId, toolGroupIds).pipe(take(1))
+                        rolesService.saveToolGroups(roleId, toolGroupIds).pipe(take(1))
                     );
                     patchState(store, { toolGroupsSaving: false });
-                    loadToolGroups({ id: roleId });
+                    // Silent: reconciles inherited chips and the header count
+                    // without the table ever leaving the loaded state.
+                    loadToolGroups({ id: roleId, silent: true });
 
                     return true;
                 } catch (error) {
                     httpErrorManager.handle(error);
-                    patchState(store, { toolGroupsSaving: false });
+                    // Roll the optimistic patch back — the grid must not keep
+                    // showing a state the backend rejected.
+                    patchState(store, { toolGroups: previous, toolGroupsSaving: false });
 
                     return false;
                 }
@@ -526,7 +568,7 @@ export const DotRolesStore = signalStore(
             async loadRoleChildren(roleId: string): Promise<void> {
                 try {
                     const loaded = await firstValueFrom(
-                        service.loadRoleById(roleId, true).pipe(take(1))
+                        rolesService.getById(roleId, true).pipe(take(1))
                     );
                     patchState(store, {
                         roles: patchNodeChildren(store.roles(), roleId, loaded.roleChildren ?? [])
@@ -545,7 +587,7 @@ export const DotRolesStore = signalStore(
              */
             async fetchRoleDetail(roleId: string): Promise<DotRoleDetail | null> {
                 try {
-                    return await firstValueFrom(service.loadRoleById(roleId, false).pipe(take(1)));
+                    return await firstValueFrom(rolesService.getById(roleId, false).pipe(take(1)));
                 } catch (error) {
                     httpErrorManager.handle(error);
 
@@ -574,7 +616,7 @@ export const DotRolesStore = signalStore(
              */
             async createRole(form: DotRoleFormValue): Promise<DotRoleDetail | null> {
                 try {
-                    const created = await firstValueFrom(service.createRole(form).pipe(take(1)));
+                    const created = await firstValueFrom(rolesService.create(form).pipe(take(1)));
 
                     const parentId = form.parentRoleId ?? null;
                     if (!parentId) {
@@ -592,7 +634,7 @@ export const DotRolesStore = signalStore(
                         // the resolve.
                         try {
                             const parentDetail = await firstValueFrom(
-                                service.loadRoleById(parentId, true).pipe(take(1))
+                                rolesService.getById(parentId, true).pipe(take(1))
                             );
                             patchState(store, {
                                 roles: patchNodeChildren(
@@ -645,7 +687,7 @@ export const DotRolesStore = signalStore(
             ): Promise<DotRoleDetail | null> {
                 try {
                     const updated = await firstValueFrom(
-                        service.updateRole(roleId, form).pipe(take(1))
+                        rolesService.update(roleId, form).pipe(take(1))
                     );
 
                     const previous = findRoleInTree(store.roles(), roleId);
@@ -687,7 +729,7 @@ export const DotRolesStore = signalStore(
              */
             async deleteRole(roleId: string): Promise<DotRoleDeletionResult | null> {
                 try {
-                    const result = await firstValueFrom(service.deleteRole(roleId).pipe(take(1)));
+                    const result = await firstValueFrom(rolesService.delete(roleId).pipe(take(1)));
 
                     // Only prune from the tree when the BE actually deleted.
                     // A 200 with `deleted:false` means the server rejected on
@@ -735,7 +777,7 @@ export const DotRolesStore = signalStore(
 
                 try {
                     const result = await firstValueFrom(
-                        service.grantUserToRole(role.id, userId).pipe(take(1))
+                        rolesService.grantUser(role.id, userId).pipe(take(1))
                     );
 
                     // Reload members so the new row lands in the table with the
@@ -773,7 +815,7 @@ export const DotRolesStore = signalStore(
 
                 try {
                     const result = await firstValueFrom(
-                        service.removeUsersFromRole(role.id, userIds).pipe(take(1))
+                        rolesService.removeUsers(role.id, userIds).pipe(take(1))
                     );
 
                     if (result.removedUserIds.length > 0) {

@@ -67,3 +67,18 @@ export interface DotRole {
      */
     userCount?: number;
 }
+
+/**
+ * Request body for `POST /v1/roles` and `PUT /v1/roles/{roleId}` (the backend
+ * `RoleForm`). PUT is a full replace, so an omitted field is cleared, not
+ * preserved — callers editing a role must send every field they want to keep.
+ */
+export interface DotRoleFormValue {
+    roleName: string;
+    roleKey?: string;
+    parentRoleId?: string | null;
+    canEditUsers: boolean;
+    canEditPermissions: boolean;
+    canEditLayouts: boolean;
+    description?: string;
+}

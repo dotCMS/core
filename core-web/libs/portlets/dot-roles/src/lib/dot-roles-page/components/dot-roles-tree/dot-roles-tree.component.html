@@ -68,18 +68,24 @@
                          the row quiet, and absent entirely on legacy search
                          nodes, which don't carry the field. -->
                     @if (data.userCount) {
+                        <!--
+                            `text-color-secondary!` — PrimeNG colors the tree
+                            node label with a more specific selector, so the
+                            badge inherits the label's near-black without the
+                            important flag.
+                        -->
                         <span
-                            class="text-color-secondary inline-flex shrink-0 items-center gap-1 text-xs"
+                            class="text-color-secondary! inline-flex shrink-0 items-center gap-1"
                             [attr.data-testid]="'node-user-count-' + data.id"
                             [attr.aria-label]="
                                 data.userCount + ' ' + ('roles.tree.user-count' | dm)
                             ">
                             <span
-                                class="material-symbols-outlined text-sm leading-none"
+                                class="material-symbols-outlined text-xs! leading-none"
                                 aria-hidden="true">
                                 person
                             </span>
-                            {{ data.userCount }}
+                            <span class="text-sm leading-none">{{ data.userCount }}</span>
                         </span>
                     }
                     <button

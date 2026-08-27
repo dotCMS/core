@@ -1,15 +1,15 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotRolesService,
+    DotRoleUserResult
+} from '@dotcms/data-access';
 
 import { DotRolesStore } from './dot-roles.store';
 
 import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../../models/dot-roles.models';
-import {
-    DotRolesPortletService,
-    DotRoleUserFilterResult
-} from '../../services/dot-roles-portlet.service';
 
 const SELECTED_ROLE = { id: 'r-eco' };
 
@@ -52,7 +52,7 @@ const MOCK_ROLE_DETAIL: DotRoleDetail = {
     editUsers: true
 };
 
-const MOCK_USER_FILTER_RESULTS: DotRoleUserFilterResult[] = [
+const MOCK_USER_FILTER_RESULTS: DotRoleUserResult[] = [
     {
         userId: 'u-1',
         firstName: 'Alan',
@@ -70,31 +70,34 @@ const MOCK_USER_FILTER_RESULTS: DotRoleUserFilterResult[] = [
 describe('DotRolesStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotRolesStore>>;
     let store: InstanceType<typeof DotRolesStore>;
-    let service: jest.Mocked<DotRolesPortletService>;
+    let service: jest.Mocked<DotRolesService>;
 
     const createService = createServiceFactory({
         service: DotRolesStore,
         providers: [
-            mockProvider(DotRolesPortletService, {
-                loadRootRoles: jest.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
-                loadRoleById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                loadRoleMembers: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
-                createRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                updateRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                deleteRole: jest
+            mockProvider(DotRolesService, {
+                getRoots: jest.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
+                getById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                getUsers: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
+                create: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                update: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
+                delete: jest
                     .fn()
                     .mockReturnValue(of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })),
-                grantUserToRole: jest.fn().mockReturnValue(
+                grantUser: jest.fn().mockReturnValue(
                     of({
                         granted: true,
                         roleId: 'r-eco',
                         user: { userId: 'u-1' }
                     })
                 ),
-                removeUsersFromRole: jest
+                removeUsers: jest
                     .fn()
                     .mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] })),
-                searchRoles: jest.fn().mockReturnValue(of([]))
+                searchTree: jest.fn().mockReturnValue(of([])),
+                getAllToolGroups: jest.fn().mockReturnValue(of([])),
+                getToolGroups: jest.fn().mockReturnValue(of([])),
+                saveToolGroups: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotHttpErrorManagerService)
         ]
@@ -103,20 +106,18 @@ describe('DotRolesStore', () => {
     beforeEach(() => {
         spectator = createService();
         store = spectator.service;
-        service = spectator.inject(DotRolesPortletService) as jest.Mocked<DotRolesPortletService>;
+        service = spectator.inject(DotRolesService) as jest.Mocked<DotRolesService>;
         jest.clearAllMocks();
-        service.loadRootRoles.mockReturnValue(of(MOCK_NESTED_ROLES));
-        service.loadRoleById.mockReturnValue(of(MOCK_ROLE_DETAIL));
-        service.loadRoleMembers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
-        service.createRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
-        service.updateRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
-        service.deleteRole.mockReturnValue(
-            of({ deleted: true, roleId: 'r-eco', usersAffected: 0 })
-        );
-        service.grantUserToRole.mockReturnValue(
+        service.getRoots.mockReturnValue(of(MOCK_NESTED_ROLES));
+        service.getById.mockReturnValue(of(MOCK_ROLE_DETAIL));
+        service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+        service.create.mockReturnValue(of(MOCK_ROLE_DETAIL));
+        service.update.mockReturnValue(of(MOCK_ROLE_DETAIL));
+        service.delete.mockReturnValue(of({ deleted: true, roleId: 'r-eco', usersAffected: 0 }));
+        service.grantUser.mockReturnValue(
             of({ granted: true, roleId: 'r-eco', user: { userId: 'u-1' } })
         );
-        service.removeUsersFromRole.mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] }));
+        service.removeUsers.mockReturnValue(of({ removedUserIds: ['u-1'], skipped: [] }));
     });
 
     describe('initial state', () => {
@@ -134,7 +135,7 @@ describe('DotRolesStore', () => {
         it('should populate roles and set status to loaded', () => {
             store.loadRootRoles();
 
-            expect(service.loadRootRoles).toHaveBeenCalledWith(true);
+            expect(service.getRoots).toHaveBeenCalledWith(true);
             expect(store.roles()).toEqual(MOCK_NESTED_ROLES);
             expect(store.status()).toBe('LOADED');
         });
@@ -150,7 +151,7 @@ describe('DotRolesStore', () => {
 
         it('should set status to error and delegate to httpErrorManager on failure', () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.loadRootRoles.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.getRoots.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             store.loadRootRoles();
 
@@ -165,7 +166,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should splice fetched children into the state tree', async () => {
-            service.loadRoleById.mockReturnValueOnce(
+            service.getById.mockReturnValueOnce(
                 of({
                     id: 'r-eco',
                     name: 'Eco Role',
@@ -194,7 +195,7 @@ describe('DotRolesStore', () => {
             store.selectRole('r-eco');
 
             expect(store.selectedRoleId()).toBe('r-eco');
-            expect(service.loadRoleById).toHaveBeenCalledWith('r-eco', true);
+            expect(service.getById).toHaveBeenCalledWith('r-eco', true);
             expect(store.selectedRole()).toEqual(MOCK_ROLE_DETAIL);
         });
 
@@ -205,7 +206,7 @@ describe('DotRolesStore', () => {
             store.selectRole(null);
 
             expect(store.selectedRoleId()).toBeNull();
-            expect(service.loadRoleById).not.toHaveBeenCalled();
+            expect(service.getById).not.toHaveBeenCalled();
         });
 
         it('should clear members when switching roles', () => {
@@ -221,7 +222,7 @@ describe('DotRolesStore', () => {
         it('should load members by role id, with no roleKey branching (#37070)', () => {
             store.loadMembers(SELECTED_ROLE);
 
-            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-eco');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
             expect(store.members()).toHaveLength(2);
             expect(store.membersStatus()).toBe('LOADED');
         });
@@ -236,7 +237,7 @@ describe('DotRolesStore', () => {
             store.loadRootRoles();
             // r-eco lives under r-categories in MOCK_NESTED_ROLES, so the
             // chain expected here is [r-eco, r-categories].
-            service.loadRoleMembers.mockImplementation((roleId: string) => {
+            service.getUsers.mockImplementation((roleId: string) => {
                 if (roleId === 'r-eco') {
                     return of([
                         { userId: 'u-1', firstName: 'Alan', lastName: 'Cruz', emailAddress: 'a@x' }
@@ -262,8 +263,8 @@ describe('DotRolesStore', () => {
             store.selectRole('r-eco');
             store.loadMembers({ id: 'r-eco' });
 
-            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-eco');
-            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-categories');
+            expect(service.getUsers).toHaveBeenCalledWith('r-eco');
+            expect(service.getUsers).toHaveBeenCalledWith('r-categories');
 
             const members = store.members();
             expect(members).toHaveLength(2);
@@ -278,7 +279,7 @@ describe('DotRolesStore', () => {
 
         it('should delegate to httpErrorManager and continue when one ancestor call fails', () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.loadRoleMembers.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.getUsers.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             store.loadMembers(SELECTED_ROLE);
 
@@ -287,6 +288,54 @@ describe('DotRolesStore', () => {
             // still resolves to `loaded` with whatever succeeded.
             expect(errorManager.handle).toHaveBeenCalled();
             expect(store.membersStatus()).toBe('LOADED');
+        });
+    });
+
+    describe('saveToolGroups', () => {
+        const TOOL_GROUPS = [
+            { id: 'tg-1', name: 'Site' },
+            { id: 'tg-2', name: 'Content' }
+        ];
+
+        beforeEach(() => {
+            store.loadRootRoles();
+            service.getToolGroups.mockReturnValue(of([TOOL_GROUPS[0]]));
+            service.getAllToolGroups.mockReturnValue(of(TOOL_GROUPS));
+            store.selectRole('r-eco');
+        });
+
+        it('never flips the table to LOADING while saving — that is the flicker', async () => {
+            const seen: string[] = [];
+            const stop = setInterval(() => seen.push(store.toolGroupsStatus()), 0);
+
+            await store.saveToolGroups(['tg-1', 'tg-2']);
+            clearInterval(stop);
+
+            expect(store.toolGroupsStatus()).toBe('LOADED');
+            expect(seen).not.toContain('LOADING');
+        });
+
+        it('paints the toggle optimistically, before the request resolves', () => {
+            // Never-resolving POST: whatever the grid shows now is the
+            // optimistic patch, not a server round-trip.
+            service.saveToolGroups.mockReturnValue(NEVER);
+
+            store.saveToolGroups(['tg-1', 'tg-2']);
+
+            const granted = store.toolGroups().filter((group) => group.granted);
+            expect(granted.map((group) => group.id)).toEqual(['tg-1', 'tg-2']);
+            expect(store.toolGroupsSaving()).toBe(true);
+        });
+
+        it('rolls the optimistic patch back when the save fails', async () => {
+            const before = store.toolGroups();
+            service.saveToolGroups.mockReturnValue(throwError(() => new Error('boom')));
+
+            const ok = await store.saveToolGroups(['tg-1', 'tg-2']);
+
+            expect(ok).toBe(false);
+            expect(store.toolGroups()).toEqual(before);
+            expect(store.toolGroupsSaving()).toBe(false);
         });
     });
 
@@ -302,7 +351,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should NOT trigger server search for queries under 3 chars', () => {
-            const searchSpy = jest.spyOn(service, 'searchRoles');
+            const searchSpy = jest.spyOn(service, 'searchTree');
             store.setFilter('ec');
 
             expect(searchSpy).not.toHaveBeenCalled();
@@ -319,18 +368,18 @@ describe('DotRolesStore', () => {
                     roleChildren: [{ id: 'r-eco', name: 'Eco Role', roleChildren: [] }]
                 }
             ];
-            (service.searchRoles as jest.Mock).mockReturnValueOnce(of(matchedTree));
+            (service.searchTree as jest.Mock).mockReturnValueOnce(of(matchedTree));
 
             store.setFilter('eco');
 
-            expect(service.searchRoles).toHaveBeenCalledWith('eco');
+            expect(service.searchTree).toHaveBeenCalledWith('eco');
             expect(store.isSearching()).toBe(true);
             expect(store.filteredRoles()).toEqual(matchedTree);
             expect(store.searchStatus()).toBe('LOADED');
         });
 
         it('should return an empty result when the search returns nothing', () => {
-            (service.searchRoles as jest.Mock).mockReturnValueOnce(of([]));
+            (service.searchTree as jest.Mock).mockReturnValueOnce(of([]));
 
             store.setFilter('nomatch');
 
@@ -339,7 +388,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should reset to the full tree when the filter is cleared', () => {
-            (service.searchRoles as jest.Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
+            (service.searchTree as jest.Mock).mockReturnValueOnce(of([{ id: 'x', name: 'x' }]));
             store.setFilter('anything');
             expect(store.isSearching()).toBe(true);
 
@@ -363,7 +412,7 @@ describe('DotRolesStore', () => {
 
     describe('selectedRoleIsParent and isSystemRole', () => {
         it('should mark the selected role as parent when the detail has roleChildren', () => {
-            service.loadRoleById.mockReturnValueOnce(
+            service.getById.mockReturnValueOnce(
                 of({
                     ...MOCK_ROLE_DETAIL,
                     roleChildren: [{ id: 'child', name: 'child' }]
@@ -382,7 +431,7 @@ describe('DotRolesStore', () => {
         });
 
         it('isSystemRole should be true only for system roles', () => {
-            service.loadRoleById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
+            service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
 
             store.selectRole('r-system');
 
@@ -392,7 +441,7 @@ describe('DotRolesStore', () => {
 
     describe('canGrantUsers', () => {
         it('should reflect the editUsers flag from the selected role', () => {
-            service.loadRoleById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, editUsers: false }));
+            service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, editUsers: false }));
 
             store.selectRole('r-system');
 
@@ -428,15 +477,15 @@ describe('DotRolesStore', () => {
         it('should POST, append the created role to the roots when parentRoleId is null', async () => {
             store.loadRootRoles();
             jest.clearAllMocks();
-            service.createRole.mockReturnValue(
+            service.create.mockReturnValue(
                 of({ id: 'r-new-root', name: 'New Root', roleKey: 'new-root' })
             );
 
             const created = await store.createRole(FORM);
 
-            expect(service.createRole).toHaveBeenCalledWith(FORM);
+            expect(service.create).toHaveBeenCalledWith(FORM);
             // Local splice — no full reload.
-            expect(service.loadRootRoles).not.toHaveBeenCalled();
+            expect(service.getRoots).not.toHaveBeenCalled();
             expect(store.roles().map((n) => n.id)).toContain('r-new-root');
             expect(store.selectedRoleId()).toBe('r-new-root');
             expect(created?.id).toBe('r-new-root');
@@ -445,7 +494,7 @@ describe('DotRolesStore', () => {
         it('should splice into the parent roleChildren when the parent is loaded', async () => {
             store.loadRootRoles();
             jest.clearAllMocks();
-            service.createRole.mockReturnValue(
+            service.create.mockReturnValue(
                 of({
                     id: 'r-eco-child',
                     name: 'Eco Child',
@@ -457,11 +506,11 @@ describe('DotRolesStore', () => {
             await store.createRole({ ...FORM, parentRoleId: 'r-eco' });
 
             // Full reload not triggered. The POST response is hydrated so
-            // the store also skips the follow-up `loadRoleById(created.id)`
+            // the store also skips the follow-up `getById(created.id)`
             // that used to fire — see the "seed selectedRole directly"
-            // comment in `createRole`.
-            expect(service.loadRootRoles).not.toHaveBeenCalled();
-            expect(service.loadRoleById).not.toHaveBeenCalled();
+            // comment in `create`.
+            expect(service.getRoots).not.toHaveBeenCalled();
+            expect(service.getById).not.toHaveBeenCalled();
             const categories = store.roles().find((n) => n.id === 'r-categories');
             const eco = categories?.roleChildren?.find((n) => n.id === 'r-eco');
             expect(eco?.roleChildren?.map((n) => n.id)).toContain('r-eco-child');
@@ -470,10 +519,10 @@ describe('DotRolesStore', () => {
         it('should refresh just the parent subtree when the parent is not loaded', async () => {
             store.loadRootRoles();
             jest.clearAllMocks();
-            service.createRole.mockReturnValue(
+            service.create.mockReturnValue(
                 of({ id: 'r-deep', name: 'Deep', parent: 'r-unloaded', roleKey: 'deep' })
             );
-            service.loadRoleById.mockReturnValueOnce(
+            service.getById.mockReturnValueOnce(
                 of({
                     id: 'r-unloaded',
                     name: 'Unloaded Parent',
@@ -483,14 +532,14 @@ describe('DotRolesStore', () => {
 
             await store.createRole({ ...FORM, parentRoleId: 'r-unloaded' });
 
-            expect(service.loadRootRoles).not.toHaveBeenCalled();
+            expect(service.getRoots).not.toHaveBeenCalled();
             // One call for the parent subtree refresh + one for the selected role detail.
-            expect(service.loadRoleById).toHaveBeenCalledWith('r-unloaded', true);
+            expect(service.getById).toHaveBeenCalledWith('r-unloaded', true);
         });
 
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.createRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.create.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const result = await store.createRole(FORM);
 
@@ -502,7 +551,7 @@ describe('DotRolesStore', () => {
     describe('updateRole', () => {
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.updateRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.update.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const result = await store.updateRole('r-eco', {
                 roleName: 'Eco',
@@ -526,7 +575,7 @@ describe('DotRolesStore', () => {
 
         it('should delegate to httpErrorManager and return null on HTTP failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.deleteRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.delete.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const result = await store.deleteRole('r-eco');
 
@@ -535,7 +584,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should leave the tree untouched when the response reports deleted:false', async () => {
-            service.deleteRole.mockReturnValueOnce(
+            service.delete.mockReturnValueOnce(
                 of({ deleted: false, roleId: 'r-eco', usersAffected: 0 })
             );
 
@@ -555,7 +604,7 @@ describe('DotRolesStore', () => {
 
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.grantUserToRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.grantUser.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const result = await store.grantUserToRole('u-1');
 
@@ -568,7 +617,7 @@ describe('DotRolesStore', () => {
 
             const result = await store.grantUserToRole('u-1');
 
-            expect(service.grantUserToRole).not.toHaveBeenCalled();
+            expect(service.grantUser).not.toHaveBeenCalled();
             expect(result).toBeNull();
         });
     });
@@ -581,7 +630,7 @@ describe('DotRolesStore', () => {
 
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.removeUsersFromRole.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.removeUsers.mockReturnValueOnce(throwError(() => new Error('boom')));
 
             const result = await store.removeUsersFromRole(['u-1']);
 
@@ -592,7 +641,7 @@ describe('DotRolesStore', () => {
         it('should short-circuit and return null when userIds is empty', async () => {
             const result = await store.removeUsersFromRole([]);
 
-            expect(service.removeUsersFromRole).not.toHaveBeenCalled();
+            expect(service.removeUsers).not.toHaveBeenCalled();
             expect(result).toBeNull();
         });
     });

@@ -1,23 +1,11 @@
-import { DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
+import { DotRole, DotRoleFormValue } from '@dotcms/dotcms-models';
 
 /**
- * Pure request/response adapters used by `DotRolesPortletService`. Extracted
- * out of the service so the delicate mapping logic (legacy Dojo shape,
- * empty-string sanitization for the `role_key` UNIQUE constraint) can be
+ * Pure request/response adapters for `DotRolesService`. Kept out of the
+ * service so the delicate mapping logic (the legacy Dojo tree shape, the
+ * empty-string sanitization the `role_key` UNIQUE constraint forces) can be
  * unit-tested without HTTP mocking.
  */
-
-/**
- * Standard dotCMS user row. Returned by both `/v1/users/filter` (Grant
- * popover search) and `/v1/roles/{roleId}/users` (#37070, Users tab member
- * list) — same serialization, so one shape covers both.
- */
-export interface DotRoleUserFilterResult {
-    readonly userId: string;
-    readonly firstName?: string;
-    readonly lastName?: string;
-    readonly emailAddress?: string;
-}
 
 /** Legacy `RoleResource.buildFilteredJsonTree` node shape. */
 export interface LegacyRoleSearchNode {
@@ -25,6 +13,18 @@ export interface LegacyRoleSearchNode {
     readonly name: string;
     readonly locked?: boolean;
     readonly children?: LegacyRoleSearchNode[];
+}
+
+/** Wire envelope of the legacy Dojo `ItemFileReadStore` search response. */
+export interface LegacyRoleSearchResponse {
+    readonly identifier?: string;
+    readonly label?: string;
+    readonly items?: Array<{
+        readonly id?: string;
+        readonly name?: string;
+        readonly top?: boolean;
+        readonly children?: LegacyRoleSearchNode[];
+    }>;
 }
 
 /**
@@ -38,12 +38,12 @@ const LEGACY_UUID_WITH_UNDERSCORES =
     /^[a-fA-F0-9]{8}_[a-fA-F0-9]{4}_[a-fA-F0-9]{4}_[a-fA-F0-9]{4}_[a-fA-F0-9]{12}$/;
 
 /**
- * Adapt a `LegacyRoleSearchNode` into the modern `DotRoleNode` shape.
- * The legacy payload underscores dashes in the id — we only reverse the
- * substitution when the id actually matches the UUID-with-underscores
- * shape, so ids that legitimately contain underscores are preserved.
+ * Adapt a `LegacyRoleSearchNode` into the modern `DotRole` shape. The legacy
+ * payload underscores dashes in the id — we only reverse the substitution when
+ * the id actually matches the UUID-with-underscores shape, so ids that
+ * legitimately contain underscores are preserved.
  */
-export function unwrapLegacySearchNode(node: LegacyRoleSearchNode): DotRoleNode {
+export function unwrapLegacySearchNode(node: LegacyRoleSearchNode): DotRole {
     return {
         id: LEGACY_UUID_WITH_UNDERSCORES.test(node.id) ? node.id.replace(/_/g, '-') : node.id,
         name: node.name,

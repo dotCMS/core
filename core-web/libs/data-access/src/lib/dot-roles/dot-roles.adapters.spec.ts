@@ -1,10 +1,10 @@
+import { DotRoleFormValue } from '@dotcms/dotcms-models';
+
 import {
     LegacyRoleSearchNode,
     sanitizeRoleForm,
     unwrapLegacySearchNode
 } from './dot-roles.adapters';
-
-import { DotRoleFormValue } from '../models/dot-roles.models';
 
 describe('dot-roles.adapters', () => {
     describe('unwrapLegacySearchNode', () => {

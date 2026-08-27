@@ -26,14 +26,15 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, debounceTime, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRoleUserResult
+} from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRoleMember } from '../../../models/dot-roles.models';
-import {
-    DotRolesPortletService,
-    DotRoleUserFilterResult
-} from '../../../services/dot-roles-portlet.service';
+import { DotRolesPortletService } from '../../../services/dot-roles-portlet.service';
 import { DotRolesStore } from '../../store/dot-roles.store';
 
 /** How long the "just granted" row highlight stays before fading out. */
@@ -80,12 +81,12 @@ export class DotRoleUsersTabComponent {
     protected readonly rowsPerPageOptions = MEMBERS_ROWS_PER_PAGE_OPTIONS;
     protected readonly defaultRowsPerPage = MEMBERS_DEFAULT_ROWS_PER_PAGE;
 
-    protected readonly $userSuggestions = signal<DotRoleUserFilterResult[]>([]);
+    protected readonly $userSuggestions = signal<DotRoleUserResult[]>([]);
     protected readonly $suggestionsLoading = signal(false);
 
     // Hide users already granted to this role (direct or inherited) — the BE
     // grant call is idempotent so re-adding would be a silent no-op.
-    protected readonly $filteredSuggestions = computed<DotRoleUserFilterResult[]>(() => {
+    protected readonly $filteredSuggestions = computed<DotRoleUserResult[]>(() => {
         const alreadyGranted = new Set(this.store.members().map((m) => m.userId));
 
         return this.$userSuggestions().filter((u) => !alreadyGranted.has(u.userId));
@@ -128,7 +129,7 @@ export class DotRoleUsersTabComponent {
                             // instead of masquerading as "No users found".
                             this.#httpErrorManager.handle(error);
 
-                            return of<DotRoleUserFilterResult[]>([]);
+                            return of<DotRoleUserResult[]>([]);
                         }),
                         tap(() => this.$suggestionsLoading.set(false))
                     )
@@ -164,7 +165,7 @@ export class DotRoleUsersTabComponent {
 
     // Restart (don't stack) the highlight timer on back-to-back grants —
     // last grant wins the fade window.
-    protected onGrantUser(user: DotRoleUserFilterResult, panel: Popover): void {
+    protected onGrantUser(user: DotRoleUserResult, panel: Popover): void {
         panel.hide();
         this.store.grantUserToRole(user.userId).then((result) => {
             // If the user navigated away between the click and the response,
