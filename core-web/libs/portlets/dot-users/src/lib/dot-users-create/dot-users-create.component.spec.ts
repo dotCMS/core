@@ -5,7 +5,11 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRolesService
+} from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
@@ -50,13 +54,6 @@ describe('DotUsersCreateComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
                 getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
-                getUserRoles: jest.fn().mockReturnValue(
-                    of([
-                        { id: 'role-back', roleKey: 'DOTCMS_BACK_END_USER' },
-                        { id: 'role-personal', roleKey: 'user-42' }
-                    ])
-                ),
-                getAllRoles: jest.fn().mockReturnValue(of([])),
                 getGettingStartedState: jest.fn().mockReturnValue(of(false)),
                 setGettingStarted: jest.fn().mockReturnValue(of({})),
                 getUsersPaginated: jest.fn().mockReturnValue(
@@ -69,6 +66,16 @@ describe('DotUsersCreateComponent', () => {
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
                 )
+            }),
+            mockProvider(DotRolesService, {
+                getForUser: jest.fn().mockReturnValue(
+                    of([
+                        { id: 'role-back', name: 'Back End', roleKey: 'DOTCMS_BACK_END_USER' },
+                        { id: 'role-personal', name: 'Personal', roleKey: 'user-42' }
+                    ])
+                ),
+                getRoots: jest.fn().mockReturnValue(of([])),
+                getById: jest.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
         ]

@@ -5,6 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map, switchMap } from 'rxjs/operators';
 
+import { DotRolesService } from '@dotcms/data-access';
 import { DotCMSResponse } from '@dotcms/dotcms-models';
 
 import {
@@ -105,29 +106,29 @@ interface LegacyRoleSearchResponse {
 @Injectable({ providedIn: 'root' })
 export class DotRolesPortletService {
     #http = inject(HttpClient);
+    readonly #roles = inject(DotRolesService);
 
     /**
-     * GET /v1/roles — root roles + their direct children.
+     * Root roles + their direct children. Delegates to the shared
+     * `DotRolesService` — the read surface is not portlet-specific and is
+     * also consumed by `dot-users` and the workflow assign components.
+     *
      * The backend only fills 2 levels; deeper levels are lazy-loaded per
-     * expand via `loadRoleById`.
+     * expand via `loadRoleById`. This portlet keeps the lazy strategy
+     * rather than the eager `getHierarchyFlat` walk because the tree only
+     * ever shows the branches the admin actually opened.
      */
     loadRootRoles(loadChildren = true): Observable<DotRoleNode[]> {
-        return this.#http
-            .get<DotCMSResponse<DotRoleNode[]>>(`/api/v1/roles?loadChildrenRoles=${loadChildren}`)
-            .pipe(map((response) => response.entity ?? []));
+        return this.#roles.getRoots(loadChildren);
     }
 
     /**
-     * GET /v1/roles/{roleId} — role detail with its direct children.
-     * Used both to populate the role detail area on selection and to
-     * lazy-load grandchildren when the roles tree expands a node.
+     * Role detail with its direct children. Used both to populate the role
+     * detail area on selection and to lazy-load grandchildren when the tree
+     * expands a node. Delegates to the shared `DotRolesService`.
      */
     loadRoleById(roleId: string, loadChildren = true): Observable<DotRoleDetail> {
-        return this.#http
-            .get<
-                DotCMSResponse<DotRoleDetail>
-            >(`/api/v1/roles/${roleId}?loadChildrenRoles=${loadChildren}`)
-            .pipe(map((response) => response.entity));
+        return this.#roles.getById(roleId, loadChildren);
     }
 
     /**

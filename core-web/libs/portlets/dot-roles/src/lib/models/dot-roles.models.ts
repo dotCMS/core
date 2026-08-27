@@ -1,52 +1,21 @@
-/**
- * Shape returned by `GET /v1/roles` and `GET /v1/roles/{roleid}` — mirrors
- * the backend `RoleView`. The wire response is **nested**: each node carries
- * its direct children under `roleChildren`. The backend loads only 2 levels
- * per request, so grandchildren come back as `roleChildren: []` even when
- * they exist. The store lazy-loads deeper levels on `onNodeExpand` in the
- * roles tree.
- *
- * `user: true` marks the role as an individual user-role (roleKey = userId).
- * User-roles are always leaves in the tree.
- */
-export interface DotRoleNode {
-    readonly id: string;
-    readonly name: string;
-    readonly roleKey?: string;
-    readonly parent?: string;
-    readonly system?: boolean;
-    readonly locked?: boolean;
-    readonly user?: boolean;
-    readonly editUsers?: boolean;
-    readonly editPermissions?: boolean;
-    readonly editLayouts?: boolean;
-    /** Direct children — populated by `/v1/roles?loadChildrenRoles=true`. */
-    readonly roleChildren?: DotRoleNode[];
-    /**
-     * Number of direct child roles, independent of whether `roleChildren`
-     * was hydrated (#37071). Lets the tree decide chevron-vs-leaf upfront
-     * instead of guessing from an empty `roleChildren` array.
-     *
-     * Absent on nodes that come from the legacy search endpoint
-     * (`/api/role/loadbyname`), which serializes its own shape — consumers
-     * must treat `undefined` as "unknown", not as zero.
-     */
-    readonly childCount?: number;
-    /**
-     * Number of users **directly** granted this role (#37071). Excludes
-     * inherited grants and users hidden from the listing (system, anonymous,
-     * default, flagged for deletion), so it matches the direct-grant total
-     * of `GET /v1/roles/{roleId}/users`. Absent on legacy search nodes.
-     */
-    readonly userCount?: number;
-}
+import { DotRole } from '@dotcms/dotcms-models';
 
-/** Full role detail. Same shape as `DotRoleNode` today. */
-export type DotRoleDetail = DotRoleNode & {
-    readonly description?: string;
-    readonly DBFQN?: string;
-    readonly FQN?: string;
-};
+/**
+ * A node of the roles tree. Alias of the shared {@link DotRole} — the wire
+ * shape is identical and there is one role model for the workspace.
+ *
+ * The names are kept because they carry the tree's intent at each call site
+ * (a node in the hierarchy vs. the detail of the selected role) and because
+ * the store, tree utils and components read better with them.
+ *
+ * Reminder for consumers: the backend hydrates only 2 levels per request, so
+ * `roleChildren: []` is not evidence of a leaf — the store lazy-loads deeper
+ * levels on `onNodeExpand`, and leaf status comes from `childCount`.
+ */
+export type DotRoleNode = DotRole;
+
+/** Detail of the selected role. Same shape — see {@link DotRoleNode}. */
+export type DotRoleDetail = DotRole;
 
 /**
  * Payload for POST /v1/roles (RoleForm).

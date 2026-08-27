@@ -6,7 +6,7 @@ import { inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
 
 import { DotUserDetail, DotUsersService } from '../../services/dot-users.service';
 
@@ -41,7 +41,7 @@ const initialState: DotUsersCreateState = {
 
 /**
  * Dialog-scoped signal store for the Create/Edit User dialog. Owns
- * the three-call hydration (`getUser` + `getUserRoles` +
+ * the three-call hydration (`getUser` + `getForUser` +
  * `getGettingStartedState`) so the shell stays about form + UX and
  * the HTTP lives in one place — mirroring the pattern the list
  * component already uses.
@@ -53,6 +53,7 @@ export const DotUsersCreateStore = signalStore(
     withState<DotUsersCreateState>(initialState),
     withMethods((store) => {
         const usersService = inject(DotUsersService);
+        const rolesService = inject(DotRolesService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
 
         return {
@@ -72,7 +73,7 @@ export const DotUsersCreateStore = signalStore(
                     switchMap((userId) =>
                         forkJoin({
                             user: usersService.getUser(userId),
-                            userRoles: usersService.getUserRoles(userId),
+                            userRoles: rolesService.getForUser(userId),
                             gettingStarted: usersService
                                 .getGettingStartedState(userId)
                                 .pipe(catchError(() => of(false)))
