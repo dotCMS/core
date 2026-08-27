@@ -3,8 +3,8 @@
 ## System Architecture
 dotCMS is a monorepo with clear separation between backend and frontend:
 
-- **Backend**: Java 25 (core modules compile to Java 25; `tools/dotcms-cli` targets Java 11)
-- **Frontend**: Angular 18.2.3 with Nx workspace
+- **Backend**: Java — see `.sdkmanrc` (runtime) and `dotcms.core.compiler.release` in `parent/pom.xml` (core compile target); `tools/dotcms-cli` targets an older release, see `maven.compiler.release` in `tools/dotcms-cli/pom.xml`
+- **Frontend**: Angular — see `@angular/core` in `core-web/package.json` for the current version
 - **Build System**: Maven with centralized dependency management
 - **Database**: PostgreSQL with Elasticsearch for search
 - **Deployment**: Docker containers with configurable ports
@@ -13,7 +13,7 @@ dotCMS is a monorepo with clear separation between backend and frontend:
 ```
 ├── dotCMS/                 # Core Java backend
 ├── core-web/               # Angular frontend with Nx
-├── tools/dotcms-cli/       # CLI tool (Java 11 target — most conservative in the repo)
+├── tools/dotcms-cli/       # CLI tool (see tools/dotcms-cli/pom.xml's maven.compiler.release — most conservative Java target in the repo)
 ├── docker/                 # Docker configurations
 ├── e2e/                    # End-to-end testing
 ├── bom/                    # Bill of Materials for dependencies
@@ -21,7 +21,7 @@ dotCMS is a monorepo with clear separation between backend and frontend:
 ```
 
 ## Key Technologies
-- **Backend**: Spring/CDI, OSGi plugins, immutable models (`@Value.Immutable`)
+- **Backend**: CDI (no Spring anywhere in this codebase), OSGi plugins, immutable models (`@Value.Immutable`)
 - **Frontend**: Angular standalone components, signals, Spectator testing
 - **Database**: PostgreSQL with DotConnect abstraction
 - **Search**: Elasticsearch integration
