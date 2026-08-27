@@ -10,9 +10,7 @@ import { DotCMSResponse } from '@dotcms/dotcms-models';
 import {
     DotRoleUserFilterResult,
     LegacyRoleSearchNode,
-    RoleHierarchyEntry,
     sanitizeRoleForm,
-    toRoleMemberResults,
     unwrapLegacySearchNode
 } from './dot-roles.adapters';
 
@@ -24,12 +22,27 @@ export type { DotRoleUserFilterResult } from './dot-roles.adapters';
 
 /**
  * `UserResource.filter` defaults `per_page=40` — without an explicit override
- * a role with more than 40 members silently truncates and the Grant popover
- * only shows the first 40 candidates. This value is a bridge until #37070
- * ships a proper server-paged members endpoint. Keeps realistic dotCMS roles
- * (typically well under 500 members) whole without hammering the endpoint.
+ * the Grant popover only ever offers the first 40 candidates. Keeps realistic
+ * dotCMS installs whole without hammering the endpoint.
  */
 export const USER_FILTER_PAGE_SIZE = 500;
+
+/**
+ * Page size requested per role when building the Users tab member list.
+ *
+ * `GET /v1/roles/{roleId}/users` (#37070) is server-paged and defaults to
+ * `per_page=40`, but the tab renders *effective* membership: direct grants
+ * plus everything inherited from the ancestor chain. That union is assembled
+ * and de-duplicated client-side across one request per ancestor, so a server
+ * page of the merged list does not exist — page 1 of two different ancestors
+ * is not page 1 of the union. We therefore pull each ancestor whole and let
+ * `p-table` paginate the result in the browser.
+ *
+ * This is a deliberate ceiling, not a bridge: it can only be lifted by an
+ * endpoint that resolves inheritance server-side, which #37070 explicitly
+ * rejected to keep `/roles/{id}/users` a pure "direct members" resource.
+ */
+export const ROLE_MEMBERS_PAGE_SIZE = 500;
 
 /** Wire response for DELETE /v1/roles/{roleId} — matches `RoleDeletionView`. */
 export interface DotRoleDeletionResult {
@@ -159,17 +172,24 @@ export class DotRolesPortletService {
     }
 
     /**
-     * GET /v1/users/filter?roleKey=X — users granted the given role.
+     * GET /v1/roles/{roleId}/users — users **directly** granted the role (#37070).
      *
-     * Fast path (used when the selected role has a `roleKey`). Returns
-     * users with email/name in a single call. The endpoint requires a
-     * `roleKey` — roles created via the UI without one need the id-based
-     * fallback below.
+     * Replaces the previous pair of calls: `/v1/users/filter?roleKey=X` (fast
+     * but unusable on roles created without a `roleKey`) and the id-based
+     * `/rolehierarchyanduserroles` fallback (worked by id but returned `Role`
+     * objects, so the Users tab rendered an empty email column). This endpoint
+     * is keyed on `roleId` *and* returns the standard user serialization, so
+     * both problems go away and every member row now carries an email.
+     *
+     * Inheritance is deliberately out of scope for the endpoint — it answers
+     * "who is directly granted this role" only. The ancestor walk that turns
+     * that into effective membership stays in the store; see
+     * `ROLE_MEMBERS_PAGE_SIZE` for why the response is pulled whole.
      */
-    loadRoleMembersByKey(roleKey: string): Observable<DotRoleUserFilterResult[]> {
+    loadRoleMembers(roleId: string): Observable<DotRoleUserFilterResult[]> {
         const url =
-            `/api/v1/users/filter?roleKey=${encodeURIComponent(roleKey)}` +
-            `&per_page=${USER_FILTER_PAGE_SIZE}`;
+            `/api/v1/roles/${encodeURIComponent(roleId)}/users` +
+            `?per_page=${ROLE_MEMBERS_PAGE_SIZE}`;
 
         return this.#http
             .get<DotCMSResponse<DotRoleUserFilterResult[]>>(url)
@@ -191,32 +211,6 @@ export class DotRolesPortletService {
         return this.#http
             .get<DotCMSResponse<DotRoleUserFilterResult[]>>(`/api/v1/users/filter?${params}`)
             .pipe(map((response) => response.entity ?? []));
-    }
-
-    /**
-     * GET /v1/roles/{roleId}/rolehierarchyanduserroles — fallback used when
-     * the selected role has no `roleKey`. The endpoint returns a mixed list
-     * of Role objects: the role itself (or its ancestors when
-     * `roleHierarchyForAssign=true`), and one entry per user assigned,
-     * where `role.user === true` and `role.roleKey` holds the userId.
-     *
-     * We filter for user-roles and map to `DotRoleUserFilterResult`. The
-     * response does not carry email — the endpoint returns Role objects,
-     * not User objects — so members loaded via this path show empty email.
-     *
-     * TODO: retire this fallback and the ancestor-walk fan-out in the store
-     * once `GET /v1/roles/{roleId}/users` ships (issue #37070). That
-     * endpoint will return `List<RoleMemberView>` with email + granted-from
-     * metadata in a single call, replacing this whole flow.
-     */
-    loadRoleMembersById(roleId: string): Observable<DotRoleUserFilterResult[]> {
-        const url = `/api/v1/roles/${encodeURIComponent(
-            roleId
-        )}/rolehierarchyanduserroles?roleHierarchyForAssign=false`;
-
-        return this.#http
-            .get<DotCMSResponse<RoleHierarchyEntry[]>>(url)
-            .pipe(map((response) => toRoleMemberResults(response.entity ?? [])));
     }
 
     /**

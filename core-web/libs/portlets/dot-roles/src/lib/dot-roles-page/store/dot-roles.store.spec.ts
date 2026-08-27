@@ -11,8 +11,7 @@ import {
     DotRoleUserFilterResult
 } from '../../services/dot-roles-portlet.service';
 
-const ROLE_BY_KEY = { id: 'r-eco', roleKey: 'eco' };
-const ROLE_BY_ID = { id: 'r-nokey', roleKey: null };
+const SELECTED_ROLE = { id: 'r-eco' };
 
 /**
  * Nested shape returned by `GET /v1/roles?loadChildrenRoles=true` — matches
@@ -79,8 +78,7 @@ describe('DotRolesStore', () => {
             mockProvider(DotRolesPortletService, {
                 loadRootRoles: jest.fn().mockReturnValue(of(MOCK_NESTED_ROLES)),
                 loadRoleById: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
-                loadRoleMembersByKey: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
-                loadRoleMembersById: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
+                loadRoleMembers: jest.fn().mockReturnValue(of(MOCK_USER_FILTER_RESULTS)),
                 createRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
                 updateRole: jest.fn().mockReturnValue(of(MOCK_ROLE_DETAIL)),
                 deleteRole: jest
@@ -109,8 +107,7 @@ describe('DotRolesStore', () => {
         jest.clearAllMocks();
         service.loadRootRoles.mockReturnValue(of(MOCK_NESTED_ROLES));
         service.loadRoleById.mockReturnValue(of(MOCK_ROLE_DETAIL));
-        service.loadRoleMembersByKey.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
-        service.loadRoleMembersById.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+        service.loadRoleMembers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
         service.createRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
         service.updateRole.mockReturnValue(of(MOCK_ROLE_DETAIL));
         service.deleteRole.mockReturnValue(
@@ -212,7 +209,7 @@ describe('DotRolesStore', () => {
         });
 
         it('should clear members when switching roles', () => {
-            store.loadMembers(ROLE_BY_KEY);
+            store.loadMembers(SELECTED_ROLE);
 
             store.selectRole('r-snow');
 
@@ -221,34 +218,31 @@ describe('DotRolesStore', () => {
     });
 
     describe('loadMembers', () => {
-        it('should use the roleKey path when the selected role has a roleKey', () => {
-            store.loadMembers(ROLE_BY_KEY);
+        it('should load members by role id, with no roleKey branching (#37070)', () => {
+            store.loadMembers(SELECTED_ROLE);
 
-            expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('eco');
-            expect(service.loadRoleMembersById).not.toHaveBeenCalled();
+            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-eco');
             expect(store.members()).toHaveLength(2);
             expect(store.membersStatus()).toBe('LOADED');
         });
 
-        it('should fall back to the roleId path when the role has no roleKey', () => {
-            store.loadMembers(ROLE_BY_ID);
+        it('should carry the email through, so no member row renders blank', () => {
+            store.loadMembers(SELECTED_ROLE);
 
-            expect(service.loadRoleMembersById).toHaveBeenCalledWith('r-nokey');
-            expect(service.loadRoleMembersByKey).not.toHaveBeenCalled();
-            expect(store.members()).toHaveLength(2);
+            expect(store.members().every((m) => m.emailAddress !== '')).toBe(true);
         });
 
         it('should walk the ancestor chain, tag each user with grantedFrom, and prefer the closest ancestor on duplicates', () => {
             store.loadRootRoles();
             // r-eco lives under r-categories in MOCK_NESTED_ROLES, so the
             // chain expected here is [r-eco, r-categories].
-            service.loadRoleMembersByKey.mockImplementation((roleKey: string) => {
-                if (roleKey === 'eco') {
+            service.loadRoleMembers.mockImplementation((roleId: string) => {
+                if (roleId === 'r-eco') {
                     return of([
                         { userId: 'u-1', firstName: 'Alan', lastName: 'Cruz', emailAddress: 'a@x' }
                     ]);
                 }
-                if (roleKey === 'Categories') {
+                if (roleId === 'r-categories') {
                     return of([
                         {
                             userId: 'u-2',
@@ -266,10 +260,10 @@ describe('DotRolesStore', () => {
             });
 
             store.selectRole('r-eco');
-            store.loadMembers({ id: 'r-eco', roleKey: 'eco' });
+            store.loadMembers({ id: 'r-eco' });
 
-            expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('eco');
-            expect(service.loadRoleMembersByKey).toHaveBeenCalledWith('Categories');
+            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-eco');
+            expect(service.loadRoleMembers).toHaveBeenCalledWith('r-categories');
 
             const members = store.members();
             expect(members).toHaveLength(2);
@@ -284,9 +278,9 @@ describe('DotRolesStore', () => {
 
         it('should delegate to httpErrorManager and continue when one ancestor call fails', () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
-            service.loadRoleMembersByKey.mockReturnValueOnce(throwError(() => new Error('boom')));
+            service.loadRoleMembers.mockReturnValueOnce(throwError(() => new Error('boom')));
 
-            store.loadMembers(ROLE_BY_KEY);
+            store.loadMembers(SELECTED_ROLE);
 
             // Partial failure of one ancestor call must not nuke the whole
             // tab: the store surfaces the error via the http manager but
@@ -359,7 +353,7 @@ describe('DotRolesStore', () => {
     describe('member count computeds', () => {
         beforeEach(() => {
             store.selectRole('r-eco');
-            store.loadMembers(ROLE_BY_KEY);
+            store.loadMembers(SELECTED_ROLE);
         });
 
         it('should compute total memberCount', () => {

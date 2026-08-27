@@ -109,17 +109,10 @@ export function appendChildToParent(
  * Build the ancestor chain for a role, ordered `[role, parent, grandparent,
  * ..., root]`. Matches the Java `RoleAPI.findRoleHierarchy` semantics (a
  * self-referential `parent === id` marks the root). The chain drives the
- * parallel `/v1/users/filter?roleKey=X` fan-out in `loadMembers`.
+ * parallel `GET /v1/roles/{roleId}/users` fan-out in `loadMembers`.
  */
-export function collectAncestorChain(
-    tree: DotRoleNode[],
-    role: { id: string; roleKey?: string | null }
-): DotRoleNode[] {
-    const start = findRoleInTree(tree, role.id) ?? {
-        id: role.id,
-        name: role.id,
-        roleKey: role.roleKey ?? undefined
-    };
+export function collectAncestorChain(tree: DotRoleNode[], role: { id: string }): DotRoleNode[] {
+    const start = findRoleInTree(tree, role.id) ?? { id: role.id, name: role.id };
     const chain: DotRoleNode[] = [start];
     let cursor: DotRoleNode | null = start;
     // Guard against pathological data — see `MAX_ROLE_DEPTH` doc.

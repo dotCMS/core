@@ -22,6 +22,23 @@ export interface DotRoleNode {
     readonly editLayouts?: boolean;
     /** Direct children — populated by `/v1/roles?loadChildrenRoles=true`. */
     readonly roleChildren?: DotRoleNode[];
+    /**
+     * Number of direct child roles, independent of whether `roleChildren`
+     * was hydrated (#37071). Lets the tree decide chevron-vs-leaf upfront
+     * instead of guessing from an empty `roleChildren` array.
+     *
+     * Absent on nodes that come from the legacy search endpoint
+     * (`/api/role/loadbyname`), which serializes its own shape — consumers
+     * must treat `undefined` as "unknown", not as zero.
+     */
+    readonly childCount?: number;
+    /**
+     * Number of users **directly** granted this role (#37071). Excludes
+     * inherited grants and users hidden from the listing (system, anonymous,
+     * default, flagged for deletion), so it matches the direct-grant total
+     * of `GET /v1/roles/{roleId}/users`. Absent on legacy search nodes.
+     */
+    readonly userCount?: number;
 }
 
 /** Full role detail. Same shape as `DotRoleNode` today. */

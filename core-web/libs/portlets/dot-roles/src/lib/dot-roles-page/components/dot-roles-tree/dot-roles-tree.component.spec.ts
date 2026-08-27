@@ -83,6 +83,56 @@ describe('DotRolesTreeComponent', () => {
         expect(spectator.query(byTestId('tree-empty'))).toBeNull();
     });
 
+    describe('leaf detection via childCount (#37071)', () => {
+        // `$treeNodes` is protected; reach it by index so the assertions
+        // target the mapping logic rather than PrimeNG's rendered DOM.
+        const treeNodes = () =>
+            (
+                spectator.component as unknown as { $treeNodes: () => { leaf: boolean }[] }
+            ).$treeNodes();
+
+        it('marks a node with childCount 0 as a leaf before any expansion', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-leaf', name: 'Leaf Role', childCount: 0, roleChildren: [] }
+            ]);
+            spectator.detectChanges();
+
+            expect(treeNodes()[0].leaf).toBe(true);
+        });
+
+        it('keeps the chevron when childCount is positive but children are not hydrated', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-parent', name: 'Parent Role', childCount: 3, roleChildren: [] }
+            ]);
+            spectator.detectChanges();
+
+            expect(treeNodes()[0].leaf).toBe(false);
+        });
+
+        it('falls back to the fetched-set heuristic when childCount is absent (legacy search nodes)', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-legacy', name: 'Legacy Node', roleChildren: [] }
+            ]);
+            spectator.detectChanges();
+
+            // Never expanded → not in the fetched set → stays expandable.
+            expect(treeNodes()[0].leaf).toBe(false);
+        });
+
+        it('treats user-roles as leaves regardless of childCount', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-user', name: 'Some User', user: true, childCount: 5 }
+            ]);
+            spectator.detectChanges();
+
+            expect(treeNodes()[0].leaf).toBe(true);
+        });
+    });
+
     it('should open the Add Role dialog when the New button is clicked', () => {
         const dialogService = spectator.inject(DialogService, true);
         spectator.detectChanges();

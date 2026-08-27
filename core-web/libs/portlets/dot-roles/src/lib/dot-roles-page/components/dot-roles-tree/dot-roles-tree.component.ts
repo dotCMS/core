@@ -287,11 +287,18 @@ export class DotRolesTreeComponent {
         return nodes.map((node) => {
             const children = this.#toTreeNodes(node.roleChildren ?? [], expandAll);
             const hasChildren = children.length > 0;
-            // A node is a confirmed leaf when it's a user-role, OR we've
-            // fetched its children and got none back. Otherwise we keep
-            // the chevron so admins can drill into deeper levels.
+            // `childCount` (#37071) is authoritative and independent of whether
+            // `roleChildren` was hydrated, so leaf-vs-chevron is correct at every
+            // depth on first paint — no more chevrons that expand into nothing.
+            //
+            // Legacy search nodes (`/api/role/loadbyname`) don't carry it, so
+            // `undefined` falls back to the old heuristic: a leaf is confirmed
+            // only once we've fetched the children and got none back.
             const confirmedLeaf =
-                node.user === true || (this.#fetchedRoleIds().has(node.id) && !hasChildren);
+                node.user === true ||
+                (node.childCount !== undefined
+                    ? node.childCount === 0
+                    : this.#fetchedRoleIds().has(node.id) && !hasChildren);
 
             return {
                 key: node.id,

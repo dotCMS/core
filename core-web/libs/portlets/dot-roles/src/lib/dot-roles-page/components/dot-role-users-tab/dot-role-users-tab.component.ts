@@ -39,10 +39,12 @@ import { DotRolesStore } from '../../store/dot-roles.store';
 /** How long the "just granted" row highlight stays before fading out. */
 const GRANT_HIGHLIGHT_DURATION_MS = 3000;
 
-// Members are paginated client-side against a single bulk fetch — the
-// service passes `per_page=USER_FILTER_PAGE_SIZE` to bypass the endpoint's
-// default 40-cap. Switch to `[lazy]="true"` + server-driven paging when
-// #37070 (`GET /v1/roles/{roleId}/users`) ships.
+// Members are paginated client-side. `GET /v1/roles/{roleId}/users` (#37070)
+// is server-paged, but the rows shown here are the *union* of the selected
+// role's direct grants and everything inherited from its ancestors, merged
+// and de-duplicated in the store. A server page of one ancestor is not a page
+// of that union, so each ancestor is pulled whole (`ROLE_MEMBERS_PAGE_SIZE`)
+// and `p-table` pages the merged array. See the note on that constant.
 const MEMBERS_ROWS_PER_PAGE_OPTIONS = [20, 40, 60] as const;
 const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
 
@@ -105,12 +107,7 @@ export class DotRoleUsersTabComponent {
             if (!selectedRole) {
                 return;
             }
-            untracked(() =>
-                this.store.loadMembers({
-                    id: selectedRole.id,
-                    roleKey: selectedRole.roleKey ?? null
-                })
-            );
+            untracked(() => this.store.loadMembers({ id: selectedRole.id }));
         });
 
         // `catchError → of([])` keeps the outer subscription alive after a

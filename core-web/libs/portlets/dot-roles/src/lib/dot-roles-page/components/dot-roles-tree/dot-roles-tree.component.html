@@ -64,6 +64,24 @@
                         {{ isLeaf ? 'shield' : 'folder' }}
                     </span>
                     <span class="flex-1 truncate">{{ node.label }}</span>
+                    <!-- Direct-grant count (#37071). Hidden at zero to keep
+                         the row quiet, and absent entirely on legacy search
+                         nodes, which don't carry the field. -->
+                    @if (data.userCount) {
+                        <span
+                            class="text-color-secondary inline-flex shrink-0 items-center gap-1 text-xs"
+                            [attr.data-testid]="'node-user-count-' + data.id"
+                            [attr.aria-label]="
+                                data.userCount + ' ' + ('roles.tree.user-count' | dm)
+                            ">
+                            <span
+                                class="material-symbols-outlined text-sm leading-none"
+                                aria-hidden="true">
+                                person
+                            </span>
+                            {{ data.userCount }}
+                        </span>
+                    }
                     <button
                         type="button"
                         class="text-color-secondary inline-flex size-5 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-100 hover:text-color"

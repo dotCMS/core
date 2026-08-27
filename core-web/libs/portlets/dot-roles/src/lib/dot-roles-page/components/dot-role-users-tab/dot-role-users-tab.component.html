@@ -84,14 +84,15 @@
             </div>
         } @else {
             <!--
-                Client-side pagination — the current members endpoints return
-                the full list in one response, so `[value]` is the whole array
-                and p-table handles paging internally. Bottom paginator +
+                Client-side pagination — `[value]` is the merged direct +
+                inherited member list the store assembles across the ancestor
+                chain, so p-table handles paging internally. Bottom paginator +
                 rows-per-page dropdown matches publishing-queue-beta.
                 `[showFirstLastIcon]="false"` + `[showPageLinks]="false"` keep
                 the control to prev / current-page / next / dropdown, which is
-                enough for admin-scale member lists. When #37070 ships server
-                paging we can switch to `[lazy]="true"` + `[totalRecords]`.
+                enough for admin-scale member lists. `[lazy]="true"` is not
+                available here: inheritance is resolved client-side by design
+                (see the component's rows-per-page note).
             -->
             <p-table
                 [value]="store.members()"

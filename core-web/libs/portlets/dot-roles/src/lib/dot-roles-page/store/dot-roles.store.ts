@@ -240,7 +240,7 @@ export const DotRolesStore = signalStore(
         // user switches roles quickly — otherwise an earlier chain could
         // resolve *after* a later one and overwrite `members` with stale
         // data. Also used post-grant / post-remove to refresh the list.
-        const loadMembers = rxMethod<{ id: string; roleKey: string | null }>(
+        const loadMembers = rxMethod<{ id: string }>(
             pipe(
                 tap(() => patchState(store, { membersStatus: 'LOADING' })),
                 switchMap((role) => {
@@ -261,12 +261,8 @@ export const DotRolesStore = signalStore(
                         return EMPTY;
                     }
 
-                    const requests = chain.map((node) => {
-                        const source$ = node.roleKey
-                            ? service.loadRoleMembersByKey(node.roleKey)
-                            : service.loadRoleMembersById(node.id);
-
-                        return source$.pipe(
+                    const requests = chain.map((node) =>
+                        service.loadRoleMembers(node.id).pipe(
                             map((users) =>
                                 users.map<DotRoleMember>((u) => ({
                                     userId: u.userId,
@@ -282,8 +278,8 @@ export const DotRolesStore = signalStore(
 
                                 return of<DotRoleMember[]>([]);
                             })
-                        );
-                    });
+                        )
+                    );
 
                     return forkJoin(requests).pipe(
                         tap((batches) => {
@@ -352,21 +348,24 @@ export const DotRolesStore = signalStore(
              * granted Reviewer directly).
              *
              * Implementation: walks the ancestor chain in `state.roles` via
-             * `parent` id, fires one `/v1/users/filter?roleKey=X` per role
-             * in parallel (falling back to the id-based endpoint when a
-             * role has no `roleKey`), and merges results. Each user is
-             * tagged with the closest ancestor where they were directly
-             * granted (selected role first, then parent, grandparent, ...),
-             * so the Users tab can render the "Granted From" chip and
-             * disable removal on inherited rows.
+             * `parent` id, fires one `GET /v1/roles/{roleId}/users` per role
+             * in parallel, and merges the results. Each user is tagged with
+             * the closest ancestor where they were directly granted (selected
+             * role first, then parent, grandparent, ...), so the Users tab can
+             * render the "Granted From" chip and disable removal on inherited
+             * rows.
              *
-             * TODO: collapse this whole flow into a single call to
-             * `GET /v1/roles/{roleId}/users` once #37070 ships. That
-             * endpoint will do the ancestor walk + user enrichment
-             * (including email) server-side.
+             * The fan-out is permanent, not a stopgap. #37070 shipped
+             * `/roles/{id}/users` as a *direct grants only* resource and
+             * explicitly declined to resolve inheritance or denormalize
+             * granted-from metadata into the response, so composing effective
+             * membership is the client's job by design. What the endpoint did
+             * remove is the `roleKey`-vs-id branching and the email-less
+             * `/rolehierarchyanduserroles` fallback: one call shape now works
+             * for every role and carries `emailAddress`.
              */
-            loadMembers(role: { id: string; roleKey?: string | null }): void {
-                loadMembers({ id: role.id, roleKey: role.roleKey ?? null });
+            loadMembers(role: { id: string }): void {
+                loadMembers({ id: role.id });
             },
 
             /**
@@ -595,7 +594,7 @@ export const DotRolesStore = signalStore(
 
                     // Reload members so the new row lands in the table with the
                     // correct grantedFromRoleId/Name (matching the selected role).
-                    loadMembers({ id: role.id, roleKey: role.roleKey ?? null });
+                    loadMembers({ id: role.id });
 
                     return result;
                 } catch (error) {
@@ -641,7 +640,7 @@ export const DotRolesStore = signalStore(
                     // Refresh from the BE too — inherited-vs-direct labelling
                     // can shift if a user was ONLY direct on this role and now
                     // ends up inherited from an ancestor still granting them.
-                    loadMembers({ id: role.id, roleKey: role.roleKey ?? null });
+                    loadMembers({ id: role.id });
 
                     return result;
                 } catch (error) {

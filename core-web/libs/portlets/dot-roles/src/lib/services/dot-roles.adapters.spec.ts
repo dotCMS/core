@@ -1,8 +1,6 @@
 import {
     LegacyRoleSearchNode,
-    RoleHierarchyEntry,
     sanitizeRoleForm,
-    toRoleMemberResults,
     unwrapLegacySearchNode
 } from './dot-roles.adapters';
 
@@ -65,73 +63,6 @@ describe('dot-roles.adapters', () => {
             const result = unwrapLegacySearchNode({ id: 'a', name: 'A' });
 
             expect(result.roleChildren).toEqual([]);
-        });
-    });
-
-    describe('toRoleMemberResults', () => {
-        it('filters non-user entries out (ancestors of the role are skipped)', () => {
-            const entries: RoleHierarchyEntry[] = [
-                { id: 'r1', name: 'Reviewer', user: false },
-                { id: 'u1', roleKey: 'user-1', name: 'Jane Doe', user: true }
-            ];
-
-            const result = toRoleMemberResults(entries);
-
-            expect(result).toHaveLength(1);
-            expect(result[0].userId).toBe('user-1');
-        });
-
-        it('prefers roleKey as userId, falls back to id', () => {
-            const entries: RoleHierarchyEntry[] = [
-                { id: 'ur-1', roleKey: 'user-key-1', name: 'A', user: true },
-                { id: 'ur-2', name: 'B', user: true }
-            ];
-
-            expect(toRoleMemberResults(entries).map((r) => r.userId)).toEqual([
-                'user-key-1',
-                'ur-2'
-            ]);
-        });
-
-        it('splits `name` on the first space (firstName / lastName)', () => {
-            const entries: RoleHierarchyEntry[] = [
-                { id: 'u', roleKey: 'u', name: 'María del Carmen', user: true }
-            ];
-
-            const [row] = toRoleMemberResults(entries);
-            expect(row.firstName).toBe('María');
-            expect(row.lastName).toBe('del Carmen');
-        });
-
-        it('handles single-word names (lastName is empty)', () => {
-            const [row] = toRoleMemberResults([
-                { id: 'u', roleKey: 'u', name: 'Prince', user: true }
-            ]);
-
-            expect(row.firstName).toBe('Prince');
-            expect(row.lastName).toBe('');
-        });
-
-        it('tolerates a missing name', () => {
-            const [row] = toRoleMemberResults([{ id: 'u', roleKey: 'u', user: true }]);
-
-            expect(row.firstName).toBe('');
-            expect(row.lastName).toBe('');
-        });
-
-        it('always returns an empty email (endpoint returns Role objects, not Users)', () => {
-            const [row] = toRoleMemberResults([{ id: 'u', roleKey: 'u', name: 'X Y', user: true }]);
-
-            expect(row.emailAddress).toBe('');
-        });
-
-        it('returns an empty array when the input has no user rows', () => {
-            const entries: RoleHierarchyEntry[] = [
-                { id: 'a', name: 'A', user: false },
-                { id: 'b', name: 'B' }
-            ];
-
-            expect(toRoleMemberResults(entries)).toEqual([]);
         });
     });
 

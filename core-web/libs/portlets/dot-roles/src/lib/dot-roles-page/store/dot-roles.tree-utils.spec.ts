@@ -231,13 +231,10 @@ describe('dot-roles.tree-utils', () => {
         });
 
         it('falls back to a synthetic node when the role is not in the tree', () => {
-            const chain = collectAncestorChain(buildTree(), {
-                id: 'ghost',
-                roleKey: 'ghost-key'
-            });
+            const chain = collectAncestorChain(buildTree(), { id: 'ghost' });
 
             expect(chain).toHaveLength(1);
-            expect(chain[0]).toEqual({ id: 'ghost', name: 'ghost', roleKey: 'ghost-key' });
+            expect(chain[0]).toEqual({ id: 'ghost', name: 'ghost' });
         });
 
         it('stops when a parent cannot be resolved in the tree', () => {
