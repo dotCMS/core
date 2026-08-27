@@ -20,17 +20,6 @@ package com.dotcms.browser;
  * Distinct from {@link BrowserQuery#showArchived}, which is <i>inclusive</i> (archived content
  * <i>plus</i> everything else) and is relied on by the legacy Site Browser. That flag is unchanged;
  * {@link #ARCHIVED} is the exclusive variant added alongside it.
- * <p>
- * <b>Why not {@link com.dotmarketing.portlets.workflows.model.WorkflowState}?</b> It carries the
- * same three names ({@code LOCKED}, {@code UNPUBLISHED}, {@code ARCHIVED}) and the question comes
- * up on sight, but it is a different concept: it is the {@code show_on} vocabulary deciding whether
- * a workflow <i>action</i> renders, so it also carries {@code LISTING} and {@code EDITING}, which
- * are view contexts rather than states a contentlet can be in and have nothing to resolve against
- * in a query. Its {@code toSet} also swallows an unparseable value and returns an <i>empty</i> set,
- * dropping the whole filter and returning a <i>wider</i> result than asked for — the opposite of
- * the 400 this filter contracts for. Reusing it would additionally tie the public
- * {@code /v1/drive/search} input vocabulary to workflow internals, so a new {@code show_on} value
- * would silently widen the API. Same words, different job.
  *
  * @see BrowserQuery.Builder#withContentStatuses(java.util.Set)
  * @since 26.08

@@ -196,13 +196,8 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
         // narrowing happens only inside decodeFilterValue for the known-key lookup.
         const decoded = decodeFilterValue(key, value);
 
-        // An empty array is not a filter, so the key is dropped rather than stored.
-        //
-        // Deliberately a general rule, not a `status` special case: every consumer reads these
-        // through `?.length`, so `undefined` and `[]` already mean the same thing, and encoding a
-        // key with nothing after the colon would put `status:` back into the URL for the next
-        // decode to trip over. `status` is only what surfaced it — sanitizing `status:BOGUS` is
-        // the first decode that can legitimately yield an empty array.
+        // A multi-value key that decoded to nothing is not a filter. Dropping it keeps a sanitized
+        // `status:BOGUS` from round-tripping back into the URL as a bare `status:`.
         if (Array.isArray(decoded) && decoded.length === 0) {
             return acc;
         }
