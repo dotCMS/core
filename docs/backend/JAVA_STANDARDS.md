@@ -1,14 +1,15 @@
 # Java Development Standards
 
 ## Runtime vs Syntax Compatibility
-- **Runtime Environment**: Java 25
-- **Syntax Requirement**: Java 25 (core modules — `dotcms.core.compiler.release`, see root `CLAUDE.md`)
-- **CLI Tools Exception**: `tools/dotcms-cli` targets Java 11 (`maven.compiler.release`) — the most conservative target in the repo, kept for portability, not an exception for newer syntax
+- **Runtime Environment**: see `.sdkmanrc` for the current Java version
+- **Syntax Requirement**: core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` — check there before assuming a syntax level is safe
+- **CLI Tools Exception**: `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in `tools/dotcms-cli/pom.xml` — historically the most conservative target in the repo, kept for portability, not an exception for newer syntax
 
-## ✅ Modern Java Syntax (Core Modules — compile to Java 25)
+## ✅ Modern Java Syntax (Core Modules)
 ```java
-// Records, switch expressions, and text blocks are all available now that
-// core modules compile to Java 25 by default
+// Records, switch expressions, and text blocks become available once
+// core modules compile to a high enough release — check
+// dotcms.core.compiler.release in parent/pom.xml
 var query = """
     SELECT c.identifier, c.title FROM contentlet c 
     WHERE c.structure_inode = ?
@@ -23,10 +24,11 @@ var status = switch (contentlet.getBaseType()) {
 public record UserInfo(String id, String email, String name) {}
 ```
 
-## ⚠️ Java 11-Compatible Syntax Required (tools/dotcms-cli only)
+## ⚠️ Conservative Syntax Required (tools/dotcms-cli only)
 ```java
-// tools/dotcms-cli targets Java 11 (maven.compiler.release=11) — avoid
-// records, switch expressions, and text blocks here
+// tools/dotcms-cli targets an older release than core — check
+// maven.compiler.release in tools/dotcms-cli/pom.xml. Avoid
+// records, switch expressions, and text blocks unless that changes
 var users = userAPI.findActiveUsers();
 var contentTypes = contentTypeAPI.findAll();
 
@@ -95,8 +97,8 @@ experiments.auto-js-injection.enabled=true
 experiments.auto-js-injection.url=https://example.com/script.js
 experiments.auto-js-injection.max-retries=3
 
-health.checks.database.timeout-seconds=30
-health.monitoring.include-system-details=true
+health.check.database.timeout.seconds=2
+health.include.system-details=true
 ```
 
 ### Logging Standards (Required)
@@ -132,7 +134,7 @@ public abstract class MyEntity {
 > types. REST response views instead use the `Abstract*` interface style
 > (`@Value.Style(typeAbstract = "Abstract*")`) so the generated type drops the prefix, plus
 > `passAnnotations = Schema.class` for Swagger. See
-> [REST_API_PATTERNS.md → View Object Pattern](REST_API_PATTERNS.md#view-object-pattern-valueimmutable).
+> [REST_API_PATTERNS.md → View Object Pattern](REST_API_PATTERNS.md#view-object-pattern-java-records).
 
 ### Exception Handling (dotCMS Hierarchy)
 ```java
@@ -246,7 +248,7 @@ MyService service = CDIUtils.getBeanThrows(MyService.class);
 
 ### After Code Changes
 - **Immutable classes**: Run `./mvnw compile` after `@Value.Immutable` changes
-- **Fast iteration**: `./mvnw install -pl :dotcms-core -DskipTests`
+- **Fast iteration**: `./mvnw install -pl :dotcms-core --am -DskipTests` (the `--am` flag matters — see CLAUDE.md's Build & Test Commands: without it, the build can fail on missing in-project deps)
 - **Docker updates**: Run `./mvnw clean install` (without `-Ddocker.skip`)
 
 ### Critical Docker Build Workflow
@@ -254,7 +256,7 @@ Docker image updates only happen when building WITHOUT `-Ddocker.skip`:
 
 ```bash
 # Fast development cycle (no Docker image update)
-./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip
+./mvnw install -pl :dotcms-core --am -DskipTests -Ddocker.skip
 
 # When ready to test in Docker (REQUIRED for new servlets/endpoints):
 ./mvnw -DskipTests clean install  # Updates Docker image
