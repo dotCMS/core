@@ -98,7 +98,7 @@ if (!permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_R
 ### Input Sanitization
 ```java
 // Sanitize user input to prevent injection attacks
-String sanitizedInput = SecurityUtils.sanitizeInput(userInput);
+String sanitizedInput = Xss.encodeForHTML(userInput);
 ```
 
 ## URL Versioning
@@ -128,6 +128,6 @@ class MyResourceIntegrationTest extends APITestCase {
 ## Location Information
 - **REST Resources**: `dotCMS/src/main/java/com/dotcms/rest/`
 - **WebResource**: `com.dotcms.rest.WebResource`
-- **ResponseUtil**: `com.dotcms.rest.ResponseUtil`
+- **ResponseUtil**: `com.dotcms.rest.api.v1.authentication.ResponseUtil`
 - **Response Views**: `com.dotcms.rest.ResponseEntityView`
 - **Testing**: Extend `APITestCase` for integration tests
