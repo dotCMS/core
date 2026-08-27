@@ -10,10 +10,23 @@
                 <p-skeleton height="1rem" width="80%" />
             </div>
         }
-        @if ($state() === 'empty') {
+        @if ($state() === 'unavailable') {
             <p class="text-color-secondary m-0 p-3" data-testid="permissions-unavailable">
                 {{ 'users.dialog.permissions.unavailable' | dm }}
             </p>
+        }
+        @if ($state() === 'timeout') {
+            <div class="flex flex-col items-start gap-3 p-3" data-testid="permissions-timeout">
+                <p class="text-color-secondary m-0">
+                    {{ 'users.dialog.permissions.timeout' | dm }}
+                </p>
+                <p-button
+                    [label]="'users.dialog.permissions.retry' | dm"
+                    severity="secondary"
+                    size="small"
+                    (onClick)="retry()"
+                    data-testid="permissions-retry-btn" />
+            </div>
         }
         <iframe
             [src]="src"

@@ -124,13 +124,25 @@
         [text]="true"
         (onClick)="close()"
         data-testid="users-dialog-cancel-btn" />
-    <p-button
-        [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
-        [disabled]="$isSaveDisabled()"
-        [pTooltip]="$isPermissionsTabOpen() ? ('users.dialog.permissions.own-save' | dm) : null"
+    <!--
+        The tooltip lives on a wrapper, not on the button: a disabled
+        native button suppresses pointer events, so `pTooltip` bound
+        directly to it would never fire — exactly when we need it to
+        explain why Save is off. Same pattern as
+        `dot-experiments-configuration-targeting`.
+    -->
+    <div
+        class="inline-block"
+        [pTooltip]="'users.dialog.permissions.own-save' | dm"
+        [tooltipDisabled]="!$isPermissionsTabOpen()"
         tooltipPosition="top"
-        (onClick)="save()"
-        data-testid="users-dialog-save-btn" />
+        data-testid="users-dialog-save-tooltip">
+        <p-button
+            [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
+            [disabled]="$isSaveDisabled()"
+            (onClick)="save()"
+            data-testid="users-dialog-save-btn" />
+    </div>
 </footer>
 
 <p-dialog

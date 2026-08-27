@@ -185,6 +185,30 @@ describe('DotUsersCreateComponent', () => {
             expect(saveButton(spectator).disabled).toBe(true);
         });
 
+        it('should disable Save when the Permissions tab is opened by clicking its header', () => {
+            // Drives the real `[(value)]` binding instead of the signal, so
+            // the tab's `[value]` staying in sync with PERMISSIONS_TAB is
+            // itself under test — a reorder would break this, not slip by.
+            expect(saveButton(spectator).disabled).toBe(false);
+
+            spectator.click(byTestId('users-dialog-tab-permissions'));
+            spectator.detectChanges();
+
+            expect(spectator.component['$activeTab']()).toBe(PERMISSIONS_TAB);
+            expect(saveButton(spectator).disabled).toBe(true);
+        });
+
+        it('should re-enable Save when navigating back off the Permissions tab', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+            expect(saveButton(spectator).disabled).toBe(true);
+
+            spectator.component['$activeTab'].set(0);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(false);
+        });
+
         it('should not close the dialog when save runs from the Permissions tab', () => {
             spectator.component['$activeTab'].set(PERMISSIONS_TAB);
             spectator.detectChanges();

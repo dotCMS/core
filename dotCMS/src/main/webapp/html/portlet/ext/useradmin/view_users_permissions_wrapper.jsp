@@ -83,6 +83,16 @@
 </script>
 
 <%@ include file="/html/portlet/ext/roleadmin/view_role_permissions_inc.jsp" %>
+
+<%--
+    Success marker read by dot-users-permissions-tab. The embedding component
+    cannot tell a rendered permissions UI from a failed one by inspecting the
+    body: top_inc.jsp and messages_inc.jsp run on every path and leave <script>
+    elements behind, so the body is never empty. This element renders last, so
+    its presence means the whole granted path completed — a mid-render failure
+    aborts the page before it and correctly reads as unavailable.
+--%>
+<div id="dot-permissions-ready" hidden></div>
 <%
     }
 %>
