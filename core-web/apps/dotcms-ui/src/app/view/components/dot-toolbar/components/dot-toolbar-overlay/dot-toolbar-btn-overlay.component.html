@@ -26,5 +26,7 @@
     [appendTo]="'body'"
     (onShow)="handlerShow()"
     (onHide)="handlerHide()">
-    <ng-content />
+    <div class="p-4">
+        <ng-content />
+    </div>
 </p-popover>
