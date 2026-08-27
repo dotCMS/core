@@ -6,7 +6,7 @@ import { computed, inject } from '@angular/core';
 
 import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
 
 import {
     appendChildToParent,
@@ -24,7 +24,8 @@ import {
     DotRoleMember,
     DotRoleNode,
     DotRoleTab,
-    DotRolesStatus
+    DotRolesStatus,
+    DotRoleToolGroupRow
 } from '../../models/dot-roles.models';
 import {
     DotRoleDeletionResult,
@@ -62,6 +63,14 @@ export interface DotRolesState {
     activeTab: DotRoleTab;
     /** Members of the selected role. */
     members: DotRoleMember[];
+    /**
+     * Tool groups rendered by the Tools tab: the full catalog, each row
+     * annotated with whether the selected role gets it and from where.
+     */
+    toolGroups: DotRoleToolGroupRow[];
+    toolGroupsStatus: DotRolesStatus;
+    /** In-flight flag for the grant/revoke POST, so the grid can lock. */
+    toolGroupsSaving: boolean;
     status: DotRolesStatus;
     membersStatus: DotRolesStatus;
     error: string | null;
@@ -77,6 +86,9 @@ const initialState: DotRolesState = {
     selectedRoleStatus: 'INIT',
     activeTab: 'users',
     members: [],
+    toolGroups: [],
+    toolGroupsStatus: 'INIT',
+    toolGroupsSaving: false,
     status: 'INIT',
     membersStatus: 'INIT',
     error: null
@@ -85,7 +97,7 @@ const initialState: DotRolesState = {
 export const DotRolesStore = signalStore(
     withState<DotRolesState>(initialState),
 
-    withComputed(({ roles, searchResults, selectedRoleId, selectedRole, members }) => ({
+    withComputed(({ roles, searchResults, selectedRoleId, selectedRole, members, toolGroups }) => ({
         /** Alias for `roles` — the tree comes nested from the wire response. */
         roleTree: computed(() => roles()),
 
@@ -107,6 +119,17 @@ export const DotRolesStore = signalStore(
 
         /** Total users granted this role. */
         memberCount: computed(() => members().length),
+
+        /**
+         * Tool groups effectively granted — direct plus inherited. Drives the
+         * "N tools granted" line in the detail header.
+         *
+         * Counts tool *groups*, not the individual portlets inside them. The
+         * header copy says "tools" because that is the user-facing name for a
+         * group in this screen; summing `portletIds` instead would report a
+         * different number than the rows the tab shows.
+         */
+        toolGroupCount: computed(() => toolGroups().filter((group) => group.granted).length),
 
         /** True when the selected role is a system role (locked / immutable). */
         isSystemRole: computed(() => selectedRole()?.system ?? false),
@@ -158,6 +181,7 @@ export const DotRolesStore = signalStore(
     withMethods((store) => {
         const service = inject(DotRolesPortletService);
         const httpErrorManager = inject(DotHttpErrorManagerService);
+        const rolesService = inject(DotRolesService);
 
         const loadRootRoles = rxMethod<void>(
             pipe(
@@ -307,6 +331,81 @@ export const DotRolesStore = signalStore(
             )
         );
 
+        /**
+         * Populate the Tools tab.
+         *
+         * Two reads, composed client-side because neither endpoint alone
+         * answers the question the tab asks:
+         *   - the catalog (`/v1/roles/layouts`) is the only source of
+         *     `portletTitles`, so it drives every row and its display;
+         *   - `/v1/roles/{id}/layouts` returns direct grants only (the BE
+         *     query is `where role_id = ?`, no hierarchy walk), so effective
+         *     grants are assembled by walking the ancestor chain, exactly as
+         *     `loadMembers` does for users.
+         *
+         * Each row is tagged with the CLOSEST ancestor that grants it (the
+         * chain is ordered `[role, parent, grandparent, ...]`), so a direct
+         * grant always wins over an inherited one and the Granted From chip
+         * names the role the admin has to edit to revoke it.
+         */
+        const loadToolGroups = rxMethod<{ id: string }>(
+            pipe(
+                tap(() => patchState(store, { toolGroupsStatus: 'LOADING' })),
+                switchMap((role) => {
+                    const searchTree = store.isSearching() ? (store.searchResults() ?? []) : [];
+                    const chain = collectAncestorChain(
+                        mergeTreesPreferParent(store.roles(), searchTree),
+                        role
+                    );
+
+                    const grants$ =
+                        chain.length === 0
+                            ? of<Array<{ node: DotRoleNode; ids: Set<string> }>>([])
+                            : forkJoin(
+                                  chain.map((node) =>
+                                      rolesService.getToolGroupsForRole(node.id).pipe(
+                                          map((groups) => ({
+                                              node,
+                                              ids: new Set(groups.map((group) => group.id))
+                                          })),
+                                          catchError((error) => {
+                                              httpErrorManager.handle(error);
+
+                                              return of({ node, ids: new Set<string>() });
+                                          })
+                                      )
+                                  )
+                              );
+
+                    return forkJoin({
+                        catalog: rolesService.getToolGroups(),
+                        grants: grants$
+                    }).pipe(
+                        tap(({ catalog, grants }) => {
+                            const toolGroups = catalog.map<DotRoleToolGroupRow>((group) => {
+                                const source = grants.find((grant) => grant.ids.has(group.id));
+
+                                return {
+                                    ...group,
+                                    granted: !!source,
+                                    grantedFromRoleId: source?.node.id ?? null,
+                                    grantedFromRoleName: source?.node.name ?? null
+                                };
+                            });
+
+                            patchState(store, { toolGroups, toolGroupsStatus: 'LOADED' });
+                        }),
+                        catchError((error) => {
+                            httpErrorManager.handle(error);
+                            patchState(store, { toolGroupsStatus: 'ERROR' });
+
+                            return EMPTY;
+                        })
+                    );
+                })
+            )
+        );
+
         return {
             loadRootRoles,
             loadRoleDetail,
@@ -332,11 +431,18 @@ export const DotRolesStore = signalStore(
                     selectedRole: null,
                     selectedRoleStatus: roleId ? 'LOADING' : 'INIT',
                     members: [],
-                    membersStatus: 'INIT'
+                    membersStatus: 'INIT',
+                    toolGroups: [],
+                    toolGroupsStatus: 'INIT'
                 });
 
                 if (roleId) {
                     loadRoleDetail(roleId);
+                    // Loaded on selection rather than when the Tools tab opens:
+                    // the detail header shows the granted count on every tab, so
+                    // deferring this would leave it reading 0 until the admin
+                    // happened to click Tools.
+                    loadToolGroups({ id: roleId });
                 }
             },
 
@@ -366,6 +472,46 @@ export const DotRolesStore = signalStore(
              */
             loadMembers(role: { id: string }): void {
                 loadMembers({ id: role.id });
+            },
+
+            loadToolGroups(role: { id: string }): void {
+                loadToolGroups({ id: role.id });
+            },
+
+            /**
+             * Persist the tool groups granted directly to the selected role.
+             *
+             * `toolGroupIds` must be the COMPLETE set of direct grants after
+             * the toggle, not a delta — the endpoint is a full replace and
+             * drops anything missing from the payload. Inherited grants are
+             * deliberately excluded: they belong to the ancestor, and sending
+             * them here would silently promote them to direct grants on this
+             * role.
+             *
+             * Reloads on success so the Granted From chips and the header
+             * count reflect what the backend actually stored.
+             */
+            async saveToolGroups(toolGroupIds: string[]): Promise<boolean> {
+                const roleId = store.selectedRoleId();
+                if (!roleId) {
+                    return false;
+                }
+
+                patchState(store, { toolGroupsSaving: true });
+                try {
+                    await firstValueFrom(
+                        rolesService.saveToolGroupsForRole(roleId, toolGroupIds).pipe(take(1))
+                    );
+                    patchState(store, { toolGroupsSaving: false });
+                    loadToolGroups({ id: roleId });
+
+                    return true;
+                } catch (error) {
+                    httpErrorManager.handle(error);
+                    patchState(store, { toolGroupsSaving: false });
+
+                    return false;
+                }
             },
 
             /**

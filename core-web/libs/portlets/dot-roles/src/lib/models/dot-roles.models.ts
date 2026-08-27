@@ -1,4 +1,4 @@
-import { DotRole } from '@dotcms/dotcms-models';
+import { DotRole, DotToolGroup } from '@dotcms/dotcms-models';
 
 /**
  * A node of the roles tree. Alias of the shared {@link DotRole} — the wire
@@ -49,6 +49,21 @@ export interface DotRoleMember {
     readonly emailAddress: string;
     readonly grantedFromRoleId: string;
     readonly grantedFromRoleName: string;
+}
+
+/**
+ * A tool group row in the Tools tab: the catalog entry plus where (if
+ * anywhere) the selected role gets it from.
+ *
+ * `grantedFrom*` follows the same rule as `DotRoleMember`: when it matches the
+ * selected role the grant is direct and can be toggled here; when it matches
+ * an ancestor the grant is inherited and can only be revoked on that ancestor,
+ * so the checkbox renders checked but disabled.
+ */
+export interface DotRoleToolGroupRow extends DotToolGroup {
+    readonly granted: boolean;
+    readonly grantedFromRoleId: string | null;
+    readonly grantedFromRoleName: string | null;
 }
 
 export type DotRoleTab = 'users' | 'permissions' | 'tools';

@@ -1,0 +1,88 @@
+<!--
+    Same full-height flex column as the Users tab: the table owns its own
+    scroll region via `flex-1 min-h-0 overflow-hidden` + `scrollHeight="flex"`,
+    so the header row stays pinned and the tab never grows the page.
+-->
+<div class="flex h-full flex-col gap-4 py-4">
+    @if (!store.canEditRoleLayouts()) {
+        <div class="bg-amber-100 px-6 py-3 text-sm text-amber-800" data-testid="cannot-edit-notice">
+            {{ 'roles.tools.cannot-edit' | dm }}
+        </div>
+    }
+
+    <div class="flex min-h-0 flex-1 flex-col overflow-hidden">
+        @if (store.toolGroupsStatus() === 'LOADING' || store.selectedRoleStatus() === 'LOADING') {
+            <p-table
+                [value]="[0, 1, 2, 3, 4]"
+                [scrollable]="true"
+                scrollHeight="flex"
+                data-testid="tools-loading-skeleton">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>{{ 'roles.tools.column.group' | dm }}</th>
+                        <th>{{ 'roles.tools.column.included' | dm }}</th>
+                        <th>{{ 'roles.tools.column.granted-from' | dm }}</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body">
+                    <tr>
+                        <td><p-skeleton shape="square" size="1rem" /></td>
+                        <td><p-skeleton height="1rem" width="40%" /></td>
+                        <td><p-skeleton height="1rem" width="70%" /></td>
+                        <td><p-skeleton height="1.25rem" width="30%" /></td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        } @else if (store.toolGroupsStatus() === 'ERROR') {
+            <p class="m-0 px-6 text-sm text-red-700" data-testid="tools-error">
+                {{ 'roles.error.load-failed' | dm }}
+            </p>
+        } @else if (store.toolGroups().length === 0) {
+            <div
+                class="text-color-secondary mx-6 rounded-lg border border-dashed border-surface-200 p-8 text-center"
+                data-testid="tools-empty">
+                <p class="m-0 text-sm">{{ 'roles.tools.empty' | dm }}</p>
+            </div>
+        } @else {
+            <p-table
+                [value]="store.toolGroups()"
+                dataKey="id"
+                [scrollable]="true"
+                scrollHeight="flex"
+                data-testid="tools-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th class="w-12"></th>
+                        <th>{{ 'roles.tools.column.group' | dm }}</th>
+                        <th>{{ 'roles.tools.column.included' | dm }}</th>
+                        <th>{{ 'roles.tools.column.granted-from' | dm }}</th>
+                    </tr>
+                </ng-template>
+                <ng-template pTemplate="body" let-group>
+                    @let direct = isDirectGrant(group);
+                    <tr [attr.data-testid]="'tool-group-row-' + group.id">
+                        <td class="w-12">
+                            <p-checkbox
+                                [binary]="true"
+                                [ngModel]="group.granted"
+                                [disabled]="isLocked(group)"
+                                (onChange)="onToggle(group, $event.checked)"
+                                [attr.data-testid]="'tool-group-checkbox-' + group.id"
+                                [attr.aria-label]="group.name" />
+                        </td>
+                        <td class="font-medium">{{ group.name }}</td>
+                        <td class="text-color-secondary text-sm">{{ includedTools(group) }}</td>
+                        <td>
+                            @if (group.granted) {
+                                <p-tag
+                                    [value]="group.grantedFromRoleName"
+                                    [severity]="direct ? 'info' : 'secondary'" />
+                            }
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</div>

@@ -5,7 +5,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { map } from 'rxjs/operators';
 
-import { DotCMSResponse, DotRole } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotRole, DotToolGroup } from '@dotcms/dotcms-models';
 
 import { DotMessageService } from '../dot-messages/dot-messages.service';
 
@@ -93,6 +93,60 @@ export class DotRolesService {
                 DotCMSResponse<DotRole[]>
             >(`/api/v1/roles/users/${encodeURIComponent(userIdOrEmail)}`)
             .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * GET /v1/roles/layouts — every tool group (backend `Layout`) in the
+     * system, each enriched with `portletTitles`: the localized, human-readable
+     * names of the portlets in `portletIds`, resolved server-side.
+     *
+     * Despite the path, this is a system-wide catalog, not a per-role read.
+     * It is the only endpoint that returns the titles, so anything displaying
+     * tool groups reads them from here.
+     */
+    getToolGroups(): Observable<DotToolGroup[]> {
+        return this.http
+            .get<DotCMSResponse<DotToolGroup[]>>('/api/v1/roles/layouts')
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * GET /v1/roles/{roleId}/layouts — the tool groups granted **directly** to
+     * the role.
+     *
+     * Direct grants only: the backend resolves this as
+     * `from LayoutsRoles where role_id = ?` with no hierarchy walk
+     * (`RoleFactoryImpl#loadLayoutIdsForRole`), so effective grants have to be
+     * composed by the caller across the ancestor chain — the same shape as
+     * {@link getForUser} and the role members endpoint.
+     *
+     * Items are raw `Layout` objects and carry no `portletTitles`; pair this
+     * with {@link getToolGroups} for anything rendered.
+     */
+    getToolGroupsForRole(roleId: string): Observable<DotToolGroup[]> {
+        return this.http
+            .get<
+                DotCMSResponse<DotToolGroup[]>
+            >(`/api/v1/roles/${encodeURIComponent(roleId)}/layouts`)
+            .pipe(map((response) => response.entity ?? []));
+    }
+
+    /**
+     * POST /v1/roles/layouts — set the tool groups granted to a role.
+     *
+     * A **full replace** of the role's direct grants, not an append: the
+     * backend diffs `toolGroupIds` against what the role currently has, drops
+     * the difference and adds the rest (`RoleHelper#saveRoleLayouts`). Callers
+     * must send the complete set they want the role to end up with.
+     *
+     * Only direct grants belong in the payload. Echoing an inherited grant
+     * here would silently promote it to a direct grant on this role.
+     */
+    saveToolGroupsForRole(roleId: string, toolGroupIds: string[]): Observable<unknown> {
+        return this.http.post('/api/v1/roles/layouts', {
+            roleId,
+            layoutIds: toolGroupIds
+        });
     }
 
     private processRolesResponse(roles: DotRole[]): DotRole[] {

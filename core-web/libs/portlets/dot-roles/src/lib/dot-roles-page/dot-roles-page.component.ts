@@ -6,7 +6,7 @@ import { TabsModule } from 'primeng/tabs';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotRolePermissionsIframeComponent } from './components/dot-role-permissions-iframe/dot-role-permissions-iframe.component';
-import { DotRoleToolsIframeComponent } from './components/dot-role-tools-iframe/dot-role-tools-iframe.component';
+import { DotRoleToolsTabComponent } from './components/dot-role-tools-tab/dot-role-tools-tab.component';
 import { DotRoleUsersTabComponent } from './components/dot-role-users-tab/dot-role-users-tab.component';
 import { DotRolesDetailHeaderComponent } from './components/dot-roles-detail-header/dot-roles-detail-header.component';
 import { DotRolesTreeComponent } from './components/dot-roles-tree/dot-roles-tree.component';
@@ -25,7 +25,7 @@ import { DotRoleTab } from '../models/dot-roles.models';
         DotRolesDetailHeaderComponent,
         DotRoleUsersTabComponent,
         DotRolePermissionsIframeComponent,
-        DotRoleToolsIframeComponent
+        DotRoleToolsTabComponent
     ],
     providers: [DotRolesStore],
     templateUrl: './dot-roles-page.component.html',
