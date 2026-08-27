@@ -5,24 +5,21 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
-import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
-import { SliderModule } from 'primeng/slider';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSContentlet, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotBrowserSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
     MAX_TRAFFIC_ALLOCATION,
-    MIN_TRAFFIC_ALLOCATION,
     SELECT_PAGE_BROWSER_PARAMS,
     SELECT_PAGE_DIALOG_MAX_WIDTH,
     SELECT_PAGE_DIALOG_WIDTH
@@ -34,40 +31,49 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
 /** Title of the Select A Page dialog. Its chrome belongs to the caller, not to the dialog. */
 const SELECT_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.select-page.header';
 
-/** Stands in for the page path in the traffic helper copy while no page is selected. */
-const TRAFFIC_HELP_FALLBACK_PAGE_KEY = 'experiments.configure.page.traffic.help.fallback-page';
+/** How the allocation reads at 100%, where there is no remainder to mention. */
+const TRAFFIC_HELP_ALL_KEY = 'experiments.configure.page.traffic.help.all';
 
-/** Explains the Select button being disabled once the experiment exists. */
+/** And below it, where the share left over goes to the Original. */
+const TRAFFIC_HELP_PARTIAL_KEY = 'experiments.configure.page.traffic.help.partial';
+
+/** Why the page is fixed on an experiment that is no longer a draft. */
 const PAGE_IMMUTABLE_TOOLTIP_KEY = 'experiments.configure.page.select.immutable.tooltip';
+
+/**
+ * Why the page is fixed on a draft that already has variants.
+ *
+ * A different message from the one above on purpose: this one names something the user can undo.
+ */
+const PAGE_HAS_VARIANTS_TOOLTIP_KEY = 'experiments.configure.page.select.has-variants.tooltip';
 
 /**
  * Page card of the Configure screen: which page the experiment runs on, and how much of that
  * page's traffic enters it.
  *
- * The page itself is picked once. `PATCH /api/v1/experiments/{id}` does not accept `pageId`, so
- * the moment the draft exists the Select button is disabled with a tooltip saying why, rather
- * than offering a choice the backend would ignore. Picking one is therefore reported to the store
- * directly — it is not a form value.
+ * The page itself is not a form value: picking one is reported to the store directly. It can be
+ * changed only while the experiment is a draft whose variants are the control alone — beyond that
+ * a non-control variant holds a copy of this page, so the Select button is disabled with a tooltip
+ * saying which of the two rules is in the way rather than offering a choice the backend refuses.
  *
  * The allocation is: it is a leaf of the shell's root form, handed over as a field tree and bound
- * to both the slider and the number input, which is what keeps the two in step. Its 1–100 rule and
- * its read-only state live in the shell's schema.
+ * to the number input. Its 1–100 rule and its read-only state live in the shell's schema.
  *
  * Nothing here validates as the user types: the required-page message only appears once Start has
- * been pressed and the store has published `page` among its validation errors (AC28). The inline
- * prefill message is separate — it reports a `?pageId=`/`?url=` that did not resolve, which
- * happened before the user touched anything (AC15).
+ * been pressed and the store has published `page` among its validation errors (AC28).
  */
 @Component({
     selector: 'dot-experiments-configure-page',
+    // `display: contents` so the two field groups become direct children of the Details card's
+    // column: projected content otherwise arrives wrapped in this host, and the card's gap would
+    // apply to the wrapper instead of to each field.
+    host: { class: 'contents' },
     imports: [
-        Card,
         FormField,
         ButtonModule,
         InputGroupModule,
         InputGroupAddonModule,
         InputTextModule,
-        SliderModule,
         TooltipModule,
         DotMessagePipe
     ],
@@ -81,31 +87,41 @@ export class DotExperimentsConfigurePageComponent {
 
     readonly store = inject(DotExperimentsConfigureStore);
 
-    readonly MIN_TRAFFIC_ALLOCATION = MIN_TRAFFIC_ALLOCATION;
-    readonly MAX_TRAFFIC_ALLOCATION = MAX_TRAFFIC_ALLOCATION;
-
     /** The page the experiment runs on, whether it was picked here or resolved from the URL. */
     protected readonly $selectedPage = computed<DotExperimentConfigurePage | null>(() =>
         this.store.selectedPage()
     );
 
     /**
-     * The page is fixed at creation time, so after that the button explains itself instead of
-     * offering a choice that cannot be persisted.
+     * The page can be changed while the experiment is a draft whose only variant is the control —
+     * the rule the server enforces. Outside it the button explains itself rather than offering a
+     * choice that would come back a 400.
      */
-    protected readonly $isPageImmutable = computed<boolean>(() => !!this.store.experiment());
+    protected readonly $canChangePage = computed<boolean>(() => this.store.$canChangePage());
 
     protected readonly $isSelectDisabled = computed<boolean>(
-        () => this.store.$isLocked() || this.$isPageImmutable()
+        () => this.store.$isLocked() || !this.$canChangePage()
     );
 
-    /** Locked wins over immutability: it is the stronger reason and the one the screen leads with. */
+    /**
+     * Why the button is disabled, most specific reason last.
+     *
+     * Locked leads, as the strongest and broadest reason. Below it the two halves of the page rule
+     * get different copy on purpose: a non-draft experiment is simply past the point of changing,
+     * while a draft with variants names something the user can act on — delete them and come back.
+     */
     protected readonly $selectTooltipKey = computed<string | null>(() => {
         if (this.store.$isLocked()) {
             return this.store.$disabledTooltipKey();
         }
 
-        return this.$isPageImmutable() ? PAGE_IMMUTABLE_TOOLTIP_KEY : null;
+        if (this.$canChangePage()) {
+            return null;
+        }
+
+        return this.store.$status() === DotExperimentStatus.DRAFT
+            ? PAGE_HAS_VARIANTS_TOOLTIP_KEY
+            : PAGE_IMMUTABLE_TOOLTIP_KEY;
     });
 
     /** Revealed by a Start press, and gone as soon as a page is picked. */
@@ -113,12 +129,21 @@ export class DotExperimentsConfigurePageComponent {
         this.store.$validationErrors().includes('page')
     );
 
-    /** Arguments of the traffic helper copy: the share, and the page it is a share of. */
-    protected readonly $trafficHelpArgs = computed<string[]>(() => [
-        String(this.$field()().value()),
-        this.$selectedPage()?.path ?? this.#dotMessageService.get(TRAFFIC_HELP_FALLBACK_PAGE_KEY)
-    ]);
+    /** At 100% there is no remainder, so the copy that mentions one would be wrong. */
+    protected readonly $isWholePage = computed<boolean>(
+        () => this.$field()().value() === MAX_TRAFFIC_ALLOCATION
+    );
 
+    protected readonly $trafficHelpKey = computed<string>(() =>
+        this.$isWholePage() ? TRAFFIC_HELP_ALL_KEY : TRAFFIC_HELP_PARTIAL_KEY
+    );
+
+    /** The whole-page wording names only the path; the other one leads with the share. */
+    protected readonly $trafficHelpArgs = computed<string[]>(() => {
+        const path = this.$selectedPage()?.path ?? '';
+
+        return this.$isWholePage() ? [path] : [String(this.$field()().value()), path];
+    });
     /**
      * Whatever the form says is wrong with the allocation, message included: the rules and their copy
      * live in the shell's schema, so the card renders them without knowing which ones exist.
@@ -130,6 +155,11 @@ export class DotExperimentsConfigurePageComponent {
     readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
+
+    /** Empties the picker so a different page can be chosen; same rule as picking one. */
+    protected clearPage(): void {
+        this.#dispatch.pageCleared();
+    }
 
     /** Opens the picker and reports the chosen page. Cancelling leaves the card as it was. */
     /**

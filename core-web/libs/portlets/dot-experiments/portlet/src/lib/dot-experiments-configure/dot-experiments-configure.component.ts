@@ -44,13 +44,11 @@ import {
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
-    DotExperimentPatchBody,
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
     MAX_INPUT_DESCRIPTIVE_LENGTH,
-    MAX_INPUT_TITLE_LENGTH,
-    TrafficProportionTypes
+    MAX_INPUT_TITLE_LENGTH
 } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
@@ -75,17 +73,13 @@ import { ConfigureFormModel, SchedulingDateBounds } from '../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
-import { bindFormAutosave } from '../util/dot-experiments-autosave.util';
 import {
     ConfigureFormSource,
     emptyConfigureForm,
     hasSameVariantIdentity,
-    isSameVariantWeights,
-    mergeVariantWeights,
     nextHalfHour,
     resolveDurationBounds,
     toConfigureFormModel,
-    toConfigurePatch,
     toVariantWeightRows
 } from '../util/dot-experiments-configure-form.util';
 import { totalWeight } from '../util/dot-experiments-configure.util';
@@ -150,6 +144,13 @@ export class DotExperimentsConfigureComponent {
     readonly store = inject(DotExperimentsConfigureStore);
 
     readonly CONFIRM_KEY = CONFIGURATION_CONFIRM_DIALOG_KEY;
+
+    /**
+     * Public so `experimentsUnsavedChangesGuard` can raise its prompt on the same instance that
+     * backs the `<p-confirmDialog>` in this template — the service is provided here, so injecting
+     * it in the guard would resolve a different one and the dialog would never open.
+     */
+    readonly confirmationService = inject(ConfirmationService);
     readonly SKELETON_CARDS = SKELETON_CARDS;
 
     /**
@@ -198,7 +199,7 @@ export class DotExperimentsConfigureComponent {
     readonly #route = inject(ActivatedRoute);
     readonly #router = inject(Router);
     readonly #events = inject(Events);
-    /** Only the weights are reported from here; everything else goes through `bindFormAutosave`. */
+    /** Only the weights are reported from here; everything else goes through `bindFormDiff`. */
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #injector = inject(Injector);
     readonly #destroyRef = inject(DestroyRef);
@@ -434,46 +435,29 @@ export class DotExperimentsConfigureComponent {
     });
 
     /**
-     * Reports the weights as they are edited — including while they do not add up.
+     * Mirrors the form into the store on every change.
      *
-     * The one key that travels invalid, deliberately: the rows on screen, the total under them and
-     * the warning count a Start press produces all read the store's copy, so holding an intermediate
-     * total back here would leave the screen describing something nobody typed. What must not reach
-     * the server is a *PATCH* carrying one, and that gate is the store's (`toOutgoingPatch`), where
-     * the key waits until the total is 100 again.
+     * The whole value, not a diff. The store holds one copy of what is on screen and one of what
+     * was last written, and comparing those is the entire dirty state; a save then sends the form
+     * as it stands. Working out which individual keys had moved bought nothing once saving stopped
+     * racing the keystrokes, and cost a layer of bookkeeping that had to be right in both
+     * directions.
      *
-     * Compared against the persisted weights rather than dispatched on every change: the store
-     * applies each edit to its own copy of the experiment, so a reported edit comes straight back as
-     * a change of `$variants` — and a binding that did not recognise its own echo would never stop.
+     * `untracked` still guards the dispatch: the store re-seeds the form from every response, so a
+     * binding that read anything else would turn one save into a round trip.
      */
-    protected readonly persistVariantWeightsEffect = effect(() => {
-        const rows = this.$model().variantWeights;
+    protected readonly mirrorFormEffect = effect(() => {
+        const value = this.$model();
 
         untracked(() => {
-            const variants = this.store.$variants();
-
-            // A slice that no longer stands for the current variants is mid-reseed and says nothing
-            // about weights yet; weights the store already holds are its own echo.
-            if (!hasSameVariantIdentity(rows, variants) || isSameVariantWeights(rows, variants)) {
-                return;
-            }
-
-            this.#dispatch.formEdited({
-                trafficProportion: {
-                    type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                    variants: mergeVariantWeights(variants, rows)
+            this.#dispatch.formChanged({
+                value,
+                validity: {
+                    trafficAllocation: this.formTree.trafficAllocation().valid(),
+                    scheduling: this.formTree.scheduling().valid()
                 }
             });
         });
-    });
-
-    /**
-     * The one autosave of the screen: whatever the form holds that the store does not is reported
-     * as a single edit, and the store debounces it into one PATCH (AC6).
-     */
-    protected readonly persistFormEffect = bindFormAutosave<ConfigureFormModel>({
-        model: this.$model,
-        toPatch: (model) => this.#toOutgoingPatch(model)
     });
 
     constructor() {
@@ -569,18 +553,6 @@ export class DotExperimentsConfigureComponent {
     /** Leaves the Configure screen for the list. */
     onBackToList(): void {
         this.#router.navigate([EXPERIMENTS_URL]);
-    }
-
-    /**
-     * The keys the form holds that the store does not, with the two bounded slices reporting
-     * whether they are worth sending: an out-of-range allocation or an out-of-window end date is
-     * shown on screen rather than PATCHed.
-     */
-    #toOutgoingPatch(model: ConfigureFormModel): DotExperimentPatchBody {
-        return toConfigurePatch(model, this.#formSource(), {
-            trafficAllocation: this.formTree.trafficAllocation().valid(),
-            scheduling: this.formTree.scheduling().valid()
-        });
     }
 
     /** What the form is filled from, and diffed against. */

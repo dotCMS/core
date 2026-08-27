@@ -4,7 +4,6 @@ import { FieldTree, FormField } from '@angular/forms/signals';
 import { Card } from 'primeng/card';
 import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
-import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import {
@@ -76,7 +75,6 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
         FormField,
         InputTextModule,
         SelectModule,
-        TagModule,
         DotMessagePipe,
         DotRadioCardComponent
     ],
@@ -123,9 +121,6 @@ export class DotExperimentsConfigureGoalComponent {
 
         return type ? this.#translateOptions(GoalsConditionsOperatorsListByType[type]) : [];
     });
-
-    /** Reads as SET once a goal type is picked, and as REQUIRED while none is. */
-    protected readonly $isGoalSet = computed<boolean>(() => !!this.$goal().type);
 
     protected readonly $showGoalTypeError = computed<boolean>(
         () => this.#hasValidationError('goalType') && !this.$goal().type

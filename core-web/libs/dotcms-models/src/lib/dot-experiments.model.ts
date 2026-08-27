@@ -33,11 +33,17 @@ export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: Menu
  * Every key is optional and the endpoint applies all the ones that are present in a single atomic
  * update, so several field changes can — and should — travel in one call.
  *
- * `pageId` and `targetingConditions` are deliberately absent: the page an experiment runs on is
- * immutable once it exists, and sending targeting conditions would have the backend rebuild the
- * experiment's Rule from them.
+ * `targetingConditions` is deliberately absent: sending it would have the backend rebuild the
+ * experiment's Rule from it.
+ *
+ * `pageId` is accepted, but only under a rule the server enforces — DRAFT, and the control the
+ * only variant — because every other variant holds a copy of the current page's layout. A value
+ * equal to the stored one is always a no-op; a genuinely different one at an ineligible
+ * experiment is a 400. See `specs/37176-draft-experiment-page-change`.
  */
 export interface DotExperimentPatchBody {
+    /** Only sendable while the experiment is a draft whose only variant is the control. */
+    pageId?: string;
     name?: string;
     description?: string;
     goals?: Goals;

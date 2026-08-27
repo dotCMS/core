@@ -1,9 +1,11 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotExperimentPatchBody } from '@dotcms/dotcms-models';
-
-import { DotExperimentConfigurePage } from '../shared/models';
+import {
+    ConfigureFormModel,
+    ConfigureFormValidity,
+    DotExperimentConfigurePage
+} from '../shared/models';
 
 /** What `?pageId=`/`?url=` asked the Page card to preselect. Either one may be present. */
 export interface ConfigurePagePrefill {
@@ -37,26 +39,45 @@ export const dotExperimentsConfigurePageEvents = eventGroup({
         enterNew: type<void>(),
         enterExisting: type<string>(),
 
-        // Page selection. `pageSelected` only applies before creation — the page is immutable
-        // afterwards, since `PATCH /api/v1/experiments/{id}` does not accept `pageId`.
+        // Page selection. Applies before creation, and afterwards while the experiment is a
+        // draft whose only variant is the control — the rule `PATCH /api/v1/experiments/{id}`
+        // enforces server-side (see specs/37176-draft-experiment-page-change).
         pageSelected: type<DotExperimentConfigurePage>(),
         pagePrefillRequested: type<ConfigurePagePrefill>(),
 
         /**
-         * A field was edited, carrying only the PATCH keys it changed.
+         * The chosen page was cleared, so the picker can start from nothing.
          *
-         * The store merges the payload into the diff it is holding and flushes the whole thing
-         * once the typing stops, so two cards edited in the same window reach the server as one
-         * multi-key call. A key is only ever present when its value actually changed — the cards
-         * compare against what is stored before dispatching.
+         * Same rule as picking one: only while the experiment is a draft whose single variant is
+         * the control. An experiment always has a page server-side — `save()` refuses one without
+         * — so this stages a re-pick rather than unsetting anything.
          */
-        formEdited: type<DotExperimentPatchBody>(),
+        pageCleared: type<void>(),
+
+        /**
+         * The form changed, carrying its whole current value.
+         *
+         * The whole value rather than a diff: the store keeps a mirror of what is on screen and a
+         * snapshot of what was last written, and comparing those two is all the dirty state this
+         * screen needs. Working out *which* keys moved bought nothing once saving stopped racing
+         * the keystrokes.
+         */
+        formChanged: type<{ value: ConfigureFormModel; validity: ConfigureFormValidity }>(),
 
         // Variants: dedicated endpoints, not a `trafficProportion` PATCH. Their *weights* are not
-        // here at all — they are a slice of the screen's form, and travel as `formEdited`.
+        // here at all — they are a slice of the screen's form, and travel with `formChanged`.
         variantAdded: type<string>(),
         variantRenamed: type<ConfigureVariantRename>(),
         variantDeleted: type<string>(),
+
+        /**
+         * Save draft was pressed.
+         *
+         * The only thing that writes the form to the server. Before the experiment exists it is
+         * what creates it — the POST carries the name, description and page — and afterwards it
+         * flushes the accumulated diff as a single PATCH.
+         */
+        saveDraftRequested: type<void>(),
 
         // Transitions. Each is already confirmed in the shell where a confirmation applies.
         startRequested: type<void>(),

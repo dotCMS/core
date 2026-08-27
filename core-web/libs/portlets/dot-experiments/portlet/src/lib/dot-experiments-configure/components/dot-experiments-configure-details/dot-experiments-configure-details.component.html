@@ -1,6 +1,6 @@
 <p-card data-testid="experiments-configure-details-card">
     <section class="flex flex-col gap-5">
-        <header class="flex flex-col gap-1">
+        <header class="-mx-4 -mt-4 flex flex-col gap-1 border-b border-surface-200 px-4 pt-4 pb-3">
             <h2 class="text-lg font-bold text-surface-900" data-section="details">
                 {{ 'experiments.configure.details.title' | dm }}
             </h2>
@@ -12,7 +12,7 @@
         <div class="flex flex-col gap-4">
             <div class="flex flex-col gap-2">
                 <label class="text-sm font-semibold text-surface-900" for="experiment-name">
-                    {{ 'experiments.create.form.name.label' | dm }}
+                    {{ 'experiments.configure.details.name.label' | dm }}
                     <span class="text-red-500" aria-hidden="true">*</span>
                 </label>
                 <input
@@ -53,10 +53,11 @@
                         {{ error.message }}
                     </small>
                 }
-                <small class="text-surface-500" data-testid="details-description-hint">
-                    {{ 'experiments.configure.details.description.hint' | dm }}
-                </small>
             </div>
+
+            <!-- Page and traffic allocation, projected so they join this card's own fields as
+                 siblings rather than arriving as a nested block with its own spacing. -->
+            <ng-content />
         </div>
     </section>
 </p-card>

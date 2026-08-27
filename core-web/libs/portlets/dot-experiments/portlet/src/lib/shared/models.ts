@@ -3,10 +3,10 @@ import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
-    DotExperimentPatchBody,
     DotExperimentStatus,
     GOAL_OPERATORS,
-    GOAL_TYPES
+    GOAL_TYPES,
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
@@ -134,20 +134,20 @@ export interface DotExperimentsConfigureViewState {
      */
     validationRevealed: boolean;
     /**
-     * The keys edited since the last successful save, merged into one PATCH body.
-     *
-     * `null` while everything on screen is persisted. It survives a failed save on purpose, so the
-     * next edit re-sends what could not be written together with what just changed.
+     * The form as it stands on screen, mirrored whole rather than as a diff against what is
+     * stored. It is what a save sends and what the Start rules are checked against.
      */
-    pendingPatch: DotExperimentPatchBody | null;
+    formValue: ConfigureFormModel | null;
+    /** Which slices the form currently considers valid; a save skips the ones that are not. */
+    formValidity: ConfigureFormValidity;
     /**
-     * True when the last autosave came back as an error.
+     * The form as it stood at the last successful write, or `null` before the first one.
      *
-     * Kept apart from {@link pendingPatch} because the two answer different questions: the diff is
-     * still unsaved, but nothing is on its way any more — and the footer must not go on saying
-     * "Saving…" for the rest of the session, which is the stuck flag #37003 set out to fix.
+     * Comparing the two is the whole of the screen's dirty state. A failed save leaves this
+     * untouched, so the work stays unsaved and the button stays live, with no flag to keep in
+     * step.
      */
-    lastSaveFailed: boolean;
+    savedFormValue: ConfigureFormModel | null;
 }
 
 /**
@@ -225,6 +225,18 @@ export interface WeightedVariant {
  * one `trafficProportion` key. Holding them here is what makes "they add up to 100" a cross-field
  * rule of the form rather than a sum recomputed wherever it happens to be needed.
  */
+/**
+ * Which bounded slices currently hold a value worth sending.
+ *
+ * The bounds themselves live in the form's schema, so validity is read off the field tree rather
+ * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
+ * and simply not sent.
+ */
+export interface ConfigureFormValidity {
+    trafficAllocation: boolean;
+    scheduling: boolean;
+}
+
 export interface ConfigureFormModel {
     name: string;
     description: string;
@@ -234,6 +246,15 @@ export interface ConfigureFormModel {
     scheduling: SchedulingFormSlice;
     /** One row per persisted variant, in the order they are drawn. Empty before creation. */
     variantWeights: VariantWeightFormRow[];
+    /**
+     * How the weights were arrived at.
+     *
+     * Carried because the weights alone cannot say it, and the backend acts on the difference:
+     * `ExperimentsAPIImpl.addVariant` redistributes a newly added variant only while the
+     * proportion is `SPLIT_EVENLY`. Pressing Split Evenly says so; typing a weight says the
+     * opposite.
+     */
+    trafficProportionType: TrafficProportionTypes;
 }
 
 /**

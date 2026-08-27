@@ -7,15 +7,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import {
-    catchError,
-    debounceTime,
-    distinctUntilChanged,
-    filter,
-    map,
-    mergeMap,
-    switchMap
-} from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, map, mergeMap, switchMap } from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -27,7 +19,6 @@ import {
 import {
     ComponentStatus,
     DotCMSContentlet,
-    DotExperimentPatchBody,
     DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
@@ -43,14 +34,13 @@ import {
 } from './dot-experiments-configure-page.events';
 
 import {
-    AUTOSAVE_DEBOUNCE_MS,
     CONFIGURATION_SEGMENT,
+    DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
     PAGE_PREFILL_ERROR_KEY,
     PAGE_PREFILL_LOOKUP_ERROR_KEY,
-    START_ERROR_HEADER_KEY,
-    TOTAL_WEIGHT
+    START_ERROR_HEADER_KEY
 } from '../shared/constants';
 import {
     ConfigureValidationRule,
@@ -58,15 +48,17 @@ import {
     ExperimentListAction
 } from '../shared/models';
 import {
-    applyPatchToExperiment,
+    emptyConfigureForm,
+    isSendableSplit,
+    toConfigurePatch
+} from '../util/dot-experiments-configure-form.util';
+import {
+    canChangePage,
     fromBrowserPage,
-    hasPendingChanges,
+    isSameFormValue,
     normalizePath,
     toConfigurePage,
-    toOutgoingPatch,
-    totalWeight,
-    validateConfigure,
-    withoutSentKeys
+    validateConfigure
 } from '../util/dot-experiments-configure.util';
 import { isAllowed } from '../util/dot-experiments-list.util';
 
@@ -85,8 +77,9 @@ const initialState: DotExperimentsConfigureViewState = {
     pagePrefillError: null,
     pageLockInfo: null,
     validationRevealed: false,
-    pendingPatch: null,
-    lastSaveFailed: false
+    formValue: null,
+    formValidity: { trafficAllocation: true, scheduling: true },
+    savedFormValue: null
 };
 
 /** Shape of the `/api/content/_search` entity the page lookup reads contentlets from. */
@@ -150,21 +143,44 @@ export const DotExperimentsConfigureStore = signalStore(
             () => store.experiment()?.trafficProportion?.variants ?? []
         );
 
-        const $totalWeight = computed<number>(() => totalWeight($variants()));
+        /**
+         * Whether the weights on screen stand in the way of a save.
+         *
+         * An empty slice does not: it means the form has nothing to say about the weights yet —
+         * the state a just-created draft is in before the shell seeds them — and the body simply
+         * leaves `trafficProportion` out. Blocking there would make the first save after creation
+         * impossible.
+         *
+         * A slice that exists has to be one the backend would take: standing for the current
+         * variants, and totalling exactly 100. Refusing rather than quietly omitting it is what
+         * keeps `saveSucceeded` free to call the whole form saved.
+         */
+        const $hasSendableWeights = computed<boolean>(() => {
+            const rows = store.formValue()?.variantWeights ?? [];
+
+            return !rows.length || isSendableSplit(rows, $variants());
+        });
 
         /**
-         * The part of the pending diff that would actually leave now — what the flush computes,
-         * computed the same way (`toOutgoingPatch`).
+         * Whether the screen holds work the server has not accepted.
          *
-         * Before the draft exists nothing can leave at all: no PATCH without an experiment, and
-         * the POST cannot fire until a page is picked. Those keys travel with the creation call
-         * (whose own feedback is `creating`/`$isSaving`), so reporting them as "autosaving" here
-         * would pin the footer on "Saving…" from the first keystroke on `/new` (#37003).
+         * Two questions, because the page lives beside the form rather than in it: has the form
+         * moved since the last write, and does the selected page still match the stored one.
+         * Before the experiment exists there is nothing to compare against, so anything the user
+         * has put in counts.
+         *
+         * A failed save needs no flag. It leaves the snapshot where it was, so the screen simply
+         * goes on being dirty — which is the truth, and is what keeps the button live.
          */
-        const $outgoingPatch = computed<DotExperimentPatchBody | null>(() => {
-            const experiment = store.experiment();
+        const $hasUnsavedChanges = computed<boolean>(() => {
+            if (store.isNew()) {
+                return !!store.draftName().trim() || !!store.selectedPage();
+            }
 
-            return experiment ? toOutgoingPatch(store.pendingPatch(), experiment) : null;
+            const selected = store.selectedPage();
+            const pageChanged = !!selected && selected.pageId !== store.experiment()?.pageId;
+
+            return pageChanged || !isSameFormValue(store.formValue(), store.savedFormValue());
         });
 
         /**
@@ -177,7 +193,7 @@ export const DotExperimentsConfigureStore = signalStore(
                       draftName: store.draftName(),
                       selectedPage: store.selectedPage(),
                       experiment: store.experiment(),
-                      pendingPatch: store.pendingPatch()
+                      formValue: store.formValue()
                   })
                 : []
         );
@@ -187,17 +203,17 @@ export const DotExperimentsConfigureStore = signalStore(
             $isLocked,
             $lockedByAnotherUser,
             $variants,
-            $totalWeight,
             /**
-             * Whether the weights the store holds do not add up (AC25). An experiment with no
-             * variants yet is not "wrong", which is the exception the backend makes as well.
+             * Share of the page's traffic entering the Experiment, as the form currently holds it.
              *
-             * The Variants card states the same thing from its own slice, where the rule lives in
-             * the schema; this is what the *store* knows, and it is why an intermediate total is
-             * held back rather than PATCHed (see `toOutgoingPatch`).
+             * Read off the form rather than the experiment so the Variants card can show what each
+             * weight means against it while the number is still being typed.
              */
-            $hasInvalidWeights: computed<boolean>(
-                () => $variants().length > 0 && $totalWeight() !== TOTAL_WEIGHT
+            $trafficAllocation: computed<number>(
+                () =>
+                    store.formValue()?.trafficAllocation ??
+                    store.experiment()?.trafficAllocation ??
+                    DEFAULT_TRAFFIC_ALLOCATION
             ),
             /** `null` while the screen is editable, so the shell can branch on its presence. */
             $lockedBannerKey: computed<string | null>(() => {
@@ -253,19 +269,43 @@ export const DotExperimentsConfigureStore = signalStore(
                 () => store.status() === ComponentStatus.SAVING || store.creating()
             ),
             /**
-             * True while a PATCH is debounced or in flight: the diff stays pending until the server
-             * accepts it, so one signal covers both.
+             * Whether the screen is holding work the server has not accepted.
              *
-             * Read off the *sendable* part of the diff, not the whole of it: a pending
-             * `trafficProportion` whose weights are still being fixed is going nowhere, and a
-             * footer saying "Saving…" while it waits would never stop (#37003).
+             * Drives the Save draft button and the leave-confirmation guard, so it has to answer
+             * for both halves of the screen's life. Before the experiment exists there is no diff
+             * to read — the name and the page live in their own slices until the POST carries
+             * them — so anything typed there counts. Afterwards it is the accumulated diff.
              *
-             * A failed save is excluded for the same reason even though its diff is sendable —
-             * nothing is on its way any more until the next edit re-sends it.
+             * A failed save deliberately stays dirty. The user's work is still only on screen, and
+             * the whole point of the button is that they can press it again.
              */
-            $isAutosaving: computed<boolean>(
-                () => !store.lastSaveFailed() && hasPendingChanges($outgoingPatch())
-            )
+            /**
+             * Whether the Page card may still offer a different page. Mirrors the server rule, so
+             * the screen refuses in the same cases rather than offering a choice that returns 400.
+             */
+            $canChangePage: computed<boolean>(() => canChangePage(store.experiment())),
+            $hasUnsavedChanges,
+            /**
+             * Whether pressing Save Draft would write anything.
+             *
+             * The name is asked for on both paths because both send it: it is required by the POST
+             * and non-optional on the PATCH, so a blank one is a rejection either way.
+             *
+             * Creating needs the page too, since the POST carries it. Afterwards a change is
+             * sendable as long as the weights are not mid-edit — the body is built from the whole
+             * form, and the one slice the backend would refuse is a split that does not total 100.
+             */
+            $canSave: computed<boolean>(() => {
+                if (!store.draftName().trim()) {
+                    return false;
+                }
+
+                if (store.isNew()) {
+                    return !!store.selectedPage();
+                }
+
+                return $hasUnsavedChanges() && $hasSendableWeights();
+            })
         };
     }),
     withReducer<DotExperimentsConfigureViewState>(
@@ -293,21 +333,51 @@ export const DotExperimentsConfigureStore = signalStore(
 
         // Creation: the flag closes the door on a second POST as the first one leaves.
         on(apiEvents.createRequested, () => ({ creating: true })),
+        /**
+         * The POST wrote three things — the name, the description and the page — so those are all
+         * the draft is clean on, and the baseline says exactly that: what was written, over an
+         * otherwise blank form.
+         *
+         * Everything else the user had entered before pressing — a goal, a schedule, an allocation
+         * — therefore still reads as unsaved, and the follow-up PATCH this same event triggers
+         * carries it. Snapshotting the live form here instead would call all of it saved and it
+         * would never be sent; snapshotting nothing would send a redundant PATCH after every
+         * creation.
+         */
         on(apiEvents.createSucceeded, ({ payload }) => ({
             experiment: payload,
             isNew: false,
             creating: false,
             draftName: payload.name,
             draftDescription: payload.description ?? '',
+            savedFormValue: {
+                ...emptyConfigureForm(),
+                name: payload.name,
+                description: payload.description ?? ''
+            },
             status: ComponentStatus.LOADED
         })),
         // The user stays on `/experiments/new` with everything they typed still there (AC4).
         on(apiEvents.createFailed, () => ({ creating: false })),
 
-        on(pageEvents.pageSelected, ({ payload }, state) =>
-            // The page is immutable once the experiment exists, so a late selection is ignored
-            // rather than silently diverging from what the server holds.
-            state.experiment ? {} : { selectedPage: payload, pagePrefillError: null }
+        /**
+         * A page was picked. Before creation it is held until the POST carries it; on an existing
+         * experiment the next Save Draft sends it, and the difference against the stored page is
+         * what makes the screen dirty in the meantime.
+         *
+         * A selection the rule does not allow is ignored rather than applied optimistically: the
+         * card does not offer the choice in the first place, and showing a page the server would
+         * refuse is worse than showing none.
+         */
+        on(pageEvents.pageSelected, ({ payload }, state) => {
+            if (!canChangePage(state.experiment)) {
+                return {};
+            }
+
+            return { selectedPage: payload, pagePrefillError: null };
+        }),
+        on(pageEvents.pageCleared, (_event, state) =>
+            canChangePage(state.experiment) ? { selectedPage: null, pagePrefillError: null } : {}
         ),
         on(apiEvents.pagePrefillResolved, ({ payload }) => ({
             selectedPage: payload,
@@ -328,19 +398,26 @@ export const DotExperimentsConfigureStore = signalStore(
         on(apiEvents.pageLockResolved, ({ payload }) => ({ pageLockInfo: payload })),
 
         /**
-         * A field changed. The keys are merged into the diff waiting to be flushed — later value
-         * per key wins — and applied locally at once: the PATCH is debounced, and no card may lag
-         * half a second behind the keystroke that caused it.
+         * The form moved. The mirror is replaced wholesale — there is nothing to merge, because
+         * the payload already *is* the whole form.
          *
-         * The drafts follow `name`/`description` so the header title tracks what is being typed,
-         * while `experiment` keeps the persisted pair (see `applyPatchToExperiment`).
+         * The drafts follow name and description so the header title tracks what is being typed,
+         * while `experiment` keeps whatever the server last answered with. The two are allowed to
+         * disagree until a save reconciles them; that gap is precisely the unsaved state.
+         *
+         * The first mirror after a load is not a change, it is the load arriving on screen: the
+         * shell builds the form from the experiment it was just handed. Taking it as the clean
+         * baseline is what stops a freshly opened experiment reporting itself as unsaved before
+         * the user has touched anything. Only the first one — every later mirror is a real edit,
+         * and `createSucceeded`/`saveSucceeded` own the snapshot from then on.
          */
-        on(pageEvents.formEdited, ({ payload }, state) => ({
-            pendingPatch: { ...state.pendingPatch, ...payload },
-            lastSaveFailed: false,
-            draftName: payload.name ?? state.draftName,
-            draftDescription: payload.description ?? state.draftDescription,
-            experiment: applyPatchToExperiment(state.experiment, payload)
+        on(pageEvents.formChanged, ({ payload }, state) => ({
+            formValue: payload.value,
+            formValidity: payload.validity,
+            draftName: payload.value.name,
+            draftDescription: payload.value.description,
+            savedFormValue:
+                state.experiment && !state.savedFormValue ? payload.value : state.savedFormValue
         })),
 
         /**
@@ -350,35 +427,29 @@ export const DotExperimentsConfigureStore = signalStore(
          */
         on(apiEvents.saveRequested, () => ({ status: ComponentStatus.SAVING })),
         /**
-         * Only what was written settles: a key whose pending value is still the one the body
-         * carried leaves the diff, and what `toOutgoingPatch` held back — or what was re-edited
-         * while the request travelled — stays pending. See `withoutSentKeys`.
+         * The response is the source of truth for what was written, so it replaces the experiment,
+         * and the form the request was built from becomes the new clean baseline.
          *
-         * The response is the source of truth for what was written, so the experiment is replaced
-         * by it — but with the held-back keys re-applied on top, or the weights the user is still
-         * fixing would snap back to the older ones the server answered with (#37003).
+         * The event carries that form rather than the reducer reading the current one: the two
+         * differ exactly when the user kept typing during the flight, and taking the current one
+         * would mark keystrokes the server never saw as saved.
+         *
+         * Snapshotting the whole form is only sound because a save cannot happen while any of it
+         * is unsendable: `$canSave` refuses a mid-edit weight split, so there is never a slice that
+         * stayed on screen while the rest was written. That refusal is what buys the absence of a
+         * held-back-keys concept here.
          */
-        on(apiEvents.saveSucceeded, ({ payload }, state) => {
-            const heldBack = withoutSentKeys(state.pendingPatch, payload.sent);
-
-            return {
-                experiment: heldBack
-                    ? applyPatchToExperiment(payload.experiment, heldBack)
-                    : payload.experiment,
-                pendingPatch: heldBack,
-                lastSaveFailed: false,
-                status: ComponentStatus.LOADED
-            };
-        }),
-        /**
-         * A rejected write keeps its diff: the next edit re-sends it merged with whatever changed,
-         * which is the only retry the screen has. The failure itself was already reported by
-         * `DotHttpErrorManagerService`, and the screen stays usable.
-         */
-        on(apiEvents.saveFailed, () => ({
-            lastSaveFailed: true,
+        on(apiEvents.saveSucceeded, ({ payload }) => ({
+            experiment: payload.experiment,
+            savedFormValue: payload.form,
             status: ComponentStatus.LOADED
         })),
+        /**
+         * A rejected write moves no snapshot, so the screen stays dirty and the button stays live —
+         * pressing it again is the retry. The failure itself was already reported by
+         * `DotHttpErrorManagerService`.
+         */
+        on(apiEvents.saveFailed, () => ({ status: ComponentStatus.LOADED })),
         /**
          * A skipped flush never touches the diff: nothing was written, so nothing can settle, and
          * dropping it would take the held-back keys with it — the next successful PATCH of another
@@ -546,18 +617,15 @@ export const DotExperimentsConfigureStore = signalStore(
                 ),
 
                 /**
-                 * Creation is the one call with no debounce: the draft exists the moment a name
-                 * and a page are both there (AC2).
+                 * The first Save draft is what creates the experiment: until it is pressed nothing
+                 * exists on the server, so leaving the screen leaves no half-filled draft behind.
                  *
                  * A second POST is stopped by the `creating` filter, not by the flattening
                  * operator: the flag is raised by `createRequested` as the first request leaves,
-                 * so an edit arriving mid-flight is dropped here and never reaches the
+                 * so a second press arriving mid-flight is dropped here and never reaches the
                  * `switchMap` — which would otherwise cancel the POST already creating the draft.
                  */
-                create$: merge(
-                    events.on(pageEvents.formEdited),
-                    events.on(pageEvents.pageSelected)
-                ).pipe(
+                create$: events.on(pageEvents.saveDraftRequested).pipe(
                     filter(() => store.isNew() && !store.creating()),
                     map(() => ({
                         name: store.draftName().trim(),
@@ -619,41 +687,57 @@ export const DotExperimentsConfigureStore = signalStore(
                 ),
 
                 /**
-                 * The one autosave: every edit feeds a single timer, and what goes out is the diff
-                 * accumulated by the time it elapses (AC6). Two cards edited in the same window
-                 * therefore reach the server as one multi-key call, not as two.
+                 * The one write of the form: Save draft flushes the whole accumulated diff as a
+                 * single multi-key PATCH, whichever cards it came from.
                  *
-                 * `switchMap`, not `mergeMap`: an edit arriving while a PATCH is on the wire
-                 * replaces it rather than queuing behind it — that is what "collapses into a single
-                 * call" means, and it is also what makes clearing the whole diff safe when a
-                 * response *is* processed.
+                 * `createSucceeded` is merged in because the first press does two things. The POST
+                 * carries the name, description and page; anything else the user had already
+                 * filled in — a goal, a schedule, a traffic split — was accumulated against an
+                 * experiment that did not exist yet, and this is the first moment it can be
+                 * written. The keys the POST itself carried are dropped by `toOutgoingPatch`, so
+                 * the follow-up stays a no-op when there was nothing else.
                  *
-                 * `createSucceeded` is merged in to flush what was typed while the creation POST
-                 * was travelling: those keys were accumulated against an experiment that did not
-                 * exist yet, and this is the first moment they can be written. The keys the POST
-                 * itself carried are dropped by `toOutgoingPatch`, so the flush stays a no-op when
-                 * nothing was typed in the meantime.
+                 * `switchMap`, not `mergeMap`: a second press while a PATCH is on the wire replaces
+                 * it rather than queuing behind it. That is also what makes settling the diff safe
+                 * when a response *is* processed.
                  *
                  * The body is reported back with the response: it is not always every pending key,
                  * and only the ones it carried may settle (#37003).
                  */
-                autosave$: merge(
-                    events.on(pageEvents.formEdited),
+                saveDraft$: merge(
+                    events.on(pageEvents.saveDraftRequested),
                     events.on(apiEvents.createSucceeded)
                 ).pipe(
-                    debounceTime(AUTOSAVE_DEBOUNCE_MS),
                     switchMap(() => {
                         const experiment = store.experiment();
-                        // Nothing to patch before the draft exists: those values reach the server
-                        // through the creation POST, and whatever is left over is flushed here as
-                        // soon as it answers.
-                        const body = experiment
-                            ? toOutgoingPatch(store.pendingPatch(), experiment)
-                            : null;
+                        const model = store.formValue();
 
-                        if (!experiment || !body) {
+                        /**
+                         * Nothing to patch before the draft exists: those values reach the server
+                         * through the creation POST, and the rest follows as soon as it answers.
+                         *
+                         * And nothing to patch when the form is not in a state worth sending —
+                         * the same question the button asks. It matters most on the run that
+                         * follows `createSucceeded`, where the POST has just written the form and
+                         * a second call would carry the identical body.
+                         */
+                        if (!experiment || !model || !store.$canSave()) {
                             return of(apiEvents.saveSkipped());
                         }
+
+                        /**
+                         * The page travels only when it actually moved. Sending the stored one
+                         * back on every save would put `pageId` in the body of an experiment that
+                         * has variants, which is the one shape `ExperimentsAPIImpl.save()` refuses
+                         * with a 400 — for a change the user never made.
+                         */
+                        const selectedPageId = store.selectedPage()?.pageId;
+                        const body = toConfigurePatch(
+                            model,
+                            store.formValidity(),
+                            experiment.trafficProportion?.variants ?? [],
+                            selectedPageId === experiment.pageId ? undefined : selectedPageId
+                        );
 
                         // `saveRequested` marks the moment a real request leaves — the visible
                         // progress indicator keys on it, so it runs for the flight only, not for
@@ -665,13 +749,30 @@ export const DotExperimentsConfigureStore = signalStore(
                                     next: (updated) =>
                                         apiEvents.saveSucceeded({
                                             experiment: updated,
-                                            sent: body
+                                            form: model
                                         }),
                                     error: toFailure(apiEvents.saveFailed)
                                 })
                             )
                         );
                     })
+                ),
+
+                /**
+                 * A refused save that carried a page puts the displayed page back.
+                 *
+                 * The card applies a pick optimistically, which is right for every field that
+                 * cannot be refused on its own. `pageId` can: the screen gates on the same rule the
+                 * server enforces, but that rule reads state — a variant added in another tab is
+                 * enough to make the two disagree. Leaving the refused page on screen would show
+                 * the user something that is not stored anywhere, so it is re-resolved from the
+                 * experiment. The message explaining why was already raised by the error handler.
+                 */
+                revertRefusedPage$: events.on(apiEvents.saveFailed).pipe(
+                    filter(() => store.selectedPage()?.pageId !== store.experiment()?.pageId),
+                    map(() => store.experiment()?.pageId),
+                    filter((pageId): pageId is string => !!pageId),
+                    map((pageId) => pageEvents.pagePrefillRequested({ pageId }))
                 ),
 
                 // Variants have dedicated endpoints; `mergeMap` so deleting one row does not

@@ -1,16 +1,18 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
 
-import { Component, computed, DestroyRef, inject, input } from '@angular/core';
+import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
+import { MenuModule } from 'primeng/menu';
+import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
@@ -21,8 +23,8 @@ import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
     MAX_INPUT_TITLE_LENGTH,
-    TrafficProportionTypes,
-    Variant
+    Variant,
+    TrafficProportionTypes
 } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -38,11 +40,12 @@ import { VariantRowViewModel, VariantWeightFormRow } from '../../../shared/model
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { toVariantWeightRows } from '../../../util/dot-experiments-configure-form.util';
 import {
-    mergeVariantWeights,
-    toVariantWeightRows
-} from '../../../util/dot-experiments-configure-form.util';
-import { splitWeightsEvenly, totalWeight } from '../../../util/dot-experiments-configure.util';
+    isControlVariant,
+    splitWeightsEvenly,
+    totalWeight
+} from '../../../util/dot-experiments-configure.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogData,
@@ -111,6 +114,8 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
         InputGroupModule,
         InputGroupAddonModule,
         InputTextModule,
+        MenuModule,
+        TableModule,
         TooltipModule,
         DotCopyButtonComponent,
         DotExperimentsVariantNameInplaceComponent,
@@ -127,6 +132,14 @@ export class DotExperimentsConfigureVariantsComponent {
      * the cross-field rule over the set of them.
      */
     readonly $field = input.required<FieldTree<VariantWeightFormRow[]>>({ alias: 'field' });
+    /**
+     * The proportion's type, as a slice of the same form.
+     *
+     * Separate from the weights because it answers a different question — *how* the split was
+     * arrived at, not what it is — and the backend acts on the difference when a variant is added
+     * later.
+     */
+    readonly $typeField = input.required<FieldTree<TrafficProportionTypes>>({ alias: 'typeField' });
 
     readonly store = inject(DotExperimentsConfigureStore);
 
@@ -157,6 +170,26 @@ export class DotExperimentsConfigureVariantsComponent {
         }));
     });
 
+    /**
+     * What each row's split works out to against *all* the page's visitors, by id.
+     *
+     * The two percentages on this card are nested and read as though they were siblings: a weight
+     * is a share of the traffic that entered the Experiment, not of everyone who saw the page. This
+     * multiplies the two out so the row can say what it actually means.
+     *
+     * Keyed off the form's weights rather than the persisted ones so it moves as the number is
+     * typed, which is the only moment the relationship is worth explaining.
+     */
+    readonly $shareOfAllTrafficById = computed<Map<string, number>>(() => {
+        const allocation = this.store.$trafficAllocation();
+
+        return new Map(
+            this.$field()()
+                .value()
+                .map(({ id, weight }) => [id, Math.round(((weight ?? 0) * allocation) / 100)])
+        );
+    });
+
     /** True while nothing on the card may be changed: not a draft, or the page is locked. */
     readonly $isDisabled = computed<boolean>(() => !!this.store.$disabledTooltipKey());
 
@@ -167,6 +200,9 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly $isAddDisabled = computed<boolean>(
         () => this.$isAtVariantCap() || this.$isBeforeCreation()
     );
+
+    /** Rebuilt by `onRowMenuToggle` for whichever row is opening the kebab. */
+    readonly $rowMenuItems = signal<MenuItem[]>([]);
 
     /** There is nothing to split while the only row is the control the POST will create. */
     readonly $isSplitEvenlyDisabled = computed<boolean>(
@@ -270,6 +306,10 @@ export class DotExperimentsConfigureVariantsComponent {
      * a decision, so a later commit knows to spare it.
      */
     onWeightCommitted(rowId: string): void {
+        // Typing a weight is the opposite claim to pressing Split Evenly, and the backend reads
+        // the type rather than inferring it from the numbers.
+        this.$typeField()().value.set(TrafficProportionTypes.CUSTOM_PERCENTAGES);
+
         const rows = this.$field()().value();
         const index = rows.findIndex(({ id }) => id === rowId);
         const committed = rows[index]?.weight;
@@ -317,6 +357,31 @@ export class DotExperimentsConfigureVariantsComponent {
     }
 
     /** Deleting is irreversible, so it goes through the shell's confirm dialog first. */
+    /**
+     * Rebuilds the kebab for the row about to open it.
+     *
+     * One menu serves every row rather than one per row: only one popup is ever open, and a
+     * `p-menu` per row would put as many hidden overlays in the DOM as there are variants.
+     */
+    onRowMenuToggle(row: VariantRowViewModel): void {
+        this.$rowMenuItems.set([
+            {
+                id: 'variant-preview',
+                label: this.#dotMessageService.get('experiments.configure.variants.action.preview'),
+                icon: 'visibility',
+                // Previewing a variant is a UVE round-trip, the same one Edit Content waits on.
+                disabled: true
+            },
+            {
+                id: 'variant-delete',
+                label: this.#dotMessageService.get('experiments.configure.variants.delete'),
+                icon: 'delete',
+                danger: true,
+                command: () => this.onDeleteVariant(row)
+            }
+        ]);
+    }
+
     onDeleteVariant(row: VariantRowViewModel): void {
         this.#confirmationService.confirm({
             key: CONFIGURATION_CONFIRM_DIALOG_KEY,
@@ -436,18 +501,10 @@ export class DotExperimentsConfigureVariantsComponent {
 
         // A reset: it overrides every weight, so no earlier decision is worth sparing afterwards.
         this.#committedRowIds = [];
+        // Writing the rows is the whole of it: the shell mirrors the form into the store, so the
+        // new split reaches it the same way a typed weight does — the type included, which is the
+        // one thing the weights themselves cannot say.
         this.$field()().value.set(rows);
-
-        this.#dispatch.formEdited({
-            trafficProportion: {
-                type: TrafficProportionTypes.SPLIT_EVENLY,
-                variants: mergeVariantWeights(variants, rows)
-            }
-        });
+        this.$typeField()().value.set(TrafficProportionTypes.SPLIT_EVENLY);
     }
-}
-
-/** The control is the `DEFAULT` variant; older experiments identify it by its name instead. */
-function isControlVariant(variant: Variant): boolean {
-    return variant.id === DEFAULT_VARIANT_ID || variant.name === DEFAULT_VARIANT_NAME;
 }

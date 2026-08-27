@@ -22,7 +22,7 @@
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col items-center overflow-hidden px-8 pt-6">
-            <div class="flex w-full max-w-[1040px] flex-col gap-5">
+            <div class="flex w-full max-w-content flex-col gap-5">
                 @for (card of SKELETON_CARDS; track card) {
                     <p-skeleton height="11rem" width="100%" borderRadius="0.5rem" />
                 }
@@ -56,13 +56,16 @@
         #configureBody
         class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-6 pb-8"
         data-testid="experiments-configure-body">
-        <div class="flex w-full max-w-[1040px] flex-col gap-5">
+        <div class="flex w-full max-w-content flex-col gap-5">
             <dot-experiments-configure-details
                 [nameField]="formTree.name"
-                [descriptionField]="formTree.description" />
+                [descriptionField]="formTree.description">
+                <dot-experiments-configure-page [field]="formTree.trafficAllocation" />
+            </dot-experiments-configure-details>
             <dot-experiments-configure-goal [field]="formTree.goal" />
-            <dot-experiments-configure-page [field]="formTree.trafficAllocation" />
-            <dot-experiments-configure-variants [field]="formTree.variantWeights" />
+            <dot-experiments-configure-variants
+                [field]="formTree.variantWeights"
+                [typeField]="formTree.trafficProportionType" />
             <dot-experiments-configure-scheduling
                 [field]="formTree.scheduling"
                 [bounds]="$schedulingBounds()" />

@@ -1,20 +1,22 @@
 import { DotPageBrowserPage } from '@dotcms/data-access';
 import {
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
     DotCMSContentlet,
     DotExperiment,
-    DotExperimentPatchBody,
+    DotExperimentStatus,
     GOAL_OPERATORS,
     GOAL_TYPES,
-    ReachPageGoalCondition,
-    UrlParameterGoalCondition,
     Variant
 } from '@dotcms/dotcms-models';
 
 import { TOTAL_WEIGHT, WEIGHT_PRECISION } from '../shared/constants';
 import {
+    ConfigureFormModel,
     ConfigureValidationRule,
     DotExperimentConfigurePage,
     DotExperimentsConfigureViewState,
+    GoalFormSlice,
     WeightedVariant
 } from '../shared/models';
 
@@ -46,6 +48,36 @@ export function splitWeightsEvenly<T extends WeightedVariant>(items: readonly T[
     }));
 }
 
+/** The control is the `DEFAULT` variant; older experiments identify it by its name instead. */
+export function isControlVariant(variant: Variant): boolean {
+    return variant.id === DEFAULT_VARIANT_ID || variant.name === DEFAULT_VARIANT_NAME;
+}
+
+/**
+ * Whether the experiment's page can still be changed.
+ *
+ * Mirrors what `ExperimentsAPIImpl.save()` enforces, so the screen refuses in the same cases the
+ * server would rather than offering a choice that comes back a 400. Two conditions, and the second
+ * is the substantive one: a non-control variant holds a copy of *this* page's layout, so repointing
+ * the experiment would orphan it. The control holds no copy — it is the page — which is exactly why
+ * it does not block.
+ *
+ * An experiment that does not exist yet has nothing to protect, so the page is free.
+ */
+export function canChangePage(experiment: DotExperiment | null): boolean {
+    if (!experiment) {
+        return true;
+    }
+
+    const variants = experiment.trafficProportion?.variants ?? [];
+
+    return (
+        experiment.status === DotExperimentStatus.DRAFT &&
+        variants.length > 0 &&
+        variants.every((variant) => isControlVariant(variant))
+    );
+}
+
 /** Sum of the weights, rounded to the precision they are stored at. A cleared one counts as zero. */
 export function totalWeight(items: readonly WeightedVariant[]): number {
     const total = items.reduce((sum, { weight }) => sum + (weight ?? 0), 0);
@@ -69,24 +101,30 @@ export function totalWeight(items: readonly WeightedVariant[]): number {
 export function validateConfigure(
     state: Pick<
         DotExperimentsConfigureViewState,
-        'draftName' | 'selectedPage' | 'experiment' | 'pendingPatch'
+        'draftName' | 'selectedPage' | 'experiment' | 'formValue'
     >
 ): ConfigureValidationRule[] {
     const errors: ConfigureValidationRule[] = [];
     const experiment = state.experiment;
 
-    // What the user has, persisted or not. The pending diff comes first because it is the newer
-    // of the two, and on `/experiments/new` it is the *only* one: `applyPatchToExperiment` has no
-    // experiment to apply an edit to before the POST answers, so a goal entered while the draft is
-    // still being created lives only here. `draftName` and `selectedPage` exist for the same
-    // reason — this is the rest of that story, not a special case.
-    const goal = state.pendingPatch?.goals?.primary ?? experiment?.goals?.primary ?? null;
+    // Read off the form, never off the experiment: the form is what the user is looking at, and
+    // on `/experiments/new` it is the only thing that exists at all. Checking what is stored would
+    // report a goal as missing while it sits complete on screen, unsaved.
+    const goal = state.formValue?.goal ?? null;
 
     if (!state.draftName.trim()) {
         errors.push('name');
     }
 
-    if (!state.selectedPage && !experiment?.pageId) {
+    /**
+     * The selected page is the form's value for the page, so it is the only thing asked.
+     *
+     * Falling back to `experiment.pageId` would report a page the user cannot see: a cleared
+     * selection, a `?pageId=` that resolved to nothing, and a lookup that failed all leave the
+     * card empty while the stored id is still there, and Start would go ahead on a page the
+     * screen is not showing.
+     */
+    if (!state.selectedPage) {
         errors.push('page');
     }
 
@@ -98,24 +136,24 @@ export function validateConfigure(
         errors.push('goalName');
     }
 
-    errors.push(...validateGoalCondition(goal?.type, goal?.conditions?.[0]));
+    errors.push(...validateGoalCondition(goal));
 
     /**
-     * Variants are the one set that cannot be completed before the draft exists: adding one needs
-     * an experiment id, so the card keeps `Add new variant` disabled until the POST answers and
-     * `minVariants` is unsatisfiable until then. Reading the diff first is still right for the
-     * weights, which the user can be mid-edit on.
+     * Variants are server state — adding, renaming and deleting one each have their own endpoint —
+     * so the experiment is the only place they exist. The card keeps `Add new variant` disabled
+     * until the POST answers, which is why `minVariants` is unsatisfiable before creation.
+     *
+     * Their *weights* are form state, and those come off the form for the same reason the goal
+     * does: the user may be mid-edit on a total that is not stored anywhere yet.
      */
-    const variants =
-        state.pendingPatch?.trafficProportion?.variants ??
-        experiment?.trafficProportion?.variants ??
-        [];
+    const variants = experiment?.trafficProportion?.variants ?? [];
+    const weights = state.formValue?.variantWeights ?? [];
 
     if (variants.length < 2) {
         errors.push('minVariants');
     }
 
-    if (variants.length && totalWeight(variants) !== TOTAL_WEIGHT) {
+    if (weights.length && totalWeight(weights) !== TOTAL_WEIGHT) {
         errors.push('weightsTotal');
     }
 
@@ -125,163 +163,47 @@ export function validateConfigure(
 /**
  * Condition rules for the two goal types that have conditions. BOUNCE_RATE and EXIT_RATE have no
  * server-side conditions, so they are complete without one.
+ *
+ * Reads the form's flat slice rather than the persisted condition shape: the two goal types nest
+ * their value differently once stored, and the screen is validating what is on it.
  */
-function validateGoalCondition(
-    goalType: GOAL_TYPES | undefined,
-    condition: ReachPageGoalCondition | UrlParameterGoalCondition | undefined
-): ConfigureValidationRule[] {
-    if (goalType === GOAL_TYPES.REACH_PAGE) {
-        const value = condition?.value as string | undefined;
-
-        return value?.trim() ? [] : ['goalConditionValue'];
+function validateGoalCondition(goal: GoalFormSlice | null): ConfigureValidationRule[] {
+    if (goal?.type === GOAL_TYPES.REACH_PAGE) {
+        return goal.value.trim() ? [] : ['goalConditionValue'];
     }
 
-    if (goalType !== GOAL_TYPES.URL_PARAMETER) {
+    if (goal?.type !== GOAL_TYPES.URL_PARAMETER) {
         return [];
     }
 
-    const value = condition?.value as { name?: string; value?: string } | undefined;
     const errors: ConfigureValidationRule[] = [];
 
     // EXISTS only asks whether the parameter is there, so it needs no value — the name it looks
     // for is still required.
-    if (condition?.operator !== GOAL_OPERATORS.EXISTS && !value?.value?.trim()) {
+    if (goal.operator !== GOAL_OPERATORS.EXISTS && !goal.value.trim()) {
         errors.push('goalConditionValue');
     }
 
-    if (!value?.name?.trim()) {
+    if (!goal.parameterName.trim()) {
         errors.push('goalParameterName');
     }
 
     return errors;
 }
 
-/** True while at least one key is waiting to be written. */
-export function hasPendingChanges(patch: DotExperimentPatchBody | null): boolean {
-    return !!patch && Object.keys(patch).length > 0;
-}
-
 /**
- * The experiment as the cards should already see it, with the keys an edit changed applied.
+ * Whether the form is exactly as it was at the last successful write.
  *
- * The PATCH is debounced, so a card cannot wait for the server to redraw: the weight that was just
- * typed has to be in the row, and a goal that was just completed has to count as configured when
- * Start is pressed half a second later.
- *
- * `name` and `description` are deliberately left out. They live on `draftName`/`draftDescription`
- * until the server answers, which is what lets the store tell a typed value from a persisted one —
- * and therefore what stops it from re-sending a name it already holds.
+ * Structural comparison over the whole model: the slices are plain data — strings, numbers, a flat
+ * goal, two dates, a list of weights — so serialising both sides answers it without a per-key
+ * walk that would have to be revisited every time a field is added. Key order is stable because
+ * both values come from the same builder.
  */
-export function applyPatchToExperiment(
-    experiment: DotExperiment | null,
-    patch: DotExperimentPatchBody
-): DotExperiment | null {
-    if (!experiment) {
-        return experiment;
-    }
-
-    return {
-        ...experiment,
-        ...(patch.goals !== undefined && { goals: patch.goals }),
-        ...(patch.scheduling !== undefined && { scheduling: patch.scheduling }),
-        ...(patch.trafficAllocation !== undefined && {
-            trafficAllocation: patch.trafficAllocation
-        }),
-        ...(patch.trafficProportion !== undefined && {
-            trafficProportion: patch.trafficProportion
-        })
-    };
-}
-
-/**
- * The body a pending diff actually goes out as, or `null` when there is nothing left to send.
- *
- * Three keys can be held back. A blank `name`, which the backend rejects — the typed value stays on
- * screen and the experiment keeps the name it was saved with until a real one replaces it. A `name`
- * or `description` the experiment already holds, which is what makes the flush that follows creation
- * a no-op: the POST carried both, so re-sending them would be a second write for nothing. And a
- * `trafficProportion` whose weights do not add up to 100, which is a guaranteed 400: the immutable's
- * `@Value.Check` rejects it on *construction*, so the PATCH fails before it is even applied
- * (`AbstractTrafficProportion.java:44-58`). Typing a weight passes through intermediate totals, and
- * none of them is worth a failed request or an error toast.
- *
- * Everything else is sent as it stands, `scheduling: null` included: clearing the schedule is a
- * change like any other, and the cards are what decide a value is worth dispatching in the first
- * place.
- */
-export function toOutgoingPatch(
-    patch: DotExperimentPatchBody | null,
-    experiment: DotExperiment
-): DotExperimentPatchBody | null {
-    if (!patch) {
-        return null;
-    }
-
-    const outgoing = { ...patch };
-
-    if (outgoing.name === undefined || !outgoing.name.trim() || outgoing.name === experiment.name) {
-        delete outgoing.name;
-    }
-
-    if (outgoing.description === experiment.description) {
-        delete outgoing.description;
-    }
-
-    if (hasUnsendableWeights(outgoing.trafficProportion?.variants)) {
-        delete outgoing.trafficProportion;
-    }
-
-    return hasPendingChanges(outgoing) ? outgoing : null;
-}
-
-/**
- * Mirrors the backend check, empty list included: it only asserts the total when the proportion
- * carries variants, so a proportion without any says nothing about weights.
- */
-function hasUnsendableWeights(variants: Variant[] | undefined): boolean {
-    return !!variants?.length && totalWeight(variants) !== TOTAL_WEIGHT;
-}
-
-/**
- * What is left of a pending diff once the values a PATCH actually carried are taken out of it —
- * `null` when the body carried them all.
- *
- * What remains is what `toOutgoingPatch` held back, and it is still unsaved: a `trafficProportion`
- * whose weights are mid-edit has to survive the response of the call that went out beside it, or
- * the rows would snap back to the older weights the server answered with (#37003).
- *
- * A key only settles while its pending value is still the one that was sent. The flush is
- * `switchMap`ped over the edits, but that only cancels a request once the *next* debounce emits —
- * an edit made while the response is travelling lands in the diff before it arrives. Settling by
- * key name would drop that edit: the field would read as saved, the form would keep showing it,
- * and the server would keep the older value with nothing left to resend it (#37003).
- */
-export function withoutSentKeys(
-    patch: DotExperimentPatchBody | null,
-    sent: DotExperimentPatchBody
-): DotExperimentPatchBody | null {
-    if (!patch) {
-        return null;
-    }
-
-    const remaining = { ...patch };
-
-    (Object.keys(sent) as (keyof DotExperimentPatchBody)[]).forEach((key) => {
-        if (isSameValue(remaining[key], sent[key])) {
-            delete remaining[key];
-        }
-    });
-
-    return hasPendingChanges(remaining) ? remaining : null;
-}
-
-/**
- * Whether a pending value is still the one that went out. The patch keys hold primitives and the
- * plain objects the reducers rebuild on every edit, so a structural comparison is what tells an
- * untouched key from one re-edited to an equal value — reference identity would not.
- */
-function isSameValue(pending: unknown, sent: unknown): boolean {
-    return JSON.stringify(pending) === JSON.stringify(sent);
+export function isSameFormValue(
+    a: ConfigureFormModel | null,
+    b: ConfigureFormModel | null
+): boolean {
+    return JSON.stringify(a) === JSON.stringify(b);
 }
 
 /** The page a content-search contentlet stands for, as the Page card shows it. */

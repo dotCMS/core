@@ -333,22 +333,6 @@ describe('DotExperimentsConfigureGoalComponent', () => {
         });
     });
 
-    describe('the state chip', () => {
-        it('should read as required while no type is picked', () => {
-            expect(spectator.query(byTestId('goal-state-chip'))?.textContent).toContain(
-                'experiments.configure.goal.chip.required'
-            );
-        });
-
-        it('should read as set once a type is picked', () => {
-            selectGoalType(GOAL_TYPES.BOUNCE_RATE);
-
-            expect(spectator.query(byTestId('goal-state-chip'))?.textContent).toContain(
-                'experiments.configure.goal.chip.set'
-            );
-        });
-    });
-
     describe('a goal nobody has picked yet', () => {
         it('should not mark the empty goal name as invalid', () => {
             // AC28: `required` in the schema reaches the DOM as the native attribute, which makes

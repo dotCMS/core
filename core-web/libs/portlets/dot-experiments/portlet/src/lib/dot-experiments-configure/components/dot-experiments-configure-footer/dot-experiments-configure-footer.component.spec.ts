@@ -2,7 +2,7 @@ import { Dispatcher } from '@ngrx/signals/events';
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { provideLocationMocks } from '@angular/common/testing';
-import { provideRouter, Router } from '@angular/router';
+import { provideRouter } from '@angular/router';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
@@ -13,7 +13,9 @@ import { DotExperimentsConfigureFooterComponent } from './dot-experiments-config
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 
-const AUTOSAVE_HINT_COPY = 'Changes are saved automatically';
+const SAVE_HINT_COPY = 'Save Draft stores this form';
+const UNSAVED_COPY = 'You have unsaved changes';
+const SAVE_DRAFT_COPY = 'Save Draft';
 const SAVING_COPY = 'Saving…';
 const LOCKED_COPY = 'This experiment can no longer be edited';
 const VALIDATION_ONE_COPY = '1 field needs your attention';
@@ -22,19 +24,22 @@ const START_COPY = 'Start Experiment';
 const SCHEDULE_COPY = 'Schedule Experiment';
 
 const messageServiceMock = new MockDotMessageService({
-    'experiments.configure.footer.autosave-hint': AUTOSAVE_HINT_COPY,
+    'experiments.configure.footer.save-hint': SAVE_HINT_COPY,
+    'experiments.configure.footer.unsaved': UNSAVED_COPY,
+    'experiments.configure.action.save-draft': SAVE_DRAFT_COPY,
     'experiments.configure.footer.saving': SAVING_COPY,
     'experiments.configure.footer.locked': LOCKED_COPY,
     'experiments.configure.footer.validation.one': VALIDATION_ONE_COPY,
     'experiments.configure.footer.validation.many': VALIDATION_MANY_COPY,
     'experiments.action.start-experiment': START_COPY,
-    'experiments.action.schedule-experiment': SCHEDULE_COPY,
-    'experiments.configure.action.back-to-list': 'Back To Experiments'
+    'experiments.action.schedule-experiment': SCHEDULE_COPY
 });
 
 const createStoreMock = () => ({
     $isLocked: jest.fn().mockReturnValue(false),
-    $isAutosaving: jest.fn().mockReturnValue(false),
+    $isSaving: jest.fn().mockReturnValue(false),
+    $hasUnsavedChanges: jest.fn().mockReturnValue(false),
+    $canSave: jest.fn().mockReturnValue(false),
     $isScheduledStart: jest.fn().mockReturnValue(false),
     $validationErrorCount: jest.fn().mockReturnValue(0),
     $status: jest.fn().mockReturnValue(DotExperimentStatus.DRAFT)
@@ -83,23 +88,31 @@ describe('DotExperimentsConfigureFooterComponent', () => {
     });
 
     describe('hint', () => {
-        it('should explain that there is no Save button', () => {
+        it('should name what Save Draft covers while there is nothing to save', () => {
             spectator.detectChanges();
 
-            expect(hint()?.textContent).toContain(AUTOSAVE_HINT_COPY);
+            expect(hint()?.textContent).toContain(SAVE_HINT_COPY);
             expect(hint()?.getAttribute('role')).toBeNull();
         });
 
-        it('should say it is saving while a field group is being persisted', () => {
-            storeMock.$isAutosaving.mockReturnValue(true);
+        it('should say there are unsaved changes once the form is dirty', () => {
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            spectator.detectChanges();
+
+            expect(hint()?.textContent).toContain(UNSAVED_COPY);
+        });
+
+        it('should say it is saving while the write is in flight', () => {
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
+            storeMock.$isSaving.mockReturnValue(true);
             spectator.detectChanges();
 
             expect(hint()?.textContent).toContain(SAVING_COPY);
         });
 
-        it('should say the experiment is read-only instead of claiming to autosave', () => {
+        it('should say the experiment is read-only instead of offering to save', () => {
             storeMock.$isLocked.mockReturnValue(true);
-            storeMock.$isAutosaving.mockReturnValue(true);
+            storeMock.$hasUnsavedChanges.mockReturnValue(true);
             spectator.detectChanges();
 
             expect(hint()?.textContent).toContain(LOCKED_COPY);
@@ -121,9 +134,9 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             expect(hint()?.getAttribute('role')).toBe('alert');
         });
 
-        it('should report the failed Start over an autosave still in flight', () => {
+        it('should report the failed Start over a save still in flight', () => {
             storeMock.$validationErrorCount.mockReturnValue(2);
-            storeMock.$isAutosaving.mockReturnValue(true);
+            storeMock.$isSaving.mockReturnValue(true);
             spectator.detectChanges();
 
             expect(hint()?.textContent).toContain('2 fields need your attention');
@@ -173,17 +186,6 @@ describe('DotExperimentsConfigureFooterComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('experiments-configure-start-btn'))).toBeNull();
-        });
-    });
-
-    describe('back', () => {
-        it('should leave for the experiments list', () => {
-            const navigate = jest.spyOn(spectator.inject(Router), 'navigate');
-            spectator.detectChanges();
-
-            clickButton('experiments-configure-footer-back-btn');
-
-            expect(navigate).toHaveBeenCalledWith(['/experiments']);
         });
     });
 });

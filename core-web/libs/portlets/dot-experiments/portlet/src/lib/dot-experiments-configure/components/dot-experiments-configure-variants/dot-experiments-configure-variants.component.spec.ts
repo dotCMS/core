@@ -14,10 +14,8 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
-    DotExperimentPatchBody,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     MAX_VARIANTS_ALLOWED,
-    TrafficProportion,
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
@@ -73,10 +71,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.cap-reached': CAP_REACHED_COPY,
     'experiments.configure.variants.edit-content.unavailable': EDIT_CONTENT_UNAVAILABLE_COPY,
     'experiments.configure.variants.control-chip': 'CONTROL',
-    'experiments.configure.variants.meta.control': 'Original page content',
-    'experiments.configure.variants.meta.variant': 'Copy of the original page',
     'experiments.configure.variants.action.preview': 'Preview',
-    'experiments.configure.variants.action.edit-content': 'Edit Content',
+    'experiments.configure.variants.action.edit': 'Edit',
     'experiments.configure.variants.error.min': 'Add at least one variant',
     'experiments.configure.variants.weights.warning': 'The weights add up to {0}%',
     'experiments.configure.variants.hint': HINT_COPY,
@@ -94,7 +90,9 @@ const createStoreMock = () => ({
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
     $validationErrors: jest.fn().mockReturnValue([]),
-    selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE)
+    selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
+    // What the "of all traffic" column multiplies each split against.
+    $trafficAllocation: jest.fn().mockReturnValue(100)
 });
 
 describe('DotExperimentsConfigureVariantsComponent', () => {
@@ -130,6 +128,9 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
      *
      * The rows default to the weights the store holds, which is what the shell seeds them from.
      */
+    let proportionType: WritableSignal<TrafficProportionTypes>;
+    let typeField: FieldTree<TrafficProportionTypes>;
+
     const render = (rows: VariantWeightFormRow[] = toVariantWeightRows(storeMock.$variants())) => {
         weights = signal(rows);
         // The shell's rules for this slice, restated — including that the weights follow the page's
@@ -164,7 +165,13 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             { injector: spectator.inject(Injector) }
         );
 
+        // The proportion's type is its own slice of the shell's form; the card writes it when the
+        // user picks a split, so the spec supplies a real field rather than a stub.
+        proportionType = signal(TrafficProportionTypes.SPLIT_EVENLY);
+        typeField = form(proportionType, { injector: spectator.inject(Injector) });
+
         spectator.setInput('field', weightsField);
+        spectator.setInput('typeField', typeField);
         spectator.detectChanges();
     };
 
@@ -250,13 +257,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(queryIn(1, 'variant-name-inplace')?.textContent).toContain(SECOND_VARIANT.name);
         });
 
-        it('should tell the control and the variants apart in the meta line', () => {
-            render();
-
-            expect(queryIn(0, 'variant-meta')?.textContent).toContain('Original page content');
-            expect(queryIn(1, 'variant-meta')?.textContent).toContain('Copy of the original page');
-        });
-
         it('should give each row its own colour dot', () => {
             render();
 
@@ -281,14 +281,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                 String(SECOND_VARIANT.weight)
             ]);
         });
-
-        it('should count the variants against the cap', () => {
-            render();
-
-            expect(spectator.query(byTestId('variants-count'))?.textContent).toContain(
-                `2/${MAX_VARIANTS_ALLOWED}`
-            );
-        });
     });
 
     /**
@@ -310,15 +302,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(rows().length).toBe(1);
             expect(queryIn(0, 'variant-control-name')?.textContent).toContain(DEFAULT_VARIANT_NAME);
             expect(queryIn(0, 'variant-control-chip')?.textContent).toContain('CONTROL');
-            expect(queryIn(0, 'variant-meta')?.textContent).toContain('Original page content');
-        });
-
-        it('should count the row against the cap', () => {
-            renderBeforeCreation();
-
-            expect(spectator.query(byTestId('variants-count'))?.textContent).toContain(
-                `1/${MAX_VARIANTS_ALLOWED}`
-            );
         });
 
         it('should state the weight as the whole of the traffic, and freeze it', () => {
@@ -346,7 +329,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             renderBeforeCreation();
 
             expect(queryIn(0, 'variant-name-inplace')).toBeNull();
-            expect(queryIn(0, 'variant-delete-btn')).toBeNull();
+            expect(queryIn(0, 'variant-actions-btn')).toBeNull();
             expect(queryIn(0, 'variant-copy-url')).toBeNull();
         });
 
@@ -393,24 +376,42 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     });
 
     describe('deleting', () => {
-        it('should not offer a delete control on the control variant', () => {
+        /** The kebab is where Delete lives, so its entries are what the tests reach for. */
+        const openRowMenu = (rowIndex: number) => {
+            clickButton('variant-actions-btn', rows()[rowIndex]);
+
+            return spectator.component.$rowMenuItems();
+        };
+
+        it('should offer no kebab on the control variant, which is never deleted', () => {
             render();
 
-            expect(queryIn(0, 'variant-delete-btn')).toBeNull();
-            expect(queryIn(1, 'variant-delete-btn')).not.toBeNull();
+            expect(queryIn(0, 'variant-actions-btn')).toBeNull();
+            expect(queryIn(1, 'variant-actions-btn')).not.toBeNull();
         });
 
-        it('should not offer a delete control while the card is disabled', () => {
+        it('should offer no kebab while the card is disabled', () => {
             storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
             render();
 
-            expect(spectator.query(byTestId('variant-delete-btn'))).toBeNull();
+            expect(spectator.query(byTestId('variant-actions-btn'))).toBeNull();
+        });
+
+        it('should offer Preview and Delete, with Preview waiting on the editor', () => {
+            render();
+
+            const items = openRowMenu(1);
+
+            expect(items.map(({ id }) => id)).toEqual(['variant-preview', 'variant-delete']);
+            expect(items[0].disabled).toBe(true);
         });
 
         it('should confirm on the shell dialog before dispatching variantDeleted', () => {
             render();
 
-            clickButton('variant-delete-btn', rows()[1]);
+            const items = openRowMenu(1);
+            items.find(({ id }) => id === 'variant-delete')?.command?.({} as never);
+            spectator.detectChanges();
 
             expect(confirm).toHaveBeenCalledTimes(1);
             expect(confirm.mock.calls[0][0].key).toBe(CONFIGURATION_CONFIRM_DIALOG_KEY);
@@ -441,6 +442,43 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             spectator.dispatchFakeEvent(input, 'input');
             spectator.detectChanges();
         };
+
+        /**
+         * The server stores an even split across three as 33.33/33.33/33.34, and the inputs are
+         * whole percentages — so the rows are rounded on the way in.
+         */
+        describe('a stored split with decimals', () => {
+            const thirds = (a: number, b: number, c: number): Variant[] => [
+                { ...CONTROL_VARIANT, weight: a },
+                { ...SECOND_VARIANT, weight: b },
+                { ...THIRD_VARIANT, weight: c }
+            ];
+
+            it('should read as whole percentages', () => {
+                storeMock.$variants.mockReturnValue(thirds(33.33, 33.33, 33.34));
+                render();
+
+                expect([0, 1, 2].map((row) => weightInput(row).value)).toEqual(['34', '33', '33']);
+            });
+
+            it('should still add up to 100, so nothing is flagged', () => {
+                // Rounding each of them alone gives 99, and the card would warn about a split the
+                // user never touched.
+                storeMock.$variants.mockReturnValue(thirds(33.33, 33.33, 33.34));
+                render();
+
+                expect(weightRows().reduce((sum, { weight }) => sum + (weight ?? 0), 0)).toBe(100);
+                expect(spectator.query(byTestId('variants-weight-warning'))).toBeNull();
+            });
+
+            it('should leave a proportion that never added up reading as broken', () => {
+                storeMock.$variants.mockReturnValue(thirds(20, 20, 20));
+                render();
+
+                expect([0, 1, 2].map((row) => weightInput(row).value)).toEqual(['20', '20', '20']);
+                expect(spectator.query(byTestId('variants-weight-warning'))).not.toBeNull();
+            });
+        });
 
         it('should write a typed weight into its row of the slice', () => {
             render();
@@ -702,16 +740,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     });
 
     describe('split evenly (AC23)', () => {
-        /** The proportion of the last edit reported, which is what reaches the PATCH. */
-        const lastProportion = (): TrafficProportion => {
-            const edits = dispatchedEvents().filter(
-                ({ type }) => type === dotExperimentsConfigurePageEvents.formEdited.type
-            );
-            const lastEdit = edits[edits.length - 1]?.payload as DotExperimentPatchBody;
-
-            return lastEdit?.trafficProportion as TrafficProportion;
-        };
-
         /** The card as it stands with three variants, which is where the remainder shows. */
         const renderThreeVariants = () => {
             storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
@@ -745,22 +773,24 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             ).toEqual(['34', '33', '33']);
         });
 
-        it('should report the proportion as SPLIT_EVENLY, which is the one thing the form cannot say', () => {
+        it('should record the split as SPLIT_EVENLY, which the weights alone cannot say', () => {
             // The backend redistributes a later variant only while the type is SPLIT_EVENLY
             // (`ExperimentsAPIImpl.addVariant`), and a weight alone does not say a split was asked
-            // for — so the press names the type itself.
+            // for — so the press writes the type into its own slice of the form.
             renderThreeVariants();
+            proportionType.set(TrafficProportionTypes.CUSTOM_PERCENTAGES);
 
             clickButton('variants-split-evenly-btn');
 
-            expect(lastProportion()).toEqual({
-                type: TrafficProportionTypes.SPLIT_EVENLY,
-                variants: [
-                    { ...CONTROL_VARIANT, weight: 34 },
-                    { ...SECOND_VARIANT, weight: 33 },
-                    { ...THIRD_VARIANT, weight: 33 }
-                ]
-            });
+            expect(proportionType()).toBe(TrafficProportionTypes.SPLIT_EVENLY);
+        });
+
+        it('should record a hand-typed weight as CUSTOM_PERCENTAGES', () => {
+            renderThreeVariants();
+
+            spectator.component.onWeightCommitted(CONTROL_VARIANT.id);
+
+            expect(proportionType()).toBe(TrafficProportionTypes.CUSTOM_PERCENTAGES);
         });
 
         it('should leave the total adding up, whatever it was before', () => {
@@ -914,8 +944,9 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             ]);
         });
 
-        it('should report the re-split as one SPLIT_EVENLY edit of the whole proportion', () => {
+        it('should record the automatic re-split as SPLIT_EVENLY', () => {
             render();
+            proportionType.set(TrafficProportionTypes.CUSTOM_PERCENTAGES);
 
             spectator
                 .inject(Dispatcher)
@@ -923,18 +954,9 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                     dotExperimentsConfigureApiEvents.addVariantSucceeded(THREE_VARIANT_EXPERIMENT)
                 );
 
-            expect(dispatchedEvents()).toContainEqual(
-                dotExperimentsConfigurePageEvents.formEdited({
-                    trafficProportion: {
-                        type: TrafficProportionTypes.SPLIT_EVENLY,
-                        variants: [
-                            { ...CONTROL_VARIANT, weight: 34 },
-                            { ...SECOND_VARIANT, weight: 33 },
-                            { ...THIRD_VARIANT, weight: 33 }
-                        ]
-                    }
-                })
-            );
+            // Adding a variant re-splits the rows, and the type has to follow: the backend only
+            // redistributes the *next* one while the proportion still says SPLIT_EVENLY.
+            expect(proportionType()).toBe(TrafficProportionTypes.SPLIT_EVENLY);
         });
 
         it('should not offer the Add control while the card is disabled', () => {
@@ -995,11 +1017,11 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             );
         });
 
-        it('should render every other row as a disabled Edit Content, with the same reason', () => {
+        it('should render every other row as a disabled Edit, with the same reason', () => {
             // The UVE round-trip is out of scope for every row, control or not (AC-Var-Edit).
             render();
 
-            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit Content');
+            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit');
             expect(isRowButtonDisabled(1, 'variant-edit-content-btn')).toBe(true);
             expect(tooltipsOf('variant-edit-content-tooltip')[1].content).toBe(
                 EDIT_CONTENT_UNAVAILABLE_COPY

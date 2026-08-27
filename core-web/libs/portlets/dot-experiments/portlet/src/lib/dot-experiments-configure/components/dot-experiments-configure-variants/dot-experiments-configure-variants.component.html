@@ -1,48 +1,45 @@
 <p-card data-testid="variants-card">
     <section class="flex flex-col gap-5">
-        <div class="flex items-start justify-between gap-4">
-            <div class="flex flex-col gap-1">
-                <h2 class="m-0 text-lg font-bold text-surface-900" data-section="variants">
-                    {{ 'experiments.configure.variants.name' | dm }}
-                </h2>
-                <span class="text-sm text-surface-500">
-                    {{ 'experiments.configure.variants.description' | dm }}
-                </span>
-            </div>
-
-            <span
-                class="text-sm font-bold text-surface-700"
-                [attr.aria-label]="
-                    'experiments.configure.variants.count'
-                        | dm: [$rows().length + '', MAX_VARIANTS_ALLOWED + '']
-                "
-                data-testid="variants-count">
-                {{ $rows().length }}/{{ MAX_VARIANTS_ALLOWED }}
+        <header class="-mx-4 -mt-4 flex flex-col gap-1 border-b border-surface-200 px-4 pt-4 pb-3">
+            <h2 class="m-0 text-lg font-bold text-surface-900" data-section="variants">
+                {{ 'experiments.configure.variants.name' | dm }}
+            </h2>
+            <span class="text-sm text-surface-500">
+                {{ 'experiments.configure.variants.description' | dm }}
             </span>
-        </div>
+        </header>
 
-        <div class="flex flex-col gap-3">
-            <div
-                class="grid grid-cols-[minmax(0,1fr)_108px_150px_32px] items-center gap-4 px-4 text-xs font-semibold tracking-wide text-surface-500 uppercase">
-                <span>{{ 'experiments.configure.variants.column.variant' | dm }}</span>
-                <span class="text-right">
-                    {{ 'experiments.configure.variants.column.traffic' | dm }}
-                </span>
-                <span></span>
-                <span></span>
-            </div>
+        <p-table
+            [value]="$rows()"
+            dataKey="id"
+            [tableStyle]="{ 'table-layout': 'fixed' }"
+            data-testid="variants-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="w-full">
+                        {{ 'experiments.configure.variants.column.variant' | dm }}
+                    </th>
+                    <th class="w-40 whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.split' | dm }}
+                    </th>
+                    <th class="w-45 text-right! whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.of-all-traffic' | dm }}
+                    </th>
+                    <th class="w-48 whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.actions' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
 
-            @for (row of $rows(); track row.id) {
-                <div
-                    class="grid min-h-[62px] grid-cols-[minmax(0,1fr)_108px_150px_32px] items-center gap-4 rounded-md border border-surface-200 px-4 py-2"
-                    data-testid="variant-row">
-                    <div class="flex min-w-0 items-center gap-3">
-                        <span
-                            class="size-2.5 flex-none rounded-full"
-                            [style.background]="row.color"
-                            aria-hidden="true"></span>
+            <ng-template pTemplate="body" let-row>
+                <tr data-testid="variant-row">
+                    <td class="max-w-0">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span
+                                class="size-2.5 flex-none rounded-full"
+                                [style.background]="row.color"
+                                aria-hidden="true"></span>
 
-                        <div class="flex min-w-0 flex-col">
                             <div class="flex min-w-0 items-center gap-2">
                                 @if (row.isControl) {
                                     <span
@@ -74,154 +71,187 @@
                                         data-testid="variant-copy-url" />
                                 }
                             </div>
-
-                            <span
-                                class="truncate text-xs text-surface-500"
-                                data-testid="variant-meta">
-                                {{
-                                    (row.isControl
-                                        ? 'experiments.configure.variants.meta.control'
-                                        : 'experiments.configure.variants.meta.variant'
-                                    ) | dm
-                                }}
-                            </span>
                         </div>
-                    </div>
+                    </td>
+                    <td>
+                        <div
+                            [pTooltip]="row.disabledTooltipKey ? (row.disabledTooltipKey | dm) : ''"
+                            [tooltipDisabled]="!row.disabledTooltipKey"
+                            tooltipPosition="bottom"
+                            data-testid="variant-weight-tooltip">
+                            <p-inputgroup>
+                                @if ($weightFieldById().get(row.id); as weightField) {
+                                    <input
+                                        pInputText
+                                        type="number"
+                                        step="1"
+                                        class="text-right font-semibold"
+                                        [formField]="weightField"
+                                        (blur)="onWeightCommitted(row.id)"
+                                        (keydown.enter)="onWeightCommitted(row.id)"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.weight' | dm
+                                        "
+                                        data-testid="variant-weight-input" />
+                                } @else {
+                                    <input
+                                        pInputText
+                                        type="number"
+                                        class="text-right font-semibold"
+                                        [value]="row.weight.toString()"
+                                        [disabled]="true"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.weight' | dm
+                                        "
+                                        data-testid="variant-weight-input" />
+                                }
+                                <p-inputgroup-addon>%</p-inputgroup-addon>
+                            </p-inputgroup>
+                        </div>
+                    </td>
 
-                    <div
-                        [pTooltip]="row.disabledTooltipKey ? (row.disabledTooltipKey | dm) : ''"
-                        [tooltipDisabled]="!row.disabledTooltipKey"
-                        tooltipPosition="bottom"
-                        data-testid="variant-weight-tooltip">
-                        <p-inputgroup>
-                            @if ($weightFieldById().get(row.id); as weightField) {
-                                <input
-                                    pInputText
-                                    type="number"
-                                    step="1"
-                                    class="text-right font-semibold"
-                                    [formField]="weightField"
-                                    (blur)="onWeightCommitted(row.id)"
-                                    (keydown.enter)="onWeightCommitted(row.id)"
-                                    [attr.aria-label]="'experiments.configure.variants.weight' | dm"
-                                    data-testid="variant-weight-input" />
-                            } @else {
-                                <input
-                                    pInputText
-                                    type="number"
-                                    class="text-right font-semibold"
-                                    [value]="row.weight.toString()"
+                    <td class="text-right!" data-testid="variant-share-of-all">
+                        {{
+                            'experiments.configure.variants.share-of-all'
+                                | dm: [($shareOfAllTrafficById().get(row.id) ?? 0) + '']
+                        }}
+                    </td>
+
+                    <td>
+                        <div class="flex items-center justify-end gap-1">
+                            <!-- Editing content is a UVE round-trip, which this screen does not do yet. -->
+                            <div
+                                [pTooltip]="
+                                    'experiments.configure.variants.edit-content.unavailable' | dm
+                                "
+                                tooltipPosition="bottom"
+                                data-testid="variant-edit-content-tooltip">
+                                <p-button
+                                    [outlined]="true"
+                                    size="small"
+                                    severity="secondary"
                                     [disabled]="true"
-                                    [attr.aria-label]="'experiments.configure.variants.weight' | dm"
-                                    data-testid="variant-weight-input" />
-                            }
-                            <p-inputgroup-addon>%</p-inputgroup-addon>
-                        </p-inputgroup>
-                    </div>
+                                    [label]="
+                                        (row.isControl
+                                            ? 'experiments.configure.variants.action.preview'
+                                            : 'experiments.configure.variants.action.edit'
+                                        ) | dm
+                                    "
+                                    data-testid="variant-edit-content-btn">
+                                    <span
+                                        class="material-symbols-rounded text-lg! leading-none!"
+                                        aria-hidden="true">
+                                        {{ row.isControl ? 'visibility' : 'edit' }}
+                                    </span>
+                                </p-button>
+                            </div>
 
-                    <!-- Editing content is a UVE round-trip, which this screen does not do yet. -->
-                    <div
-                        class="flex justify-end"
-                        [pTooltip]="'experiments.configure.variants.edit-content.unavailable' | dm"
-                        tooltipPosition="bottom"
-                        data-testid="variant-edit-content-tooltip">
-                        <p-button
-                            [text]="true"
-                            size="small"
-                            [disabled]="true"
-                            [label]="
-                                (row.isControl
-                                    ? 'experiments.configure.variants.action.preview'
-                                    : 'experiments.configure.variants.action.edit-content'
-                                ) | dm
-                            "
-                            data-testid="variant-edit-content-btn" />
-                    </div>
+                            <!-- A fixed slot, occupied or not: the control has no second action —
+                                 it is never deleted, and Preview is already its primary one — but
+                                 its row still has to line up with the ones that do. -->
+                            <div class="flex w-9 flex-none justify-end">
+                                @if (!row.isControl && !row.disabled) {
+                                    <p-button
+                                        [text]="true"
+                                        [rounded]="true"
+                                        size="small"
+                                        severity="secondary"
+                                        (onClick)="onRowMenuToggle(row); rowMenu.toggle($event)"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.actions.menu' | dm
+                                        "
+                                        data-testid="variant-actions-btn">
+                                        <span
+                                            class="material-symbols-rounded text-xl! leading-none!"
+                                            aria-hidden="true">
+                                            more_vert
+                                        </span>
+                                    </p-button>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
 
-                    <div class="flex items-center justify-center">
-                        @if (!row.isControl && !row.disabled) {
-                            <p-button
-                                [text]="true"
-                                [rounded]="true"
-                                size="small"
-                                severity="danger"
-                                (onClick)="onDeleteVariant(row)"
-                                [attr.aria-label]="'experiments.configure.variants.delete' | dm"
-                                data-testid="variant-delete-btn">
-                                <span
-                                    class="material-symbols-rounded text-xl! leading-none!"
-                                    aria-hidden="true">
-                                    delete
-                                </span>
-                            </p-button>
-                        }
-                    </div>
-                </div>
-            }
+            <ng-template pTemplate="footer">
+                <tr data-testid="variants-total-row">
+                    <td class="font-semibold text-surface-900">
+                        {{ 'experiments.configure.variants.total' | dm }}
+                    </td>
+                    <td
+                        class="font-bold"
+                        [class.text-red-700]="$hasWeightWarning()"
+                        [class.text-surface-900]="!$hasWeightWarning()"
+                        data-testid="variants-total-weight">
+                        {{ $totalWeight() }}%
+                    </td>
+                    <td
+                        class="text-right! text-surface-500"
+                        data-testid="variants-total-of-entering">
+                        {{
+                            'experiments.configure.variants.total.of-entering'
+                                | dm: [store.$trafficAllocation() + '']
+                        }}
+                    </td>
+                    <td></td>
+                </tr>
+            </ng-template>
+        </p-table>
 
-            <div
-                class="grid grid-cols-[minmax(0,1fr)_108px_150px_32px] items-center gap-4 px-4"
-                data-testid="variants-total-row">
-                <span class="text-sm font-semibold text-surface-900">
-                    {{ 'experiments.configure.variants.total' | dm }}
-                </span>
-                <span
-                    class="text-right text-sm font-bold"
-                    [class.text-red-700]="$hasWeightWarning()"
-                    [class.text-surface-900]="!$hasWeightWarning()"
-                    data-testid="variants-total-weight">
-                    {{ $totalWeight() }}%
-                </span>
+        <div class="flex items-center justify-between gap-4">
+            <!-- Whichever of the two has something to say; the actions sit opposite them. -->
+            <div class="flex min-w-0 items-center gap-3">
+                @if ($showMinVariantsError()) {
+                    <span
+                        data-error="1"
+                        class="flex items-center gap-1.5 text-xs font-medium text-red-700"
+                        data-testid="variants-min-error">
+                        <span
+                            class="material-symbols-rounded text-base! leading-none!"
+                            aria-hidden="true">
+                            error
+                        </span>
+                        {{ 'experiments.configure.variants.error.min' | dm }}
+                    </span>
+                }
+                @if ($isHintVisible()) {
+                    <span class="text-xs text-surface-500" data-testid="variants-hint">
+                        {{
+                            $isDisabled()
+                                ? ('experiments.configure.variants.hint.locked' | dm)
+                                : ('experiments.configure.variants.hint'
+                                  | dm: [MAX_VARIANTS_ALLOWED.toString()])
+                        }}
+                    </span>
+                }
+            </div>
+
+            <div class="flex flex-none items-center gap-2">
+                <!-- Stays on screen while the card is read-only, disabled, the way it did when it
+                     lived in the total row: it explains what the numbers are, not just how to
+                     change them. Add is the one that goes, since there is nothing to add to. -->
                 <p-button
-                    class="justify-self-end"
                     [text]="true"
                     size="small"
                     [disabled]="$isSplitEvenlyDisabled()"
                     (onClick)="onSplitEvenly()"
                     [label]="'experiments.configure.variants.split-evenly' | dm"
                     data-testid="variants-split-evenly-btn" />
-                <span></span>
+
+                @if (!$isDisabled()) {
+                    <p-button
+                        [outlined]="true"
+                        size="small"
+                        [disabled]="$isAddDisabled()"
+                        (onClick)="onAddVariant()"
+                        [pTooltip]="'experiments.configure.variants.cap-reached' | dm"
+                        [tooltipDisabled]="!$isAtVariantCap()"
+                        tooltipPosition="top"
+                        [label]="'experiments.configure.variants.add' | dm"
+                        data-testid="variants-add-btn" />
+                }
             </div>
-        </div>
-
-        <div class="flex items-center justify-between gap-4">
-            @if (!$isDisabled()) {
-                <p-button
-                    [outlined]="true"
-                    size="small"
-                    [disabled]="$isAddDisabled()"
-                    (onClick)="onAddVariant()"
-                    [pTooltip]="'experiments.configure.variants.cap-reached' | dm"
-                    [tooltipDisabled]="!$isAtVariantCap()"
-                    tooltipPosition="top"
-                    [label]="'experiments.configure.variants.add' | dm"
-                    data-testid="variants-add-btn" />
-            }
-
-            @if ($showMinVariantsError()) {
-                <span
-                    data-error="1"
-                    class="flex items-center gap-1.5 text-xs font-medium text-red-700"
-                    data-testid="variants-min-error">
-                    <span
-                        class="material-symbols-rounded text-base! leading-none!"
-                        aria-hidden="true">
-                        error
-                    </span>
-                    {{ 'experiments.configure.variants.error.min' | dm }}
-                </span>
-            }
-
-            @if ($isHintVisible()) {
-                <span class="text-xs text-surface-500" data-testid="variants-hint">
-                    {{
-                        $isDisabled()
-                            ? ('experiments.configure.variants.hint.locked' | dm)
-                            : ('experiments.configure.variants.hint'
-                              | dm: [MAX_VARIANTS_ALLOWED.toString()])
-                    }}
-                </span>
-            }
         </div>
 
         @if ($hasWeightWarning()) {
@@ -249,3 +279,24 @@
         }
     </section>
 </p-card>
+
+<p-menu #rowMenu [model]="$rowMenuItems()" [popup]="true" appendTo="body">
+    <ng-template #item let-item>
+        <span
+            class="p-menu-item-link flex items-center gap-3 px-3 py-2"
+            [class.cursor-pointer]="!item.disabled"
+            [class.opacity-60]="item.disabled"
+            [attr.data-testid]="item.id">
+            <span
+                class="material-symbols-rounded text-lg! leading-none!"
+                [class.text-red-600]="item.danger"
+                [class.text-surface-500]="!item.danger"
+                aria-hidden="true">
+                {{ item.icon }}
+            </span>
+            <span [class.text-red-600]="item.danger" [class.text-surface-800]="!item.danger">
+                {{ item.label }}
+            </span>
+        </span>
+    </ng-template>
+</p-menu>

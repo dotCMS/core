@@ -1,21 +1,28 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, inject } from '@angular/core';
-import { Router } from '@angular/router';
 
 import { ButtonModule } from 'primeng/button';
 
 import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { EXPERIMENTS_URL } from '../../../shared/constants';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 
-/** Persistent hint that explains why the screen has no Save button (AC8). */
-const AUTOSAVE_HINT_KEY = 'experiments.configure.footer.autosave-hint';
+/**
+ * Persistent hint naming what Save draft covers.
+ *
+ * Deliberately specific rather than "nothing is saved until you press Save": adding, renaming and
+ * deleting a variant have their own endpoints and persist the moment they happen, so a blanket
+ * claim would be untrue for the card the user is most likely to be looking at.
+ */
+const SAVE_HINT_KEY = 'experiments.configure.footer.save-hint';
 
-/** Replaces the hint while a field group is being persisted, so the writes are not invisible. */
+/** Replaces the hint once there is something to save, so the button reads as the way out. */
+const UNSAVED_HINT_KEY = 'experiments.configure.footer.unsaved';
+
+/** Replaces the hint while the save is in flight, so the write is not invisible. */
 const SAVING_HINT_KEY = 'experiments.configure.footer.saving';
 
 /** Replaces the hint once the configuration is read-only, where nothing is being saved. */
@@ -58,8 +65,8 @@ export class DotExperimentsConfigureFooterComponent {
 
     /**
      * The single line of copy on the left, in precedence order: a locked experiment is not saving
-     * anything, a failed Start is the most recent thing the user did, and an in-flight autosave is
-     * worth showing over the generic hint it is the proof of.
+     * anything, a failed Start is the most recent thing the user did, a save in flight is worth
+     * showing over anything static, and unsaved work is worth saying before the generic hint.
      */
     readonly $hint = computed<FooterHint>(() => {
         if (this.store.$isLocked()) {
@@ -76,12 +83,33 @@ export class DotExperimentsConfigureFooterComponent {
             };
         }
 
+        if (this.store.$isSaving()) {
+            return { key: SAVING_HINT_KEY, args: [], isError: false };
+        }
+
         return {
-            key: this.store.$isAutosaving() ? SAVING_HINT_KEY : AUTOSAVE_HINT_KEY,
+            key: this.store.$hasUnsavedChanges() ? UNSAVED_HINT_KEY : SAVE_HINT_KEY,
             args: [],
             isError: false
         };
     });
+
+    /**
+     * Save draft is offered while the experiment can still be edited. It is the only thing that
+     * writes the form, so it outlives the Start button — a draft may be saved and left alone.
+     */
+    readonly $showSave = computed<boolean>(() => !this.store.$isLocked());
+
+    /**
+     * Nothing to write, or a write already on its way.
+     *
+     * `$canSave` rather than `$hasUnsavedChanges`: with the weights mid-edit the form is dirty —
+     * the leave prompt still fires — but the body would be one the backend refuses, and a button
+     * that produces a 400 reads as broken. The weights warning beside the rows says why.
+     */
+    readonly $isSaveDisabled = computed<boolean>(
+        () => !this.store.$canSave() || this.store.$isSaving()
+    );
 
     /**
      * A start dated in the future schedules the experiment instead of running it, and the button
@@ -102,11 +130,10 @@ export class DotExperimentsConfigureFooterComponent {
     );
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
-    readonly #router = inject(Router);
 
-    /** Leaves the Configure screen for the list. */
-    onBackToList(): void {
-        this.#router.navigate([EXPERIMENTS_URL]);
+    /** Writes the form: creates the experiment on the first press, patches it afterwards. */
+    onSaveDraft(): void {
+        this.#dispatch.saveDraftRequested();
     }
 
     /**

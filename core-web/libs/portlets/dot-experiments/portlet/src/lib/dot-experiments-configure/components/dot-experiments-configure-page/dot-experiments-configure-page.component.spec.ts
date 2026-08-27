@@ -11,6 +11,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotExperiment,
+    DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -22,7 +23,6 @@ import { DotExperimentsConfigurePageComponent } from './dot-experiments-configur
 import {
     MAX_TRAFFIC_ALLOCATION,
     MIN_TRAFFIC_ALLOCATION,
-    PAGE_PREFILL_ERROR_KEY,
     SELECT_PAGE_BROWSER_PARAMS
 } from '../../../shared/constants';
 import { ConfigureValidationRule, DotExperimentConfigurePage } from '../../../shared/models';
@@ -31,17 +31,22 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
 
 const EMPTY_PAGE_COPY = 'No Page selected';
 const PAGE_REQUIRED_COPY = 'Pick the page the experiment runs on';
-const PREFILL_ERROR_COPY = 'That page could not be found';
-const IMMUTABLE_TOOLTIP_COPY = 'The page cannot be changed after creation';
+const IMMUTABLE_TOOLTIP_COPY = 'The page can only be changed while the experiment is a draft';
+const HAS_VARIANTS_TOOLTIP_COPY =
+    'This experiment already has variants. Delete them to change the page.';
 const LOCKED_TOOLTIP_COPY = 'This experiment can no longer be edited';
 const SELECT_PAGE_HEADER_COPY = 'Select A Page';
+const TRAFFIC_HELP_ALL_COPY = 'All traffic to {0} enters the Experiment';
+const TRAFFIC_HELP_PARTIAL_COPY = '{0}% of the traffic to {1} enters the Experiment';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.page.empty': EMPTY_PAGE_COPY,
     'experiments.configure.page.error.required': PAGE_REQUIRED_COPY,
-    'experiments.configure.page.prefill.not-found': PREFILL_ERROR_COPY,
     'experiments.configure.page.select.immutable.tooltip': IMMUTABLE_TOOLTIP_COPY,
+    'experiments.configure.page.select.has-variants.tooltip': HAS_VARIANTS_TOOLTIP_COPY,
     'experiments.configure.select-page.header': SELECT_PAGE_HEADER_COPY,
+    'experiments.configure.page.traffic.help.all': TRAFFIC_HELP_ALL_COPY,
+    'experiments.configure.page.traffic.help.partial': TRAFFIC_HELP_PARTIAL_COPY,
     [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: LOCKED_TOOLTIP_COPY
 });
 
@@ -70,7 +75,9 @@ const createStoreMock = () => ({
     pagePrefillError: signal<string | null>(null),
     $validationErrors: signal<ConfigureValidationRule[]>([]),
     $isLocked: signal(false),
-    $disabledTooltipKey: signal<string | null>(null)
+    $disabledTooltipKey: signal<string | null>(null),
+    $canChangePage: signal(true),
+    $status: signal<DotExperimentStatus>(DotExperimentStatus.DRAFT)
 });
 
 describe('DotExperimentsConfigurePageComponent', () => {
@@ -141,12 +148,6 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
     const trafficInput = () =>
         spectator.query(byTestId('experiments-configure-traffic-input')) as HTMLInputElement;
-
-    const sliderValue = () =>
-        spectator
-            .query(byTestId('experiments-configure-traffic-slider'))
-            ?.querySelector('[role="slider"]')
-            ?.getAttribute('aria-valuenow');
 
     const typeTrafficAllocation = (value: string) => {
         spectator.typeInElement(value, trafficInput());
@@ -242,10 +243,49 @@ describe('DotExperimentsConfigurePageComponent', () => {
     });
 
     describe('immutable page', () => {
-        it('should disable the button once the experiment exists', () => {
-            // The PATCH endpoint does not accept `pageId`, so the page is fixed at creation.
+        it('should offer Clear instead of Select once a changeable page is chosen', () => {
             storeMock.experiment.set(EXPERIMENT);
             storeMock.selectedPage.set(SELECTED_PAGE);
+            spectator.detectChanges();
+
+            // The two swap: with a page in place the way to a different one is to clear this one.
+            expect(
+                spectator.query(byTestId('experiments-configure-page-clear-btn'))
+            ).not.toBeNull();
+            expect(spectator.query(byTestId('experiments-configure-page-select-btn'))).toBeNull();
+        });
+
+        it('should empty the selection when Clear is pressed', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            spectator.detectChanges();
+
+            spectator.click(
+                spectator
+                    .query(byTestId('experiments-configure-page-clear-btn'))
+                    ?.querySelector('button') as HTMLElement
+            );
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsConfigurePageEvents.pageCleared()
+            );
+        });
+
+        it('should point at the variants when a draft has them, since that is undoable', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            storeMock.$canChangePage.set(false);
+            spectator.detectChanges();
+
+            expect(selectButton().disabled).toBe(true);
+            expect(tooltipText()).toBe(HAS_VARIANTS_TOOLTIP_COPY);
+        });
+
+        it('should explain the status instead once the experiment is past draft', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            storeMock.$canChangePage.set(false);
+            storeMock.$status.set(DotExperimentStatus.RUNNING);
             spectator.detectChanges();
 
             expect(selectButton().disabled).toBe(true);
@@ -283,37 +323,31 @@ describe('DotExperimentsConfigurePageComponent', () => {
                 spectator.query(byTestId('experiments-configure-page-error'))?.textContent
             ).toContain(PAGE_REQUIRED_COPY);
         });
-
-        it('should report a page that the URL asked for but could not be resolved', () => {
-            // AC15: a bad `?pageId=`/`?url=` is the screen's own state, not a validation failure.
-            storeMock.pagePrefillError.set(PAGE_PREFILL_ERROR_KEY);
-            spectator.detectChanges();
-
-            expect(
-                spectator.query(byTestId('experiments-configure-page-prefill-error'))?.textContent
-            ).toContain(PREFILL_ERROR_COPY);
-        });
-
-        it('should not report a prefill failure when the URL asked for nothing', () => {
-            expect(
-                spectator.query(byTestId('experiments-configure-page-prefill-error'))
-            ).toBeNull();
-        });
     });
 
     describe('traffic allocation', () => {
-        it('should start from the value the form holds', () => {
-            mountWith(EXPERIMENT.trafficAllocation);
+        const help = () => spectator.query(byTestId('experiments-configure-traffic-help'));
 
-            expect(trafficInput().value).toBe(String(EXPERIMENT.trafficAllocation));
-            expect(sliderValue()).toBe(String(EXPERIMENT.trafficAllocation));
+        // It rides the Page row and only appears once there is a page to take traffic from, so
+        // every case here starts from a selected one.
+        beforeEach(() => {
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            spectator.detectChanges();
         });
 
-        it('should keep the slider and the number input in step', () => {
-            // Both controls bind to the same field, which is what keeps them together.
-            typeTrafficAllocation('40');
+        it('should not be offered while no page is selected', () => {
+            storeMock.selectedPage.set(null);
+            spectator.detectChanges();
 
-            expect(sliderValue()).toBe('40');
+            expect(spectator.query(byTestId('experiments-configure-traffic-input'))).toBeNull();
+        });
+
+        it('should start from the value the form holds', () => {
+            mountWith(EXPERIMENT.trafficAllocation);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            spectator.detectChanges();
+
+            expect(trafficInput().value).toBe(String(EXPERIMENT.trafficAllocation));
         });
 
         it('should write the typed allocation into the model', () => {
@@ -326,6 +360,27 @@ describe('DotExperimentsConfigurePageComponent', () => {
             typeTrafficAllocation('120');
 
             expect(spectator.query(byTestId('experiments-configure-traffic-error'))).not.toBeNull();
+        });
+
+        it('should say the whole page enters the Experiment at 100%', () => {
+            typeTrafficAllocation('100');
+
+            expect(help()?.textContent).toContain(SELECTED_PAGE.path);
+            expect(help()?.textContent).toContain('All traffic');
+        });
+
+        it('should name the share instead once part of the page is held back', () => {
+            // "All traffic" would be a lie below 100 — the remainder still sees the Original.
+            typeTrafficAllocation('40');
+
+            expect(help()?.textContent).toContain('40%');
+            expect(help()?.textContent).toContain(SELECTED_PAGE.path);
+        });
+
+        it('should give way to the range error rather than sit beside it', () => {
+            typeTrafficAllocation('120');
+
+            expect(help()).toBeNull();
         });
 
         it('should disable the allocation while the experiment is locked', () => {

@@ -12,7 +12,6 @@ import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access
 import {
     ComponentStatus,
     DotExperiment,
-    DotExperimentPatchBody,
     DotExperimentStatus,
     DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
@@ -47,7 +46,7 @@ import {
 import { dotExperimentsConfigureApiEvents } from '../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../store/dot-experiments-configure.store';
-import { EMPTY_GOAL_SLICE } from '../util/dot-experiments-configure-form.util';
+import { EMPTY_GOAL_SLICE, emptyConfigureForm } from '../util/dot-experiments-configure-form.util';
 
 const ERROR_COPY = {
     title: 'Could not load the experiment',
@@ -123,7 +122,9 @@ class HeaderStubComponent {}
 
 @Component({
     selector: 'dot-experiments-configure-details',
-    template: '<span data-error data-testid="details-error-marker"></span>'
+    // Projects: the Page fields live inside this card now, so a stub that swallowed its content
+    // would report the Page section as missing from the screen.
+    template: '<span data-error data-testid="details-error-marker"></span><ng-content />'
 })
 class DetailsStubComponent {
     readonly nameField = input<FieldTree<string>>();
@@ -282,11 +283,29 @@ describe('DotExperimentsConfigureComponent', () => {
     /** `injectDispatch` appends a scope argument, so only the event itself is compared. */
     const dispatchedEvents = () => dispatch.mock.calls.map(([event]) => event);
 
-    /** The bodies of every edit the screen reported. */
-    const reportedPatches = (): DotExperimentPatchBody[] =>
+    /** Every form value the screen mirrored into the store, in order. */
+    const mirroredValues = (): ConfigureFormModel[] =>
         dispatchedEvents()
-            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.formEdited.type)
-            .map(({ payload }) => payload as DotExperimentPatchBody);
+            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.formChanged.type)
+            .map(({ payload }) => (payload as { value: ConfigureFormModel }).value);
+
+    /** The last value the screen mirrored, which is what a save would send. */
+    const lastMirrored = (): ConfigureFormModel | undefined => mirroredValues().at(-1);
+
+    /**
+     * Whether the scheduling slice was last reported as sendable.
+     *
+     * The value is always mirrored — the pickers show what was chosen either way — so what the
+     * bounds decide is not whether it travels but whether the save includes it.
+     */
+    const schedulingReportedValid = (): boolean | undefined => {
+        const last = dispatchedEvents()
+            .filter(({ type }) => type === dotExperimentsConfigurePageEvents.formChanged.type)
+            .at(-1);
+
+        return (last?.payload as { validity: { scheduling: boolean } } | undefined)?.validity
+            .scheduling;
+    };
 
     /** Dispatches an outcome the store would have raised once a call settled. */
     const emitSucceeded = (
@@ -582,7 +601,8 @@ describe('DotExperimentsConfigureComponent', () => {
                         startDate: new Date(1893456000000),
                         endDate: new Date(1893542400000)
                     },
-                    variantWeights: [{ id: CONTROL_VARIANT.id, weight: CONTROL_VARIANT.weight }]
+                    variantWeights: [{ id: CONTROL_VARIANT.id, weight: CONTROL_VARIANT.weight }],
+                    trafficProportionType: EXPERIMENT.trafficProportion.type
                 });
             });
 
@@ -595,14 +615,17 @@ describe('DotExperimentsConfigureComponent', () => {
                     goal: EMPTY_GOAL_SLICE,
                     trafficAllocation: 100,
                     scheduling: { startDate: null, endDate: null },
-                    variantWeights: []
+                    variantWeights: [],
+                    trafficProportionType: TrafficProportionTypes.SPLIT_EVENLY
                 });
             });
 
-            it('should not report an edit just for being filled in', () => {
+            it('should mirror the experiment it was filled from, unchanged', () => {
                 loadExperiment();
 
-                expect(reportedPatches()).toEqual([]);
+                // Hydration is not an edit, but it is still what is on screen — and the store
+                // snapshots it, so mirroring it is what keeps a freshly loaded screen clean.
+                expect(lastMirrored()?.name).toBe(EXPERIMENT.name);
             });
 
             it('should keep what is on screen when an autosave response replaces the experiment', () => {
@@ -683,195 +706,83 @@ describe('DotExperimentsConfigureComponent', () => {
         });
 
         /**
-         * Weights are the one key reported even while they are invalid: the rows, the total and the
-         * Start validation all read the store's copy, and the gate that keeps an intermediate total
-         * off the wire is the store's own (`toOutgoingPatch`).
+         * The screen's whole contribution to persistence: it mirrors the form and nothing else.
+         *
+         * What is *sendable* is no longer decided here — a blank name, a half-typed goal and a
+         * weight split that does not total 100 are all mirrored, and `toConfigurePatch` is what
+         * leaves them out of the body. Those rules are tested against that function directly,
+         * which is where they now live.
          */
-        describe('reporting the weights', () => {
+        describe('mirroring the form', () => {
             beforeEach(() => loadExperiment(withVariants(TWO_VARIANTS)));
 
-            const reportWeights = (control: number, variantB: number | null) =>
+            it('should mirror the whole form, not the field that changed', () => {
+                editForm({ name: 'Winter landing test' });
+
+                expect(lastMirrored()).toEqual(
+                    expect.objectContaining({
+                        name: 'Winter landing test',
+                        description: expect.any(String),
+                        trafficAllocation: expect.any(Number)
+                    })
+                );
+            });
+
+            it('should mirror several fields edited together as one value', () => {
+                editForm({ name: 'Winter landing test', trafficAllocation: 40 });
+
+                expect(lastMirrored()).toEqual(
+                    expect.objectContaining({
+                        name: 'Winter landing test',
+                        trafficAllocation: 40
+                    })
+                );
+            });
+
+            /**
+             * The mirror has to carry what the backend would refuse, or the rows on screen, the
+             * running total and the Start rules would each be reading something different from
+             * what the user is looking at.
+             */
+            it('should mirror weights that do not add up', () => {
                 editForm({
                     variantWeights: [
-                        { id: CONTROL_VARIANT.id, weight: control },
-                        { id: SECOND_VARIANT.id, weight: variantB }
+                        { id: CONTROL_VARIANT.id, weight: 70 },
+                        { id: SECOND_VARIANT.id, weight: 20 }
                     ]
                 });
 
-            it('should report the whole proportion, not the row that changed', () => {
-                reportWeights(30, 70);
-
-                expect(reportedPatches()).toContainEqual({
-                    trafficProportion: {
-                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                        variants: [
-                            { ...CONTROL_VARIANT, weight: 30 },
-                            { ...SECOND_VARIANT, weight: 70 }
-                        ]
-                    }
-                });
-            });
-
-            it('should report weights that do not add up as well', () => {
-                reportWeights(70, 50);
-
-                expect(reportedPatches()).toContainEqual({
-                    trafficProportion: {
-                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                        variants: [
-                            { ...CONTROL_VARIANT, weight: 70 },
-                            { ...SECOND_VARIANT, weight: 50 }
-                        ]
-                    }
-                });
-            });
-
-            it('should report a cleared weight as the zero it counts as', () => {
-                reportWeights(70, null);
-
-                expect(reportedPatches()).toContainEqual({
-                    trafficProportion: {
-                        type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
-                        variants: [
-                            { ...CONTROL_VARIANT, weight: 70 },
-                            { ...SECOND_VARIANT, weight: 0 }
-                        ]
-                    }
-                });
-            });
-
-            it('should not report the weights it was just seeded with', () => {
-                expect(reportedPatches()).toEqual([]);
-            });
-
-            it('should not report an edit again when the store echoes it back', () => {
-                reportWeights(30, 70);
-                const reportedOnce = reportedPatches().length;
-
-                storeMock.experiment.set(
-                    withVariants([
-                        { ...CONTROL_VARIANT, weight: 30 },
-                        { ...SECOND_VARIANT, weight: 70 }
-                    ])
-                );
-                storeMock.$variants.set([
-                    { ...CONTROL_VARIANT, weight: 30 },
-                    { ...SECOND_VARIANT, weight: 70 }
+                expect(
+                    lastMirrored()?.variantWeights.map(({ id, weight }) => ({ id, weight }))
+                ).toEqual([
+                    { id: CONTROL_VARIANT.id, weight: 70 },
+                    { id: SECOND_VARIANT.id, weight: 20 }
                 ]);
-                spectator.detectChanges();
-
-                expect(reportedPatches().length).toBe(reportedOnce);
-            });
-        });
-
-        describe('reporting what changed', () => {
-            beforeEach(() => loadExperiment());
-
-            it('should report a typed name on its own', () => {
-                editForm({ name: 'Winter landing test' });
-
-                expect(reportedPatches()).toContainEqual({ name: 'Winter landing test' });
             });
 
-            it('should report an emptied description, which is a change like any other', () => {
-                editForm({ description: '' });
-
-                expect(reportedPatches()).toContainEqual({ description: '' });
-            });
-
-            it('should never report a blank name, which the backend rejects', () => {
+            it('should mirror a blank name rather than swallow it', () => {
                 editForm({ name: '   ' });
 
-                expect(reportedPatches()).toEqual([]);
+                expect(lastMirrored()?.name).toBe('   ');
             });
 
-            it('should report a complete goal in the shape the endpoint persists', () => {
-                editForm({
-                    goal: {
-                        type: GOAL_TYPES.REACH_PAGE,
-                        name: 'Reach pricing',
-                        parameter: 'url',
-                        operator: GOAL_OPERATORS.CONTAINS,
-                        parameterName: '',
-                        value: '/pricing'
-                    }
-                });
+            it('should report the validity of the bounded slices alongside the value', () => {
+                editForm({ name: 'Winter landing test' });
 
-                expect(reportedPatches()).toContainEqual({
-                    goals: {
-                        primary: {
-                            name: 'Reach pricing',
-                            type: GOAL_TYPES.REACH_PAGE,
-                            conditions: [
-                                {
-                                    parameter: 'url',
-                                    operator: GOAL_OPERATORS.CONTAINS,
-                                    value: '/pricing'
-                                }
-                            ]
+                const last = dispatchedEvents()
+                    .filter(
+                        ({ type }) => type === dotExperimentsConfigurePageEvents.formChanged.type
+                    )
+                    .at(-1);
+
+                expect(last?.payload).toEqual(
+                    expect.objectContaining({
+                        validity: {
+                            trafficAllocation: expect.any(Boolean),
+                            scheduling: expect.any(Boolean)
                         }
-                    }
-                });
-            });
-
-            it('should not report a goal whose condition is still half typed', () => {
-                editForm({
-                    goal: {
-                        type: GOAL_TYPES.REACH_PAGE,
-                        name: 'Reach pricing',
-                        parameter: 'url',
-                        operator: GOAL_OPERATORS.CONTAINS,
-                        parameterName: '',
-                        value: ''
-                    }
-                });
-
-                expect(reportedPatches()).toEqual([]);
-            });
-
-            it('should report a new allocation', () => {
-                editForm({ trafficAllocation: 40 });
-
-                expect(reportedPatches()).toContainEqual({ trafficAllocation: 40 });
-            });
-
-            it('should not report an allocation outside 1-100', () => {
-                editForm({ trafficAllocation: 120 });
-
-                expect(reportedPatches()).toEqual([]);
-            });
-
-            it('should report a schedule as instants', () => {
-                const startDate = daysFromNow(1);
-                const endDate = daysFromNow(CONFIGURED_MIN_DURATION_DAYS + 2);
-
-                editForm({ scheduling: { startDate, endDate } });
-
-                expect(reportedPatches()).toContainEqual({
-                    scheduling: { startDate: startDate.getTime(), endDate: endDate.getTime() }
-                });
-            });
-
-            it('should report an emptied schedule as no schedule at all', () => {
-                // `null` is what the PATCH endpoint reads as "starts when Start is pressed".
-                loadExperiment({
-                    ...EXPERIMENT,
-                    scheduling: { startDate: daysFromNow(1).getTime(), endDate: null }
-                });
-
-                editForm({ scheduling: { startDate: null, endDate: null } });
-
-                expect(reportedPatches()).toContainEqual({ scheduling: null });
-            });
-
-            it('should carry both keys in one body when two cards changed together', () => {
-                // `PATCH /api/v1/experiments/{id}` applies every key of its body at once (AC6).
-                editForm({ name: 'Winter landing test', trafficAllocation: 40 });
-
-                expect(reportedPatches()).toContainEqual({
-                    name: 'Winter landing test',
-                    trafficAllocation: 40
-                });
+                    })
+                );
             });
         });
 
@@ -894,7 +805,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     }
                 });
 
-                expect(reportedPatches()).toEqual([]);
+                expect(schedulingReportedValid()).toBe(false);
             });
 
             it('should accept an end date inside the configured window', () => {
@@ -905,7 +816,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     }
                 });
 
-                expect(reportedPatches().length).toBe(1);
+                expect(schedulingReportedValid()).toBe(true);
             });
 
             it('should reject an end date beyond the configured maximum duration', () => {
@@ -916,7 +827,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     }
                 });
 
-                expect(reportedPatches()).toEqual([]);
+                expect(schedulingReportedValid()).toBe(false);
             });
         });
 
@@ -967,12 +878,12 @@ describe('DotExperimentsConfigureComponent', () => {
             });
 
             it('should stay silent on an autosave, which is deliberately unannounced', () => {
-                // `saveSucceeded` carries the body it wrote beside the experiment (#37003), so it
-                // is dispatched here rather than through the shared helper.
+                // `saveSucceeded` carries the form the request was built from beside the
+                // experiment (#37003), so it is dispatched here rather than through the helper.
                 spectator.inject(Dispatcher).dispatch(
                     dotExperimentsConfigureApiEvents.saveSucceeded({
                         experiment,
-                        sent: { name: experiment.name }
+                        form: emptyConfigureForm()
                     })
                 );
                 spectator.detectChanges();
@@ -1101,17 +1012,14 @@ describe('DotExperimentsConfigureComponent', () => {
             expect(modelOf()().name).toBe('');
         });
 
-        it('should not report an allocation while there is no experiment to patch', () => {
-            // The creation POST does not carry it, and there is nothing to PATCH yet.
-            editForm({ trafficAllocation: 40 });
+        it('should mirror the form before the experiment exists', () => {
+            // Nothing can be PATCHed yet, but the store still needs the value: it is what the
+            // creation POST is built from, and what the Start rules are checked against.
+            editForm({ name: 'Summer landing test', trafficAllocation: 40 });
 
-            expect(reportedPatches()).toEqual([]);
-        });
-
-        it('should still report the name that creates the draft', () => {
-            editForm({ name: 'Summer landing test' });
-
-            expect(reportedPatches()).toContainEqual({ name: 'Summer landing test' });
+            expect(lastMirrored()).toEqual(
+                expect.objectContaining({ name: 'Summer landing test', trafficAllocation: 40 })
+            );
         });
     });
 
@@ -1127,13 +1035,13 @@ describe('DotExperimentsConfigureComponent', () => {
         it('should fall back to a seven day minimum', () => {
             editForm({ scheduling: { startDate: null, endDate: daysFromNow(5) } });
 
-            expect(reportedPatches()).toEqual([]);
+            expect(schedulingReportedValid()).toBe(false);
         });
 
         it('should fall back to a ninety day maximum', () => {
             editForm({ scheduling: { startDate: null, endDate: daysFromNow(40) } });
 
-            expect(reportedPatches().length).toBe(1);
+            expect(schedulingReportedValid()).toBe(true);
         });
     });
 
@@ -1155,7 +1063,7 @@ describe('DotExperimentsConfigureComponent', () => {
         it('should treat an unset property as no property at all', () => {
             editForm({ scheduling: { startDate: null, endDate: daysFromNow(5) } });
 
-            expect(reportedPatches()).toEqual([]);
+            expect(schedulingReportedValid()).toBe(false);
         });
     });
 
@@ -1236,15 +1144,12 @@ describe('DotExperimentsConfigureComponent', () => {
             radio.click();
             spectator.detectChanges();
 
-            expect(reportedPatches()).toContainEqual({
-                goals: {
-                    primary: {
-                        name: 'experiments.goal.conditions.minimize.bounce.rate',
-                        type: GOAL_TYPES.BOUNCE_RATE,
-                        conditions: []
-                    }
-                }
-            });
+            expect(lastMirrored()?.goal).toEqual(
+                expect.objectContaining({
+                    type: GOAL_TYPES.BOUNCE_RATE,
+                    name: 'experiments.goal.conditions.minimize.bounce.rate'
+                })
+            );
         });
     });
 

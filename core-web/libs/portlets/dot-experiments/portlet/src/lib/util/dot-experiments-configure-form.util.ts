@@ -12,13 +12,15 @@ import {
     ReachPageGoalCondition,
     TIME_7_DAYS,
     TIME_90_DAYS,
+    TrafficProportionTypes,
     UrlParameterGoalCondition,
     Variant
 } from '@dotcms/dotcms-models';
 
-import { DEFAULT_TRAFFIC_ALLOCATION } from '../shared/constants';
+import { DEFAULT_TRAFFIC_ALLOCATION, TOTAL_WEIGHT, WEIGHT_PRECISION } from '../shared/constants';
 import {
     ConfigureFormModel,
+    ConfigureFormValidity,
     GoalFormSlice,
     SchedulingFormSlice,
     VariantWeightFormRow
@@ -65,18 +67,6 @@ export interface ConfigureFormSource {
     draftDescription: string;
 }
 
-/**
- * Which bounded slices currently hold a value worth sending.
- *
- * The bounds themselves live in the form's schema, so validity is read off the field tree rather
- * than re-derived here: an out-of-range allocation or an out-of-window end date is shown on screen
- * and simply not sent.
- */
-export interface ConfigureFormValidity {
-    trafficAllocation: boolean;
-    scheduling: boolean;
-}
-
 /** The form as it opens on `/experiments/new`: nothing chosen, and all of the page's traffic. */
 export function emptyConfigureForm(): ConfigureFormModel {
     return toConfigureFormModel({ experiment: null, draftName: '', draftDescription: '' });
@@ -99,18 +89,44 @@ export function toConfigureFormModel({
         goal: toGoalSlice(experiment?.goals),
         trafficAllocation: experiment?.trafficAllocation ?? DEFAULT_TRAFFIC_ALLOCATION,
         scheduling: toSchedulingSlice(experiment?.scheduling),
-        variantWeights: toVariantWeightRows(experiment?.trafficProportion?.variants)
+        variantWeights: toVariantWeightRows(experiment?.trafficProportion?.variants),
+        trafficProportionType:
+            experiment?.trafficProportion?.type ?? TrafficProportionTypes.SPLIT_EVENLY
     };
 }
 
 /**
  * One weight row per persisted variant, in the order the proportion holds them — which is the order
  * the card draws, so a row and its input are the same thing.
+ *
+ * The weights arrive as the server stores them, which for an even split across three variants is
+ * 33.33/33.33/33.34. The inputs are whole percentages, so the rows are rounded — and the rounding
+ * loss is settled on the first row, the same place `splitWeightsEvenly` puts its own remainder,
+ * because three rows reading 33 would total 99 and the card would flag a split nobody had touched.
+ *
+ * Only a proportion that already added up gets that correction: one that did not is left reading
+ * as broken, which it is.
  */
 export function toVariantWeightRows(
     variants: Variant[] | null | undefined
 ): VariantWeightFormRow[] {
-    return (variants ?? []).map(({ id, weight }) => ({ id, weight: weight ?? 0 }));
+    const stored = (variants ?? []).map(({ id, weight }) => ({ id, weight: weight ?? 0 }));
+
+    if (!stored.length || sumWeights(stored) !== TOTAL_WEIGHT) {
+        return stored.map(({ id, weight }) => ({ id, weight: Math.round(weight) }));
+    }
+
+    const rows = stored.map(({ id, weight }) => ({ id, weight: Math.round(weight) }));
+    const drift = TOTAL_WEIGHT - sumWeights(rows);
+
+    return rows.map((row, index) => (index === 0 ? { ...row, weight: row.weight + drift } : row));
+}
+
+/** Sum of the rows, rounded to the precision the weights are stored at. */
+function sumWeights(rows: VariantWeightFormRow[]): number {
+    const total = rows.reduce((sum, { weight }) => sum + (weight ?? 0), 0);
+
+    return Math.round(total * WEIGHT_PRECISION) / WEIGHT_PRECISION;
 }
 
 /**
@@ -151,65 +167,81 @@ export function isSameVariantWeights(rows: VariantWeightFormRow[], variants: Var
 }
 
 /**
- * The PATCH keys the form holds that the store does not — which is exactly what one autosave sends.
+ * The form, as the PATCH body that stores it.
  *
- * Only *changed* keys travel, because the store applies every edit locally as it is reported: the
- * baseline moves with the form, so a second edit carries only what it changed. And only *sendable*
- * ones: a blank name the backend rejects, a half-typed goal it would reject too, and an
- * out-of-bounds number or date are all left on screen instead.
+ * Everything the form holds travels on every save. There is no comparison against what the server
+ * already has: `PATCH /api/v1/experiments/{id}` applies each key it receives in one atomic update,
+ * so re-sending an unchanged value costs a field assignment and buys the absence of an entire
+ * bookkeeping layer. It is also what the rest of the admin does — the content editor posts
+ * `this.form.value` whole, over forms far larger than this one.
  *
- * This is the form layer's half of the contract. The store's `toOutgoingPatch` then drops a `name`
- * or `description` the experiment already holds, which is what keeps the flush that follows the
- * creation POST — whose body carried both — from writing them a second time.
+ * What is still filtered is what the backend would *reject*, which is a different question from
+ * what changed: a blank name, a half-typed goal, an out-of-bounds number or date, and a set of
+ * weights that does not total 100. Those stay on screen rather than turning a save of the whole
+ * form into a 400 over one field.
  *
- * `variantWeights` is deliberately not here: unlike every other key, a weight has to reach the store
- * even while the set of them is *invalid*, so the rows on screen and the Start validation see what
- * was typed. It travels through its own binding (see the shell), and the store's `toOutgoingPatch`
- * is what keeps an intermediate total off the wire.
+ * `pageId` is passed in rather than read off the model — the page lives beside the form, not in
+ * it — and an unchanged one is an unconditional no-op server-side, so it needs no guard here.
  */
 export function toConfigurePatch(
     model: ConfigureFormModel,
-    source: ConfigureFormSource,
-    validity: ConfigureFormValidity
+    validity: ConfigureFormValidity,
+    variants: Variant[],
+    pageId?: string
 ): DotExperimentPatchBody {
-    const { experiment } = source;
     const patch: DotExperimentPatchBody = {};
 
-    // A blank name is never dispatched: the backend rejects it, so letting it through would only
-    // queue a PATCH that cannot succeed. What was typed stays on screen.
-    if (model.name.trim() && model.name !== source.draftName) {
+    if (pageId) {
+        patch.pageId = pageId;
+    }
+
+    // A blank name is never sent: the backend rejects it, so it would fail the save of every other
+    // field with it. What was typed stays on screen.
+    if (model.name.trim()) {
         patch.name = model.name;
     }
 
-    // An emptied description is a change like any other — unlike an emptied name.
-    if (model.description !== source.draftDescription) {
-        patch.description = model.description;
-    }
+    patch.description = model.description;
 
-    if (isGoalComplete(model.goal) && !isSameGoal(model.goal, toGoalSlice(experiment?.goals))) {
+    if (isGoalComplete(model.goal)) {
         patch.goals = toGoals(model.goal);
     }
 
-    // There is nothing to patch before the draft exists: the creation POST does not carry the
-    // allocation, and an untouched form is asking for the default the server already applies.
-    const storedTrafficAllocation = experiment?.trafficAllocation ?? DEFAULT_TRAFFIC_ALLOCATION;
-
-    if (
-        experiment &&
-        validity.trafficAllocation &&
-        model.trafficAllocation !== storedTrafficAllocation
-    ) {
+    if (validity.trafficAllocation) {
         patch.trafficAllocation = model.trafficAllocation;
     }
 
-    if (
-        validity.scheduling &&
-        !isSameScheduling(model.scheduling, toSchedulingSlice(experiment?.scheduling))
-    ) {
+    if (validity.scheduling) {
         patch.scheduling = toRange(model.scheduling);
     }
 
+    // Weights reach the server only as a complete, valid split. An intermediate total is a state
+    // the form is allowed to be in and the backend is not.
+    if (isSendableSplit(model.variantWeights, variants)) {
+        patch.trafficProportion = {
+            type: model.trafficProportionType,
+            variants: mergeVariantWeights(variants, model.variantWeights)
+        };
+    }
+
     return patch;
+}
+
+/**
+ * Whether the rows are a split the backend would take.
+ *
+ * Two conditions, and both matter. The rows must stand for the current variants — a slice caught
+ * mid-reseed describes a set that no longer exists — and they must total exactly 100, which is the
+ * same assertion `TrafficProportion` makes server-side.
+ */
+export function isSendableSplit(rows: VariantWeightFormRow[], variants: Variant[]): boolean {
+    if (!rows.length || !hasSameVariantIdentity(rows, variants)) {
+        return false;
+    }
+
+    const total = rows.reduce((sum, row) => sum + (row.weight ?? 0), 0);
+
+    return Math.round(total * WEIGHT_PRECISION) / WEIGHT_PRECISION === TOTAL_WEIGHT;
 }
 
 /** A goal is only worth sending when the server would accept it. */

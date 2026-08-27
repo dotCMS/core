@@ -4,6 +4,7 @@ import { ExperimentsConfigProperties } from '@dotcms/dotcms-models';
 import { DotExperimentsConfigResolver } from '@dotcms/portlets/dot-experiments/data-access';
 import { DotPushPublishEnvironmentsResolver } from '@dotcms/ui';
 
+import { experimentsUnsavedChangesGuard } from './guards/unsaved-changes.guard';
 import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from './shared/constants';
 
 /**
@@ -12,8 +13,8 @@ import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from './shared/constant
  * They are deliberately **one** route config rather than two. Creating a draft swaps
  * `/experiments/new` for `/experiments/:experimentId/configuration` with `replaceUrl`, and the
  * router reuses a component only while the route config stays the same — two configs would tear
- * the shell (and with it the store) down in the middle of that swap, dropping the debounced
- * autosaves and the just-created experiment held in memory. With a single config only the params
+ * the shell (and with it the store) down in the middle of that swap, dropping the unsaved form
+ * and the just-created experiment held in memory. With a single config only the params
  * change, which is exactly what the store expects: it reads the route once on init and owns the
  * experiment from then on.
  *
@@ -65,6 +66,10 @@ export const dotExperimentsPortletRoutes: Routes = [
     {
         matcher: experimentsConfigureMatcher,
         title: 'experiment.container.configuration.title',
+        // The screen only writes when Save Draft is pressed, so leaving it is the moment unsaved
+        // work is lost. Does not fire on the `new` → `:experimentId/configuration` swap, which is
+        // a reused route — and which follows a successful save anyway.
+        canDeactivate: [experimentsUnsavedChangesGuard],
         // Both resolvers are `@Injectable()` without `providedIn: 'root'` — see the list route.
         providers: [DotExperimentsConfigResolver, DotPushPublishEnvironmentsResolver],
         resolve: {

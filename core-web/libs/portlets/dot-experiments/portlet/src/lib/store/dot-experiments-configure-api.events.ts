@@ -2,9 +2,9 @@ import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
 import { DotPageLockInfo } from '@dotcms/data-access';
-import { DotExperiment, DotExperimentPatchBody } from '@dotcms/dotcms-models';
+import { DotExperiment } from '@dotcms/dotcms-models';
 
-import { DotExperimentConfigurePage } from '../shared/models';
+import { ConfigureFormModel, DotExperimentConfigurePage } from '../shared/models';
 
 /**
  * What the backend answered on the Configure screen: every event here is dispatched from a store
@@ -40,18 +40,18 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
          */
         saveRequested: type<void>(),
         /**
-         * `sent` is the body the PATCH carried, which is not always every pending key:
-         * `toOutgoingPatch` holds back what the backend would reject. Only the keys that were
-         * written settle, so the rest stays pending instead of being dropped (#37003).
+         * `form` is the form as it stood when the PATCH was built, not as it stands when the
+         * answer arrives. Those differ whenever the user kept typing during the flight, and it is
+         * the first one the server was told about — snapshotting the later one would declare that
+         * typing saved and lose it (#37003).
          */
-        saveSucceeded: type<{ experiment: DotExperiment; sent: DotExperimentPatchBody }>(),
-        /** The diff stays pending, so the next edit re-sends it merged with whatever changed. */
+        saveSucceeded: type<{ experiment: DotExperiment; form: ConfigureFormModel }>(),
+        /** The form stays dirty, so pressing Save Draft again is the retry. */
         saveFailed: type<unknown>(),
         /**
-         * The debounce elapsed with nothing worth sending — a diff whose only key was a blank
-         * name, an experiment that does not exist yet, or weights that are still mid-edit. No call
-         * went out, so nothing settles: this changes no state and is here as the record that the
-         * flush happened at all.
+         * Save Draft was pressed with nothing worth sending — a blank name, an experiment that
+         * does not exist yet, or weights that are still mid-edit. No call went out, so nothing
+         * settles: this changes no state and is here as the record that the press happened at all.
          */
         saveSkipped: type<void>(),
 
