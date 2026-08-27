@@ -259,35 +259,35 @@ describe('DotContentDriveStatusFilterComponent with the real store', () => {
         spectator = createComponent();
         store = spectator.inject(DotContentDriveStore);
         spectator.detectChanges();
-        spectator.flushEffects();
+        spectator.detectChanges();
     });
 
     it('should persist a selection to the store without looping', () => {
         spectator.component.$selection.set(['ARCHIVED']);
         // Would never settle if each write re-notified the signal that triggered it.
-        spectator.flushEffects();
+        spectator.detectChanges();
 
         expect(store.getFilterValue('status')).toEqual(['ARCHIVED']);
     });
 
     it('should remove the filter when the selection is emptied, and settle', () => {
         spectator.component.$selection.set(['LOCKED']);
-        spectator.flushEffects();
+        spectator.detectChanges();
         expect(store.getFilterValue('status')).toEqual(['LOCKED']);
 
         spectator.component.$selection.set([]);
-        spectator.flushEffects();
+        spectator.detectChanges();
 
         expect(store.getFilterValue('status')).toBeUndefined();
     });
 
     it('should not reset pagination when an unrelated filter changes', () => {
         spectator.component.$selection.set(['ARCHIVED']);
-        spectator.flushEffects();
+        spectator.detectChanges();
 
         store.setPagination({ ...store.pagination(), page: 3, offset: 40 });
         store.patchFilters({ title: 'something' });
-        spectator.flushEffects();
+        spectator.detectChanges();
 
         // patchFilters resets pagination itself; what matters is that the status effect does not
         // fire a SECOND write on top of it. The selection is unchanged, so by value equality the

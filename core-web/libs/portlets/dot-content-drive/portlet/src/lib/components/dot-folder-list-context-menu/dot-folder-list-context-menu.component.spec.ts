@@ -845,7 +845,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     expect(pushPublishItem()?.disabled).toBe(true);
 
                     withEnvironments();
-                    spectator.flushEffects();
+                    spectator.detectChanges();
 
                     await component.getMenuItems(folderContextMenuWithPublish);
 
