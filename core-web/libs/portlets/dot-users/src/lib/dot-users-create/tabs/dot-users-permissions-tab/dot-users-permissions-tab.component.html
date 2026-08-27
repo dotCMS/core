@@ -1,9 +1,28 @@
-@if ($permissionsUrl()) {
-    <dot-permissions-iframe
-        [url]="$permissionsUrl()"
-        height="100%"
-        [iframeTitle]="'users.dialog.permissions.iframe.title' | dm"
-        class="flex min-h-0 flex-1 flex-col" />
+@if ($iframeSrc(); as src) {
+    <div class="relative flex min-h-0 w-full flex-1 flex-col">
+        @if ($state() === 'loading') {
+            <div
+                class="absolute inset-0 z-10 flex flex-col gap-3 p-4"
+                data-testid="permissions-loading">
+                <p-skeleton height="2rem" width="60%" />
+                <p-skeleton height="1rem" width="90%" />
+                <p-skeleton height="1rem" width="85%" />
+                <p-skeleton height="1rem" width="80%" />
+            </div>
+        }
+        @if ($state() === 'empty') {
+            <p class="text-color-secondary m-0 p-3" data-testid="permissions-unavailable">
+                {{ 'users.dialog.permissions.unavailable' | dm }}
+            </p>
+        }
+        <iframe
+            [src]="src"
+            class="size-full flex-1 border-none"
+            [class.opacity-0]="$state() !== 'loaded'"
+            [title]="'users.dialog.permissions.iframe.title' | dm"
+            (load)="onLoad($event)"
+            data-testid="permissions-iframe"></iframe>
+    </div>
 } @else {
     <div
         class="flex h-full min-h-96 flex-col items-center justify-center gap-2 py-8"
