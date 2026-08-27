@@ -135,7 +135,7 @@ public class MySecureService {
         
         // Check read permission
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
             throw new DotSecurityException("Read permission denied for entity: " + entityId);
         }
         
@@ -149,7 +149,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT, user)) {
             throw new DotSecurityException("Edit permission denied for entity: " + entityId);
         }
         
@@ -168,7 +168,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT_PERMISSIONS)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
             throw new DotSecurityException("Delete permission denied for entity: " + entityId);
         }
         
