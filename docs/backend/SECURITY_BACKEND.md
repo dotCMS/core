@@ -5,7 +5,7 @@
 ### Parameter Validation Pattern
 ```java
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rest.ResponseUtil;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 
 public class MyResource {
     
@@ -252,7 +252,7 @@ public List<MyEntity> unsafeFind(String name) throws DotDataException {
 
 ### Output Encoding Pattern
 ```java
-import org.springframework.web.util.HtmlUtils;
+import com.liferay.util.Xss;
 
 public class MyResponseBuilder {
     
@@ -260,8 +260,8 @@ public class MyResponseBuilder {
         Map<String, Object> response = new HashMap<>();
         
         // Encode HTML content for safe display
-        response.put("name", HtmlUtils.htmlEscape(entity.getName()));
-        response.put("description", HtmlUtils.htmlEscape(entity.getDescription()));
+        response.put("name", Xss.encodeForHTML(entity.getName()));
+        response.put("description", Xss.encodeForHTML(entity.getDescription()));
         
         // Safe content (already validated)
         response.put("id", entity.getId());
