@@ -16,6 +16,9 @@ import { createFakeUser, createFakeUserDetail } from '../testing/dot-user.mock';
 const MOCK_USER = createFakeUser();
 const MOCK_USER_DETAIL = createFakeUserDetail();
 
+/** `p-tab` value of the Permissions tab. */
+const PERMISSIONS_TAB = 2;
+
 /** p-button doesn't forward clicks itself — reach the inner native button. */
 function saveButton(spectator: Spectator<DotUsersCreateComponent>): HTMLButtonElement {
     return spectator
@@ -155,6 +158,13 @@ describe('DotUsersCreateComponent', () => {
             const button = saveButton(spectator);
             expect(button.disabled).toBe(false);
         });
+
+        it('should keep Save enabled on the Permissions tab — that tab asks the user to save first', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(false);
+        });
     });
 
     describe('edit mode', () => {
@@ -166,6 +176,22 @@ describe('DotUsersCreateComponent', () => {
                     { provide: DynamicDialogConfig, useValue: { data: { user: MOCK_USER } } }
                 ]
             });
+        });
+
+        it('should disable Save on the Permissions tab — the embedded JSP owns its save', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(true);
+        });
+
+        it('should not close the dialog when save runs from the Permissions tab', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
         it('should hydrate the form from the user data', () => {

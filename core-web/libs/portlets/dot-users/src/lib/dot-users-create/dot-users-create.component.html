@@ -126,8 +126,8 @@
         data-testid="users-dialog-cancel-btn" />
     <p-button
         [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
-        [disabled]="$isSaveDisabled() || $activeTab() === 2"
-        [pTooltip]="$activeTab() === 2 ? ('users.dialog.permissions.own-save' | dm) : null"
+        [disabled]="$isSaveDisabled()"
+        [pTooltip]="$isPermissionsTabOpen() ? ('users.dialog.permissions.own-save' | dm) : null"
         tooltipPosition="top"
         (onClick)="save()"
         data-testid="users-dialog-save-btn" />

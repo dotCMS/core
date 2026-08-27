@@ -1,5 +1,9 @@
 <%@ page import="com.dotmarketing.business.APILocator" %>
+<%@ page import="com.dotmarketing.business.NoSuchUserException" %>
 <%@ page import="com.dotmarketing.business.Role" %>
+<%@ page import="com.dotmarketing.exception.DotDataException" %>
+<%@ page import="com.dotmarketing.exception.DotSecurityException" %>
+<%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.model.User" %>
 
@@ -19,8 +23,21 @@
 
     if (UtilMethods.isSet(userId)
             && APILocator.getLayoutAPI().doesUserHaveAccessToPortlet("users", user)) {
-        final User userToEdit = APILocator.getUserAPI().loadUserById(userId, user, false);
-        userRole = APILocator.getRoleAPI().getUserRole(userToEdit);
+        try {
+            final User userToEdit = APILocator.getUserAPI().loadUserById(userId, user, false);
+            userRole = APILocator.getRoleAPI().getUserRole(userToEdit);
+        } catch (NoSuchUserException | DotSecurityException e) {
+            // The id did not resolve, or the viewer lacks READ on the target user.
+            // Both are expected: leave userRole null so the page renders a blank
+            // body and the Angular tab shows its `unavailable` message. Letting
+            // these escape would put a container error page inside the iframe —
+            // top_inc.jsp has already written to the response by this point.
+            Logger.warn(this.getClass(),
+                    "Cannot render permissions for User ID '" + userId + "': " + e.getMessage());
+        } catch (DotDataException e) {
+            Logger.error(this.getClass(),
+                    "Error loading permissions for User ID '" + userId + "': " + e.getMessage(), e);
+        }
     }
 
     if (userRole != null) {
