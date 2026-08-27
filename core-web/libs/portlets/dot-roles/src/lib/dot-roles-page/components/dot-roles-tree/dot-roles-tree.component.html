@@ -80,8 +80,14 @@
                             [attr.aria-label]="
                                 data.userCount + ' ' + ('roles.tree.user-count' | dm)
                             ">
+                            <!--
+                                13px: Tailwind's `text-xs` (12px) reads too
+                                small next to the 14px count, and `text-sm`
+                                puts the icon back at the count's size. No
+                                scale step sits between them.
+                            -->
                             <span
-                                class="material-symbols-outlined text-xs! leading-none"
+                                class="material-symbols-outlined text-[13px]! leading-none"
                                 aria-hidden="true">
                                 person
                             </span>
