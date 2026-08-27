@@ -17,14 +17,14 @@ Java Compile   WAR + OSGI    Cargo Plugin     docker-descriptor.xml  dotcms/java
 
 ### Hierarchical Configuration
 
-The Docker build process uses the **fabric8 docker-maven-plugin** (version 0.43.4) with hierarchical configuration across multiple modules:
+The Docker build process uses the **fabric8 docker-maven-plugin** (version 0.48.0, see `version.docker-maven.plugin` in `parent/pom.xml`) with hierarchical configuration across multiple modules:
 
 #### Parent Configuration (`parent/pom.xml`)
 ```xml
 <plugin>
     <groupId>io.fabric8</groupId>
     <artifactId>docker-maven-plugin</artifactId>
-    <version>0.43.4</version>
+    <version>${version.docker-maven.plugin}</version>
     <configuration>
         <images>
             <image>
@@ -42,7 +42,7 @@ The Docker build process uses the **fabric8 docker-maven-plugin** (version 0.43.
 ```
 
 **Base Configuration Includes**:
-- **Database**: PostgreSQL with pgvector (`ankane/pgvector`)
+- **Database**: PostgreSQL with pgvector (`pgvector/pgvector:pg18`, see `docker.image.postgres` in `environments/environment.properties`)
 - **OpenSearch**: Search engine (`opensearchproject/opensearch:1.3.6`)
 - **dotCMS**: Main application container
 - **Volume Mappings**: Shared directories and configurations
@@ -97,7 +97,7 @@ The Docker build process uses the **fabric8 docker-maven-plugin** (version 0.43.
 <plugin>
     <groupId>org.codehaus.cargo</groupId>
     <artifactId>cargo-maven3-plugin</artifactId>
-    <version>1.10.6</version>
+    <version>${version.cargo.plugin}</version>
     <configuration>
         <container>
             <containerId>tomcat9x</containerId>
@@ -173,7 +173,8 @@ target/dist/dotserver/tomcat-${tomcat.version}/
 ### Stage 1: Build Context
 **File**: `dotCMS/src/main/docker/original/Dockerfile`
 ```dockerfile
-FROM dotcms/java-base:${java.base.image.version} as builder
+ARG SDKMAN_JAVA_VERSION="SDKMAN_JAVA_VERSION_ARG_NOT_SET"
+FROM dotcms/java-base:${SDKMAN_JAVA_VERSION} AS container-base
 
 # Copy assembled distribution
 COPY maven /srv/
@@ -187,24 +188,30 @@ RUN chown -R dotcms:dotcms /srv && \
 ```dockerfile
 FROM ubuntu:24.04
 
-# Install runtime dependencies
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        openjdk-11-jre-headless \
-        && rm -rf /var/lib/apt/lists/*
+# Java is already present via the container-base stage (installed by SDKMAN
+# in the dotcms/java-base image) — no separate apt-get Java install here
 
 # Copy from builder stage
-COPY --from=builder /srv /srv
+COPY --from=container-base /java /java
+COPY --from=container-base /srv /srv
 
 # Set runtime user
 USER dotcms
+ENV JAVA_HOME="/java"
 
-# Expose ports
-EXPOSE 8080 4000 5005
+# Expose ports (see real Dockerfile for the full list, incl. JMX/proxy ports)
+EXPOSE 8080 4000 8000
 
 # Set entrypoint
-ENTRYPOINT ["/srv/entrypoint.sh"]
+ENTRYPOINT ["/usr/bin/tini", "--", "/srv/entrypoint.sh"]
 ```
+
+> **Two different "debug port" conventions, both real:** port `8000` above is what the
+> base Dockerfile itself `EXPOSE`s for JVM debugging, configured via `CMS_JAVA_OPTS`
+> when running a pre-built image directly (see `docker-compose-examples/single-node-debug-mode/`).
+> The Maven-driven `docker-start,debug` workflow (see JMX Remote Monitoring below)
+> overrides this to port `5005` via the `debug.port` property in `parent/pom.xml` —
+> that's a separate, run-time-only port mapping, not a Dockerfile change.
 
 ## Development Startup: docker-start Profile
 
@@ -252,7 +259,7 @@ ENTRYPOINT ["/srv/entrypoint.sh"]
 | **Simple code changes** in dotcms-core only | `./mvnw install -pl :dotcms-core -DskipTests` | `just build-quicker` | Fastest - only builds core module | ~2-3 min |
 | **Core changes affecting dependencies** | `./mvnw install -pl :dotcms-core --am -DskipTests` | *(use Maven)* | Builds core + upstream dependencies | ~3-5 min |
 | **Major changes or clean start** | `./mvnw clean install -DskipTests` | `just build` | Full clean build of all modules | ~8-15 min |
-| **Quick iteration without Docker** | `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip` | `just build-no-docker` | Fastest - skips Docker image creation | ~1-2 min |
+| **Full build without Docker** | `./mvnw -DskipTests clean install -Ddocker.skip` | `just build-no-docker` | Same scope as `just build` (full clean install of all modules), just skips the Docker image step | ~8-15 min |
 | **No tests, no Docker** | `./mvnw install -pl :dotcms-core -DskipTests -Ddocker.skip` | *(use Maven)* | Ultimate speed for unit test cycles | ~1-2 min |
 
 ### Maven Reactor Flags Explained
@@ -574,13 +581,14 @@ NOT included with -pl :dotcms-core:
 4. **Glowroot Profiler** (port 4000, if enabled)
 5. **Debug Port** (port 5005, if enabled)
 
-### Alternative: dev-run Script
+### Alternative: just Commands
 ```bash
 # Simple development startup
-./dev-run
+just dev-run
 
-# With specific options
-./dev-run --debug --glowroot
+# With debugging and the Glowroot profiler
+just dev-run-debug
+just dev-run-jmx-debug-glowroot
 ```
 
 ## JMX Remote Monitoring
@@ -809,7 +817,7 @@ ports:
   - "9999:9999"  # JMX Remote Port
   - "9998:9998"  # RMI Registry Port
   - "8080:8080"  # dotCMS Application
-  - "8000:8000"  # Java Debug Port (if debug enabled)
+  - "5005:5005"  # Java Debug Port (if debug enabled) — see debug.port in parent/pom.xml
   - "4000:4000"  # Glowroot Profiler (if enabled)
 ```
 
@@ -827,7 +835,7 @@ ports:
 - JMX authentication is disabled for development
 
 **3. Wrong JConsole Version**
-- Use JConsole from same JDK version as dotCMS (Java 25)
+- Use JConsole from same JDK version as dotCMS (see `.sdkmanrc` for the current version)
 - Avoid mixing different Java versions
 
 **4. Base Image Issues**
