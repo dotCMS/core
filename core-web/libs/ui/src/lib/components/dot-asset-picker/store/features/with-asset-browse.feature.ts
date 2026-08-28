@@ -49,7 +49,8 @@ const initialState: DotAssetPickerBrowseState = {
  *
  * Mirrors the shape of Content Drive's request builder, minus everything the picker has no use for
  * (workflow filters, user-searchable fields) and plus the two things it needs: a silent mimetype
- * restriction and `showFolders: false` as an invariant.
+ * restriction, and folders and menu links switched off unless the caller opts in through
+ * `DotAssetPickerBrowseOptions`.
  */
 export function withAssetBrowse() {
     return signalStoreFeature(

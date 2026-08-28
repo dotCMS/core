@@ -44,7 +44,14 @@ export interface DotAssetPickerBrowseOptions {
      */
     showLinks?: boolean;
 
-    /** Include working (unpublished) versions. Omit for live-only. */
+    /**
+     * Which versions to browse, as the endpoint understands it.
+     *
+     * Three states, and the omitted one is not the restrictive one: **omit** and the endpoint's own
+     * default applies, which *includes* working versions; **`true`** is the same thing said
+     * explicitly; **`false`** is the only value that narrows to live-only (the request then carries
+     * `live: true`).
+     */
     showWorking?: boolean;
 
     /** Include archived content. Omit to exclude it, which is the picker's standing behaviour. */
@@ -117,8 +124,8 @@ export interface DotAssetPickerConfig {
     mimeTypes?: string[];
 
     /**
-     * Browse capabilities beyond plain asset picking — folders, menu links, version state, sorting
-     * and extension narrowing.
+     * Browse capabilities beyond plain asset picking — folders, menu links, version state and
+     * sorting.
      *
      * Omit for today's behaviour. See {@link DotAssetPickerBrowseOptions}.
      */
