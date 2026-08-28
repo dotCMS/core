@@ -461,6 +461,8 @@ describe('TemplateBuilderComponent', () => {
                 mockGrid = {
                     disable: jest.fn(),
                     enable: jest.fn(),
+                    load: jest.fn(),
+                    save: jest.fn().mockReturnValue([{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }]),
                     el: { querySelectorAll: jest.fn().mockReturnValue([]) }
                 };
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -472,12 +474,91 @@ describe('TemplateBuilderComponent', () => {
                 expect(mockGrid.disable).toHaveBeenCalled();
             });
 
-            it('should dispatch a document Escape keydown event when disabled becomes true', () => {
+            it('should dispatch a synthetic mouseup to terminate an in-progress drag before locking the grid', () => {
                 const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+                spectator.component.draggingElement = document.createElement('div');
+
                 spectator.setInput('disabled', true);
+
+                expect(dispatchSpy).toHaveBeenCalledWith(
+                    expect.objectContaining({ type: 'mouseup' })
+                );
+                expect(mockGrid.disable).toHaveBeenCalled();
+
+                dispatchSpy.mockRestore();
+            });
+
+            it('should restore the pre-drag layout with grid.load() to undo the committed drag position', () => {
+                const savedState = [{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }];
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = savedState;
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(mockGrid.load).toHaveBeenCalledWith(savedState);
+            });
+
+            it('should NOT call grid.load() when there is no pre-drag state (external drag-in)', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = null;
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(mockGrid.load).not.toHaveBeenCalled();
+            });
+
+            it('should call load() on preDragGrid (not main grid) when cancelling a column drag', () => {
+                const savedState = [{ id: 'col-1', x: 0, y: 0, w: 6, h: 1 }];
+                const subGridLoad = jest.fn();
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = savedState;
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragGrid = { load: subGridLoad };
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                expect(subGridLoad).toHaveBeenCalledWith(savedState);
+                expect(mockGrid.load).not.toHaveBeenCalled();
+            });
+
+            it('should reset suppressStoreUpdates to false after cancelling an in-progress drag', () => {
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                (spectator.component as any).preDragState = [{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }];
+                spectator.component.draggingElement = document.createElement('div');
+
+                spectator.setInput('disabled', true);
+
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                expect((spectator.component as any).suppressStoreUpdates).toBe(false);
+            });
+
+            it('should NOT dispatch mouseup when disabled becomes true with no active drag', () => {
+                const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+                spectator.component.draggingElement = null;
+
+                spectator.setInput('disabled', true);
+
+                const mouseupCalls = dispatchSpy.mock.calls.filter(
+                    ([event]) => (event as Event).type === 'mouseup'
+                );
+                expect(mouseupCalls).toHaveLength(0);
+                expect(mockGrid.disable).toHaveBeenCalled();
+
+                dispatchSpy.mockRestore();
+            });
+
+            it('should dispatch Escape to close open PrimeNG panels when disabled becomes true', () => {
+                const dispatchSpy = jest.spyOn(document, 'dispatchEvent');
+
+                spectator.setInput('disabled', true);
+
                 expect(dispatchSpy).toHaveBeenCalledWith(
                     expect.objectContaining({ type: 'keydown', key: 'Escape' })
                 );
+
                 dispatchSpy.mockRestore();
             });
 
@@ -515,6 +596,65 @@ describe('TemplateBuilderComponent', () => {
                 spectator.component.grid = undefined as any;
                 expect(() => spectator.setInput('disabled', true)).not.toThrow();
             });
+        });
+    });
+
+    describe('setSubGridEvent — dropped handler', () => {
+        let handlers: Record<string, (...args: unknown[]) => void>;
+        let mockSubGrid: {
+            on: jest.Mock;
+            removeWidget: jest.Mock;
+        };
+        let store: DotTemplateBuilderStore;
+
+        beforeEach(() => {
+            store = spectator.inject(DotTemplateBuilderStore);
+            handlers = {};
+            mockSubGrid = {
+                removeWidget: jest.fn(),
+                on: jest.fn().mockImplementation(function (this: unknown, event, cb) {
+                    handlers[event as string] = cb;
+
+                    return this; // fluent chain
+                })
+            };
+
+            spectator.component.setSubGridEvent(mockSubGrid as never);
+        });
+
+        it('should call store.subGridOnDropped and onDragStop when not suppressed', () => {
+            const subGridOnDroppedSpy = jest.spyOn(store, 'subGridOnDropped');
+            const onDragStopSpy = jest.spyOn(spectator.component, 'onDragStop');
+            const el = document.createElement('div');
+            const newNode = { el, grid: mockSubGrid };
+
+            handlers['dropped']({}, {}, newNode);
+
+            expect(subGridOnDroppedSpy).toHaveBeenCalled();
+            expect(onDragStopSpy).toHaveBeenCalled();
+            expect(mockSubGrid.removeWidget).not.toHaveBeenCalled();
+        });
+
+        it('should removeWidget and skip store.subGridOnDropped when suppressStoreUpdates is true', () => {
+            const subGridOnDroppedSpy = jest.spyOn(store, 'subGridOnDropped');
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spectator.component as any).suppressStoreUpdates = true;
+
+            const el = document.createElement('div');
+            const newNode = { el, grid: mockSubGrid };
+
+            handlers['dropped']({}, {}, newNode);
+
+            expect(mockSubGrid.removeWidget).toHaveBeenCalledWith(el, true, false);
+            expect(subGridOnDroppedSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not throw when newNode.el is null during cancel window', () => {
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            (spectator.component as any).suppressStoreUpdates = true;
+            const newNode = { el: null, grid: mockSubGrid };
+
+            expect(() => handlers['dropped']({}, {}, newNode)).not.toThrow();
         });
     });
 

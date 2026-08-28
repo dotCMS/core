@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { EMPTY, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -6,21 +6,23 @@ import {
     Component,
     OnDestroy,
     OnInit,
-    computed,
     effect,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
 import {
+    catchError,
     debounceTime,
     distinctUntilChanged,
     finalize,
     switchMap,
     take,
-    takeUntil
+    takeUntil,
+    tap
 } from 'rxjs/operators';
 
 import { DotMessageService, DotPageLayoutService, DotRouterService } from '@dotcms/data-access';
@@ -54,7 +56,11 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
-    protected readonly $isSaving = computed(() => this.uveStore.uveStatus() === UVE_STATUS.LOADING);
+    // Component-local save-in-flight flag. Deliberately separate from uveStore.uveStatus()
+    // so that unrelated global LOADING events (lock toggle, page-api re-fetch) cannot
+    // unlock the canvas mid-POST or throw a spurious spinner over the layout builder.
+    readonly #layoutSaveInFlight = signal(false);
+    protected readonly $isSaving = this.#layoutSaveInFlight.asReadonly();
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
@@ -92,7 +98,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         // Drop edits that complete mid-flight: in-progress drags or open dropdowns
         // can still emit templateChange after the canvas is frozen. Discarding them
         // prevents corrupting the payload of the in-flight save.
-        if (this.uveStore.uveStatus() === UVE_STATUS.LOADING) {
+        if (this.#layoutSaveInFlight()) {
             return;
         }
 
@@ -141,13 +147,18 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         // - https://blog.bitsrc.io/3-ways-to-debounce-http-requests-in-angular-c407eb165ada
         this.updateTemplate$
             .pipe(
+                tap(() => {
+                    // Gate the Page Properties nav item immediately on any edit so users
+                    // cannot navigate to page settings while layout changes are pending.
+                    this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                }),
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
-                    // Lock the canvas only when the POST is actually sent, not on every edit.
-                    this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                    // Lock the canvas when the POST is actually sent, not on every edit.
+                    this.#layoutSaveInFlight.set(true);
                     this.messageService.add({
                         severity: 'info',
                         summary: 'Info',
@@ -160,13 +171,17 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                             ...layout,
                             title: null
                         })
-                        .pipe(finalize(() => this.dotRouterService.allowRouteDeactivation()));
+                        .pipe(
+                            catchError((err: HttpErrorResponse) => {
+                                this.handleErrorSaveTemplate(err);
+
+                                return EMPTY;
+                            }),
+                            finalize(() => this.dotRouterService.allowRouteDeactivation())
+                        );
                 })
             )
-            .subscribe(
-                () => this.handleSuccessSaveTemplate(),
-                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
-            );
+            .subscribe(() => this.handleSuccessSaveTemplate());
     }
 
     /**
@@ -177,6 +192,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     private handleSuccessSaveTemplate(): void {
+        this.#layoutSaveInFlight.set(false);
         this.messageService.add({
             severity: 'success',
             summary: 'Success',
@@ -194,6 +210,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     private handleErrorSaveTemplate(_: HttpErrorResponse) {
+        this.#layoutSaveInFlight.set(false);
         this.messageService.add({
             severity: 'error',
             summary: 'Error',

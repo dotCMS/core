@@ -160,6 +160,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     public draggingElement: HTMLElement | null;
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
+    // Full grid layout captured at drag-start. If the canvas is locked mid-drag,
+    // we dispatch mouseup (which commits the drag at the wrong cursor position) and
+    // immediately restore this snapshot via grid.load() — equivalent to dropping the
+    // row/column in its original position. Cleared on every normal drag completion.
+    private preDragState: GridStackWidget[] | null = null;
+
+    // The specific GridStack instance (main grid or a subgrid) that owns the dragged
+    // widget. Needed so column drags restore the correct subgrid, not just the top-level grid.
+    private preDragGrid: GridStack | null = null;
+
+    // When true, store write calls inside GridStack event handlers are skipped.
+    // Set for the synchronous window between mouseup dispatch and grid.load() so that
+    // the forced drag-commit and the subsequent layout restore do not corrupt the store.
+    private suppressStoreUpdates = false;
+
     grid!: GridStack;
 
     addBoxIsDragging = false;
@@ -293,14 +308,44 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     private applyGridDisabled(disabled: boolean): void {
         if (disabled) {
-            this.grid.disable();
-            // Cancel any in-progress drag (internal row move or external toolbar widget drag-in).
-            // GridStack's DDDraggable registers a document keydown listener and calls cancel()
-            // on Escape, removing the drag clone from the DOM so the overlay becomes visible.
-            // PrimeNG dropdowns also close on Escape, covering the open-dropdown edge case.
+            if (this.draggingElement) {
+                // Snapshot the references before the cancel window clears them.
+                const preDragState = this.preDragState;
+                const preDragGrid = this.preDragGrid ?? this.grid;
+                this.preDragState = null;
+                this.preDragGrid = null;
+
+                // Suppress store writes for the entire synchronous cancel window:
+                // mouseup fires change/dropped synchronously (GridStack commits the drag),
+                // and grid.load() fires change again (to restore positions).
+                // Both sets of events must be dropped to keep the store consistent.
+                this.suppressStoreUpdates = true;
+
+                // Terminate the in-progress drag. DDDraggable's document mouseup listener
+                // runs synchronously: _mouseUp → dragstop → onDragStop() → change → moveRow.
+                document.dispatchEvent(
+                    new MouseEvent('mouseup', { bubbles: true, cancelable: true })
+                );
+
+                // Restore the layout to the state it was in when the drag started.
+                // For row drags preDragGrid is the main grid; for column drags it is the subgrid.
+                if (preDragState) {
+                    preDragGrid.load(preDragState);
+                }
+
+                this.suppressStoreUpdates = false;
+            }
+
+            // Close any PrimeNG overlays (container pickers, dropdowns) that were opened
+            // before the canvas locked. These panels are appended to <body> and therefore
+            // outside the [inert] subtree and above the disabled overlay in z-order —
+            // dispatching Escape is the standard PrimeNG mechanism to close them.
+            // Note: GridStack 8.4.0 does not honour Escape for drag cancellation.
             document.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
             );
+
+            this.grid.disable();
         } else {
             this.grid.enable();
         }
@@ -328,7 +373,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         }, 350);
 
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
-            this.store.moveRow(nodes as DotGridStackWidget[]);
+            if (!this.suppressStoreUpdates) {
+                this.store.moveRow(nodes as DotGridStackWidget[]);
+            }
         });
 
         GridStack.setupDragIn('dotcms-add-widget', {
@@ -343,16 +390,22 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
 
         this.grid
             .on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
+                // External drag-ins (toolbar → grid) always need removeWidget so the DOM is
+                // cleaned up — even during the cancel window. Only store.addRow is suppressed.
                 if (!newNode.el || previousNode) return;
 
                 newNode.grid?.removeWidget(newNode.el, true, false);
 
-                this.store.addRow({
-                    y: newNode.y
-                });
+                if (!this.suppressStoreUpdates) {
+                    this.store.addRow({
+                        y: newNode.y
+                    });
+                }
             })
             .on('dragstart', ({ target }) => {
                 this.draggingElement = target as HTMLElement;
+                this.preDragState = this.grid.save(false) as GridStackWidget[];
+                this.preDragGrid = this.grid;
             })
             .on('dragstop', () => this.onDragStop());
 
@@ -549,11 +602,26 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     setSubGridEvent(subGrid: GridStack): void {
         subGrid
             .on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
+                if (this.suppressStoreUpdates) {
+                    // Cancel window: GridStack committed the drop (external box from toolbar,
+                    // or cross-row move) but the store must not be updated. Remove the
+                    // placeholder/widget GridStack added so no ghost box appears in the layout.
+                    if (newNode.el) {
+                        newNode.grid?.removeWidget(newNode.el, true, false);
+                    }
+
+                    this.onDragStop();
+
+                    return;
+                }
+
                 this.store.subGridOnDropped(oldNode, newNode);
                 this.onDragStop();
             })
             .on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                if (!this.suppressStoreUpdates) {
+                    this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                }
             })
             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
                 this.store.setResizingRowID(String(el.gridstackNode.grid.parentGridItem.id));
@@ -563,6 +631,10 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             })
             .on('dragstart', ({ target }) => {
                 this.draggingElement = target as HTMLElement;
+                // Save the subgrid's own column layout — not the main grid — so that
+                // a column drag cancelled mid-flight restores only the affected row.
+                this.preDragState = subGrid.save(false) as GridStackWidget[];
+                this.preDragGrid = subGrid;
             })
             .on('dragstop', () => this.onDragStop());
     }
@@ -574,6 +646,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     onDragStop() {
         this.draggingElement = null;
+        this.preDragState = null;
+        this.preDragGrid = null;
         this.scrollDirection = SCROLL_DIRECTION.NONE;
     }
 
