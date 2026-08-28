@@ -59,8 +59,21 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     // Component-local save-in-flight flag. Deliberately separate from uveStore.uveStatus()
     // so that unrelated global LOADING events (lock toggle, page-api re-fetch) cannot
     // unlock the canvas mid-POST or throw a spurious spinner over the layout builder.
+    //
+    // Lifecycle: set true when the POST fires → stays true through pageReload() re-hydration
+    // → cleared by #handleReloadComplete when uveStatus returns to LOADED.
+    // On HTTP error it is cleared immediately (no reload happens on failure).
     readonly #layoutSaveInFlight = signal(false);
     protected readonly $isSaving = this.#layoutSaveInFlight.asReadonly();
+
+    // Keep the canvas locked through the full save + reload cycle.
+    // pageReload() transitions uveStatus LOADING → LOADED when the re-fetch is done;
+    // that is the earliest safe point to re-enable editing.
+    readonly #handleReloadComplete = effect(() => {
+        if (this.#layoutSaveInFlight() && this.uveStore.uveStatus() === UVE_STATUS.LOADED) {
+            this.#layoutSaveInFlight.set(false);
+        }
+    });
 
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
@@ -192,7 +205,9 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     private handleSuccessSaveTemplate(): void {
-        this.#layoutSaveInFlight.set(false);
+        // Do NOT clear #layoutSaveInFlight here — the canvas must stay locked
+        // through the pageReload() re-hydration window. The #handleReloadComplete
+        // effect clears it once uveStatus signals LOADED.
         this.messageService.add({
             severity: 'success',
             summary: 'Success',

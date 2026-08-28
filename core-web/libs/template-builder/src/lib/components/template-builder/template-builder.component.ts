@@ -350,6 +350,10 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             this.grid.enable();
         }
 
+        // GridStack's built-in disable(recurse=true) only walks node.subGrid — it does not
+        // reach subgrids that were created via GridStack.addGrid() (as this component does),
+        // because addGrid() populates the DOM but not the engine's subGrid references.
+        // This manual querySelectorAll loop closes that gap.
         const subGridEls = this.grid.el.querySelectorAll(
             '.grid-stack'
         ) as NodeListOf<GridHTMLElement>;
@@ -470,6 +474,12 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                     this.setAddBoxIsDragging(false);
                 });
         });
+
+        // Apply the current disabled state to the freshly created grid. Without this,
+        // if [disabled]=true arrives via ngOnChanges before setUpGridStack() runs
+        // (the grid init is deferred via requestAnimationFrame), the canvas boots enabled
+        // behind an active overlay.
+        this.applyGridDisabled(this.disabled);
     }
 
     ngOnDestroy(): void {
