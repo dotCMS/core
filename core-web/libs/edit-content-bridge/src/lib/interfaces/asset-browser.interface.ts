@@ -82,6 +82,19 @@ export interface DotBrowserOptions {
      * @default { field: 'modDate', direction: 'asc' }
      */
     sort?: { field: string; direction: 'asc' | 'desc' };
+
+    /**
+     * Called once with what the editor picked, or with `null` if they cancelled.
+     *
+     * A callback rather than a promise, to match the rest of `DotCustomFieldApi` — `ready()` and
+     * `onChangeField()` are callback-based, and one method resolving a promise instead would make
+     * the API read like two APIs.
+     *
+     * Called **exactly once**: never twice, and never after `close()` has already reported the
+     * cancellation. Opening is asynchronous (the picker needs a site, and finding one is a
+     * request), so this fires some time after the call returns.
+     */
+    onClose?: (selection: DotBrowserSelection | null) => void;
 }
 
 /** What every selection carries, whatever kind it is. */
@@ -141,21 +154,12 @@ export type DotBrowserSelection =
     | DotBrowserLinkSelection;
 
 /**
- * Handle on an open browse dialog.
+ * Controls an open browse dialog.
  *
- * Returns a promise rather than taking an `onClose` callback, so a template reads as
- * `const selection = await handle.result` instead of nesting. `close()` stays because a caller
- * still needs to dismiss the dialog itself — a promise alone cannot do that.
+ * Returned synchronously even though the dialog itself opens a moment later, so a caller always has
+ * something to hold — `close()` called before the dialog appears cancels the pending open.
  */
-export interface DotBrowserHandle {
-    /**
-     * Resolves with the selection, or `null` when the editor cancels.
-     *
-     * Never rejects on cancellation — cancelling is an ordinary outcome, not an error, and making
-     * it a rejection would force every caller into a `try`/`catch` to handle the common case.
-     */
-    readonly result: Promise<DotBrowserSelection | null>;
-
-    /** Closes the dialog programmatically; `result` resolves `null`. */
+export interface DotBrowserController {
+    /** Closes the dialog programmatically; `onClose` is called once with `null`. */
     close(): void;
 }

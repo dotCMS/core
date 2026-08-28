@@ -109,7 +109,7 @@ So the picker has to *grow the browse contract* before it can stand in — and i
 - Q: What happens to `ContentByFolderParams` flags the browse endpoint cannot express? → A: Verified against `/api/v1/drive/search` — #37112 already covers everything the two shipped templates need. `extensions` is the single genuine gap, so the spec grows to close it in the endpoint rather than dropping it. See *Capability Mapping* below.
 - Q: Is `DotCustomFieldApi` a shipped contract that must stay backward-compatible? → A: **No.** It is new and no customer uses it yet — the `_new.vtl` templates only render when the new Edit Content is enabled, which is not the default. This is the moment to fix the API's design; backward compatibility is not required. **Scope of this freedom is `DotCustomFieldApi` only** — `/api/v1/drive/search` has other consumers and MUST keep working (additive changes only).
 - Q: What shape should the selection result take? → A: A union discriminated by `kind` (`file` / `dotasset` / `page` / `folder` / `link`), with `identifier`, `title` and a non-empty `url` on every variant and contentlet-only fields confined to the variants that have them.
-- Q: Callback or Promise? → A: A handle exposing a `result` Promise, keeping `close()` for programmatic dismissal. One way to do it, not two.
+- Q: Callback or Promise? → A: **Callback (`onClose`), keeping a controller with `close()`.** Initially specified as a `result` Promise; **reversed 2026-08-28 during implementation** at the developer's request, and correctly so — the rest of `DotCustomFieldApi` (`ready()`, `onChangeField()`) is callback-based, so a single promise-returning method would make the API read like two APIs. There was no technical reason for the Promise: the asynchronous site lookup works the same either way. The redesigned *parameters* and the `kind`-discriminated *result* are unaffected.
 - Q: Redesign the request parameters? → A: Yes, fully — `kinds[]` replaces five booleans, `status` replaces two, `sort` replaces `sortByDesc`, and `path` (optional, path-based) replaces the mandatory id-based `hostFolderId`.
 
 ---
@@ -133,7 +133,7 @@ and the AssetPicker itself. Every change there stays additive and backward-compa
 | # | Today | Problem | Fix |
 |---|---|---|---|
 | 1 | `BrowserSelectorResult` is contentlet-shaped: `inode`, `mimeType`, `baseType`, `contentType` | Meaningless for a folder or a menu link; forced FR-011 into an impossible "all fields populated" rule and is the root of the selection-pipeline break | Union discriminated by `kind` |
-| 2 | `onClose(result \| null)` callback + returned controller | Callback nesting in template code for a one-shot dialog | Handle with a `result` Promise, keeping `close()` |
+| 2 | ~~`onClose` callback~~ | ~~Callback nesting~~ — **withdrawn**: consistency with the rest of `DotCustomFieldApi` outweighs it | **Kept as `onClose`**, with the guarantee that it fires exactly once |
 | 3 | Five booleans for content kind (`showFiles`, `showPages`, `showFolders`, `showLinks`, `showDotAssets`) | Verbose; no way to express "these kinds"; invalid combinations representable | `kinds: DotBrowserItemKind[]` |
 | 4 | `showWorking` + `showArchived` | Three states in two booleans, with a meaningless combination | `status: 'live' \| 'working' \| 'archived'` |
 | 5 | `sortByDesc: boolean` | Direction with no field; diverges from the Drive API's `field:direction` | `sort?: { field, direction }` |
@@ -169,24 +169,35 @@ type DotBrowserSelection =
     | (DotBrowserSelectionBase & { kind: 'folder'; inode: string })
     | (DotBrowserSelectionBase & { kind: 'link'; inode: string });
 
-interface DotBrowserHandle {
-    readonly result: Promise<DotBrowserSelection | null>;  // null = cancelled
-    close(): void;                                          // resolves `result` with null
+interface DotBrowserOptions {
+    // …plus:
+    onClose?: (selection: DotBrowserSelection | null) => void;  // exactly once; null = cancelled
 }
 
-openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
+interface DotBrowserController {
+    close(): void;   // closes the dialog; onClose is called once with null
+}
+
+openBrowserModal(options?: DotBrowserOptions): DotBrowserController;
 ```
 
 Consumer code becomes:
 
 ```js
-const { result } = DotCustomFieldApi.openBrowserModal({
-    title: "Select a Page", kinds: ["page", "link"], status: "live",
-    sort: { field: "modDate", direction: "desc" }
+DotCustomFieldApi.openBrowserModal({
+    title: "Select a Page",
+    kinds: ["page", "link"],
+    status: "live",
+    sort: { field: "modDate", direction: "desc" },
+    onClose: (selection) => {
+        if (selection) field.setValue(selection.url);
+    }
 });
-const selection = await result;
-if (selection) field.setValue(selection.url);
 ```
+
+Opening is asynchronous — the picker needs a site, and finding one is a request — which is another
+reason the outcome arrives through `onClose` rather than a return value. The controller comes back
+immediately, and `close()` cancels a still-pending open.
 
 ---
 
@@ -390,9 +401,9 @@ workspace lints, tests and builds clean.
   fields, which they do not today.
 - **FR-005**: The picker MUST be able to list pages when the caller asks for them, without pages
   becoming reachable from the File, Image, video or audio entry points.
-- **FR-006**: The picker MUST honor `showWorking`, `showArchived`, `showDotAssets`, `sortByDesc`
-  and `extensions`. All five are expressible on the browse endpoint once Group E lands — see
-  *Capability Mapping* — so none may be silently dropped.
+- **FR-006**: The picker MUST honor `status` (live/working/archived), `sort` and the dotAsset kind.
+  All are expressible on the browse endpoint today — see *Capability Mapping* — so none may be
+  silently dropped. `extensions` is **not exposed** until the endpoint supports it (Group E).
 - **FR-007**: Every capability added by Group A MUST be off by default, so a caller that asks for
   nothing new gets today's asset-only behavior.
 - **FR-007a**: Group A MUST be **purely additive**. The picker already navigates and selects; this
@@ -407,8 +418,8 @@ workspace lints, tests and builds clean.
 
 - **FR-009**: `AngularFormBridge.openBrowserModal()` MUST open the new AssetPicker.
 - **FR-010**: The `openBrowserModal` contract MUST be replaced with the *Target shape* above:
-  `DotBrowserOptions`, `DotBrowserSelection` (a union discriminated by `kind`) and
-  `DotBrowserHandle`. `BrowserSelectorOptions`, `BrowserSelectorResult` and
+  `DotBrowserOptions` (including `onClose`), `DotBrowserSelection` (a union discriminated by `kind`)
+  and `DotBrowserController`. `BrowserSelectorOptions`, `BrowserSelectorResult` and
   `BrowserSelectorController` are removed. This is safe because the API is unshipped — see *API
   Redesign*. **No equivalent freedom applies to `/api/v1/drive/search`** (FR-033).
 - **FR-010a**: Both shipped VTL templates MUST be updated to the new shape in the same change, so
@@ -421,11 +432,11 @@ workspace lints, tests and builds clean.
   without inspecting other fields.
 - **FR-012**: Selecting a folder and selecting a menu link MUST each yield a non-empty, usable
   `url`.
-- **FR-013**: Cancelling by close control, `Esc` or mask click MUST resolve the handle's `result`
-  with `null` exactly once. The Promise MUST never reject on cancellation and MUST never resolve
-  twice.
-- **FR-014**: `handle.close()` MUST close the dialog programmatically and resolve `result` with
-  `null`.
+- **FR-013**: Cancelling by close control, `Esc` or mask click MUST invoke `options.onClose` exactly
+  once with `null` — never twice, and never again after a programmatic `close()` has already
+  reported it.
+- **FR-014**: `controller.close()` MUST close the dialog programmatically and invoke `onClose` once
+  with `null`, including when called before the dialog has finished opening.
 - **FR-015**: `options.title` MUST be shown as the dialog's visible title.
 - **FR-016**: The dialog MUST continue to open inside the Angular zone so callers invoked from
   outside Angular (VTL script) still trigger change detection.
@@ -436,9 +447,9 @@ workspace lints, tests and builds clean.
   containing `'link'` together with `mimeTypes`, which the endpoint resolves by dropping links —
   the behavior MUST be surfaced to the developer rather than silently absorbed. This work MUST NOT
   work around the upstream rule.
-- **FR-037**: `DojoFormBridge.openBrowserModal()` MUST return a well-formed handle whose `result`
-  resolves `null`, accompanied by a developer-facing warning that the legacy editor does not
-  support it — rather than today's silent no-op that is indistinguishable from a cancelled dialog.
+- **FR-037**: `DojoFormBridge.openBrowserModal()` MUST return a well-formed controller and invoke
+  `onClose(null)`, accompanied by a developer-facing warning that the legacy editor does not support
+  it — rather than today's silent no-op that is indistinguishable from a cancelled dialog.
 - **FR-018**: Both shipped templates MUST work end to end **in the new Angular Edit Content**: the
   file-browser field (browse → path lands in the input and the field value) and the redirect field
   (browse → link/page URL lands in the redirect input).
@@ -479,7 +490,17 @@ workspace lints, tests and builds clean.
   Image) MUST still pass.
 - **FR-031**: Lint and unit tests MUST pass for the affected frontend libraries.
 
-### Group E — Close the one endpoint gap: `extensions`
+### Group E — Close the one endpoint gap: `extensions` *(SPLIT OUT — separate issue)*
+
+> **Decided 2026-08-28: not covered by this work.** Research (R4) found `extensions` is absent from
+> the browse endpoint's cursor-based path entirely, so closing it means a new SQL predicate under
+> binding ADR-0018 — not the form-field addition the spec first assumed. No shipped template uses
+> it, and including it takes the PR off the frontend-only merge-queue fast path (ADR-0013).
+>
+> **Applied consequence:** `extensions` was **removed from the public contract** rather than left
+> exposed. An option the endpoint cannot honour would be accepted and silently ignored — exactly the
+> failure FR-017 exists to prevent. It ships with the endpoint support, in the follow-up issue.
+> FR-032–FR-035 and SC-012 move there too.
 
 - **FR-032**: `/api/v1/drive/search` MUST accept an `extensions` parameter and pass it through to
   the browse query. The underlying query object already supports it (`BrowserQuery.extensions`, set
@@ -512,7 +533,7 @@ replaces for traceability.*
 | `sort` | `sortByDesc` | Honored | `sortBy` as `field:direction`, e.g. `modDate:desc` |
 | `mimeTypes` | `mimeTypes` | Honored | `mimeTypes` |
 | `path` | `hostFolderId` | Honored, **improved** | `assetPath` directly. The redesign drops the id→path resolution the old id-based field would have needed — which also avoids the `byPath` endpoint ADR-0020 deprecates. |
-| `extensions` | `extensions` | **Gap — closed by Group E** | No endpoint parameter today. `BrowserQuery` supports it; the request form and helper do not. |
+| *(not exposed)* | `extensions` | **Deferred with Group E** | No endpoint parameter today, and absent from its cursor path entirely. Deliberately kept **out of the contract** rather than accepted and ignored — see Group E. |
 
 **Hard constraint discovered:** the helper computes
 `showLinks = requestForm.showLinks() && !isSet(requestForm.mimeTypes())` — **menu links are
@@ -574,9 +595,9 @@ for. #37112 is sufficient for it.
   all pass.
 - **SC-011**: A written scope correction for #37207 and a confirmation of #37132 exist and are
   linked from this spec before merge.
-- **SC-012**: A browse request that names file extensions returns only assets with those
-  extensions, and an identical request without them returns exactly what it returns today — proving
-  the endpoint addition is both effective and backward-compatible.
+- **SC-012** *(moves to the Group E follow-up)*: A browse request that names file extensions returns
+  only assets with those extensions, and an identical request without them returns exactly what it
+  returns today — proving the endpoint addition is both effective and backward-compatible.
 
 ---
 

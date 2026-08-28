@@ -1,4 +1,4 @@
-import { DotBrowserHandle, DotBrowserOptions } from './asset-browser.interface';
+import { DotBrowserController, DotBrowserOptions } from './asset-browser.interface';
 import { FormFieldAPI, FormFieldValue } from './form-field.interface';
 
 /**
@@ -55,15 +55,20 @@ export interface FormBridge {
      * Only the Angular host opens anything: the legacy Dojo editor has never had this dialog, and
      * its bridge resolves `null` with a warning rather than pretending.
      *
-     * @param options What to browse. Every field is optional; the defaults browse assets only.
-     * @returns A handle whose `result` resolves with the selection, or `null` if cancelled.
+     * @param options What to browse, and what to do with the result. Every field is optional; the
+     * defaults browse assets only.
+     * @returns A controller for closing the dialog programmatically.
      *
      * @example
-     * const { result } = bridge.openBrowserModal({ kinds: ['page', 'link'], status: 'live' });
-     * const selection = await result;
-     * if (selection) field.setValue(selection.url);
+     * bridge.openBrowserModal({
+     *   kinds: ['page', 'link'],
+     *   status: 'live',
+     *   onClose: (selection) => {
+     *     if (selection) field.setValue(selection.url);
+     *   }
+     * });
      */
-    openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
+    openBrowserModal(options?: DotBrowserOptions): DotBrowserController;
 }
 
 // Re-export all interfaces for backwards compatibility

@@ -392,15 +392,18 @@ describe('DojoFormBridge', () => {
 
         afterEach(() => warn.mockRestore());
 
-        it('should return a well-formed handle', () => {
-            const handle = bridge.openBrowserModal({ kinds: ['file'] });
+        it('should return a controller', () => {
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
 
-            expect(handle.result).toBeInstanceOf(Promise);
-            expect(typeof handle.close).toBe('function');
+            expect(typeof controller.close).toBe('function');
         });
 
-        it('should resolve null because it opens nothing', async () => {
-            await expect(bridge.openBrowserModal({ kinds: ['file'] }).result).resolves.toBeNull();
+        it('should report null because it opens nothing', () => {
+            const onClose = jest.fn();
+
+            bridge.openBrowserModal({ kinds: ['file'], onClose });
+
+            expect(onClose).toHaveBeenCalledWith(null);
         });
 
         it('should warn that the legacy editor does not support it', () => {
@@ -409,17 +412,16 @@ describe('DojoFormBridge', () => {
             expect(warn).toHaveBeenCalled();
         });
 
-        it('should tolerate close() being called', async () => {
+        it('should tolerate close() being called', () => {
             // Nothing is open, so this must be a no-op rather than a throw — a caller cannot know
             // which host it landed in.
-            const handle = bridge.openBrowserModal({ kinds: ['file'] });
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
 
-            expect(() => handle.close()).not.toThrow();
-            await expect(handle.result).resolves.toBeNull();
+            expect(() => controller.close()).not.toThrow();
         });
 
-        it('should work with no options at all', async () => {
-            await expect(bridge.openBrowserModal().result).resolves.toBeNull();
+        it('should work with no options at all', () => {
+            expect(() => bridge.openBrowserModal()).not.toThrow();
         });
     });
 });

@@ -108,11 +108,21 @@ export function withAssetBrowse() {
                         ? currentFilters.baseType
                         : pickerConfig?.allowedBaseTypes;
 
-                    // Read UNTRACKED: the response writes the next page's cursor back into `pages`,
-                    // so tracking it here would recompute the request, refire the search, and loop.
-                    const cursor = untracked(
-                        () => pages()[currentPagination.page - 1]?.contentCursor ?? 0
-                    );
+                    // Read UNTRACKED: the response writes the next page's cursors back into
+                    // `pages`, so tracking it here would recompute the request, refire the search,
+                    // and loop.
+                    const bookmark = untracked(() => pages()[currentPagination.page - 1]);
+
+                    // What the caller opted into. Absent, this is the asset-only picker every entry
+                    // point but `openBrowserModal` uses.
+                    const browse = pickerConfig?.browse;
+
+                    // Once a stream is exhausted the endpoint asks us to switch it off, so later
+                    // pages stop paying for a query with nothing left to return.
+                    const showFolders =
+                        Boolean(browse?.showFolders) && (bookmark?.hasMoreFolders ?? true);
+                    const showLinks =
+                        Boolean(browse?.showLinks) && (bookmark?.hasMoreLinks ?? true);
 
                     return {
                         assetPath: `//${site?.hostname}${path() || '/'}`,
@@ -127,22 +137,28 @@ export function withAssetBrowse() {
                         mimeTypes: pickerConfig?.mimeTypes?.length
                             ? pickerConfig.mimeTypes
                             : undefined,
-                        contentCursor: cursor,
-                        // Always 0: with `showFolders: false` the folder cursor never advances.
-                        folderCursor: 0,
+                        contentCursor: bookmark?.contentCursor ?? 0,
+                        // No longer pinned. It stays 0 while folders are switched off — which is
+                        // every entry point but `openBrowserModal` — but a caller that asks for
+                        // folders pages through them like any other stream.
+                        folderCursor: bookmark?.folderCursor ?? 0,
+                        ...(browse?.showLinks
+                            ? { showLinks, linkCursor: bookmark?.linkCursor ?? 0 }
+                            : {}),
                         maxResults: currentPagination.limit,
                         sortBy: `${sort().field}:${sort().order}`,
                         // Version state. Not a flat `false` any more: `openBrowserModal` callers can
                         // ask for live-only or for archived content. Absent `browse`, this is
                         // exactly what it always was.
-                        archived: pickerConfig?.browse?.showArchived ?? false,
+                        archived: browse?.showArchived ?? false,
                         // `live: true` means published-only. The endpoint's own default is `false`
                         // (working included), which is what every entry point but `browse` wants, so
                         // the key is omitted unless a caller explicitly asked for live-only.
-                        ...(pickerConfig?.browse?.showWorking === false ? { live: true } : {}),
-                        // Invariant, not a default: the picker's list is for assets. Folders are
-                        // navigated through the sidebar tree.
-                        showFolders: false
+                        ...(browse?.showWorking === false ? { live: true } : {}),
+                        // Default, not an invariant any more: the picker's list is for assets, and
+                        // folders are navigated through the sidebar tree — unless the caller
+                        // explicitly asked for them.
+                        showFolders
                     };
                 },
                 // Structural dedupe so a no-op recompute doesn't refire the search.
@@ -180,7 +196,14 @@ export function withAssetBrowse() {
                                 // resume from a cursor instead of replaying from the top.
                                 pages[page] = {
                                     contentCursor: response.nextContentCursor,
-                                    hasMoreContent: response.hasMoreContent
+                                    hasMoreContent: response.hasMoreContent,
+                                    folderCursor: response.nextFolderCursor,
+                                    hasMoreFolders: response.hasMoreFolders,
+                                    // Only a `showLinks` response carries these. Defaulting the
+                                    // cursor to the one we sent keeps it from rewinding to 0 on a
+                                    // page that did not query links.
+                                    linkCursor: response.nextLinkCursor ?? 0,
+                                    hasMoreLinks: response.hasMoreLinks ?? false
                                 };
 
                                 patchState(store, {

@@ -1,5 +1,5 @@
 import {
-    DotBrowserHandle,
+    DotBrowserController,
     DotBrowserOptions,
     FieldValidationState,
     FormBridge,
@@ -321,17 +321,16 @@ export class DojoFormBridge implements FormBridge {
      * template author with nothing to go on. Giving the old editor a working browser is a separate
      * piece of work.
      *
-     * @returns A handle whose `result` resolves `null`; `close()` is a no-op.
+     * @returns A controller whose `close()` is a no-op; `onClose` is called once with `null`.
      */
-    openBrowserModal(_options?: DotBrowserOptions): DotBrowserHandle {
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
         console.warn(
             'DotCustomFieldApi.openBrowserModal is not available in the legacy edit contentlet — ' +
                 'no picker will open. It is supported only in the new Edit Content.'
         );
 
-        return {
-            result: Promise.resolve(null),
-            close: () => undefined
-        };
+        options.onClose?.(null);
+
+        return { close: () => undefined };
     }
 }

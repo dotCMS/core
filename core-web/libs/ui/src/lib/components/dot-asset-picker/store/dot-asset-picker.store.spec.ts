@@ -93,6 +93,16 @@ const IMAGE_FIELD_CONFIG: DotAssetPickerConfig = {
     mimeTypes: ['image/*']
 };
 
+/**
+ * What `openBrowserModal` hands the store: pages alongside assets, plus folders and menu links —
+ * none of which any other entry point may ask for.
+ */
+const BROWSE_CONFIG: DotAssetPickerConfig = {
+    site: SITE,
+    allowedBaseTypes: [DotCMSBaseTypesContentTypes.FILEASSET, DotCMSBaseTypesContentTypes.HTMLPAGE],
+    browse: { showFolders: true, showLinks: true }
+};
+
 describe('DotAssetPickerStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotAssetPickerStore>>;
     let store: InstanceType<typeof DotAssetPickerStore>;
@@ -235,7 +245,10 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
-    describe('showFolders invariant', () => {
+    // Formerly "showFolders invariant". It is no longer an invariant — `openBrowserModal` can ask
+    // for folders — but it remains the DEFAULT, and these are now the guards that prove no other
+    // entry point gained them.
+    describe('showFolders default (no browse options)', () => {
         it('should be false with no filters applied', () => {
             store.initPicker(FILE_FIELD_CONFIG);
 
@@ -407,6 +420,163 @@ describe('DotAssetPickerStore', () => {
             spectator.flushEffects();
 
             expect(store.totalItems()).toBe(42);
+        });
+    });
+
+    describe('browse entry point (openBrowserModal)', () => {
+        /** A response that still has more of everything to give. */
+        const MORE_OF_EVERYTHING = {
+            ...EMPTY_RESPONSE,
+            hasMoreContent: true,
+            hasMoreFolders: true,
+            hasMoreLinks: true,
+            nextContentCursor: 20,
+            nextFolderCursor: 5,
+            nextLinkCursor: 3
+        };
+
+        it('should ask for folders when the caller does', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showFolders).toBe(true);
+        });
+
+        it('should ask for menu links when the caller does', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showLinks).toBe(true);
+        });
+
+        it('should offer pages alongside assets', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().baseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+        });
+
+        it('should ask for live content only when the caller wants published', () => {
+            store.initPicker({ ...BROWSE_CONFIG, browse: { showWorking: false } });
+
+            expect(store.$request().live).toBe(true);
+        });
+
+        it('should include archived content when the caller asks for it', () => {
+            store.initPicker({ ...BROWSE_CONFIG, browse: { showArchived: true } });
+
+            expect(store.$request().archived).toBe(true);
+        });
+
+        describe('three-cursor paging', () => {
+            beforeEach(() => {
+                contentDriveService.search.mockReturnValue(of(MORE_OF_EVERYTHING));
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+            });
+
+            it('should no longer pin the folder cursor to zero', () => {
+                // The old invariant ("with showFolders: false the folder cursor never advances")
+                // held only because folders were never returned. Now they can be.
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().folderCursor).toBe(5);
+            });
+
+            it('should resume every stream from where the previous page left off', () => {
+                // Contentlets, folders and links page independently — one cursor cannot describe a
+                // page of a mixed list.
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+                expect(store.$request().folderCursor).toBe(5);
+                expect(store.$request().linkCursor).toBe(3);
+            });
+
+            it('should start every stream at zero on page one', () => {
+                expect(store.$request().contentCursor).toBe(0);
+                expect(store.$request().folderCursor).toBe(0);
+                expect(store.$request().linkCursor).toBe(0);
+            });
+        });
+
+        describe('exhausted streams', () => {
+            it('should stop asking for folders once there are no more', () => {
+                // The endpoint's own contract: when hasMoreFolders comes back false, the next page
+                // should skip the folder query entirely rather than pay for it again.
+                contentDriveService.search.mockReturnValue(
+                    of({
+                        ...MORE_OF_EVERYTHING,
+                        hasMoreFolders: false,
+                        nextFolderCursor: 5
+                    })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                // Asserted on BOTH pages on purpose. `showFolders` starts out hardcoded `false`, so
+                // checking only page 2 would pass today for entirely the wrong reason — a guard
+                // that cannot fail is not a guard.
+                expect(store.$request().showFolders).toBe(true);
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().showFolders).toBe(false);
+            });
+
+            it('should stop asking for links once there are no more', () => {
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreLinks: false, nextLinkCursor: 3 })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().showLinks).toBe(false);
+            });
+
+            it('should keep asking for content while content remains', () => {
+                // Reaching the end of one stream must not truncate the others.
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreFolders: false, hasMoreLinks: false })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+            });
+        });
+    });
+
+    describe('opt-in guarantee (no browse options)', () => {
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should not ask for links for the %s', (_name, config) => {
+            store.initPicker(config);
+
+            expect(store.$request().showLinks).toBeFalsy();
+        });
+
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should keep the folder cursor pinned for the %s', (_name, config) => {
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, hasMoreContent: true, nextContentCursor: 20 })
+            );
+            store.initPicker(config);
+            spectator.flushEffects();
+
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+            expect(store.$request().folderCursor).toBe(0);
+        });
+
+        it('should not request archived content', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.$request().archived).toBe(false);
         });
     });
 

@@ -106,7 +106,20 @@ export interface DotContentDriveLink {
     modDate: number;
 }
 
-export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder | DotContentDriveLink;
+export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * A browse result that may also contain menu Links.
+ *
+ * Deliberately NOT folded into {@link DotContentDriveItem}: Content Drive never asks for links, and
+ * every one of its consumers reads that union as "a folder, or else a contentlet". Widening it
+ * there would force `isFolder`, the action centre, the workflow counters and the drag handling to
+ * reason about a third kind that cannot reach them.
+ *
+ * Only a caller that sends `showLinks: true` — today, the asset picker's browse mode — receives
+ * these, and only that caller uses this type.
+ */
+export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
 
 /**
  * An item the shared folder actions (context menu, Edit-folder dialog) can act on.

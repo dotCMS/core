@@ -1,4 +1,9 @@
-import { ComponentStatus, DotContentDriveItem, DotSite, TreeNodeItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotContentDriveBrowseItem,
+    DotSite,
+    TreeNodeItem
+} from '@dotcms/dotcms-models';
 
 /**
  * Everything the host hands the picker when it opens.
@@ -221,7 +226,7 @@ export interface DotAssetPickerState {
 }
 
 export interface DotAssetPickerBrowseState {
-    items: DotContentDriveItem[];
+    items: DotContentDriveBrowseItem[];
     status: ComponentStatus;
     pagination: DotAssetPickerPagination;
     sort: DotAssetPickerSort;
@@ -282,5 +287,5 @@ export interface DotAssetPickerSelectionState {
      * are not contentlets. What follows from that: only a contentlet can be re-fetched with its
      * full content before the picker closes — see `DotAssetPickerComponent.confirm`.
      */
-    selectedAsset: DotContentDriveItem | null;
+    selectedAsset: DotContentDriveBrowseItem | null;
 }

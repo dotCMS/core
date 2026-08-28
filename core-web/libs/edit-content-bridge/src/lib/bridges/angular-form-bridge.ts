@@ -14,7 +14,7 @@ import {
 } from '@dotcms/ui';
 
 import {
-    DotBrowserHandle,
+    DotBrowserController,
     DotBrowserItemKind,
     DotBrowserOptions,
     DotBrowserSelection,
@@ -507,33 +507,30 @@ export class AngularFormBridge implements FormBridge {
      * File and Image fields use — widened here to also return pages, folders and menu links, which
      * a browser has to offer and an asset picker does not.
      *
-     * **Asynchronous by nature.** The picker needs a site, and finding one is a request, so the
-     * dialog opens a tick or more after the call. That is why this returns a handle with a promise
-     * rather than a dialog reference: the caller gets something usable immediately and awaits the
-     * outcome. `close()` works before the dialog exists, and cancels the pending open.
+     * **Opening is asynchronous.** The picker needs a site, and finding one is a request, so the
+     * dialog appears a tick or more after this returns — which is exactly why the outcome arrives
+     * through `onClose` rather than as a return value. The controller comes back immediately, and
+     * `close()` works even before the dialog exists: it cancels the pending open.
      *
-     * @param options What to browse. Every field is optional; the defaults browse assets only.
-     * @returns A handle whose `result` resolves with the selection, or `null` if cancelled.
+     * @param options What to browse, and what to do with the result. Every field is optional; the
+     * defaults browse assets only.
+     * @returns A controller for closing the dialog programmatically.
      *
      * @example
-     * const { result } = bridge.openBrowserModal({
+     * bridge.openBrowserModal({
      *   title: 'Select a Page',
      *   kinds: ['page', 'link'],
      *   status: 'live',
-     *   sort: { field: 'modDate', direction: 'desc' }
+     *   sort: { field: 'modDate', direction: 'desc' },
+     *   onClose: (selection) => {
+     *     if (selection) field.setValue(selection.url);
+     *   }
      * });
-     * const selection = await result;
-     * if (selection) field.setValue(selection.url);
      */
-    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserHandle {
-        let settle!: (value: DotBrowserSelection | null) => void;
-        const result = new Promise<DotBrowserSelection | null>((resolve) => {
-            settle = resolve;
-        });
-
-        // Whoever gets there first wins, and every later call is a no-op. PrimeNG can emit `onClose`
-        // after a programmatic `close()`, and a cancelled open can race the site lookup — without
-        // this, `result` would look like it settled twice.
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
+        // Whoever gets there first wins, and every later call is a no-op. PrimeNG can emit its own
+        // close after a programmatic `close()`, and a cancelled open races the site lookup —
+        // without this, `onClose` would fire twice.
         let settled = false;
         const finish = (selection: DotBrowserSelection | null) => {
             if (settled) {
@@ -541,7 +538,7 @@ export class AngularFormBridge implements FormBridge {
             }
 
             settled = true;
-            settle(selection);
+            options.onClose?.(selection);
         };
 
         if (!this.#resolveSite) {
@@ -551,7 +548,7 @@ export class AngularFormBridge implements FormBridge {
             );
             finish(null);
 
-            return { result, close: () => undefined };
+            return { close: () => undefined };
         }
 
         // Per-call, not the shared `#dialogRef`: two custom fields can each hold an open picker, and
@@ -601,7 +598,6 @@ export class AngularFormBridge implements FormBridge {
             });
 
         return {
-            result,
             close: () => {
                 cancelled = true;
                 siteSub.unsubscribe();

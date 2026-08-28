@@ -1,6 +1,8 @@
 # Contract 1 — `DotCustomFieldApi.openBrowserModal()` (REDESIGNED)
 
 **Audience**: custom-field VTL template authors.
+**Async note**: opening is asynchronous (the picker resolves a site first), so `onClose` fires some time after the call returns and `close()` is specified to cancel a still-pending open.
+
 **Stability**: **new and unshipped** — no customer consumers. Verified: `file_browser_field_render.vtl`
 and `redirect_custom_field.vtl` are dispatchers (`#if($structures.isNewEditModeEnabled())` →
 `_new.vtl`, else `_old.vtl`), so the `_new` templates only render when the new Edit Content is on,
@@ -38,6 +40,8 @@ interface DotBrowserOptions {
     extensions?: string[];
     /** @default { field: 'modDate', direction: 'asc' } */
     sort?: { field: string; direction: 'asc' | 'desc' };
+    /** Called exactly once with the selection, or `null` if cancelled. */
+    onClose?: (selection: DotBrowserSelection | null) => void;
 }
 
 interface DotBrowserSelectionBase {
@@ -61,14 +65,12 @@ type DotBrowserSelection =
     | (DotBrowserSelectionBase & { kind: 'folder'; inode: string })
     | (DotBrowserSelectionBase & { kind: 'link';   inode: string });
 
-interface DotBrowserHandle {
-    /** Resolves with the selection, or `null` when cancelled. Never rejects on cancel. */
-    readonly result: Promise<DotBrowserSelection | null>;
-    /** Closes programmatically; `result` resolves `null`. */
+interface DotBrowserController {
+    /** Closes the dialog programmatically; `onClose` is called once with `null`. */
     close(): void;
 }
 
-openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
+openBrowserModal(options?: DotBrowserOptions): DotBrowserController;
 ```
 
 ### Removed
@@ -84,7 +86,7 @@ openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
 | # | Was | Now | Fixes |
 |---|---|---|---|
 | 1 | Result carried `inode`/`mimeType`/`baseType`/`contentType` for everything | Union on `kind` | A folder can no longer be asked for a mimetype. Removes the root cause of the selection-pipeline break (R1) |
-| 2 | `onClose(result \| null)` + controller | `handle.result` Promise + `close()` | `await` instead of callback nesting |
+| 2 | `onClose(result \| null)` + controller | **unchanged** — still `onClose` + controller | Nothing. A Promise was specified, then withdrawn: `ready()` and `onChangeField()` are callback-based, so a lone promise-returning method would split the API's idiom in two. The asynchronous site lookup works identically either way, so there was no technical reason to switch |
 | 3 | 5 booleans for content kind | `kinds[]` | Invalid combinations unrepresentable |
 | 4 | `showWorking` + `showArchived` | `status` | 3 states in 3 values, not 2 booleans |
 | 5 | `sortByDesc: boolean` | `sort: { field, direction }` | Matches the Drive API's `field:direction` |
@@ -97,9 +99,9 @@ openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
 | # | Guarantee | Requirement |
 |---|---|---|
 | B1 | The dialog title is `options.title` | FR-015 |
-| B2 | `result` resolves once with a selection whose `url` is non-empty and whose `kind` is correct | FR-011, FR-011a, FR-012 |
-| B3 | ✕, `Esc`, or mask click resolves `result` with `null` **exactly once**; never rejects | FR-013 |
-| B4 | `handle.close()` closes the dialog and resolves `result` with `null` once | FR-014 |
+| B2 | `onClose` fires once with a selection whose `url` is non-empty and whose `kind` is correct | FR-011, FR-011a, FR-012 |
+| B3 | ✕, `Esc`, or mask click calls `onClose(null)` **exactly once** | FR-013 |
+| B4 | `controller.close()` closes the dialog and calls `onClose(null)` once — including before the dialog has opened | FR-014 |
 | B5 | The dialog opens inside the Angular zone (callers are outside Angular) | FR-016 |
 | B6 | Every option reaches the browse request per *Capability Mapping* | FR-017 |
 | B7 | Defaults reproduce asset-only browsing: `kinds: ['file','dotasset']`, `status: 'working'` | FR-007 |
@@ -109,7 +111,7 @@ openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
 | Bridge | Host | Behavior |
 |---|---|---|
 | `AngularFormBridge` | New Angular Edit Content | Opens `DotAssetPickerComponent` |
-| `DojoFormBridge` | Legacy Dojo edit contentlet | Opens nothing. Returns a well-formed handle whose `result` resolves `null`, **plus a developer warning** — today's silent no-op is indistinguishable from a cancel (FR-022, FR-037) |
+| `DojoFormBridge` | Legacy Dojo edit contentlet | Opens nothing. Returns a controller and calls `onClose(null)`, **plus a developer warning** — today's silent no-op is indistinguishable from a cancel (FR-022, FR-037) |
 
 ---
 
@@ -127,14 +129,15 @@ Both are dotCMS-owned and are the acceptance gate.
 -   onClose: (result) => { if (result && result.url) { vlUriInput.value = result.url;
 -                                                      field.setValue(result.url); } }
 - });
-+ const { result } = DotCustomFieldApi.openBrowserModal({
++ DotCustomFieldApi.openBrowserModal({
 +   title: "$text.get('Select-a-file')",
 +   kinds: ["file", "page", "folder"],
 +   status: "live",
-+   sort: { field: "modDate", direction: "desc" }
++   sort: { field: "modDate", direction: "desc" },
++   onClose: (selection) => {
++     if (selection) { vlUriInput.value = selection.url; field.setValue(selection.url); }
++   }
 + });
-+ const selection = await result;
-+ if (selection) { vlUriInput.value = selection.url; field.setValue(selection.url); }
 ```
 
 ### `WEB-INF/velocity/static/htmlpage_assets/redirect_custom_field_new.vtl:55`
@@ -156,9 +159,10 @@ redesign's point.
 
 - [ ] Each of the five kinds returns the right `kind` and a non-empty `url` (B2, SC-002, SC-003)
 - [ ] Contentlet-only fields are absent from folder and link selections (FR-011)
-- [ ] All four cancel paths resolve `null` exactly once and never reject (B3, B4, SC-006)
+- [ ] All four cancel paths call `onClose(null)` exactly once (B3, B4, SC-006)
+- [ ] `close()` before the dialog opens cancels it and still reports exactly once
 - [ ] Defaults with no `options` produce asset-only browsing (B7)
 - [ ] Each option reaches the search request (B6)
-- [ ] `DojoFormBridge` resolves `null` and warns (FR-037)
+- [ ] `DojoFormBridge` calls `onClose(null)` and warns (FR-037)
 - [ ] Both templates updated; no reference to the removed types remains (FR-010a)
 - [ ] Both templates verified manually end to end (SC-001)
