@@ -116,6 +116,21 @@ r=$(fixture wf.yml "jobs:
 expect_match "cache sub-path actions are governed independently" \
   'cache/(restore|save)' "$r"
 
+r=$(fixture wf.yml "jobs:
+  a:
+    steps:
+      - uses: actions/upload-artifact@v4
+      - uses: pnpm/action-setup@v4")
+expect_match "upload-artifact@v4 and pnpm/action-setup@v4 are violations" \
+  'upload-artifact' "$r"
+
+r=$(fixture wf.yml "jobs:
+  a:
+    steps:
+      - uses: actions/cache/restore@v3")
+expect_match "cache/restore@v3 (dead v1 cache service) is a violation" \
+  'cache/restore@v3' "$r"
+
 echo "== A2: SHA pin integrity =="
 
 r=$(fixture wf.yml "jobs:
@@ -144,6 +159,13 @@ r=$(fixture wf.yml "jobs:
       - uses: actions/checkout@8ade135a41bc03ea155e62e844d188df1ea18608 # v7.0.1")
 expect_match "unknown SHA is a violation even with a plausible comment" \
   'checkout' "$r"
+
+r=$(fixture wf.yml "jobs:
+  a:
+    steps:
+      - uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4.3.0")
+expect_match "the maven-job cache SHA pin is caught by SHA, not by comment" \
+  'SHA-pinned to 0057852bfaa8' "$r"
 
 echo "== A3: required inputs are explicit =="
 
