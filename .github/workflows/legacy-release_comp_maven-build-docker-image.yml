@@ -257,14 +257,14 @@ jobs:
         if: success()
 
       - name: Docker.io login
-        uses: docker/login-action@v3.0.0
+        uses: docker/login-action@v4.6.0
         with:
           username: ${{ secrets.docker_io_username }}
           password: ${{ secrets.docker_io_token }}
         if: inputs.docker_registry == 'DOCKER.IO' || inputs.docker_registry == 'BOTH'
 
       - name: GHCR.io login
-        uses: docker/login-action@v3.0.0
+        uses: docker/login-action@v4.6.0
         with:
           registry: ghcr.io
           username: ${{ secrets.ghcr_io_username }}
