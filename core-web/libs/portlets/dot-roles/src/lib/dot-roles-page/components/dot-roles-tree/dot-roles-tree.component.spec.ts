@@ -1,5 +1,5 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
-import { EMPTY } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
 
@@ -41,7 +41,8 @@ describe('DotRolesTreeComponent', () => {
                 status: jest.fn().mockReturnValue('LOADED'),
                 setFilter: jest.fn(),
                 selectRole: jest.fn(),
-                deleteRole: jest.fn().mockResolvedValue(null)
+                deleteRole: jest.fn().mockResolvedValue(null),
+                loadRoleChildren: jest.fn()
             }),
             mockProvider(DialogService, { open: jest.fn() }),
             mockProvider(ConfirmationService, {
@@ -130,6 +131,62 @@ describe('DotRolesTreeComponent', () => {
             spectator.detectChanges();
 
             expect(treeNodes()[0].leaf).toBe(true);
+        });
+    });
+
+    describe('revealing a newly created role', () => {
+        beforeEach(() => {
+            // `mockProvider` shares its jest.fn()s across tests, so call
+            // history survives unless it is cleared here.
+            (spectator.inject(DotRolesStore, true).loadRoleChildren as jest.Mock).mockClear();
+        });
+
+        const openWithResult = (created: unknown) => {
+            const dialogService = spectator.inject(DialogService, true);
+            (dialogService.open as jest.Mock).mockReturnValue({ onClose: of(created) });
+            spectator.detectChanges();
+            spectator.click(byTestId('new-role-btn'));
+        };
+
+        it('expands the parent branch so the new child is actually visible', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.roleTree as jest.Mock).mockReturnValue([
+                { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
+            ]);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
+            ]);
+
+            openWithResult({ id: 'r-child', name: 'Child', parent: 'r-parent' });
+            spectator.detectChanges();
+
+            const tree = (
+                spectator.component as unknown as {
+                    $treeNodes: () => { key: string; expanded: boolean }[];
+                }
+            ).$treeNodes();
+            expect(tree.find((n) => n.key === 'r-parent')?.expanded).toBe(true);
+        });
+
+        it('fetches the parent children so the new role does not appear alone', () => {
+            const store = spectator.inject(DotRolesStore, true);
+            (store.roleTree as jest.Mock).mockReturnValue([
+                { id: 'r-parent', name: 'Parent', childCount: 1, roleChildren: [] }
+            ]);
+
+            openWithResult({ id: 'r-child', name: 'Child', parent: 'r-parent' });
+
+            // Without this the branch holds only the spliced-in role, which
+            // reads as though its siblings were deleted.
+            expect(store.loadRoleChildren).toHaveBeenCalledWith('r-parent');
+        });
+
+        it('does nothing for a root role — it is visible already', () => {
+            const store = spectator.inject(DotRolesStore, true);
+
+            openWithResult({ id: 'r-root', name: 'Root', parent: 'r-root' });
+
+            expect(store.loadRoleChildren).not.toHaveBeenCalled();
         });
     });
 

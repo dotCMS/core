@@ -51,6 +51,7 @@
             <p-table
                 [value]="store.toolGroups()"
                 dataKey="id"
+                [rowTrackBy]="trackByGroupId"
                 [scrollable]="true"
                 scrollHeight="flex"
                 data-testid="tools-table">
@@ -81,12 +82,24 @@
                         <td class="font-medium">{{ group.name }}</td>
                         <td class="text-sm text-gray-500">{{ includedTools(group) }}</td>
                         <td>
-                            @if (group.granted) {
-                                <p-tag
-                                    class="whitespace-nowrap"
-                                    [value]="group.grantedFromRoleName"
-                                    [severity]="direct ? 'info' : 'secondary'" />
-                            }
+                            <!--
+                                Fixed-height slot. The tag renders only on
+                                granted rows, so without a reserved line box
+                                the row grows the instant a checkbox is
+                                ticked. `h-6` is the line box of the tallest
+                                plain-text cell, and the tag is flattened to
+                                the same height so ticking never shifts the
+                                row.
+                            -->
+                            <div class="flex h-6 items-center">
+                                @if (group.granted) {
+                                    <p-tag
+                                        class="whitespace-nowrap"
+                                        styleClass="h-6! py-0! leading-none!"
+                                        [value]="group.grantedFromRoleName"
+                                        [severity]="direct ? 'info' : 'secondary'" />
+                                }
+                            </div>
                         </td>
                     </tr>
                 </ng-template>

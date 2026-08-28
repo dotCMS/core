@@ -19,7 +19,7 @@ import {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
@@ -28,6 +28,7 @@ import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.compo
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
 import { DotRoleNode } from '../../../models/dot-roles.models';
 import { DotRolesStore } from '../../store/dot-roles.store';
+import { collectAncestorChain } from '../../store/dot-roles.tree-utils';
 
 interface DotRolePrimeTreeNode extends TreeNode {
     data: DotRoleNode;
@@ -197,13 +198,55 @@ export class DotRolesTreeComponent {
     }
 
     protected onAddRole(parentRoleId?: string): void {
-        this.#dialogService.open(DotRolesAddComponent, {
+        const ref = this.#dialogService.open(DotRolesAddComponent, {
             header: this.#messageService.get('roles.add.title'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
             data: { parentRoleId: parentRoleId ?? null }
         });
+
+        ref.onClose
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((created?: DotRoleNode) => {
+                if (created) {
+                    this.#revealCreatedRole(created);
+                }
+            });
+    }
+
+    /**
+     * Open the branch the new role landed in.
+     *
+     * The store already selects it, and `$selectedNode` follows — but selection
+     * is invisible inside a collapsed parent, so the admin gets no feedback that
+     * anything happened.
+     */
+    #revealCreatedRole(created: DotRoleNode): void {
+        // A self-referential `parent` marks a root; those are visible already.
+        const parentId = created.parent && created.parent !== created.id ? created.parent : null;
+        if (!parentId) {
+            return;
+        }
+
+        // Expand the whole ancestor path, not just the immediate parent — that
+        // parent may itself sit inside a collapsed branch.
+        const chain = collectAncestorChain(this.store.roleTree(), { id: parentId });
+        this.#openNodeIds.update((set) => {
+            const next = new Set(set);
+            chain.forEach((node) => next.add(node.id));
+
+            return next;
+        });
+
+        // If this parent's children were never fetched, the tree holds only the
+        // role we just spliced in — expanding would show it alone and hide its
+        // siblings, which reads as "the others were deleted". Fetch the real
+        // set; the backend already has the new role, so nothing is lost.
+        if (!this.#fetchedRoleIds().has(parentId)) {
+            this.#fetchedRoleIds.update((set) => new Set(set).add(parentId));
+            this.store.loadRoleChildren(parentId);
+        }
     }
 
     /**

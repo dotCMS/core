@@ -91,6 +91,7 @@
             <p-table
                 [value]="store.members()"
                 dataKey="userId"
+                [rowTrackBy]="trackByUserId"
                 [scrollable]="true"
                 scrollHeight="flex"
                 [paginator]="true"

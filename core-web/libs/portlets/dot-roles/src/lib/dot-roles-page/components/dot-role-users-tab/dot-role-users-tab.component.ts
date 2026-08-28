@@ -207,6 +207,13 @@ export class DotRoleUsersTabComponent {
         });
     }
 
+    // See the note on `trackByGroupId` in the Tools tab: PrimeNG tracks rows
+    // by object identity, so re-fetching members after a grant/remove would
+    // otherwise tear down and rebuild every row — dropping the `just-granted`
+    // highlight's transition and re-triggering row animations.
+    protected readonly trackByUserId = (_index: number, member: DotRoleMember): string =>
+        member.userId;
+
     /** Direct grants only — inherited rows must be revoked at the ancestor. */
     protected isDirectGrant(member: DotRoleMember): boolean {
         return member.grantedFromRoleId === this.store.selectedRoleId();

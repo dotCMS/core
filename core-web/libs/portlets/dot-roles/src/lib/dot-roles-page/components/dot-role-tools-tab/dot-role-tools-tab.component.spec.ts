@@ -67,6 +67,25 @@ describe('DotRoleToolsTabComponent', () => {
         (store().saveToolGroups as jest.Mock).mockClear();
     });
 
+    describe('row identity across the post-save reconcile', () => {
+        it('keeps the same <tr> when the reconcile rebuilds the row objects', () => {
+            (store().toolGroups as jest.Mock).mockReturnValue([row()]);
+            spectator.detectChanges();
+
+            const before = spectator.query(byTestId('tool-group-row-tg-1'));
+            expect(before).toBeTruthy();
+
+            // What the silent reconcile after a save does: same data, brand
+            // new object references. With PrimeNG's default identity
+            // `rowTrackBy` this tears the row down and rebuilds the
+            // checkbox — the blink.
+            (store().toolGroups as jest.Mock).mockReturnValue([row()]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('tool-group-row-tg-1'))).toBe(before);
+        });
+    });
+
     it('renders the empty state when the catalog is empty', () => {
         spectator.detectChanges();
 

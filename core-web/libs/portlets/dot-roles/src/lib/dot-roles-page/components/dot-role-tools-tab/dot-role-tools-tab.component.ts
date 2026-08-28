@@ -86,6 +86,14 @@ export class DotRoleToolsTabComponent {
             .map((group) => group.id)
     );
 
+    // PrimeNG's default `rowTrackBy` is object identity, so the reconcile
+    // that follows a save — which rebuilds every row object — makes Angular
+    // destroy and re-create each `<tr>`, and with it the `p-checkbox`. That
+    // re-creation is the visible blink on the boxes the admin just ticked.
+    // Tracking by id lets Angular patch the existing rows in place instead.
+    protected readonly trackByGroupId = (_index: number, group: DotRoleToolGroupRow): string =>
+        group.id;
+
     protected isDirectGrant(group: DotRoleToolGroupRow): boolean {
         return group.granted && group.grantedFromRoleId === this.store.selectedRoleId();
     }

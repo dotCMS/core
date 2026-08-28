@@ -1,18 +1,21 @@
 import { patchState, signalStore, withComputed, withMethods, withState } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, firstValueFrom, forkJoin, of, pipe } from 'rxjs';
+import { EMPTY, firstValueFrom, forkJoin, of, pipe, Subject } from 'rxjs';
 
 import { computed, inject } from '@angular/core';
 
-import { catchError, map, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, debounceTime, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotHttpErrorManagerService,
+    DotMessageDisplayService,
+    DotMessageService,
     DotRoleDeletionResult,
     DotRolesService,
     DotRoleUserGrantResult,
     DotRoleUsersRemovalResult
 } from '@dotcms/data-access';
+import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import {
     appendChildToParent,
@@ -34,6 +37,13 @@ import {
     DotRolesStatus,
     DotRoleToolGroupRow
 } from '../../models/dot-roles.models';
+
+/**
+ * How long to wait after the last successful tool-group save before telling the
+ * admin. Long enough to absorb a run of checkbox clicks, short enough that the
+ * confirmation still feels attached to the action.
+ */
+const TOOL_GROUPS_SAVED_NOTICE_DELAY = 1500;
 
 export interface DotRolesState {
     /**
@@ -195,6 +205,24 @@ export const DotRolesStore = signalStore(
     withMethods((store) => {
         const httpErrorManager = inject(DotHttpErrorManagerService);
         const rolesService = inject(DotRolesService);
+        const messageDisplayService = inject(DotMessageDisplayService);
+        const messageService = inject(DotMessageService);
+
+        /**
+         * Coalesces the "saved" toast. Each checkbox click is its own full
+         * replace, so an admin granting five tool groups fires five saves in
+         * a few seconds — one toast per save would bury the screen. Debounced
+         * so a burst produces a single confirmation once the admin stops.
+         */
+        const toolGroupsSaved$ = new Subject<void>();
+        toolGroupsSaved$.pipe(debounceTime(TOOL_GROUPS_SAVED_NOTICE_DELAY)).subscribe(() => {
+            messageDisplayService.push({
+                life: 5000,
+                severity: DotMessageSeverity.SUCCESS,
+                message: messageService.get('roles.tools.saved'),
+                type: DotMessageType.SIMPLE_MESSAGE
+            });
+        });
 
         const loadRootRoles = rxMethod<void>(
             pipe(
@@ -277,9 +305,17 @@ export const DotRolesStore = signalStore(
         // user switches roles quickly — otherwise an earlier chain could
         // resolve *after* a later one and overwrite `members` with stale
         // data. Also used post-grant / post-remove to refresh the list.
-        const loadMembers = rxMethod<{ id: string }>(
+        const loadMembers = rxMethod<{ id: string; silent?: boolean }>(
             pipe(
-                tap(() => patchState(store, { membersStatus: 'LOADING' })),
+                // Same rule as loadToolGroups: `silent` reconciles in the
+                // background after a grant/revoke. Flipping to LOADING there
+                // swaps the whole table for the skeleton and back, which reads
+                // as the member list blinking on every grant.
+                tap(({ silent }) => {
+                    if (!silent) {
+                        patchState(store, { membersStatus: 'LOADING' });
+                    }
+                }),
                 switchMap((role) => {
                     // Under active search, ancestors of the picked role may
                     // live only in `searchResults` (the lazy tree hasn't
@@ -578,8 +614,8 @@ export const DotRolesStore = signalStore(
              * `/rolehierarchyanduserroles` fallback: one call shape now works
              * for every role and carries `emailAddress`.
              */
-            loadMembers(role: { id: string }): void {
-                loadMembers({ id: role.id });
+            loadMembers(role: { id: string; silent?: boolean }): void {
+                loadMembers({ id: role.id, silent: role.silent });
             },
 
             loadToolGroups(role: { id: string }): void {
@@ -656,6 +692,10 @@ export const DotRolesStore = signalStore(
                         // count without the table leaving the loaded state.
                         loadToolGroups({ id: roleId, silent: true });
                     }
+
+                    // Notified even if the admin has navigated on — the save
+                    // did happen, and silence would read as "it did not".
+                    toolGroupsSaved$.next();
 
                     return true;
                 } catch (error) {
@@ -926,7 +966,7 @@ export const DotRolesStore = signalStore(
                     // dispatch would cancel the current role's members load and
                     // then be thrown away by the sink guard, stranding the tab.
                     if (store.selectedRoleId() === role.id) {
-                        loadMembers({ id: role.id });
+                        loadMembers({ id: role.id, silent: true });
                     }
 
                     return result;
@@ -973,9 +1013,11 @@ export const DotRolesStore = signalStore(
                     // Refresh from the BE too — inherited-vs-direct labelling
                     // can shift if a user was ONLY direct on this role and now
                     // ends up inherited from an ancestor still granting them.
-                    // Guarded as above.
+                    // Guarded as above, and silent: the rows are already on
+                    // screen (minus the optimistic prune), so the skeleton
+                    // would only blink them away and back.
                     if (store.selectedRoleId() === role.id) {
-                        loadMembers({ id: role.id });
+                        loadMembers({ id: role.id, silent: true });
                     }
 
                     return result;

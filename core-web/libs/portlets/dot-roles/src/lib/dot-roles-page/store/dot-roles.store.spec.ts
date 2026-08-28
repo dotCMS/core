@@ -3,8 +3,10 @@ import { NEVER, of, throwError } from 'rxjs';
 
 import {
     DotHttpErrorManagerService,
-    DotRolesService,
-    DotRoleUserResult
+    DotMessageDisplayService,
+    DotMessageService,
+    DotRoleUserResult,
+    DotRolesService
 } from '@dotcms/data-access';
 
 import { DotRolesStore } from './dot-roles.store';
@@ -99,7 +101,9 @@ describe('DotRolesStore', () => {
                 getToolGroups: jest.fn().mockReturnValue(of([])),
                 saveToolGroups: jest.fn().mockReturnValue(of({}))
             }),
-            mockProvider(DotHttpErrorManagerService)
+            mockProvider(DotHttpErrorManagerService),
+            mockProvider(DotMessageDisplayService, { push: jest.fn() }),
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) })
         ]
     });
 
@@ -809,6 +813,21 @@ describe('DotRolesStore', () => {
             expect(service.grantUser).not.toHaveBeenCalled();
             expect(result).toBeNull();
         });
+
+        it('should refresh members silently so the table does not blink', async () => {
+            store.loadMembers(SELECTED_ROLE);
+            expect(store.membersStatus()).toBe('LOADED');
+
+            // Hold the refresh in flight so the intermediate status is
+            // observable. A non-silent reload would flip to LOADING here,
+            // and the users tab renders the skeleton on LOADING — swapping
+            // the whole table out and back on every grant.
+            service.getUsers.mockReturnValue(NEVER);
+
+            await store.grantUserToRole('u-1');
+
+            expect(store.membersStatus()).toBe('LOADED');
+        });
     });
 
     describe('removeUsersFromRole', () => {
@@ -832,6 +851,17 @@ describe('DotRolesStore', () => {
 
             expect(service.removeUsers).not.toHaveBeenCalled();
             expect(result).toBeNull();
+        });
+
+        it('should refresh members silently so the table does not blink', async () => {
+            store.loadMembers(SELECTED_ROLE);
+            expect(store.membersStatus()).toBe('LOADED');
+
+            service.getUsers.mockReturnValue(NEVER);
+
+            await store.removeUsersFromRole(['u-1']);
+
+            expect(store.membersStatus()).toBe('LOADED');
         });
     });
 });
