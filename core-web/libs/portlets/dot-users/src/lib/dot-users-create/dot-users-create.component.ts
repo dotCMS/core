@@ -19,12 +19,14 @@ import { InputTextModule } from 'primeng/inputtext';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TabsModule } from 'primeng/tabs';
 import { TagModule } from 'primeng/tag';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
 import { DotUsersCreateStore } from './store/dot-users-create.store';
+import { DotUsersPermissionsTabComponent } from './tabs/dot-users-permissions-tab/dot-users-permissions-tab.component';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
 import { DotUsersRolesTabComponent } from './tabs/dot-users-roles-tab/dot-users-roles-tab.component';
 
@@ -72,6 +74,9 @@ const ACCESS_ROLE_KEYS = {
     frontend: 'DOTCMS_FRONT_END_USER'
 } as const;
 
+/** `p-tab` value of the Permissions tab. */
+const PERMISSIONS_TAB = 2;
+
 /**
  * Create / Edit User dialog. Hosts the four-tab experience (Profile,
  * Roles, Permissions, API Tokens) inside the shared PrimeNG dynamic
@@ -79,9 +84,10 @@ const ACCESS_ROLE_KEYS = {
  * (create vs edit), and orchestrates each tab as a standalone
  * presentational sub-component.
  *
- * Scope for issue #36718 — Profile + Roles tabs are real; Permissions
- * and API Tokens render "Coming soon" placeholders and are delivered
- * by #36719 and #36720.
+ * Scope for issue #36719 (this branch) — Profile + Roles + Permissions
+ * tabs are real; API Tokens still renders "Coming soon" and lands via
+ * #36720. In edit mode Save is disabled on the Permissions tab because
+ * the embedded JSP owns its own save button.
  */
 @Component({
     selector: 'dot-users-create',
@@ -96,10 +102,12 @@ const ACCESS_ROLE_KEYS = {
         SkeletonModule,
         TabsModule,
         TagModule,
+        TooltipModule,
         DotMessagePipe,
         DotUsersReplacementPickerComponent,
         DotUsersProfileTabComponent,
-        DotUsersRolesTabComponent
+        DotUsersRolesTabComponent,
+        DotUsersPermissionsTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',
@@ -237,7 +245,20 @@ export class DotUsersCreateComponent {
         () => !this.isEdit || this.#store.status() === 'loaded'
     );
 
-    protected readonly $isSaveDisabled = computed(() => !this.$dataReady());
+    /**
+     * The embedded permissions JSP owns its own save button, so the
+     * footer Save is a no-op while that tab is open — but only in edit
+     * mode. In create mode the tab renders "save this user first", and
+     * disabling Save there would leave the user with an instruction
+     * they cannot act on without switching tabs.
+     */
+    protected readonly $isPermissionsTabOpen = computed(
+        () => this.isEdit && this.$activeTab() === PERMISSIONS_TAB
+    );
+
+    protected readonly $isSaveDisabled = computed(
+        () => !this.$dataReady() || this.$isPermissionsTabOpen()
+    );
 
     /**
      * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
