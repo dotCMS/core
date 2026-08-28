@@ -57,7 +57,7 @@ runs:
       id: download-cli-artifacts
       uses: actions/download-artifact@v8.0.1
       with:
-        digest-mismatch: warn
+        digest-mismatch: error
         pattern: cli-artifacts-*
         path: ${{ github.workspace }}/artifacts
         github-token: ${{ inputs.github-token }} # token with actions:read permissions on target repo
