@@ -8,10 +8,12 @@
     [scrollHeight]="$scrollHeight() ?? undefined"
     [metaKeySelection]="$metaKeySelection()"
     [pt]="$pt() ?? undefined"
+    [contextMenu]="$contextMenu() ?? undefined"
     [attr.data-testid]="$treeTestId()"
     (onNodeSelect)="onNodeSelect.emit($event)"
     (onNodeExpand)="onNodeExpand.emit($event)"
-    (onNodeCollapse)="onNodeCollapse.emit($event)">
+    (onNodeCollapse)="onNodeCollapse.emit($event)"
+    (onNodeContextMenuSelect)="onNodeContextMenuSelect.emit($event)">
     <ng-template let-node pTemplate="default">
         @if (nodeLabelTemplate(); as labelTpl) {
             <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
@@ -43,14 +45,25 @@
     </ng-template>
 
     <!-- LOADING WON'T WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
+    <!-- The icon owns its own centring instead of inheriting it.
+         `flex size-full items-center justify-center` makes this element fill the toggle button and
+         centre the glyph box inside itself, so the glyph's position no longer depends on the icon
+         font's baseline — which is what made the misalignment change with the font size, since a
+         baseline-aligned glyph moves as the em box grows or shrinks. `leading-none` keeps the line box
+         equal to the glyph.
+         The `!` modifiers are required, and `flex!` especially: primeicons' own `.pi` sets
+         `display: inline-block`, and it is unlayered (primeicons.css is a plain build stylesheet),
+         so it beats Tailwind utilities, which live in `@layer utilities`. Without the modifier the
+         `flex` is silently dropped while `size-*` still applies, which leaves an inline-block box
+         taller than its line box and pins the glyph to the top of it. -->
     <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
         @if (loading) {
             <i
-                class="pi pi-spin pi-spinner text-sm text-surface-400"
+                class="pi pi-spin pi-spinner flex! size-full items-center justify-center text-xs! leading-none! text-surface-400"
                 data-testid="tree-toggler-loading"></i>
         } @else {
             <i
-                class="pi text-sm text-gray-600"
+                class="pi flex! size-full translate-y-px items-center justify-center text-xs! leading-none! text-gray-600"
                 [class]="expanded ? 'pi-chevron-down' : 'pi-chevron-right'"></i>
         }
     </ng-template>

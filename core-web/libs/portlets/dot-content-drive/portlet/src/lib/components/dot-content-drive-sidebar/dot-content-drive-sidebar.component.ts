@@ -12,15 +12,10 @@ import {
     viewChild
 } from '@angular/core';
 
-import type {
-    TreeNodeCollapseEvent,
-    TreeNodeExpandEvent,
-    TreeNodeSelectEvent
-} from 'primeng/types/tree';
+import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
 import { DotContentDriveActionableFolder, TreeNodeLoadMoreData } from '@dotcms/dotcms-models';
 import {
-    ALL_FOLDER,
     DotContentDriveMoveItems,
     DotContentDriveTreeRightClick,
     DotContentDriveUploadFiles,
@@ -43,10 +38,13 @@ import { appendLoadMoreNodes, mergeFolderNodePage } from '../../utils/functions'
     templateUrl: './dot-content-drive-sidebar.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [DotTreeFolderComponent],
-    host: { class: 'w-full h-full grid grid-rows-[min-content_1fr]' },
+    host: { class: 'block w-full h-full' },
     styles: `
+        /* The top inset used to come from the site-name header that sat above the tree. With the
+           site now named by the tree's own root row, the tree owns that spacing — and the amount is
+           what centers that first row on the toolbar's search box and tree toggler beside it. */
         :host ::ng-deep .p-tree {
-            padding: 0 0.75rem 0.75rem;
+            padding: 1.25rem 0.75rem 0.75rem;
         }
     `
 })
@@ -199,8 +197,8 @@ export class DotContentDriveSidebarComponent {
      * Loads the next page of children for a folder level when its "Load more" node is clicked,
      * appending them and refreshing (or removing) the "Load more" node.
      *
-     * Root-level sentinels are siblings of root folders (not children of ALL_FOLDER), so they
-     * update the top-level folders array. Nested sentinels update `parent.children`.
+     * Root-level sentinels live alongside the root folders, which are the site node's children, so
+     * they update that node's children. Nested sentinels update their own `parent.children`.
      *
      * @param {DotFolderTreeNodeItem} node - The clicked "Load more" node
      */
@@ -218,27 +216,34 @@ export class DotContentDriveSidebarComponent {
 
                 if (isRootLevel) {
                     const current = this.$folders();
-                    const allFolder =
-                        current.find((folder) => folder.key === ALL_FOLDER.key) ?? ALL_FOLDER;
-                    const loaded = current.filter(
-                        (folder) =>
-                            folder.key !== ALL_FOLDER.key &&
-                            folder.data?.type !== LOAD_MORE_NODE_TYPE
+                    const siteNode = this.#siteNode();
+                    const siblings = siteNode
+                        ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? [])
+                        : current;
+
+                    const loaded = siblings.filter(
+                        (folder) => folder.data?.type !== LOAD_MORE_NODE_TYPE
                     );
                     // Merge rather than concatenate: the hierarchy load can pin a deep-linked folder to
                     // the top of a level out of sort order, and paging far enough returns it again.
-                    const combined = mergeFolderNodePage(loaded, folders);
+                    const nextSiblings = appendLoadMoreNodes(
+                        mergeFolderNodePage(loaded, folders),
+                        totalEntries,
+                        parentPath || '/',
+                        hostname ?? '',
+                        (nextPage ?? 1) + 1
+                    );
 
-                    this.#store.updateFolders([
-                        allFolder,
-                        ...appendLoadMoreNodes(
-                            combined,
-                            totalEntries,
-                            parentPath || '/',
-                            hostname ?? '',
-                            (nextPage ?? 1) + 1
-                        )
-                    ]);
+                    // With a site row the root folders are its children; without one they are the
+                    // top level itself, which is how a plain folder tree is shaped.
+                    if (siteNode) {
+                        siteNode.children = nextSiblings;
+                        this.#store.updateFolders([...current]);
+
+                        return;
+                    }
+
+                    this.#store.updateFolders(nextSiblings);
 
                     return;
                 }
@@ -334,18 +339,28 @@ export class DotContentDriveSidebarComponent {
     }
 
     /**
-     * Handles node collapse events
-     * Prevents collapse of the special 'ALL_FOLDER' node
+     * The site row, when the tree has one. Recognised by having no folder path: every folder node
+     * carries one, and the row that stands for a site does not. A tree can be a plain list of
+     * folders with no site row at all, which is why this is a lookup rather than an assumption about
+     * the first node.
      *
-     * @param {TreeNodeCollapseEvent} event - The tree node collapse event
+     * @returns {DotFolderTreeNodeItem | undefined} the site row, if the tree has one
      */
-    protected onNodeCollapse(event: TreeNodeCollapseEvent): void {
-        const { node } = event;
+    #siteNode(): DotFolderTreeNodeItem | undefined {
+        return this.$folders().find((folder) => !folder.data?.path);
+    }
 
-        if (node.key === ALL_FOLDER.key) {
-            node.expanded = true;
-            return;
-        }
+    /**
+     * The folders at the top of the hierarchy: the site row's children when there is one, otherwise
+     * the top level itself. Path walks start here, since the site row's empty path matches no
+     * segment.
+     *
+     * @returns {DotFolderTreeNodeItem[]} the root folders
+     */
+    #rootFolders(): DotFolderTreeNodeItem[] {
+        const siteNode = this.#siteNode();
+
+        return siteNode ? ((siteNode.children as DotFolderTreeNodeItem[]) ?? []) : this.$folders();
     }
 
     /**
@@ -357,7 +372,7 @@ export class DotContentDriveSidebarComponent {
      */
     recursiveExpandOneNode(
         segments: string[],
-        nodes: DotFolderTreeNodeItem[] = this.$folders()
+        nodes: DotFolderTreeNodeItem[] = this.#rootFolders()
     ): void {
         if (segments.length === 0) {
             return;

@@ -52,12 +52,16 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
+import { stripDocStats } from './utils/doc-stats.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
-import { preserveUnknownBlockNodes, restoreUnknownBlockNodes } from './utils/unknown-block.utils';
+import {
+    preserveUnknownNodesInDocument,
+    restoreUnknownBlockNodes
+} from './utils/unknown-block.utils';
 
 /** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
 function editorDocumentJsonText(editor: Editor): string {
-    return JSON.stringify(editor.getJSON());
+    return JSON.stringify(stripDocStats(editor.getJSON()));
 }
 
 /**
@@ -129,16 +133,6 @@ function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
 }
 
-function preserveUnknownNodesInDocument(
-    parsed: JSONContent,
-    knownNodeNames: Set<string>
-): JSONContent {
-    return {
-        ...parsed,
-        content: preserveUnknownBlockNodes(parsed.content, knownNodeNames)
-    };
-}
-
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -146,7 +140,7 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         const trimmed = parsed.trimStart();
         if (trimmed.startsWith('{')) {
             try {
-                return JSON.stringify(JSON.parse(parsed)) === currentJson;
+                return JSON.stringify(stripDocStats(JSON.parse(parsed))) === currentJson;
             } catch {
                 return false;
             }
@@ -154,8 +148,9 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
         return parsed === editor.getHTML();
     }
     return (
-        JSON.stringify(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor))) ===
-        currentJson
+        JSON.stringify(
+            stripDocStats(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)))
+        ) === currentJson
     );
 }
 

@@ -7,6 +7,7 @@ import { DotFolderService } from '@dotcms/data-access';
 import {
     createLoadMoreTreeNode,
     DotCMSContentTypeField,
+    PERMISSIONS_TYPE,
     DotContentDriveDateRange,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -17,7 +18,7 @@ import {
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
@@ -29,6 +30,8 @@ import {
     FOLDER_NAME_FILTER_MIN_LENGTH,
     FOLDER_TREE_HIERARCHY_PAGE_SIZE,
     FOLDER_TREE_PAGE_SIZE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
 } from '../shared/constants';
@@ -127,7 +130,8 @@ export const decodeByFilterKey: Record<
     title: singleSelector,
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
-    workflow: multiSelector
+    workflow: multiSelector,
+    sharedAssets: singleSelector
 };
 
 /**
@@ -239,6 +243,133 @@ export function encodeFilters(filters: DotContentDriveFilters): string {
             return acc;
         }, [] as string[])
         .join(';');
+}
+
+/**
+ * Guarantees the language filter always carries a value, seeding the environment's default
+ * language whenever nothing is selected.
+ *
+ * "No language selected" is not the neutral state it looks like: the backend omits the language
+ * term from the query entirely (`LuceneQueryBuilder.getSystemSearchableQueryTerms`), so every
+ * language version of a contentlet comes back as its own row. Selecting the default explicitly is
+ * both what users expect to see and an honest reflection of what is applied — so the seeded value
+ * lands in `filters` (and therefore in the URL) like any other selection.
+ *
+ * Returns the filters untouched when the default is unknown — the languages request has not
+ * answered yet, or failed — so the portlet degrades to exactly its pre-seeding behaviour instead
+ * of inventing a language. Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with `languageId` guaranteed when possible.
+ */
+export function withDefaultLanguage(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    if (!defaultLanguageId || filters?.languageId?.length) {
+        return filters;
+    }
+
+    return { ...filters, languageId: [String(defaultLanguageId)] };
+}
+
+/**
+ * Seeds the shared-assets toggle with its default when the filters do not carry it.
+ *
+ * The toggle is on by default, which could have been left implicit — no key meaning on. It is
+ * seeded instead so the state that is applied is always visible in the URL rather than inferred from
+ * something missing, and so "Clear all" lands on the same explicit value a fresh load does.
+ *
+ * Never mutates the input.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @return {*} {DotContentDriveFilters} The filters, with the shared-assets key guaranteed.
+ */
+export function withDefaultSharedAssets(filters: DotContentDriveFilters): DotContentDriveFilters {
+    if (filters?.[SHARED_ASSETS_FILTER_KEY]) {
+        return filters;
+    }
+
+    return { ...filters, [SHARED_ASSETS_FILTER_KEY]: SHARED_ASSETS_ENABLED_VALUE };
+}
+
+/**
+ * Whether any filter is set to something other than its default.
+ *
+ * Not the same question as "are there filters at all": the seeded defaults — the environment language
+ * and the shared-assets toggle — are always present, so counting keys would answer yes on a drive
+ * nobody has filtered. Consumers use this to decide whether there is anything worth offering to
+ * clear.
+ *
+ * A filter explicitly set to its default value counts as default, which is deliberate: selecting the
+ * default language by hand is indistinguishable from the seeded state, and clearing it would just
+ * re-select the same thing.
+ *
+ * @param {DotContentDriveFilters} filters The filters to inspect.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {boolean} True when at least one filter differs from its default.
+ */
+export function hasNonDefaultFilters(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): boolean {
+    return Object.entries(filters ?? {}).some(([key, value]) => {
+        if (key === SHARED_ASSETS_FILTER_KEY) {
+            return value !== SHARED_ASSETS_ENABLED_VALUE;
+        }
+
+        if (key === 'languageId') {
+            const languages = Array.isArray(value) ? value : [value];
+
+            return !(
+                defaultLanguageId &&
+                languages.length === 1 &&
+                languages[0] === String(defaultLanguageId)
+            );
+        }
+
+        return true;
+    });
+}
+
+/**
+ * Applies every filter default in one pass, for the paths that build a filter set from scratch or
+ * from the URL: init, "Clear all", removing a single filter, and history restore. Keeping them
+ * together is what stops one of those paths from quietly missing a default.
+ *
+ * @param {DotContentDriveFilters} filters The filters to seed.
+ * @param {number} [defaultLanguageId] The environment's default language id, when known.
+ * @return {*} {DotContentDriveFilters} The filters, with defaults applied.
+ */
+export function withFilterDefaults(
+    filters: DotContentDriveFilters,
+    defaultLanguageId?: number
+): DotContentDriveFilters {
+    return withDefaultSharedAssets(withDefaultLanguage(filters, defaultLanguageId));
+}
+
+/**
+ * Encodes the filters with their keys in a stable (alphabetical) order, for **comparison only**.
+ *
+ * {@link encodeFilters} follows insertion order, which makes two equivalent filter sets encode
+ * differently — `title:x;languageId:1` vs `languageId:1;title:x`. That is harmless in the URL but
+ * not when the encoded string is used to decide whether state changed. Never use this to write the
+ * URL; it would reorder the params users see.
+ *
+ * @param {DotContentDriveFilters} filters The filters to encode.
+ * @return {*} {string} A key-order-independent encoding of the filters.
+ */
+export function sortedEncodedFilters(filters: DotContentDriveFilters): string {
+    if (!filters) {
+        return '';
+    }
+
+    return encodeFilters(
+        Object.fromEntries(
+            Object.entries(filters).sort(([keyA], [keyB]) => keyA.localeCompare(keyB))
+        )
+    );
 }
 
 /**
@@ -958,4 +1089,43 @@ export function buildUserSearchablePayload(
     }
 
     return Object.keys(payload).length ? payload : undefined;
+}
+
+/**
+ * Whether the user may add children to a drop target.
+ *
+ * The one rule behind every creation affordance in the drive — the New menu, Upload, the grid drop
+ * zone, and a drag onto a tree folder — so the four cannot disagree about the same folder.
+ *
+ * A node with no permissions is the site root: its parent is the host rather than a folder, and no
+ * folder endpoint reports on it, so `siteCanAddChildren` answers that case. Both unknowns resolve to
+ * **allowed** — a lookup still in flight, and an instance too old to report the field — because
+ * denying on an unknown takes the action away from users who hold the permission, and the server
+ * still refuses what it enforces.
+ *
+ * Note what the server actually enforces, since the gate is not uniformly a preview of it: creating
+ * a folder checks this (`FolderAPIImpl:673`) and so does moving a contentlet
+ * (`ESContentletAPIImpl:607`), but the contentlet checkin path does **not**, so an upload is not
+ * refused server-side. The gate is still applied there, so that one route into a folder does not
+ * quietly allow what the other two forbid.
+ *
+ * @param {DotFolderTreeNodeData} [target] - The folder being dropped on or browsed
+ * @param {boolean} [siteCanAddChildren] - The site-level answer, for the root
+ * @returns {boolean} Whether creation should be offered
+ */
+export function canAddChildrenTo(
+    target: DotFolderTreeNodeData | undefined | null,
+    siteCanAddChildren: boolean | undefined
+): boolean {
+    if (!target) {
+        return true;
+    }
+
+    const permissions = (target as { permissions?: string[] }).permissions;
+
+    if (!permissions?.length) {
+        return siteCanAddChildren !== false;
+    }
+
+    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
 }

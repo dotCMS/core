@@ -1,11 +1,11 @@
 import { describe, it, expect } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, SpectatorService, mockProvider } from '@openng/spectator/jest';
-import { NEVER, of } from 'rxjs';
+import { NEVER, of, Subject } from 'rxjs';
 
 import { DotFolderService } from '@dotcms/data-access';
 import { DotPagination, FolderSearchView } from '@dotcms/dotcms-models';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { createFakeFolderSearchView, createFakeSite } from '@dotcms/utils-testing';
 
 import { withSidebar } from './withSidebar';
@@ -16,6 +16,7 @@ import {
     DotContentDriveState,
     DotContentDriveStatus
 } from '../../../shared/models';
+import { createSiteNode } from '../../../utils/tree-folder.utils';
 
 const mockSite = createFakeSite();
 
@@ -87,15 +88,20 @@ describe('withSidebar', () => {
     let store: InstanceType<typeof sidebarStoreMock>;
     let folderService: jest.Mocked<DotFolderService>;
 
-    const realAllFolder: DotFolderTreeNodeItem = {
-        ...ALL_FOLDER,
-        data: {
-            hostname: mockSite.hostname,
-            path: '',
-            type: 'folder',
-            id: mockSite.identifier
-        }
-    };
+    // What `createSiteNode` produces for the mocked site: the row that stands for the site.
+    const siteNode: DotFolderTreeNodeItem = createSiteNode(mockSite);
+
+    /**
+     * The site node as the tree holds it: the site's folders are its children, so its chevron
+     * collapses the site. `searchFolders` is mocked empty unless a test says otherwise, hence the
+     * default.
+     */
+    const siteNodeWithChildren = (
+        children: DotFolderTreeNodeItem[] = []
+    ): DotFolderTreeNodeItem => ({
+        ...siteNode,
+        children
+    });
 
     const createService = createServiceFactory({
         service: sidebarStoreMock,
@@ -115,10 +121,49 @@ describe('withSidebar', () => {
     describe('initial state', () => {
         it('should set initial after loading folders', () => {
             expect(store.sidebarLoading()).toBe(false);
-            expect(store.folders()).toEqual([realAllFolder]);
-            expect(store.selectedNode()).toEqual({
-                ...realAllFolder
-            });
+            expect(store.folders()).toEqual([siteNodeWithChildren()]);
+            expect(store.selectedNode()).toEqual(siteNode);
+        });
+    });
+
+    describe('the site node', () => {
+        const rootViews: FolderSearchView[] = [
+            createFakeFolderSearchView({ id: 'a', name: 'activities', path: '/' }),
+            createFakeFolderSearchView({ id: 'b', name: 'blog', path: '/' })
+        ];
+
+        beforeEach((done) => {
+            folderService.searchFolders.mockReturnValue(searchResult(rootViews));
+            store.loadFolders();
+            setTimeout(done, 0);
+        });
+
+        afterEach(() => {
+            // The mock is created once with the factory, so a return value set here would otherwise
+            // stand for every later test in the file.
+            folderService.searchFolders.mockReturnValue(searchResult([]));
+        });
+
+        it('should be the only top-level node', () => {
+            expect(store.folders()).toHaveLength(1);
+            expect(store.folders()[0].key).toBe(mockSite.identifier);
+        });
+
+        it('should own the site folders as its children, so its chevron collapses the site', () => {
+            // As siblings they sat level with the site while its chevron controlled nothing, and
+            // expanding it fetched them again, rendering every root folder twice.
+            const children = store.folders()[0].children as DotFolderTreeNodeItem[];
+
+            expect(children.map((child) => child.data.path)).toEqual(['/activities/', '/blog/']);
+        });
+
+        it('should be labelled with the hostname and carry the site identifier', () => {
+            expect(store.folders()[0].label).toBe(mockSite.hostname);
+            expect(store.folders()[0].data.id).toBe(mockSite.identifier);
+        });
+
+        it('should start expanded, since the site opens showing its folders', () => {
+            expect(store.folders()[0].expanded).toBe(true);
         });
     });
 
@@ -133,9 +178,7 @@ describe('withSidebar', () => {
                         expect.objectContaining({ siteId: mockSite.identifier })
                     );
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual({
-                        ...realAllFolder
-                    });
+                    expect(store.folders()).toContainEqual(siteNodeWithChildren());
                     done();
                 }, 0);
             });
@@ -159,11 +202,61 @@ describe('withSidebar', () => {
 
                 setTimeout(() => {
                     expect(store.sidebarLoading()).toBe(false);
-                    expect(store.folders()).toContainEqual({
-                        ...realAllFolder
-                    });
+                    expect(store.folders()).toContainEqual(siteNodeWithChildren());
                     done();
                 }, 0);
+            });
+
+            // Two triggers can call this concurrently on a cold load: the feature's own `onInit`
+            // and the sidebar component's `currentSite` effect. Without cancellation both writes
+            // land and the one that *resolves* last wins, so a slower earlier request overwrites a
+            // newer complete one — the tree shows the wrong folders until the next reload.
+            describe('when a second load starts before the first resolves', () => {
+                const viewNamed = (name: string) =>
+                    createFakeFolderSearchView({
+                        id: `folder-${name}`,
+                        name,
+                        path: '/',
+                        addChildrenAllowed: true
+                    });
+
+                const labelsInTree = () =>
+                    (store.folders()[0]?.children ?? []).map((child) => child.label);
+
+                it('should keep the newer result when the older one resolves last', (done) => {
+                    const stale = new Subject<{
+                        folders: FolderSearchView[];
+                        pagination: DotPagination;
+                    }>();
+
+                    folderService.searchFolders.mockReturnValue(stale);
+                    store.loadFolders();
+
+                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
+                    store.loadFolders();
+
+                    // The first request answers only now, after the second already has.
+                    stale.next({ folders: [viewNamed('stale')], pagination: EMPTY_PAGINATION });
+                    stale.complete();
+
+                    setTimeout(() => {
+                        expect(labelsInTree()).toEqual(['/fresh/']);
+                        done();
+                    }, 0);
+                });
+
+                it('should settle loading once, on the newer result', (done) => {
+                    folderService.searchFolders.mockReturnValue(NEVER);
+                    store.loadFolders();
+
+                    folderService.searchFolders.mockReturnValue(searchResult([viewNamed('fresh')]));
+                    store.loadFolders();
+
+                    setTimeout(() => {
+                        expect(store.sidebarLoading()).toBe(false);
+                        done();
+                    }, 0);
+                });
             });
         });
 
@@ -273,7 +366,7 @@ describe('withSidebar', () => {
 
         describe('updateFolders', () => {
             it('should update the folders array', () => {
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 
@@ -282,7 +375,7 @@ describe('withSidebar', () => {
 
             it('should create a new array reference', () => {
                 const originalFolders = store.folders();
-                const newFolders = [realAllFolder, ...mockTreeNodes];
+                const newFolders = [siteNode, ...mockTreeNodes];
 
                 store.updateFolders(newFolders);
 

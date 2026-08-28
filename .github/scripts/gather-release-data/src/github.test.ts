@@ -39,7 +39,15 @@ describe('extractPRNumbers', () => {
 });
 
 describe('findPreviousTag', () => {
-  const tags = ['v26.03.13-02', 'v26.03.13-01', 'v26.03.12-01', 'v26.03.11-01'];
+  const documented = (...tags: string[]) =>
+    tags.map((tag) => ({ tag, hasNotes: true }));
+
+  const tags = documented(
+    'v26.03.13-02',
+    'v26.03.13-01',
+    'v26.03.12-01',
+    'v26.03.11-01'
+  );
 
   it('finds the tag immediately before the given tag', () => {
     expect(findPreviousTag(tags, 'v26.03.13-02')).toBe('v26.03.13-01');
@@ -53,6 +61,35 @@ describe('findPreviousTag', () => {
 
   it('returns undefined for the oldest tag', () => {
     expect(findPreviousTag(tags, 'v26.03.11-01')).toBeUndefined();
+  });
+
+  // Regression: 26.08.19 shipped four attempts. -01/-02/-03 died before writing
+  // notes, so stopping at -03 described 1 of 19 commits.
+  it('skips undocumented releases', () => {
+    const withGhosts = [
+      { tag: 'v26.08.19-04', hasNotes: true },
+      { tag: 'v26.08.19-03', hasNotes: false },
+      { tag: 'v26.08.19-02', hasNotes: false },
+      { tag: 'v26.08.19-01', hasNotes: false },
+      { tag: 'v26.08.14-01', hasNotes: true },
+    ];
+    expect(findPreviousTag(withGhosts, 'v26.08.19-04')).toBe('v26.08.14-01');
+  });
+
+  it('still returns a same-day attempt that published notes', () => {
+    const sameDay = [
+      { tag: 'v26.08.12-02', hasNotes: true },
+      { tag: 'v26.08.12-01', hasNotes: true },
+    ];
+    expect(findPreviousTag(sameDay, 'v26.08.12-02')).toBe('v26.08.12-01');
+  });
+
+  it('returns undefined when every predecessor is undocumented', () => {
+    const allGhosts = [
+      { tag: 'v26.08.19-02', hasNotes: true },
+      { tag: 'v26.08.19-01', hasNotes: false },
+    ];
+    expect(findPreviousTag(allGhosts, 'v26.08.19-02')).toBeUndefined();
   });
 });
 

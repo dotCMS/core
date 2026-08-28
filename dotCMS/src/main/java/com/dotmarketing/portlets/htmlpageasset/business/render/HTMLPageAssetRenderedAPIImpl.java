@@ -43,15 +43,16 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.Set;
 
@@ -64,6 +65,16 @@ import java.util.Set;
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     public static final String HTML_HEAD = "<head>";
+
+    /**
+     * Matches the opening {@code <head>} tag case-insensitively against the <b>original</b> HTML,
+     * for the same reason as {@code CLOSING_BODY_TAG_PATTERN} in
+     * {@link HTMLPageAssetRenderedBuilder} — an index taken from a lowercased copy is not valid
+     * against the source string, because some code points lowercase to more than one char
+     * (e.g. {@code İ} U+0130 -> {@code i} + U+0307). See #37072.
+     */
+    private static final Pattern OPENING_HEAD_TAG_PATTERN =
+            Pattern.compile(Pattern.quote(HTML_HEAD), Pattern.CASE_INSENSITIVE);
 
     // Matches either the full UVE script block (init function + <script src> with onload)
     // or the plain SDK script tag injected when no schemas are found.
@@ -350,14 +361,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     }
 
-    private String injectJSCode(final String pageHTML, final String JsCode) {
+    private String injectJSCode(final String pageHTML, final String jsCode) {
 
-        if (StringUtils.containsIgnoreCase(pageHTML, HTML_HEAD)) {
-            final int indexOf = pageHTML.toLowerCase().indexOf(HTML_HEAD);
-            return pageHTML.substring(0, indexOf + HTML_HEAD.length()) + JsCode + pageHTML.substring(indexOf + 6);
-        } else {
-            return JsCode + "\n" + pageHTML;
+        if (!UtilMethods.isSet(pageHTML)) {
+            return jsCode;
         }
+        final Matcher headMatcher = OPENING_HEAD_TAG_PATTERN.matcher(pageHTML);
+        if (headMatcher.find()) {
+            final int headTagEnd = headMatcher.end();
+            return pageHTML.substring(0, headTagEnd) + jsCode + pageHTML.substring(headTagEnd);
+        }
+        return jsCode + "\n" + pageHTML;
     }
 
     /**

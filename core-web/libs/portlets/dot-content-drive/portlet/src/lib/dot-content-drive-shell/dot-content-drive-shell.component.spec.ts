@@ -20,21 +20,23 @@ import { Dialog } from 'primeng/dialog';
 
 import {
     AddToBundleService,
+    DotAlertConfirmService,
     DotContentSearchService,
     DotContentTypeService,
     DotCurrentUserService,
+    DotFolderService,
     DotHttpErrorManagerService,
+    DotLanguagesService,
+    DotMessageService,
+    DotPropertiesService,
+    DotRouterService,
     DotSiteService,
     DotSystemConfigService,
+    DotUploadFileService,
     DotWorkflowActionsFireService,
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService,
-    DotRouterService,
-    DotLanguagesService,
-    DotFolderService,
-    DotUploadFileService,
-    DotMessageService,
-    DotPropertiesService
+    PushPublishService
 } from '@dotcms/data-access';
 import { LoggerService, StringUtils } from '@dotcms/dotcms-js';
 import {
@@ -49,16 +51,16 @@ import {
     EditContentDialogData
 } from '@dotcms/edit-content';
 import {
-    DotFolderListViewComponent,
     DotFolderTreeNodeData,
     DotFolderTreeNodeItem,
     DotContentDriveMoveItems
 } from '@dotcms/portlets/content-drive/ui';
 import { GlobalStore } from '@dotcms/store';
+import { DotFolderListViewComponent, DotUploadTypeSelectorComponent } from '@dotcms/ui';
+import { mockLocales } from '@dotcms/utils-testing';
 
 import { DotContentDriveShellComponent } from './dot-content-drive-shell.component';
 
-import { DotContentDriveDialogUploadSelectorComponent } from '../components/dialogs/dot-content-drive-dialog-upload-selector/dot-content-drive-dialog-upload-selector.component';
 import {
     ACTION_CENTER_DIALOG_CONTENT_STYLE,
     ACTION_CENTER_DIALOG_STYLE,
@@ -90,6 +92,12 @@ import { DotContentDriveStore } from '../store/dot-content-drive.store';
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
 // a compile-checked payload; reset in the shared beforeEach for isolation.
 const editPanelRequestSignal: WritableSignal<EditContentDialogData | null> = signal(null);
+// Module scope: both store mocks in this file read it, and they live in describes that do not
+// share a `beforeEach`. Reset per test rather than re-created, so neither mock captures a stale one.
+const canAddChildrenSignal: WritableSignal<boolean> = signal(true);
+// The site-level answer the drop guard falls back to at the root. Module scope for the same reason
+// as the one above: two store mocks in this file read it from describes with no shared `beforeEach`.
+const siteCanAddChildrenSignal: WritableSignal<boolean | undefined> = signal(undefined);
 
 describe('DotContentDriveShellComponent', () => {
     let spectator: Spectator<DotContentDriveShellComponent>;
@@ -125,6 +133,8 @@ describe('DotContentDriveShellComponent', () => {
             }),
             mockProvider(ActivatedRoute, MOCK_ROUTE),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -159,6 +169,12 @@ describe('DotContentDriveShellComponent', () => {
             }),
             LoggerService,
             StringUtils,
+            mockProvider(PushPublishService, {
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
+                getEnvironments: jest.fn().mockReturnValue(of([]))
+            }),
             mockProvider(AddToBundleService, {
                 getBundles: jest.fn().mockReturnValue(of([])),
                 addToBundle: jest.fn().mockReturnValue(of({}))
@@ -178,6 +194,8 @@ describe('DotContentDriveShellComponent', () => {
     });
 
     beforeEach(() => {
+        canAddChildrenSignal.set(true);
+        siteCanAddChildrenSignal.set(undefined);
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
@@ -192,6 +210,10 @@ describe('DotContentDriveShellComponent', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     // Tree collapsed at start to render the toggle button on toolbar
                     isTreeExpanded: jest.fn().mockReturnValue(false),
@@ -219,12 +241,19 @@ describe('DotContentDriveShellComponent', () => {
                     setSelectedItems: jest.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
+                    // Resolved on portlet init; `false` disables Push Publish everywhere it
+                    // is gated, which is all the shell's own tests need.
+                    hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
                     contextMenu: jest.fn().mockReturnValue(null),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
                     actionExecution: signal(undefined),
+                    // Read by the Locale chip inside that toolbar: the store resolves the languages
+                    // once and seeds the environment default into the `languageId` filter.
+                    languages: signal(mockLocales),
+                    defaultLanguageId: jest.fn().mockReturnValue(1),
                     actionExecutionResult: actionExecutionResultSignal,
                     clearActionExecutionResult: jest.fn(),
                     setDialog: jest.fn(),
@@ -427,6 +456,64 @@ describe('DotContentDriveShellComponent', () => {
             );
         });
 
+        it('should use an action-specific partial copy when the result names one', () => {
+            // A reindex falls short for different reasons than a workflow fire — content that could
+            // not be read or indexed, and a cancelled run. Borrowing the default copy would blame
+            // permissions, locks and workflow steps, none of which apply, and send the user off to
+            // fix something that was never the problem.
+            settle({
+                actionName: 'Refresh',
+                successCount: 2,
+                skippedCount: 1,
+                failCount: 1,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.refreshed-partial',
+                'Refresh',
+                '2',
+                '1',
+                '1'
+            );
+        });
+
+        it('should keep the default partial copy for results that name none', () => {
+            settle({
+                actionName: 'Publish',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.action-center.toast.executed-partial',
+                'Publish',
+                '1',
+                '1',
+                '0'
+            );
+        });
+
+        it('should ignore the action-specific copy on a clean run', () => {
+            // Nothing fell short, so there is no cause to name — the plain success copy is right
+            // whatever the action would have said about a shortfall.
+            settle({
+                actionName: 'Refresh',
+                successCount: 3,
+                skippedCount: 0,
+                failCount: 0,
+                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+            });
+
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    detail: 'content-drive.action-center.toast.executed-detail'
+                })
+            );
+        });
+
         it('should refresh the grid, close the dialog and consume the result', () => {
             settle({
                 actionName: 'Publish',
@@ -438,6 +525,44 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.loadItems).toHaveBeenCalled();
             expect(store.closeDialog).toHaveBeenCalled();
             expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should never close the dialog for a backgrounded outcome', () => {
+            // A reindex reports itself by push, so its result can land minutes after it was fired -
+            // while the user is mid-way through configuring a different action. Closing the dialog
+            // then throws away whatever they had typed.
+            dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+            spectator.detectChanges();
+
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.closeDialog).not.toHaveBeenCalled();
+            // Nor pulled the rows out from under the open form.
+            expect(store.loadItems).not.toHaveBeenCalled();
+            // Still reported, and still consumed.
+            expect(messageService.add).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should still refresh the grid for a backgrounded outcome when no dialog is open', () => {
+            // The common case: the user fired the reindex and carried on browsing. Nothing is at risk,
+            // so the grid picks up the reindexed state.
+            settle({
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true
+            });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.closeDialog).not.toHaveBeenCalled();
         });
 
         it('should stay silent while no result is published', () => {
@@ -460,14 +585,63 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
 
-            expect(location.go).toHaveBeenCalledWith(
+            // A filter write REPLACES rather than pushes. Only opening the panel pushes (AC8), so
+            // Back always leaves the portlet instead of walking back through filter URLs.
+            expect(location.replaceState).toHaveBeenCalledWith(
                 expect.stringContaining('filters=contentType%3ABlog%3BbaseType%3A1%2C2%2C3')
             );
+            expect(location.go).not.toHaveBeenCalled();
+        });
+
+        it('pushes a history entry when the user navigates to a different folder', () => {
+            // Folder navigation is a real user action, so Back must step back up the tree. Only the
+            // automatic filter seed is denied an entry.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/first');
+            // `path` is a plain jest.fn, so it is not a tracked dependency. Each phase re-sets the
+            // real `filters` signal (a fresh object reference) to drive the effect, which then reads
+            // the current path.
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            (location.go as jest.Mock).mockClear();
+            (location.replaceState as jest.Mock).mockClear();
+
+            store.path.mockReturnValue('/second');
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(location.go).toHaveBeenCalledWith(expect.stringContaining('path=%2Fsecond'));
+        });
+
+        it('does not push a history entry when the default filters are seeded', () => {
+            // The seed is not a user action, and it lands twice on a cold load: once for the
+            // sharedAssets default and again when the default language resolves. Pushing either would
+            // bury the entry the user arrived on, so Back would take two or three presses to escape
+            // the portlet instead of leaving it immediately.
+            store.isTreeExpanded.mockReturnValue(false);
+            store.path.mockReturnValue('/');
+            (location.go as jest.Mock).mockClear();
+            (location.replaceState as jest.Mock).mockClear();
+
+            filtersSignal.set({ sharedAssets: 'true' });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            filtersSignal.set({ sharedAssets: 'true', languageId: ['1'] });
+            spectator.detectChanges();
+            spectator.flushEffects();
+
+            expect(location.go).not.toHaveBeenCalled();
+            expect(location.replaceState).toHaveBeenCalled();
         });
 
         it('should not include filters in query params when filters are empty', () => {
@@ -482,7 +656,8 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: 'contentType:Blog;baseType:1,2,3',
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -498,7 +673,8 @@ describe('DotContentDriveShellComponent', () => {
                     isTreeExpanded: 'false',
                     path: '/another/path',
                     filters: null, // With merge, null removes the param
-                    editContent: null
+                    editContent: null,
+                    editContentLang: null
                 },
                 queryParamsHandling: 'merge'
             });
@@ -651,16 +827,16 @@ describe('DotContentDriveShellComponent', () => {
             expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
-        it('should exclude folders from the sub-header count', () => {
+        it('should count folders in the sub-header, since actions now take them', () => {
             store.selectedItems.mockReturnValue([
                 MOCK_ITEMS[0],
-                { type: 'folder', inode: 'f1', identifier: 'f1' } as unknown as DotContentDriveItem
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.flushEffects();
             spectator.detectChanges();
 
-            expect(spectator.component.$actionCenterSelectionCount()).toBe(1);
+            expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
         });
 
         it('should retitle the header to the drilled-into action', () => {
@@ -743,6 +919,36 @@ describe('DotContentDriveShellComponent', () => {
 
             const dropzone = spectator.query('[data-testid="dropzone"]');
             expect(dropzone).toBeTruthy();
+        });
+
+        // Dropping a file creates a contentlet in the target folder, which the server refuses
+        // without CAN_ADD_CHILDREN. The zone refuses the upload rather than failing after it has
+        // started, and carries the reason so it does not just read as a broken drop target.
+        it('should disable the dropzone where children cannot be added', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(true);
+        });
+
+        it('should tell the dropzone why the upload is refused', () => {
+            canAddChildrenSignal.set(false);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabledMessage()).toBeTruthy();
+        });
+
+        it('should leave the dropzone enabled where children can be added', () => {
+            canAddChildrenSignal.set(true);
+            spectator.detectChanges();
+
+            const dropzone = spectator.debugElement.query(By.css('[data-testid="dropzone"]'));
+
+            expect(dropzone.componentInstance.$disabled()).toBe(false);
         });
     });
 
@@ -877,6 +1083,26 @@ describe('DotContentDriveShellComponent', () => {
                 field: 'modDate',
                 order: DotContentDriveSortOrder.ASC
             });
+        });
+    });
+
+    describe('grid selection binding', () => {
+        it('should drive the grid from the store so clearing it unchecks the rows', () => {
+            // The grid is in controlled mode purely so this holds. Left uncontrolled it keeps its own
+            // checked set and only drops it when the items reference changes, which meant a selection
+            // cleared on action hand-off stayed visibly ticked until the next search returned.
+            store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+            spectator.detectChanges();
+
+            const listView = spectator.query(DotFolderListViewComponent);
+
+            expect(listView).toBeTruthy();
+            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+
+            // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
+            // signal, so changing its return value cannot notify change detection. What matters is
+            // that the input is bound to store state at all — the propagation is Angular's, and the
+            // store's own spec covers that loadItems and hand-off empty that state.
         });
     });
 
@@ -1062,7 +1288,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should open the upload menu with the selected folder when the upload button is clicked', () => {
             openViaButton(TARGET_FOLDER_DATA);
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
@@ -1078,7 +1304,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
             expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
@@ -1095,7 +1321,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            const selector = spectator.query(DotContentDriveDialogUploadSelectorComponent);
+            const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
             expect(selector.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
@@ -1115,7 +1341,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should clear the selector payload when the popover is dismissed without a selection', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
 
             const popover = spectator.debugElement.query(
                 By.css('[data-testId="upload-selector-popover"]')
@@ -1123,7 +1349,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(popover, 'onHide', {});
             spectator.detectChanges();
 
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
 
         const dropFiles = () =>
@@ -1169,7 +1395,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.component.$uploadSelectorPayload()).toBeTruthy();
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
         });
     });
 
@@ -1450,7 +1676,7 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
 
             expect(clickSpy).toHaveBeenCalled();
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
 
         it('should upload with the folder base type after the picker returns (button flow)', () => {
@@ -1493,7 +1719,7 @@ describe('DotContentDriveShellComponent', () => {
                 hostFolder: TARGET_FOLDER_DATA.id,
                 indexPolicy: 'WAIT_FOR'
             });
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeFalsy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeFalsy();
         });
     });
 
@@ -1568,6 +1794,100 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
             workflowService = spectator.inject(DotWorkflowActionsFireService);
             messageService.add.mockClear();
+        });
+
+        // Dropping onto a tree folder is a third route into that folder, alongside the New menu and
+        // the grid drop zone. Creating a folder and moving a contentlet are both refused server-side
+        // without this permission (`FolderAPIImpl:673`, `ESContentletAPIImpl:607`), so an ungated
+        // drop hands the user a failure they had no way to predict — and the upload path, which the
+        // server does *not* refuse, would otherwise quietly allow what the other two forbid.
+        describe('dropping on a folder that refuses content', () => {
+            // `defaultBaseType` matters: without it an upload opens the type selector instead of
+            // uploading, so an assertion that no upload fired would pass with or without the gate.
+            const deniedFolder = {
+                id: 'folder-1',
+                hostname: 'demo.dotcms.com',
+                path: '/documents/',
+                type: 'folder',
+                defaultBaseType: 'FILEASSET',
+                permissions: ['READ', 'EDIT']
+            } as unknown as DotFolderTreeNodeData;
+
+            const allowedFolder = {
+                ...deniedFolder,
+                permissions: ['READ', 'EDIT', 'CAN_ADD_CHILDREN']
+            } as unknown as DotFolderTreeNodeData;
+
+            const dropFiles = (targetFolder: DotFolderTreeNodeData) => {
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'uploadFiles', {
+                    files: [new File([''], 'a.png')] as unknown as FileList,
+                    targetFolder
+                });
+            };
+
+            const dropItems = (targetFolder: DotFolderTreeNodeData) => {
+                store.dragItems.mockReturnValue({
+                    folders: [],
+                    contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
+                });
+                const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
+                spectator.triggerEventHandler(sidebar, 'moveItems', { targetFolder });
+            };
+
+            it('should refuse a move onto it', () => {
+                dropItems(deniedFolder);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
+
+            it('should say why the move was refused', () => {
+                dropItems(deniedFolder);
+
+                expect(messageService.add).toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+            });
+
+            it('should refuse an upload onto it', () => {
+                dropFiles(deniedFolder);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should upload onto a folder that accepts content', () => {
+                dropFiles({
+                    ...allowedFolder,
+                    defaultBaseType: 'FILEASSET'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should still allow a move onto a folder that accepts content', () => {
+                workflowService.bulkFire.mockReturnValue(
+                    of({ successCount: 1, skippedCount: 0, fails: [] })
+                );
+
+                dropItems(allowedFolder);
+
+                expect(workflowService.bulkFire).toHaveBeenCalled();
+            });
+
+            // The site root carries no permissions of its own, so the store's site-level answer is
+            // what decides there.
+            it('should refuse a move onto the site root when the site refuses content', () => {
+                siteCanAddChildrenSignal.set(false);
+
+                dropItems({
+                    id: 'site-1',
+                    hostname: 'demo.dotcms.com',
+                    path: '',
+                    type: 'folder'
+                } as unknown as DotFolderTreeNodeData);
+
+                expect(workflowService.bulkFire).not.toHaveBeenCalled();
+            });
         });
 
         describe('onMoveItems', () => {
@@ -2443,7 +2763,7 @@ describe('DotContentDriveShellComponent', () => {
             });
             spectator.detectChanges();
 
-            expect(spectator.query(DotContentDriveDialogUploadSelectorComponent)).toBeTruthy();
+            expect(spectator.query(DotUploadTypeSelectorComponent)).toBeTruthy();
             expect(clickSpy).not.toHaveBeenCalled();
         });
     });
@@ -2683,6 +3003,41 @@ describe('DotContentDriveShellComponent', () => {
             ]);
         });
 
+        it('should type a True/False Radio or Select field as a boolean column', () => {
+            // The reported case: dotCMS's own Radio help text tells users to author a True/False
+            // field as `True|1` / `False|0`, and the product ships `Host.runDashboard` in exactly
+            // that shape. Only Checkbox was covered before, which is why the boolean column's
+            // rendering shipped untested for these two.
+            showInListFieldsSignal.set([
+                { variable: 'boolRadio', name: 'Bool Radio', dataType: 'BOOL', fieldType: 'Radio' },
+                {
+                    variable: 'boolSelect',
+                    name: 'Bool Select',
+                    dataType: 'BOOL',
+                    fieldType: 'Select'
+                }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'boolRadio', type: 'boolean' }),
+                expect.objectContaining({ field: 'boolSelect', type: 'boolean' })
+            ]);
+        });
+
+        it('should keep a non-boolean Radio or Select field a text column', () => {
+            showInListFieldsSignal.set([
+                { variable: 'size', name: 'Size', dataType: 'TEXT', fieldType: 'Radio' },
+                { variable: 'colour', name: 'Colour', dataType: 'TEXT', fieldType: 'Select' }
+            ] as DotCMSContentTypeField[]);
+            spectator.detectChanges();
+
+            expect(spectator.component.$extraColumns()).toEqual([
+                expect.objectContaining({ field: 'size', type: 'text' }),
+                expect.objectContaining({ field: 'colour', type: 'text' })
+            ]);
+        });
+
         it('should expose no extra columns when there are no Show In List fields', () => {
             showInListFieldsSignal.set([]);
             spectator.detectChanges();
@@ -2761,6 +3116,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 snapshot: { queryParams: deepLinkQueryParams }
             }),
             mockProvider(DotSystemConfigService),
+            // The folder context menu confirms folder deletes through this.
+            mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotContentTypeService, {
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES)),
                 getContentTypes: jest.fn().mockImplementation(() => of([]))
@@ -2791,6 +3148,12 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             }),
             LoggerService,
             StringUtils,
+            mockProvider(PushPublishService, {
+                // The store resolves this on init, and both the Action Center's Push Publish row and
+                // the folder context menu's Push Publish item gate on the result. An empty answer
+                // disables them, which is all the shell's own tests need.
+                getEnvironments: jest.fn().mockReturnValue(of([]))
+            }),
             mockProvider(AddToBundleService, {
                 getBundles: jest.fn().mockReturnValue(of([])),
                 addToBundle: jest.fn().mockReturnValue(of({}))
@@ -2811,6 +3174,9 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
 
     beforeEach(() => {
         openEditByIdentifier.mockClear();
+        // The params object is shared by the factory, so a language set by one test would otherwise
+        // leak into the next.
+        delete deepLinkQueryParams['editContentLang'];
     });
 
     /** Mounts with the deps the constructor needs; does not run change detection. */
@@ -2819,6 +3185,10 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
             providers: [
                 mockProvider(DotContentDriveStore, {
                     initContentDrive: jest.fn(),
+                    // Read by the toolbar (rendered for real here) and the drop zone: both gate
+                    // their creation affordances on it.
+                    $canAddChildren: canAddChildrenSignal,
+                    siteCanAddChildren: siteCanAddChildrenSignal,
                     currentSite: jest.fn().mockReturnValue(MOCK_SITES[0]),
                     isTreeExpanded: jest.fn().mockReturnValue(false),
                     items: jest.fn().mockReturnValue(MOCK_ITEMS),
@@ -2837,6 +3207,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     userSearchableFields: jest.fn().mockReturnValue([]),
                     userSearchableActive: jest.fn().mockReturnValue([]),
                     showInListFields: signal([]),
+                    languages: signal(mockLocales),
+                    defaultLanguageId: jest.fn().mockReturnValue(1),
                     setIsTreeExpanded: jest.fn(),
                     isTreeVisuallyExpanded: jest.fn().mockReturnValue(false),
                     isTreeForceCollapsed: jest.fn().mockReturnValue(false),
@@ -2914,7 +3286,25 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         deepLinkQueryParams.editContent = 'id-1';
         mountShell();
 
-        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1');
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
+    });
+
+    it('forwards the language from the link so the exact version reopens', () => {
+        // An identifier has one version per language, so without this the resolver can only guess —
+        // and it runs before the store's languages request has resolved.
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = '2';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
+    });
+
+    it('ignores a non-numeric language on the link', () => {
+        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams.editContentLang = 'nope';
+        mountShell();
+
+        expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
     });
 
     it('ignores the non-shareable `new` marker on construction', () => {

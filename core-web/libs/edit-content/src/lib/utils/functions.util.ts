@@ -28,6 +28,18 @@ import { Tab } from '../models/dot-edit-content-form.interface';
 import { UIState } from '../models/dot-edit-content.model';
 
 // This function is used to cast the value to a correct type for the Angular Form if the field is a single selectable field
+/**
+ * String option values a True/False field may legitimately use for `true`.
+ *
+ * A True/False field's options are authored by the user, and dotCMS invites them to use the
+ * database's own representation: the Radio field's help text gives `True|1 False|0` as the example,
+ * `SelectableValuesField.check()` accepts those plus `y`/`n`, `t`/`f` and `on`/`off`, and the product
+ * itself ships `Host.runDashboard` as `Yes|1 / No|0`. The backend coerces the whole set through
+ * commons-lang `BooleanUtils.toBoolean` on save, so this mirrors it — matching only `'true'` made
+ * every such option collapse to `false`, i.e. two options with the same value.
+ */
+const BOOL_TRUE_TOKENS = new Set(['true', '1', 'y', 'yes', 't', 'on']);
+
 export const castSingleSelectableValue = (
     value: unknown,
     type: string
@@ -42,7 +54,7 @@ export const castSingleSelectableValue = (
             // For boolean type, handle both boolean and string values
             return typeof value === 'boolean'
                 ? value
-                : String(value).toLowerCase().trim() === 'true';
+                : BOOL_TRUE_TOKENS.has(String(value).toLowerCase().trim());
         }
 
         case DotEditContentFieldSingleSelectableDataType.INTEGER:

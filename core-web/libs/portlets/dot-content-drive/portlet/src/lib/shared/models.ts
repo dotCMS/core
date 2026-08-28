@@ -4,18 +4,34 @@ import {
     DotContentDriveActionableItem,
     DotContentDriveItem,
     DotFolder,
+    DotLanguage,
     DotSite
 } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { DotUploadBaseType, DotUploadSelection, DotUploadSelectorPayload } from '@dotcms/ui';
 
-import { DIALOG_TYPE, UPLOAD_SELECTOR_OPTIONS } from './constants';
+import { DIALOG_TYPE } from './constants';
 
 /**
- * Base types the upload selector can produce, derived from the selector options so the type and the
- * rendered choices never drift apart.
+ * The parameters for the buildTreeFolderNodes function.
+ *
+ * @export
+ * @interface BuildTreeFolderNodesParams
  */
-export type DotContentDriveUploadBaseType = (typeof UPLOAD_SELECTOR_OPTIONS)[number]['baseType'];
+export interface BuildTreeFolderNodesParams {
+    folderHierarchyLevels: DotFolder[][];
+    targetPath: string;
+    rootNode: DotFolderTreeNodeItem;
+}
+
+/**
+ * Upload-flow types now live in `@dotcms/ui`, shared with the AssetPicker. Aliased here so the
+ * portlet keeps its own naming.
+ */
+export type DotContentDriveUploadBaseType = DotUploadBaseType;
+export type DotContentDriveUploadSelectorPayload = DotUploadSelectorPayload;
+export type DotContentDriveUploadSelection = DotUploadSelection;
 
 /**
  * The status of the content drive.
@@ -141,6 +157,25 @@ export interface DotContentDriveActionExecutionResult {
     successCount: number;
     skippedCount: number;
     failCount: number;
+    /**
+     * i18n key for the partial-outcome copy, when the default does not fit.
+     *
+     * The default names workflow-specific causes next to each number — permissions and locks for
+     * failures, "not on their workflow step" for skips. Those are the right causes for a bulk fire and
+     * the wrong ones for anything else, and a shortfall explained by the wrong cause sends the user off
+     * to fix something that was never the problem. An action whose failures and skips mean something
+     * different supplies its own copy rather than borrowing that one.
+     */
+    partialDetailKey?: string;
+    /**
+     * Whether this outcome arrived unprompted, from a job that finished in the background.
+     *
+     * Every other result settles a request the user is waiting on, so closing the dialog and reloading
+     * the grid is the natural next step. A backgrounded one can land at any moment — minutes later,
+     * while the user is filling in a different action's form — and doing either would throw away work
+     * they are in the middle of.
+     */
+    backgrounded?: boolean;
 }
 
 /**
@@ -149,27 +184,6 @@ export interface DotContentDriveActionExecutionResult {
  */
 export interface DotContentDriveContentTypeSelectorPayload {
     listType: DotUVEPaletteListTypes;
-}
-
-/**
- * Payload passed INTO the upload-type selector dialog. `files` is present for the drag-and-drop
- * flow (the dropped files are already known) and absent for the Upload-button flow (the OS file
- * picker opens after the user picks a type).
- */
-export interface DotContentDriveUploadSelectorPayload {
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
-}
-
-/**
- * Object emitted BACK by the upload-type selector dialog. Carries everything needed to trigger the
- * upload (and, in the future, to remember the chosen type per folder — see epic #35436).
- * `targetFolder` is omitted when nothing is selected (uploads to the site root).
- */
-export interface DotContentDriveUploadSelection {
-    baseType: DotContentDriveUploadBaseType;
-    targetFolder?: DotFolderTreeNodeData;
-    files?: FileList;
 }
 
 export interface DotContentDrivePage {
@@ -228,6 +242,34 @@ export interface DotContentDriveState extends DotContentDriveInit {
      */
     isTreeForceCollapsed: boolean;
     /**
+     * Every language configured in the environment, from `DotLanguagesService.get()`.
+     *
+     * Held here rather than fetched per consumer so the Locale filter and the default-language seed
+     * share one request instead of issuing the same call twice.
+     */
+    languages: DotLanguage[];
+    /**
+     * Id of the environment's default language — the language flagged `defaultLanguage`, which is
+     * NOT necessarily id 1 nor the first entry returned.
+     *
+     * Seeds the `languageId` filter whenever no language is selected: a cold load, a URL without a
+     * language, a clear-all, or a Back/Forward restore. "No language" is not a neutral state — the
+     * backend omits the language term entirely, so every language version of a contentlet comes
+     * back as its own row (see `withDefaultLanguage`).
+     *
+     * `undefined` while the request is in flight, and if it fails or the environment declares no
+     * default — see {@link defaultLanguageLoaded}.
+     */
+    defaultLanguageId?: number;
+    /**
+     * Whether the languages request has settled — to a default id, to no default, or to a failure.
+     * Distinguishes "not fetched yet" from "fetched, nothing to seed", which lets the first search
+     * wait for the seed instead of firing once without a language (a flash of duplicated rows) and
+     * again with it. Always ends up `true`, so a failure degrades to the pre-seeding behaviour
+     * rather than hanging the portlet in `LOADING`.
+     */
+    defaultLanguageLoaded: boolean;
+    /**
      * Whether the logged-in user holds the CMS Administrator role, from
      * `DotCurrentUserService.getCurrentUser()`.
      *
@@ -255,6 +297,11 @@ export type DotKnownContentDriveFilters = {
     languageId: string[];
     // Each entry is `schemeId` or `schemeId:stepId` (single step pinned per scheme)
     workflow: string[];
+    // `'false'` hides SYSTEM_HOST (shared) assets, `'true'` shows them. Always present: the filter is
+    // seeded to `'true'` on a cold load, on "Clear all", and on a Back/Forward restore (see
+    // `withFilterDefaults`), so the value is explicit in the URL rather than implied by the key's
+    // absence.
+    sharedAssets: string;
 };
 
 /**
@@ -274,15 +321,3 @@ export type DotContentDriveFilters = Partial<DotKnownContentDriveFilters> & {
  * @interface DotContentDriveDecodeFunction
  */
 export type DotContentDriveDecodeFunction = (value: string) => string | string[];
-
-/**
- * The parameters for the buildTreeFolderNodes function.
- *
- * @export
- * @interface buildTreeFolderNodesParams
- */
-export interface BuildTreeFolderNodesParams {
-    folderHierarchyLevels: DotFolder[][];
-    targetPath: string;
-    rootNode: DotFolderTreeNodeItem;
-}

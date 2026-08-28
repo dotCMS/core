@@ -8,6 +8,9 @@ servers:
 tags:
 - description: AI-powered content generation and analysis endpoints
   name: AI
+- description: "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST\
+    \ is the global default) and headless OIDC token exchange"
+  name: dotAuth
 - description: JavaScript execution and server-side scripting
   name: JavaScript
 - description: Content bundle management and deployment
@@ -2623,24 +2626,6 @@ paths:
       summary: Retrieves Accessibility Guidelines
       tags:
       - Accessibility Checker
-  /v1/agents/a11y/active-run:
-    get:
-      description: "Returns the run the agent service currently associates with the\
-        \ calling user, so a client that reconnects (a reload, or a second tab) can\
-        \ rejoin a run already in progress instead of starting a duplicate."
-      operationId: getA11yAgentActiveRun
-      responses:
-        "200":
-          content:
-            application/json: {}
-          description: "The active or last run, relayed from the agent service"
-        "401":
-          content:
-            application/json: {}
-          description: Authentication required
-      summary: Get the caller's active or most recent agent run
-      tags:
-      - Accessibility Agent
   /v1/agents/a11y/fix:
     post:
       description: "Resolves the page identifier to a live URL, URI and host id, mints\
@@ -3020,6 +3005,74 @@ paths:
           content:
             application/json: {}
           description: default response
+      tags:
+      - AI
+  /v1/ai/providers:
+    get:
+      description: "Returns, for every registered dotAI provider, the capabilities\
+        \ it supports (chat/embeddings/image) and the providerConfig fields each supported\
+        \ capability requires or accepts."
+      operationId: listAiProviders
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAiProviderListView"
+          description: Provider metadata retrieved successfully
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+      summary: List dotAI provider configuration metadata
+      tags:
+      - AI
+  /v1/ai/providers/test/{capability}:
+    post:
+      description: "Builds the provider client for the given capability from the posted\
+        \ configuration and issues one minimal real request against the provider (a\
+        \ short chat reply, a one-line embedding, or a single test image). Masked\
+        \ credential fields (\"*****\") in the posted config are resolved against\
+        \ the real value already stored for siteId before testing. Returns success=false\
+        \ with a message on any validation or provider error rather than an HTTP error\
+        \ status, so the caller can always render the result."
+      operationId: testAiProviderConnection
+      parameters:
+      - in: path
+        name: capability
+        required: true
+        schema:
+          type: string
+      - in: query
+        name: siteId
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: Provider config section to test
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityAiTestConnectionView"
+          description: Test executed — check the success field for the outcome
+        "400":
+          content:
+            application/json: {}
+          description: Unknown capability or malformed request body
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - requires CMS admin, or access denied to site"
+      summary: Test a dotAI provider connection
       tags:
       - AI
   /v1/ai/search:
@@ -6168,6 +6221,38 @@ paths:
       summary: Copies a container to the current host
       tags:
       - Containers
+  /v1/content/_bulkrefresh:
+    post:
+      description: "Clears the contentlet cache and reindexes every selected contentlet,\
+        \ all versions of each. Returns a job id. This is accepted work, not finished\
+        \ work: completion is pushed to the submitting user over the websocket. Not\
+        \ a full index rebuild."
+      operationId: bulkRefreshContent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkRefreshForm"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityBulkRefreshSubmitView"
+          description: Accepted - reindex job enqueued
+        "400":
+          description: Bad request - empty selection or over the configured item cap
+        "401":
+          description: Unauthorized - no backend user session
+        "403":
+          description: Forbidden - not a CMS Power User or CMS Administrator
+        "415":
+          description: Unsupported Media Type
+        "500":
+          description: Internal Server Error - the job could not be created
+      summary: Reindex a selection of contentlets
+      tags:
+      - Content
   /v1/content/_canlock/{inodeOrIdentifier}:
     get:
       description: Checks if the contentlet specified by its inode or identifier can
@@ -9591,6 +9676,380 @@ paths:
       summary: Update field variable by field variable name
       tags:
       - Content Type Field
+  /v1/dotauth/discover/oidc:
+    post:
+      description: "Thin authenticated proxy used by the dotAuth portlet to populate\
+        \ issuer, endpoint, JWKS, and supported algorithm fields from a .well-known/openid-configuration\
+        \ URL."
+      operationId: discoverDotAuthOidc
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: "Parsed OIDC discovery fields: issuer, endpoints, JWKS\
+                  \ URI, and signing algorithms"
+          description: Discovery document parsed successfully
+        "400":
+          description: Missing or invalid discovery URL
+        "401":
+          description: Authentication required
+        "500":
+          description: Internal server error
+      summary: Fetch and parse an OIDC discovery document
+      tags:
+      - dotAuth
+  /v1/dotauth/export:
+    post:
+      description: "Exports OAuth/OIDC, SAML, and headless dotAuth AppSecrets into\
+        \ one encrypted Apps export file."
+      operationId: exportDotAuthAppSecrets
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/octet-stream: {}
+          description: Encrypted export file
+        "400":
+          description: Invalid password or no secrets configured
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Export all dotAuth AppSecrets
+      tags:
+      - dotAuth
+  /v1/dotauth/fetch/saml-metadata:
+    post:
+      description: Authenticated proxy that fetches SAML metadata XML from an IdP's
+        metadata endpoint URL. Returns the raw XML as a string so the admin can review
+        it before saving.
+      operationId: fetchSamlMetadata
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Object with a single 'xml' field containing the raw metadata
+                  XML
+          description: Metadata fetched successfully
+        "400":
+          description: Missing or invalid metadata URL
+        "401":
+          description: Authentication required
+        "500":
+          description: Internal server error
+      summary: Fetch SAML IdP metadata XML from a URL
+      tags:
+      - dotAuth
+  /v1/dotauth/headless:
+    delete:
+      description: Deletes the headless config. SSO config is not affected.
+      operationId: clearDotAuthHeadlessConfig
+      responses:
+        "204":
+          description: Headless config cleared
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+      summary: Clear the system-level headless token-exchange configuration
+      tags:
+      - dotAuth
+    put:
+      description: Writes headless config to SYSTEM_HOST. Headless config is system-wide
+        (not per-site). SSO saves/deletes never affect it.
+      operationId: saveDotAuthHeadlessConfig
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties:
+                type: object
+      responses:
+        "200":
+          description: Headless config saved
+        "401":
+          description: Authentication required
+        "403":
+          description: Insufficient permissions
+        "500":
+          description: Internal server error
+      summary: Save the system-level headless token-exchange configuration
+      tags:
+      - dotAuth
+  /v1/dotauth/import:
+    post:
+      description: "Imports an encrypted Apps export file containing only OAuth/OIDC,\
+        \ SAML, and headless dotAuth AppSecrets."
+      operationId: importDotAuthAppSecrets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+                description: Import result with count of imported secrets
+          description: Import succeeded
+        "400":
+          description: "Invalid password, empty file, or non-dotAuth secrets in file"
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Import dotAuth AppSecrets
+      tags:
+      - dotAuth
+  /v1/dotauth/oauth/exchange:
+    options:
+      operationId: exchangePreflight
+      responses:
+        default:
+          content:
+            '*/*': {}
+          description: default response
+      tags:
+      - dotAuth
+    post:
+      description: "Validates the caller-supplied id_token against the configured\
+        \ OIDC provider's JWKS (signature, iss, aud == our client_id, exp, nonce),\
+        \ resolves or JIT-provisions the matching dotCMS user, and returns an opaque\
+        \ session-ref bound to that user."
+      operationId: exchange
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OAuthExchangeForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityOAuthExchangeView"
+          description: Token exchange succeeded
+        "400":
+          description: Malformed payload or non-OIDC provider configured
+        "401":
+          description: "id_token failed validation (signature, iss, aud, exp, or nonce)"
+        "403":
+          description: Resolved dotCMS user exists but is not active
+        "404":
+          description: Exchange endpoint not found
+        "503":
+          description: OAuth is not configured for this site
+      summary: Exchange an OIDC id_token for a dotAuth session-ref
+      tags:
+      - dotAuth
+  /v1/dotauth/oauth/session:
+    delete:
+      description: "Removes the session referenced by the Authorization: Bearer header\
+        \ from the in-memory session cache. Always returns 204 — unknown or missing\
+        \ refs are silently ignored so this is safe to call unconditionally on sign-out."
+      operationId: logout
+      responses:
+        "204":
+          description: Session invalidated (or was unknown)
+      summary: Invalidate the caller's dotAuth session-ref
+      tags:
+      - dotAuth
+  /v1/dotauth/saml/metadata/{hostId}:
+    get:
+      description: "Generates SAML Service Provider metadata XML for the given site.\
+        \ For inherited configs the certificate comes from the SYSTEM_HOST row, but\
+        \ the entity ID and ACS URL use the target site's hostname so the IdP can\
+        \ distinguish per-site requests."
+      operationId: getSamlSpMetadata
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/xml: {}
+          description: SP metadata XML
+        "401":
+          description: Authentication required
+        "404":
+          description: No SAML configuration found for this site
+        "500":
+          description: Internal server error
+      summary: Download SAML SP metadata XML for a site
+      tags:
+      - dotAuth
+  /v1/dotauth/sessionrefs/revoke:
+    post:
+      description: Flushes the dotAuth sessionRef cache. Existing browser sessions
+        are not affected.
+      operationId: revokeDotAuthSessionRefs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: All session-refs revoked
+        "401":
+          description: Authentication required
+        "403":
+          description: Admin access required
+        "500":
+          description: Internal server error
+      summary: Revoke all dotAuth sessionRefs
+      tags:
+      - dotAuth
+  /v1/dotauth/sites:
+    get:
+      description: "Returns the SYSTEM_HOST (global default) status plus a per-site\
+        \ list indicating whether each site has its own OAuth/SAML configuration,\
+        \ inherits from the system default, or is unconfigured."
+      operationId: listDotAuthSites
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotAuthSitesView"
+          description: Sites retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to access dotAuth
+        "500":
+          description: Internal server error
+      summary: List all sites with their dotAuth status
+      tags:
+      - dotAuth
+  /v1/dotauth/sites/{hostId}:
+    delete:
+      description: Deletes both OAuth and SAML secret rows for the given hostId. On
+        SYSTEM_HOST this removes the global default; non-system hosts fall back to
+        inheriting from SYSTEM_HOST afterward.
+      operationId: clearDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "204":
+          description: Configuration cleared successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to edit this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Clear the dotAuth configuration for a site
+      tags:
+      - dotAuth
+    get:
+      description: "Returns the protocol-specific configuration stored for the given\
+        \ hostId. Use the sentinel \"SYSTEM_HOST\" for the global default. When the\
+        \ host has no row of its own and the system default is configured, the response\
+        \ carries inherited=true and values holds the system defaults. Hidden secrets\
+        \ (e.g. clientSecret, privateKey) are masked as \"****\"."
+      operationId: getDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityDotAuthConfigView"
+          description: Configuration retrieved successfully
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to read this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Get the dotAuth configuration for a site
+      tags:
+      - dotAuth
+    put:
+      description: Writes the chosen protocol's secrets for the given hostId and deletes
+        the other protocol's row for that host (mutual exclusion). Posting "****"
+        on a hidden field preserves the stored value.
+      operationId: saveDotAuthConfig
+      parameters:
+      - in: path
+        name: hostId
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DotAuthConfigForm"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityStringView"
+          description: Configuration saved successfully
+        "400":
+          description: Invalid form payload
+        "401":
+          description: Authentication required
+        "403":
+          description: User does not have permission to edit this site
+        "404":
+          description: Site not found
+        "500":
+          description: Internal server error
+      summary: Save (upsert) the dotAuth configuration for a site
+      tags:
+      - dotAuth
   /v1/ema:
     get:
       operationId: getDetails
@@ -15309,6 +15768,50 @@ paths:
       tags:
       - Roles
   /v1/roles/{roleid}:
+    delete:
+      description: "Deletes a role. The deletion CASCADES and is not reversible: the\
+        \ role is removed from all users that have it, all permissions granted to\
+        \ the role are deleted, and its layout (tool-group) assignments are detached.\
+        \ The response reports how many users were affected. Deletion is rejected\
+        \ when the role has child roles or is referenced by a workflow action's Assign\
+        \ To (409), and for system or locked roles (403)."
+      operationId: deleteRole
+      parameters:
+      - description: Id of the role to delete
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleDeletionView"
+          description: Role deleted successfully; usersAffected reports the cascade
+            blast radius
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role is a system\
+            \ or locked role"
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+        "409":
+          content:
+            application/json: {}
+          description: "Conflict - the role has child roles, or a workflow action\
+            \ references it"
+      summary: Delete a role
+      tags:
+      - Roles
     get:
       description: Load role based on the role id with optional children roles
       operationId: loadRoleByRoleId
@@ -15455,6 +15958,184 @@ paths:
             application/json: {}
           description: Role not found
       summary: Load users and roles by role ID
+      tags:
+      - Roles
+  /v1/roles/{roleid}/users:
+    delete:
+      description: "Bulk-removes the DIRECT membership of the given users from the\
+        \ role. The batch has PARTIAL-SUCCESS semantics: it never fails as a whole\
+        \ once the role resolves — every removable membership is removed and every\
+        \ other entry is reported in the skipped list with a reason: not_found (no\
+        \ user matches the id), inherited (the user is not a direct member — the membership\
+        \ is inherited through the role hierarchy, or the user is not a member at\
+        \ all; inherited membership can only be revoked by removing the user from\
+        \ the ancestor role that grants it), or error (unexpected per-user failure,\
+        \ logged server-side). Removals are committed per user, so entries already\
+        \ processed stay removed regardless of later entries. Only user-assignable\
+        \ roles (editUsers=true) accept membership changes: a role whose editUsers\
+        \ flag is false — e.g. a user's individual role or a system role — is rejected\
+        \ with 403 for the whole request, mirroring the grant endpoint."
+      operationId: removeUsersFromRole
+      parameters:
+      - description: Id of the role to remove users from
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RoleUsersForm"
+        description: Ids of the users to remove from the role
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleUsersRemovalView"
+          description: Batch processed; removedUserIds and skipped report the per-user
+            outcomes
+        "400":
+          content:
+            application/json: {}
+          description: "Bad request - missing body, empty userIds, or null/blank entries"
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role's editUsers\
+            \ flag is false"
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Remove users from a role
+      tags:
+      - Roles
+    get:
+      description: "Returns the paginated list of users directly granted the given\
+        \ role, using the standard user serialization (email address included). Grants\
+        \ inherited through the role hierarchy are not included."
+      operationId: loadUsersByRoleId
+      parameters:
+      - description: Id of the role to list users for
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      - description: "Filter matching user id, first name, last name, email or full\
+          \ name"
+        in: query
+        name: filter
+        schema:
+          type: string
+      - description: Page number for pagination
+        in: query
+        name: page
+        schema:
+          type: integer
+          format: int32
+          default: 1
+      - description: Number of items per page
+        in: query
+        name: per_page
+        schema:
+          type: integer
+          format: int32
+          default: 40
+      - description: Column name for sorting results
+        in: query
+        name: orderby
+        schema:
+          type: string
+      - description: "Sorting direction: ASC or DESC"
+        in: query
+        name: direction
+        schema:
+          type: string
+          default: ASC
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityPaginatedDataView"
+          description: Users retrieved successfully
+        "400":
+          content:
+            application/json: {}
+          description: Bad request - invalid pagination or sorting parameters
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: Forbidden - roles portlet access required
+        "404":
+          content:
+            application/json: {}
+          description: Role not found
+      summary: Get the users directly granted a role
+      tags:
+      - Roles
+  /v1/roles/{roleid}/users/{userId}:
+    post:
+      description: "Grants the role to the user as a DIRECT membership. The operation\
+        \ is IDEMPOTENT: granting a role the user already holds returns 200 and changes\
+        \ nothing — no duplicate membership is created and retries are safe, even\
+        \ when the role's editUsers flag has since been turned off. Note the inherited-membership\
+        \ behavior (legacy parity): role membership is inherited DOWN the role tree,\
+        \ so a user holding a parent role implicitly holds every child role. Granting\
+        \ a role the user already INHERITS this way also returns 200 but does NOT\
+        \ create a direct membership — the user will not appear in the role's direct-users\
+        \ list afterwards. Roles whose editUsers flag is false cannot be granted (403);\
+        \ workflow and system roles are non-grantable because that flag is false on\
+        \ them."
+      operationId: addUserToRole
+      parameters:
+      - description: Id of the role to grant
+        in: path
+        name: roleid
+        required: true
+        schema:
+          type: string
+      - description: Id of the user to grant the role to
+        in: path
+        name: userId
+        required: true
+        schema:
+          type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResponseEntityRoleUserGrantView"
+          description: User holds the role after the call; the response carries the
+            granted roleId and a minimal user payload
+        "401":
+          content:
+            application/json: {}
+          description: Unauthorized - authentication required
+        "403":
+          content:
+            application/json: {}
+          description: "Forbidden - admin permissions required, or the role's editUsers\
+            \ flag is false"
+        "404":
+          content:
+            application/json: {}
+          description: Role or user not found
+      summary: Grant a role to a user
       tags:
       - Roles
   /v1/site:
@@ -18063,7 +18744,15 @@ paths:
     put:
       description: "Updates an existing user's information including personal details,\
         \ roles, and account settings. Only admin users or users with appropriate\
-        \ portlet access can perform this operation."
+        \ portlet access can perform this operation. The optional roles list carries\
+        \ role KEYS and is the user's complete desired set of user-assignable roles\
+        \ (editUsers=true): omit the field to leave roles untouched, send a non-empty\
+        \ list to replace the user-assignable role set, or send an empty list to remove\
+        \ all of the user's user-assignable roles. System-managed memberships (e.g.\
+        \ the user's individual role) are never modified, keys that resolve to no\
+        \ role are ignored, and null or blank entries are rejected with 400. Note\
+        \ that roles without a key cannot be expressed in this list — manage those\
+        \ through the role-centric /v1/roles/{roleId}/users endpoints instead."
       operationId: updateUser
       requestBody:
         content:
@@ -18071,7 +18760,9 @@ paths:
             schema:
               $ref: "#/components/schemas/UserForm"
         description: "User update data including personal information, roles, and\
-          \ account settings"
+          \ account settings. The roles list (role keys) is the complete desired set\
+          \ of user-assignable roles: absent = untouched, empty = remove all user-assignable\
+          \ roles, non-empty = replace."
         required: true
       responses:
         "200":
@@ -24552,6 +25243,10 @@ components:
           - CATEGORY
           - RULE
           example: FOLDER
+        canAddChildren:
+          type: boolean
+          description: Whether the requesting user can add children to this asset
+          example: true
         canEdit:
           type: boolean
           description: Whether the requesting user can edit this asset
@@ -24591,6 +25286,7 @@ components:
       required:
       - assetId
       - assetType
+      - canAddChildren
       - canEdit
       - canEditPermissions
       - inheritanceMode
@@ -24903,6 +25599,29 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkRefreshForm:
+      type: object
+      properties:
+        contentletIds:
+          type: array
+          items:
+            type: string
+          maxItems: 2147483647
+          minItems: 1
+        includeDependencies:
+          type: boolean
+        includeItemResults:
+          type: boolean
+      required:
+      - contentletIds
+    BulkRefreshSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkResultView:
       type: object
       properties:
@@ -27072,6 +27791,51 @@ components:
             type: string
           versionable:
             type: boolean
+    DotAuthConfigForm:
+      type: object
+      properties:
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        values:
+          type: object
+          additionalProperties:
+            type: object
+      required:
+      - values
+    DotAuthConfigView:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        headlessValues:
+          type: object
+          additionalProperties:
+            type: object
+        hostId:
+          type: string
+        inherited:
+          type: boolean
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        values:
+          type: object
+          additionalProperties:
+            type: object
+    DotAuthSitesView:
+      type: object
+      properties:
+        sites:
+          type: array
+          items:
+            $ref: "#/components/schemas/SiteRowView"
+        system:
+          $ref: "#/components/schemas/SystemView"
     DotTempFile:
       type: object
       properties:
@@ -30654,6 +31418,31 @@ components:
       required:
       - assetPath
       - data
+    OAuthExchangeForm:
+      type: object
+      properties:
+        expirationDays:
+          type: integer
+          format: int32
+        idToken:
+          type: string
+        nonce:
+          type: string
+      required:
+      - idToken
+      - nonce
+    OAuthExchangeView:
+      type: object
+      properties:
+        expirationDays:
+          type: integer
+          format: int32
+        expiresAt:
+          type: string
+        sessionRef:
+          type: string
+        user:
+          $ref: "#/components/schemas/UserSummary"
     OpenFolderForm:
       type: object
       properties:
@@ -31331,6 +32120,43 @@ components:
           type: object
           additionalProperties:
             type: object
+    ProviderField:
+      type: object
+      properties:
+        hint:
+          type: string
+        name:
+          type: string
+        required:
+          type: boolean
+        requiredUnless:
+          type: string
+        type:
+          type: string
+          enum:
+          - STRING
+          - NUMBER
+          - SECRET
+    ProviderMetadata:
+      type: object
+      properties:
+        fields:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              $ref: "#/components/schemas/ProviderField"
+        provider:
+          type: string
+        supportedCapabilities:
+          type: array
+          items:
+            type: string
+            enum:
+            - CHAT
+            - EMBEDDINGS
+            - IMAGE
+          uniqueItems: true
     PublishingEndPoint:
       type: object
       properties:
@@ -32061,6 +32887,54 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityAiProviderListView:
+      type: object
+      properties:
+        entity:
+          type: array
+          items:
+            $ref: "#/components/schemas/ProviderMetadata"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityAiTestConnectionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/TestConnectionResult"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityApiTokenWithJwtView:
       type: object
       properties:
@@ -32162,6 +33036,29 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/BulkActionsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityBulkRefreshSubmitView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/BulkRefreshSubmitResponse"
         errors:
           type: array
           items:
@@ -32650,6 +33547,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/DeleteContentletsResultView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDotAuthConfigView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotAuthConfigView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityDotAuthSitesView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/DotAuthSitesView"
         errors:
           type: array
           items:
@@ -33631,6 +34574,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityOAuthExchangeView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/OAuthExchangeView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityPageLivePreviewVersionView:
       type: object
       properties:
@@ -34102,6 +35068,29 @@ components:
           type: array
           items:
             type: string
+    ResponseEntityRoleDeletionView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleDeletionView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
     ResponseEntityRoleDetailView:
       type: object
       properties:
@@ -34180,6 +35169,52 @@ components:
       properties:
         entity:
           $ref: "#/components/schemas/RolePermissionsView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleUserGrantView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleUserGrantView"
+        errors:
+          type: array
+          items:
+            $ref: "#/components/schemas/ErrorEntity"
+        i18nMessagesMap:
+          type: object
+          additionalProperties:
+            type: string
+        messages:
+          type: array
+          items:
+            $ref: "#/components/schemas/MessageEntity"
+        pagination:
+          $ref: "#/components/schemas/Pagination"
+        permissions:
+          type: array
+          items:
+            type: string
+    ResponseEntityRoleUsersRemovalView:
+      type: object
+      properties:
+        entity:
+          $ref: "#/components/schemas/RoleUsersRemovalView"
         errors:
           type: array
           items:
@@ -35918,6 +36953,28 @@ components:
           type: boolean
         user:
           type: boolean
+    RoleDeletionView:
+      type: object
+      properties:
+        deleted:
+          type: boolean
+          description: Whether the role was deleted
+          example: true
+        roleId:
+          type: string
+          description: Id of the deleted role
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        usersAffected:
+          type: integer
+          format: int32
+          description: Number of users the role was removed from by the cascading
+            deletion. Counts direct assignments only; users inheriting the role through
+            the role hierarchy are not included
+          example: 3
+      required:
+      - deleted
+      - roleId
+      - usersAffected
     RoleForm:
       type: object
       properties:
@@ -35947,6 +37004,26 @@ components:
           uniqueItems: true
         roleId:
           type: string
+    RoleMemberUserView:
+      type: object
+      description: The user the role was granted to
+      properties:
+        email:
+          type: string
+          description: Email address of the user
+          example: user@example.com
+        fullName:
+          type: string
+          description: Full name of the user
+          example: Jane Doe
+        userId:
+          type: string
+          description: Id of the user
+          example: dotcms.org.2807
+      required:
+      - email
+      - fullName
+      - userId
     RolePermissionAssetView:
       type: object
       description: The updated asset with new permission assignments for this role
@@ -36237,9 +37314,67 @@ components:
           type: array
           items:
             type: string
+    RoleUserGrantView:
+      type: object
+      properties:
+        granted:
+          type: boolean
+          description: "Whether the user holds the role after the call. The grant\
+            \ is idempotent, so this is also true when the user already held the role\
+            \ and nothing changed"
+          example: true
+        roleId:
+          type: string
+          description: Id of the granted role
+          example: 48190c8c-42c4-46af-8d1a-0cd5db894797
+        user:
+          $ref: "#/components/schemas/RoleMemberUserView"
+      required:
+      - granted
+      - roleId
+      - user
+    RoleUsersForm:
+      type: object
+      properties:
+        userIds:
+          type: array
+          description: Ids of the users to remove from the role
+          example:
+          - dotcms.org.2807
+          items:
+            type: string
+            description: Ids of the users to remove from the role
+            example: "[\"dotcms.org.2807\"]"
+          uniqueItems: true
+      required:
+      - userIds
+    RoleUsersRemovalView:
+      type: object
+      properties:
+        removedUserIds:
+          type: array
+          description: Ids of the users whose direct membership in the role was removed
+          items:
+            type: string
+            description: Ids of the users whose direct membership in the role was
+              removed
+        skipped:
+          type: array
+          description: "Users that could not be removed, each with a reason"
+          items:
+            $ref: "#/components/schemas/SkippedUserView"
+      required:
+      - removedUserIds
+      - skipped
     RoleView:
       type: object
       properties:
+        childCount:
+          type: integer
+          format: int32
+          description: "Number of direct child roles, independent of children hydration"
+          example: 3
+          minimum: 0
         dbfqn:
           type: string
         description:
@@ -36268,6 +37403,17 @@ components:
           type: string
         system:
           type: boolean
+        userCount:
+          type: integer
+          format: int32
+          description: "Number of users directly granted this role, matching the totals\
+            \ of the role users listing: inherited grants and hidden users (system,\
+            \ anonymous, default, flagged for deletion) are not included"
+          example: 12
+          minimum: 0
+      required:
+      - childCount
+      - userCount
     RowField:
       type: object
       allOf:
@@ -36927,6 +38073,24 @@ components:
             $ref: "#/components/schemas/SimpleSiteVariableForm"
       required:
       - siteName
+    SiteRowView:
+      type: object
+      properties:
+        hostId:
+          type: string
+        hostName:
+          type: string
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
+        status:
+          type: string
+          enum:
+          - SITE_OVERRIDE
+          - INHERITED
+          - NOT_CONFIGURED
     SiteVariableForm:
       type: object
       properties:
@@ -36960,6 +38124,25 @@ components:
           type: string
         value:
           type: string
+    SkippedUserView:
+      type: object
+      description: "Users that could not be removed, each with a reason"
+      properties:
+        reason:
+          type: string
+          description: Why the user was skipped
+          enum:
+          - not_found
+          - inherited
+          - error
+          example: inherited
+        userId:
+          type: string
+          description: "Id of the skipped user, as submitted in the request"
+          example: dotcms.org.2807
+      required:
+      - reason
+      - userId
     SmallRoleView:
       type: object
       properties:
@@ -37061,6 +38244,18 @@ components:
           - UNLOCK
         workflowAction:
           $ref: "#/components/schemas/WorkflowAction"
+    SystemView:
+      type: object
+      properties:
+        configured:
+          type: boolean
+        headlessConfigured:
+          type: boolean
+        protocol:
+          type: string
+          enum:
+          - OAUTH
+          - SAML
     TabDividerField:
       type: object
       allOf:
@@ -37648,6 +38843,13 @@ components:
         title:
           type: string
         working:
+          type: boolean
+    TestConnectionResult:
+      type: object
+      properties:
+        message:
+          type: string
+        success:
           type: boolean
     TextAreaField:
       type: object
@@ -38956,8 +40158,23 @@ components:
             type: string
         roles:
           type: array
+          description: "Role keys or role IDs (roles created without a key can only\
+            \ be referenced by ID). On update: field absent = roles untouched; []\
+            \ = remove all user-assignable roles; otherwise the complete user-assignable\
+            \ role set. On create: absent or empty = default Front-end User role.\
+            \ Unknown entries are ignored."
+          example:
+          - DOTCMS_BACK_END_USER
+          - 48190c8c-42c4-46af-8d1a-0cd5db894797
           items:
             type: string
+            description: "Role keys or role IDs (roles created without a key can only\
+              \ be referenced by ID). On update: field absent = roles untouched; []\
+              \ = remove all user-assignable roles; otherwise the complete user-assignable\
+              \ role set. On create: absent or empty = default Front-end User role.\
+              \ Unknown entries are ignored."
+            example: "[\"DOTCMS_BACK_END_USER\",\"48190c8c-42c4-46af-8d1a-0cd5db894797\"\
+              ]"
         timeZoneId:
           type: string
         userId:
@@ -39047,6 +40264,23 @@ components:
       - path
       - permissions
       - type
+    UserSummary:
+      type: object
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        fullName:
+          type: string
+        lastName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+        userId:
+          type: string
     VanityURLView:
       type: object
       properties:

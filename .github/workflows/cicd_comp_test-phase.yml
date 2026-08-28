@@ -96,7 +96,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
+          # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
+          fetch-depth: 1
         
       - name: Parse test configuration
         id: parse-config
@@ -249,13 +251,30 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
         with:
-          fetch-depth: 0
+          # Shallow checkout: test jobs run Maven suites against the checked-out
+          # snapshot only — no git history is read anywhere in this job or in the
+          # maven-job action (buildnumber-maven-plugin reads HEAD, which works on
+          # a shallow clone). fetch-depth: 0 pulled every branch ref (~2k+
+          # branches, ~1.1 GB pack) at ~19-20 min per matrix job.
+          fetch-depth: 1
+
+      # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
+      # against origin/main (core-web/pom.xml git.origin.branch). The shallow
+      # checkout above has no origin/main ref, so fetch just that ref, shallow.
+      - name: Fetch origin/main for Nx affected
+        if: contains(matrix.maven_args, '-Pvalidate')
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of
       # self-skipping. Ubuntu 24.04 libvips42 bundles the pdf/heif/svg/webp/jxl delegates.
+      # Bounded so a wedged Ubuntu mirror can't burn the job timeout (#37118).
+      # 15m, not tighter: measured median 21s but max 521s on a throttled mirror
+      # (198 kB/s) that still succeeded. The hang case ran 3h+, so 15m separates
+      # the two without tripping on slow-but-alive fetches.
       - name: Install native libvips (image engine parity tests)
         if: matrix.test_type == 'jvm'
+        timeout-minutes: 15
         run: sudo apt-get update && sudo apt-get install -y --no-install-recommends libvips42 libheif-plugin-aomenc
 
       - name: Run ${{ matrix.name }}

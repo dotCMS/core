@@ -19,6 +19,15 @@ export type TreeNodeContentData = {
     path: string;
     hostname: string;
     id: string;
+    /** Folder inode — used by Content Drive / AssetPicker to open the content editor pre-selected. */
+    inode?: string;
+    /**
+     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
+     * Drives folder-aware Upload behavior in Content Drive.
+     */
+    defaultBaseType?: string | null;
+    /** True when the node was selected from the folder list/table rather than the tree. */
+    fromTable?: boolean;
 };
 
 /**

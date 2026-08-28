@@ -169,6 +169,23 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-es-search/portlet').then((m) => m.dotEsSearchRoutes)
     },
     {
+        path: 'dotAuth',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
+    },
+    {
+        path: 'experiments',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-experiments/portlet').then(
+                (m) => m.dotExperimentsPortletRoutes
+            )
+    },
+    {
         path: 'tags',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
@@ -198,6 +215,14 @@ const PORTLETS_ANGULAR: Route[] = [
         data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-users/portlet').then((m) => m.dotUsersRoutes)
+    },
+    {
+        path: 'roles-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
     },
     {
         path: 'query-tool',

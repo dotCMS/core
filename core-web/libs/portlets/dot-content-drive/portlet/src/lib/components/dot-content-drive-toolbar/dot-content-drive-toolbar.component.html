@@ -11,24 +11,41 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <p-button
-                        animate.enter="toolbar-enter"
-                        animate.leave="toolbar-leave"
-                        [label]="$uploadLabelKey() | dm"
-                        icon="pi pi-upload"
-                        [outlined]="true"
-                        data-testid="upload-asset-button"
-                        (click)="$upload.emit($event)" />
+                    <!-- Both create children in the browsed folder, and the server refuses without
+                         CAN_ADD_CHILDREN on it, so they are offered disabled with the reason rather
+                         than left to fail after the user has picked a file or filled in a dialog.
 
-                    <p-button
-                        animate.enter="toolbar-enter"
-                        animate.leave="toolbar-leave"
-                        [label]="'content-drive.add-new' | dm"
-                        icon="pi pi-chevron-down"
-                        iconPos="right"
-                        data-testid="add-new-button"
-                        (click)="menu.toggle($event)"
-                        #button />
+                         The tooltip sits on a wrapper, not on the buttons: a disabled button
+                         computes `pointer-events: none` (measured), so no hover reaches it and a
+                         tooltip bound there would never fire — which is the whole point here. -->
+                    <span
+                        [pTooltip]="$addChildrenTooltip() | dm"
+                        data-testid="upload-asset-tooltip"
+                        class="inline-flex">
+                        <dot-upload-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [defaultBaseType]="$uploadBaseType()"
+                            [disabled]="!$canAddChildren()"
+                            data-testid="upload-asset-button"
+                            (upload)="$upload.emit($event)" />
+                    </span>
+
+                    <span
+                        [pTooltip]="$addChildrenTooltip() | dm"
+                        data-testid="add-new-tooltip"
+                        class="inline-flex">
+                        <p-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [label]="'content-drive.add-new' | dm"
+                            icon="pi pi-chevron-down"
+                            iconPos="right"
+                            [disabled]="!$canAddChildren()"
+                            data-testid="add-new-button"
+                            (click)="menu.toggle($event)"
+                            #button />
+                    </span>
                 }
 
                 @if ($displayActions()) {
@@ -57,6 +74,9 @@
         </div>
 
         <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
+            <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
+                 precondition for the filters that narrow within them. -->
+            <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
             <dot-content-drive-language-field data-testid="language-field" />

@@ -5,6 +5,7 @@ import type { Injector } from '@angular/core';
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
 import Emoji, { emojis } from '@tiptap/extension-emoji';
+import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
 import Superscript from '@tiptap/extension-superscript';
@@ -53,6 +54,15 @@ export function createEditorExtensions(
                 t(`dot.block.editor.upload.media-type.${mediaType}`)
             )
     };
+    /**
+     * Only gate a REGISTRATION with this if the key is selectable in Allowed Blocks — that
+     * list comes from `getEditorBlockOptions()`, which offers block nodes only. `link`,
+     * `emoji` and `youtube` are not in it, so gating them dropped the extension on every
+     * restricted field instead of restricting anything: `link` (a mark) aborted
+     * `Node.fromJSON` for the whole document, `emoji`/`youtube` resurfaced as
+     * `Unsupported block (…)`. Those three are registered unconditionally and gate their
+     * authoring paths instead (#37175).
+     */
     const has = (name: string): boolean => !allowedBlocks || allowedBlocks.includes(name);
 
     // Headings use customer-facing per-level names ("heading1".."heading6"). When the field
@@ -114,39 +124,38 @@ export function createEditorExtensions(
               ]
             : []),
         ...(has('image') ? [DotImage] : []),
-        ...(has('link')
-            ? [
-                  DotLink.configure({
-                      openOnClick: false,
-                      enableClickSelection: true,
-                      autolink: true,
-                      linkOnPaste: true,
-                      HTMLAttributes: {
-                          rel: 'noopener noreferrer',
-                          target: '_self'
-                      }
-                  })
-              ]
-            : []),
+        // Always registered — see `has()`. Authoring gate: toolbar button + the two flags below.
+        DotLink.configure({
+            openOnClick: false,
+            enableClickSelection: true,
+            autolink: has('link'),
+            linkOnPaste: has('link'),
+            HTMLAttributes: {
+                rel: 'noopener noreferrer',
+                target: '_self'
+            }
+        }),
         ...(has('video') ? [Video] : []),
         ...(has('audio') ? [Audio] : []),
-        ...(has('youtube')
-            ? [
-                  Youtube.configure({
-                      height: 300,
-                      width: 400,
-                      interfaceLanguage: 'us',
-                      nocookie: true,
-                      modestBranding: true
-                  })
-              ]
-            : []),
+        // Always registered — see `has()`. Authoring gate: the "Add asset by URL" popover,
+        // already behind `showAssetByUrl()`.
+        Youtube.configure({
+            height: 300,
+            width: 400,
+            interfaceLanguage: 'us',
+            nocookie: true,
+            modestBranding: true
+        }),
         ...(has('dotContent') ? [createDotContentlet(injector)] : []),
         ...(has('gridBlock') ? [GridBlock, GridColumn] : []),
         TextAlign.configure({ types: ['heading', 'paragraph'] }),
         IndentExtension,
         Superscript,
         Subscript,
+        // Legacy-compat + parity: the legacy editor registers Highlight, so stored content can
+        // carry `highlight` marks. Without it here TipTap aborts the whole document (#37145).
+        // Styled via `.tiptap mark` in editor.component.css rather than inline HTMLAttributes.
+        Highlight,
         createUploadPlaceholderExtension(uploadCopy),
         // Legacy-compat only: the new editor never creates `aiContent` nodes (AI Content
         // dialog inserts the generated HTML via `commands.insertContent` so it becomes
@@ -155,24 +164,22 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        ...(has('emoji')
-            ? [
-                  Emoji.configure({
-                      emojis,
-                      enableEmoticons: true,
-                      suggestion: {
-                          char: ':',
-                          items: () => [],
-                          render: () => ({
-                              onStart: () => undefined,
-                              onUpdate: () => undefined,
-                              onKeyDown: () => false,
-                              onExit: () => undefined
-                          })
-                      }
-                  })
-              ]
-            : []),
+        // Always registered — see `has()`. Authoring gate: toolbar button + `enableEmoticons`.
+        // The `:` suggestion trigger is inert by design; insertion goes through the popover.
+        Emoji.configure({
+            emojis,
+            enableEmoticons: has('emoji'),
+            suggestion: {
+                char: ':',
+                items: () => [],
+                render: () => ({
+                    onStart: () => undefined,
+                    onUpdate: () => undefined,
+                    onKeyDown: () => false,
+                    onExit: () => undefined
+                })
+            }
+        }),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService)
     ];
