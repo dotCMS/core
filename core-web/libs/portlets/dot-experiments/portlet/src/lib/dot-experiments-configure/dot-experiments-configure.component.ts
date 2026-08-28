@@ -168,6 +168,15 @@ export class DotExperimentsConfigureComponent {
     readonly $hasError = computed<boolean>(() => this.store.status() === ComponentStatus.ERROR);
 
     /**
+     * Whether Goal, Variants and Scheduling are still behind the save gate.
+     *
+     * Everything those three cards hold is written by `PATCH /experiments/{id}`, so until the
+     * draft exists there is nowhere for it to go — the Variants card could not even add a row.
+     * Details is the way through: it carries the Name and the Page the creation POST needs.
+     */
+    readonly $isGated = computed<boolean>(() => this.store.isNew());
+
+    /**
      * Indeterminate bar under the header while a request is on the wire — the same affordance UVE
      * gives its autosave.
      *

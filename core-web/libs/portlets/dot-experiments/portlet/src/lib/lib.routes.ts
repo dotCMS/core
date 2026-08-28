@@ -67,8 +67,8 @@ export const dotExperimentsPortletRoutes: Routes = [
         matcher: experimentsConfigureMatcher,
         title: 'experiment.container.configuration.title',
         // The screen only writes when Save Draft is pressed, so leaving it is the moment unsaved
-        // work is lost. Does not fire on the `new` → `:experimentId/configuration` swap, which is
-        // a reused route — and which follows a successful save anyway.
+        // work is lost. The guard lets through the one navigation the screen makes itself, off
+        // `new` once the draft exists.
         canDeactivate: [experimentsUnsavedChangesGuard],
         // Both resolvers are `@Injectable()` without `providedIn: 'root'` — see the list route.
         providers: [DotExperimentsConfigResolver, DotPushPublishEnvironmentsResolver],

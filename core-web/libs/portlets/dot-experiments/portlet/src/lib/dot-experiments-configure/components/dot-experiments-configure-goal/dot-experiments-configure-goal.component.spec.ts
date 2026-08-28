@@ -436,4 +436,31 @@ describe('DotExperimentsConfigureGoalComponent', () => {
             expect(nameInput().value).toBe('');
         });
     });
+
+    /**
+     * The save gate: this card writes through `PATCH /experiments/{id}`, so until the draft exists
+     * there is nowhere for anything here to go.
+     */
+    describe('behind the save gate', () => {
+        const panel = () => spectator.query(byTestId('experiments-configure-goal-card'));
+
+        it('should mask the card and take it out of the tab order', () => {
+            mountWith();
+            spectator.setInput('gated', true);
+            spectator.detectChanges();
+
+            // The mask stops the pointer; `inert` is what stops the keyboard reaching the fields
+            // underneath it.
+            expect(spectator.query('.p-blockui-mask')).not.toBeNull();
+            expect(panel()?.hasAttribute('inert')).toBe(true);
+        });
+
+        it('should lift both once the draft exists', () => {
+            mountWith();
+            spectator.setInput('gated', false);
+            spectator.detectChanges();
+
+            expect(panel()?.hasAttribute('inert')).toBe(false);
+        });
+    });
 });

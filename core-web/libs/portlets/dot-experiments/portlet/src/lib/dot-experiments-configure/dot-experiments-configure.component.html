@@ -59,20 +59,28 @@
         <div class="flex w-full max-w-content flex-col gap-5">
             <dot-experiments-configure-details
                 [nameField]="formTree.name"
-                [descriptionField]="formTree.description">
+                [descriptionField]="formTree.description"
+                [gated]="$isGated()">
                 <dot-experiments-configure-page [field]="formTree.trafficAllocation" />
             </dot-experiments-configure-details>
-            <dot-experiments-configure-goal [field]="formTree.goal" />
+            <dot-experiments-configure-goal [field]="formTree.goal" [gated]="$isGated()" />
             <dot-experiments-configure-variants
                 [field]="formTree.variantWeights"
-                [typeField]="formTree.trafficProportionType" />
+                [typeField]="formTree.trafficProportionType"
+                [gated]="$isGated()" />
             <dot-experiments-configure-scheduling
                 [field]="formTree.scheduling"
-                [bounds]="$schedulingBounds()" />
+                [bounds]="$schedulingBounds()"
+                [gated]="$isGated()" />
         </div>
     </div>
 
-    <dot-experiments-configure-footer />
+    <!-- The footer is the screen's bar of actions on an experiment that exists. While the gate
+         is closed there is none, and the one action there is — creating it — belongs to the card
+         that carries what the POST needs. -->
+    @if (!$isGated()) {
+        <dot-experiments-configure-footer />
+    }
 
     <p-confirmDialog
         [key]="CONFIRM_KEY"

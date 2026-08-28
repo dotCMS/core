@@ -2,9 +2,10 @@ import { DatePipe } from '@angular/common';
 import { Component, computed, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
+import { BlockUIModule } from 'primeng/blockui';
 import { ButtonModule } from 'primeng/button';
-import { Card } from 'primeng/card';
 import { DatePickerModule } from 'primeng/datepicker';
+import { PanelModule } from 'primeng/panel';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -32,7 +33,15 @@ const DATE_PICKER_STEP_MINUTE = 30;
  */
 @Component({
     selector: 'dot-experiments-configure-scheduling',
-    imports: [DatePipe, Card, FormField, ButtonModule, DatePickerModule, DotMessagePipe],
+    imports: [
+        DatePipe,
+        BlockUIModule,
+        PanelModule,
+        FormField,
+        ButtonModule,
+        DatePickerModule,
+        DotMessagePipe
+    ],
     templateUrl: './dot-experiments-configure-scheduling.component.html'
 })
 export class DotExperimentsConfigureSchedulingComponent {
@@ -41,6 +50,12 @@ export class DotExperimentsConfigureSchedulingComponent {
 
     /** Where the two pickers may go, resolved from the backend's duration limits by the shell. */
     readonly $bounds = input.required<SchedulingDateBounds>({ alias: 'bounds' });
+
+    /**
+     * Whether the card is behind the save gate: the draft does not exist yet, so nothing here has
+     * anywhere to be written to. Owned by the shell, which knows whether the experiment is new.
+     */
+    readonly $gated = input<boolean>(false, { alias: 'gated' });
 
     readonly DATE_PICKER_STEP_MINUTE = DATE_PICKER_STEP_MINUTE;
 

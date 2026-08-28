@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { CanDeactivateFn } from '@angular/router';
+import { CanDeactivateFn, RouterStateSnapshot } from '@angular/router';
 
 import { ConfirmEventType } from 'primeng/api';
 
@@ -7,6 +7,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { CONFIGURATION_CONFIRM_DIALOG_KEY } from '@dotcms/dotcms-models';
 
 import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/dot-experiments-configure.component';
+import { CONFIGURATION_SEGMENT, NEW_EXPERIMENT_SEGMENT } from '../shared/constants';
 
 /**
  * Warns before leaving the Configure screen with work the server has not accepted.
@@ -21,15 +22,19 @@ import { DotExperimentsConfigureComponent } from '../dot-experiments-configure/d
  * through the component is what guarantees the request and the dialog resolve to the same
  * instance. The dialog is keyed, so the request carries the key too.
  *
- * A save that just succeeded needs no flag to bypass the prompt — settling the diff is what makes
- * the experiment clean, so the guard simply finds nothing to warn about. The one same-route
- * navigation the screen performs, `new` → `:experimentId/configuration` after creation, does not
- * reach this guard at all: the route is reused, and `canDeactivate` does not fire on a reused
- * config. Leaving the screen always does, since no sibling route shares this one's config.
+ * A save that just succeeded needs no flag to bypass the prompt: settling the form is what makes
+ * the screen clean, so the guard finds nothing to warn about.
  */
 export const experimentsUnsavedChangesGuard: CanDeactivateFn<DotExperimentsConfigureComponent> = (
-    component
+    component,
+    _currentRoute,
+    currentState,
+    nextState
 ) => {
+    if (isCreationRedirect(component, currentState, nextState)) {
+        return true;
+    }
+
     const dotMessageService = inject(DotMessageService);
 
     if (!component.store.$hasUnsavedChanges()) {
@@ -61,3 +66,26 @@ export const experimentsUnsavedChangesGuard: CanDeactivateFn<DotExperimentsConfi
         });
     });
 };
+
+/**
+ * Whether this is the screen redirecting itself off `new` once the POST answered.
+ *
+ * It is not the user leaving, and it must never be challenged. Both routes are the same route
+ * config, so the component is reused and nothing is lost — but `canDeactivate` fires all the same,
+ * and at that instant the follow-up PATCH carrying whatever the POST could not write is still in
+ * flight, which reads as unsaved work. Prompting there cancels the redirect and strands the screen
+ * on `/experiments/new` behind a dialog about changes that were on their way to the server.
+ */
+function isCreationRedirect(
+    component: DotExperimentsConfigureComponent,
+    currentState: RouterStateSnapshot,
+    nextState: RouterStateSnapshot
+): boolean {
+    const experimentId = component.store.experiment()?.id;
+
+    return (
+        !!experimentId &&
+        currentState.url.endsWith(`/${NEW_EXPERIMENT_SEGMENT}`) &&
+        nextState.url.endsWith(`/${experimentId}/${CONFIGURATION_SEGMENT}`)
+    );
+}

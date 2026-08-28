@@ -40,10 +40,11 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
          */
         saveRequested: type<void>(),
         /**
-         * `form` is the form as it stood when the PATCH was built, not as it stands when the
-         * answer arrives. Those differ whenever the user kept typing during the flight, and it is
-         * the first one the server was told about — snapshotting the later one would declare that
-         * typing saved and lose it (#37003).
+         * `form` is the form the request was built from, not the form as it stands when the answer
+         * arrives — those differ whenever the user kept typing during the flight, and only the
+         * first one was ever sent. `experiment` is what came back, and the weights are read off it
+         * rather than off `form`: variants are server state, and the card mirrors whatever the
+         * response holds (#37003).
          */
         saveSucceeded: type<{ experiment: DotExperiment; form: ConfigureFormModel }>(),
         /** The form stays dirty, so pressing Save Draft again is the retry. */

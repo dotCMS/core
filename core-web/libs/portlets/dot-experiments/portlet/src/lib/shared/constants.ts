@@ -126,6 +126,9 @@ export const NEW_EXPERIMENT_SEGMENT = 'new';
 /** Trailing segment of the Configure URL of an experiment that already exists. */
 export const CONFIGURATION_SEGMENT = 'configuration';
 
+/** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
+export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
+
 /**
  * Multiplier applied to the page-lookup limit.
  *

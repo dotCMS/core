@@ -107,6 +107,20 @@ const buildExperiment = (experiment: Partial<DotExperiment> = {}): DotExperiment
 
 const VALID_DRAFT = buildExperiment();
 
+/**
+ * What the creation POST actually answers with: the three fields it carried, plus the control
+ * variant the backend makes. No goal, no schedule — `VALID_DRAFT` is a fully configured experiment
+ * and standing in for a creation response with it describes a server that invented a goal.
+ */
+const CREATED_DRAFT: DotExperiment = buildExperiment({
+    goals: null,
+    scheduling: null,
+    trafficProportion: {
+        type: TrafficProportionTypes.SPLIT_EVENLY,
+        variants: [buildVariant('DEFAULT', 100)]
+    }
+});
+
 const buildPageContentlet = (contentlet: Partial<DotCMSContentlet> = {}): DotCMSContentlet =>
     ({
         identifier: PAGE.pageId,
@@ -283,8 +297,11 @@ describe('DotExperimentsConfigureStore', () => {
      * `VALID_DRAFT`: a fixture whose description differs from the one that was sent describes a
      * server that rewrote it, which would leave the screen legitimately dirty afterwards.
      */
-    const createDraft = (name = VALID_DRAFT.name) => {
-        edit({ name, description: VALID_DRAFT.description ?? '' });
+    const createDraft = (name = VALID_DRAFT.name, answersWith = CREATED_DRAFT) => {
+        // Whatever follows the POST answers with the same draft it made: a fully configured
+        // experiment there would describe a server that added a goal nobody asked for.
+        patchExperiment.mockReturnValue(of(answersWith));
+        edit({ name, description: CREATED_DRAFT.description ?? '' });
         dispatcher.dispatch(pageEvents.pageSelected(PAGE));
         dispatcher.dispatch(pageEvents.saveDraftRequested());
     };
@@ -332,7 +349,7 @@ describe('DotExperimentsConfigureStore', () => {
         formModel = emptyConfigureForm();
 
         getById.mockReturnValue(of(VALID_DRAFT));
-        add.mockReturnValue(of(VALID_DRAFT));
+        add.mockReturnValue(of(CREATED_DRAFT));
         patchExperiment.mockReturnValue(of(VALID_DRAFT));
         addVariant.mockReturnValue(of(VALID_DRAFT));
         editVariant.mockReturnValue(of(VALID_DRAFT));
@@ -439,10 +456,10 @@ describe('DotExperimentsConfigureStore', () => {
             getById.mockClear();
 
             // What the store's own `createSucceeded` navigation produces.
-            laterUrls$.next(convertToParamMap({ experimentId: VALID_DRAFT.id }));
+            laterUrls$.next(convertToParamMap({ experimentId: CREATED_DRAFT.id }));
 
             expect(getById).not.toHaveBeenCalled();
-            expect(store.experiment()).toEqual(VALID_DRAFT);
+            expect(store.experiment()).toEqual(CREATED_DRAFT);
         });
 
         it('should go back to a creation form when the URL drops the id', () => {
@@ -482,14 +499,47 @@ describe('DotExperimentsConfigureStore', () => {
          * settled them. The screen reported itself dirty the instant it was saved, and the leave
          * prompt fired on the `/new` → `/:id/configuration` swap that creation performs.
          */
-        it('should be clean the moment the draft is created', () => {
+        it('should be clean once the created draft is on screen', () => {
+            // The POST makes the control variant and the card seeds a weight row from it — a
+            // change the user never made. Counted as unsaved work it makes leaving prompt for
+            // nothing, which is what it did (#37003).
             initNew();
 
             createDraft();
+            mirrorForm(CREATED_DRAFT);
 
             expect(add).toHaveBeenCalledTimes(1);
             expect(store.$hasUnsavedChanges()).toBe(false);
             expect(store.$canSave()).toBe(false);
+        });
+
+        it('should be clean after creating with an allocation the POST could not carry', () => {
+            // The POST takes the page, the name and the description only, so an allocation set
+            // before the press reaches the server through the PATCH that follows it — and the
+            // screen has to end up clean, or leaving asks about a change that was saved.
+            const created = buildExperiment({
+                ...CREATED_DRAFT,
+                trafficAllocation: 100
+            });
+            const patched = buildExperiment({ ...created, trafficAllocation: 89 });
+            add.mockReturnValue(of(created));
+            patchExperiment.mockReturnValue(of(patched));
+            initNew();
+
+            edit({
+                name: VALID_DRAFT.name,
+                description: CREATED_DRAFT.description ?? '',
+                trafficAllocation: 89
+            });
+            dispatcher.dispatch(pageEvents.pageSelected(PAGE));
+            saveDraft();
+            mirrorForm(patched);
+
+            expect(patchExperiment).toHaveBeenCalledWith(
+                created.id,
+                expect.objectContaining({ trafficAllocation: 89 })
+            );
+            expect(store.$hasUnsavedChanges()).toBe(false);
         });
 
         it('should never create a draft from a blank name', () => {
@@ -539,10 +589,13 @@ describe('DotExperimentsConfigureStore', () => {
 
         it('should replace /new with the created experiment url', () => {
             const created = buildExperiment({ id: 'exp-created' });
+            // Both calls answer with the same draft: the follow-up PATCH replacing it with some
+            // other experiment is the fixture talking, not the store.
             add.mockReturnValue(of(created));
+            patchExperiment.mockReturnValue(of(created));
             initNew();
 
-            createDraft();
+            createDraft(VALID_DRAFT.name, created);
 
             expect(store.experiment()).toEqual(created);
             expect(store.isNew()).toBe(false);
@@ -944,6 +997,10 @@ describe('DotExperimentsConfigureStore', () => {
 
         it('should re-send what a failed save could not write, merged with the next edit', () => {
             patchExperiment.mockReturnValueOnce(throwError(() => httpError(400)));
+            // The retry answers with what it wrote, which is what settles the screen.
+            patchExperiment.mockReturnValue(
+                of(buildExperiment({ name: 'Alpha campaign v2', trafficAllocation: 60 }))
+            );
             initExisting();
 
             edit({ name: 'Alpha campaign v2' });
@@ -1134,7 +1191,10 @@ describe('DotExperimentsConfigureStore', () => {
             });
             expect(request.request.body).not.toHaveProperty('targetingConditions');
 
-            request.flush({ entity: VALID_DRAFT });
+            // Nothing was entered that the POST could not carry, so no PATCH follows it.
+            request.flush({ entity: CREATED_DRAFT });
+
+            httpMock.verify();
         });
     });
 

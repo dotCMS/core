@@ -5,13 +5,14 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
+import { BlockUIModule } from 'primeng/blockui';
 import { ButtonModule } from 'primeng/button';
-import { Card } from 'primeng/card';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
+import { PanelModule } from 'primeng/panel';
 import { TableModule } from 'primeng/table';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -108,7 +109,8 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
 @Component({
     selector: 'dot-experiments-configure-variants',
     imports: [
-        Card,
+        BlockUIModule,
+        PanelModule,
         FormField,
         ButtonModule,
         InputGroupModule,
@@ -140,6 +142,12 @@ export class DotExperimentsConfigureVariantsComponent {
      * later.
      */
     readonly $typeField = input.required<FieldTree<TrafficProportionTypes>>({ alias: 'typeField' });
+
+    /**
+     * Whether the card is behind the save gate: the draft does not exist yet, so nothing here has
+     * anywhere to be written to. Owned by the shell, which knows whether the experiment is new.
+     */
+    readonly $gated = input<boolean>(false, { alias: 'gated' });
 
     readonly store = inject(DotExperimentsConfigureStore);
 

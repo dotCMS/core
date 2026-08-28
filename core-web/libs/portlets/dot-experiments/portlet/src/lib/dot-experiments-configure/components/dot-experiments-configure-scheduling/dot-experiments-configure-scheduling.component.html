@@ -1,14 +1,21 @@
-<p-card data-testid="experiments-configure-scheduling-card">
-    <section class="flex flex-col gap-5">
-        <header class="-mx-4 -mt-4 flex flex-col gap-1 border-b border-surface-200 px-4 pt-4 pb-3">
+<!-- `inert` alongside the mask: BlockUI stops the pointer but leaves the fields in the tab order,
+     so a keyboard user could still fill in a card that has nowhere to save to. -->
+<p-panel
+    #panel
+    [attr.inert]="$gated() ? '' : null"
+    data-testid="experiments-configure-scheduling-card">
+    <ng-template #header>
+        <div class="flex flex-col gap-1">
             <h2 class="text-lg font-bold text-surface-900" data-section="scheduling">
                 {{ 'experiments.configure.scheduling.name' | dm }}
             </h2>
             <p class="text-sm text-surface-500">
                 {{ 'experiments.configure.scheduling.subtitle' | dm }}
             </p>
-        </header>
+        </div>
+    </ng-template>
 
+    <section class="flex flex-col gap-5">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="flex flex-col gap-2">
                 <label class="text-sm font-semibold text-surface-900" for="experiments-start-date">
@@ -89,4 +96,9 @@
             }
         </div>
     </section>
-</p-card>
+</p-panel>
+
+<!-- The gate: nothing here can be filled in until the draft exists. `target` is the panel
+     itself — PrimeNG appends the mask into it, and blocks the whole document when it has no
+     target, which is why this sits next to the panel rather than around it. -->
+<p-blockUI [target]="panel" [blocked]="$gated()" data-testid="configure-gate-scheduling" />

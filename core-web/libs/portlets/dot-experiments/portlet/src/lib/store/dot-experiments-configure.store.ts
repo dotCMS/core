@@ -20,6 +20,7 @@ import {
     ComponentStatus,
     DotCMSContentlet,
     DotExperimentStatus,
+    DotExperiment,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     Variant
@@ -43,12 +44,13 @@ import {
     START_ERROR_HEADER_KEY
 } from '../shared/constants';
 import {
+    ConfigureFormModel,
     ConfigureValidationRule,
     DotExperimentsConfigureViewState,
     ExperimentListAction
 } from '../shared/models';
 import {
-    emptyConfigureForm,
+    toConfigureFormModel,
     isSendableSplit,
     toConfigurePatch
 } from '../util/dot-experiments-configure-form.util';
@@ -113,6 +115,28 @@ interface PageLookupEntity {
  * Not provided in root: supply it in the Configure shell's `providers` together with
  * `DotExperimentsService` and `DotPagesBrowserService`.
  */
+
+/**
+ * The form a stored experiment implies — the one baseline every clean state is measured against.
+ *
+ * Always derived from what the server answered with, never snapshotted from the screen, and
+ * derived by the same function the shell fills the form with, so the two agree by construction.
+ * That is the whole rule: clean means the screen holds what the server holds.
+ *
+ * Snapshotting the request instead is wrong in both directions. It calls saved whatever the user
+ * typed while the request was in flight, which was never sent; and it calls saved the slices
+ * `toConfigurePatch` deliberately withholds — a goal without a type, a split mid-edit — which were
+ * not sent either. A just-created draft is the same story from the other side: the POST makes the
+ * control variant, the card seeds a row from it, and only the response knows about it.
+ */
+function baselineOf(experiment: DotExperiment): ConfigureFormModel {
+    return toConfigureFormModel({
+        experiment,
+        draftName: experiment.name,
+        draftDescription: experiment.description ?? ''
+    });
+}
+
 export const DotExperimentsConfigureStore = signalStore(
     withState<DotExperimentsConfigureViewState>(initialState),
     withComputed((store) => {
@@ -180,7 +204,28 @@ export const DotExperimentsConfigureStore = signalStore(
             const selected = store.selectedPage();
             const pageChanged = !!selected && selected.pageId !== store.experiment()?.pageId;
 
-            return pageChanged || !isSameFormValue(store.formValue(), store.savedFormValue());
+            /**
+             * A weights slice the card has not seeded yet says nothing about the weights, so it is
+             * not a difference — the same reading that lets a save go out without one. Without it a
+             * just-created draft is dirty for the instant between the POST answering and the card
+             * mirroring the control it made, and that instant is long enough to fire a PATCH that
+             * carries nothing new, and to make leaving the screen ask about nothing.
+             */
+            const form = store.formValue();
+            const saved = store.savedFormValue();
+
+            // No form at all is not unsaved work: the screen has been reset and the shell has not
+            // put anything on it yet, which is where a URL arriving mid-session leaves it.
+            if (!form) {
+                return pageChanged;
+            }
+
+            const comparable =
+                form && saved && !form.variantWeights.length
+                    ? { ...form, variantWeights: saved.variantWeights }
+                    : form;
+
+            return pageChanged || !isSameFormValue(comparable, saved);
         });
 
         /**
@@ -327,6 +372,7 @@ export const DotExperimentsConfigureStore = signalStore(
             isNew: false,
             draftName: payload.name,
             draftDescription: payload.description ?? '',
+            savedFormValue: baselineOf(payload),
             status: ComponentStatus.LOADED
         })),
         on(apiEvents.loadFailed, () => ({ status: ComponentStatus.ERROR })),
@@ -334,15 +380,10 @@ export const DotExperimentsConfigureStore = signalStore(
         // Creation: the flag closes the door on a second POST as the first one leaves.
         on(apiEvents.createRequested, () => ({ creating: true })),
         /**
-         * The POST wrote three things — the name, the description and the page — so those are all
-         * the draft is clean on, and the baseline says exactly that: what was written, over an
-         * otherwise blank form.
-         *
-         * Everything else the user had entered before pressing — a goal, a schedule, an allocation
-         * — therefore still reads as unsaved, and the follow-up PATCH this same event triggers
-         * carries it. Snapshotting the live form here instead would call all of it saved and it
-         * would never be sent; snapshotting nothing would send a redundant PATCH after every
-         * creation.
+         * The POST carried only the name, the description and the page, so a goal, a schedule or
+         * an allocation entered before the press still differs from the draft that came back —
+         * which is what leaves them dirty, and what the follow-up PATCH this event triggers
+         * carries. The control variant the POST created is on both sides, so it does not.
          */
         on(apiEvents.createSucceeded, ({ payload }) => ({
             experiment: payload,
@@ -350,11 +391,7 @@ export const DotExperimentsConfigureStore = signalStore(
             creating: false,
             draftName: payload.name,
             draftDescription: payload.description ?? '',
-            savedFormValue: {
-                ...emptyConfigureForm(),
-                name: payload.name,
-                description: payload.description ?? ''
-            },
+            savedFormValue: baselineOf(payload),
             status: ComponentStatus.LOADED
         })),
         // The user stays on `/experiments/new` with everything they typed still there (AC4).
@@ -404,20 +441,12 @@ export const DotExperimentsConfigureStore = signalStore(
          * The drafts follow name and description so the header title tracks what is being typed,
          * while `experiment` keeps whatever the server last answered with. The two are allowed to
          * disagree until a save reconciles them; that gap is precisely the unsaved state.
-         *
-         * The first mirror after a load is not a change, it is the load arriving on screen: the
-         * shell builds the form from the experiment it was just handed. Taking it as the clean
-         * baseline is what stops a freshly opened experiment reporting itself as unsaved before
-         * the user has touched anything. Only the first one — every later mirror is a real edit,
-         * and `createSucceeded`/`saveSucceeded` own the snapshot from then on.
          */
-        on(pageEvents.formChanged, ({ payload }, state) => ({
+        on(pageEvents.formChanged, ({ payload }) => ({
             formValue: payload.value,
             formValidity: payload.validity,
             draftName: payload.value.name,
-            draftDescription: payload.value.description,
-            savedFormValue:
-                state.experiment && !state.savedFormValue ? payload.value : state.savedFormValue
+            draftDescription: payload.value.description
         })),
 
         /**
@@ -427,21 +456,13 @@ export const DotExperimentsConfigureStore = signalStore(
          */
         on(apiEvents.saveRequested, () => ({ status: ComponentStatus.SAVING })),
         /**
-         * The response is the source of truth for what was written, so it replaces the experiment,
-         * and the form the request was built from becomes the new clean baseline.
-         *
-         * The event carries that form rather than the reducer reading the current one: the two
-         * differ exactly when the user kept typing during the flight, and taking the current one
-         * would mark keystrokes the server never saw as saved.
-         *
-         * Snapshotting the whole form is only sound because a save cannot happen while any of it
-         * is unsendable: `$canSave` refuses a mid-edit weight split, so there is never a slice that
-         * stayed on screen while the rest was written. That refusal is what buys the absence of a
-         * held-back-keys concept here.
+         * The response is the source of truth for what was written: it replaces the experiment,
+         * and the baseline is derived from it. Anything the user typed while the request was in
+         * flight is therefore still dirty, which is what makes the next press send it.
          */
         on(apiEvents.saveSucceeded, ({ payload }) => ({
             experiment: payload.experiment,
-            savedFormValue: payload.form,
+            savedFormValue: baselineOf(payload.experiment),
             status: ComponentStatus.LOADED
         })),
         /**

@@ -136,6 +136,7 @@ class DetailsStubComponent {
     template: '<span data-error data-testid="goal-error-marker"></span>'
 })
 class GoalStubComponent {
+    readonly gated = input<boolean>();
     readonly field = input<unknown>();
 }
 
@@ -146,11 +147,13 @@ class PageStubComponent {
 
 @Component({ selector: 'dot-experiments-configure-variants', template: '' })
 class VariantsStubComponent {
+    readonly gated = input<boolean>();
     readonly field = input<FieldTree<VariantWeightFormRow[]>>();
 }
 
 @Component({ selector: 'dot-experiments-configure-scheduling', template: '' })
 class SchedulingStubComponent {
+    readonly gated = input<boolean>();
     readonly field = input<unknown>();
     readonly bounds = input<unknown>();
 }
@@ -172,6 +175,8 @@ const createStoreMock = () => ({
     $isAutosaving: signal(false),
     $isSaving: signal(false),
     experiment: signal<DotExperiment | null>(null),
+    // What the save gate reads: true until a draft exists, so it follows `experiment`.
+    isNew: signal(true),
     // The weights slice is seeded from these, so they move with `experiment` (see `loadExperiment`).
     $variants: signal<Variant[]>([]),
     $disabledTooltipKey: signal<string | null>(null),
@@ -267,6 +272,7 @@ describe('DotExperimentsConfigureComponent', () => {
      */
     const loadExperiment = (experiment: DotExperiment = EXPERIMENT) => {
         storeMock.experiment.set(experiment);
+        storeMock.isNew.set(false);
         storeMock.$variants.set(experiment.trafficProportion?.variants ?? []);
         storeMock.draftName.set(experiment.name);
         storeMock.draftDescription.set(experiment.description ?? '');
@@ -342,6 +348,9 @@ describe('DotExperimentsConfigureComponent', () => {
         beforeEach(() => {
             spectator = createComponent();
             dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+            // The route names an experiment, so the store is past the save gate before the first
+            // render — the tests here are about the screen of an experiment that exists.
+            storeMock.isNew.set(false);
         });
 
         describe('loaded screen', () => {
@@ -878,8 +887,6 @@ describe('DotExperimentsConfigureComponent', () => {
             });
 
             it('should stay silent on an autosave, which is deliberately unannounced', () => {
-                // `saveSucceeded` carries the form the request was built from beside the
-                // experiment (#37003), so it is dispatched here rather than through the helper.
                 spectator.inject(Dispatcher).dispatch(
                     dotExperimentsConfigureApiEvents.saveSucceeded({
                         experiment,
@@ -978,6 +985,41 @@ describe('DotExperimentsConfigureComponent', () => {
                 .dispatch(dotExperimentsConfigureApiEvents.createSucceeded(experiment));
             loadExperiment(experiment);
         };
+
+        /**
+         * The save gate: Goal, Variants and Scheduling hold nothing the creation POST can carry,
+         * so they stay masked until the draft exists. The mask itself is each card's own business
+         * — asserted in their specs; what the shell owns is who is told to close.
+         */
+        describe('the save gate', () => {
+            const gatedCards = () => [
+                spectator.query(GoalStubComponent),
+                spectator.query(VariantsStubComponent),
+                spectator.query(SchedulingStubComponent)
+            ];
+
+            it('should close over the three cards the POST cannot write', () => {
+                expect(gatedCards().map((card) => card?.gated())).toEqual([true, true, true]);
+            });
+
+            it('should lift as soon as the draft exists', () => {
+                createExperiment();
+                spectator.detectChanges();
+
+                expect(gatedCards().map((card) => card?.gated())).toEqual([false, false, false]);
+            });
+
+            it('should keep the footer bar out of the screen while the gate is closed', () => {
+                // The bar's whole job is acting on an experiment that exists. Details carries the
+                // one action there is before that.
+                expect(spectator.query('dot-experiments-configure-footer')).toBeNull();
+
+                createExperiment();
+                spectator.detectChanges();
+
+                expect(spectator.query('dot-experiments-configure-footer')).not.toBeNull();
+            });
+        });
 
         it('should not read the created experiment back into the form', () => {
             // The form is what created the draft, so re-reading it would drop a goal or a schedule

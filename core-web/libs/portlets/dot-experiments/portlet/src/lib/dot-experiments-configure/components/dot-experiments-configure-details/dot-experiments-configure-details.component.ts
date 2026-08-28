@@ -1,12 +1,17 @@
+import { injectDispatch } from '@ngrx/signals/events';
+
 import { Component, computed, inject, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
-import { Card } from 'primeng/card';
+import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { PanelModule } from 'primeng/panel';
 
 import { MAX_INPUT_DESCRIPTIVE_LENGTH, MAX_INPUT_TITLE_LENGTH } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
+import { DOT_PANEL_NO_FOOTER } from '../../../shared/constants';
+import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 
 /**
@@ -32,7 +37,7 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
  */
 @Component({
     selector: 'dot-experiments-configure-details',
-    imports: [Card, FormField, InputTextModule, DotMessagePipe],
+    imports: [ButtonModule, PanelModule, FormField, InputTextModule, DotMessagePipe],
     templateUrl: './dot-experiments-configure-details.component.html'
 })
 export class DotExperimentsConfigureDetailsComponent {
@@ -46,7 +51,19 @@ export class DotExperimentsConfigureDetailsComponent {
     /** Description leaf of the root form, carrying its max-length rule. */
     readonly $descriptionField = input.required<FieldTree<string>>({ alias: 'descriptionField' });
 
+    /**
+     * Whether the save gate is still closed — the draft does not exist yet.
+     *
+     * This card is not masked by it: it holds the Name and the Page the creation POST carries, so
+     * it is the way through. What the flag decides is whether it also carries the press.
+     */
+    readonly $gated = input<boolean>(false, { alias: 'gated' });
+
     readonly #store = inject(DotExperimentsConfigureStore);
+    readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
+
+    /** Takes the empty footer band out of the layout once the card stops offering the press. */
+    protected readonly DOT_PANEL_NO_FOOTER = DOT_PANEL_NO_FOOTER;
 
     protected readonly maxNameLength = MAX_INPUT_TITLE_LENGTH;
     protected readonly maxDescriptionLength = MAX_INPUT_DESCRIPTIVE_LENGTH;
@@ -58,4 +75,17 @@ export class DotExperimentsConfigureDetailsComponent {
     protected readonly $showNameRequiredError = computed<boolean>(() =>
         this.#store.$validationErrors().includes('name')
     );
+
+    /**
+     * Same rule the footer's button uses: nothing to write, or a write already on its way.
+     * `$canSave` before creation asks for the Name and the Page, which is exactly the gate.
+     */
+    protected readonly $isSaveDisabled = computed<boolean>(
+        () => !this.#store.$canSave() || this.#store.$isSaving()
+    );
+
+    /** The press that creates the draft. The store decides POST or PATCH from its own state. */
+    protected onSaveDraft(): void {
+        this.#dispatch.saveDraftRequested();
+    }
 }

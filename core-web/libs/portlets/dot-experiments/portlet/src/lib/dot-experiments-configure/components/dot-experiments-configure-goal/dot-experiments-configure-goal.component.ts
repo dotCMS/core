@@ -1,8 +1,9 @@
 import { Component, computed, inject, input } from '@angular/core';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
-import { Card } from 'primeng/card';
+import { BlockUIModule } from 'primeng/blockui';
 import { InputTextModule } from 'primeng/inputtext';
+import { PanelModule } from 'primeng/panel';
 import { SelectModule } from 'primeng/select';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -71,7 +72,8 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
 @Component({
     selector: 'dot-experiments-configure-goal',
     imports: [
-        Card,
+        BlockUIModule,
+        PanelModule,
         FormField,
         InputTextModule,
         SelectModule,
@@ -83,6 +85,12 @@ const GOAL_TYPE_OPTIONS: GoalTypeOption[] = CONFIGURE_GOAL_TYPES.map((type) => (
 export class DotExperimentsConfigureGoalComponent {
     /** The goal slice of the root form: the card's whole editable surface. */
     readonly $field = input.required<FieldTree<GoalFormSlice>>({ alias: 'field' });
+
+    /**
+     * Whether the card is behind the save gate: the draft does not exist yet, so nothing here has
+     * anywhere to be written to. Owned by the shell, which knows whether the experiment is new.
+     */
+    readonly $gated = input<boolean>(false, { alias: 'gated' });
 
     readonly #store = inject(DotExperimentsConfigureStore);
     readonly #dotMessageService = inject(DotMessageService);
