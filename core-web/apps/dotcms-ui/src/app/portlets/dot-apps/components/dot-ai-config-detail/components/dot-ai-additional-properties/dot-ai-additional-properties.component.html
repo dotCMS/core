@@ -1,7 +1,13 @@
 <div class="flex flex-col gap-2">
-    <span class="text-xs font-medium text-gray-600">
-        {{ 'apps.ai.additional-properties.label' | dm }}
-    </span>
+    <div class="flex items-center gap-1">
+        <span class="text-sm font-medium text-gray-700">
+            {{ 'apps.ai.additional-properties.label' | dm }}
+        </span>
+        <i
+            class="pi pi-info-circle text-xs text-gray-400"
+            [pTooltip]="'apps.ai.additional-properties.tooltip' | dm"
+            tooltipPosition="top"></i>
+    </div>
 
     @if (properties().length > 0) {
         <div class="flex flex-col gap-2">
@@ -30,10 +36,9 @@
     }
 
     <p-button
+        class="self-end"
         [text]="true"
         size="small"
-        icon="pi pi-plus"
         [label]="'apps.ai.additional-properties.add.button' | dm"
-        styleClass="self-start"
         (onClick)="addProperty()" />
 </div>

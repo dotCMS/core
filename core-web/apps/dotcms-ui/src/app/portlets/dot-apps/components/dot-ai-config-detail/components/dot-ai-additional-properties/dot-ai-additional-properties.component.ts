@@ -3,6 +3,7 @@ import { FormArray, FormControl, FormGroup, ReactiveFormsModule } from '@angular
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -20,7 +21,7 @@ export type DotAiAdditionalPropertyGroup = FormGroup<{
     selector: 'dot-ai-additional-properties',
     templateUrl: './dot-ai-additional-properties.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [ReactiveFormsModule, ButtonModule, InputTextModule, DotMessagePipe]
+    imports: [ReactiveFormsModule, ButtonModule, InputTextModule, TooltipModule, DotMessagePipe]
 })
 export class DotAiAdditionalPropertiesComponent {
     readonly properties = input.required<FormArray<DotAiAdditionalPropertyGroup>>();

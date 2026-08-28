@@ -1,9 +1,6 @@
 <div class="field" [formGroup]="formGroup()">
-    <label [for]="field().name" class="text-xs font-medium text-gray-600">
+    <label [for]="field().name" [class.p-label-input-required]="field().required">
         {{ label() }}
-        @if (field().required) {
-            <span class="text-red-500">*</span>
-        }
     </label>
 
     @switch (field().type) {
@@ -47,6 +44,6 @@
     }
 
     @if (field().hint) {
-        <small class="text-gray-500">{{ field().hint }}</small>
+        <span class="p-field-hint">{{ field().hint }}</span>
     }
 </div>
