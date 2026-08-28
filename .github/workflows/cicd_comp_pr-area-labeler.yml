@@ -31,7 +31,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout for config
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           sparse-checkout: .github/area-labels.yml
           sparse-checkout-cone-mode: false

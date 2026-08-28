@@ -94,7 +94,7 @@ jobs:
       has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
           # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
@@ -249,7 +249,7 @@ jobs:
 
     steps:          
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           # Shallow checkout: test jobs run Maven suites against the checked-out
           # snapshot only — no git history is read anywhere in this job or in the

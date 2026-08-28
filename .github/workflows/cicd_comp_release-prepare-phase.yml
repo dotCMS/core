@@ -98,7 +98,7 @@ jobs:
       # the release branch from. fetch-depth: 0 pulled every branch ref
       # (~2k+ branches, ~1.1 GB pack) and cost ~20 min per release run.
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           fetch-depth: 1
           token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
