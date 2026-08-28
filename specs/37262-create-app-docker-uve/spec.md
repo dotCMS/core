@@ -200,7 +200,7 @@ the permission data is genuinely absent, so `isAdmin()` has nothing to throw abo
   from an interrupted first boot and must be recreated with `docker compose down -v`.
 - **A separate backend defect is implied**: any interrupted first boot silently bricks the
   instance, and a restart neither repairs nor reports it. That is broader than this issue and is
-  filed separately.
+  filed as **#37268**.
 
 **On the readiness signal.** Switching to `/dotmgt/readyz` on 8090 is still worth doing — it is
 the purpose-built probe and does not depend on the web app — but it is a correctness tidy-up,
@@ -294,7 +294,7 @@ runtime, so it reaches every already-installed CLI immediately):*
   silently bricks the instance**: the starter import leaves site permissions unwritten, a restart
   re-runs `Task00004LoadStarter` and reports success, and every Apps API call 403s forever with no
   warning to the user. That is out of scope here (it is a starter-import/permissions problem in
-  legacy `com.dotmarketing.*`, not a CLI one) and is filed separately. This fix removes the
+  legacy `com.dotmarketing.*`, not a CLI one) and is filed as **#37268**. This fix removes the
   *trigger* by stopping the crash.
 - **Pinning the dotCMS image tag alongside `CUSTOM_STARTER_URL`.** Real drift risk
   (`latest` + hardcoded `starter-20260630`) and it intersects binding ADR-0019, so it deserves
