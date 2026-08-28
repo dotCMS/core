@@ -130,7 +130,16 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                             .sorted(Comparator.comparing(Field::variable))
                             .map(field -> {
                                 final Object value = contentlet.get(field.variable());
-                                return value != null ? field.variable() + "=" + value : null;
+                                if (value == null) {
+                                    return null;
+                                }
+                                // Escape backslash first, then the delimiters, so the seed
+                                // is unambiguous even when a field value contains '|' or '='.
+                                final String escaped = value.toString()
+                                        .replace("\\", "\\\\")
+                                        .replace("|", "\\|")
+                                        .replace("=", "\\=");
+                                return field.variable() + "=" + escaped;
                             })
                             .filter(Objects::nonNull)
                             .collect(Collectors.joining("|"));
@@ -221,9 +230,9 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
                 final String deterministicId = formattedString(assetType, parentHost, parentFolder, assetName.get());
 
                 Logger.debug(DeterministicIdentifierAPIImpl.class,
-                        String.format(" assetType: %s, assetName: %s,  deterministicId: %s",
+                        String.format(" assetType: %s, assetNameLength: %s,  deterministicId: %s",
                                 assetType,
-                                assetName,
+                                assetName.map(String::length).orElse(0),
                                 deterministicId));
 
                 return Optional.of(deterministicId);
