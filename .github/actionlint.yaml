@@ -1,0 +1,26 @@
+# actionlint configuration (added with #36850, alongside .github/scripts/check-action-versions.sh).
+#
+# Two suppressions, both deliberate and both permanent:
+
+# 1. The repo's self-hosted runner label. Without this, actionlint reports
+#    `label "ubuntu-server" is unknown` twice for security_scheduled_pentest.yml,
+#    which would give the new lint job two spurious failures on day one.
+self-hosted-runner:
+  labels:
+    - ubuntu-server
+
+# 2. shellcheck findings inside `run:` blocks are ignored repo-wide.
+#
+#    Measured 2026-08-27: actionlint reports 286 findings, and 272 of them are
+#    shellcheck (overwhelmingly SC2086 "double quote to prevent globbing"). They are
+#    pre-existing, unrelated to action versions, and at that volume they drown out
+#    the 14 findings that actually concern workflow structure.
+#
+#    This is a scoping decision, not a claim that they don't matter. Shell quality in
+#    `run:` blocks deserves its own pass; suppressing it here keeps this lint job
+#    focused on what it was added to catch — malformed `uses:`, broken `${{ }}`,
+#    invalid `needs:`/`if:` — across the 51 files #36850 hand-edits.
+paths:
+  "**":
+    ignore:
+      - 'shellcheck reported issue'

@@ -1,0 +1,81 @@
+name: 'Actions Lint — PR validate'
+
+# Guards GitHub Actions definitions on PRs that touch them.
+#
+# Why this exists: .github/filters.yaml routes only cicd_comp_*.yml, cicd_1-pr.yml and
+# core-cicd/**/action.yml to any build, so roughly 38 of the 51 files #36850 edits get
+# no build, no test and no lint on a PR at all. That gap is why the Node 20 deprecation
+# went unnoticed until the runner started shouting. Sub-second job, zero npm deps.
+#
+# Standalone for now; can fold into cicd_1-pr.yml later, and should become a required
+# status check once it has run green for a week (tracked in #37194).
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/**'
+      - '.github/actions/**'
+      - '.github/scripts/check-action-versions.sh'
+      - '.github/actionlint.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: actions-lint-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+env:
+  ACTIONLINT_VERSION: '1.7.12'
+  ACTIONLINT_SHA256_AMD64: '8aca8db96f1b94770f1b0d72b6dddcb1ebb8123cb3712530b08cc387b349a3d8'
+
+jobs:
+  lint:
+    name: Lint action definitions
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          sparse-checkout: .github
+          sparse-checkout-cone-mode: false
+
+      # Blocking. This is the executable Red→Green test for #36850: it fails on a tree
+      # where any governed action sits below its target major, where a SHA pin disagrees
+      # with its `# vX.Y.Z` comment, or where download-artifact inherits digest-mismatch
+      # instead of declaring it.
+      - name: Check action versions
+        run: .github/scripts/check-action-versions.sh --format github
+
+      # Blocking. The guard is only trustworthy if it is itself tested — a guard that
+      # exits 0 for the wrong reason is worse than no guard.
+      - name: Test the version guard
+        run: bash .github/workflows/tests/check-action-versions.test.sh
+
+      - name: Test the issue-linking logic
+        run: bash .github/workflows/tests/link-issue-to-pr.test.sh
+
+      - name: Install actionlint
+        run: |
+          set -euo pipefail
+          url="https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz"
+          curl --fail --silent --show-error --location --output actionlint.tar.gz "$url"
+          echo "${ACTIONLINT_SHA256_AMD64}  actionlint.tar.gz" | sha256sum --check --strict -
+          tar --extract --gzip --file actionlint.tar.gz actionlint
+          ./actionlint --version
+
+      # Advisory for now, deliberately. Measured 2026-08-27, actionlint reports 12
+      # findings on main once .github/actionlint.yaml suppresses shellcheck noise; 9 of
+      # them are pre-existing and unrelated to action versions (untrusted `github.head_ref`,
+      # undefined secret properties, plus four that belong to #37194 — setup-python@v4,
+      # configure-aws-credentials@v1, and the malformed `options:` key in the issue-fetcher
+      # and issue-labeler action.yml files). Failing on them would make this job red from
+      # birth and it would get disabled.
+      #
+      # It still annotates the diff, which is what catches YAML damage during a large
+      # mechanical sweep. Flip `continue-on-error` off once #37194 clears the remaining
+      # findings.
+      - name: Run actionlint (advisory)
+        continue-on-error: true
+        run: ./actionlint -color
