@@ -1,4 +1,4 @@
-# Issue Resolution Specification: create-app local Docker run never starts dotCMS, then a transient UVE 403 aborts the CLI and discards the project
+# Issue Resolution Specification: create-app local Docker run never starts dotCMS, and the resulting broken instance 403s the UVE call and discards the project
 
 **Feature Branch**: `37262-create-app-docker-uve`
 
@@ -30,7 +30,9 @@ independent defects compound into total data loss for the run:
    Visual Editor (UVE) app-configuration `POST` returns 403 and the CLI calls `process.exit(1)`.
    Because UVE setup runs *before* scaffolding, the user is left with an empty directory: no
    project, no `.env`, and the working token and site ID are discarded without ever being
-   printed.
+   printed. The 403 is not incidental: hand-starting the container in step 1 leaves the starter
+   import incomplete, the site's permissions unwritten, and the instance **permanently** unable
+   to serve the Apps API. The two defects are one causal chain, not two independent bugs.
 
 Recovery is then blocked by the CLI's own side effects: the port pre-check hard-fails on the
 now-running dotCMS's ports, and the directory-clearing prompt would delete the
@@ -88,10 +90,12 @@ failed to setup UVE config: status=403, code=ERR_BAD_REQUEST
 
 Exit code 1, empty target directory.
 
-**Reproducibility**: The compose defect (steps 3–4) is deterministic on any cold start where
-dotCMS wins the race against Postgres. The 403 (step 5) is timing-dependent: replaying the
-CLI's exact three-call sequence against a fully-settled dotCMS returns 200 for all three, so it
-reproduces when the CLI reaches the UVE call while the instance is still settling.
+**Reproducibility**: The compose defect (steps 3–4) occurs on a cold start where dotCMS wins the
+race against Postgres; it is timing-dependent and did **not** reproduce on a fast machine with a
+warm image cache. The 403 (step 5) is **deterministic once step 3 has happened**: killing dotCMS
+mid starter-import and hand-starting it reproduces 403 on every subsequent attempt (193/193 over
+~7 minutes). Against a cleanly-booted instance all three calls return 200, which is why the
+original report read it as transient — it is not. See Root-Cause Hypothesis, Cause 2.
 
 ## Scope of Investigation *(mandatory)*
 
@@ -129,28 +133,82 @@ depends on `db` and `opensearch` without `condition: service_healthy`, so it sta
 Postgres that is not yet accepting connections and dies. With no `restart:` policy it stays
 dead. The `db` healthcheck that would have prevented this already exists and is simply unused.
 
-**Cause 2 — the 403 is a startup race, not a permissions problem.** Ruled out by evidence in
-the report: license gating (`LicenseUtil.getLevel()` has returned `PLATFORM` unconditionally
-since #31261, Feb 2025, making the `InvalidLicenseException` path dead on any current image);
-Apps-portlet access (`GET /api/v1/apps` and `GET /api/v1/apps/dotema-config-v2/{siteId}` both
-return 200 for a token minted the way the CLI mints one); and a wrong site ID. What remains is
-`AppsAPIImpl.userDoesNotHaveAccess()` (`AppsAPIImpl.java:104`) calling `user.isAdmin()`, which
-is wrapped in `Try.of(…).getOrElse(false)` (`com/liferay/portal/model/User.java:321`) — so
-*any* exception during the role lookup silently reports "not an admin", becomes a
-`DotSecurityException`, and maps to 403.
+**Cause 2 — the 403 is permanent damage caused by Cause 1, not a startup race.**
+*This supersedes the original hypothesis, which planning disproved by experiment.*
 
-The timing supports this: the CLI's readiness probe is `/api/v1/appconfiguration`, which answers
-as soon as the web layer is up — it went green ~60s after container start, far too early for a
-demo-starter import to have completed. The CLI then wrote app secrets to an instance still
-settling roles, permissions and caches.
+The report proposed a transient race: the CLI writes while the instance is still settling roles
+and permissions, and `AppsAPIImpl.userDoesNotHaveAccess()` calling `user.isAdmin()` — wrapped in
+`Try.of(…).getOrElse(false)` — silently reports "not an admin". **Measurement does not support
+that**, and two experiments replaced it (M5/64GB host, dotCMS constrained to 2 CPUs / 4G):
 
-**The readiness signal is therefore wrong.** dotCMS ships a real readiness probe at
-`/dotmgt/readyz` (verified: responds `ready`, unauthenticated, no IP ACL) — but only on port
-**8090**, which this compose does not publish (`/dotmgt/readyz` on 8080 is a 404). Even
-`/readyz` is not sufficient: its registered checks cover CDI, memory, threads and the servlet
-container, not "starter import finished". For a CLI the reliable rule is **readiness means the
-call you are about to make succeeds** — gate the write on a successful read of the same
-resource.
+*Experiment 1 — clean boot has no settling window at all.*
+
+| Signal | First success |
+|---|---|
+| `POST /api/v1/authentication/api-token` | **46s** |
+| `GET /api/v1/apps/dotema-config-v2/{siteId}` | **46s** |
+| `/dotmgt/livez`, `/dotmgt/readyz` | 48s |
+| `/api/v1/appconfiguration` (the CLI's current probe) | 49s |
+
+The UVE endpoint is usable **two seconds before `readyz` goes green**. Server logs show why: the
+starter import (T+20s) and the ES reindex (T+44s) both complete *inside* Tomcat startup
+(`Server startup in [36517] milliseconds`), and the connector accepts no traffic until after
+them. There is no window in which the API answers but the data plane is unready — so the
+hypothesised race cannot occur on a clean boot.
+
+*Experiment 2 — the reporter's actual path reproduces it, permanently.*
+
+Reproducing reproduction step 4 (dotCMS killed mid starter-import, then hand-started):
+
+```
+T+39s  appconfiguration 200 — CLI proceeds
+T+41s  api-token   -> 200
+T+41s  defaultSite -> 200
+T+41s  UVE GET -> 403   UVE POST -> 403
+   … 193 consecutive attempts over ~7 minutes, zero successes …
+T+440s UVE GET -> 403   UVE POST -> 403
+```
+
+That is the reported log line for line. The server states the cause plainly:
+
+```
+DotSecurityException: User 'Admin User [ID: dotcms.org.1][email:admin@dotcms.com]'
+  does not have READ permissions on Site 'demo.dotcms.com'
+```
+
+The interrupted import never wrote the site's permission rows. The restart re-ran
+`Task00004LoadStarter` and Tomcat came up clean, but the permissions never appeared. **The
+instance does not recover** — only `docker compose down -v` and a fresh start does.
+
+**So the causal chain is**: Cause 1 (dotCMS races Postgres and exits) → user hand-starts the
+crashed container → the starter import is left incomplete → site permissions are missing →
+**every** Apps API call 403s, forever. Cause 2 is a *consequence* of Cause 1, not an independent
+defect. **Fixing the compose file removes it.**
+
+What this rules out, on evidence rather than inference: it is not license gating
+(`LicenseUtil.getLevel()` has returned `PLATFORM` unconditionally since #31261), not
+Apps-portlet access, not a wrong site ID, and **not** `user.isAdmin()` swallowing an exception —
+the permission data is genuinely absent, so `isAdmin()` has nothing to throw about.
+
+**Consequences for the fix** (these change the design, not just the narrative):
+
+- **Retrying or polling the UVE call cannot work.** A read-before-write gate that polls `GET`
+  until 200 would poll forever against a condition that never clears. A single probe is correct;
+  retry only `5xx`.
+- **The failure guidance must change.** "Configure UVE manually at this URL" is useless advice
+  here — manual configuration fails identically. The CLI must say the instance is unrecoverable
+  from an interrupted first boot and must be recreated with `docker compose down -v`.
+- **A separate backend defect is implied**: any interrupted first boot silently bricks the
+  instance, and a restart neither repairs nor reports it. That is broader than this issue and is
+  filed separately.
+
+**On the readiness signal.** Switching to `/dotmgt/readyz` on 8090 is still worth doing — it is
+the purpose-built probe and does not depend on the web app — but it is a correctness tidy-up,
+not the fix for the 403. Experiment 1 shows `/api/v1/appconfiguration` is not meaningfully late.
+
+*Evidence limits*: one host, one starter, one image; the kill point was fixed at 25s. Which
+kill-points corrupt and which do not is unmapped, and why a re-run import leaves permissions
+missing is a backend question, not a CLI one.
 
 **Cause 3 — the CLI discards recoverable state.** Independent of causes 1 and 2, and the reason
 a transient failure becomes total loss. Verified in-repo:
@@ -230,11 +288,14 @@ runtime, so it reaches every already-installed CLI immediately):*
 
 **Explicitly out of scope / non-goals**:
 
-- **Changing `user.isAdmin()` exception handling** (`com/liferay/portal/model/User.java:321`)
-  or `AppsAPIImpl.userDoesNotHaveAccess()`. This is a real defect — a transient role-lookup
-  failure should not read as a permission denial — but it is legacy Liferay code on a hot
-  permission path with a wide blast radius, and the P0 fix does not depend on it. Tracked as a
-  P2 follow-up, specified and planned separately.
+- **The backend defect behind the 403.** Planning disproved the original `user.isAdmin()`
+  exception-swallowing hypothesis: the permission rows are genuinely absent, so there is no
+  exception to swallow. The real backend defect is larger and worse — **an interrupted first boot
+  silently bricks the instance**: the starter import leaves site permissions unwritten, a restart
+  re-runs `Task00004LoadStarter` and reports success, and every Apps API call 403s forever with no
+  warning to the user. That is out of scope here (it is a starter-import/permissions problem in
+  legacy `com.dotmarketing.*`, not a CLI one) and is filed separately. This fix removes the
+  *trigger* by stopping the crash.
 - **Pinning the dotCMS image tag alongside `CUSTOM_STARTER_URL`.** Real drift risk
   (`latest` + hardcoded `starter-20260630`) and it intersects binding ADR-0019, so it deserves
   its own decision rather than being folded into a bug fix. P2 follow-up.
@@ -350,8 +411,12 @@ rediscover the reasoning.)*
   plus a block to paste — so this is new behavior, not a restoration. `.env` is written when
   absent; when the scaffolded example already ships one, it is left alone and the block is
   printed as today.
-- **AC-005**: The UVE write is gated on a successful `GET` of the same resource, and retries on
-  401/403/5xx rather than failing on first response.
+- **AC-005**: The UVE write is gated on a single successful `GET` of the same resource. Retry
+  applies to `5xx` only. It must **not** retry or poll on 403: a 403 here means the instance's
+  permissions were never written by an interrupted starter import, and that never clears — 193
+  consecutive attempts over ~7 minutes all returned 403. On 403 the CLI skips the write and tells
+  the user their instance is unrecoverable and must be recreated with `docker compose down -v`,
+  rather than offering manual UVE setup steps that would fail identically.
 - **AC-006** *(P1)*: With a healthy dotCMS already answering on 8082, a second run offers to
   reuse it instead of aborting with "Required ports are already in use". Reproduction step 6 no
   longer blocks.
