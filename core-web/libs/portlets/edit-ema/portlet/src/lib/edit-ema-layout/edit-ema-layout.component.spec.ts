@@ -167,6 +167,11 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
+        // Reset save mock to default — jest.clearAllMocks() does not reset mockReturnValue/
+        // mockImplementation overrides, so tests that call mockReturnValue(throwError(...))
+        // would contaminate subsequent tests that rely on the default of(PAGE_RESPONSE) behavior.
+        (dotPageLayoutService.save as jest.Mock).mockImplementation(() => of(PAGE_RESPONSE));
+
         store.pageLoad({
             clientHost: 'http://localhost:3000',
             language_id: '1',

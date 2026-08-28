@@ -610,7 +610,7 @@ describe('TemplateBuilderComponent', () => {
         let store: DotTemplateBuilderStore;
 
         beforeEach(() => {
-            store = spectator.inject(DotTemplateBuilderStore);
+            store = spectator.inject(DotTemplateBuilderStore, true); // true = component injector (DotTemplateBuilderStore is component-scoped)
             handlers = {};
             mockSubGrid = {
                 removeWidget: jest.fn(),
