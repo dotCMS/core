@@ -55,8 +55,9 @@ runs:
 
     - name: 'Download all cli build artifacts.'
       id: download-cli-artifacts
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       with:
+        digest-mismatch: warn
         pattern: cli-artifacts-*
         path: ${{ github.workspace }}/artifacts
         github-token: ${{ inputs.github-token }} # token with actions:read permissions on target repo

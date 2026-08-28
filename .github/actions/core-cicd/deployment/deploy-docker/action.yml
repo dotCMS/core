@@ -86,9 +86,10 @@ runs:
   using: "composite"
   steps:
     - name: Download Docker Build Context
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       if: inputs.build_run_id # Only download the artifact if a build run id is provided
       with:
+        digest-mismatch: warn
         name: docker-build-context${{ inputs.artifact_suffix }}
         path: ${{ github.workspace }}
         run-id: ${{ inputs.build_run_id }}
