@@ -21,6 +21,7 @@ import {
     mergeTreesPreferParent,
     patchNodeChildren,
     patchNodeInPlace,
+    patchNodeUserCount,
     removeNodeFromTree
 } from './dot-roles.tree-utils';
 
@@ -299,8 +300,9 @@ export const DotRolesStore = signalStore(
 
                     const requests = chain.map((node) =>
                         rolesService.getUsers(node.id).pipe(
-                            map((users) =>
-                                users.map<DotRoleMember>((u) => ({
+                            map((users) => ({
+                                failed: false,
+                                members: users.map<DotRoleMember>((u) => ({
                                     userId: u.userId,
                                     firstName: u.firstName ?? '',
                                     lastName: u.lastName ?? '',
@@ -308,11 +310,12 @@ export const DotRolesStore = signalStore(
                                     grantedFromRoleId: node.id,
                                     grantedFromRoleName: node.name
                                 }))
-                            ),
+                            })),
                             catchError((error) => {
                                 httpErrorManager.handle(error);
 
-                                return of<DotRoleMember[]>([]);
+                                // Unknown, not empty — see the `failed` check below.
+                                return of({ failed: true, members: [] as DotRoleMember[] });
                             })
                         )
                     );
@@ -321,15 +324,54 @@ export const DotRolesStore = signalStore(
                         tap((batches) => {
                             const byUserId = new Map<string, DotRoleMember>();
                             for (const batch of batches) {
-                                for (const member of batch) {
+                                for (const member of batch.members) {
                                     if (!byUserId.has(member.userId)) {
                                         byUserId.set(member.userId, member);
                                     }
                                 }
                             }
+                            // Same guard as loadToolGroups: a response for a
+                            // role the admin already navigated away from must
+                            // not repaint the current role's member list.
+                            if (store.selectedRoleId() !== role.id) {
+                                return;
+                            }
+
+                            // Same rule as loadToolGroups: an ancestor we could
+                            // not query is not an ancestor with no members. A
+                            // silently short roster is worse than a visible
+                            // failure when the admin is auditing who has access.
+                            const unverified = batches.some((batch) => batch.failed);
+                            const members = Array.from(byUserId.values());
+
+                            // Keep the tree badge honest. `userCount` ships with
+                            // the role payload and is never refreshed by a grant
+                            // or a revoke, so without this it stays at whatever
+                            // it was when the tree loaded — most visibly, a role
+                            // that just got its first user keeps showing no badge
+                            // at all, since the badge hides at zero.
+                            //
+                            // Counts DIRECT grants only, matching what the
+                            // backend puts in that field. Skipped when a check
+                            // failed: writing a count derived from a partial
+                            // answer would replace a stale number with a wrong
+                            // one.
+                            const directCount = unverified
+                                ? null
+                                : members.filter((m) => m.grantedFromRoleId === role.id).length;
+
                             patchState(store, {
-                                members: Array.from(byUserId.values()),
-                                membersStatus: 'LOADED'
+                                members,
+                                membersStatus: unverified ? 'ERROR' : 'LOADED',
+                                ...(directCount === null
+                                    ? {}
+                                    : {
+                                          roles: patchNodeUserCount(
+                                              store.roles(),
+                                              role.id,
+                                              directCount
+                                          )
+                                      })
                             });
                         }),
                         catchError((error) => {
@@ -379,18 +421,28 @@ export const DotRolesStore = signalStore(
 
                     const grants$ =
                         chain.length === 0
-                            ? of<Array<{ node: DotRoleNode; ids: Set<string> }>>([])
+                            ? of<Array<{ node: DotRoleNode; ids: Set<string>; failed: boolean }>>(
+                                  []
+                              )
                             : forkJoin(
                                   chain.map((node) =>
                                       rolesService.getToolGroups(node.id).pipe(
                                           map((groups) => ({
                                               node,
-                                              ids: new Set(groups.map((group) => group.id))
+                                              ids: new Set(groups.map((group) => group.id)),
+                                              failed: false
                                           })),
                                           catchError((error) => {
                                               httpErrorManager.handle(error);
 
-                                              return of({ node, ids: new Set<string>() });
+                                              // Keep the other ancestors usable,
+                                              // but remember this one is unknown —
+                                              // see the `failed` handling below.
+                                              return of({
+                                                  node,
+                                                  ids: new Set<string>(),
+                                                  failed: true
+                                              });
                                           })
                                       )
                                   )
@@ -412,7 +464,25 @@ export const DotRolesStore = signalStore(
                                 };
                             });
 
-                            patchState(store, { toolGroups, toolGroupsStatus: 'LOADED' });
+                            // The role may have changed while this was in
+                            // flight — writing here would show one role's tool
+                            // groups under another's name, and the next toggle
+                            // would POST this role's grants onto that one.
+                            if (store.selectedRoleId() !== role.id) {
+                                return;
+                            }
+
+                            // If an ancestor check failed we cannot tell "not
+                            // granted" from "could not verify". Rendering the
+                            // grid anyway would show inherited groups unchecked,
+                            // and an admin trusting it would create a redundant
+                            // direct grant for something the role already has.
+                            const unverified = grants.some((grant) => grant.failed);
+
+                            patchState(store, {
+                                toolGroups,
+                                toolGroupsStatus: unverified ? 'ERROR' : 'LOADED'
+                            });
                         }),
                         catchError((error) => {
                             httpErrorManager.handle(error);
@@ -452,7 +522,11 @@ export const DotRolesStore = signalStore(
                     members: [],
                     membersStatus: 'INIT',
                     toolGroups: [],
-                    toolGroupsStatus: 'INIT'
+                    toolGroupsStatus: 'INIT',
+                    // A save still in flight belongs to the role we are leaving.
+                    // Leaving this true locks every checkbox on the role we are
+                    // switching TO, which has no save of its own.
+                    toolGroupsSaving: false
                 });
 
                 if (roleId) {
@@ -598,6 +672,25 @@ export const DotRolesStore = signalStore(
              * it here before opening the Edit dialog — search-result nodes
              * only carry `{id, name, locked}`, and PUT is a full replace.
              */
+            /**
+             * One-shot deep search that RETURNS its results instead of writing
+             * them to state.
+             *
+             * `setFilter` drives the left-hand tree through `searchResults`, so
+             * a dialog reusing it would visibly re-filter the tree behind it.
+             * This shares the same endpoint and the same ancestor-path payload
+             * without touching what the page is showing.
+             */
+            async searchRoleTree(query: string): Promise<DotRoleNode[]> {
+                try {
+                    return await firstValueFrom(rolesService.searchTree(query).pipe(take(1)));
+                } catch (error) {
+                    httpErrorManager.handle(error);
+
+                    return [];
+                }
+            },
+
             async fetchRoleDetail(roleId: string): Promise<DotRoleDetail | null> {
                 try {
                     return await firstValueFrom(rolesService.getById(roleId, false).pipe(take(1)));
@@ -629,7 +722,17 @@ export const DotRolesStore = signalStore(
              */
             async createRole(form: DotRoleFormValue): Promise<DotRoleDetail | null> {
                 try {
-                    const created = await firstValueFrom(rolesService.create(form).pipe(take(1)));
+                    const response = await firstValueFrom(rolesService.create(form).pipe(take(1)));
+
+                    // `POST /v1/roles` answers with `Role.toMap()`, not a
+                    // `RoleView`, so the payload carries no `childCount`. The
+                    // tree treats an absent count as "unknown" and falls back
+                    // to its chevron heuristic, which renders a brand-new role
+                    // as a folder. A role that was just created has no
+                    // children by definition, so state that outright.
+                    // (`PUT` does return a RoleView, so update needs none of
+                    // this.)
+                    const created: DotRoleDetail = { ...response, childCount: 0 };
 
                     const parentId = form.parentRoleId ?? null;
                     if (!parentId) {

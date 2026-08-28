@@ -43,6 +43,54 @@ const buildTree = (): DotRoleNode[] => [
 ];
 
 describe('dot-roles.tree-utils', () => {
+    describe('childCount stays in sync with local mutations', () => {
+        // The tree treats childCount as authoritative for leaf-vs-chevron, so
+        // a stale 0 renders a parent that just gained a child as a leaf — and
+        // the new role becomes unreachable until a full reload.
+        it('bumps a childless parent when a child is appended', () => {
+            const tree = [{ id: 'p', name: 'Parent', childCount: 0, roleChildren: [] }];
+
+            const [parent] = appendChildToParent(tree, 'p', { id: 'c', name: 'Child' });
+
+            expect(parent.childCount).toBe(1);
+            expect(parent.roleChildren).toHaveLength(1);
+        });
+
+        it('decrements the parent when one of its children is removed', () => {
+            const tree = [
+                {
+                    id: 'p',
+                    name: 'Parent',
+                    childCount: 2,
+                    roleChildren: [
+                        { id: 'c1', name: 'C1' },
+                        { id: 'c2', name: 'C2' }
+                    ]
+                }
+            ];
+
+            const [parent] = removeNodeFromTree(tree, 'c1');
+
+            expect(parent.childCount).toBe(1);
+            expect(parent.roleChildren).toHaveLength(1);
+        });
+
+        it('leaves an untouched branch count alone', () => {
+            const tree = [
+                {
+                    id: 'p',
+                    name: 'Parent',
+                    childCount: 5,
+                    roleChildren: [{ id: 'c1', name: 'C1' }]
+                }
+            ];
+
+            const [parent] = removeNodeFromTree(tree, 'somewhere-else');
+
+            expect(parent.childCount).toBe(5);
+        });
+    });
+
     describe('patchNodeChildren', () => {
         it('replaces children on a matching root node', () => {
             const tree = buildTree();

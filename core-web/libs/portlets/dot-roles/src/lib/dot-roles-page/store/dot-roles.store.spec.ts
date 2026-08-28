@@ -219,6 +219,15 @@ describe('DotRolesStore', () => {
     });
 
     describe('loadMembers', () => {
+        beforeEach(() => {
+            // The store only writes members for the role that is CURRENTLY
+            // selected, so a response for a role the admin already left cannot
+            // repaint the tab. In the app `loadMembers` is only ever reached
+            // through the effect that fires after selection, so the tests
+            // select first too.
+            store.selectRole(SELECTED_ROLE.id);
+        });
+
         it('should load members by role id, with no roleKey branching (#37070)', () => {
             store.loadMembers(SELECTED_ROLE);
 
@@ -283,11 +292,11 @@ describe('DotRolesStore', () => {
 
             store.loadMembers(SELECTED_ROLE);
 
-            // Partial failure of one ancestor call must not nuke the whole
-            // tab: the store surfaces the error via the http manager but
-            // still resolves to `loaded` with whatever succeeded.
+            // A failed ancestor check leaves the roster unknowable, not empty.
+            // Resolving to `loaded` would render a silently short member list
+            // that an admin auditing access would read as complete.
             expect(errorManager.handle).toHaveBeenCalled();
-            expect(store.membersStatus()).toBe('LOADED');
+            expect(store.membersStatus()).toBe('ERROR');
         });
     });
 
@@ -374,6 +383,127 @@ describe('DotRolesStore', () => {
 
             expect(ok).toBe(false);
             expect(store.toolGroups()).toEqual(before);
+            expect(store.toolGroupsSaving()).toBe(false);
+        });
+    });
+
+    describe('tree user-count badge', () => {
+        beforeEach(() => {
+            store.loadRootRoles();
+        });
+
+        const countFor = (id: string) => {
+            const find = (nodes: DotRoleNode[]): DotRoleNode | undefined => {
+                for (const node of nodes) {
+                    if (node.id === id) {
+                        return node;
+                    }
+                    const found = find(node.roleChildren ?? []);
+                    if (found) {
+                        return found;
+                    }
+                }
+
+                return undefined;
+            };
+
+            return find(store.roles())?.userCount;
+        };
+
+        it('syncs the badge from the direct-grant count after members load', () => {
+            service.getUsers.mockImplementation((roleId: string) =>
+                of(roleId === 'r-eco' ? MOCK_USER_FILTER_RESULTS : [])
+            );
+
+            store.selectRole('r-eco');
+            store.loadMembers({ id: 'r-eco' });
+
+            // Both fixtures are granted directly on r-eco.
+            expect(countFor('r-eco')).toBe(2);
+        });
+
+        it('counts direct grants only — inherited members do not inflate it', () => {
+            service.getUsers.mockImplementation((roleId: string) =>
+                of(roleId === 'r-eco' ? [MOCK_USER_FILTER_RESULTS[0]] : MOCK_USER_FILTER_RESULTS)
+            );
+
+            store.selectRole('r-eco');
+            store.loadMembers({ id: 'r-eco' });
+
+            // The ancestor contributes members too, but the badge reports what
+            // the backend puts in `userCount`: this role's own grants.
+            expect(countFor('r-eco')).toBe(1);
+        });
+
+        it('leaves the badge alone when a membership check failed', () => {
+            const before = countFor('r-eco');
+            service.getUsers.mockReturnValue(throwError(() => new Error('boom')));
+
+            store.selectRole('r-eco');
+            store.loadMembers({ id: 'r-eco' });
+
+            // Replacing a stale count with one derived from a partial answer
+            // would be worse than leaving it stale.
+            expect(countFor('r-eco')).toBe(before);
+        });
+    });
+
+    describe('cross-role race safety', () => {
+        // A response that arrives after the admin moved to another role must
+        // not repaint that role's tab. Getting this wrong is not cosmetic:
+        // the Tools tab computes its next POST payload from whatever is in
+        // `toolGroups`, so one role's grants could be written onto another.
+        beforeEach(() => {
+            store.loadRootRoles();
+        });
+
+        it('drops a members response for a role the admin already left', () => {
+            store.selectRole('r-eco');
+            service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+
+            // Simulate the late reconcile a grant/remove fires with the id it
+            // captured before its await.
+            store.selectRole('r-categories');
+            const membersAfterSwitch = store.members();
+            store.loadMembers({ id: 'r-eco' });
+
+            expect(store.members()).toEqual(membersAfterSwitch);
+        });
+
+        it('drops a tool-group response for a role the admin already left', () => {
+            service.getAllToolGroups.mockReturnValue(of([{ id: 'tg-1', name: 'Site' }]));
+            // Per-role grants must DIFFER, otherwise a leaked response would be
+            // indistinguishable from the correct one and the test would pass
+            // even with the guard removed.
+            service.getToolGroups.mockImplementation((roleId: string) =>
+                of(roleId === 'r-eco' ? [{ id: 'tg-1', name: 'Site' }] : [])
+            );
+
+            store.selectRole('r-eco');
+            store.selectRole('r-categories');
+            // r-categories grants nothing, so nothing is granted right now.
+            expect(store.toolGroups().every((group) => !group.granted)).toBe(true);
+
+            // A late reconcile carrying r-eco's id must not mark tg-1 granted
+            // while r-categories is the selected role.
+            store.loadToolGroups({ id: 'r-eco' });
+
+            expect(store.toolGroups().every((group) => !group.granted)).toBe(true);
+        });
+
+        it('clears a previous role in-flight save lock on selection', () => {
+            service.saveToolGroups.mockReturnValue(NEVER);
+            service.getAllToolGroups.mockReturnValue(of([{ id: 'tg-1', name: 'Site' }]));
+            service.getToolGroups.mockReturnValue(of([]));
+
+            store.selectRole('r-eco');
+            store.saveToolGroups(['tg-1']);
+            expect(store.toolGroupsSaving()).toBe(true);
+
+            // Leaving mid-save must not carry the lock onto the next role —
+            // it would disable every checkbox on a role with no save running.
+            store.selectRole('r-categories');
+
             expect(store.toolGroupsSaving()).toBe(false);
         });
     });
@@ -528,6 +658,24 @@ describe('DotRolesStore', () => {
             expect(store.roles().map((n) => n.id)).toContain('r-new-root');
             expect(store.selectedRoleId()).toBe('r-new-root');
             expect(created?.id).toBe('r-new-root');
+        });
+
+        it('marks a created role as childless so the tree draws it as a leaf', async () => {
+            // POST /v1/roles answers with Role.toMap(), which has no
+            // childCount — without normalising it the tree cannot tell "no
+            // children" from "unknown" and renders a folder.
+            service.create.mockReturnValue(of({ id: 'r-new', name: 'New Role' }));
+
+            const created = await store.createRole({
+                roleName: 'New Role',
+                parentRoleId: null,
+                canEditUsers: true,
+                canEditPermissions: true,
+                canEditLayouts: true
+            });
+
+            expect(created?.childCount).toBe(0);
+            expect(store.roles().at(-1)?.childCount).toBe(0);
         });
 
         it('should splice into the parent roleChildren when the parent is loaded', async () => {

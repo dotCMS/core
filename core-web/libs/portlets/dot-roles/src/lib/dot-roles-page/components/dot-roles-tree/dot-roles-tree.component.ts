@@ -207,7 +207,7 @@ export class DotRolesTreeComponent {
 
     protected onAddRole(parentRoleId?: string): void {
         this.#dialogService.open(DotRolesAddComponent, {
-            header: undefined,
+            header: this.#messageService.get('roles.add.title'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
@@ -243,6 +243,7 @@ export class DotRolesTreeComponent {
         }
 
         this.#dialogService.open(DotRolesEditComponent, {
+            header: this.#messageService.get('roles.edit.title'),
             width: '700px',
             closable: true,
             closeOnEscape: true,

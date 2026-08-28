@@ -31,7 +31,7 @@ import {
     DotMessageService,
     DotRoleUserResult
 } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotRoleMember } from '../../../models/dot-roles.models';
 import { DotRolesPortletService } from '../../../services/dot-roles-portlet.service';
@@ -63,7 +63,8 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
         TooltipModule,
         ConfirmDialogModule,
         SkeletonModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotEmptyContainerComponent
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
@@ -77,6 +78,15 @@ export class DotRoleUsersTabComponent {
     readonly #messageService = inject(DotMessageService);
     readonly #httpErrorManager = inject(DotHttpErrorManagerService);
     readonly #destroyRef = inject(DestroyRef);
+
+    // `hideContactUsLink` is set at every call site: this is an internal admin
+    // screen, not a licensing dead-end, so the contact link would be noise.
+    protected readonly $emptyMembersConfig = computed<PrincipalConfiguration>(() => ({
+        title: this.#messageService.get('roles.users.empty.title'),
+        subtitle: this.#messageService.get('roles.users.empty.copy'),
+        icon: 'group',
+        iconStyle: 'material-symbols-rounded'
+    }));
 
     protected readonly rowsPerPageOptions = MEMBERS_ROWS_PER_PAGE_OPTIONS;
     protected readonly defaultRowsPerPage = MEMBERS_DEFAULT_ROWS_PER_PAGE;

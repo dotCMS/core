@@ -61,16 +61,29 @@ export function patchNodeInPlace(
     });
 }
 
-/** Immutably drop the node with `id` from anywhere in the tree. */
+/**
+ * Immutably drop the node with `id` from anywhere in the tree.
+ *
+ * Decrements the parent's `childCount` when the removal actually took a child
+ * from it — see {@link appendChildToParent} for why that field cannot be left
+ * stale. Only adjusted when a child was really removed at this level, so an
+ * untouched branch keeps its count.
+ */
 export function removeNodeFromTree(nodes: DotRoleNode[], id: string): DotRoleNode[] {
     return nodes.reduce<DotRoleNode[]>((acc, node) => {
         if (node.id === id) {
             return acc;
         }
         if (node.roleChildren && node.roleChildren.length > 0) {
+            const roleChildren = removeNodeFromTree(node.roleChildren, id);
+            const removedHere = roleChildren.length < node.roleChildren.length;
+
             acc.push({
                 ...node,
-                roleChildren: removeNodeFromTree(node.roleChildren, id)
+                childCount: removedHere
+                    ? Math.max(0, (node.childCount ?? node.roleChildren.length) - 1)
+                    : node.childCount,
+                roleChildren
             });
         } else {
             acc.push(node);
@@ -82,6 +95,11 @@ export function removeNodeFromTree(nodes: DotRoleNode[], id: string): DotRoleNod
 /**
  * Immutably append a newly-created role to its parent's `roleChildren`.
  * Sharing branches by reference keeps re-render churn minimal.
+ *
+ * `childCount` is bumped alongside the splice. The tree treats that field as
+ * authoritative for leaf-vs-chevron, so leaving it stale at 0 would render a
+ * parent that just gained its first child as a childless leaf — with no
+ * chevron, the new role is unreachable until a full reload.
  */
 export function appendChildToParent(
     nodes: DotRoleNode[],
@@ -90,9 +108,12 @@ export function appendChildToParent(
 ): DotRoleNode[] {
     return nodes.map((node) => {
         if (node.id === parentId) {
+            const roleChildren = [...(node.roleChildren ?? []), child];
+
             return {
                 ...node,
-                roleChildren: [...(node.roleChildren ?? []), child]
+                childCount: Math.max(node.childCount ?? 0, roleChildren.length),
+                roleChildren
             };
         }
         if (node.roleChildren && node.roleChildren.length > 0) {
@@ -101,6 +122,34 @@ export function appendChildToParent(
                 roleChildren: appendChildToParent(node.roleChildren, parentId, child)
             };
         }
+        return node;
+    });
+}
+
+/**
+ * Immutably set a node's `userCount`, leaving everything else untouched.
+ *
+ * The tree badge reads this field, but it only arrives with the role payload —
+ * granting or revoking a user does not refresh it, so it goes stale the moment
+ * the admin edits membership. Callers sync it from the direct-grant count they
+ * just computed.
+ */
+export function patchNodeUserCount(
+    nodes: DotRoleNode[],
+    id: string,
+    userCount: number
+): DotRoleNode[] {
+    return nodes.map((node) => {
+        if (node.id === id) {
+            return { ...node, userCount };
+        }
+        if (node.roleChildren && node.roleChildren.length > 0) {
+            return {
+                ...node,
+                roleChildren: patchNodeUserCount(node.roleChildren, id, userCount)
+            };
+        }
+
         return node;
     });
 }

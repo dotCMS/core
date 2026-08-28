@@ -3,7 +3,7 @@
     scroll region via `flex-1 min-h-0 overflow-hidden` + `scrollHeight="flex"`,
     so the header row stays pinned and the tab never grows the page.
 -->
-<div class="flex h-full flex-col gap-4 py-4">
+<div class="flex h-full flex-col">
     @if (!store.canEditRoleLayouts()) {
         <div class="bg-amber-100 px-6 py-3 text-sm text-amber-800" data-testid="cannot-edit-notice">
             {{ 'roles.tools.cannot-edit' | dm }}
@@ -22,7 +22,11 @@
                         <th class="w-12"></th>
                         <th>{{ 'roles.tools.column.group' | dm }}</th>
                         <th>{{ 'roles.tools.column.included' | dm }}</th>
-                        <th>{{ 'roles.tools.column.granted-from' | dm }}</th>
+                        <!-- Included Tools is greedy; without a floor here the
+                             chip wraps a two-word role name onto two lines. -->
+                        <th class="w-44 min-w-44">
+                            {{ 'roles.tools.column.granted-from' | dm }}
+                        </th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body">
@@ -30,7 +34,7 @@
                         <td><p-skeleton shape="square" size="1rem" /></td>
                         <td><p-skeleton height="1rem" width="40%" /></td>
                         <td><p-skeleton height="1rem" width="70%" /></td>
-                        <td><p-skeleton height="1.25rem" width="30%" /></td>
+                        <td class="w-44"><p-skeleton height="1.25rem" width="70%" /></td>
                     </tr>
                 </ng-template>
             </p-table>
@@ -39,11 +43,10 @@
                 {{ 'roles.error.load-failed' | dm }}
             </p>
         } @else if (store.toolGroups().length === 0) {
-            <div
-                class="text-color-secondary mx-6 rounded-lg border border-dashed border-surface-200 p-8 text-center"
-                data-testid="tools-empty">
-                <p class="m-0 text-sm">{{ 'roles.tools.empty' | dm }}</p>
-            </div>
+            <dot-empty-container
+                [configuration]="$emptyToolGroupsConfig()"
+                [hideContactUsLink]="true"
+                data-testid="tools-empty" />
         } @else {
             <p-table
                 [value]="store.toolGroups()"
@@ -56,7 +59,11 @@
                         <th class="w-12"></th>
                         <th>{{ 'roles.tools.column.group' | dm }}</th>
                         <th>{{ 'roles.tools.column.included' | dm }}</th>
-                        <th>{{ 'roles.tools.column.granted-from' | dm }}</th>
+                        <!-- Included Tools is greedy; without a floor here the
+                             chip wraps a two-word role name onto two lines. -->
+                        <th class="w-44 min-w-44">
+                            {{ 'roles.tools.column.granted-from' | dm }}
+                        </th>
                     </tr>
                 </ng-template>
                 <ng-template pTemplate="body" let-group>
@@ -72,10 +79,11 @@
                                 [attr.aria-label]="group.name" />
                         </td>
                         <td class="font-medium">{{ group.name }}</td>
-                        <td class="text-color-secondary text-sm">{{ includedTools(group) }}</td>
+                        <td class="text-sm text-gray-500">{{ includedTools(group) }}</td>
                         <td>
                             @if (group.granted) {
                                 <p-tag
+                                    class="whitespace-nowrap"
                                     [value]="group.grantedFromRoleName"
                                     [severity]="direct ? 'info' : 'secondary'" />
                             }

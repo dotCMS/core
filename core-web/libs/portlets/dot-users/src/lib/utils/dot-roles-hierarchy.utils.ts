@@ -74,12 +74,12 @@ export function flattenRoleHierarchy(
 /**
  * Breadth-first rounds until nothing new is discovered.
  *
- * Only descends into nodes with `childCount > 0`. Most roles below the first
- * level are leaves, so this prunes the large majority of the request burst
- * this walk used to produce when the Roles tab opened. Roles whose
- * `childCount` is absent are still visited, so a serializer that omits the
- * field degrades to the old exhaustive behavior rather than silently
- * truncating the tree.
+ * Skips only the nodes whose `childCount` is confirmed zero — the filter is
+ * `!== 0`, so an ABSENT `childCount` is still visited and a serializer that
+ * omits the field degrades to the old exhaustive behavior rather than
+ * silently truncating the tree. Most roles below the first level are leaves,
+ * so this prunes the large majority of the request burst this walk used to
+ * produce when the Roles tab opened.
  */
 function expandDescendants(
     toExpand: DotRole[],

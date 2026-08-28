@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -34,7 +35,12 @@ describe('DotRolesAddComponent', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([]),
+                roleTree: jest.fn().mockReturnValue([
+                    { id: 'r-a', name: 'Root A', childCount: 2, roleChildren: [] },
+                    { id: 'r-b', name: 'Root B', childCount: 0, roleChildren: [] }
+                ]),
+                loadRoleChildren: jest.fn(),
+                searchRoleTree: jest.fn().mockResolvedValue([]),
                 createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
@@ -45,6 +51,92 @@ describe('DotRolesAddComponent', () => {
 
     beforeEach(() => {
         spectator = createComponent();
+    });
+
+    describe('parent picker', () => {
+        beforeEach(() => {
+            // `mockProvider` builds its jest.fn()s once at factory scope, so
+            // call history survives between tests unless it is cleared here.
+            const store = createComponent().inject(DotRolesStore, true);
+            (store.searchRoleTree as jest.Mock).mockClear();
+            (store.loadRoleChildren as jest.Mock).mockClear();
+        });
+
+        it('marks a node with children as expandable even before they are fetched', () => {
+            const spectator = createComponent();
+            spectator.detectChanges();
+
+            const [withChildren, withoutChildren] = spectator.component['$parentTree']();
+            // `leaf: false` is what gives PrimeNG a toggler to click.
+            expect(withChildren.leaf).toBe(false);
+            expect(withoutChildren.leaf).toBe(true);
+        });
+
+        it('hydrates a branch on expand — the backend only sends two levels', () => {
+            const spectator = createComponent();
+            spectator.detectChanges();
+            const store = spectator.inject(DotRolesStore, true);
+
+            spectator.component['onNodeExpand']({ node: { key: 'r-a' } });
+
+            expect(store.loadRoleChildren).toHaveBeenCalledWith('r-a');
+        });
+
+        it('keeps a branch open after its children load', () => {
+            // PrimeNG records expansion by mutating node.expanded; our options
+            // come from a computed, so without tracking the keys the branch
+            // snaps shut the moment loadRoleChildren patches the store.
+            const spectator = createComponent();
+            spectator.detectChanges();
+
+            spectator.component['onNodeExpand']({ node: { key: 'r-a' } });
+            spectator.detectChanges();
+
+            const expanded = spectator.component['$parentTree']().find((n) => n.key === 'r-a');
+            expect(expanded?.expanded).toBe(true);
+        });
+
+        it('forgets the branch once collapsed', () => {
+            const spectator = createComponent();
+            spectator.detectChanges();
+
+            spectator.component['onNodeExpand']({ node: { key: 'r-a' } });
+            spectator.component['onNodeCollapse']({ node: { key: 'r-a' } });
+            spectator.detectChanges();
+
+            const node = spectator.component['$parentTree']().find((n) => n.key === 'r-a');
+            expect(node?.expanded).toBe(false);
+        });
+
+        it('runs a deep search past 3 characters and shows the matches', fakeAsync(() => {
+            const spectator = createComponent();
+            spectator.detectChanges();
+            const store = spectator.inject(DotRolesStore, true);
+            (store.searchRoleTree as jest.Mock).mockResolvedValue([
+                { id: 'r-found', name: 'Found', roleChildren: [] }
+            ]);
+
+            spectator.component['onFilter']({ filter: 'fou' });
+            tick(300);
+            flushMicrotasks();
+            spectator.detectChanges();
+
+            expect(store.searchRoleTree).toHaveBeenCalledWith('fou');
+            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual(['r-found']);
+        }));
+
+        it('does not search under 3 characters and falls back to the cached tree', fakeAsync(() => {
+            const spectator = createComponent();
+            spectator.detectChanges();
+            const store = spectator.inject(DotRolesStore, true);
+
+            spectator.component['onFilter']({ filter: 'fo' });
+            tick(300);
+            flushMicrotasks();
+
+            expect(store.searchRoleTree).not.toHaveBeenCalled();
+            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual(['r-a', 'r-b']);
+        }));
     });
 
     it('should render the required inputs and disabled Save button', () => {
@@ -106,7 +198,11 @@ describe('DotRolesAddComponent (opened from inline +)', () => {
         detectChanges: false,
         providers: [
             mockProvider(DotRolesStore, {
-                roleTree: jest.fn().mockReturnValue([]),
+                roleTree: jest
+                    .fn()
+                    .mockReturnValue([
+                        { id: 'r-categories', name: 'Categories', roleChildren: [] }
+                    ]),
                 createRole: jest.fn().mockResolvedValue({ id: 'r-new', name: 'New' })
             }),
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
@@ -122,6 +218,37 @@ describe('DotRolesAddComponent (opened from inline +)', () => {
         const spectator = createComponent();
         spectator.detectChanges();
 
-        expect(spectator.component['form'].controls.parentRoleId.value).toBe('r-categories');
+        // The picker binds to a TreeNode, not a bare id — the `+` on a tree
+        // row hands over an id, which the component resolves to its node.
+        const parent = spectator.component['form'].controls.parent.value;
+        expect(parent?.key).toBe('r-categories');
+        expect(parent?.label).toBe('Categories');
+    });
+
+    it('sends the picked node id as parentRoleId on save', async () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        const store = spectator.inject(DotRolesStore, true);
+        spectator.component['form'].controls.roleName.setValue('New Role');
+        await spectator.component['onSave']();
+
+        expect(store.createRole).toHaveBeenCalledWith(
+            expect.objectContaining({ roleName: 'New Role', parentRoleId: 'r-categories' })
+        );
+    });
+
+    it('sends a null parentRoleId when the picker is cleared — a root role', async () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        const store = spectator.inject(DotRolesStore, true);
+        spectator.component['form'].controls.roleName.setValue('New Root');
+        spectator.component['form'].controls.parent.setValue(null);
+        await spectator.component['onSave']();
+
+        expect(store.createRole).toHaveBeenCalledWith(
+            expect.objectContaining({ parentRoleId: null })
+        );
     });
 });

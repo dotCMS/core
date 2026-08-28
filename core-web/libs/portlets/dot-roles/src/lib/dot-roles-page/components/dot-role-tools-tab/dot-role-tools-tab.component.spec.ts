@@ -113,6 +113,21 @@ describe('DotRoleToolsTabComponent', () => {
             );
         });
 
+        it('recovers a readable name when the portlet title came back untranslated', () => {
+            // LanguageUtil.get returns the key itself when a portlet has no
+            // title translation, which is what custom portlets hit.
+            expect(
+                included([
+                    'com.dotcms.repackage.javax.portlet.title.c_Blog-Entries',
+                    'com.dotcms.repackage.javax.portlet.title.c_Activities'
+                ])
+            ).toBe('Blog Entries, Activities');
+        });
+
+        it('leaves an already-translated title untouched', () => {
+            expect(included(['Pages', 'Browser'])).toBe('Pages, Browser');
+        });
+
         it('renders nothing for a group with no portlets', () => {
             expect(included([])).toBe('');
             expect(included(undefined)).toBe('');

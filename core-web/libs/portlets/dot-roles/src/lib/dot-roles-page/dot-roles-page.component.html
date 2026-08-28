@@ -63,14 +63,11 @@
                     </p-tabpanels>
                 </p-tabs>
             } @else {
-                <div
-                    class="text-color-secondary flex flex-1 flex-col items-center justify-center gap-2"
-                    data-testid="empty-selection">
-                    <span class="material-symbols-outlined text-5xl opacity-50">
-                        left_panel_open
-                    </span>
-                    <p>{{ 'roles.detail.empty' | dm }}</p>
-                </div>
+                <dot-empty-container
+                    class="flex-1"
+                    [configuration]="$noSelectionConfig()"
+                    [hideContactUsLink]="true"
+                    data-testid="empty-selection" />
             }
         </div>
     </ng-template>

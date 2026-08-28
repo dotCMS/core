@@ -9,7 +9,7 @@
     `[scrollable]/scrollHeight="flex"` places the scroll on the tbody so the
     header and pagination footer stay pinned.
 -->
-<div class="flex h-full flex-col gap-4 py-4">
+<div class="flex h-full flex-col gap-4">
     @if (role && !store.canGrantUsers()) {
         <div
             class="bg-amber-100 px-6 py-3 text-sm text-amber-800"
@@ -72,16 +72,10 @@
                 {{ 'roles.error.load-failed' | dm }}
             </p>
         } @else if (store.members().length === 0) {
-            <div
-                class="text-color-secondary mx-6 rounded-lg border border-dashed border-surface-200 p-8 text-center"
-                data-testid="members-empty">
-                <p class="m-0 mb-1 font-semibold">
-                    {{ 'roles.users.empty.title' | dm }}
-                </p>
-                <p class="m-0 text-sm">
-                    {{ 'roles.users.empty.copy' | dm }}
-                </p>
-            </div>
+            <dot-empty-container
+                [configuration]="$emptyMembersConfig()"
+                [hideContactUsLink]="true"
+                data-testid="members-empty" />
         } @else {
             <!--
                 Client-side pagination — `[value]` is the merged direct +

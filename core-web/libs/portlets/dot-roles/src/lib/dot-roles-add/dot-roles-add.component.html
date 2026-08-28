@@ -1,16 +1,13 @@
-<header class="mb-4">
-    <h2 class="m-0 text-lg font-semibold">{{ 'roles.add.title' | dm }}</h2>
-</header>
-
 <form [formGroup]="form" (ngSubmit)="onSave()" class="form flex flex-col gap-4">
     <div class="field">
-        <label for="roleName">{{ 'roles.form.name' | dm }} *</label>
+        <label dotFieldRequired for="roleName">{{ 'roles.form.name' | dm }}</label>
         <input
             pInputText
             id="roleName"
             formControlName="roleName"
             data-testid="input-role-name"
             [attr.aria-required]="true" />
+        <dot-field-validation-message [field]="form.get('roleName')" />
     </div>
 
     <div class="field">
@@ -20,13 +17,26 @@
 
     <div class="field">
         <label for="parentRoleId">{{ 'roles.form.parent' | dm }}</label>
-        <p-select
+        <!--
+            A tree rather than a flat indented list: the hierarchy is the
+            whole point of picking a parent, and indentation alone gets
+            ambiguous past two levels. Clearing the selection means "no
+            parent" (a root role) — hence `showClear` instead of a synthetic
+            "Root" entry that would sit oddly inside a tree.
+        -->
+        <p-treeSelect
             id="parentRoleId"
-            formControlName="parentRoleId"
-            [options]="$parentOptions()"
-            optionLabel="label"
-            optionValue="value"
+            class="w-full"
+            formControlName="parent"
+            [options]="$parentTree()"
+            [showClear]="true"
+            [filter]="true"
+            [loading]="$searching()"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+            (onFilter)="onFilter($event)"
             appendTo="body"
+            [placeholder]="'roles.form.parent.root' | dm"
             data-testid="select-parent" />
     </div>
 
