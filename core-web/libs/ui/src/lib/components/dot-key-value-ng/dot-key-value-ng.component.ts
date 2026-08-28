@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, computed, input, output, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    input,
+    linkedSignal,
+    output
+} from '@angular/core';
 
 import { TableModule } from 'primeng/table';
 
@@ -13,6 +20,15 @@ export interface DotKeyValue {
     value: string;
 }
 
+/**
+ * Editor for an ordered list of key/value pairs, shared by three consumers:
+ * the Edit Content key/value field, the Content Type Field Variables tab, and
+ * the Apps custom-properties panel.
+ *
+ * This component owns the list and the table frame; the entry row and each data
+ * row are separate components attached by attribute selector, so their hosts are
+ * the `tr` elements themselves.
+ */
 @Component({
     selector: 'dot-key-value-ng',
     templateUrl: './dot-key-value-ng.component.html',
@@ -25,133 +41,79 @@ export interface DotKeyValue {
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueComponent {
-    /**
-     * Controls whether the hidden field option is displayed in the UI
-     */
     $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
 
-    /**
-     * The list of key-value pairs to be displayed and manipulated
-     */
     $variables = input<DotKeyValue[]>([], { alias: 'variables' });
 
-    /**
-     * Controls whether drag and drop functionality is enabled for reordering items
-     */
-    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
-
-    /**
-     * Emits the updated list of key-value pairs after any change operation
-     */
     updatedList = output<DotKeyValue[]>();
 
-    /**
-     * Emits when a key-value pair is deleted
-     */
     delete = output<DotKeyValue>();
 
-    /**
-     * Emits when a new key-value pair is saved
-     */
     save = output<DotKeyValue>();
 
-    /**
-     * Emits when an existing key-value pair is updated, containing both new and old values
-     */
     update = output<{
         variable: DotKeyValue;
         oldVariable: DotKeyValue;
     }>();
 
     /**
-     * Computed signal that holds the current list of variables
+     * Working copy of the list. Seeded from `$variables` and re-seeded whenever
+     * the consumer supplies a new one.
      */
-    $variableList = computed(() => signal(this.$variables()));
+    $variableList = linkedSignal(() => this.$variables());
 
     /**
-     * Computed hash map of existing keys to prevent duplicates
+     * Existing keys, so the entry row can reject a duplicate before it is added.
      */
-    $forbiddenkeys = computed(() => {
-        const variableList = this.$variableList();
-
-        return variableList().reduce(
+    $forbiddenkeys = computed(() =>
+        this.$variableList().reduce(
             (acc, variable) => {
                 acc[variable.key] = true;
 
                 return acc;
             },
             {} as Record<string, boolean>
-        );
-    });
+        )
+    );
 
-    /**
-     * Computed value for table column span based on component configuration
-     */
-    $colspan = computed(() => {
-        const showHiddenField = this.$showHiddenField();
-        const dragAndDrop = this.$dragAndDrop();
+    /** Column count for the empty-state row: drag handle + key + value + actions. */
+    readonly colspan = 4;
 
-        return showHiddenField ? (dragAndDrop ? 5 : 4) : 3;
-    });
-
-    /**
-     * Handles the deletion of a key-value pair
-     * Removes the variable from the local list and emits events for parent components
-     *
-     * @param {number} index - The index of the variable to delete in the array
-     */
-    deleteVariable(index: number): void {
-        const variableList = this.$variableList();
-        const deletedVariable = variableList()[index];
-        variableList.update((variables) => {
-            variables.splice(index, 1);
-
-            return [...variables];
-        });
-        this.delete.emit(deletedVariable);
-        this.updatedList.emit(variableList());
-    }
-
-    /**
-     * Handles saving a new key-value pair
-     * Adds the variable to the local list and emits events for parent components
-     *
-     * @param {DotKeyValue} variable - The new key-value pair to save
-     */
     saveVariable(variable: DotKeyValue): void {
-        const variableList = this.$variableList();
-        variableList.update((variables) => {
-            return [variable, ...variables];
-        });
+        this.$variableList.update((variables) => [variable, ...variables]);
         this.save.emit(variable);
-        this.updatedList.emit(variableList());
+        this.updatedList.emit(this.$variableList());
     }
 
-    /**
-     * Handles updating an existing key-value pair
-     * Updates the variable in the local list and emits events for parent components
-     *
-     * @param {DotKeyValue} variable - The updated key-value pair
-     * @param {number} index - The index of the variable to update in the array
-     */
     updateKeyValue(variable: DotKeyValue, index: number): void {
-        const variableList = this.$variableList();
-        const oldVariable = variableList()[index];
-        variableList.update((variables) => {
-            variables[index] = variable;
-
-            return [...variables];
-        });
+        const oldVariable = this.$variableList()[index];
+        this.$variableList.update((variables) =>
+            variables.map((item, i) => (i === index ? variable : item))
+        );
         this.update.emit({ variable, oldVariable });
-        this.updatedList.emit(variableList());
+        this.updatedList.emit(this.$variableList());
+    }
+
+    deleteVariable(index: number): void {
+        const deletedVariable = this.$variableList()[index];
+        this.$variableList.update((variables) => variables.filter((_, i) => i !== index));
+        this.delete.emit(deletedVariable);
+        this.updatedList.emit(this.$variableList());
     }
 
     /**
-     * Handles reordering of variables after drag and drop operations
-     * Emits the updated list for parent components to process
+     * Publishes the list after a drag-and-drop reorder.
+     *
+     * PrimeNG has already moved the item by this point — `onRowDrop` calls
+     * `reorderArray` on the very array bound to `[value]`, which is the one this
+     * signal holds. So the move must NOT be applied again here; all that is left
+     * is to hand out a new reference, since an in-place mutation leaves the
+     * signal comparing equal and never notifying.
      */
-    reorderVariables(): void {
-        const variableList = this.$variableList();
-        this.updatedList.emit(variableList());
+    onRowReorder(): void {
+        const reordered = [...this.$variableList()];
+
+        this.$variableList.set(reordered);
+        this.updatedList.emit(reordered);
     }
 }

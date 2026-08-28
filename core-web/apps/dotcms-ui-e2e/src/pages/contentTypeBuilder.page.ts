@@ -107,4 +107,33 @@ export class ContentTypeBuilderPage {
 
         await expect(dialog).toBeHidden();
     }
+
+    /** The field-properties dialog, scoped so we never match an unrelated `.p-dialog`. */
+    private fieldDialog(): Locator {
+        return this.page.locator('p-dynamicdialog:has(dot-edit-field-dialog) .p-dialog').first();
+    }
+
+    /**
+     * Opens a placed field's dialog and switches to its Field Variables tab —
+     * the second consumer of the shared Key/Value editor (#37191).
+     */
+    async openFieldVariables(fieldName: string) {
+        await this.placedField(fieldName).click();
+
+        const dialog = this.fieldDialog();
+        await dialog.waitFor({ state: 'visible' });
+        await dialog.getByRole('tab', { name: /field variables/i }).click();
+        await this.fieldVariablesPanel().waitFor({ state: 'visible' });
+    }
+
+    /** Root of the Field Variables editor, for scoping a `KeyValueField` helper. */
+    fieldVariablesPanel(): Locator {
+        return this.fieldDialog().locator('dot-content-type-fields-variables');
+    }
+
+    async closeFieldDialog() {
+        const dialog = this.fieldDialog();
+        await dialog.getByTestId('dotDialogCancelAction').click();
+        await expect(dialog).toBeHidden();
+    }
 }

@@ -1,286 +1,326 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory } from '@openng/spectator/jest';
 
-import { fakeAsync, tick } from '@angular/core/testing';
-import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { NoopAnimationsModule } from '@angular/platform-browser/animations';
-
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { TableModule } from 'primeng/table';
-import { TextareaModule } from 'primeng/textarea';
-import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
+import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotKeyValueTableRowComponent } from './dot-key-value-table-row.component';
 
-import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
-const mockVariable: DotKeyValue = {
-    key: 'name',
-    hidden: false,
-    value: 'John'
-};
+const mockVariable: DotKeyValue = { key: 'name', hidden: false, value: 'John' };
 
-/**
- * Test template without pReorderableRow / pReorderableRowHandle so we don't need PrimeNG Table in the test injector.
- * Same structure and behavior, only the drag directives are omitted.
- */
-const TEST_TEMPLATE = `
-@let variable = $variable();
-@let showHiddenField = $showHiddenField();
-@let isHiddenField = $isHiddenField();
-<tr class="dot-key-value-table-row">
-    @if ($dragAndDrop()) {
-        <td class="p-2 align-middle">
-            <span class="pi pi-bars text-gray-500"></span>
-        </td>
-    }
-    <td class="p-2 align-middle" data-testId="dot-key-value-key">
-        <span>{{ variable.key }}</span>
-    </td>
-    @if (isHiddenField) {
-        <td class="p-2 align-middle" data-testId="dot-key-value-label">
-            <span>
-                <i class="pi pi-lock inline-block mr-1"></i>
-                {{ 'keyValue.value_hidden' | dm }}
-            </span>
-        </td>
-    } @else {
-        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
-            <input
-                (keydown.enter)="onPressEnter($event)"
-                [placeholder]="'keyValue.value_input.placeholder' | dm"
-                [type]="inputType"
-                [formControl]="valueControl"
-                class="w-full"
-                autocomplete="false"
-                data-testId="dot-key-value-input"
-                pInputText
-                pSize="small" />
-        </td>
-    }
-    @if (showHiddenField) {
-        <td class="p-2 align-middle">
-            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
-                <p-toggleSwitch
-                    [formControl]="hiddenControl"
-                    data-testId="dot-key-value-hidden-switch" />
-            }
-        </td>
-    }
-    <td class="p-2 align-middle">
-        <p-button
-            (click)="delete.emit()"
-            data-testId="dot-key-value-delete-button"
-            icon="pi pi-times"
-            severity="secondary"
-            size="small"
-            [text]="true" />
-    </td>
-</tr>
-`;
+const messageServiceMock = new MockDotMessageService({
+    'keyValue.value_input.placeholder': 'Enter Value',
+    'keyValue.value_hidden': 'Value hidden',
+    Delete: 'Delete',
+    Reorder: 'Reorder'
+});
 
 describe('DotKeyValueTableRowComponent', () => {
-    let spectator: Spectator<DotKeyValueTableRowComponent>;
-    const createComponent = createComponentFactory({
+    let spectator: SpectatorHost<DotKeyValueTableRowComponent>;
+
+    const createHost = createHostFactory({
         component: DotKeyValueTableRowComponent,
-        imports: [
-            FormsModule,
-            ReactiveFormsModule,
-            ToggleSwitchModule,
-            InputTextModule,
-            ButtonModule,
-            TextareaModule,
-            TableModule,
-            DotMessagePipe,
-            NoopAnimationsModule
-        ],
         providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            // `pReorderableRowHandle` reaches for the parent Table through DI.
+            { provide: Table, useValue: { onRowReorder: { emit: jest.fn() } } }
+        ]
+    });
+
+    /**
+     * The component attaches to a `tr`, so it needs a table to live in — see the
+     * class doc for why an element wrapper is not an option.
+     */
+    const mount = () => {
+        spectator = createHost(
+            `<table><tbody>
+                <tr dotKeyValueTableRow
+                    [variable]="variable"
+                    [index]="index"
+                    [showHiddenField]="showHiddenField"></tr>
+            </tbody></table>`,
             {
-                provide: DotMessageService,
-                useValue: new MockDotMessageService({
-                    'keyValue.key_input.placeholder': 'Enter Key',
-                    'keyValue.value_input.placeholder': 'Enter Value',
-                    'keyValue.value_hidden': 'Value hidden'
-                })
+                hostProps: {
+                    variable: mockVariable,
+                    index: 0,
+                    showHiddenField: false
+                }
             }
-        ],
-        overrideComponents: [[DotKeyValueTableRowComponent, { set: { template: TEST_TEMPLATE } }]]
-    });
-
-    beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                showHiddenField: false,
-                variable: mockVariable,
-                index: 0,
-                dragAndDrop: false
-            } as unknown
-        });
-
+        );
         spectator.detectChanges();
+
+        return spectator;
+    };
+
+    /** TestBed can only be instantiated once per test, so props change in place. */
+    const setProps = (props: Partial<Record<string, unknown>>) => {
+        spectator.setHostInput(props);
+        spectator.detectChanges();
+    };
+
+    beforeEach(() => mount());
+
+    describe('at-rest presentation (FR-005, FR-008)', () => {
+        it('should render the value as plain text, not an always-on input', () => {
+            const output = spectator.query(byTestId('dot-key-value-value-output'));
+
+            expect(output.textContent).toContain('John');
+            expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
+        });
+
+        it('should never expose an editable control for the key', () => {
+            const keyCell = spectator.query(byTestId('dot-key-value-key'));
+
+            expect(keyCell.textContent).toContain('name');
+            expect(keyCell.querySelector('input')).toBeFalsy();
+        });
+
+        it('should render a stored "null" rather than dropping the pair', () => {
+            setProps({ variable: { key: 'imported-key', hidden: false, value: 'null' } });
+
+            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent.trim()).toBe(
+                'null'
+            );
+        });
     });
 
-    describe('Editable variables', () => {
-        it('should load the component', () => {
-            const deleteButton = spectator.query(byTestId('dot-key-value-delete-button'));
-            const valueInput = spectator.query(byTestId('dot-key-value-input'));
-            const keyElement = spectator.query(byTestId('dot-key-value-key'));
+    describe('click-to-edit (FR-006, FR-007)', () => {
+        const activate = () => {
+            spectator.click(byTestId('dot-key-value-value-output'));
+            spectator.detectChanges();
+        };
 
-            expect(deleteButton).toBeTruthy();
-            expect(valueInput).toBeTruthy();
-            expect(keyElement.textContent).toContain('name');
+        it('should turn the value into a focused input when activated', () => {
+            activate();
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+
+            expect(input).toBeTruthy();
+            expect(document.activeElement).toBe(input);
+            expect(spectator.component.$isEditing()).toBe(true);
         });
 
-        describe('Edit Input field is visible', () => {
-            it('should emit save when the value is changed', fakeAsync(() => {
-                const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-                const valueInput = spectator.query<HTMLInputElement>(
-                    byTestId('dot-key-value-input')
-                );
+        it('should commit the edit and return to plain text on Enter', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
 
-                spectator.typeInElement('newValue', valueInput);
-                spectator.detectChanges();
-                tick(1100);
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            spectator.typeInElement('edited', input);
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            spectator.detectChanges();
 
-                expect(saveSpy).toHaveBeenCalledWith({
-                    ...mockVariable,
-                    value: 'newValue'
-                });
-            }));
-
-            it('should emit delete event when button clicked', () => {
-                const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
-                const deleteButton = spectator.query(byTestId('dot-key-value-delete-button'));
-
-                spectator.click(deleteButton);
-                spectator.detectChanges();
-
-                expect(deleteSpy).toHaveBeenCalled();
-            });
-
-            it('should emit save when Enter key is pressed', () => {
-                const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-                const valueInput = spectator.query<HTMLInputElement>(
-                    byTestId('dot-key-value-input')
-                );
-
-                spectator.typeInElement('newValue', valueInput);
-                valueInput.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
-                spectator.detectChanges();
-
-                expect(saveSpy).toHaveBeenCalledWith({
-                    ...mockVariable,
-                    value: 'newValue',
-                    hidden: false
-                });
-            });
-
-            it('should set input type to text when not hidden', () => {
-                const valueInput = spectator.query<HTMLInputElement>(
-                    byTestId('dot-key-value-input')
-                );
-
-                expect(valueInput.type).toBe('text');
-                expect(spectator.component.inputType).toBe('text');
-            });
+            expect(saveSpy).toHaveBeenCalledWith({ ...mockVariable, value: 'edited' });
+            expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
         });
 
-        describe('Hidden Fields', () => {
-            beforeEach(() => {
-                spectator = createComponent({
-                    props: {
-                        showHiddenField: true,
-                        variable: { ...mockVariable, hidden: true },
-                        index: 0,
-                        dragAndDrop: false
-                    } as unknown
-                });
-                spectator.detectChanges();
-            });
+        it('should restore the original value on Escape and emit nothing', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
 
-            it('should show the password placeholder instead of the value', () => {
-                const valueLabel = spectator.query<HTMLParagraphElement>(
-                    byTestId('dot-key-value-label')
-                );
-                expect(valueLabel.textContent).toContain('Value hidden');
-            });
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            spectator.typeInElement('discard me', input);
+            input.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape' }));
+            spectator.detectChanges();
 
-            it('should have disabled edit controls when field is hidden', async () => {
-                await spectator.fixture.whenStable();
-
-                expect(spectator.component.form).toBeTruthy();
-
-                const inputSwitch = spectator.query(ToggleSwitch);
-
-                expect(inputSwitch).toBeFalsy();
-                expect(spectator.component.$isHiddenField()).toBe(true);
-            });
-
-            it('should set input type to password when hidden', () => {
-                // Create with non-hidden to then toggle to hidden
-                spectator = createComponent({
-                    props: {
-                        showHiddenField: true,
-                        variable: mockVariable,
-                        index: 0,
-                        dragAndDrop: false
-                    } as unknown
-                });
-                spectator.detectChanges();
-
-                // Now manually set form control to hidden
-                spectator.component.hiddenControl.setValue(true);
-                spectator.detectChanges();
-
-                expect(spectator.component.inputType).toBe('password');
-            });
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+                'John'
+            );
         });
 
-        describe('Null value displayed as "null" string (imported data)', () => {
-            beforeEach(() => {
-                spectator = createComponent({
-                    props: {
-                        showHiddenField: false,
-                        variable: { key: 'imported-key', hidden: false, value: 'null' },
-                        index: 0,
-                        dragAndDrop: false
-                    } as unknown
-                });
-                spectator.detectChanges();
-            });
+        it('should not report an edit that changed nothing', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
 
-            it('should render the row and show "null" as value', () => {
-                const keyElement = spectator.query(byTestId('dot-key-value-key'));
-                const valueInput = spectator.query<HTMLInputElement>(
-                    byTestId('dot-key-value-input')
-                );
-                expect(keyElement.textContent).toContain('imported-key');
-                expect(valueInput).toBeTruthy();
-                expect(valueInput.value).toBe('null');
-            });
+            spectator
+                .query(byTestId('dot-key-value-input'))
+                .dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('removing', () => {
+        it('should emit delete when the remove control is used', () => {
+            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
+
+            spectator.click(byTestId('dot-key-value-delete-button'));
+            spectator.detectChanges();
+
+            expect(deleteSpy).toHaveBeenCalled();
+        });
+    });
+
+    describe('hover-revealed actions stay reachable (FR-017, FR-019)', () => {
+        /**
+         * Hiding an action with `display:none`, `[hidden]` or an `@if` on hover
+         * state removes it from the tab order, which strands keyboard and touch
+         * users with no visible symptom for anyone using a mouse. These tests
+         * assert the mechanism, not merely that the icon "is not visible".
+         */
+
+        it.each([['dot-key-value-delete-button'], ['dot-key-value-drag-handle']])(
+            'should keep %s in the DOM and out of sight via opacity only',
+            (testId) => {
+                const action = spectator.query(byTestId(testId));
+
+                expect(action).toBeTruthy();
+                expect(action.className).toContain('opacity-0');
+                expect(action.className).not.toContain('hidden');
+
+                const styles = getComputedStyle(action);
+                expect(styles.display).not.toBe('none');
+                expect(styles.visibility).not.toBe('hidden');
+            }
+        );
+
+        it.each([['dot-key-value-delete-button'], ['dot-key-value-drag-handle']])(
+            'should reveal %s on focus-within, not on hover alone',
+            (testId) => {
+                const action = spectator.query(byTestId(testId));
+
+                expect(action.className).toContain('group-hover:opacity-100');
+                expect(action.className).toContain('group-focus-within:opacity-100');
+            }
+        );
+
+        it('should expose an accessible name on every action', () => {
+            expect(
+                spectator.query(byTestId('dot-key-value-delete-button')).getAttribute('aria-label')
+            ).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-key-value-drag-handle')).getAttribute('aria-label')
+            ).toBeTruthy();
+        });
+    });
+
+    describe('icons use Material Symbols (DC-003)', () => {
+        it('should render the drag handle as the drag_indicator glyph', () => {
+            const icon = spectator.query(byTestId('dot-key-value-drag-handle-icon'));
+
+            expect(icon.className).toContain('material-symbols-outlined');
+            expect(icon.textContent.trim()).toBe('drag_indicator');
         });
 
-        describe('Drag and Drop', () => {
-            beforeEach(() => {
-                spectator = createComponent({
-                    props: {
-                        showHiddenField: false,
-                        variable: mockVariable,
-                        index: 0,
-                        dragAndDrop: true
-                    } as unknown
-                });
-                spectator.detectChanges();
-            });
+        it('should render the remove action as the close glyph', () => {
+            const icon = spectator.query(byTestId('dot-key-value-delete-icon'));
 
-            it('should show the drag handle when dragAndDrop is true', () => {
-                const dragHandle = spectator.query('.pi-bars');
-                expect(dragHandle).toBeTruthy();
-            });
+            expect(icon.className).toContain('material-symbols-outlined');
+            expect(icon.textContent.trim()).toBe('close');
+        });
+
+        it('should leave no PrimeIcons in the authored markup', () => {
+            expect(spectator.element.querySelector('[class*="pi-"]')).toBeFalsy();
+        });
+    });
+
+    describe('reordering', () => {
+        it('should always render a drag handle — every consumer can reorder', () => {
+            expect(spectator.query(byTestId('dot-key-value-drag-handle'))).toBeTruthy();
+        });
+    });
+
+    describe('hidden values (FR-018, FR-021 to FR-025)', () => {
+        const mountHidden = (hidden: boolean) =>
+            setProps({ showHiddenField: true, variable: { ...mockVariable, hidden } });
+
+        it('should attach the toggle to the value control, not a column of its own', () => {
+            mountHidden(false);
+            const toggle = spectator.query(byTestId('dot-key-value-visibility-toggle'));
+
+            expect(toggle).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-hidden-switch'))).toBeFalsy();
+            expect(toggle.closest('[data-testId="dot-key-value-editable-column"]')).toBeTruthy();
+        });
+
+        it('should keep the toggle in the same cell whether the value is masked or not', () => {
+            // The eye must not jump position when a value is hidden.
+            mountHidden(false);
+            const plainCell = spectator
+                .query(byTestId('dot-key-value-visibility-toggle'))
+                .closest('td');
+
+            mountHidden(true);
+            const maskedCell = spectator
+                .query(byTestId('dot-key-value-visibility-toggle'))
+                .closest('td');
+
+            expect(plainCell.getAttribute('data-testId')).toBe('dot-key-value-editable-column');
+            expect(maskedCell.getAttribute('data-testId')).toBe('dot-key-value-editable-column');
+        });
+
+        it('should keep the toggle visible without hover or focus', () => {
+            mountHidden(true);
+            const toggle = spectator.query(byTestId('dot-key-value-visibility-toggle'));
+
+            // State, not just an action — so it must NOT carry the hover-reveal
+            // classes the drag handle and remove control use.
+            expect(toggle.className).not.toContain('opacity-0');
+            expect(getComputedStyle(toggle).display).not.toBe('none');
+        });
+
+        it('should show which state the value is in', () => {
+            mountHidden(true);
+            expect(
+                spectator.query(byTestId('dot-key-value-visibility-icon')).textContent.trim()
+            ).toBe('visibility_off');
+
+            mountHidden(false);
+            expect(
+                spectator.query(byTestId('dot-key-value-visibility-icon')).textContent.trim()
+            ).toBe('visibility');
+        });
+
+        it('should mask a hidden value and show a plain one as text', () => {
+            mountHidden(true);
+            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeTruthy();
+            expect(spectator.element.textContent).not.toContain('John');
+
+            mountHidden(false);
+            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+                'John'
+            );
+            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeFalsy();
+        });
+
+        it('should offer no in-place editing for a hidden value', () => {
+            mountHidden(true);
+
+            expect(spectator.query(byTestId('dot-key-value-value-output'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
+        });
+
+        it('should hide a plain value when the toggle is used', () => {
+            mountHidden(false);
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.click(byTestId('dot-key-value-visibility-toggle'));
+            spectator.detectChanges();
+
+            expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden: true }));
+        });
+
+        it('should reveal a hidden value again when the toggle is used', () => {
+            // Without this, hiding a value is a one-way trip and the user can
+            // never read or edit it again.
+            mountHidden(true);
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.click(byTestId('dot-key-value-visibility-toggle'));
+            spectator.detectChanges();
+
+            expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden: false }));
+        });
+
+        it('should render no visibility affordance at all when the consumer opts out', () => {
+            setProps({ showHiddenField: false, variable: { ...mockVariable, hidden: true } });
+
+            expect(spectator.query(byTestId('dot-key-value-visibility-toggle'))).toBeFalsy();
+            // A masked row in a consumer with no eye would be a dead end (FR-024).
+            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeFalsy();
         });
     });
 });

@@ -1,72 +1,67 @@
 import {
+    ChangeDetectionStrategy,
     Component,
     ElementRef,
     effect,
+    inject,
     input,
     output,
-    viewChild,
-    inject,
-    ChangeDetectionStrategy
+    viewChild
 } from '@angular/core';
 import {
     AbstractControl,
-    FormsModule,
+    FormBuilder,
     ReactiveFormsModule,
     ValidationErrors,
     ValidatorFn,
-    Validators,
-    FormBuilder
+    Validators
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
+import { IconFieldModule } from 'primeng/iconfield';
+import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
-import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
+/**
+ * The always-available row for adding a new pair, under the column headers.
+ * Attached as an attribute so the host IS the `tr` — see
+ * {@link DotKeyValueTableRowComponent} for why.
+ */
 @Component({
-    selector: 'dot-key-value-table-header-row',
+    // `libs/ui` narrows this rule to element selectors; see the class doc for why
+    // that is not usable here.
+    // eslint-disable-next-line @angular-eslint/component-selector
+    selector: 'tr[dotKeyValueTableHeaderRow]',
     templateUrl: './dot-key-value-table-header-row.component.html',
-    host: { class: 'contents' },
-    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
-        ToggleSwitchModule,
+        IconFieldModule,
+        InputIconModule,
         InputTextModule,
-        FormsModule,
         ReactiveFormsModule,
         DotMessagePipe
-    ]
+    ],
+    changeDetection: ChangeDetectionStrategy.Eager
 })
 export class DotKeyValueTableHeaderRowComponent {
-    /** Form builder service for creating reactive forms */
     #fb = inject(FormBuilder);
 
-    /** Reference to the key cell element */
-    $keyCell = viewChild.required<ElementRef>('keyCell');
+    $keyCell = viewChild.required<ElementRef<HTMLInputElement>>('keyCell');
 
-    /** Reference to the save button element */
-    $saveButton = viewChild.required<ElementRef>('saveButton');
+    $valueCell = viewChild.required<ElementRef<HTMLInputElement>>('valueCell');
 
-    /** Reference to the value cell element */
-    $valueCell = viewChild.required<ElementRef>('valueCell');
-
-    /** Controls visibility of the hidden field option */
     $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
 
-    /** Record of keys that are not allowed to be used */
+    /** Keys already in the list, which this row must not duplicate. */
     $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
 
-    /** Enables drag and drop functionality for the row */
-    $dragAndDrop = input<boolean>(false, { alias: 'dragAndDrop' });
-
-    /** Emits the key-value pair when saved */
     save = output<DotKeyValue>();
 
-    /** Form group for managing key-value inputs and validation */
     form = this.#fb.nonNullable.group({
-        key: ['', [Validators.required, this.keyValidator()]],
+        key: ['', [Validators.required, this.#keyValidator()]],
         value: ['', Validators.required],
         hidden: [false]
     });
@@ -78,62 +73,51 @@ export class DotKeyValueTableHeaderRowComponent {
         });
     }
 
-    /** Gets the key form control */
     get keyControl() {
         return this.form.controls.key;
     }
 
-    /** Gets the value form control */
     get valueControl() {
         return this.form.controls.value;
     }
 
-    /** Gets the hidden form control */
     get hiddenControl() {
         return this.form.controls.hidden;
     }
 
     /**
-     * Handles cancel event by stopping propagation and resetting the form
-     *
-     * @param {Event} $event - The event object
+     * Emits the pair if the form is valid, otherwise flags the offending control.
      */
-    onCancel($event: Event): void {
-        $event.stopPropagation();
+    saveVariable(): void {
+        if (!this.form.valid) {
+            this.form.markAllAsTouched();
+            this.keyControl.markAsDirty();
+            this.valueControl.markAsDirty();
+
+            return;
+        }
+
+        this.save.emit(this.form.getRawValue());
         this.resetForm();
     }
 
     /**
-     * Saves the variable if the form is valid, otherwise marks form controls as touched
-     * Emits the form value when valid and resets the form
-     */
-    saveVariable(): void {
-        if (this.form.valid) {
-            this.save.emit(this.form.getRawValue());
-            this.resetForm();
-        } else {
-            this.form.markAllAsTouched();
-            this.keyControl.markAsDirty();
-            this.valueControl.markAsDirty();
-        }
-    }
-
-    /**
-     * Resets the form to initial state and focuses on the key input
+     * Clears the row and returns focus to the key input, so consecutive pairs
+     * can be entered without reaching for the pointer (FR-012).
      */
     resetForm(): void {
         this.form.reset();
         this.$keyCell().nativeElement.focus();
     }
 
-    /**
-     * Handles Enter key event on key input
-     * Focuses on value input if key is valid, otherwise keeps focus on key input
-     *
-     * @param {Event} $event - The keyboard event
-     */
-    handleKeyInputEnter($event: Event): void {
-        $event.preventDefault();
+    onCancel(event: Event): void {
+        event.stopPropagation();
+        this.resetForm();
+    }
+
+    /** Enter on the key input advances to the value, if the key is usable. */
+    handleKeyInputEnter(event: Event): void {
+        event.preventDefault();
 
         if (this.keyControl.valid) {
             this.$valueCell().nativeElement.focus();
@@ -144,30 +128,17 @@ export class DotKeyValueTableHeaderRowComponent {
         this.$keyCell().nativeElement.focus();
     }
 
-    /**
-     * Handles Enter key event on value input
-     * Triggers save action when Enter is pressed
-     *
-     * @param {Event} $event - The keyboard event
-     */
-    handleValueInputEnter($event: Event): void {
-        $event.preventDefault();
+    /** Enter on the value input adds the pair. */
+    handleValueInputEnter(event: Event): void {
+        event.preventDefault();
         this.saveVariable();
     }
 
     /**
-     * Creates a validator function that checks if a key is forbidden
-     *
-     * @returns {ValidatorFn} Validator function that returns error if key is forbidden
-     * @private
+     * Rejects a key that is already present in the list.
      */
-    private keyValidator(): ValidatorFn {
-        return ({ value }: AbstractControl): ValidationErrors | null => {
-            if (!this.$forbiddenkeys()[value]) {
-                return null;
-            }
-
-            return { duplicatedKey: true };
-        };
+    #keyValidator(): ValidatorFn {
+        return ({ value }: AbstractControl): ValidationErrors | null =>
+            this.$forbiddenkeys()[value] ? { duplicatedKey: true } : null;
     }
 }

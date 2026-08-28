@@ -1,28 +1,59 @@
-@let variableList = $variableList();
+@let showHiddenField = $showHiddenField();
 
-<p-table [value]="variableList()" #table dataKey="key" (onRowReorder)="reorderVariables()">
-    <ng-template #header let-columns>
-        <dot-key-value-table-header-row
+<!--
+    PrimeNG gives cells their separators but the table no outer frame, so the border
+    is ours; the last body row's separator is then suppressed, or it lands a second
+    line just inside that frame. Framing matches `dot-relationship-field`.
+-->
+<p-table
+    [value]="$variableList()"
+    #table
+    dataKey="key"
+    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_tbody_tr:last-child_td]:border-b-0!"
+    [rowHover]="true"
+    [scrollable]="true"
+    (onRowReorder)="onRowReorder()">
+    <ng-template #header>
+        <tr>
+            <th class="w-12 min-w-12" scope="col"></th>
+            <th scope="col">{{ 'keyValue.key_header.label' | dm }}</th>
+            <th scope="col">{{ 'keyValue.value_header.label' | dm }}</th>
+            <th class="w-16 min-w-12" scope="col">
+                <span class="sr-only">{{ 'keyValue.actions_header.label' | dm }}</span>
+            </th>
+        </tr>
+        <!-- `td` not `th`, so this row keeps the plain background instead of the header band. -->
+        <tr
+            dotKeyValueTableHeaderRow
             (save)="saveVariable($event)"
-            [showHiddenField]="$showHiddenField()"
-            [dragAndDrop]="$dragAndDrop()"
-            [forbiddenkeys]="$forbiddenkeys()" />
+            [showHiddenField]="showHiddenField"
+            [forbiddenkeys]="$forbiddenkeys()"></tr>
     </ng-template>
+
     <ng-template #body let-variable let-rowIndex="rowIndex">
-        <dot-key-value-table-row
+        <tr
+            dotKeyValueTableRow
+            [pReorderableRow]="rowIndex"
             (delete)="deleteVariable(rowIndex)"
             (save)="updateKeyValue($event, rowIndex)"
-            [showHiddenField]="$showHiddenField()"
+            [showHiddenField]="showHiddenField"
             [variable]="variable"
             [index]="rowIndex"
-            [dragAndDrop]="$dragAndDrop()"
-            #tableRow />
+            #tableRow></tr>
     </ng-template>
-    <ng-template #emptymessage let-variables>
+
+    <ng-template #emptymessage>
         <tr>
-            <td [attr.colspan]="$colspan()">
-                <div class="flex p-2 gap-2 justify-center" data-testId="no-rows">
-                    <i class="pi pi-folder-open"></i>
+            <td [attr.colspan]="colspan">
+                <div
+                    class="flex flex-col items-center justify-center gap-2 p-6"
+                    data-testId="no-rows">
+                    <span
+                        class="material-symbols-outlined text-4xl! text-surface-500 dark:text-surface-300"
+                        aria-hidden="true"
+                        data-testId="dot-key-value-empty-icon">
+                        key
+                    </span>
                     <p class="text-surface-500 dark:text-surface-300">
                         {{ 'keyValue.value_no_rows.label' | dm }}
                     </p>

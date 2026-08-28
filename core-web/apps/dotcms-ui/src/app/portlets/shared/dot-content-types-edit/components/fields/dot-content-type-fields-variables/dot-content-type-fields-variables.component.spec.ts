@@ -1,10 +1,11 @@
-import { of } from 'rxjs';
+import { of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import { Component, DebugElement } from '@angular/core';
 import { ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { DotMessageDisplayService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
@@ -128,6 +129,72 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
         expect(comp.$fieldVariables()).toEqual(deletedCollection);
+    });
+
+    // -----------------------------------------------------------------
+    // #37191 — US2
+    // -----------------------------------------------------------------
+
+    describe('server failures (US2 scenario 5)', () => {
+        let httpErrorManager: DotHttpErrorManagerService;
+        const httpError = new HttpErrorResponse({ status: 500, statusText: 'Server Error' });
+
+        beforeEach(() => {
+            httpErrorManager = de.injector.get(DotHttpErrorManagerService);
+            jest.spyOn(httpErrorManager, 'handle').mockReturnValue(of(null));
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            fixtureHost.detectChanges();
+        });
+
+        it('should surface a failed save and leave the list untouched', () => {
+            jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(
+                throwError(() => httpError)
+            );
+            const before = comp.$fieldVariables();
+
+            de.query(By.css('dot-key-value-ng')).triggerEventHandler('save', {
+                key: 'newKey',
+                value: 'newValue'
+            });
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+            expect(comp.$fieldVariables()).toEqual(before);
+        });
+
+        it('should surface a failed delete and keep the variable in the list', () => {
+            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
+                throwError(() => httpError)
+            );
+            const before = comp.$fieldVariables();
+
+            de.query(By.css('dot-key-value-ng')).triggerEventHandler(
+                'delete',
+                mockFieldVariables[0]
+            );
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
+            // A row that failed to delete must not disappear — that would tell
+            // the admin the deletion worked.
+            expect(comp.$fieldVariables()).toEqual(before);
+        });
+    });
+
+    describe('editor capabilities (FR-024, FR-030)', () => {
+        beforeEach(() => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            fixtureHost.detectChanges();
+        });
+
+        it('should offer reordering, which every consumer has', () => {
+            expect(de.query(By.css('[data-testId="dot-key-value-drag-handle"]'))).toBeTruthy();
+        });
+
+        it('should not offer hidden values', () => {
+            const editor = de.query(By.css('dot-key-value-ng'));
+
+            expect(editor.componentInstance.$showHiddenField()).toBe(false);
+            expect(de.query(By.css('[data-testId="dot-key-value-hidden-switch"]'))).toBeNull();
+        });
     });
 
     describe('Block Editor Field', () => {

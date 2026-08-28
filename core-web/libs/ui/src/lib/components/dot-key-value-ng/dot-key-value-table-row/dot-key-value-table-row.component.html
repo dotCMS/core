@@ -1,55 +1,105 @@
 @let variable = $variable();
 @let showHiddenField = $showHiddenField();
 @let isHiddenField = $isHiddenField();
-@let index = $index();
+@let isEditing = $isEditing();
 
-<tr class="dot-key-value-table-row" [pReorderableRow]="index">
-    @if ($dragAndDrop()) {
-        <td class="p-2 align-middle">
-            <span class="pi pi-bars text-gray-500" pReorderableRowHandle></span>
-        </td>
-    }
-    <td class="p-2 align-middle" data-testId="dot-key-value-key">
-        <span>{{ variable.key }}</span>
-    </td>
-    @if (isHiddenField) {
-        <td class="p-2 align-middle" data-testId="dot-key-value-label">
-            <span>
-                <i class="pi pi-lock inline-block mr-1"></i>
-                {{ 'keyValue.value_hidden' | dm }}
+<td class="w-12 min-w-12">
+    <span
+        class="inline-flex cursor-grab text-surface-500 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 dark:text-surface-400"
+        [attr.aria-label]="'Reorder' | dm"
+        pReorderableRowHandle
+        role="button"
+        tabindex="0"
+        data-testId="dot-key-value-drag-handle">
+        <span
+            class="material-symbols-outlined text-lg!"
+            aria-hidden="true"
+            data-testId="dot-key-value-drag-handle-icon">
+            drag_indicator
+        </span>
+    </span>
+</td>
+
+<td data-testId="dot-key-value-key">
+    <span>{{ variable.key }}</span>
+</td>
+
+<!--
+    One cell for both states: the value swaps inside it, but the field and the eye
+    never move, and the eye stays a button so hiding is reversible.
+-->
+<td data-testId="dot-key-value-editable-column">
+    <p-iconfield class="block w-full">
+        @if (isHiddenField) {
+            <span
+                class="block w-full truncate pr-8 tracking-widest"
+                data-testId="dot-key-value-masked-value">
+                {{ maskedValue }}
             </span>
-        </td>
-    } @else {
-        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
+        } @else if (isEditing) {
             <input
-                (keydown.enter)="onPressEnter($event)"
+                (keydown.enter)="commitEdit($event)"
+                (keydown.escape)="cancelEdit($event)"
+                (blur)="commitEdit($event)"
+                [formControl]="editControl"
                 [placeholder]="'keyValue.value_input.placeholder' | dm"
-                [type]="inputType"
-                [formControl]="valueControl"
                 class="w-full"
+                #valueInput
                 autocomplete="false"
                 data-testId="dot-key-value-input"
                 pInputText
-                pSize="small" />
-        </td>
-    }
-    @if (showHiddenField) {
-        <td class="p-2 align-middle">
-            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
-                <p-toggleSwitch
-                    [formControl]="hiddenControl"
-                    data-testId="dot-key-value-hidden-switch" />
-            }
-        </td>
-    }
+                pSize="small"
+                type="text" />
+        } @else {
+            <span
+                (click)="startEdit()"
+                (keydown.enter)="startEdit()"
+                class="block w-full cursor-text truncate pr-8"
+                role="button"
+                tabindex="0"
+                data-testId="dot-key-value-value-output">
+                {{ variable.value }}
+            </span>
+        }
+        @if (showHiddenField) {
+            <p-inputicon>
+                <!-- Never hover-gated: which values are secret must be readable at a glance. -->
+                <button
+                    (click)="toggleHidden()"
+                    [attr.aria-label]="'keyValue.value_hidden' | dm"
+                    [attr.aria-pressed]="isHiddenField"
+                    class="inline-flex size-4 cursor-pointer items-center justify-center text-surface-500 dark:text-surface-400"
+                    data-testId="dot-key-value-visibility-toggle"
+                    type="button">
+                    <span
+                        class="material-symbols-outlined text-base!"
+                        aria-hidden="true"
+                        data-testId="dot-key-value-visibility-icon">
+                        {{ isHiddenField ? 'visibility_off' : 'visibility' }}
+                    </span>
+                </button>
+            </p-inputicon>
+        }
+    </p-iconfield>
+</td>
 
-    <td class="p-2 align-middle">
-        <p-button
-            (click)="delete.emit()"
-            data-testId="dot-key-value-delete-button"
-            icon="pi pi-times"
-            severity="secondary"
-            size="small"
-            [text]="true" />
-    </td>
-</tr>
+<td class="w-16 min-w-12">
+    <button
+        (click)="delete.emit()"
+        [attr.aria-label]="'Delete' | dm"
+        [text]="true"
+        class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
+        data-testId="dot-key-value-delete-button"
+        pButton
+        severity="secondary"
+        size="small"
+        type="button">
+        <span
+            class="material-symbols-outlined text-lg!"
+            aria-hidden="true"
+            data-testId="dot-key-value-delete-icon"
+            pButtonIcon>
+            close
+        </span>
+    </button>
+</td>

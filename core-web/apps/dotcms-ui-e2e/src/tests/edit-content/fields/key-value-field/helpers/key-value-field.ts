@@ -12,11 +12,16 @@ export class KeyValueField {
     readonly keyCells: Locator;
     readonly rows: Locator;
 
+    /**
+     * @param scope Either the Edit Content field variable name, or an explicit
+     *   root Locator for the other consumers of the shared editor (the Field
+     *   Variables dialog and the Apps custom-properties panel).
+     */
     constructor(
         private page: Page,
-        readonly fieldVariable = 'keyValueField'
+        scope: string | Locator = 'keyValueField'
     ) {
-        this.root = page.getByTestId(`field-${fieldVariable}`);
+        this.root = typeof scope === 'string' ? page.getByTestId(`field-${scope}`) : scope;
         this.keyInput = this.root.getByTestId('key-input');
         this.valueInput = this.root.getByTestId('value-input');
         this.saveButton = this.root.getByTestId('save-button');
@@ -51,10 +56,22 @@ export class KeyValueField {
         });
     }
 
+    private rowForKey(key: string): Locator {
+        return this.exactKeyCell(key).locator(
+            'xpath=ancestor::tr[contains(@class,"dot-key-value-table-row")][1]'
+        );
+    }
+
+    /**
+     * The value as rendered at rest. Since #37191 an existing row shows plain
+     * text; the input only exists while that row is being edited.
+     */
+    private valueOutputForKey(key: string): Locator {
+        return this.rowForKey(key).getByTestId('dot-key-value-value-output');
+    }
+
     private valueInputForKey(key: string): Locator {
-        return this.exactKeyCell(key)
-            .locator('xpath=ancestor::tr[contains(@class,"dot-key-value-table-row")][1]')
-            .getByTestId('dot-key-value-input');
+        return this.rowForKey(key).getByTestId('dot-key-value-input');
     }
 
     async expectEntry(key: string, value?: string): Promise<void> {
@@ -63,9 +80,7 @@ export class KeyValueField {
         await expect(keyCell).toHaveText(key);
 
         if (value !== undefined) {
-            await expect
-                .poll(async () => this.valueInputForKey(key).inputValue(), { timeout: 10000 })
-                .toBe(value);
+            await expect(this.valueOutputForKey(key)).toHaveText(value, { timeout: 10000 });
         }
     }
 
@@ -74,17 +89,46 @@ export class KeyValueField {
     }
 
     async editEntryValue(key: string, newValue: string): Promise<void> {
+        await this.valueOutputForKey(key).click();
+
         const valueInput = this.valueInputForKey(key);
         await expect(valueInput).toBeVisible({ timeout: 10000 });
         await valueInput.fill(newValue);
         await valueInput.press('Enter');
-        await expect.poll(async () => valueInput.inputValue(), { timeout: 10000 }).toBe(newValue);
+
+        // Committing returns the row to its at-rest text presentation.
+        await expect(this.valueOutputForKey(key)).toHaveText(newValue, { timeout: 10000 });
+    }
+
+    /** Escape must discard the edit and restore what was there before. */
+    async cancelEntryEdit(key: string, typed: string, original: string): Promise<void> {
+        await this.valueOutputForKey(key).click();
+
+        const valueInput = this.valueInputForKey(key);
+        await expect(valueInput).toBeVisible({ timeout: 10000 });
+        await valueInput.fill(typed);
+        await valueInput.press('Escape');
+
+        await expect(this.valueOutputForKey(key)).toHaveText(original, { timeout: 10000 });
     }
 
     async deleteEntryByKey(key: string): Promise<void> {
-        await this.exactKeyCell(key)
-            .locator('xpath=ancestor::tr[contains(@class,"dot-key-value-table-row")][1]')
-            .getByTestId('dot-key-value-delete-button')
-            .click();
+        const row = this.rowForKey(key);
+        // Row actions are revealed on hover — see FR-017.
+        await row.hover();
+        await row.getByTestId('dot-key-value-delete-button').click();
+    }
+
+    async expectKeyOrder(keys: string[]): Promise<void> {
+        await expect(this.keyCells).toHaveText(keys, { timeout: 10000 });
+    }
+
+    /** Drags the row owning `key` onto the row currently at `targetIndex`. */
+    async dragRowTo(key: string, targetIndex: number): Promise<void> {
+        const handle = this.rowForKey(key).getByTestId('dot-key-value-drag-handle');
+        await this.rowForKey(key).hover();
+        await expect(handle).toBeVisible({ timeout: 10000 });
+
+        await handle.dragTo(this.rows.nth(targetIndex));
     }
 }
