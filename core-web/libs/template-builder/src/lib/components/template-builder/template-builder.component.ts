@@ -337,10 +337,18 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             }
 
             // Close any PrimeNG overlays (container pickers, dropdowns) that were opened
-            // before the canvas locked. These panels are appended to <body> and therefore
+            // before the canvas locked. These panels are appended to <body> and are therefore
             // outside the [inert] subtree and above the disabled overlay in z-order —
             // dispatching Escape is the standard PrimeNG mechanism to close them.
             // Note: GridStack 8.4.0 does not honour Escape for drag cancellation.
+            //
+            // Known limitation: PrimeNG DynamicDialog also responds to document Escape
+            // (primeng-dynamicdialog.mjs:740-747). A user who opens the "Add style classes"
+            // dialog during the 5-second debounce window will have it dismissed here.
+            // The practical impact is low: any style-class change inside the dialog resets
+            // the debounce, so the dialog is only at risk if the user sits idle in it for
+            // the full 5 s without confirming. Fixing this precisely would require checking
+            // for an open DynamicDialog before dispatching, which is not worth the complexity.
             document.dispatchEvent(
                 new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
             );

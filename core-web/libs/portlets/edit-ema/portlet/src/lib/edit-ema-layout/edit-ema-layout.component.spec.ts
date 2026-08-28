@@ -327,6 +327,23 @@ describe('EditEmaLayoutComponent', () => {
             expect(templateBuilder.disabled).toBe(false);
         }));
 
+        it('should unlock canvas when pageReload fails (uveStatus = ERROR) to avoid a permanent lock', fakeAsync(() => {
+            const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(true);
+            expect(pageReloadSpy).toHaveBeenCalled();
+
+            // Simulate re-fetch failure
+            store.setUveStatus(UVE_STATUS.ERROR);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        }));
+
         it('should keep canvas locked through the pageReload window and unlock only when reload completes', fakeAsync(() => {
             // Prevent the real pageReload from running so we can control when it "finishes"
             const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());

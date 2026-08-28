@@ -67,10 +67,21 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     protected readonly $isSaving = this.#layoutSaveInFlight.asReadonly();
 
     // Keep the canvas locked through the full save + reload cycle.
-    // pageReload() transitions uveStatus LOADING → LOADED when the re-fetch is done;
-    // that is the earliest safe point to re-enable editing.
+    // pageReload() transitions uveStatus LOADING → LOADED on success, or → ERROR on a
+    // re-fetch failure (withPageApi.ts:369). Both signal the reload is finished — unlock
+    // on either so a failed reload never leaves the canvas permanently locked.
+    //
+    // Known residual: any cross-feature store writer that lands LOADED (e.g. withWorkflow
+    // completing a lock/unlock) during the in-flight window would also clear the flag
+    // early. This is a narrow race (< 2 s window, requires a concurrent banner-button
+    // click) and a proper fix requires pageReload() to expose a completion observable.
+    // The risk is accepted and documented here to prevent silent "fixes" that would
+    // inadvertently widen the original data-loss window.
     readonly #handleReloadComplete = effect(() => {
-        if (this.#layoutSaveInFlight() && this.uveStore.uveStatus() === UVE_STATUS.LOADED) {
+        const status = this.uveStore.uveStatus();
+        const done = status === UVE_STATUS.LOADED || status === UVE_STATUS.ERROR;
+
+        if (this.#layoutSaveInFlight() && done) {
             this.#layoutSaveInFlight.set(false);
         }
     });
@@ -111,6 +122,11 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         // Drop edits that complete mid-flight: in-progress drags or open dropdowns
         // can still emit templateChange after the canvas is frozen. Discarding them
         // prevents corrupting the payload of the in-flight save.
+        //
+        // Intentional: lastTemplate is NOT updated here. Dropped edits are changes the
+        // server never saw, so the page-leave force-save (initForceSaveOnLeave) correctly
+        // persists the last *accepted* template — not a partial in-flight state that
+        // updateOldRows would have overwritten anyway.
         if (this.#layoutSaveInFlight()) {
             return;
         }
