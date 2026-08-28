@@ -526,7 +526,9 @@ describe('TemplateBuilderComponent', () => {
 
             it('should reset suppressStoreUpdates to false after cancelling an in-progress drag', () => {
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                (spectator.component as any).preDragState = [{ id: 'row-1', x: 0, y: 0, w: 12, h: 1 }];
+                (spectator.component as any).preDragState = [
+                    { id: 'row-1', x: 0, y: 0, w: 12, h: 1 }
+                ];
                 spectator.component.draggingElement = document.createElement('div');
 
                 spectator.setInput('disabled', true);
