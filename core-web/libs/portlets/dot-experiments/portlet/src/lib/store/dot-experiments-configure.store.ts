@@ -651,17 +651,32 @@ export const DotExperimentsConfigureStore = signalStore(
                     map(() => ({
                         name: store.draftName().trim(),
                         description: store.draftDescription(),
-                        page: store.selectedPage()
+                        page: store.selectedPage(),
+                        /**
+                         * Carried by the POST rather than by a PATCH behind it. The endpoint takes
+                         * it — `ExperimentForm` has the field and defaults it to 100 below zero —
+                         * and a creation that delivers everything the screen holds is a creation
+                         * with nothing left over to reconcile.
+                         *
+                         * Withheld while the field is invalid, exactly as the PATCH withholds it:
+                         * the server would take a number the form is showing as an error.
+                         */
+                        trafficAllocation: store.formValidity().trafficAllocation
+                            ? store.$trafficAllocation()
+                            : undefined
                     })),
                     filter(({ name, page }) => !!name && !!page),
-                    switchMap(({ name, description, page }) =>
+                    switchMap(({ name, description, page, trafficAllocation }) =>
                         merge(
                             of(apiEvents.createRequested()),
                             experimentsService
                                 .add({
                                     pageId: page?.pageId ?? '',
                                     name,
-                                    description
+                                    description,
+                                    ...(trafficAllocation === undefined
+                                        ? {}
+                                        : { trafficAllocation })
                                 })
                                 .pipe(
                                     mapResponse({

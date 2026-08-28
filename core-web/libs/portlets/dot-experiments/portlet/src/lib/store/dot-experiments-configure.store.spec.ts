@@ -40,6 +40,7 @@ import { dotExperimentsConfigurePageEvents } from './dot-experiments-configure-p
 import { DotExperimentsConfigureStore } from './dot-experiments-configure.store';
 
 import {
+    DEFAULT_TRAFFIC_ALLOCATION,
     LOCKED_BANNER_KEY_READ_ONLY,
     LOCKED_BANNER_KEY_RUNNING,
     PAGE_PREFILL_ERROR_KEY,
@@ -489,7 +490,8 @@ describe('DotExperimentsConfigureStore', () => {
             expect(add).toHaveBeenCalledWith({
                 pageId: PAGE.pageId,
                 name: 'Alpha campaign',
-                description: ''
+                description: '',
+                trafficAllocation: DEFAULT_TRAFFIC_ALLOCATION
             });
         });
 
@@ -513,17 +515,11 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$canSave()).toBe(false);
         });
 
-        it('should be clean after creating with an allocation the POST could not carry', () => {
-            // The POST takes the page, the name and the description only, so an allocation set
-            // before the press reaches the server through the PATCH that follows it — and the
-            // screen has to end up clean, or leaving asks about a change that was saved.
-            const created = buildExperiment({
-                ...CREATED_DRAFT,
-                trafficAllocation: 100
-            });
-            const patched = buildExperiment({ ...created, trafficAllocation: 89 });
+        it('should carry an allocation set before the press in the POST itself', () => {
+            // `ExperimentForm` takes it, so there is nothing for a second call to deliver — and a
+            // creation with nothing left over cannot leave the screen dirty behind it.
+            const created = buildExperiment({ ...CREATED_DRAFT, trafficAllocation: 89 });
             add.mockReturnValue(of(created));
-            patchExperiment.mockReturnValue(of(patched));
             initNew();
 
             edit({
@@ -533,12 +529,10 @@ describe('DotExperimentsConfigureStore', () => {
             });
             dispatcher.dispatch(pageEvents.pageSelected(PAGE));
             saveDraft();
-            mirrorForm(patched);
+            mirrorForm(created);
 
-            expect(patchExperiment).toHaveBeenCalledWith(
-                created.id,
-                expect.objectContaining({ trafficAllocation: 89 })
-            );
+            expect(add).toHaveBeenCalledWith(expect.objectContaining({ trafficAllocation: 89 }));
+            expect(patchExperiment).not.toHaveBeenCalled();
             expect(store.$hasUnsavedChanges()).toBe(false);
         });
 
@@ -1187,7 +1181,8 @@ describe('DotExperimentsConfigureStore', () => {
             expect(request.request.body).toEqual({
                 pageId: PAGE.pageId,
                 name: VALID_DRAFT.name,
-                description: VALID_DRAFT.description ?? ''
+                description: VALID_DRAFT.description ?? '',
+                trafficAllocation: DEFAULT_TRAFFIC_ALLOCATION
             });
             expect(request.request.body).not.toHaveProperty('targetingConditions');
 

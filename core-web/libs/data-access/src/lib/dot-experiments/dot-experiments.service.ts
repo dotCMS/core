@@ -41,13 +41,16 @@ export class DotExperimentsService {
             .pipe(map((x) => x?.entity?.health));
     }
     /**
-     * Add a new experiment
-     * @param  experiment
-     * @returns Observable<DotExperiment>
-     * @memberof DotExperimentsService
+     * Creates an experiment.
+     *
+     * `trafficAllocation` is optional because the older screen never set it, not because the
+     * endpoint refuses it: `ExperimentForm` carries it, and `createExperimentFromForm` defaults it
+     * to 100 when it arrives below zero. Leaving it out of the call meant a screen that let the
+     * user choose one had to follow every creation with a PATCH to deliver it.
      */
     add(
-        experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'>
+        experiment: Pick<DotExperiment, 'pageId' | 'name' | 'description'> &
+            Partial<Pick<DotExperiment, 'trafficAllocation'>>
     ): Observable<DotExperiment> {
         return this.http
             .post<DotCMSResponseExperiment<DotExperiment>>(API_ENDPOINT, experiment)
