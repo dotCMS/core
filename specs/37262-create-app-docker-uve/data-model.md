@@ -1,4 +1,4 @@
-# Phase 1 Data Model: create-app local Docker start failure + transient UVE 403
+# Phase 1 Data Model: create-app local Docker start failure + permanent UVE 403
 
 **Feature**: `37262-create-app-docker-uve` · **Plan**: [plan.md](./plan.md)
 
@@ -106,15 +106,24 @@ Unchanged in shape; what changes is when it may be written.
 | `configuration.hidden` | `boolean` | constant `false` |
 | `configuration.value` | `string` | `getUVEConfigValue(http://localhost:${getPortByFramework(framework)})` |
 
-**Precondition (new).** A `POST` is permitted only after a `GET` of the same resource returns 200.
-The `GET` is polled; the `POST` retries on `401`, `403`, `5xx` — the transient-permission and
-still-settling signatures — and does **not** retry on other `4xx`, which indicate a real client
-error that retrying cannot fix.
+**Precondition (new).** A `POST` is permitted only after a **single** `GET` of the same resource
+returns 200. The `GET` is a probe, not a poll. The `POST` retries on `5xx` only.
 
-**Failure semantics (new).** `Err` from this call sets `uveConfigured = false` and is non-fatal. The
-warning must carry the [headless UVE configuration guide](https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config)
-plus `host`, `siteId`, and the app key `dotema-config-v2`, so the single unset setting is
-self-serviceable.
+**A 403 is terminal, not transient.** Measured: after an interrupted starter import the endpoint
+returned 403 on 193 consecutive attempts over ~7 minutes. Retrying or polling cannot succeed,
+because the site's permission rows were never written. On a clean boot the same call returns 200 at
+~46s — earlier than `/dotmgt/readyz` — so there is no window to wait out either.
+
+**Failure semantics (new).** `Err` from this call sets `uveConfigured = false` and is non-fatal.
+The message depends on *why*:
+
+| Status | Meaning | What the CLI says |
+|---|---|---|
+| `403` | permissions missing from an interrupted first boot — unrecoverable | Recreate the instance: `docker compose down -v && docker compose up -d --wait`. **Do not** offer manual UVE steps; they fail identically. |
+| `5xx` | genuinely transient | Retry; on exhaustion, warn and continue |
+| other | unexpected | Warn with the [headless UVE guide](https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config), `host`, `siteId`, and app key `dotema-config-v2` |
+
+In every case scaffolding continues and the run exits 0.
 
 ---
 

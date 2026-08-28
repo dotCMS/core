@@ -35,17 +35,30 @@ UVE configuration is **optional**. Its failure MUST:
 **Exit-code change**: a run that previously exited `1` now exits `0` with a warning. Deliberate, and
 called out in the spec's Regression Risk — any wrapper asserting the old behavior will see it.
 
-## X3 — Write only after a successful read
+## X3 — Probe once before writing; never retry a 403
 
-The UVE `POST` is permitted only after a `GET` of the same resource returns 200.
+The UVE `POST` is attempted only after a `GET` of the same resource returns 200.
 
-- `GET` is polled while the instance settles.
-- `POST` retries on `401`, `403`, `5xx` (transient permission / still-settling signatures).
-- `POST` does **not** retry other `4xx` — a real client error retrying cannot fix.
+- The `GET` is a **single probe**, not a poll.
+- `POST` retries on `5xx` only — the one genuinely transient class.
+- `POST` does **not** retry on `403`, `401`, or any other `4xx`.
 
-Rationale: `/dotmgt/readyz` covers CDI, memory, threads and the servlet container — not starter
-import, role seeding, or permission-cache warm-up (research R5). Transport readiness is not
-data-plane readiness.
+**Why no retry on 403** (this reverses the original contract). Measurement during planning showed a
+403 here is not transient and never clears: after an interrupted starter import the site's
+permission rows are missing, and the endpoint returned 403 on **193 consecutive attempts over ~7
+minutes**, with zero successes. Polling would spin forever. Against a cleanly-booted instance the
+same call returns 200 within ~46s of `docker compose up`, before `/dotmgt/readyz` is even green —
+so there is no settling window to wait out.
+
+**On 403 the CLI MUST NOT offer manual UVE setup steps.** Manual configuration fails identically,
+for the same missing permissions. It must instead report that the instance is unrecoverable from an
+interrupted first boot and must be recreated:
+
+```
+docker compose down -v && docker compose up -d --wait
+```
+
+Root cause and evidence: see spec.md "Cause 2", and #37268 for the backend defect.
 
 ## X4 — Progress is truthful
 
