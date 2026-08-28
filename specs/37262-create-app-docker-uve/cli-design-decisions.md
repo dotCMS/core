@@ -55,9 +55,24 @@ existing top-level `catch` at `index.ts:388`, which emits and then exits.
 - **Worse**: a large diff in exactly the code the user is trusting after a bad experience, and a
   future `process.exit()` added anywhere silently re-opens the hole Option A closes structurally.
 
-**Recommendation: A for the guarantee, B only for the UVE path.** X2 needs the UVE failure to
-*continue* to scaffolding, not exit — so that one site becomes ordinary flow regardless. A gives a
-structural guarantee for everything else at a fraction of the blast radius.
+**Recommendation: Option A everywhere. Option B is not needed at all.**
+
+An earlier draft said "B for the UVE path", which was imprecise. The UVE site
+(`src/index.ts:369-371`) does not need throwing or catching — X2 requires the run to **continue**,
+so the `process.exit(1)` there is simply deleted and replaced with ordinary control flow:
+
+```ts
+if (!setUpUVE.ok) {
+    run.uveConfigured = false;
+    warnUveFailed(setUpUVE.val, run);   // terminal-403 vs other, per contract X3
+} else {
+    spinner.succeed('Configured the Universal Visual Editor');
+}
+// falls through to scaffolding either way
+```
+
+So the whole change is: one `process.on('exit')` handler, plus deleting one `process.exit(1)`.
+No 13-site refactor.
 
 **Open question for you**: accept the synchronous-handler constraint (`writeFileSync`, no prompt on
 the way out)?
@@ -158,11 +173,34 @@ A second, smaller question rides along: **how much do we verify before reusing?*
 answering on 8082 — but is it a *suitable* dotCMS? Minimum bar should be that the readiness probe
 and token issuance both succeed; otherwise treat the port as busy-and-unusable and fail as today.
 
-**Recommendation: `isTTY`, auto-reuse when non-interactive, and only reuse an instance that passes
-readiness + token issuance.**
+**DECISION (Freddy, 2026-08-28): silent auto-reuse on CI only. Otherwise ask, and let the user
+stop right there.**
 
-**Open question for you**: is auto-reuse-when-piped the right default, or should a non-interactive
-run fail loudly rather than silently adopt a stranger's instance?
+```ts
+const isCI = Boolean(process.env.CI) || !process.stdout.isTTY;
+
+if (isCI) {
+    console.log(chalk.yellow('⚠  dotCMS already running on 8082 — reusing it (non-interactive).'));
+    reuse = true;                       // decide, never block a scripted run
+} else {
+    reuse = await askReuseOrAbort();     // { Reuse this instance | Abort }
+}
+```
+
+Two points this settles:
+
+- **The prompt must offer abort, not just reuse.** "Ask" means a real choice — a user who did not
+  expect a dotCMS on 8082 needs to stop and look, not be pushed forward.
+- **Even the CI path prints a notice.** Silent means "no prompt", not "no output": a scripted run
+  that quietly attaches to an unknown instance is exactly the failure this is meant to avoid.
+
+**Edge case folded in**: no TTY but no `CI` env var either (a piped local run). Treated as CI —
+there is nobody to answer the prompt, so blocking is the worst option. The printed notice is what
+makes it recoverable.
+
+**Still required before reusing**: the instance must pass readiness **and** token issuance.
+Something answering on 8082 is not necessarily a usable dotCMS, and adopting a stranger's instance
+would wire the user's project to the wrong CMS.
 
 ---
 
