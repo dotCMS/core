@@ -26,6 +26,7 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFormGroup, passwordsMatchValidator } from './dot-users-form.model';
 import { DotUsersCreateStore } from './store/dot-users-create.store';
+import { DotUsersApiTokensTabComponent } from './tabs/dot-users-api-tokens-tab/dot-users-api-tokens-tab.component';
 import { DotUsersPermissionsTabComponent } from './tabs/dot-users-permissions-tab/dot-users-permissions-tab.component';
 import { DotUsersProfileTabComponent } from './tabs/dot-users-profile-tab/dot-users-profile-tab.component';
 import { DotUsersRolesTabComponent } from './tabs/dot-users-roles-tab/dot-users-roles-tab.component';
@@ -84,10 +85,9 @@ const PERMISSIONS_TAB = 2;
  * (create vs edit), and orchestrates each tab as a standalone
  * presentational sub-component.
  *
- * Scope for issue #36719 (this branch) — Profile + Roles + Permissions
- * tabs are real; API Tokens still renders "Coming soon" and lands via
- * #36720. In edit mode Save is disabled on the Permissions tab because
- * the embedded JSP owns its own save button.
+ * With #36720 all four tabs are real. In edit mode Save is disabled on
+ * the Permissions tab because the embedded JSP owns its own save
+ * button.
  */
 @Component({
     selector: 'dot-users-create',
@@ -107,7 +107,8 @@ const PERMISSIONS_TAB = 2;
         DotUsersReplacementPickerComponent,
         DotUsersProfileTabComponent,
         DotUsersRolesTabComponent,
-        DotUsersPermissionsTabComponent
+        DotUsersPermissionsTabComponent,
+        DotUsersApiTokensTabComponent
     ],
     templateUrl: './dot-users-create.component.html',
     styleUrl: './dot-users-create.component.scss',
