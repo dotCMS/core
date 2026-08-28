@@ -15652,7 +15652,8 @@ paths:
       tags:
       - Roles
     get:
-      description: Get all layouts in the system
+      description: Get all layouts (tool groups) in the system. Requires an authenticated
+        back-end user with access to the Roles portlet.
       operationId: getAllLayouts
       responses:
         "200":
@@ -15664,7 +15665,8 @@ paths:
         "401":
           content:
             application/json: {}
-          description: Unauthorized - authentication required
+          description: "Unauthorized - authentication required, or the caller is not\
+            \ a backend user with access to the Roles portlet"
         "500":
           content:
             application/json: {}
