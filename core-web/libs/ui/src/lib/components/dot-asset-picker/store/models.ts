@@ -186,16 +186,46 @@ export interface DotAssetPickerBrowseState {
 }
 
 export interface DotAssetPickerFolderTreeState {
-    /** Tree roots: one node per site the user can browse, each expandable into its folders. */
+    /**
+     * Tree roots. Exactly one: the browsed site's root, rendered as `All`.
+     *
+     * Sites used to be the roots, which is how the editor changed site — by expanding a different
+     * one. The site is now chosen explicitly in the sidebar's own selector, so the tree shows one
+     * site's folders and nothing else.
+     */
     folders: TreeNodeItem[];
-    /** Highlighted node — a site root or a folder. `null` until the tree resolves. */
+    /** Highlighted node — the `All` root or a folder. `null` until the tree resolves. */
     selectedNode: TreeNodeItem | null;
     foldersStatus: ComponentStatus;
     /**
-     * Sidebar "Search sites & folders" term. Separate from `filters.title`, which searches assets:
-     * this one narrows what the *tree* shows.
+     * Sidebar "Search folders..." term. Narrows the *folders* of the browsed site — never the
+     * sites, which have their own search inside the selector, and never the assets, which are
+     * `filters.title`.
      */
-    treeSearch: string;
+    folderSearch: string;
+    /**
+     * Flat, recursive matches for `folderSearch`, replacing the tree while a term is active.
+     *
+     * `null` and `[]` mean different things and both are load-bearing: `null` is "not searching",
+     * `[]` is "searched, nothing matched". Collapsing them fires the empty state before the editor
+     * has typed anything.
+     */
+    searchResults: TreeNodeItem[] | null;
+    /**
+     * Status of the *search* request, deliberately separate from `foldersStatus`.
+     *
+     * A failed search and a failed tree load render differently; one shared field makes a failure
+     * indistinguishable from an empty result, which is the bug the old sidebar had.
+     */
+    searchStatus: ComponentStatus;
+    /**
+     * Whether more matches exist than the one page shown.
+     *
+     * Only the response's pagination knows this — nothing in `searchResults` records it. It drives
+     * a "narrow your search" hint rather than a "load more": the results come from a recursive
+     * query, and paging one would silently page the non-recursive query the tree uses.
+     */
+    searchHasMore: boolean;
 }
 
 export interface DotAssetPickerSelectionState {
