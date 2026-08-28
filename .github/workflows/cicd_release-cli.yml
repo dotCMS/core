@@ -165,8 +165,9 @@ jobs:
           echo "artifactsDir=${{ github.workspace }}/artifacts" >> "$GITHUB_ENV"
 
       - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
+          digest-mismatch: warn
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
       - uses: ./.github/actions/core-cicd/maven-job
@@ -207,8 +208,9 @@ jobs:
         run: pip install jinja2-cli
 
       - name: 'Download all build artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
+          digest-mismatch: warn
           path: ${{ github.workspace }}/artifacts
           pattern: cli-artifacts-*
           merge-multiple: true

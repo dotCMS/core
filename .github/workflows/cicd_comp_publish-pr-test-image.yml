@@ -94,8 +94,9 @@ jobs:
 
       - name: Download prebuilt image
         if: steps.resolve.outputs.found == 'true'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v8.0.1
         with:
+          digest-mismatch: warn
           name: docker-image
           path: /tmp/prebuilt
           run-id: ${{ steps.resolve.outputs.run_id }}

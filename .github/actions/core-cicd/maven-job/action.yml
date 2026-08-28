@@ -263,8 +263,9 @@ runs:
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
       if: ${{ inputs.artifacts-from != '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       with:
+        digest-mismatch: warn
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
@@ -273,8 +274,9 @@ runs:
     - id: restore-artifact-docker-image
       name: Restore Docker Image
       if: ${{ inputs.needs-docker-image == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       with:
+        digest-mismatch: warn
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/docker-image
 
@@ -286,8 +288,9 @@ runs:
     - id: restore-artifact-classes
       name: Restore Classes
       if: ${{ inputs.restore-classes == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@v8.0.1
       with:
+        digest-mismatch: warn
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
