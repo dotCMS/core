@@ -15,12 +15,14 @@ without printing either. These are the guarantees the fix establishes.
 This is the single most important guarantee here: it converts every future unanticipated failure
 from total loss into a recoverable one.
 
-> ⚠️ **The implementation note previously here was wrong and is withdrawn.** It said this runs
-> "from a `finally`-equivalent position". `finally` does **not** run on `process.exit()`, and there
-> are 17 `process.exit()` call sites (13 inside the single `try` at `src/index.ts:93`), so that is
-> not implementable as written. The mechanism is decision **D1** in
-> [cli-design-decisions.md](../cli-design-decisions.md) — do not implement X1 until it is settled.
-> The *guarantee* above stands unchanged; only the means is open.
+**Mechanism (D1, decided)**: a single `process.on('exit')` handler that prints `host`/`token`/
+`siteId` and writes `.env` with `writeFileSync`. It must be synchronous — no `await`, no prompting.
+
+An earlier note here said "from a `finally`-equivalent position"; that was wrong and is withdrawn.
+`finally` does **not** run on `process.exit()`, and there are 17 such call sites (13 inside the
+single `try` at `src/index.ts:93`). The exit hook covers all of them, including paths nobody has
+written yet — which is the point. Verified: stdout survives the handler at 200 lines to both a pipe
+and a file; the state block is ~5 lines.
 
 ## X2 — Optional steps are non-fatal
 
@@ -63,7 +65,13 @@ Root cause and evidence: see spec.md "Cause 2", and #37268 for the backend defec
 ## X4 — Progress is truthful
 
 - "Containers started successfully" is printed only when containers are actually running and
-  healthy — via `docker compose up -d --wait` with an explicit `--wait-timeout`.
+  healthy — via `docker compose up -d --wait --wait-timeout 600` (D7).
+- **Feedback MUST be continuous for the entire wait** — up to ten minutes. Ten minutes of frozen
+  spinner is the failure this issue was reported for, so "pull progress is visible" is not enough.
+  Two sources, both required:
+  1. stream `docker compose up --wait`'s own per-container `Waiting → Healthy` transitions, which
+     `execa` currently swallows; and
+  2. a ticker showing elapsed time and per-service state, refreshed every ~2s.
 - A `--wait` timeout is reported with diagnostics, not left as a silent block (research R4: a wrong
   probe hangs `--wait`; it does not cause a restart loop).
 - Image-pull progress is streamed; no silent multi-minute spinner.
@@ -81,7 +89,18 @@ re-narrow to `=== 200` (the current mismatch at `src/index.ts:507`).
 ## X6 — Re-runs are possible
 
 A busy port is not by itself fatal. If 8082 is busy **and** answers as a healthy dotCMS, the CLI
-offers to reuse that instance instead of exiting. Only a busy port that is *not* dotCMS is an error.
+reuses that instance instead of exiting. Only a busy port that is *not* dotCMS is an error.
+
+**Interactivity (D3, decided)**:
+
+| Context | Behavior |
+|---|---|
+| TTY | **Prompt**, offering *reuse* or *abort*. Someone who did not expect a dotCMS on 8082 needs to stop and look, not be pushed forward. |
+| `CI` env var set, or no TTY | **Auto-reuse, but print a notice.** "Silent" means no prompt, not no output — a scripted run quietly attaching to an unknown instance is the failure this guards against. A piped local run has nobody to answer, so blocking is the worst option. |
+
+Reuse requires the instance to pass **readiness *and* token issuance**. Something answering on 8082
+is not necessarily a usable dotCMS, and adopting a stranger's instance would wire the project to the
+wrong CMS.
 
 Corollary: the CLI must not offer to empty a directory whose `docker-compose.yml` is the only way to
 tear down the instance it is about to reuse.
@@ -103,6 +122,32 @@ scaffolding between them calls `process.exit(1)` internally, so the restore neve
 
 `.env` is written when absent; when already present it is left alone and the block is printed
 instead (research R7).
+
+**Filename (D6, decided): always `.env`**, for every framework. The examples disagree with each
+other — `nextjs`/`astro`/`nextjs-experiments` ship `.env.local.example`, `angular-ssr`/`vuejs` ship
+`.env.example`, `angular` ships neither — while the CLI today tells everyone `touch .env`. One
+filename is simpler, and it is functionally safe: Next.js and Astro both read `.env` as well as
+`.env.local`.
+
+Ordering note: `cloneFrontEndSample` deletes everything in the target directory except `examples/`,
+so a `.env` written *before* scaffolding would be destroyed. Writing from the exit hook (X1) happens
+after scaffolding, so it survives.
+
+## X9 — The compose file is bundled, not downloaded
+
+The CLI ships its own compose file inside the npm package and **writes** it to the project
+directory. It does not fetch it, and it does not modify the shared
+`single-node-demo-site` example (D4).
+
+Delivery goes through a swappable source so remote fetching stays one env var away:
+
+```ts
+resolveComposeSource()   // bundled asset, unless DOTCMS_COMPOSE_URL is set
+```
+
+Obtaining **contents** and writing them — rather than downloading to a path, as today — is what
+makes the two sources interchangeable. This also removes `downloadFile`'s missing timeout, absent
+redirect handling and lack of retry from the default path entirely.
 
 ---
 

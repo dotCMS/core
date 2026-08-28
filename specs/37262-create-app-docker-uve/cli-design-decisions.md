@@ -1,13 +1,14 @@
 # CLI design decisions — open before implementation
 
 **Feature**: `37262-create-app-docker-uve` · **Blocks**: US2, US3, US4 (not US1)
-**Status**: awaiting decision · **Raised**: 2026-08-28
+**Status**: **ALL RESOLVED** 2026-08-28 · **Raised**: 2026-08-28
 
 The contracts in [contracts/cli-exit-contract.md](./contracts/cli-exit-contract.md) state what the
-CLI must *guarantee*. They do not state *how*, and three of those guarantees turn out to need a
-real decision before code is written. One of them (D1) is specified **incorrectly** today.
+CLI must *guarantee*. They did not state *how*. D1–D3 were raised before implementation; D4–D8 came
+out of answering them. **All are now decided** — see the summary table at the end.
 
-None of this affects **US1 (compose)**, which is fully designed, Red-confirmed, and independent.
+The largest change is **D4**: the CLI now ships its **own** compose file instead of editing the
+shared `single-node-demo-site` example. That removes the biggest risk in the whole plan.
 
 ---
 
@@ -214,3 +215,130 @@ would wire the user's project to the wrong CMS.
 
 Once these are settled I will correct **X1** in the contract — it is currently a guarantee that
 cannot be implemented as written — and record D2/D3 alongside X3 and X6.
+
+
+---
+
+## D4 — The CLI owns its compose file *(decided: bundle it in the package)*
+
+**Problem**: the original plan edited `docker/docker-compose-examples/single-node-demo-site/docker-compose.yml`,
+which is fetched from `main` at runtime and also used directly by README readers. Every hardening
+step we wanted (gate on OpenSearch, publish 8090, healthchecks that `--wait` depends on) was a
+behavior change shipped unversioned to consumers who never asked for it — and gating on OpenSearch
+in particular introduced a way for dotCMS to **never start** if that probe later broke (e.g. an
+`opensearch:1` → `:2` bump invalidating `admin:admin`).
+
+**Decision**: give the CLI its own compose file, **bundled in the npm package**, and leave the
+shared demo example untouched.
+
+- File ships at `core-web/libs/sdk/create-app/assets/docker-compose.yml`.
+- No runtime download — this removes `downloadFile`'s missing timeout, redirect handling and retry,
+  and the unpinned `main` URL, in one move.
+- **Installed CLIs (≤1.2.5) keep fetching the old shared file and are not repaired.** Accepted
+  knowingly: this tool starts fresh local instances, is not a CI dependency, no known users have it
+  in CI — and `npx @dotcms/create-app` resolves to the latest published version anyway, so only a
+  warm npx cache stays behind.
+
+**Consequence**: the "ships unversioned to every consumer" risk — previously the single largest in
+this work — no longer applies. Nothing else reads the CLI's file.
+
+### D4a — Keep it easy to swap back to remote
+
+Reading the file is an interface, so bundled and remote are interchangeable:
+
+```ts
+export interface ComposeSource {
+    readonly describe: string;              // shown in diagnostics
+    read(): Promise<string>;
+}
+
+export const bundledCompose: ComposeSource = { /* fs.readFile of the shipped asset */ };
+export const remoteCompose = (url: string): ComposeSource => ({ /* hardened fetch */ });
+
+export function resolveComposeSource(): ComposeSource {
+    const override = process.env.DOTCMS_COMPOSE_URL;
+    return override ? remoteCompose(override) : bundledCompose;
+}
+```
+
+The call site obtains **contents** and writes them, rather than downloading straight to disk as
+today — that shape change is what makes the sources swappable. `DOTCMS_COMPOSE_URL` allows a
+field hotfix with no code change or release. `updateDockerComposeStarterUrl` still rewrites the
+file on disk afterwards, so `--starter` is unaffected.
+
+**Packaging gotchas** (the asset will silently not ship otherwise): `package.json` `files` is
+`["*.js", "README.md"]`, and `project.json`'s esbuild `assets` lists only README and package.json.
+Both need the compose file added.
+
+---
+
+## D5 — How strict is the CLI's file? *(decided: strict, `start_period: 120s`)*
+
+Now that nothing else consumes it, strictness costs nothing:
+
+- `dotcms` `depends_on` gates on **both** `db` and `opensearch` at `condition: service_healthy`.
+- OpenSearch probe: `curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name`
+  — **verified on this stack, succeeds at 15s**; `curl` is present in the OpenSearch image.
+- `dotcms` healthcheck on `http://127.0.0.1:8090/dotmgt/livez`, **`start_period: 120s`**
+  (~2.5× the measured ~46s boot — enough headroom for slower hardware without waiting three
+  minutes to learn something is wrong), plus `restart: unless-stopped`.
+- Management port published **loopback-only**: `127.0.0.1:8090:8090` (D-rationale in research R3).
+
+---
+
+## D6 — `.env` filename *(decided: always `.env`)*
+
+The examples disagree with the CLI today: `nextjs`, `astro` and `nextjs-experiments` ship
+`.env.local.example`; `angular-ssr` and `vuejs` ship `.env.example`; `angular` ships neither — while
+the CLI tells everyone `touch .env`.
+
+**Decision: always write `.env`**, regardless of framework. Functionally safe — Next.js and Astro
+both read `.env` in addition to `.env.local` — and one filename is simpler to implement and explain.
+Written **if absent**; if a file is already there it is left alone and the values are printed
+instead.
+
+---
+
+## D7 — `--wait-timeout` and feedback *(decided: 600s, with continuous feedback)*
+
+`--wait-timeout 600`. Pull time is spent before the container starts, so it does not consume this
+budget; a timeout here means something is genuinely wrong.
+
+**Conditional on continuous UI feedback for the whole wait** — ten minutes of frozen spinner is the
+failure this issue was reported for. Requires both:
+
+1. streaming `docker compose up --wait`'s own per-container `Waiting → Healthy` transitions, which
+   `execa` currently swallows; and
+2. a ticker showing elapsed time and per-service state, polled every ~2s.
+
+This tightens AC-009 and contract X4: feedback must be continuous, not merely "pull progress
+visible".
+
+---
+
+## D8 — Image tag *(decided: keep `latest` for now)*
+
+The bundled file **could** pin `dotcms/dotcms:<CLI's matching release>` under ADR-0019, since the SDK
+version is the dotCMS release version — which would make image/starter drift impossible.
+
+**Deferred.** `latest` stays for now, so the drift the issue flagged (`latest` paired with a
+hardcoded `starter-20260630`) **remains an open risk**, and ADR-0019 alignment is postponed rather
+than resolved. Bundling makes this easy to revisit later.
+
+---
+
+## Summary of decisions
+
+| # | Decision | Outcome |
+|---|---|---|
+| D1 | Emit mechanism for X1 | `process.on('exit')` handler prints state **and** writes `.env` with `writeFileSync`; the UVE `process.exit(1)` is simply deleted. No 13-site refactor. |
+| D2 | UVE poll budget | Moot — a 403 is terminal. Single probe, retry `5xx` only. |
+| D3 | Reuse when non-interactive | Silent auto-reuse on CI (or no TTY) **with a printed notice**; otherwise prompt offering **reuse or abort**. Reuse only an instance passing readiness + token issuance. |
+| D4 | Compose file ownership | CLI ships its own, bundled; shared demo example untouched; `DOTCMS_COMPOSE_URL` swaps to remote. |
+| D5 | Strictness | Gate on both services healthy; `start_period: 120s`; loopback 8090. |
+| D6 | `.env` filename | Always `.env`, write-if-absent. |
+| D7 | `--wait-timeout` | 600s, conditional on continuous feedback. |
+| D8 | Image tag | `latest` for now; drift risk and ADR-0019 alignment stay open. |
+
+**Out of scope, confirmed (T066)**: #37268 (interrupted boot bricks the instance), image-tag
+pinning / ADR-0019 alignment, and #35096 (E2E suite incl. fault injection).

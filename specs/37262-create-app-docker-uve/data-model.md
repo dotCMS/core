@@ -60,14 +60,16 @@ back into the main line instead of terminating it.
 
 ## 2. `ComposeTopology` — the service dependency + health graph
 
-Not a runtime object; the contract the compose file encodes. The bug is a missing edge and two
-missing health states.
+Not a runtime object; the contract **the CLI's own bundled compose file** encodes
+(`core-web/libs/sdk/create-app/assets/docker-compose.yml`). The shared `single-node-demo-site`
+example is not changed by this work — see cli-design-decisions.md D4. The bug is a missing edge and
+two missing health states.
 
 | Service | Healthcheck | Restart | `dotcms` depends on it via |
 |---|---|---|---|
 | `db` | exists today (`pg_isready`), **unused** | `unless-stopped` ✓ | `condition: service_healthy` ← **new** |
 | `opensearch` | **none** → add (`curl -sk … \| grep -q cluster_name`, from `single-node-os-migration`) | **none** → `unless-stopped` | `condition: service_healthy` ← **new** |
-| `dotcms` | **none** → add (`curl -f http://127.0.0.1:8090/dotmgt/livez`, `start_period: 180s`) | **none** → `unless-stopped` | — |
+| `dotcms` | **none** → add (`curl -f http://127.0.0.1:8090/dotmgt/livez`, `start_period: 120s`) | **none** → `unless-stopped` | — |
 
 **Health states** (Docker semantics, per research R4):
 
@@ -91,8 +93,9 @@ starting ──(within start_period, failures ignored)──▶ healthy
 | `8090` | **`127.0.0.1` only** ← new | management port is unauthenticated (research R3) |
 
 **Compatibility constraint**: the file must retain a line matching
-`/^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m`, or `--starter` throws in every installed CLI
-(research R9). This forbids converting that key to a block scalar or `- KEY=value` list form.
+`/^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m`, or `--starter` throws. This forbids converting
+that key to a block scalar or `- KEY=value` list form. (Blast radius is now this CLI version rather
+than every installed one, since the file is bundled — but it is still a silent break.)
 
 ---
 

@@ -1,10 +1,14 @@
-# Contract: `single-node-demo-site/docker-compose.yml`
+# Contract: the CLI's bundled compose file
 
-**Consumers**: every installed `@dotcms/create-app` (fetched from `main` at runtime via
-`src/git/index.ts:68`), and humans following `single-node-demo-site/README.md`.
+**File**: `core-web/libs/sdk/create-app/assets/docker-compose.yml`
+**Consumer**: `@dotcms/create-app` only — it is shipped **inside the npm package**, not downloaded.
 
-This file has no version negotiation — a change reaches all consumers at once. These are the
-guarantees it must keep.
+> **The shared `docker/docker-compose-examples/single-node-demo-site/docker-compose.yml` is NOT
+> changed by this work.** It keeps serving README readers and already-installed CLIs (≤1.2.5)
+> exactly as before. See [cli-design-decisions.md](../cli-design-decisions.md) D4.
+
+Because nothing else reads this file, it can be strict without imposing on anyone. That is the
+whole reason for owning it.
 
 ---
 
@@ -20,8 +24,10 @@ depends_on:
     condition: service_healthy
 ```
 
-*Deviates from sibling examples, which use `service_started` for opensearch — justified in
-research R1: this stack is driven by an unattended CLI.*
+*Deviates from the sibling examples, which use `service_started` for opensearch. Safe here in a way
+it was not on the shared file: an unattended CLI wants the strongest ordering available, and a
+future OpenSearch image bump that invalidated the probe would affect only this CLI's own stack —
+not README readers or other examples.*
 
 ## C2 — Health probes
 
@@ -31,8 +37,12 @@ research R1: this stack is driven by an unattended CLI.*
 | `opensearch` | `curl -sk https://localhost:9200 -u admin:admin \| grep -q cluster_name` | adapted from `single-node-os-migration` — `-k` for the self-signed cert, `-u` because `DOT_ES_AUTH_BASIC_PASSWORD: 'admin'` |
 | `dotcms` | `curl -f http://127.0.0.1:8090/dotmgt/livez` | matches `lgtm-observability` / `single-node-metrics-monitoring` |
 
-`dotcms` MUST use `start_period: 180s` — a cold first boot performs a full demo-starter import.
-(Above both precedents: lgtm 120s, metrics-monitoring 20s. See research R4 open item 2.)
+`dotcms` MUST use **`start_period: 120s`** — roughly 2.5x the measured ~46s boot, leaving headroom
+for slower hardware without waiting three minutes to learn something is wrong. (Precedents: lgtm
+120s, metrics-monitoring 20s.)
+
+The OpenSearch probe is **verified on this stack**: it succeeds at ~15s, and `curl` is present in
+the `opensearchproject/opensearch:1` image.
 
 `curl` is present in the image (`Dockerfile:47`), so `CMD`-form probes are valid.
 
@@ -57,7 +67,7 @@ port with no credential check and no IP allowlist (research R3), so a wildcard b
 `/dotmgt/health` and `/dotmgt/metrics` to the local network. The container's own healthcheck uses
 `127.0.0.1` internally and is unaffected.
 
-## C5 — Backward compatibility with installed CLIs (**do not break**)
+## C5 — `--starter` compatibility (**do not break**)
 
 The file MUST retain a line matching:
 
@@ -65,22 +75,38 @@ The file MUST retain a line matching:
 /^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m
 ```
 
-`updateDockerComposeStarterUrl` (`src/index.ts:487`) rewrites the file with this regex when
-`--starter` is passed and **throws if there is no match**. Converting that key to a YAML block
-scalar, an anchor, or `- CUSTOM_STARTER_URL=…` list form would break `--starter` for every already
--installed CLI, with no release able to fix them.
+`updateDockerComposeStarterUrl` (`src/index.ts:487`) rewrites the file **on disk after it is
+written** with this regex when `--starter` is passed, and **throws if there is no match**.
+Converting that key to a YAML block scalar, an anchor, or `- CUSTOM_STARTER_URL=…` list form breaks
+`--starter`.
 
-A CLI at ≤1.2.5 running `docker compose up -d` (no `--wait`) against this file MUST still work — it
-gains correct startup and a restart policy, and ignores 8090 entirely.
+Less severe than before — the blast radius is now this CLI version rather than every installed one —
+but still a silent break that no test other than the guard in `scripts/verify-cold-start.sh` would
+catch.
 
 ## C6 — Documentation
 
-`single-node-demo-site/README.md` MUST state that 8090 is published on loopback and what it serves.
-An undocumented new port mapping in a file users read as a template is a surprise.
+`core-web/libs/sdk/create-app/README.md` MUST state that the stack publishes 8090 on loopback, what
+it serves, and that the compose file is bundled rather than downloaded — including the
+`DOTCMS_COMPOSE_URL` escape hatch for pointing at a remote file instead (D4a).
+
+## C7 — Delivery
+
+The file is read through the `ComposeSource` interface (D4a) and **written** to the project
+directory, never downloaded to it. `resolveComposeSource()` returns the bundled asset unless
+`DOTCMS_COMPOSE_URL` is set. The asset MUST be listed in both `package.json` `files` and
+`project.json`'s esbuild `assets`, or it will silently not ship.
+
+## C8 — Image tag
+
+The file pins **no** dotCMS version: `dotcms/dotcms:latest` stays for now (D8). The drift risk the
+issue flagged — `latest` paired with a hardcoded `starter-20260630` — is therefore **still open**,
+and ADR-0019 alignment (SDK version = dotCMS release version) is deferred, not resolved.
 
 ---
 
 ## Verification
 
-See [quickstart.md](../quickstart.md) — cold start with `--wait`, `docker kill` recovery, and a
-`--starter` regression run to prove C5.
+`core-web/libs/sdk/create-app/scripts/verify-cold-start.sh` — cold start with `--wait`,
+`docker kill` recovery, loopback-only exposure, and the `CUSTOM_STARTER_URL` guard for C5. Run
+`--static` for the config-only assertions (no Docker required).

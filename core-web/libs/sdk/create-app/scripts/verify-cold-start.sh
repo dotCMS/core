@@ -1,8 +1,13 @@
 #!/usr/bin/env bash
 #
-# verify-cold-start.sh — acceptance checks for the single-node-demo-site stack.
+# verify-cold-start.sh — acceptance checks for the compose file that
+# @dotcms/create-app ships (../assets/docker-compose.yml).
 #
-# This file is the executable form of the manual procedure in
+# This checks the CLI's OWN bundled stack, not the shared
+# docker/docker-compose-examples/single-node-demo-site example, which this work
+# deliberately leaves untouched (see cli-design-decisions.md D4).
+#
+# It is the executable form of the manual procedure in
 # specs/37262-create-app-docker-uve/quickstart.md steps 1-3. It exists because the
 # behavior it checks (dependency ordering, restart on exit, port binding) cannot be
 # unit-tested: it needs a real Docker daemon, real image pulls, and a multi-minute
@@ -23,7 +28,7 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-COMPOSE_FILE="$SCRIPT_DIR/docker-compose.yml"
+COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/../assets/docker-compose.yml}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-600}"
 RESTART_GRACE="${RESTART_GRACE:-30}"
 
