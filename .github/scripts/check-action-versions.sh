@@ -237,8 +237,12 @@ while IFS= read -r f; do
               nxt = L[j]
               if (nxt ~ /^[ \t]*$/) continue
               match(nxt, /[^ \t]/); ind = RSTART
-              # Leaving the step: dedent to or past the "- uses:" column, or a new list item.
-              if (ind <= base) break
+              # Where the step ends. `uses:` and `with:` are SIBLING keys of the step
+              # mapping, so in the composite / leading-`- name:` form they share an
+              # indent -- stopping at ind <= base would never look inside `with:`.
+              # Stop only on a genuine dedent, or on the next list item at or left of
+              # this column (the `- uses:` form, where the dash sets base).
+              if (ind < base) break
               if (nxt ~ /^[ \t]*-[ \t]/ && ind <= base) break
               if (nxt ~ ("^[ \t]*" want[k] "[ \t]*:")) { found = 1; break }
             }

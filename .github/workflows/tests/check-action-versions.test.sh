@@ -195,6 +195,57 @@ r=$(fixture wf.yml "jobs:
           digest-mismatch: error")
 expect_exit "digest-mismatch: error also satisfies A3" 0 "$r"
 
+# Regression: in composite actions and in steps that lead with `- name:`, `uses:`
+# and `with:` are SIBLING keys at the same indentation. An earlier A3 lookahead
+# stopped at the first line whose indent was <= the `uses:` indent, so it never
+# looked inside `with:` and reported every such site as missing the input.
+r=$(fixture wf.yml "runs:
+  using: composite
+  steps:
+    - name: Download
+      uses: actions/download-artifact@v8.0.1
+      with:
+        digest-mismatch: warn
+        name: maven-repo")
+expect_exit "A3 sees into with: when uses:/with: are siblings (composite form)" 0 "$r"
+
+r=$(fixture wf.yml "runs:
+  using: composite
+  steps:
+    - name: Download
+      uses: actions/download-artifact@v8.0.1
+      with:
+        name: maven-repo")
+expect_match "...and still flags the sibling form when the input is absent" \
+  'digest-mismatch' "$r"
+
+# An `if:` may sit between `uses:` and `with:`.
+r=$(fixture wf.yml "runs:
+  using: composite
+  steps:
+    - name: Download
+      uses: actions/download-artifact@v8.0.1
+      if: inputs.build_run_id
+      with:
+        digest-mismatch: warn
+        name: ctx")
+expect_exit "A3 tolerates an if: between uses: and with:" 0 "$r"
+
+# The input must belong to THIS step, not a later one.
+r=$(fixture wf.yml "runs:
+  using: composite
+  steps:
+    - name: Download
+      uses: actions/download-artifact@v8.0.1
+      with:
+        name: maven-repo
+    - name: Other
+      uses: actions/upload-artifact@v7.0.1
+      with:
+        digest-mismatch: warn")
+expect_match "A3 does not borrow the input from a later step" \
+  'digest-mismatch' "$r"
+
 echo "== Scope: actions outside the manifest are not policed =="
 
 r=$(fixture wf.yml "jobs:
