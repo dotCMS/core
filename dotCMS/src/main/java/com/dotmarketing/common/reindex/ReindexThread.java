@@ -26,7 +26,6 @@ import com.dotmarketing.db.HibernateUtil;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.ThreadUtils;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.model.User;
@@ -35,6 +34,7 @@ import java.sql.SQLException;
 import java.time.Duration;
 import java.util.Map;
 import java.util.concurrent.ThreadPoolExecutor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import org.apache.felix.framework.OSGISystem;
 
@@ -68,6 +68,40 @@ import org.apache.felix.framework.OSGISystem;
  * </ul>
  * </p>
  *
+ * <h2>Worker lifecycle</h2>
+ * <p>
+ * Exactly one worker runnable may be executing per JVM. Two independent pieces of state describe
+ * it, and conflating them caused the defects fixed in issue #36922:
+ * </p>
+ * <ul>
+ * <li>{@code state} ({@link ThreadState}) is a <em>command</em> channel — what the system wants the
+ * worker to do. {@code STOPPED} means "not running, restartable"; {@code SHUTDOWN} is terminal and
+ * must never be restarted; {@code PAUSED} and {@code RUNNING} both imply a live worker.</li>
+ * <li>{@code workerAlive} is a <em>fact</em> — whether a runnable is actually executing. It is
+ * claimed by compare-and-set before the runnable is submitted and cleared by the runnable in a
+ * {@code finally} that also covers {@link Error}. Liveness must never be inferred from
+ * {@code state}: a runnable that died leaves {@code state} untouched.</li>
+ * </ul>
+ * <p>
+ * The shutdown signal is {@link com.dotcms.shutdown.ShutdownCoordinator#isShutdownStarted()}, a
+ * monotonic latch — <strong>not</strong>
+ * {@link com.dotcms.shutdown.ShutdownCoordinator#isRequestDraining()}, which is only true during
+ * shutdown Phase 1 (bounded by {@code shutdown.request.drain.timeout.seconds}, default 15 s) and is
+ * cleared before this component's shutdown task even runs. {@code isRequestDraining()} remains a
+ * "do not start expensive work" hint in {@link #finalizeReIndex()} and
+ * {@link #switchOverIfNeeded()} only.
+ * </p>
+ * <p>
+ * Every wait in this class goes through {@link #waitFor(long)} rather than
+ * {@code ThreadUtils.sleep}, which silently swallows {@code InterruptedException} <em>and</em> the
+ * interrupt flag, making a parked worker un-interruptible.
+ * </p>
+ * <p>
+ * Recovery is node-local. In a cluster each node runs its own worker against journal rows claimed
+ * by {@code ConfigUtils.getServerId()}; one node restarting its worker neither affects nor repairs
+ * another's.
+ * </p>
+ *
  * @author root
  * @version 3.3
  * @since Mar 22, 2012
@@ -76,7 +110,20 @@ import org.apache.felix.framework.OSGISystem;
 public class ReindexThread {
 
     private enum ThreadState {
-        STOPPED, PAUSED, RUNNING;
+        /** Never started, or explicitly stopped. Restartable via {@link #unpauseImpl()}. */
+        STOPPED,
+        /** Alive but parked: the queue drained, or a full reindex is bracketing the worker. */
+        PAUSED,
+        /** Alive and draining the queue. */
+        RUNNING,
+        /**
+         * The JVM is shutting down. Terminal: the worker exits and must NOT be restarted.
+         *
+         * <p>Distinct from {@link #STOPPED} on purpose. {@code STOPPED} is the value
+         * {@link #unpauseImpl()} keys off to re-submit the runnable, so reusing it for shutdown
+         * would let a late commit listener resurrect the worker mid-shutdown (issue #36922).</p>
+         */
+        SHUTDOWN;
     }
 
     private final ContentletIndexAPI indexAPI;
@@ -85,7 +132,7 @@ public class ReindexThread {
     private final RoleAPI roleAPI;
     private final UserAPI userAPI;
 
-    private static ReindexThread instance;
+    private static volatile ReindexThread instance;
 
     private final long SLEEP = Config.getLongProperty("REINDEX_THREAD_SLEEP", 250);
     private final int SLEEP_ON_ERROR = Config.getIntProperty("REINDEX_THREAD_SLEEP_ON_ERROR", 500);
@@ -132,6 +179,37 @@ public class ReindexThread {
 
     private final AtomicReference<ThreadState> state = new AtomicReference<>(ThreadState.STOPPED);
 
+    /**
+     * Whether a {@link #ReindexThreadRunnable} is actually executing right now.
+     *
+     * <p>Deliberately <em>separate</em> from {@link #state}. {@code state} is a command channel —
+     * what the system wants the worker to do; this flag is a fact — whether a worker exists to obey
+     * it. Bug 2 in issue #36922 was {@link #unpauseImpl()} inferring the second from the first: a
+     * runnable that had died left {@code state} at {@code PAUSED}, so unpausing flipped a flag
+     * nobody was reading and the queue silently never drained.</p>
+     *
+     * <p>Claimed by compare-and-set <strong>before</strong> the runnable is submitted (so two
+     * concurrent callers cannot both start one) and cleared by the runnable in a {@code finally}
+     * that also covers {@link Error}.</p>
+     */
+    private final AtomicBoolean workerAlive = new AtomicBoolean(false);
+
+    /**
+     * Single constant for the shutdown notice, used by every site that can observe shutdown, so
+     * the "at most once per shutdown" guarantee holds across all of them.
+     */
+    private static final String SHUTDOWN_DETECTED_MSG =
+            "Shutdown detected, stopping reindex operations";
+
+    /**
+     * Throttle key for the dead-worker recovery notice. A compile-time constant on purpose: the
+     * key set {@code Logger}'s static throttle map can grow to must stay bounded, so a repeating
+     * failure cannot turn logging into a memory-exhaustion vector (AC-019).
+     */
+    private static final String DEAD_WORKER_MESSAGE_KEY = "reindex-thread-dead-worker-restarted";
+
+    private static final int DEAD_WORKER_LOG_INTERVAL_MS = 60000;
+
 
     private final static String REINDEX_THREAD_PAUSED = "REINDEX_THREAD_PAUSED";
     private final static Lazy<SystemCache> cache = Lazy.of(() -> CacheLocator.getSystemCache());
@@ -160,22 +238,103 @@ public class ReindexThread {
     private final Runnable ReindexThreadRunnable = () -> {
         Logger.info(this.getClass(),
                 "---  ReindexThread is starting, background indexing will begin");
-
-        while (state.get() != ThreadState.STOPPED) {
-            try {
-                runReindexLoop();
-            } catch (Exception e) {
-                Logger.error(this.getClass(), e.getMessage(), e);
+        try {
+            while (!isTerminal()) {
+                try {
+                    runReindexLoop();
+                } catch (Exception e) {
+                    // Recoverable: log and let the loop retry.
+                    Logger.error(this.getClass(), e.getMessage(), e);
+                }
             }
+        } catch (Throwable e) {
+            // A JVM-level Error (OutOfMemoryError, LinkageError) must not be retried in a tight
+            // loop — retrying is futile and can deepen the failure. It terminates the worker, and
+            // the finally below clears liveness so the next unpause restarts it instead of the
+            // node stalling silently forever (issue #36922, Bug 2).
+            Logger.error(this.getClass(),
+                    "ReindexThread terminating on unrecoverable error: " + e.getMessage(), e);
+        } finally {
+            // Invariant I2: cleared on EVERY exit path — normal, Exception, Error, interrupt,
+            // executor shutdown. This is what makes a dead worker detectable.
+            workerAlive.set(false);
+            Logger.warn(this.getClass(),
+                    "---  ReindexThread is stopping, background indexing will not take place");
         }
-        Logger.warn(this.getClass(),
-                "---  ReindexThread is stopping, background indexing will not take place");
-
     };
 
     @VisibleForTesting
     long totalESPuts() {
         return contentletsIndexed;
+    }
+
+    /**
+     * {@code true} when the worker must not keep running: either explicitly stopped or shut down.
+     * Every loop in this class tests this rather than {@code == STOPPED}, so the terminal
+     * {@link ThreadState#SHUTDOWN} genuinely ends the outer loop in {@link #ReindexThreadRunnable}
+     * instead of letting it re-enter {@link #runReindexLoop()} (issue #36922, Bug 1).
+     */
+    /**
+     * Interrupt-aware wait, used instead of {@code ThreadUtils.sleep} on this class's own wait
+     * paths.
+     *
+     * <p>{@code ThreadUtils.sleep} is
+     * {@code Try.run(() -> Thread.sleep(t)).onFailure(DotRuntimeException::new)}. {@code onFailure}
+     * takes a {@code Consumer<Throwable>}, so that method reference only <em>constructs</em> an
+     * exception and drops it: the {@code InterruptedException} is never rethrown or logged, and the
+     * interrupt flag the JVM cleared when {@code Thread.sleep} threw is never restored. A worker
+     * parked in it cannot be interrupted at all, which is why {@code shutdownNow()} from
+     * {@code ReindexThreadShutdownTask} has no effect today.</p>
+     *
+     * <p>{@code ThreadUtils.sleep} itself is deliberately left alone — it has many callers across
+     * the legacy codebase and changing its contract is out of scope for this fix.</p>
+     *
+     * @return {@code false} if the wait was interrupted, in which case the caller must stop working
+     */
+    private boolean waitFor(final long millis) {
+        try {
+            Thread.sleep(millis);
+            return true;
+        } catch (final InterruptedException e) {
+            // Restore what Thread.sleep cleared, so the executor and anything up the stack can
+            // still observe that this thread was interrupted.
+            Thread.currentThread().interrupt();
+            Logger.debug(this, "ReindexThread interrupted; terminating the worker");
+            return false;
+        }
+    }
+
+    private boolean isTerminal() {
+        final ThreadState current = state.get();
+        return current == ThreadState.STOPPED || current == ThreadState.SHUTDOWN;
+    }
+
+    /**
+     * Checks for shutdown and, on the first observation, transitions to the terminal state and logs
+     * once.
+     *
+     * <p>Uses {@link ShutdownCoordinator#isShutdownStarted()} — a monotonic latch — rather than
+     * {@link ShutdownCoordinator#isRequestDraining()}, which is only true during shutdown Phase 1
+     * (bounded by {@code shutdown.request.drain.timeout.seconds}, default 15 s) and is cleared
+     * before the reindex shutdown task even runs. Keying the terminal decision off the transient
+     * flag is what produced the hot-loop, and what let the worker resume indexing once Phase 1
+     * ended. {@code isRequestDraining()} is still honored in {@link #finalizeReIndex()} and
+     * {@link #switchOverIfNeeded()} as a "do not start expensive work" hint.</p>
+     *
+     * <p>{@code getAndSet} makes the log emission win-once: only the thread that actually performs
+     * the transition writes the line, so the message appears at most once per shutdown at every
+     * log level — not once per throttle window.</p>
+     *
+     * @return {@code true} if shutdown has started and the caller should stop working
+     */
+    private boolean shutdownRequested() {
+        if (!ShutdownCoordinator.isShutdownStarted()) {
+            return false;
+        }
+        if (state.getAndSet(ThreadState.SHUTDOWN) != ThreadState.SHUTDOWN) {
+            Logger.info(this, SHUTDOWN_DETECTED_MSG);
+        }
+        return true;
     }
 
 
@@ -210,10 +369,9 @@ public class ReindexThread {
      * consecutive batches and no TOCTOU race on the processor reference.</p>
      */
     private void runReindexLoop() {
-        while (state.get() != ThreadState.STOPPED) {
+        while (!isTerminal()) {
             try {
-                if (ShutdownCoordinator.isRequestDraining()) {
-                    Logger.infoEvery(this.getClass(), "Shutdown detected, stopping reindex operations", 10*60*10000);
+                if (shutdownRequested()) {
                     break;
                 }
 
@@ -222,8 +380,7 @@ public class ReindexThread {
                 if (workingRecords.isEmpty()) {
                     finalizeReIndex();
                 } else {
-                    if (ShutdownCoordinator.isRequestDraining()) {
-                        Logger.info(this, "Shutdown detected during record processing, stopping reindex operations");
+                    if (shutdownRequested()) {
                         break;
                     }
 
@@ -246,6 +403,12 @@ public class ReindexThread {
                     Logger.debug(this, "ReindexThread stopping due to shutdown: " + ex.getMessage());
                     break;
                 }
+                if (ex instanceof Error) {
+                    // Let JVM-level errors propagate to the runnable, which logs, terminates and
+                    // clears liveness. Swallowing them here would spin this loop at
+                    // SLEEP_ON_ERROR forever against a JVM that cannot recover.
+                    throw (Error) ex;
+                }
                 if (ex instanceof ReindexPoolExhaustedException) {
                     // The mapping guard refused the batch because the storage it needs is not
                     // answering. No journal entry was failed, so the work is still queued — back
@@ -255,10 +418,16 @@ public class ReindexThread {
                     Logger.errorEvery(ReindexThread.class, "reindex-thread-pool-degraded",
                             "--- ReindexThread is backing off: " + ex.getMessage(),
                             SLEEP_WHEN_DEGRADED);
-                    ThreadUtils.sleep(SLEEP_WHEN_DEGRADED);
+                    if (!waitFor(SLEEP_WHEN_DEGRADED)) {
+                        requestStop();
+                        break;
+                    }
                 } else {
                     Logger.error(this, "ReindexThread Exception", ex);
-                    ThreadUtils.sleep(SLEEP_ON_ERROR);
+                    if (!waitFor(SLEEP_ON_ERROR)) {
+                        requestStop();
+                        break;
+                    }
                 }
             } finally {
                 DbConnectionFactory.closeSilently();
@@ -271,13 +440,21 @@ public class ReindexThread {
 
     private void sleep() {
         while (state.get() == ThreadState.PAUSED) {
-            ThreadUtils.sleep(SLEEP);
+            // A parked worker must not wake itself into RUNNING while the JVM is shutting down:
+            // the pause marker is normally absent/expired, which is exactly the "resume" case.
+            if (shutdownRequested()) {
+                return;
+            }
+            if (!waitFor(SLEEP)) {
+                requestStop();
+                return;
+            }
             //Logs every 60 minutes
             Logger.infoEvery(ReindexThread.class, "--- ReindexThread Paused",
                     Config.getIntProperty("REINDEX_THREAD_PAUSE_IN_MINUTES", 60) * 60000);
             Long restartTime = (Long) cache.get().get(REINDEX_THREAD_PAUSED);
             if (restartTime == null || restartTime < System.currentTimeMillis()) {
-                state.set(ThreadState.RUNNING);
+                state.compareAndSet(ThreadState.PAUSED, ThreadState.RUNNING);
             }
         }
     }
@@ -309,8 +486,27 @@ public class ReindexThread {
         unpause();
     }
 
-    private void state(ThreadState state) {
+    private void state(final ThreadState state) {
         getInstance().state.set(state);
+    }
+
+    /**
+     * Moves the worker to the restartable {@link ThreadState#STOPPED} state, but never downgrades
+     * the terminal {@link ThreadState#SHUTDOWN}.
+     *
+     * <p>{@code ReindexThreadShutdownTask} calls {@link #stopThread()} during shutdown. Without this
+     * guard that call would rewrite {@code SHUTDOWN} to {@code STOPPED} — the one state
+     * {@link #unpauseImpl()} treats as "safe to re-submit" — handing a late commit listener a way
+     * to restart the worker while the JVM is tearing down.</p>
+     */
+    private void requestStop() {
+        ThreadState current;
+        do {
+            current = state.get();
+            if (current == ThreadState.SHUTDOWN) {
+                return;
+            }
+        } while (!state.compareAndSet(current, ThreadState.STOPPED));
     }
 
     /**
@@ -318,7 +514,7 @@ public class ReindexThread {
      */
     public static void stopThread() {
         Logger.info(ReindexThread.class, "Stopping ReindexThread...");
-        getInstance().state(ThreadState.STOPPED);
+        getInstance().requestStop();
         
         // Give the thread a moment to notice the state change and exit gracefully
         try {
@@ -336,15 +532,21 @@ public class ReindexThread {
      * instance is null.
      */
     public static ReindexThread getInstance() {
-        if (instance == null) {
+        // Correct double-checked locking: `instance` is volatile and the guarded branch assigns a
+        // local rather than returning `new ReindexThread().instance`. The previous form relied on
+        // the constructor's `instance = this` side effect through a NON-volatile field, which can
+        // publish a partially constructed object — including a null workerAlive flag.
+        ReindexThread result = instance;
+        if (result == null) {
             synchronized (ReindexThread.class) {
-                if (instance == null) {
-                    return new ReindexThread().instance;
+                result = instance;
+                if (result == null) {
+                    result = new ReindexThread();
+                    instance = result;
                 }
             }
-
         }
-        return instance;
+        return result;
     }
 
     public static void pause() {
@@ -364,17 +566,43 @@ public class ReindexThread {
         }
     }
 
-    private static void unpauseImpl() {
+    /**
+     * The single place a {@link #ReindexThreadRunnable} is submitted, shared by the cold-start
+     * ({@code STOPPED}) and dead-worker-recovery ({@code PAUSED} with no live runnable) paths.
+     *
+     * <p>Order matters: shutdown is checked first (transition T9), then liveness is <em>claimed</em>
+     * by compare-and-set <strong>before</strong> submitting. Claiming first is what guarantees a
+     * single worker — two concurrent callers cannot both observe "dead" and both submit — and it
+     * also makes the pool's {@code DiscardOldestPolicy} unreachable for this task, since at most
+     * one submission is ever in flight.</p>
+     *
+     * <p>If the submit throws after the claim succeeds, the claim is rolled back (invariant I3). A
+     * stranded {@code true} would make every future unpause believe a worker exists and block
+     * recovery permanently — a worse failure than the bug this fixes.</p>
+     *
+     * @param bootstrapOsgi {@code true} only for a cold start. Dead-worker recovery must not
+     *        re-bootstrap the OSGI framework: the process is already up, and only the worker died.
+     * @return {@code true} if this call started a worker
+     */
+    private static boolean startWorker(final boolean bootstrapOsgi) {
 
-        ThreadState state = getInstance().state.get();
-        if (state == ThreadState.PAUSED) {
-            Logger.info(ReindexThread.class, "--- Unpausing reindex thread ");
-            cache.get().remove(REINDEX_THREAD_PAUSED);
-            getInstance().state(ThreadState.RUNNING);
-        } else if (state == ThreadState.STOPPED) {
-            Logger.info(ReindexThread.class, "--- Recreating ReindexThread from stopped");
-            OSGISystem.getInstance().initializeFramework();
-            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(ReindexThread.class,
+                    "Not starting the ReindexThread worker: shutdown is in progress");
+            return false;
+        }
+
+        final ReindexThread inst = getInstance();
+
+        // Invariant I1: claim before submit. The loser of the race simply returns.
+        if (!inst.workerAlive.compareAndSet(false, true)) {
+            return false;
+        }
+
+        try {
+            if (bootstrapOsgi) {
+                OSGISystem.getInstance().initializeFramework();
+            }
             cache.get().remove(REINDEX_THREAD_PAUSED);
 
             final DotSubmitter submitter = DotConcurrentFactory.getInstance()
@@ -387,8 +615,52 @@ public class ReindexThread {
                                             new ThreadPoolExecutor.DiscardOldestPolicy())
                                     .build()
                     );
-            getInstance().state(ThreadState.RUNNING);
-            submitter.submit(getInstance().ReindexThreadRunnable);
+            inst.state(ThreadState.RUNNING);
+            submitter.submit(inst.ReindexThreadRunnable);
+            return true;
+        } catch (Throwable t) {
+            // Invariant I3: never leave the flag claimed with no worker behind it.
+            inst.workerAlive.set(false);
+            Logger.error(ReindexThread.class,
+                    "Failed to start the ReindexThread worker: " + t.getMessage(), t);
+            return false;
+        }
+    }
+
+    private static void unpauseImpl() {
+
+        // Transition T9: never bring the worker back while the JVM is shutting down. Commit
+        // listeners can fire late in the shutdown sequence, and a restart here would resurrect the
+        // worker against infrastructure that is already being torn down.
+        if (ShutdownCoordinator.isShutdownStarted()) {
+            Logger.debug(ReindexThread.class,
+                    "Ignoring unpause request: shutdown is in progress");
+            return;
+        }
+
+        final ReindexThread inst = getInstance();
+        final ThreadState state = inst.state.get();
+
+        if (state == ThreadState.PAUSED) {
+            if (inst.workerAlive.get()) {
+                // Healthy path: a live worker is parked in sleep(); a flag flip is all it needs.
+                Logger.info(ReindexThread.class, "--- Unpausing reindex thread ");
+                cache.get().remove(REINDEX_THREAD_PAUSED);
+                inst.state(ThreadState.RUNNING);
+            } else {
+                // Issue #36922, Bug 2: PAUSED but nothing is alive to act on it. Previously this
+                // logged a cheerful "Unpausing" and returned, and the queue never drained. Report
+                // it at ERROR so it is alertable, then actually restart the worker.
+                Logger.errorEvery(ReindexThread.class, DEAD_WORKER_MESSAGE_KEY,
+                        "--- ReindexThread was PAUSED but no worker was alive; restarting it. "
+                                + "Content queued for indexing on this node would otherwise never "
+                                + "be indexed.", DEAD_WORKER_LOG_INTERVAL_MS);
+                startWorker(false);
+            }
+        } else if (state == ThreadState.STOPPED) {
+            Logger.info(ReindexThread.class, "--- Recreating ReindexThread from stopped");
+            Logger.infoEvery(ReindexThread.class, "--- ReindexThread Running", 60000);
+            startWorker(true);
         }
 
     }
