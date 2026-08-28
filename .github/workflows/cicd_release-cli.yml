@@ -88,7 +88,7 @@ jobs:
 
       # Checkout the repository
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
 
       # Setup git configuration
       - name: 'Setup git config'
@@ -156,7 +156,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Check out repository'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.precheck.outputs.AUXILIARY_BRANCH }}
       - name: 'Create artifacts directory'
@@ -193,7 +193,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: 'Checkout code'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.precheck.outputs.HEAD }}
 
@@ -359,7 +359,7 @@ jobs:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7.0.1
         with:
           ref: ${{ needs.precheck.outputs.HEAD }}
 
