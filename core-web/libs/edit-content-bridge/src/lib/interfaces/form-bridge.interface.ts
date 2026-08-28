@@ -1,4 +1,4 @@
-import { BrowserSelectorController, BrowserSelectorOptions } from './browser-selector.interface';
+import { DotBrowserHandle, DotBrowserOptions } from './asset-browser.interface';
 import { FormFieldAPI, FormFieldValue } from './form-field.interface';
 
 /**
@@ -49,39 +49,23 @@ export interface FormBridge {
     destroy(): void;
 
     /**
-     * Opens a browser selector modal to allow the user to select content (pages, files, etc.).
-     * The content type can be filtered using the mimeTypes option.
+     * Opens the asset browser so the user can pick content — an asset, a page, a folder or a menu
+     * link.
      *
-     * @param options - Configuration options for the browser selector
-     * @returns A controller object to manage the dialog
+     * Only the Angular host opens anything: the legacy Dojo editor has never had this dialog, and
+     * its bridge resolves `null` with a warning rather than pretending.
      *
-     * @example
-     * // Select a page
-     * bridge.openBrowserModal({
-     *   header: 'Select a Page',
-     *   mimeTypes: ['application/dotpage'],
-     *   onClose: (result) => console.log(result)
-     * });
+     * @param options What to browse. Every field is optional; the defaults browse assets only.
+     * @returns A handle whose `result` resolves with the selection, or `null` if cancelled.
      *
      * @example
-     * // Select an image
-     * bridge.openBrowserModal({
-     *   header: 'Select an Image',
-     *   mimeTypes: ['image'],
-     *   onClose: (result) => console.log(result)
-     * });
-     *
-     * @example
-     * // Select any file
-     * bridge.openBrowserModal({
-     *   header: 'Select a File',
-     *   includeDotAssets: true,
-     *   onClose: (result) => console.log(result)
-     * });
+     * const { result } = bridge.openBrowserModal({ kinds: ['page', 'link'], status: 'live' });
+     * const selection = await result;
+     * if (selection) field.setValue(selection.url);
      */
-    openBrowserModal(options: BrowserSelectorOptions): BrowserSelectorController;
+    openBrowserModal(options?: DotBrowserOptions): DotBrowserHandle;
 }
 
 // Re-export all interfaces for backwards compatibility
-export * from './browser-selector.interface';
+export * from './asset-browser.interface';
 export * from './form-field.interface';
