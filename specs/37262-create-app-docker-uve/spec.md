@@ -269,13 +269,20 @@ runtime, so it reaches every already-installed CLI immediately):*
 
 - The CLI never exits without printing recoverable state (host, token, site ID), and writes the
   `.env` it already has every value for.
-- UVE setup failure is non-fatal: warn, print manual setup steps, and continue to scaffolding.
-  The warning must link the user to the official headless UVE configuration guide —
-  <https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config>
-  — alongside the concrete values they need (host, site ID, and the app key
-  `dotema-config-v2`), so the one unset setting is self-serviceable rather than a dead end.
-- Gate the UVE write on a read — poll `GET` on the UVE app endpoint until 200, then `POST` with
-  retry on 401/403/5xx.
+- UVE setup failure is non-fatal: warn and continue to scaffolding. The message depends on why
+  it failed, because the two cases need opposite advice:
+  - **403 (terminal)** — the instance's permissions were never written by an interrupted first
+    boot. Manual UVE configuration would fail identically, so **do not** offer the manual steps.
+    Tell the user the instance is unrecoverable and to run
+    `docker compose down -v && docker compose up -d --wait`, and reference #37268.
+  - **anything else** — link the official headless UVE configuration guide,
+    <https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config>,
+    alongside the concrete values needed (host, site ID, app key `dotema-config-v2`), so the one
+    unset setting is self-serviceable rather than a dead end.
+- Probe before the UVE write — a **single** `GET` on the UVE app endpoint; on 200, `POST` with
+  retry on `5xx` **only**. Never poll, and never retry a 403: measurement showed a 403 here is
+  terminal (193 consecutive failures over ~7 minutes), so a poll would spin forever. On 403 the
+  CLI reports the instance as unrecoverable and stops — see the terminal-403 message below.
 
 *CLI (P1):*
 
