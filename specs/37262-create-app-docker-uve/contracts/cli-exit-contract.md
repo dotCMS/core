@@ -12,9 +12,15 @@ without printing either. These are the guarantees the fix establishes.
 > Once `token` and `siteId` are non-null, **every** terminal path — success, handled failure, or
 > unexpected throw — emits `host`, `token`, `siteId`, and writes `.env`.
 
-Implemented as an emit step that runs from a `finally`-equivalent position, not from the happy path.
 This is the single most important guarantee here: it converts every future unanticipated failure
 from total loss into a recoverable one.
+
+> ⚠️ **The implementation note previously here was wrong and is withdrawn.** It said this runs
+> "from a `finally`-equivalent position". `finally` does **not** run on `process.exit()`, and there
+> are 17 `process.exit()` call sites (13 inside the single `try` at `src/index.ts:93`), so that is
+> not implementable as written. The mechanism is decision **D1** in
+> [cli-design-decisions.md](../cli-design-decisions.md) — do not implement X1 until it is settled.
+> The *guarantee* above stands unchanged; only the means is open.
 
 ## X2 — Optional steps are non-fatal
 
