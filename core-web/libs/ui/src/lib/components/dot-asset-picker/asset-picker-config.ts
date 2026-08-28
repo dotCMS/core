@@ -95,6 +95,14 @@ export interface DotAssetPickerEntryOptions {
      * `browse` mode only, for the same reason as {@link allowedBaseTypes}.
      */
     browse?: DotAssetPickerBrowseOptions;
+
+    /**
+     * Explicit mimetype restriction.
+     *
+     * `browse` mode only. The media modes get theirs from {@link ASSET_PICKER_MIME_TYPES} and must
+     * not be overridable — an Image field that could return a PDF is broken.
+     */
+    mimeTypes?: string[];
 }
 
 /**
@@ -114,11 +122,15 @@ export function buildAssetPickerConfig({
     languageId,
     initialAssetPath,
     allowedBaseTypes,
-    browse
+    browse,
+    mimeTypes: explicitMimeTypes
 }: DotAssetPickerEntryOptions): DotAssetPickerConfig {
     // Presence in the mimetype map is what makes a mode a media mode — no `mode === 'x'` chain to
     // extend the next time a media node shows up.
     const mimeTypes = ASSET_PICKER_MIME_TYPES[mode as DotAssetPickerMediaMode];
+
+    // `browse` has no entry in the map, so it is the one mode that may bring its own.
+    const browseMimeTypes = mode === 'browse' ? explicitMimeTypes : undefined;
 
     // An explicit path is always about the entry site; a remembered one carries its own.
     const remembered = initialAssetPath ? undefined : readLastAssetLocation();
@@ -145,6 +157,7 @@ export function buildAssetPickerConfig({
                 ? [...allowedBaseTypes]
                 : [...ASSET_PICKER_ASSET_BASE_TYPES],
         ...(isBrowse && browse ? { browse } : {}),
+        ...(browseMimeTypes?.length ? { mimeTypes: [...browseMimeTypes] } : {}),
         ...(languageId ? { languageId } : {}),
         // What starts selected, plus the silent mimetype narrowing — media modes only.
         ...(mimeTypes

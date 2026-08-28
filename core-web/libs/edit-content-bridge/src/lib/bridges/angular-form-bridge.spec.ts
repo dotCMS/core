@@ -980,16 +980,24 @@ describe('AngularFormBridge', () => {
                 );
             });
 
-            it('should pass mimeTypes, extensions and path straight through', () => {
-                bridge.openBrowserModal({
-                    mimeTypes: ['image/*'],
-                    extensions: ['jpg'],
-                    path: '/images/'
-                });
+            it('should pass mimeTypes and path straight through', () => {
+                // No `extensions` here on purpose: the browse endpoint has no such parameter yet,
+                // so the option is not exposed rather than accepted and ignored.
+                bridge.openBrowserModal({ mimeTypes: ['image/*'], path: '/images/' });
 
                 expect(openedConfig().mimeTypes).toEqual(['image/*']);
-                expect(openedConfig().browse?.extensions).toEqual(['jpg']);
                 expect(openedConfig().path).toBe('/images/');
+            });
+
+            it('should warn when links are asked for together with mimeTypes', () => {
+                // The endpoint drops links whenever a mimetype filter is set. Surfaced, not worked
+                // around — silently returning fewer kinds than requested is the worse outcome.
+                const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+
+                bridge.openBrowserModal({ kinds: ['link'], mimeTypes: ['image/*'] });
+
+                expect(warn).toHaveBeenCalled();
+                warn.mockRestore();
             });
         });
 
