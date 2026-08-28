@@ -133,7 +133,7 @@ jobs:
 
       # Execute the paths-filter step to determine changes
       # For PRs, paths-filter automatically uses GitHub API to get changed files
-      - uses: dorny/paths-filter@v3.0.1
+      - uses: dorny/paths-filter@v4.0.3
         if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
