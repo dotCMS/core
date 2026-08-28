@@ -10,7 +10,7 @@
 
 **Related GitHub Issue**: [#37208](https://github.com/dotCMS/core/issues/37208) — part of epic [#36702](https://github.com/dotCMS/core/issues/36702) (Create AssetPicker component reusing Content Drive)
 
-**Input**: User description: "Crear el spec para el issue 37208 — el gran cambio es que la sección izquierda del AssetPicker ahora tiene un selector de sitio con su propio buscador, y un buscador de carpetas que muestra resultados planos (nombre + ruta completa) reutilizando lo que ya renderiza el folder tree."
+**Input**: User description: "Write the spec for issue 37208 — the big change is that the AssetPicker's left column now has a site selector with its own search, plus a folder search that shows flat results (name + full path), reusing what the folder tree already renders."
 
 ## Context
 
