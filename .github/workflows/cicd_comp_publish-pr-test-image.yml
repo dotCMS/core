@@ -96,7 +96,7 @@ jobs:
         if: steps.resolve.outputs.found == 'true'
         uses: actions/download-artifact@v8.0.1
         with:
-          digest-mismatch: warn
+          digest-mismatch: error
           name: docker-image
           path: /tmp/prebuilt
           run-id: ${{ steps.resolve.outputs.run_id }}
