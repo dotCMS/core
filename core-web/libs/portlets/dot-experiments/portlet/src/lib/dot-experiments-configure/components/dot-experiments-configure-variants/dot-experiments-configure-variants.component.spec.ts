@@ -77,6 +77,7 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.weights.warning': 'The weights add up to {0}%',
     'experiments.configure.variants.hint': HINT_COPY,
     'experiments.configure.variants.hint.locked': 'Locked',
+    'experiments.configure.variants.share-of-all': '{0}%',
     [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY
 });
 
@@ -1071,6 +1072,34 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             spectator.detectChanges();
 
             expect(panel()?.hasAttribute('inert')).toBe(false);
+        });
+    });
+
+    /**
+     * The one thing the Split column cannot say: a weight is a share of the traffic that *enters*
+     * the experiment, and the page sends only as much of its own as the allocation allows.
+     */
+    describe('the share of the page traffic', () => {
+        const shareOf = (rowIndex: number) =>
+            queryIn(rowIndex, 'variant-share-of-all')?.textContent?.trim();
+
+        it('should read as the weight itself while the whole page enters', () => {
+            storeMock.$trafficAllocation.mockReturnValue(100);
+            render();
+
+            expect(shareOf(0)).toBe(`${CONTROL_VARIANT.weight}%`);
+        });
+
+        it('should scale the weight by the allocation once part of the page is held back', () => {
+            // 50% of the 92% that enters is 46% of everyone who visits the page.
+            storeMock.$trafficAllocation.mockReturnValue(92);
+            render([
+                { id: CONTROL_VARIANT.id, weight: 50 },
+                { id: SECOND_VARIANT.id, weight: 50 }
+            ]);
+
+            expect(shareOf(0)).toBe('46%');
+            expect(shareOf(1)).toBe('46%');
         });
     });
 });
