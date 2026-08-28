@@ -1,7 +1,20 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable @typescript-eslint/no-empty-function */
 
+import { of, throwError } from 'rxjs';
+
+import { DotSite } from '@dotcms/dotcms-models';
+import { DotAssetPickerComponent } from '@dotcms/ui';
+
 import { AngularFormBridge } from './angular-form-bridge';
+
+/** The site the picker browses; the bridge is handed a way to resolve it. */
+const SITE: DotSite = {
+    identifier: 'site-1',
+    hostname: 'dotcms.com',
+    aliases: null,
+    archived: false
+};
 
 // Mock Angular dependencies
 const mockFormGroup = {
@@ -857,266 +870,283 @@ describe('AngularFormBridge', () => {
     });
 
     describe('openBrowserModal', () => {
+        let resolveSite: jest.Mock;
+
+        /** A file asset row, as the picker hands one back. */
+        const FILE_ITEM = {
+            identifier: 'asset-id',
+            inode: 'asset-inode',
+            title: 'Logo',
+            fileName: 'logo.png',
+            url: '/images/logo.png',
+            mimeType: 'image/png',
+            baseType: 'FILEASSET',
+            contentType: 'FileAsset'
+        };
+
         beforeEach(() => {
             jest.clearAllMocks();
-        });
-
-        it('should open dialog with correct configuration', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select a Page',
-                params: {
-                    hostFolderId: 'test-folder-id',
-                    mimeTypes: ['application/dotpage']
-                },
-                onClose
-            });
-
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    header: 'Select a Page',
-                    appendTo: 'body',
-                    closeOnEscape: false,
-                    draggable: false,
-                    keepInViewport: false,
-                    maskStyleClass: 'p-dialog-mask-dynamic',
-                    resizable: false,
-                    modal: true,
-                    width: '90%',
-                    style: { 'max-width': '1040px' },
-                    data: {
-                        hostFolderId: 'test-folder-id',
-                        mimeTypes: ['application/dotpage']
-                    }
-                })
+            window.localStorage.clear();
+            AngularFormBridge.resetInstance();
+            resolveSite = jest.fn(() => of(SITE));
+            bridge = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any,
+                undefined,
+                resolveSite as any
             );
         });
 
-        it('should use default header if not provided', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: undefined as any,
-                params: {
-                    hostFolderId: 'test-folder-id',
-                    mimeTypes: ['image']
-                },
-                onClose
+        /** The picker config the bridge handed the dialog. */
+        const openedConfig = () => mockDialogService.open.mock.calls[0][1].data;
+
+        describe('opening', () => {
+            it('should open the new AssetPicker', () => {
+                bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(mockDialogService.open).toHaveBeenCalledWith(
+                    DotAssetPickerComponent,
+                    expect.anything()
+                );
             });
 
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    header: 'Select Content'
-                })
-            );
-        });
+            it('should browse the resolved site', () => {
+                // The picker cannot browse without one, which is why the bridge has to be given a
+                // way to resolve it.
+                bridge.openBrowserModal({ kinds: ['file'] });
 
-        it('should pass params to dialog data', () => {
-            const onClose = jest.fn();
-            const params = {
-                hostFolderId: 'test-folder-id',
-                mimeTypes: ['image/jpeg', 'image/png'],
-                showPages: true,
-                showFiles: false
-            };
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params,
-                onClose
+                expect(resolveSite).toHaveBeenCalled();
+                expect(openedConfig().site).toBe(SITE);
             });
 
-            expect(mockDialogService.open).toHaveBeenCalledWith(
-                expect.any(Function),
-                expect.objectContaining({
-                    data: params
-                })
-            );
-        });
+            it('should show the caller-supplied title', () => {
+                // The picker renders its own header, so the title travels in the config rather
+                // than in `DynamicDialogConfig.header`.
+                bridge.openBrowserModal({ title: 'Select a Page', kinds: ['page'] });
 
-        it('should handle onClose callback with content', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(openedConfig().title).toBe('Select a Page');
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                name: 'test-name',
-                url: 'https://example.com/test',
-                mimeType: 'image/png',
-                baseType: 'FILEASSET',
-                contentType: 'FileAsset'
-            };
+            it('should run inside NgZone', () => {
+                // Callers are VTL scripts running outside Angular, so without this the dialog
+                // opens with no change detection behind it.
+                const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                bridge.openBrowserModal({ kinds: ['file'] });
 
-            expect(onClose).toHaveBeenCalledWith({
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                name: 'test-name',
-                url: 'https://example.com/test',
-                mimeType: 'image/png',
-                baseType: 'FILEASSET',
-                contentType: 'FileAsset'
+                expect(zoneRunSpy).toHaveBeenCalled();
+            });
+
+            it('should default to asset-only browsing when given no options', () => {
+                bridge.openBrowserModal();
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(openedConfig().browse?.showFolders).toBeFalsy();
+                expect(openedConfig().browse?.showLinks).toBeFalsy();
             });
         });
 
-        it('should handle onClose callback with null', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+        describe('option mapping', () => {
+            it('should map kinds to the offered base types', () => {
+                bridge.openBrowserModal({ kinds: ['file', 'page'] });
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
             });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(null);
-            }
+            it('should map folder and link kinds to browse options', () => {
+                bridge.openBrowserModal({ kinds: ['page', 'folder', 'link'] });
 
-            expect(onClose).toHaveBeenCalledWith(null);
+                expect(openedConfig().browse).toEqual(
+                    expect.objectContaining({ showFolders: true, showLinks: true })
+                );
+            });
+
+            it.each([
+                ['live', { showWorking: false, showArchived: false }],
+                ['working', { showWorking: true, showArchived: false }],
+                ['archived', { showArchived: true }]
+            ] as const)('should map status %s', (status, expected) => {
+                bridge.openBrowserModal({ status });
+
+                expect(openedConfig().browse).toEqual(expect.objectContaining(expected));
+            });
+
+            it('should map sort direction', () => {
+                bridge.openBrowserModal({ sort: { field: 'modDate', direction: 'desc' } });
+
+                expect(openedConfig().browse).toEqual(
+                    expect.objectContaining({ sortByDesc: true })
+                );
+            });
+
+            it('should pass mimeTypes, extensions and path straight through', () => {
+                bridge.openBrowserModal({
+                    mimeTypes: ['image/*'],
+                    extensions: ['jpg'],
+                    path: '/images/'
+                });
+
+                expect(openedConfig().mimeTypes).toEqual(['image/*']);
+                expect(openedConfig().browse?.extensions).toEqual(['jpg']);
+                expect(openedConfig().path).toBe('/images/');
+            });
         });
 
-        it('should handle content with fileName instead of name', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+        describe('result', () => {
+            /** Hands the picker's close payload back through the dialog ref. */
+            const closeWith = (payload: any) => mockDialogRef.onClose._callback?.(payload);
+
+            it('should resolve a file selection', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith(FILE_ITEM);
+
+                await expect(handle.result).resolves.toEqual({
+                    kind: 'file',
+                    identifier: 'asset-id',
+                    inode: 'asset-inode',
+                    title: 'Logo',
+                    name: 'logo.png',
+                    url: '/images/logo.png',
+                    mimeType: 'image/png',
+                    baseType: 'FILEASSET',
+                    contentType: 'FileAsset'
+                });
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                fileName: 'test-file.png',
-                url: 'https://example.com/test',
-                mimeType: 'image/png'
-            };
+            it('should report a dotAsset as its own kind', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['dotasset'] });
+                closeWith({ ...FILE_ITEM, baseType: 'DOTASSET' });
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
+                await expect(handle.result).resolves.toEqual(
+                    expect.objectContaining({ kind: 'dotasset' })
+                );
+            });
 
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    name: 'test-file.png'
-                })
-            );
+            it('should resolve a page selection', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['page'] });
+                closeWith({
+                    identifier: 'page-id',
+                    inode: 'page-inode',
+                    title: 'Home',
+                    url: '/index',
+                    baseType: 'HTMLPAGE',
+                    contentType: 'htmlpageasset'
+                });
+
+                await expect(handle.result).resolves.toEqual(
+                    expect.objectContaining({ kind: 'page', url: '/index' })
+                );
+            });
+
+            it('should fall back to urlMap when there is no url', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith({ ...FILE_ITEM, url: undefined, urlMap: '/mapped/url' });
+
+                await expect(handle.result).resolves.toEqual(
+                    expect.objectContaining({ url: '/mapped/url' })
+                );
+            });
+
+            it('should fall back to fileName when there is no name', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith({ ...FILE_ITEM, name: undefined });
+
+                await expect(handle.result).resolves.toEqual(
+                    expect.objectContaining({ name: 'logo.png' })
+                );
+            });
         });
 
-        it('should handle content with urlMap instead of url', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+        describe('cancelling', () => {
+            const closeWith = (payload: any) => mockDialogRef.onClose._callback?.(payload);
+
+            it('should resolve null when the picker is dismissed', async () => {
+                // ✕, Esc and mask click all arrive as the same empty close from PrimeNG.
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith(undefined);
+
+                await expect(handle.result).resolves.toBeNull();
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title',
-                urlMap: 'https://example.com/mapped-url'
-            };
+            it('should never reject on cancel', async () => {
+                // Cancelling is an ordinary outcome; making it a rejection would force every
+                // caller into a try/catch for the common case.
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith(null);
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
-
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    url: 'https://example.com/mapped-url'
-                })
-            );
-        });
-
-        it('should handle content with empty url and urlMap', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                await expect(handle.result).resolves.toBeNull();
             });
 
-            const content = {
-                identifier: 'test-id',
-                inode: 'test-inode',
-                title: 'Test Title'
-            };
+            it('should resolve exactly once even if the dialog closes twice', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+                closeWith(null);
+                closeWith(FILE_ITEM);
 
-            if (mockDialogRef.onClose._callback) {
-                mockDialogRef.onClose._callback(content);
-            }
-
-            expect(onClose).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    url: ''
-                })
-            );
-        });
-
-        it('should return controller with close method', () => {
-            const onClose = jest.fn();
-            const controller = bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                // The first outcome wins; a late second emission cannot overwrite it.
+                await expect(handle.result).resolves.toBeNull();
             });
 
-            expect(controller).toBeDefined();
-            expect(typeof controller.close).toBe('function');
+            it('should close the dialog when close() is called', async () => {
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
 
-            controller.close();
-            expect(mockDialogRef.close).toHaveBeenCalled();
-        });
+                handle.close();
 
-        it('should run openBrowserModal inside NgZone', () => {
-            const zoneRunSpy = jest.spyOn(mockNgZone, 'run');
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
+                expect(mockDialogRef.close).toHaveBeenCalled();
+                closeWith(undefined);
+                await expect(handle.result).resolves.toBeNull();
             });
 
-            expect(zoneRunSpy).toHaveBeenCalled();
+            it('should resolve null when no site can be resolved', async () => {
+                // Opening a picker that cannot browse anything is worse than not opening it.
+                resolveSite.mockReturnValue(of(null));
+
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                await expect(handle.result).resolves.toBeNull();
+            });
+
+            it('should resolve null when the site lookup fails', async () => {
+                resolveSite.mockReturnValue(throwError(() => new Error('offline')));
+
+                const handle = bridge.openBrowserModal({ kinds: ['file'] });
+
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                await expect(handle.result).resolves.toBeNull();
+            });
+
+            it('should resolve null when the host gave the bridge no way to resolve a site', async () => {
+                // A host that never wired one up cannot browse. Saying so beats opening an empty
+                // picker.
+                AngularFormBridge.resetInstance();
+                const bridgeWithoutSite = AngularFormBridge.getInstance(
+                    mockFormGroup as any,
+                    mockNgZone as any,
+                    mockDialogService as any
+                );
+
+                const handle = bridgeWithoutSite.openBrowserModal({ kinds: ['file'] });
+
+                expect(mockDialogService.open).not.toHaveBeenCalled();
+                await expect(handle.result).resolves.toBeNull();
+            });
         });
     });
 
     describe('destroy with dialog cleanup', () => {
         it('should close dialog when destroyed', () => {
-            const onClose = jest.fn();
-            bridge.openBrowserModal({
-                header: 'Select Content',
-                params: {
-                    hostFolderId: 'test-folder-id'
-                },
-                onClose
-            });
+            AngularFormBridge.resetInstance();
+            const bridgeWithSite = AngularFormBridge.getInstance(
+                mockFormGroup as any,
+                mockNgZone as any,
+                mockDialogService as any,
+                undefined,
+                (() => of(SITE)) as any
+            );
+            bridgeWithSite.openBrowserModal({ kinds: ['file'] });
 
-            bridge.destroy();
+            bridgeWithSite.destroy();
 
             expect(mockDialogRef.close).toHaveBeenCalled();
         });

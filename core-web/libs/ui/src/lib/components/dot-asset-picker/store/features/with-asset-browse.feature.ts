@@ -132,7 +132,14 @@ export function withAssetBrowse() {
                         folderCursor: 0,
                         maxResults: currentPagination.limit,
                         sortBy: `${sort().field}:${sort().order}`,
-                        archived: false,
+                        // Version state. Not a flat `false` any more: `openBrowserModal` callers can
+                        // ask for live-only or for archived content. Absent `browse`, this is
+                        // exactly what it always was.
+                        archived: pickerConfig?.browse?.showArchived ?? false,
+                        // `live: true` means published-only. The endpoint's own default is `false`
+                        // (working included), which is what every entry point but `browse` wants, so
+                        // the key is omitted unless a caller explicitly asked for live-only.
+                        ...(pickerConfig?.browse?.showWorking === false ? { live: true } : {}),
                         // Invariant, not a default: the picker's list is for assets. Folders are
                         // navigated through the sidebar tree.
                         showFolders: false

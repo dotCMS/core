@@ -2,7 +2,11 @@ import { patchState, signalStore, withHooks, withMethods, withState } from '@ngr
 
 import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
 
-import { DEFAULT_ASSET_PICKER_PAGE, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
+import {
+    DEFAULT_ASSET_PICKER_PAGE,
+    DEFAULT_ASSET_PICKER_PAGINATION,
+    DEFAULT_ASSET_PICKER_SORT
+} from './constants';
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
@@ -71,6 +75,14 @@ export const DotAssetPickerStore = signalStore(
                         ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {})
                     },
                     pagination: DEFAULT_ASSET_PICKER_PAGINATION,
+                    // Seeded, not pinned: `sortByDesc` sets the direction the picker opens with,
+                    // and the user can still re-sort from the table header afterwards.
+                    sort: config.browse
+                        ? {
+                              ...DEFAULT_ASSET_PICKER_SORT,
+                              order: config.browse.sortByDesc === false ? 'asc' : 'desc'
+                          }
+                        : DEFAULT_ASSET_PICKER_SORT,
                     pages: [DEFAULT_ASSET_PICKER_PAGE],
                     items: [],
                     selectedAsset: null
