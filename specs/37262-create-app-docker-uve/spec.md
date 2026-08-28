@@ -268,10 +268,19 @@ weights *who shaped the design* over line count:
 
 | Reviewer | Why they should review |
 | --- | --- |
-| **Steve Bolton** (`spbolton`) | Dominant blame on every hunk in scope — the `dotcms` service block, its `depends_on`, and its `ports`. Also authored `lgtm-observability/docker-compose.yml` (#32980), which is the `condition: service_healthy` pattern this change copies. Best-placed to say whether we are applying that pattern faithfully. |
-| **Will Ezell** | Authored the OpenSearch 1.x + SSL setup in this file (#27754) and the Postgres 18 upgrade (#34236) that touched both this file and the model stack. Owns the current `db`/`opensearch` shape we are adding healthchecks to. |
+| **Will Ezell** (`wezell`) | Authored the OpenSearch 1.x + SSL setup in this file (#27754) and the Postgres 18 upgrade (#34236) that touched both this file and the model stack. Owns the current `db`/`opensearch` shape we are adding healthchecks to, and is the most senior still-active owner of `docker/`. |
 | **Erick González** (`erickgonzalez`) | Most recent semantic change to the `dotcms` service (#36490, 2026-07-13) and prior starter-version work (#36362). Closest to the `CUSTOM_STARTER_URL` / starter-import behavior that the readiness race depends on. |
-| **Daniel Colina** | Holds 13 lines of the `opensearch` block and part of the `depends_on` region via #29915. Secondary — loop in if the OpenSearch healthcheck shape is contested. |
+| **Jose Castro** (`jcastro-dotcms`) | Not a blame match on this file. Added to cover the gap below: second-most-active contributor to `docker/` over the last 12 months. |
+
+**Unavailable — the two strongest blame signals.** `spbolton` (Steve Bolton) holds dominant blame
+on every hunk in scope *and* authored `lgtm-observability/docker-compose.yml` (#32980), the exact
+`condition: service_healthy` pattern this change copies. `dcolina` (Daniel Colina) holds 13 lines
+of the `opensearch` block via #29915. Neither is a collaborator on `dotCMS/core` any more (last
+commits 2026-03-30 and 2026-04-07 respectively), so GitHub rejects a review request for them.
+
+This leaves a real coverage gap: **nobody currently assignable designed the pattern being copied.**
+The plan phase should treat the lgtm-observability compose as the specification for correct
+usage — reading it directly rather than relying on a reviewer to catch a faithful-copy error.
 
 Two review questions to put to them explicitly, since neither is settled by this spec:
 
