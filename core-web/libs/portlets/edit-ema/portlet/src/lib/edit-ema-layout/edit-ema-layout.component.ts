@@ -77,7 +77,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
     // click) and a proper fix requires pageReload() to expose a completion observable.
     // The risk is accepted and documented here to prevent silent "fixes" that would
     // inadvertently widen the original data-loss window.
-    readonly #handleReloadComplete = effect(() => {
+    readonly $handleReloadComplete = effect(() => {
         const status = this.uveStore.uveStatus();
         const done = status === UVE_STATUS.LOADED || status === UVE_STATUS.ERROR;
 
