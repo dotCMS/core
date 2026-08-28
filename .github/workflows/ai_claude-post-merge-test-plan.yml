@@ -65,7 +65,9 @@ jobs:
           # "Area : Backend" with spaces around the colon. Verified via
           # `gh api repos/dotCMS/core/labels`. A gate written without the
           # spaces matches nothing.
-          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json merged -q .merged)
+          # `--json merged` is not a valid field for `gh pr view` (gh lists mergedAt/mergedBy/state
+          # but no bare `merged`), and under `set -e` that aborts this step on every run. Use state.
+          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state -q '.state == "MERGED"')
           LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
 
           echo "PR #$PR_NUMBER merged=$MERGED"
@@ -284,11 +286,17 @@ jobs:
     name: Generate and post the plan
     needs: [preflight, prep]
     if: needs.prep.outputs.has_work == 'true'
+    # Must match what the nested executor requests, not what this job appears to need.
+    # claude-orchestrator delegates to claude-executor, which requests contents: write and
+    # pull-requests: write; GitHub only allows permissions to NARROW down a reusable-workflow
+    # chain, so granting less here makes the nested call illegal and the whole workflow file
+    # invalid — it fails at startup before any job runs, with no logs. Same set as the sibling
+    # ai_claude-rollback-safety.yml, which calls the same orchestrator.
     permissions:
-      contents: read
+      contents: write
       id-token: write
       issues: write
-      pull-requests: read
+      pull-requests: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
