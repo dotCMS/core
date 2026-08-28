@@ -195,7 +195,7 @@ jobs:
 
       - name: Cache Maven Repository
         id: cache-maven
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: ~/.m2/repository
           key: maven-core-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
@@ -205,7 +205,7 @@ jobs:
 
       - name: Cache Core Output
         id: cache-core-output
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ./dotCMS/target/classes
@@ -218,7 +218,7 @@ jobs:
 
       - name: Cache Node Binary
         id: cache-node-binary
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: |
             core-web/installs
@@ -227,7 +227,7 @@ jobs:
 
       - name: Cache NPM
         id: cache-npm
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.npm
@@ -237,7 +237,7 @@ jobs:
 
       - name: Cache Docker Context
         id: cache-docker-context
-        uses: actions/cache@v4
+        uses: actions/cache@v6.1.0
         with:
           path: ${{ env.DOCKER_BUILD_CONTEXT }}/context
           key: docker-context-${{ steps.set-common-vars.outputs.date }}-${{ github.run_id }}
@@ -270,14 +270,14 @@ jobs:
 
       - name: Restore Maven Repository
         id: restore-maven
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ~/.m2/repository
           key: maven-core-${{ needs.prepare-release.outputs.date }}-${{ github.run_id }}
 
       - name: Restore Core Output
         id: restore-core-output
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: |
             ./dotCMS/target/classes
@@ -287,14 +287,14 @@ jobs:
 
       - name: Restore Node Binary
         id: restore-node-binary
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: core-web/installs
           key: node-binary-${{ hashFiles('core-web/.nvmrc') }}
 
       - name: Restore NPM
         id: restore-npm
-        uses: actions/cache/restore@v4
+        uses: actions/cache/restore@v6.1.0
         with:
           path: ~/.npm
           key: npm-${{ hashFiles('core-web/package-lock.json') }}

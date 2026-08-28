@@ -55,7 +55,7 @@ jobs:
   build:
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v7.0.1
 
       - name: Prepare Runner
         uses: ./.github/actions/core-cicd/prepare-runner
