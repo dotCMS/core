@@ -17,7 +17,7 @@ import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotContentDriveItem,
+    DotContentDriveBrowseItem,
     DotSite
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -86,7 +86,7 @@ const SELECTED_FOLDER = {
     title: 'images',
     name: 'images',
     path: '/images/'
-} as unknown as DotContentDriveItem;
+} as DotContentDriveBrowseItem;
 
 /** A menu link row. Also not a contentlet. */
 const SELECTED_LINK = {
@@ -96,7 +96,7 @@ const SELECTED_LINK = {
     inode: 'link-inode',
     title: 'Docs',
     url: '/docs'
-} as unknown as DotContentDriveItem;
+} as DotContentDriveBrowseItem;
 const HYDRATED_ASSET = {
     inode: 'inode-1',
     title: 'logo.png',
@@ -142,7 +142,7 @@ const createMockStore = () => {
         folders: signal([]),
         foldersStatus: signal(ComponentStatus.LOADED),
         selectedNode: signal<{ data: unknown } | undefined>(undefined),
-        selectedAsset: signal<DotContentDriveItem | null>(null),
+        selectedAsset: signal<DotContentDriveBrowseItem | null>(null),
         $request: signal({}),
         // methods
         initPicker: jest.fn(),

@@ -980,6 +980,17 @@ describe('AngularFormBridge', () => {
                 );
             });
 
+            it('should map the sort field, not just the direction', () => {
+                // Reported in review of #37273: only `direction` was read, so a caller asking for
+                // `title` silently got the picker's default `modDate`. Both shipped templates pass
+                // `modDate`, which is the default, so the drop was invisible.
+                bridge.openBrowserModal({ sort: { field: 'title', direction: 'asc' } });
+
+                expect(openedConfig().browse).toEqual(
+                    expect.objectContaining({ sortField: 'title', sortByDesc: false })
+                );
+            });
+
             it('should pass mimeTypes and path straight through', () => {
                 // No `extensions` here on purpose: the browse endpoint has no such parameter yet,
                 // so the option is not exposed rather than accepted and ignored.

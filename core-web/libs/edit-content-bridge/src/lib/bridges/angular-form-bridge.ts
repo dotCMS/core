@@ -592,9 +592,19 @@ export class AngularFormBridge implements FormBridge {
                         });
                     });
                 },
-                // Nothing to browse and nothing useful to say beyond that — same as the File field,
-                // which simply does not open when no site resolves.
-                error: () => finish(null)
+                // Nothing to browse — same as the File field, which simply does not open when no
+                // site resolves. Logged because this is the 5xx / offline / expired-session branch:
+                // to the template author `onClose(null)` is indistinguishable from the user
+                // pressing Cancel, so without this a "the browse button does nothing" report has
+                // nothing behind it.
+                error: (error) => {
+                    console.error(
+                        'DotCustomFieldApi.openBrowserModal: could not resolve the current site, ' +
+                            'so the picker did not open.',
+                        error
+                    );
+                    finish(null);
+                }
             });
 
         return {
@@ -657,7 +667,9 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
         // Three states, expressed as the two flags the picker already understands.
         ...(options.status ? { showWorking: options.status !== 'live' } : {}),
         ...(options.status ? { showArchived: options.status === 'archived' } : {}),
-        ...(options.sort ? { sortByDesc: options.sort.direction === 'desc' } : {})
+        ...(options.sort
+            ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
+            : {})
     };
 }
 
@@ -687,6 +699,17 @@ function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
  * its target. Contentlet-only fields are attached only for the kinds that actually have them, so a
  * consumer can never read a mimetype off a folder.
  */
+/**
+ * A string, or nothing.
+ *
+ * The row arrives as `Record<string, unknown>`, so a malformed one could hand back a number or an
+ * object where the contract promises a string. Narrowing here means a consumer reading `.mimeType`
+ * gets either a real string or `undefined`, never something that only claims to be one.
+ */
+function asString(value: unknown): string | undefined {
+    return typeof value === 'string' ? value : undefined;
+}
+
 function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrowserSelection {
     const row = item as Record<string, unknown>;
     const kind = kindOf(row);
@@ -705,16 +728,18 @@ function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrows
     if (kind === 'page') {
         return {
             ...base,
-            baseType: row['baseType'],
-            contentType: row['contentType']
-        } as DotBrowserSelection;
+            kind,
+            baseType: asString(row['baseType']),
+            contentType: asString(row['contentType'])
+        };
     }
 
     return {
         ...base,
-        name: row['name'] ?? row['fileName'],
-        mimeType: row['mimeType'],
-        baseType: row['baseType'],
-        contentType: row['contentType']
-    } as DotBrowserSelection;
+        kind,
+        name: asString(row['name']) ?? asString(row['fileName']),
+        mimeType: asString(row['mimeType']),
+        baseType: asString(row['baseType']),
+        contentType: asString(row['contentType'])
+    };
 }

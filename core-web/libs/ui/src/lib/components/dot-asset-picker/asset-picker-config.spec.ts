@@ -230,8 +230,7 @@ describe('buildAssetPickerConfig', () => {
                 showLinks: true,
                 showWorking: false,
                 showArchived: false,
-                sortByDesc: true,
-                extensions: ['jpg']
+                sortByDesc: true
             };
 
             const config = buildAssetPickerConfig({ mode: 'browse', site: SITE, browse });

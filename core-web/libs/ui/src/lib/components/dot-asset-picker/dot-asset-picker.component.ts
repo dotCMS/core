@@ -304,7 +304,10 @@ export class DotAssetPickerComponent implements OnInit {
             return { siteId: site.identifier, hostname: site.hostname, path: item.path };
         }
 
-        const url = (item as DotCMSContentlet).url;
+        // No cast: after `isFolder`, the union is `DotCMSContentlet | DotContentDriveLink` and both
+        // declare `url: string`. Reading it directly means a future browse item without a `url`
+        // fails to compile here instead of silently reading `undefined`.
+        const url = item.url;
         const lastSlash = url?.lastIndexOf('/') ?? -1;
         const path = lastSlash >= 0 ? url.slice(0, lastSlash + 1) : this.store.path();
 

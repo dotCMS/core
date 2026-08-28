@@ -67,19 +67,25 @@ export function withAssetBrowse() {
              * Handing that to PrimeNG makes every full page look like the last one, so it computes a
              * single page and renders "next" disabled — the paging chain below never even runs.
              *
-             * So while the bookmark for the page on screen reports more content, claim one page
-             * beyond to keep the arrow live; once it doesn't, the page is the last one and the exact
-             * total is knowable. Mirrors Content Drive's `$totalItems`.
+             * So while the bookmark for the page on screen reports more of ANY stream, claim one
+             * page beyond to keep the arrow live; once none of them do, the page is the last one and
+             * the exact total is knowable. Mirrors Content Drive's `$totalItems`.
+             *
+             * All three streams matter, not just content: contentlets, folders and menu links page
+             * independently, so a page whose content ran out while folders kept going would
+             * otherwise report the rows already on screen as the grand total. PrimeNG then sees
+             * `first + rows >= totalRecords`, disables Next, and those folders become unreachable.
              */
             $totalRecords: computed(() => {
                 const { page, limit } = pagination();
-                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMoreContent`
-                // answers "is there anything past what is on screen".
+                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMore*` flags
+                // answer "is there anything past what is on screen".
                 const bookmark = pages()[page];
+                const hasMore = bookmark
+                    ? bookmark.hasMoreContent || bookmark.hasMoreFolders || bookmark.hasMoreLinks
+                    : false;
 
-                return bookmark?.hasMoreContent
-                    ? limit * (page + 1)
-                    : limit * (page - 1) + items().length;
+                return hasMore ? limit * (page + 1) : limit * (page - 1) + items().length;
             }),
 
             /**
@@ -153,8 +159,9 @@ export function withAssetBrowse() {
                         // exactly what it always was.
                         archived: browse?.showArchived ?? false,
                         // `live: true` means published-only. The endpoint's own default is `false`
-                        // (working included), which is what every entry point but `browse` wants, so
-                        // the key is omitted unless a caller explicitly asked for live-only.
+                        // (working included), which is what every entry point but `openBrowserModal`
+                        // wants, so the key is omitted unless a caller explicitly asked for
+                        // live-only.
                         ...(browse?.showWorking === false ? { live: true } : {}),
                         // Default, not an invariant any more: the picker's list is for assets, and
                         // folders are navigated through the sidebar tree — unless the caller
@@ -192,6 +199,9 @@ export function withAssetBrowse() {
                             tap((response: DotContentDriveSearchResponse) => {
                                 const page = store.pagination().page;
                                 const pages = [...store.pages()];
+                                // The bookmark this page was requested with — its cursors are the
+                                // "where we asked from" fallback below.
+                                const sent = pages[page - 1];
 
                                 // Bookmark where the NEXT page starts, so paging forward can
                                 // resume from a cursor instead of replaying from the top.
@@ -200,10 +210,15 @@ export function withAssetBrowse() {
                                     hasMoreContent: response.hasMoreContent,
                                     folderCursor: response.nextFolderCursor,
                                     hasMoreFolders: response.hasMoreFolders,
-                                    // Only a `showLinks` response carries these. Defaulting the
-                                    // cursor to the one we sent keeps it from rewinding to 0 on a
-                                    // page that did not query links.
-                                    linkCursor: response.nextLinkCursor ?? 0,
+                                    // Only a `showLinks` response carries these, and unlike the
+                                    // folder pair they are both optional — so a response could
+                                    // report more links without saying where to resume. Falling
+                                    // back to the cursor we sent keeps the stream from rewinding to
+                                    // 0 and re-serving links that were already shown; once there
+                                    // are no more, 0 is correct because nothing will read it again.
+                                    linkCursor: response.hasMoreLinks
+                                        ? (response.nextLinkCursor ?? sent?.linkCursor ?? 0)
+                                        : 0,
                                     hasMoreLinks: response.hasMoreLinks ?? false
                                 };
 

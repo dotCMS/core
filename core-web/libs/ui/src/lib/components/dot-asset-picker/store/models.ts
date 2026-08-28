@@ -59,6 +59,14 @@ export interface DotAssetPickerBrowseOptions {
 
     /** Sort descending rather than ascending. */
     sortByDesc?: boolean;
+
+    /**
+     * Field to sort by, e.g. `modDate` or `title`.
+     *
+     * Seeds the picker's initial sort alongside {@link sortByDesc}; omit for the picker's default.
+     * Both are a starting point, not a lock — the editor can re-sort from the table header.
+     */
+    sortField?: string;
 }
 
 export interface DotAssetPickerConfig {

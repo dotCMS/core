@@ -84,7 +84,7 @@ export const DotAssetPickerStore = signalStore(
                     // and the user can still re-sort from the table header afterwards.
                     sort: config.browse
                         ? {
-                              ...DEFAULT_ASSET_PICKER_SORT,
+                              field: config.browse.sortField ?? DEFAULT_ASSET_PICKER_SORT.field,
                               order: config.browse.sortByDesc === false ? 'asc' : 'desc'
                           }
                         : DEFAULT_ASSET_PICKER_SORT,

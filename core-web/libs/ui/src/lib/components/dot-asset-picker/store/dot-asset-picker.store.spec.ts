@@ -548,6 +548,65 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
+    describe('paginator row count across three streams', () => {
+        it('should keep Next reachable while folders remain, even with content exhausted', () => {
+            // Reported in review of #37273. The paginator total looked only at `hasMoreContent`, so
+            // a page whose content stream ended while folders kept going reported the rows already
+            // on screen as the grand total. PrimeNG then sees `first + rows >= totalRecords`,
+            // disables Next, and the remaining folders become unreachable.
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: true,
+                    nextFolderCursor: 5
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            // One page beyond what is on screen, so the arrow stays live.
+            expect(store.$totalRecords()).toBeGreaterThan(15);
+        });
+
+        it('should keep Next reachable while menu links remain', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: true,
+                    nextLinkCursor: 3
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBeGreaterThan(15);
+        });
+
+        it('should settle on the exact total once every stream is exhausted', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: false
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(15);
+        });
+    });
+
     describe('opt-in guarantee (no browse options)', () => {
         it.each([
             ['File field', FILE_FIELD_CONFIG],
