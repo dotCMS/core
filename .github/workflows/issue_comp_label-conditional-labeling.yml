@@ -64,7 +64,7 @@ jobs:
           GITHUB_CONTEXT: ${{ toJSON(github) }}
       - name: Resolve Labels
         id: resolve-labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         with:
           result-encoding: string
           script: |
@@ -93,7 +93,7 @@ jobs:
             
             core.setOutput('labels', JSON.stringify(filteredLabels));
       - name: Add Labels
-        uses: actions/github-script@v7
+        uses: actions/github-script@v8
         if: success() && steps.resolve-labels.outputs.labels != ''
         with:
           result-encoding: string

@@ -297,7 +297,7 @@ runs:
 
     - name: Docker Hub Login
       if: ${{ inputs.docker-io-username != '' && inputs.docker-io-token != '' }}
-      uses: docker/login-action@v3.0.0
+      uses: docker/login-action@v4.6.0
       with:
         username: ${{ inputs.docker-io-username }}
         password: ${{ inputs.docker-io-token }}
