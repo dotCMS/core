@@ -1,14 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    inject,
-    signal,
-    viewChild
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -38,7 +30,6 @@ import { DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
  */
 @Component({
     selector: 'dot-roles-add',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         ButtonModule,
@@ -50,8 +41,7 @@ import { DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent
     ],
-    templateUrl: './dot-roles-add.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-roles-add.component.html'
 })
 export class DotRolesAddComponent {
     readonly #store = inject(DotRolesStore);
@@ -84,6 +74,13 @@ export class DotRolesAddComponent {
     protected readonly treeSelect = viewChild(TreeSelect);
     protected readonly $searching = signal(false);
     readonly #filterInput$ = new Subject<string>();
+
+    /**
+     * Guards against an older search overwriting a newer one. The debounce
+     * gates how often a search STARTS, not the order responses come back, and
+     * these calls are plain promises with no switchMap to cancel the loser.
+     */
+    #searchToken = 0;
 
     protected readonly $submitting = signal(false);
     protected readonly $error = signal<string | null>(null);
@@ -186,14 +183,28 @@ export class DotRolesAddComponent {
     async #runSearch(query: string): Promise<void> {
         // Under 3 chars the picker falls back to the cached tree — matching
         // the left-hand tree, and avoiding a request per keystroke.
+        const token = ++this.#searchToken;
+
         if (query.trim().length < 3) {
             this.#searchResults.set(null);
+            // Reset the widget's own filter too. `Tree.getRootNode()` keeps
+            // serving its cached `filteredNodes` once the filter has run, so
+            // reverting the options alone would leave the last search's rows
+            // on screen after the admin backspaces out of the query.
+            this.treeSelect()?.treeViewChild?._filter('');
 
             return;
         }
 
         this.$searching.set(true);
         const results = await this.#store.searchRoleTree(query);
+
+        // A newer query already landed — drop this one rather than replacing
+        // fresh results with stale ones.
+        if (token !== this.#searchToken) {
+            return;
+        }
+
         this.#searchResults.set(results);
         this.$searching.set(false);
 

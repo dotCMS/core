@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
+import { Component, OnInit, computed, inject } from '@angular/core';
 
 import { SplitterModule } from 'primeng/splitter';
 import { TabsModule } from 'primeng/tabs';
@@ -17,7 +17,6 @@ import { DotRoleTab } from '../models/dot-roles.models';
 
 @Component({
     selector: 'dot-roles-page',
-    standalone: true,
     imports: [
         SplitterModule,
         TabsModule,
@@ -31,8 +30,7 @@ import { DotRoleTab } from '../models/dot-roles.models';
     ],
     providers: [DotRolesStore],
     templateUrl: './dot-roles-page.component.html',
-    host: { class: 'flex flex-1 min-h-0 block' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'flex flex-1 min-h-0 block' }
 })
 export class DotRolesPageComponent implements OnInit {
     protected readonly store = inject(DotRolesStore);

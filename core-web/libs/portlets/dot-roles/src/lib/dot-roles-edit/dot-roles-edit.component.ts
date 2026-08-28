@@ -1,14 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    inject,
-    signal,
-    viewChild
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
@@ -47,7 +39,6 @@ import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-role
  */
 @Component({
     selector: 'dot-roles-edit',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         ButtonModule,
@@ -62,8 +53,7 @@ import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-role
         DotFieldValidationMessageComponent
     ],
     providers: [ConfirmationService],
-    templateUrl: './dot-roles-edit.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-roles-edit.component.html'
 })
 export class DotRolesEditComponent {
     readonly #store = inject(DotRolesStore);
@@ -91,6 +81,13 @@ export class DotRolesEditComponent {
     protected readonly treeSelect = viewChild(TreeSelect);
     protected readonly $searching = signal(false);
     readonly #filterInput$ = new Subject<string>();
+
+    /**
+     * Guards against an older search overwriting a newer one. The debounce
+     * gates how often a search STARTS, not the order responses come back, and
+     * these calls are plain promises with no switchMap to cancel the loser.
+     */
+    #searchToken = 0;
 
     protected readonly role: DotRoleDetail = this.#config.data?.role;
 
@@ -121,15 +118,24 @@ export class DotRolesEditComponent {
         if (!this.role) {
             return [];
         }
+        const cached = this.#store.roleTree();
+        const searchResults = this.#searchResults();
+        const source = searchResults ?? cached;
+
+        // Collect descendants from BOTH datasets, not just the one being
+        // rendered. The cached tree holds only the branches that were expanded,
+        // while search results carry full ancestor paths from a different
+        // endpoint — so each can contain a descendant the other is missing.
+        // Excluding from only one lets the search path offer a real descendant
+        // as the new parent, which is the cycle this guard exists to prevent.
         const exclude = new Set<string>();
-        this.#collectDescendantIds(this.#findInTree(this.#store.roleTree(), this.role.id), exclude);
+        this.#collectDescendantIds(this.#findInTree(cached, this.role.id), exclude);
+        if (searchResults) {
+            this.#collectDescendantIds(this.#findInTree(searchResults, this.role.id), exclude);
+        }
         exclude.add(this.role.id);
 
-        return this.#toTreeNodes(
-            this.#searchResults() ?? this.#store.roleTree(),
-            exclude,
-            this.#expandedKeys()
-        );
+        return this.#toTreeNodes(source, exclude, this.#expandedKeys());
     });
 
     constructor() {
@@ -141,10 +147,17 @@ export class DotRolesEditComponent {
         // self-referential `parent`, which `#normalizeParentId` maps to null.
         const currentParentId = this.#normalizeParentId(this.role);
         if (currentParentId) {
-            const node = this.#findNode(this.$parentTree(), currentParentId);
-            if (node) {
-                this.form.controls.parent.setValue(node);
-            }
+            // The fallback is what stops a silent reparent: a role reached
+            // through the page's search can have its parent chain missing from
+            // the cached tree, and leaving the picker empty would send
+            // `parentRoleId: null` — moving the role to root on a Save the
+            // admin only opened to rename it.
+            this.form.controls.parent.setValue(
+                this.#findNode(this.$parentTree(), currentParentId) ?? {
+                    key: currentParentId,
+                    label: this.#parentLabel(currentParentId)
+                }
+            );
         }
 
         if (this.readOnly) {
@@ -208,14 +221,28 @@ export class DotRolesEditComponent {
     }
 
     async #runSearch(query: string): Promise<void> {
+        const token = ++this.#searchToken;
+
         if (query.trim().length < 3) {
             this.#searchResults.set(null);
+            // Reset the widget's own filter too. `Tree.getRootNode()` keeps
+            // serving its cached `filteredNodes` once the filter has run, so
+            // reverting the options alone would leave the last search's rows
+            // on screen after the admin backspaces out of the query.
+            this.treeSelect()?.treeViewChild?._filter('');
 
             return;
         }
 
         this.$searching.set(true);
         const results = await this.#store.searchRoleTree(query);
+
+        // A newer query already landed — drop this one rather than replacing
+        // fresh results with stale ones.
+        if (token !== this.#searchToken) {
+            return;
+        }
+
         this.#searchResults.set(results);
         this.$searching.set(false);
 
@@ -316,6 +343,11 @@ export class DotRolesEditComponent {
 
             return acc;
         }, []);
+    }
+
+    /** Best-effort display name for a parent that is not in the loaded tree. */
+    #parentLabel(parentId: string): string {
+        return this.#findInTree(this.#store.roleTree(), parentId)?.name ?? parentId;
     }
 
     #findNode(nodes: TreeNode[], key: string): TreeNode | null {

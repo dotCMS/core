@@ -370,7 +370,22 @@ export const DotRolesStore = signalStore(
                                               store.roles(),
                                               role.id,
                                               directCount
-                                          )
+                                          ),
+                                          // While a search is active the tree
+                                          // renders `searchResults`, not
+                                          // `roles` — patching only the cache
+                                          // would leave the badge stale on
+                                          // exactly the path most admins use to
+                                          // reach a role.
+                                          ...(store.isSearching()
+                                              ? {
+                                                    searchResults: patchNodeUserCount(
+                                                        store.searchResults() ?? [],
+                                                        role.id,
+                                                        directCount
+                                                    )
+                                                }
+                                              : {})
                                       })
                             });
                         }),
@@ -627,17 +642,34 @@ export const DotRolesStore = signalStore(
                     await firstValueFrom(
                         rolesService.saveToolGroups(roleId, toolGroupIds).pipe(take(1))
                     );
-                    patchState(store, { toolGroupsSaving: false });
-                    // Silent: reconciles inherited chips and the header count
-                    // without the table ever leaving the loaded state.
-                    loadToolGroups({ id: roleId, silent: true });
+                    // Both the lock and the reconcile are scoped to the role
+                    // this save belongs to. Dispatching with a stale id enters
+                    // the SHARED rxMethod, whose switchMap cancels the current
+                    // role's in-flight load; the sink guard then discards the
+                    // stale result, so nothing ever settles that role's status
+                    // and its tab stays on the skeleton. And clearing the lock
+                    // unconditionally would unlock a grid whose own save is
+                    // still running.
+                    if (store.selectedRoleId() === roleId) {
+                        patchState(store, { toolGroupsSaving: false });
+                        // Silent: reconciles inherited chips and the header
+                        // count without the table leaving the loaded state.
+                        loadToolGroups({ id: roleId, silent: true });
+                    }
 
                     return true;
                 } catch (error) {
                     httpErrorManager.handle(error);
-                    // Roll the optimistic patch back — the grid must not keep
-                    // showing a state the backend rejected.
-                    patchState(store, { toolGroups: previous, toolGroupsSaving: false });
+                    // Roll the optimistic patch back — but only onto the role it
+                    // came from. `previous` is role A's snapshot; writing it
+                    // while role B is on screen would replace B's real grants,
+                    // and the next save would persist A's rows as B's.
+                    if (store.selectedRoleId() === roleId) {
+                        patchState(store, {
+                            toolGroups: previous,
+                            toolGroupsSaving: false
+                        });
+                    }
 
                     return false;
                 }
@@ -744,24 +776,18 @@ export const DotRolesStore = signalStore(
                             roles: appendChildToParent(store.roles(), parentId, created)
                         });
                     } else {
-                        // Parent isn't in the loaded tree — await the
-                        // sub-tree refresh so the tree is coherent before
-                        // we resolve. A bare `subscribe` here used to race
-                        // the resolve.
-                        try {
-                            const parentDetail = await firstValueFrom(
-                                rolesService.getById(parentId, true).pipe(take(1))
-                            );
-                            patchState(store, {
-                                roles: patchNodeChildren(
-                                    store.roles(),
-                                    parentId,
-                                    parentDetail.roleChildren ?? []
-                                )
-                            });
-                        } catch (error) {
-                            httpErrorManager.handle(error);
-                        }
+                        // Parent isn't in the loaded tree. The previous attempt
+                        // here fetched it and called `patchNodeChildren`, which
+                        // only rewrites a node it can already FIND — so in
+                        // exactly the case this branch exists for it was a
+                        // no-op, and the new role never appeared in the tree
+                        // (it was still selected in the detail pane, which made
+                        // it look like it had worked).
+                        //
+                        // We cannot splice into an unknown location, so reload
+                        // the roots. Heavier than a scoped patch, but a coherent
+                        // tree beats a silently missing role.
+                        loadRootRoles();
                     }
 
                     // The POST response is already a hydrated `RoleView` —
@@ -896,9 +922,12 @@ export const DotRolesStore = signalStore(
                         rolesService.grantUser(role.id, userId).pipe(take(1))
                     );
 
-                    // Reload members so the new row lands in the table with the
-                    // correct grantedFromRoleId/Name (matching the selected role).
-                    loadMembers({ id: role.id });
+                    // Guarded for the same reason as saveToolGroups: a stale
+                    // dispatch would cancel the current role's members load and
+                    // then be thrown away by the sink guard, stranding the tab.
+                    if (store.selectedRoleId() === role.id) {
+                        loadMembers({ id: role.id });
+                    }
 
                     return result;
                 } catch (error) {
@@ -944,7 +973,10 @@ export const DotRolesStore = signalStore(
                     // Refresh from the BE too — inherited-vs-direct labelling
                     // can shift if a user was ONLY direct on this role and now
                     // ends up inherited from an ancestor still granting them.
-                    loadMembers({ id: role.id });
+                    // Guarded as above.
+                    if (store.selectedRoleId() === role.id) {
+                        loadMembers({ id: role.id });
+                    }
 
                     return result;
                 } catch (error) {

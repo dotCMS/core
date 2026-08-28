@@ -1,15 +1,6 @@
 import { Subject, of } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    effect,
-    inject,
-    signal,
-    untracked
-} from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -51,7 +42,6 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
 
 @Component({
     selector: 'dot-role-users-tab',
-    standalone: true,
     imports: [
         FormsModule,
         AvatarModule,
@@ -68,8 +58,7 @@ const MEMBERS_DEFAULT_ROWS_PER_PAGE = 20;
     ],
     providers: [ConfirmationService],
     templateUrl: './dot-role-users-tab.component.html',
-    host: { class: 'block h-full' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'block h-full' }
 })
 export class DotRoleUsersTabComponent {
     protected readonly store = inject(DotRolesStore);

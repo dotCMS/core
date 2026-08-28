@@ -435,16 +435,22 @@ describe('DotRolesStore', () => {
             expect(countFor('r-eco')).toBe(1);
         });
 
-        it('leaves the badge alone when a membership check failed', () => {
-            const before = countFor('r-eco');
-            service.getUsers.mockReturnValue(throwError(() => new Error('boom')));
-
+        it('leaves an already-populated badge alone when a membership check failed', () => {
+            // Seed a real count first. Asserting against an unset badge would
+            // only prove we do not write `undefined` on a first failed load —
+            // the risk this guards is RESETTING a good count with one derived
+            // from a partial answer.
+            service.getUsers.mockImplementation((roleId: string) =>
+                of(roleId === 'r-eco' ? MOCK_USER_FILTER_RESULTS : [])
+            );
             store.selectRole('r-eco');
             store.loadMembers({ id: 'r-eco' });
+            expect(countFor('r-eco')).toBe(2);
 
-            // Replacing a stale count with one derived from a partial answer
-            // would be worse than leaving it stale.
-            expect(countFor('r-eco')).toBe(before);
+            service.getUsers.mockReturnValue(throwError(() => new Error('boom')));
+            store.loadMembers({ id: 'r-eco' });
+
+            expect(countFor('r-eco')).toBe(2);
         });
     });
 
@@ -703,25 +709,21 @@ describe('DotRolesStore', () => {
             expect(eco?.roleChildren?.map((n) => n.id)).toContain('r-eco-child');
         });
 
-        it('should refresh just the parent subtree when the parent is not loaded', async () => {
+        it('reloads the roots when the parent is not in the loaded tree', async () => {
+            // The scoped patch this used to attempt was a no-op: it rewrote a
+            // node it had to find first, and this branch runs precisely when
+            // the parent is nowhere in the tree. The role was created but never
+            // appeared, which read as "it worked" because the detail pane still
+            // selected it. A full reload is heavier but coherent.
             store.loadRootRoles();
             jest.clearAllMocks();
             service.create.mockReturnValue(
                 of({ id: 'r-deep', name: 'Deep', parent: 'r-unloaded', roleKey: 'deep' })
             );
-            service.getById.mockReturnValueOnce(
-                of({
-                    id: 'r-unloaded',
-                    name: 'Unloaded Parent',
-                    roleChildren: [{ id: 'r-deep', name: 'Deep', roleChildren: [] }]
-                })
-            );
 
             await store.createRole({ ...FORM, parentRoleId: 'r-unloaded' });
 
-            expect(service.getRoots).not.toHaveBeenCalled();
-            // One call for the parent subtree refresh + one for the selected role detail.
-            expect(service.getById).toHaveBeenCalledWith('r-unloaded', true);
+            expect(service.getRoots).toHaveBeenCalled();
         });
 
         it('should delegate to httpErrorManager and return null on failure', async () => {

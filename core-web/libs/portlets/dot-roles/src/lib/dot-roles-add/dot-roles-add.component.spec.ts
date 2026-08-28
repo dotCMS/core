@@ -56,10 +56,13 @@ describe('DotRolesAddComponent', () => {
     describe('parent picker', () => {
         beforeEach(() => {
             // `mockProvider` builds its jest.fn()s once at factory scope, so
-            // call history survives between tests unless it is cleared here.
-            const store = createComponent().inject(DotRolesStore, true);
-            (store.searchRoleTree as jest.Mock).mockClear();
-            (store.loadRoleChildren as jest.Mock).mockClear();
+            // BOTH call history and implementation survive between tests.
+            // `mockClear` only resets the former — re-seed the default too, or
+            // one test's `mockResolvedValue` silently becomes every later
+            // test's behaviour.
+            const store = spectator.inject(DotRolesStore, true);
+            (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
+            (store.loadRoleChildren as jest.Mock).mockReset();
         });
 
         it('marks a node with children as expandable even before they are fetched', () => {
@@ -112,7 +115,7 @@ describe('DotRolesAddComponent', () => {
             const spectator = createComponent();
             spectator.detectChanges();
             const store = spectator.inject(DotRolesStore, true);
-            (store.searchRoleTree as jest.Mock).mockResolvedValue([
+            (store.searchRoleTree as jest.Mock).mockResolvedValueOnce([
                 { id: 'r-found', name: 'Found', roleChildren: [] }
             ]);
 

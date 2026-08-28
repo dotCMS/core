@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { CheckboxModule } from 'primeng/checkbox';
@@ -52,7 +52,6 @@ function toReadableToolName(title: string): string {
  */
 @Component({
     selector: 'dot-role-tools-tab',
-    standalone: true,
     imports: [
         FormsModule,
         CheckboxModule,
@@ -63,8 +62,7 @@ function toReadableToolName(title: string): string {
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-role-tools-tab.component.html',
-    host: { class: 'block h-full' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'block h-full' }
 })
 export class DotRoleToolsTabComponent {
     protected readonly store = inject(DotRolesStore);

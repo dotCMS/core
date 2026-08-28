@@ -1,13 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    inject,
-    signal
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -45,7 +38,6 @@ interface DotRolePrimeTreeNode extends TreeNode {
 
 @Component({
     selector: 'dot-roles-tree',
-    standalone: true,
     imports: [
         FormsModule,
         ButtonModule,
@@ -60,8 +52,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
     ],
     providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-tree.component.html',
-    host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
 export class DotRolesTreeComponent {
     protected readonly store = inject(DotRolesStore);
