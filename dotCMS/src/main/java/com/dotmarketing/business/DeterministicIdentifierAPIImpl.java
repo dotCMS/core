@@ -38,6 +38,7 @@ import com.google.common.base.Preconditions;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 import java.io.IOException;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
@@ -117,7 +118,24 @@ public class DeterministicIdentifierAPIImpl implements DeterministicIdentifierAP
             } else {
                 //This should handle cases like a multi-binary contentlets
                 final Optional<String> optional = resolveAssetName(contentlet);
-                seed = optional.orElseGet(contentlet::getTitle);
+                if (optional.isPresent()) {
+                    seed = optional.get();
+                } else {
+                    // For generic contentlets with no binary fields, build the seed from all
+                    // non-system field values sorted by variable name. This prevents two contentlets
+                    // with the same title but different field values from receiving the same identifier.
+                    final String fieldValueSeed = contentlet.getContentType().fields().stream()
+                            .filter(field -> !(field instanceof BinaryField))
+                            .filter(field -> field.dataType() != DataTypes.SYSTEM)
+                            .sorted(Comparator.comparing(Field::variable))
+                            .map(field -> {
+                                final Object value = contentlet.get(field.variable());
+                                return value != null ? field.variable() + "=" + value : null;
+                            })
+                            .filter(Objects::nonNull)
+                            .collect(Collectors.joining("|"));
+                    seed = UtilMethods.isSet(fieldValueSeed) ? fieldValueSeed : contentlet.getTitle();
+                }
             }
         } else if (asset instanceof WebAsset) {
             seed = ((WebAsset) asset).getTitle();
