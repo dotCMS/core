@@ -26,8 +26,7 @@ time, and each affected job emits a deprecation annotation. dotCMS/core's CI is 
 because it also picks up **8 documentation mentions across 7 `README.md` files** (7 `checkout`, 1
 `setup-node`) — tracked separately in Fix Scope, since a stale doc example is a different kind of
 defect from a stale executable pin. All counts are **as of 2026-08-24** and will drift as `.github/`
-changes on `main`; they are descriptive, and no acceptance criterion depends on a specific number
-(see AC-007).
+changes on `main`; they are descriptive, and no acceptance criterion depends on a specific number.
 
 Two distinct harms:
 
@@ -145,11 +144,6 @@ notes and source):
   `actions/checkout@v4` in `deploy-javascript-sdk/README.md:38` and `deploy-javadoc/README.md:39`,
   and `actions/setup-node@v4` in `deploy-javascript-sdk/README.md:41`. Prose counts: a reader copying
   from it reintroduces the drift.
-- **Add the drift guard**: `.github/scripts/check-action-versions.sh` plus a standalone
-  `cicd_pr_actions-lint.yml` job modeled on the existing `cicd_pr_skill-lint.yml`. This is the
-  executable, confirmed-failing test required by Constitution Principle V, and it is the only
-  automated validation the ~38 unfiltered files will ever get. Delivered as **one self-contained
-  commit** so a reviewer can drop it without touching the migration.
 
 **Explicitly out of scope / non-goals**:
 
@@ -200,6 +194,13 @@ notes and source):
   `build:docs:dotcms-models`. Half of what that workflow existed to publish no longer exists.
   Re-verified after the merge: `publish_docs.yml` still carries `actions/setup-node@v2-beta` with
   `node-version: "16.13.2"`, so the in-scope pin bump is unaffected.
+- **A drift guard for action versions.** An earlier revision of this spec put a
+  `.github/scripts/check-action-versions.sh` plus a `cicd_pr_actions-lint.yml` job in scope, as the
+  executable confirmed-failing test Principle V asks for. **Removed 2026-08-28 by dev decision:** the
+  upgrade does not need it, and a version bump and a new permanent CI job are two changes with two
+  different reviewers — one judging versions, the other judging whether the team wants more CI to
+  own. It belongs with #37194's other "stop this recurring" work (`dependabot.yml`, `filters.yaml`),
+  not here. See AC-007 for what this costs.
 - Extending `.github/filters.yaml` so `.github/**` triggers real validation, and adding
   `.github/dependabot.yml` for the `github-actions` ecosystem. Both are the *structural* fix for this
   class of drift and both are strongly recommended — tracked in #37194, so this change stays a runtime bump.
@@ -298,8 +299,9 @@ notes and source):
 - **AC-002**: No occurrence of `ACTIONS_ALLOW_USE_UNSECURE_NODE_VERSION` (or equivalent) anywhere in
   the repository.
 - **AC-003**: Every reference to the 8 in-scope actions under `.github/` is at or above its target
-  major; every SHA-pinned reference matches its `# vX.Y.Z` comment. Enforced mechanically by AC-007's
-  guard, not by eye.
+  major; every SHA-pinned reference matches its `# vX.Y.Z` comment. With the drift guard moved to
+  #37194 this is verified by review plus a throwaway scan at delivery time, not by a committed check —
+  see AC-007.
 - **AC-004**: Caching and artifacts continue to work with **unchanged keys and names** — Maven
   repository restore/save, Maven-wrapper cache, node-binary (`installs`) cache, pnpm store cache,
   SDKMAN caches, Sonar cache; and the `maven-repo`, `docker-image`, `build-classes`,
@@ -320,24 +322,34 @@ notes and source):
   step that changed behavior on its new major carries an **explicit** input rather than relying on a
   default — specifically `digest-mismatch` on all 14 `download-artifact` sites. If a required input
   changed on a target major, the workflow is updated so the job still succeeds.
-- **AC-007 (the Red gate)**: `.github/scripts/check-action-versions.sh` **fails on `main` with a
-  non-zero violation count**, and **passes (zero violations) after the sweep**. The count itself is
-  **informational, not part of the criterion** — it was ~124 across ~51 files as of 2026-08-24 and
-  will drift as `.github/` changes on `main`, so pinning it would make this AC false even when the
-  guard behaves correctly. It asserts three properties, each
-  catching a different failure class: (1) no in-scope reference below its target major; (2) every
-  in-scope SHA pin is a known target SHA *and* its trailing version comment agrees; (3) every
-  `download-artifact` reference declares `digest-mismatch` explicitly.
-  **Resolved 2026-08-24 (dev decision):** both the guard script and the `cicd_pr_actions-lint.yml` job
-  ship in this PR as **batch 0, one self-contained droppable commit**, modeled on
-  `cicd_pr_skill-lint.yml`. It is **not** marked a required status check in this PR — land it, let it
-  run green for a week, flip required in a follow-up.
+- **AC-007 (Principle V, and what this change gives up)**: this change ships **no executable test**.
+  That is a wider exception than the one first recorded here, and it is stated plainly rather than
+  softened.
+
+  An earlier revision satisfied Principle V with a committed guard script that failed on `main` and
+  passed after the sweep — a genuine Red → Green on the exact property at issue. That guard has been
+  **moved to #37194** (see Non-goals), so what remains is `actionlint`, an annotation scan and
+  `workflow_dispatch` dry-runs: all real, none of them committed to the repository, and none of them
+  re-runnable by a reviewer or by CI.
+
+  The concrete cost, so it is on the record and not discovered later:
+  - **No confirmed-failing test.** Principle V's gate 3 (Red) cannot be demonstrated in CI for this
+    change. The developer must accept the exception explicitly; silence is not consent.
+  - **The ~38 files that `.github/filters.yaml` does not route to any build keep getting no build, no
+    test and no lint.** That gap is the root cause of this issue, and this change does not close it.
+  - **Nothing prevents recurrence.** The next runtime deprecation reopens the same sweep. #37194 is
+    where that gets fixed; until it lands, drift is caught only by review.
+
+  This is a deliberate scoping trade, not an oversight: it keeps this PR reviewable as a pure runtime
+  bump. It also means the value of #37194 is higher than it looks — it is the part that stops the
+  problem, and it should not be allowed to sit.
 - **Verification method** — no unit/integration/Postman/Jest layer exists for workflow YAML, so
   Principle V is satisfied by naming what does apply and recording, here, why the classic layers
   cannot:
-  1. **Red → Green (the primary test):** `.github/scripts/check-action-versions.sh` — exits **1 on
-     `main`** (non-zero violations; ~124 at time of writing, informational only), exits **0 after the
-     sweep**. Committed, reproducible, dev-approvable. The failing run is linked in the PR body.
+  1. **Delivery-time scan (throwaway, not committed):** a one-off script run at delivery that asserts
+     no in-scope reference sits below its target major, every SHA pin matches its `# vX.Y.Z` comment,
+     and every `download-artifact` declares `digest-mismatch`. Its result is recorded in the PR body.
+     Being throwaway is the whole limitation — see AC-007.
   2. **Regression net:** `actionlint` over `.github/workflows/` — catches malformed `uses:`, broken
      `${{ }}`, invalid `needs:`/`if:` across 51 hand-edited files. Gate on **no *new* findings**
      against a baseline captured on `main`, not on zero findings. `actionlint` is deliberately *not*
@@ -352,8 +364,8 @@ notes and source):
   4. **`workflow_dispatch` dry-runs** for cold-path workflows a PR cannot reach, via
      `gh workflow run <file> --ref 36850-…`: `utility_discover-docker-tags.yml`,
      `cicd_manual_build-docker-context.yml`, `cicd_manual_build-java-base.yml`,
-     `issue_manual_label-issues.yml`, `cicd_scheduled_qa-stuck-check.yml`,
-     `cicd_scheduled_opensearch-phase-sweep.yml`, `cicd_scheduled_image-cve-scan.yml`, and
+     `issue_manual_label-issues.yml`, `cicd_scheduled_opensearch-phase-sweep.yml`,
+     `cicd_scheduled_image-cve-scan.yml`, and
      **`cicd_manual_publish-starter.yml`** — the repo's only macOS job and the least-tested path for
      `node24` actions.
   5. **Explicitly unverifiable pre-merge, and why** — recorded on the record as Principle V requires:
