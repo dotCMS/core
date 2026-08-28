@@ -231,8 +231,11 @@ specs/*/research.md
 specs/*/tasks.md
 specs/*/quickstart.md
 specs/*/checklists/
-# Which feature the local checkout is working on. Per-branch, per-developer state that every
-# feature rewrites — committing it guarantees a conflict on each merge and leaves `main` pointing
-# at whichever feature landed last. SPEC_KIT_QUICK_START.md says it is "local and untracked, never
-# committed"; it had been committed by accident since #36950.
+
+# Machine-local pointer to the active feature dir: which feature this checkout is working on,
+# rewritten by every /speckit-specify run. Per-branch, per-developer state — committing it
+# guarantees a conflict on each merge and leaves `main` pointing at whichever feature landed
+# last. SPEC_KIT_QUICK_START.md says it is "local and untracked, never committed"; it had been
+# committed by accident since #36950. Spec-Kit 0.16.1 ships this rule in a managed
+# .specify/.gitignore; this repo is pinned to 0.12.4, so it lives here until the upgrade.
 .specify/feature.json

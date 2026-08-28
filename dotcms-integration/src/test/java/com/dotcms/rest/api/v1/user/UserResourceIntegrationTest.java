@@ -23,6 +23,7 @@ import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.liferay.portal.model.User;
@@ -342,5 +343,138 @@ public class UserResourceIntegrationTest {
 
         assertTrue("roles must be untouched after a rejected payload",
                 roleAPI.doesUserHaveRole(target, held));
+    }
+
+    // ==================== #37209: role IDs accepted alongside keys in `roles` ====================
+
+    /**
+     * Minimal valid create form: explicit userId (so the test can reload the user without
+     * parsing the response), required names/email, and a password (createNewUser dereferences it).
+     */
+    private static UserForm.Builder createFormFor(final String userId) {
+        return new UserForm.Builder()
+                .userId(userId)
+                .firstName("RoleIds")
+                .lastName("Create" + uniq())
+                .email("roleids-" + uniq() + "@dotcms.com")
+                .password("Passw0rd!".toCharArray())
+                .active(true);
+    }
+
+    /**
+     * Method to test: {@link UserResource#update(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: The payload names roles by ID — one custom role WITHOUT a key (cannot be
+     * expressed as a key at all) and one keyed role addressed by its ID — while the user holds a
+     * third assignable role that is not in the payload.
+     * Expected Result: 200; both ID entries resolve and are granted; the role not sent is
+     * reconciled away exactly as with key entries.
+     */
+    @Test
+    public void test_update_roleIdEntries_resolveLikeKeys() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("roleids" + uniq(), false, true);
+        final Role keyless = new RoleDataGen().key(null).nextPersisted();
+        final Role keyed = new RoleDataGen().key("roleidskeyed" + uniq()).nextPersisted();
+        final Role notSent = new RoleDataGen().key("roleidsnotsent" + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(notSent, target);
+        // Cold cache on purpose: RoleFactoryImpl.loadRoleByKey consults the role cache first, and
+        // RoleCacheImpl.get checks the ID group before the key group — so an ID entry resolves by
+        // accident whenever the role happens to be cached. The DB-backed lookup is key-only.
+        CacheLocator.getRoleCache().clearCache();
+
+        final Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(List.of(keyless.getId(), keyed.getId())).build());
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+
+        assertTrue("keyless role must be granted by id", roleAPI.doesUserHaveRole(target, keyless));
+        assertTrue("keyed role must be granted by id too", roleAPI.doesUserHaveRole(target, keyed));
+        assertFalse("role absent from the payload must be reconciled away",
+                roleAPI.doesUserHaveRole(target, notSent));
+    }
+
+    /**
+     * Given Scenario: A user holds a keyless custom role and a keyed role. An admin saves once
+     * sending the keyed role by key and the keyless one by ID, then saves again sending only the
+     * keyed role.
+     * Expected Result: first save preserves both (keys and IDs mix freely); second save removes
+     * the keyless role — the payload remains the source of truth for user-assignable roles.
+     *
+     * Pin, not a red test: for roles the user ALREADY holds this passes even before #37209,
+     * because the update's permission check warms the user's roles into the role cache and
+     * loadRoleByKey happens to resolve cached roles by ID. The explicit resolver makes the outcome
+     * independent of cache state; this test guards the "kept" half regardless.
+     */
+    @Test
+    public void test_update_keylessRole_keptWhenIdSent_removedWhenAbsent() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final User target = UserTestUtil.getUser("roleidskeep" + uniq(), false, true);
+        final Role keyless = new RoleDataGen().key(null).nextPersisted();
+        final Role keyed = new RoleDataGen().key("roleidskept" + uniq()).nextPersisted();
+        roleAPI.addRoleToUser(keyless, target);
+        roleAPI.addRoleToUser(keyed, target);
+        // Cold cache on purpose: RoleFactoryImpl.loadRoleByKey consults the role cache first, and
+        // RoleCacheImpl.get checks the ID group before the key group — so an ID entry resolves by
+        // accident whenever the role happens to be cached. The DB-backed lookup is key-only.
+        CacheLocator.getRoleCache().clearCache();
+
+        Response resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(List.of(keyed.getRoleKey(), keyless.getId())).build());
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertTrue(roleAPI.doesUserHaveRole(target, keyless));
+        assertTrue(roleAPI.doesUserHaveRole(target, keyed));
+
+        resourceResponse = resource.update(mockRequest(), response,
+                updateFormFor(target).roles(List.of(keyed.getRoleKey())).build());
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+        assertFalse("keyless role not in the payload must be removed",
+                roleAPI.doesUserHaveRole(target, keyless));
+        assertTrue(roleAPI.doesUserHaveRole(target, keyed));
+    }
+
+    /**
+     * Method to test: {@link UserResource#create(HttpServletRequest, HttpServletResponse, UserForm)}
+     * Given Scenario: A user is created with `roles` naming a keyless custom role by ID.
+     * Expected Result: 200; the new user holds that role.
+     */
+    @Test
+    public void test_create_roleIdEntry_resolvesLikeKey() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        final Role keyless = new RoleDataGen().key(null).nextPersisted();
+        final String userId = "roleidscreate-" + uniq();
+        // Cold cache on purpose: RoleFactoryImpl.loadRoleByKey consults the role cache first, and
+        // RoleCacheImpl.get checks the ID group before the key group — so an ID entry resolves by
+        // accident whenever the role happens to be cached. The DB-backed lookup is key-only.
+        CacheLocator.getRoleCache().clearCache();
+
+        final Response resourceResponse = resource.create(mockRequest(), response,
+                createFormFor(userId).roles(List.of(keyless.getId())).build());
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+
+        final User created = APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false);
+        assertTrue("keyless role must be granted by id on create", roleAPI.doesUserHaveRole(created, keyless));
+    }
+
+    /**
+     * Given Scenario: A user is created WITHOUT the roles field.
+     * Expected Result: the legacy default applies — the user gets the Front-end User role.
+     * Pins today's create default so the resolver refactor cannot drift it.
+     */
+    @Test
+    public void test_create_rolesAbsent_defaultsToFrontEndUser() throws Exception {
+        final RoleAPI roleAPI = APILocator.getRoleAPI();
+        // note: UserIdValidatorImpl rejects any userId containing "default" (User.DEFAULT)
+        final String userId = "roleidsnoroles-" + uniq();
+
+        final Response resourceResponse = resource.create(mockRequest(), response, createFormFor(userId).build());
+        assertEquals(Status.OK.getStatusCode(), resourceResponse.getStatus());
+
+        final User created = APILocator.getUserAPI().loadUserById(userId, APILocator.systemUser(), false);
+        // Assert by KEY on a fresh load, not against roleAPI.loadFrontEndUserRole(): that method
+        // memoizes a Role instance for the JVM's lifetime (RoleAPIImpl.LOGGEDIN_SITE_USER), and a
+        // prior test in the shard may replace the DOTCMS_FRONT_END_USER row (Task05170...RolesTest
+        // renames it via SQL and the upgrade task inserts a new one), leaving the memo stale.
+        final List<Role> directRoles = roleAPI.loadRolesForUser(created.getUserId(), false);
+        assertTrue("new user must receive the default Front-end User role",
+                directRoles.stream().anyMatch(role -> Role.DOTCMS_FRONT_END_USER.equals(role.getRoleKey())));
     }
 }
