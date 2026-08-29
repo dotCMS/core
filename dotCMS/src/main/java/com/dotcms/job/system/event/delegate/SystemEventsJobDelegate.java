@@ -4,6 +4,7 @@ import com.dotcms.api.system.event.SystemEvent;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.SystemEventsAPI;
 import com.dotcms.job.system.event.AbstractJobDelegate;
+import com.dotcms.job.system.event.SystemEventsCursorTracker;
 import com.dotcms.job.system.event.SystemEventsJob;
 import com.dotcms.job.system.event.delegate.bean.JobDelegateDataBean;
 import com.dotcms.rest.api.v1.system.websocket.SystemEventsWebSocketEndPoint;
@@ -12,7 +13,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 
-import java.util.List;
+import java.util.Collection;
 
 /**
  * This delegate class is registered to the {@link SystemEventsJob}, which is
@@ -39,16 +40,23 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 
 	@Override
 	public void executeDelegate(final JobDelegateDataBean data) throws DotDataException {
-		List<SystemEvent> newEvents = null;
+		Collection<SystemEvent> newEvents = null;
 		final long lastCallback = data.getLastCallback();
 
 		try {
 
 			Logger.debug(this, "Getting events, last callback: " + lastCallback);
-			newEvents = (List<SystemEvent>) this.systemEventsAPI.getEventsSince(lastCallback);
+			// getEventsSince already returns Collection<SystemEvent>; the previous unchecked cast to
+			// List bought nothing and hid the real type.
+			newEvents = this.systemEventsAPI.getEventsSince(lastCallback);
 		} catch (Exception e) {
 
-			Logger.debug(this, e.getMessage(), e);
+			// A failed read used to be invisible at debug level, so a node that had stopped consuming
+			// looked identical to a quiet queue. Re-thrown so the Job leaves the cursor untouched and
+			// retries this range rather than skipping it.
+			Logger.warn(this, "Unable to read system events since [" + lastCallback + "]: "
+					+ e.getMessage(), e);
+			throw new DotDataException(e.getMessage(), e);
 		}
 
 		if (null != newEvents && !newEvents.isEmpty()) {
@@ -56,7 +64,16 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 			final SystemEventsWebSocketEndPoint webSocketEndPoint = this.webSocketContainerAPI
 					.getEndpointInstance(SystemEventsWebSocketEndPoint.class);
 
+			final SystemEventsCursorTracker cursorTracker = data.getCursorTracker();
+			final long readAt = System.currentTimeMillis();
+
 			for (final SystemEvent event : newEvents) {
+
+				// The overlap window deliberately re-reads recent events so late commits are caught;
+				// without this check it would also re-deliver everything inside the window.
+				if (null != cursorTracker && cursorTracker.isAlreadyDelivered(event.getId())) {
+					continue;
+				}
 
 				// the owner server does not need to send the message again!
 				if (!SERVER_ID.equals(event.getServerId())) {
@@ -70,8 +87,36 @@ public class SystemEventsJobDelegate extends AbstractJobDelegate {
 					}
 				} else {
 
+					// Kept at INFO deliberately: this line is the instrument the issue used to measure
+					// the original 50-63% loss, and the spec's Step B verification still counts it.
+					// Throttling or demoting it is a follow-up, to be done only once the reconciliation
+					// counter has been validated in production - and it must update spec.md Step B at
+					// the same time.
 					Logger.info(this, "The event: " + event.getId() +
 								", has been skipped on the server: " + SERVER_ID);
+
+					if (null != cursorTracker) {
+						cursorTracker.recordObservedOwnEvent();
+					}
+				}
+
+				// The one remaining way an event can be lost after this fix is a transaction held open
+				// longer than the overlap window. Warn while the margin is merely thin, rather than
+				// after events start disappearing.
+				if (null != cursorTracker
+						&& cursorTracker.isCommitLagApproachingWindow(
+								event.getCreationDate().getTime(), readAt)) {
+					Logger.warn(this, "System event [" + event.getId() + "] was committed "
+							+ (readAt - event.getCreationDate().getTime())
+							+ "ms after its creation timestamp, approaching the overlap window. "
+							+ "Raise SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS - events from transactions "
+							+ "longer than that window are dropped.");
+				}
+
+				// Recorded whether delivered or skipped: a node's own events must not be re-examined
+				// and re-logged on every poll for as long as they sit inside the window.
+				if (null != cursorTracker) {
+					cursorTracker.markDelivered(event.getId(), event.getCreationDate().getTime());
 				}
 			}
 		}
