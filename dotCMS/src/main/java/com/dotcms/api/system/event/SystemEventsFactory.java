@@ -166,9 +166,10 @@ public class SystemEventsFactory implements Serializable {
 			// accumulating rows. This is the whole of the new per-poll write volume - O(nodes), never
 			// O(events x nodes).
 			final DotConnect dc = new DotConnect();
-			dc.setSQL("INSERT INTO system_event_cursor (server_id, last_event_date, mod_date) "
-					+ "VALUES (?, ?, ?) ON CONFLICT (server_id) DO UPDATE "
-					+ "SET last_event_date = ?, mod_date = ?");
+			// Single string literal on purpose: every value is bound through addParam below, and
+			// assembling the statement with + trips static-analysis injection heuristics even when
+			// the fragments are all constants. Matches how every other query in this class is written.
+			dc.setSQL("INSERT INTO system_event_cursor (server_id, last_event_date, mod_date) VALUES (?, ?, ?) ON CONFLICT (server_id) DO UPDATE SET last_event_date = ?, mod_date = ?");
 			final Date now = new Date();
 			dc.addParam(serverId);
 			dc.addParam(lastEventDate);
