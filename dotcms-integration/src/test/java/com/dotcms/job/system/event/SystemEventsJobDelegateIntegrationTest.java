@@ -252,9 +252,15 @@ public class SystemEventsJobDelegateIntegrationTest {
     }
 
     /**
-     * Writes a row whose payload names a class Jackson cannot construct. Written with raw SQL on
+     * Writes a row whose payload names a class that cannot be constructed. Written with raw SQL on
      * purpose: the API would never produce one, which is precisely why this failure reached
      * production unnoticed.
+     *
+     * <p>The payload deliberately names a class that <b>does not exist</b>, rather than a real class
+     * that happens to lack a Jackson creator. An earlier version of this test used
+     * {@code UserSessionBean} — and then that class was given a creator in this same change, so the
+     * fixture silently stopped being poison and the test asserted nothing. Pinning the mechanism
+     * rather than one broken class keeps this test honest as payload classes get fixed.
      */
     private void insertPoisonEvent(final String eventId, final String serverId, final long created)
             throws Exception {
@@ -265,7 +271,7 @@ public class SystemEventsJobDelegateIntegrationTest {
                 .addParam("SWITCH_SITE")
                 .addParam("{\"data\":{\"user\":\"dotcms.org.1\",\"sessionId\":\"ABC123\"},"
                         + "\"visibility\":\"GLOBAL\","
-                        + "\"type\":\"com.dotcms.api.system.event.UserSessionBean\"}")
+                        + "\"type\":\"com.dotcms.api.system.event.NoSuchPayloadTypeForTesting\"}")
                 .addParam(created)
                 .addParam(serverId)
                 .loadResult();
