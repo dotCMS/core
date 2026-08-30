@@ -1,9 +1,9 @@
-import { Observable } from 'rxjs';
+import { Observable, forkJoin, of } from 'rxjs';
 
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { map } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import { DotCMSAPIResponse } from '@dotcms/dotcms-models';
 
@@ -101,10 +101,17 @@ interface DotUserUpdateResponse {
 }
 
 /**
- * RoleView returned by `GET /api/v1/roles/users/{userIdOrEmail}`. The
- * `roleKey` field is what UserForm on the backend consumes when we
- * send `roles: [...]` on save — create/update call
- * `roleAPI.loadRoleByKey(...)` on each entry.
+ * RoleView returned by the `/api/v1/roles/**` endpoints. `roleKey`
+ * is what the backend UserForm expects on save — create/update look
+ * each entry up via `roleAPI.loadRoleByKey(...)`. Not every role
+ * carries a roleKey (per-user personal roles typically don't), which
+ * the Roles tab filters out since they cannot be sent back on save.
+ *
+ * `roleChildren` is populated by `GET /api/v1/roles?loadChildrenRoles=true`
+ * — the root-roles endpoint returns each root with its immediate
+ * descendants nested. The service flattens the two levels into a
+ * single list with the `parent` field set so callers can walk the
+ * hierarchy with a plain parent-id lookup.
  */
 export interface DotRoleView {
     id: string;
@@ -119,6 +126,7 @@ export interface DotRoleView {
     system?: boolean;
     dbfqn?: string;
     fqn?: string;
+    roleChildren?: DotRoleView[];
 }
 
 interface DotRolesResponse {
@@ -129,6 +137,65 @@ interface DotToolgroupStateResponse {
     entity: {
         message?: boolean;
     };
+}
+
+/**
+ * Row shape returned by GET /api/v1/apitoken/{userId}/tokens. Mirrors
+ * `com.dotcms.auth.providers.jwt.beans.ApiToken`. Dates are epoch
+ * milliseconds (`revokedDate` is null when not revoked). The three
+ * boolean flags reflect derived state on the backend: `valid = !expired
+ * && !revoked && after-notBefore`.
+ */
+export interface DotApiToken {
+    id: string;
+    userId: string;
+    requestingUserId: string;
+    requestingIp: string | null;
+    issuer: string | null;
+    subject: string | null;
+    tokenType: string | null;
+    claims: { label?: string } & Record<string, unknown>;
+    allowNetwork: string | null;
+    issueDate: number;
+    expiresDate: number;
+    revokedDate: number | null;
+    modificationDate: number;
+    valid: boolean;
+    expired: boolean;
+    revoked: boolean;
+}
+
+/**
+ * Payload accepted by POST /api/v1/apitoken. `expirationSeconds` is
+ * the TTL in seconds computed from the user-picked expiration date.
+ * `network` is a CIDR block ("0.0.0.0/0" = any). Free-form `claims`
+ * are stored verbatim; the UI only sets `label`.
+ */
+export interface DotApiTokenCreatePayload {
+    userId: string;
+    expirationSeconds: number;
+    network?: string;
+    claims?: { label?: string } & Record<string, unknown>;
+}
+
+/**
+ * Response envelope for POST /api/v1/apitoken. The `jwt` field is the
+ * initial signed value returned alongside the created token record;
+ * the caller can re-mint an equivalent JWT later via `getApiTokenJwt`,
+ * so this is not a one-shot secret — it's just the convenient first
+ * one so the UI doesn't need a second round-trip.
+ */
+export interface DotApiTokenCreateResult {
+    jwt: string;
+    token: DotApiToken;
+}
+
+interface DotApiTokensListResponse {
+    entity: { tokens: DotApiToken[] };
+}
+
+interface DotApiTokenCreateResponse {
+    entity: { jwt: string; token: DotApiToken };
 }
 
 export interface DotUsersPaginatedParams {
@@ -211,11 +278,13 @@ export class DotUsersService {
 
     /**
      * Returns every role currently assigned to a user (explicit + system).
-     * We rely on this for two things:
+     * We rely on this for three things:
      *   1. Hydrating the Access section toggles by checking for
      *      well-known role keys (CMS Administrator, DOTCMS_BACK_END_USER,
      *      DOTCMS_FRONT_END_USER).
-     *   2. Preserving the user's other role memberships on save. The
+     *   2. Seeding the Roles tab's Granted panel with the user's
+     *      currently-granted roles.
+     *   3. Preserving the user's other role memberships on save. The
      *      backend `PUT /api/v1/users` replaces the full role list, so
      *      we must send back every role key the user already had, minus
      *      the access-role keys that are now toggled off.
@@ -260,5 +329,169 @@ export class DotUsersService {
         return this.#http.put(url, null, {
             params: new HttpParams().set('userid', userId)
         });
+    }
+
+    /**
+     * Loads every system role for the Roles tab shuttle, with the
+     * full parent/child hierarchy resolved. Backend endpoints only
+     * return one level of children per call, so we:
+     *   1. Fetch the roots via `/api/v1/roles?loadChildrenRoles=true`
+     *      → returns roots with their immediate children nested.
+     *   2. Recursively fetch `/api/v1/roles/{id}?loadChildrenRoles=true`
+     *      for every non-root role we've discovered so far, until a
+     *      round yields no new roles.
+     *
+     * `_search` would be a single call but returns `SmallRoleView`
+     * (no parent, no hierarchy), so a client-side tree cannot be
+     * reconstructed from it. The recursive walk keeps request count
+     * bounded by the number of non-root roles in the system.
+     */
+    getAllRoles(): Observable<DotRoleView[]> {
+        return this.#http
+            .get<DotRolesResponse>('/api/v1/roles', {
+                params: new HttpParams().set('loadChildrenRoles', 'true')
+            })
+            .pipe(switchMap((response) => this.expandRoleTree(response.entity ?? [])));
+    }
+
+    private expandRoleTree(roots: DotRoleView[]): Observable<DotRoleView[]> {
+        const flat: DotRoleView[] = [];
+        const seen = new Set<string>();
+
+        for (const root of roots) {
+            if (!seen.has(root.id)) {
+                flat.push({ ...root, roleChildren: undefined, parent: undefined });
+                seen.add(root.id);
+            }
+            for (const child of root.roleChildren ?? []) {
+                if (!seen.has(child.id)) {
+                    flat.push({ ...child, roleChildren: undefined, parent: root.id });
+                    seen.add(child.id);
+                }
+            }
+        }
+
+        const initialChildren = flat.filter((role) => role.parent);
+
+        return this.expandDescendants(initialChildren, flat, seen);
+    }
+
+    private expandDescendants(
+        toExpand: DotRoleView[],
+        flat: DotRoleView[],
+        seen: Set<string>
+    ): Observable<DotRoleView[]> {
+        if (toExpand.length === 0) {
+            return of(flat);
+        }
+
+        const requests = toExpand.map((role) =>
+            this.#http
+                .get<{ entity: DotRoleView }>(`/api/v1/roles/${encodeURIComponent(role.id)}`, {
+                    params: new HttpParams().set('loadChildrenRoles', 'true')
+                })
+                .pipe(
+                    map((resp) => ({
+                        parentId: role.id,
+                        children: resp.entity.roleChildren ?? []
+                    })),
+                    // A failed lookup for one node shouldn't kill the whole
+                    // tree — treat it as "no discovered children" and move on.
+                    catchError(() => of({ parentId: role.id, children: [] as DotRoleView[] }))
+                )
+        );
+
+        return forkJoin(requests).pipe(
+            switchMap((results) => {
+                const newlyDiscovered: DotRoleView[] = [];
+                for (const { parentId, children } of results) {
+                    for (const child of children) {
+                        if (!seen.has(child.id)) {
+                            const role: DotRoleView = {
+                                ...child,
+                                roleChildren: undefined,
+                                parent: parentId
+                            };
+                            flat.push(role);
+                            seen.add(child.id);
+                            newlyDiscovered.push(role);
+                        }
+                    }
+                }
+
+                return this.expandDescendants(newlyDiscovered, flat, seen);
+            })
+        );
+    }
+
+    /**
+     * Lists every API token owned by a user. `showRevoked=false` (the
+     * default) filters revoked entries server-side; the tab flips this
+     * when the user checks "Show revoked/expired".
+     */
+    getApiTokens(userId: string, showRevoked: boolean): Observable<DotApiToken[]> {
+        return this.#http
+            .get<DotApiTokensListResponse>(
+                `/api/v1/apitoken/${encodeURIComponent(userId)}/tokens`,
+                { params: new HttpParams().set('showRevoked', String(showRevoked)) }
+            )
+            .pipe(map((response) => response.entity?.tokens ?? []));
+    }
+
+    /**
+     * Mints a new API token for the target user. The JWT string in the
+     * response is a convenience — the tab surfaces it inline so the
+     * admin doesn't need a second call — but any later reveal minted
+     * via `getApiTokenJwt` signs an equivalent JWT over the same
+     * record. Listings only return metadata.
+     */
+    createApiToken(payload: DotApiTokenCreatePayload): Observable<DotApiTokenCreateResult> {
+        return this.#http
+            .post<DotApiTokenCreateResponse>('/api/v1/apitoken', payload)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Mints a fresh JWT for an existing token id. Stateless: the token
+     * record itself is unchanged and previously-issued JWTs stay valid
+     * until the token is revoked or expires — revoke is the only
+     * mechanism that kills a leaked JWT. Backend refuses this on
+     * revoked/expired tokens (400).
+     */
+    getApiTokenJwt(tokenId: string): Observable<string> {
+        return this.#http
+            .get<{ entity: { jwt: string } }>(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/jwt`)
+            .pipe(
+                map((response) => {
+                    const jwt = response.entity?.jwt;
+                    // Throwing here surfaces a malformed response
+                    // through the tab's httpErrorManager instead of
+                    // leaving the reveal dialog spinning on `''`.
+                    if (typeof jwt !== 'string' || jwt.length === 0) {
+                        throw new Error('Malformed JWT response');
+                    }
+
+                    return jwt;
+                })
+            );
+    }
+
+    /**
+     * Soft-revokes a token. The row stays in the list (with
+     * `revoked=true`, `revokedDate` populated) so an admin can prove
+     * when it was disabled; a subsequent DELETE is required to purge.
+     */
+    revokeApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.put(`/api/v1/apitoken/${encodeURIComponent(tokenId)}/revoke`, null);
+    }
+
+    /**
+     * Hard-deletes a token. No UI surface yet — the current tab shows
+     * a static "Revoked" pill for inactive rows instead of a Delete
+     * button. Left in place so the wiring is ready when that follow-up
+     * lands.
+     */
+    deleteApiToken(tokenId: string): Observable<unknown> {
+        return this.#http.delete(`/api/v1/apitoken/${encodeURIComponent(tokenId)}`);
     }
 }
