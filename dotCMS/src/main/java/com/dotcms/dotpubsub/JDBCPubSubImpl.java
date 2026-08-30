@@ -9,14 +9,18 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
+import com.zaxxer.hikari.HikariDataSource;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 import org.postgresql.PGConnection;
 import org.postgresql.PGNotification;
 
+import javax.sql.DataSource;
 import javax.validation.constraints.NotNull;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
+import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.Map;
 import java.util.Set;
@@ -26,7 +30,8 @@ import java.util.regex.Pattern;
 
 /**
  * Provides notifications for the postgres pub/sub connection.
- * The secret sauce is that it borrows 1 DB connection and keeps it open forever.
+ * The secret sauce is that it opens 1 dedicated DB connection — outside the Hikari request pool,
+ * see {@code PGListener.listenerConnection()} — and keeps it open forever.
  * With this one long term connection, you "listen" to the topics on
  * postgres and continually do a "SELECT 1" in that connection to be notified
  * of any new messages to those topics.
@@ -118,7 +123,7 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
 
         private RUNSTATE runstate = RUNSTATE.STARTED;
         private final Set<String> topics = ConcurrentHashMap.newKeySet();
-        private final Lazy<Connection> connection = Lazy.of(() -> Try.of(() -> DbConnectionFactory.getDataSource().getConnection()).getOrElseThrow(DotRuntimeException::new));
+        private final Lazy<Connection> connection = Lazy.of(() -> Try.of(PGListener::listenerConnection).getOrElseThrow(DotRuntimeException::new));
         private final Lazy<PGConnection> pgConnection = Lazy.of(() -> Try.of(() -> connection.get().unwrap(PGConnection.class)).getOrElseThrow(DotRuntimeException::new));
         private final Pattern validTopicRegEx = Pattern.compile("[a-z0-9_]");
 
@@ -126,6 +131,52 @@ public class JDBCPubSubImpl implements DotPubSubProvider {
             // init our db connection.  The pgConnection opens the underlying
             // db connection
             pgConnection.get();
+        }
+
+        /**
+         * Opens the connection this listener holds open for the lifetime of the thread.
+         *
+         * <p>It is built from the pool's own JDBC coordinates rather than borrowed from the pool.
+         * A Postgres {@code LISTEN} needs a connection that is never returned, which is the one
+         * thing a request pool must not hand out: the slot is withdrawn for the lifetime of the
+         * JVM without ever showing up as in-use work, and HikariCP reports the hold as
+         * {@code Apparent connection leak detected} — a stack trace on every boot that looks like
+         * a bug and is not one (issue #36934).</p>
+         *
+         * <p>Falls back to a pooled connection when the datasource does not expose a JDBC URL — a
+         * JNDI-provided or otherwise wrapped datasource — because a listener that works while
+         * logging a spurious warning beats no listener at all.</p>
+         *
+         * @return a dedicated connection when possible, a pooled one otherwise
+         * @throws SQLException if the connection cannot be opened
+         */
+        private static Connection listenerConnection() throws SQLException {
+            return listenerConnection(DbConnectionFactory.getDataSource());
+        }
+
+        /**
+         * {@link #listenerConnection()} against an explicit datasource, so the choice between a
+         * dedicated and a pooled connection can be exercised without a running pool.
+         *
+         * @param dataSource the datasource to derive the connection from
+         * @return a dedicated connection when possible, a pooled one otherwise
+         * @throws SQLException if the connection cannot be opened
+         */
+        @VisibleForTesting
+        static Connection listenerConnection(final DataSource dataSource) throws SQLException {
+            if (dataSource instanceof HikariDataSource hikari
+                    && UtilMethods.isSet(hikari.getJdbcUrl())) {
+                Logger.info(JDBCPubSubImpl.class, () -> "Opening a dedicated connection for the"
+                        + " Postgres pub/sub listener, outside the Hikari pool.");
+                return DriverManager.getConnection(hikari.getJdbcUrl(), hikari.getUsername(),
+                        hikari.getPassword());
+            }
+
+            Logger.warn(JDBCPubSubImpl.class, "The datasource exposes no JDBC URL, so the Postgres"
+                    + " pub/sub listener has to borrow a pooled connection and hold it open. The"
+                    + " pool loses that connection for the lifetime of the JVM and HikariCP will"
+                    + " report it as an apparent connection leak.");
+            return dataSource.getConnection();
         }
 
 
