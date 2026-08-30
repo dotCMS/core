@@ -134,7 +134,29 @@ binding the queue to PostgreSQL internals). Do not re-derive them.
 | `SYSTEM_EVENTS_MAX_BACKLOG_MINUTES` | `60` | Bounds recovery after downtime; must stay well below retention |
 | `SYSTEM_EVENTS_LAG_WARN_THRESHOLD_PERCENT` | `50` | Warn when commit lag reaches this share of the window |
 | `SYSTEM_EVENTS_RECONCILE_INTERVAL_MINUTES` | `60` | Reconciliation cadence |
-| `DELETE_EVENTS_OLDER_THAN` | `31` (days) | Retention, enforced by `DeleteOldSystemEventsJob` |
+| `systemevents.job.deleteevents.olderthan` | `31` (days) | Retention, enforced by `DeleteOldSystemEventsJob` |
+
+> **The retention key is `systemevents.job.deleteevents.olderthan`**, not `DELETE_EVENTS_OLDER_THAN` — that is the name of the Java constant, not the property. Reading the constant name as a key silently returns the default.
+
+### Hot reload
+
+`Config` resolves a property from three tiers, and they do not behave alike:
+
+| Tier | Hot? |
+|---|---|
+| `DOT_`-prefixed environment variable | ❌ fixed for the life of the process |
+| **System table** (DB-backed, cluster-propagated) | ✅ **takes effect on the next poll** |
+| `.properties` file | partially — reloaded by the file watcher, not on every read |
+
+Every accessor in `SystemEventsConfig` reads `Config` on each call, and the poller's tracker is bound
+to live configuration rather than to the values it was built with. So raising
+`SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS` in the system table in response to a commit-lag warning takes
+effect on the next poll — which is the point of that warning. Only the in-memory dedupe set is
+carried across polls.
+
+Note the recursion: changing a property in the system table publishes a `SystemTableUpdatedKeyEvent`
+cluster-wide **through this queue**, so cluster-wide hot config reload depends on the delivery this
+document describes.
 
 ---
 

@@ -65,8 +65,8 @@ public class SystemEventsJob implements Runnable, Job {
 	/**
 	 * Long-lived on purpose. The tracker carries the dedupe set that suppresses the repeat deliveries
 	 * the overlap window necessarily produces, so a per-poll instance would defeat it entirely.
-	 * A consequence worth knowing: changes to the overlap window and backlog settings take effect on
-	 * restart, not on the next poll.
+	 * The tracker is bound to live configuration, so changes to the overlap window and backlog take
+	 * effect on the next poll; only the dedupe set is carried across polls.
 	 */
 	private static volatile SystemEventsCursorTracker cursorTracker;
 
@@ -193,9 +193,10 @@ public class SystemEventsJob implements Runnable, Job {
 		if (cursorTracker == null) {
 			synchronized (SystemEventsJob.class) {
 				if (cursorTracker == null) {
-					cursorTracker = new SystemEventsCursorTracker(
-							SystemEventsConfig.getOverlapWindowMillis(),
-							SystemEventsConfig.getMaxBacklogMillis());
+					// Bound to live config, not to the values at construction: the dedupe set has to
+					// survive across polls, but the window and backlog are re-read each time so a
+					// change takes effect on the next poll rather than at the next restart.
+					cursorTracker = SystemEventsCursorTracker.fromConfig();
 				}
 			}
 		}

@@ -3,6 +3,8 @@ package com.dotcms.job.system.event;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.IntSupplier;
+import java.util.function.LongSupplier;
 
 /**
  * The cursor-advance logic for the {@code system_event} poller (issue #36827) — deliberately pure and
@@ -34,9 +36,14 @@ public class SystemEventsCursorTracker {
      */
     static final int STALE_CURSOR_INTERVAL_MULTIPLIER = 6;
 
-    private final long overlapWindowMillis;
-    private final long maxBacklogMillis;
-    private final int lagWarnThresholdPercent;
+    /**
+     * Read on each use rather than captured once, so that a value changed in the system table takes
+     * effect on the next poll. An operator raising the overlap window in response to a commit-lag
+     * warning should not have to restart the node to act on the warning they were just given.
+     */
+    private final LongSupplier overlapWindowMillis;
+    private final LongSupplier maxBacklogMillis;
+    private final IntSupplier lagWarnThresholdPercent;
 
     /** Events this node observed that it had authored itself; the input to reconciliation. */
     private final AtomicLong observedOwnEventCount = new AtomicLong(0L);
@@ -56,9 +63,30 @@ public class SystemEventsCursorTracker {
 
     public SystemEventsCursorTracker(final long overlapWindowMillis, final long maxBacklogMillis,
                                      final int lagWarnThresholdPercent) {
+        this(() -> overlapWindowMillis, () -> maxBacklogMillis, () -> lagWarnThresholdPercent);
+    }
+
+    /**
+     * Live-config constructor used by the running poller: each value is re-read on use, so a change
+     * takes effect on the next poll rather than at the next restart.
+     */
+    public SystemEventsCursorTracker(final LongSupplier overlapWindowMillis,
+                                     final LongSupplier maxBacklogMillis,
+                                     final IntSupplier lagWarnThresholdPercent) {
         this.overlapWindowMillis = overlapWindowMillis;
         this.maxBacklogMillis = maxBacklogMillis;
         this.lagWarnThresholdPercent = lagWarnThresholdPercent;
+    }
+
+    /**
+     * Builds a tracker bound to live configuration.
+     *
+     * @return a tracker that re-reads its settings on every poll
+     */
+    public static SystemEventsCursorTracker fromConfig() {
+        return new SystemEventsCursorTracker(SystemEventsConfig::getOverlapWindowMillis,
+                SystemEventsConfig::getMaxBacklogMillis,
+                SystemEventsConfig::getLagWarnThresholdPercent);
     }
 
     /**
@@ -77,7 +105,7 @@ public class SystemEventsCursorTracker {
             return new SystemEventsPollWindow(now, now, false, 0L);
         }
 
-        final long backlogBound = now - this.maxBacklogMillis;
+        final long backlogBound = now - this.maxBacklogMillis.getAsLong();
         final boolean clamped = storedCursor < backlogBound;
         final long effectiveCursor = clamped ? backlogBound : storedCursor;
         final long skippedSpanMillis = clamped ? backlogBound - storedCursor : 0L;
@@ -86,7 +114,7 @@ public class SystemEventsCursorTracker {
         // contract, but moving the cursor backwards is not something callers should have to reason about.
         final long queryStartTime = Math.max(now, storedCursor);
 
-        final long readFloor = effectiveCursor - this.overlapWindowMillis;
+        final long readFloor = effectiveCursor - this.overlapWindowMillis.getAsLong();
 
         // Anything older than the new floor can never be returned by a query again, so retaining its
         // id would only grow the map.
@@ -164,7 +192,8 @@ public class SystemEventsCursorTracker {
      */
     public boolean isCommitLagApproachingWindow(final long createdDate, final long firstReadTime) {
         final long lagMillis = firstReadTime - createdDate;
-        final long thresholdMillis = (this.overlapWindowMillis * this.lagWarnThresholdPercent) / 100;
+        final long thresholdMillis =
+                (this.overlapWindowMillis.getAsLong() * this.lagWarnThresholdPercent.getAsInt()) / 100;
         return lagMillis >= thresholdMillis;
     }
 

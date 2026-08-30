@@ -10,6 +10,18 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Two of these settings are correctness-relevant rather than merely tuning:
  *
+ * <h2>Hot reload</h2>
+ *
+ * <p>Every accessor here reads {@code Config} on each call, so a value changed in the system table
+ * (the DB-backed, cluster-propagated tier of {@code Config}) takes effect on the <b>next poll</b> —
+ * no restart. Values supplied as {@code DOT_}-prefixed environment variables are fixed for the life
+ * of the process, as they are everywhere in dotCMS.
+ *
+ * <p>{@code SystemEventsJob} therefore re-reads the window and backlog each poll rather than
+ * capturing them once, so that operators tuning
+ * {@code SYSTEM_EVENTS_OVERLAP_WINDOW_SECONDS} in response to a commit-lag warning see the effect
+ * immediately — which is the whole point of that warning.
+ *
  * <ul>
  *   <li>The <b>overlap window</b> is how far back each poll re-reads. It is what makes an event that
  *       commits after its {@code created} timestamp still eligible for delivery, so a non-positive
@@ -33,8 +45,15 @@ public class SystemEventsConfig {
     public static final String LAG_WARN_THRESHOLD_PERCENT =
             "SYSTEM_EVENTS_LAG_WARN_THRESHOLD_PERCENT";
 
-    /** Existing retention property owned by {@code DeleteOldSystemEventsDelegate}, in days. */
-    public static final String DELETE_EVENTS_OLDER_THAN = "DELETE_EVENTS_OLDER_THAN";
+    /**
+     * Existing retention property owned by {@code DeleteOldSystemEventsDelegate}, in days.
+     *
+     * <p>Note the key is <b>not</b> the constant's name: the delegate declares it as
+     * {@code DELETE_EVENTS_OLDER_THAN = "systemevents.job.deleteevents.olderthan"}. Reading the
+     * constant name as if it were the key silently returns the default and hides an operator's
+     * actual retention setting from {@link #isBacklogWithinRetention()}.
+     */
+    public static final String DELETE_EVENTS_OLDER_THAN = "systemevents.job.deleteevents.olderthan";
 
     /** How often the authored-vs-observed reconciliation runs, in minutes. */
     public static final String RECONCILE_INTERVAL_MINUTES = "SYSTEM_EVENTS_RECONCILE_INTERVAL_MINUTES";

@@ -125,4 +125,47 @@ public class SystemEventsConfigTest {
         Config.setProperty(SystemEventsConfig.OVERLAP_WINDOW_SECONDS, -5);
         assertEquals(120, SystemEventsConfig.getOverlapWindowSeconds());
     }
+
+    /**
+     * Method to test: {@link SystemEventsConfig#getRetentionDays()}
+     * Given Scenario: The retention property is set using the key the rest of dotCMS actually uses —
+     * {@code systemevents.job.deleteevents.olderthan}, declared in {@code DeleteOldSystemEventsDelegate}
+     * Expected Result: The configured value is read.
+     *
+     * <p>This test exists because the original implementation used the *constant's name*
+     * ({@code "DELETE_EVENTS_OLDER_THAN"}) as the property key. That silently returned the default,
+     * so {@link SystemEventsConfig#isBacklogWithinRetention()} could never see an operator's real
+     * retention setting. The earlier test missed it by setting the property through the same wrong
+     * constant — it validated the mistake instead of catching it. Hence the literal key here.
+     */
+    @Test
+    public void test_retention_is_read_from_the_real_property_key() {
+        Config.setProperty("systemevents.job.deleteevents.olderthan", 7);
+        try {
+            assertEquals(7, SystemEventsConfig.getRetentionDays());
+        } finally {
+            Config.setProperty("systemevents.job.deleteevents.olderthan", null);
+        }
+    }
+
+    /**
+     * Method to test: {@link SystemEventsConfig#isBacklogWithinRetention()} with a real retention key
+     * Given Scenario: An operator shortens retention to 1 day while the backlog clamp stays at 60 min
+     * Expected Result: Still consistent (60 min is well inside 1 day), proving the check now actually
+     * sees the operator's value rather than always comparing against the default.
+     */
+    @Test
+    public void test_backlog_check_sees_a_real_retention_change() {
+        Config.setProperty("systemevents.job.deleteevents.olderthan", 1);
+        Config.setProperty(SystemEventsConfig.MAX_BACKLOG_MINUTES, 60);
+        try {
+            assertTrue(SystemEventsConfig.isBacklogWithinRetention());
+            // 20 hours of backlog against 1 day of retention leaves no margin.
+            Config.setProperty(SystemEventsConfig.MAX_BACKLOG_MINUTES, 60 * 20);
+            assertFalse(SystemEventsConfig.isBacklogWithinRetention());
+        } finally {
+            Config.setProperty("systemevents.job.deleteevents.olderthan", null);
+            Config.setProperty(SystemEventsConfig.MAX_BACKLOG_MINUTES, null);
+        }
+    }
 }
