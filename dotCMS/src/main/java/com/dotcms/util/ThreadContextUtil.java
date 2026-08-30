@@ -7,14 +7,46 @@ import com.dotmarketing.util.UtilMethods;
 
 /**
  * Thread Context Util provides methods to handle reindex stuff and other thread local context things
+ *
+ * <p><b>Two mechanisms, on purpose.</b> The two pieces of state here flow in opposite directions,
+ * so they are held differently:</p>
+ *
+ * <ul>
+ *   <li>{@code reindex} travels <b>caller to callee</b>: an API call declares "do not index inline
+ *       while I run" and everything underneath reads it. That is a dynamically scoped binding, and
+ *       it is held in a {@link ScopedValue} — bounded by the call, immutable, and restored on exit
+ *       whether the delegate returns or throws.</li>
+ *   <li>{@code includeDependencies} travels <b>callee to caller</b>: code deep in the stack records
+ *       that the eventual deferred reindex must include dependencies, and code higher up reads it
+ *       afterwards to decide how to index. A scoped value cannot express that — its bindings are
+ *       immutable by design — so this one stays in the mutable {@link ThreadContext} held by a
+ *       thread local. See {@code WorkflowAPIImpl.fireWorkflowPostCheckin}, which consumes what
+ *       {@code ESContentletAPIImpl} recorded.</li>
+ * </ul>
+ *
+ * <p>Reaching for a scoped value for the second one would be the classic mistake: the mechanism is
+ * a better thread local only for context that genuinely descends.</p>
+ *
  * @author jsancas
  */
 public class ThreadContextUtil {
+
+    /**
+     * Whether API calls on this thread should index inline. Unbound means yes, which is the default
+     * the platform relies on.
+     */
+    private static final ScopedValue<Boolean> REINDEX = ScopedValue.newInstance();
 
     private static ThreadLocal<ThreadContext> contextLocal = new ThreadLocal<>();
 
     /**
      * Get the context from the current thread
+     *
+     * <p>Only {@code includeDependencies} still lives here; the reindex flag is a
+     * {@link ScopedValue}. Note that this method <i>installs</i> a context on first use, so callers
+     * that merely want to read the reindex flag should use {@link #isReindex()} instead of coming
+     * through here.</p>
+     *
      * @return {@link ThreadContext}
      */
     public static ThreadContext getOrCreateContext() {
@@ -34,8 +66,7 @@ public class ThreadContextUtil {
      */
     public static boolean isReindex () {
 
-        final ThreadContext context = getOrCreateContext();
-        return context.isReindex();
+        return REINDEX.orElse(Boolean.TRUE);
     }
 
     /**
@@ -76,20 +107,11 @@ public class ThreadContextUtil {
      */
     public static void wrapVoidNoReindex (final VoidDelegate delegate) {
 
-        final ThreadContext threadContext = getOrCreateContext();
-        final boolean reindex = threadContext.isReindex();
+        wrapReturnNoReindex(() -> {
 
-        try {
-
-            threadContext.setReindex(false);
             delegate.execute();
-        } catch(Throwable e) {
-
-            throw new DotRuntimeException(e);
-        } finally {
-
-            threadContext.setReindex(reindex);
-        }
+            return null;
+        });
     }
 
 
@@ -100,19 +122,12 @@ public class ThreadContextUtil {
      */
     public  static <T> T wrapReturnNoReindex (final ReturnableDelegate<T> delegate) {
 
-        final ThreadContext threadContext = getOrCreateContext();
-        final boolean reindex = threadContext.isReindex();
-
         try {
 
-            threadContext.setReindex(false);
-            return delegate.execute();
+            return ScopedValue.where(REINDEX, Boolean.FALSE).call(delegate::execute);
         } catch(Throwable e) {
 
             throw new DotRuntimeException(e);
-        } finally {
-
-            threadContext.setReindex(reindex);
         }
     }
 }

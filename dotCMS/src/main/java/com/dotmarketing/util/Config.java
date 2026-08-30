@@ -6,7 +6,6 @@ import com.dotcms.util.ConfigurationInterpolator;
 import com.dotcms.util.FileWatcherAPI;
 import com.dotcms.util.ReflectionUtils;
 import com.dotcms.util.SystemEnvironmentConfigurationInterpolator;
-import com.dotcms.util.ThreadContextUtil;
 import com.dotcms.util.transform.StringToEntityTransformer;
 import com.dotmarketing.business.APILocator;
 import com.google.common.annotations.VisibleForTesting;
@@ -56,6 +55,22 @@ public class Config {
     private static final Set<String> environmentSetKeys = ConcurrentHashMap.newKeySet();
 
     private static SystemTableConfigSource systemTableConfigSource = null;
+
+    /**
+     * Marks that this thread is already inside a system-table property lookup.
+     *
+     * <p>Reading a property can consult the system table, and consulting the system table reads
+     * properties in order to reach the database — so the lookup has to be able to tell that it is
+     * re-entering itself. Being <i>bound</i> is the whole signal, so the value carried is
+     * irrelevant.</p>
+     *
+     * <p>This replaces a mutable {@code tag} string kept on the per-thread {@code ThreadContext}.
+     * The binding is released when the lookup returns or throws, without a {@code finally} that has
+     * to remember what to put back, and nothing is retained on the thread afterwards — the previous
+     * spelling installed a {@code ThreadContext} in a thread local for every thread that ever read
+     * a property, and only a reflective shutdown task ever cleared it.</p>
+     */
+    private static final ScopedValue<Boolean> IN_SYSTEM_TABLE_LOOKUP = ScopedValue.newInstance();
 
     @VisibleForTesting
     public static boolean enableSystemTableConfigSource = "true".equalsIgnoreCase(EnvironmentVariablesService.getInstance().getenv().getOrDefault("DOT_ENABLE_SYSTEM_TABLE_CONFIG_SOURCE", "true"));
@@ -377,15 +392,12 @@ public class Config {
 
         if (null != names && null != systemTableConfigSource && enableSystemTableConfigSource) {
 
-            final String tag = ThreadContextUtil.getOrCreateContext().getTag();
-            if (UtilMethods.isSet(tag) && "ConfigSystemTable".equals(tag)) {
+            if (IN_SYSTEM_TABLE_LOOKUP.isBound()) {
                 // we are already in the system table, so do not need to check inner system table calls (avoid recursion)
                 return null;
             }
 
-            try {
-
-                ThreadContextUtil.getOrCreateContext().setTag("ConfigSystemTable");
+            return ScopedValue.where(IN_SYSTEM_TABLE_LOOKUP, Boolean.TRUE).call(() -> {
 
                 for (final String name : names) {
                     final String value = Try.of(() -> systemTableConfigSource.getValue(name)).getOrNull();
@@ -394,10 +406,8 @@ public class Config {
                     }
                 }
 
-            } finally {
-                // the result is done, do not need more the barrier tag
-                ThreadContextUtil.getOrCreateContext().setTag(null);
-            }
+                return null;
+            });
         }
 
         return null;
