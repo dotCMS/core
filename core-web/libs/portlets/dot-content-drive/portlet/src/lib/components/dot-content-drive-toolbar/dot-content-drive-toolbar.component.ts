@@ -31,6 +31,7 @@ import { DotContentDriveFieldFilterMenuComponent } from './components/dot-conten
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
+import { DotContentDriveStatusFilterComponent } from './components/dot-content-drive-status-filter/dot-content-drive-status-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
@@ -140,6 +141,7 @@ interface ToolbarAnimationState {
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
         DotContentDriveSharedAssetsFilterComponent,
+        DotContentDriveStatusFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
