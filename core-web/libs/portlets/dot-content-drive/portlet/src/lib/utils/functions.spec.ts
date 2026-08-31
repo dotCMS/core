@@ -101,23 +101,23 @@ describe('Utility Functions', () => {
         });
 
         it('should decode multiple filters correctly', () => {
-            const result = decodeFilters('contentType:Blog;status:published');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should handle filters with spaces correctly', () => {
-            const result = decodeFilters('contentType:Blog; status:published');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog; owner:jane');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should handle filters with spaces in the value correctly', () => {
-            const result = decodeFilters('title: Some Random Title;status:published');
-            expect(result).toEqual({ title: 'Some Random Title', status: 'published' });
+            const result = decodeFilters('title: Some Random Title;owner:jane');
+            expect(result).toEqual({ title: 'Some Random Title', owner: 'jane' });
         });
 
         it('should ignore empty filter parts - edge case', () => {
-            const result = decodeFilters('contentType:Blog;;status:published;');
-            expect(result).toEqual({ contentType: ['Blog'], status: 'published' });
+            const result = decodeFilters('contentType:Blog;;owner:jane;');
+            expect(result).toEqual({ contentType: ['Blog'], owner: 'jane' });
         });
 
         it('should overwrite duplicated keys with the last value - edge case', () => {
@@ -126,8 +126,8 @@ describe('Utility Functions', () => {
         });
 
         it('should handle datetime values with multiple colons - edge case', () => {
-            const result = decodeFilters('modDate:2023-10-15T14:30:45;status:published');
-            expect(result).toEqual({ modDate: '2023-10-15T14:30:45', status: 'published' });
+            const result = decodeFilters('modDate:2023-10-15T14:30:45;owner:jane');
+            expect(result).toEqual({ modDate: '2023-10-15T14:30:45', owner: 'jane' });
         });
 
         it('should handle values with multiple colons and multiple semicolons - edge case', () => {
@@ -141,25 +141,28 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters without colons - edge case', () => {
-            const result = decodeFilters('contentType:Blog;status');
+            const result = decodeFilters('contentType:Blog;owner');
             expect(result).toEqual({ contentType: ['Blog'] });
         });
 
         it('should handle multiselector correctly', () => {
-            const result = decodeFilters('contentType:Blog,News;status:published');
-            expect(result).toEqual({ contentType: ['Blog', 'News'], status: 'published' });
+            const result = decodeFilters('contentType:Blog,News;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog', 'News'], owner: 'jane' });
         });
 
         it('should handle multiselector with spaces correctly', () => {
-            const result = decodeFilters('contentType:Blog, News;status:published');
-            expect(result).toEqual({ contentType: ['Blog', 'News'], status: 'published' });
+            const result = decodeFilters('contentType:Blog, News;owner:jane');
+            expect(result).toEqual({ contentType: ['Blog', 'News'], owner: 'jane' });
         });
 
         it('should handle multiselector with a wrong value', () => {
-            const result = decodeFilters('contentType:Blog,;status:published,draft');
+            // `owner` is a stand-in for an unknown multi-value key. It used to be `status`, which
+            // is now a real, validated key — the values below are not valid statuses and would be
+            // sanitized away, which is not what this test is about.
+            const result = decodeFilters('contentType:Blog,;owner:jane,sam');
             expect(result).toEqual({
                 contentType: ['Blog'],
-                status: ['published', 'draft']
+                owner: ['jane', 'sam']
             });
         });
     });
@@ -311,6 +314,49 @@ describe('Utility Functions', () => {
             const result = decodeByFilterKey.workflow('schemeA:stepX,schemeB,schemeC:stepY');
             expect(result).toEqual(['schemeA:stepX', 'schemeB', 'schemeC:stepY']);
         });
+
+        it('should decode multiple statuses', () => {
+            expect(decodeByFilterKey.status('UNPUBLISHED,LOCKED')).toEqual([
+                'UNPUBLISHED',
+                'LOCKED'
+            ]);
+        });
+
+        it('should drop a status value that is not a real status', () => {
+            // A stale or hand-edited URL must degrade to "no status filter" rather than reaching
+            // the endpoint, which rejects an unknown status with a 400 — and that 400 surfaces as a
+            // stopped spinner over a stale grid.
+            expect(decodeByFilterKey.status('ARCHIVED,BOGUS')).toEqual(['ARCHIVED']);
+        });
+
+        it('should drop the key entirely when no status survives sanitizing', () => {
+            // Not an empty array: that would round-trip back into the URL as a bare `status:`.
+            expect(decodeFilters('status:BOGUS')).toEqual({});
+            expect(decodeFilters('contentType:Blog;status:BOGUS')).toEqual({
+                contentType: ['Blog']
+            });
+        });
+
+        it('should decode a SINGLE status as an array, not a string', () => {
+            // The case an explicit `decodeByFilterKey` entry exists to cover. Without it the key
+            // falls through to the comma sniff in `decodeFilterValue`, and a lone value decodes to
+            // the string 'ARCHIVED' — whose `.length` is 8, so every `?.status?.length` guard
+            // downstream reads as "a status is active" and the filter looks fine right up until
+            // someone selects exactly one.
+            expect(decodeByFilterKey.status('ARCHIVED')).toEqual(['ARCHIVED']);
+        });
+    });
+
+    describe('status filter round-trip', () => {
+        it('should survive encode → decode unchanged', () => {
+            const filters = { status: ['ARCHIVED', 'LOCKED'] };
+            expect(decodeFilters(encodeFilters(filters))).toEqual(filters);
+        });
+
+        it('should survive the round-trip with a single status', () => {
+            const filters = { status: ['LOCKED'] };
+            expect(decodeFilters(encodeFilters(filters))).toEqual(filters);
+        });
     });
 
     describe('workflow token (de)serialization', () => {
@@ -379,7 +425,7 @@ describe('Utility Functions', () => {
         it('should preserve the filters when encoding and then decoding', () => {
             const original: DotContentDriveFilters = {
                 contentType: ['Blog', 'News'],
-                status: 'published',
+                owner: 'jane',
                 'someContentType.url': 'http://some.url'
             };
 

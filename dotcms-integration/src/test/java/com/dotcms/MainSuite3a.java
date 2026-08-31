@@ -14,6 +14,7 @@ import com.dotcms.rest.api.v1.drive.ContentDriveKeywordSearchTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveLinksTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowArchiveStepTest;
 import com.dotcms.rest.api.v1.drive.ContentDriveWorkflowFilterTest;
+import com.dotcms.rest.api.v1.drive.ContentDriveStatusFilterTest;
 import com.dotcms.rest.api.v1.system.cache.CacheResourceIntegrationTest;
 import com.dotcms.rest.api.v1.system.role.RoleResourceIntegrationTest;
 import com.dotcms.security.apps.AppsAPIImplTest;
@@ -89,6 +90,7 @@ import org.junit.runners.Suite;
         ContentDriveLinksTest.class,
         ContentDriveWorkflowArchiveStepTest.class,
         ContentDriveWorkflowFilterTest.class,
+        ContentDriveStatusFilterTest.class,
         AppsAPIImplTest.class,
         com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest.class,
         com.dotcms.rendering.velocity.viewtools.content.util.ContentUtilsTest.class,

@@ -3,6 +3,7 @@ import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/
 import {
     DefaultGoalConfiguration,
     DotExperiment,
+    DotExperimentPatchBody,
     DotExperimentStatus,
     Goals,
     GoalsLevels,
@@ -169,6 +170,46 @@ describe('DotExperimentsService', () => {
         const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
 
         expect(req.request.body['trafficProportion']).toEqual(newValue);
+    });
+
+    it('should patch several keys of an experiment in one call', () => {
+        // The endpoint applies every key present in one atomic update, which is what lets an
+        // accumulated diff travel as a single request.
+        const body: DotExperimentPatchBody = {
+            name: 'new name',
+            description: 'new description',
+            goals: { ...DefaultGoalConfiguration },
+            scheduling: { startDate: 1, endDate: 2 },
+            trafficAllocation: 60,
+            trafficProportion: {
+                type: TrafficProportionTypes.CUSTOM_PERCENTAGES,
+                variants: [{ id: '111', name: 'DEFAULT', weight: 100 }]
+            }
+        };
+
+        spectator.service.patch(EXPERIMENT_ID, body).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body).toEqual(body);
+    });
+
+    it('should patch a cleared schedule, which is a change like any other', () => {
+        spectator.service.patch(EXPERIMENT_ID, { scheduling: null }).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body).toEqual({ scheduling: null });
+    });
+
+    it('should never send targetingConditions or pageId', () => {
+        // Either one would have the backend rebuild the experiment's Rule, or ignore the key.
+        spectator.service.patch(EXPERIMENT_ID, { name: 'new name' }).subscribe();
+
+        const req = spectator.expectOne(`${API_ENDPOINT}/${EXPERIMENT_ID}`, HttpMethod.PATCH);
+
+        expect(req.request.body).not.toHaveProperty('targetingConditions');
+        expect(req.request.body).not.toHaveProperty('pageId');
     });
 
     it('should return an Observable of undefined when experimentId is undefined', (done) => {

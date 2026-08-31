@@ -909,7 +909,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // The effect checks currentSite at the start, so if it's null, loadFolders won't be called
             // We verify this by checking that after setting null, loadFolders is not called
             spectator.detectComponentChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             // Since currentSite is null, the effect should return early and not call loadFolders
             // Note: This test verifies the effect logic, not the actual effect execution
