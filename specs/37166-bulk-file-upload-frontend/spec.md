@@ -386,7 +386,8 @@ delivered by the anticipated task manager rather than by this feature.)*
 - **FR-032**: The capability for following a long server-side run — submit, follow, report progress,
   report the terminal state and outcome, stop — MUST be expressed generically, with no knowledge of
   uploads or of Content Drive, so that the folder copy and bulk delete work
-  ([#37063](https://github.com/dotCMS/core/issues/37063)) can adopt it unchanged.
+  ([#37062](https://github.com/dotCMS/core/issues/37062) /
+  [#37063](https://github.com/dotCMS/core/issues/37063)) can adopt it unchanged.
 - **FR-033**: The interface MUST NOT require a general-purpose background-jobs screen for any of the
   above.
 
@@ -451,7 +452,7 @@ recorded here as a planning obligation so it cannot be discovered during review.
   every case including partial failure and cancellation.
 - **SC-006**: An author who starts a batch and leaves the portlet still learns its outcome.
 - **SC-007**: Starting a long operation never prevents an author from starting an unrelated one.
-- **SC-008**: The run-following capability is adopted by #37063 without modification to it.
+- **SC-008**: The run-following capability is adopted by #37062 / #37063 without modification to it.
 - **SC-009**: No message definition used by Content Drive is left defined and unreferenced, and none
   referenced is left undefined.
 

@@ -175,6 +175,11 @@ point reached.
   fails; the batch does not.
 - **The author cannot add children to the target folder.** Refused at submission as a permission
   error — not as N per-file failures.
+- **A file collides with an existing asset the author cannot edit, or resolves to a content type
+  the author lacks permission to create.** The target-folder check above (FR-003) already passed;
+  this is a narrower permission check that only resolves once the file reaches the reused
+  single-file path (FR-006). Recorded as that file's own permission-denied failure (FR-016), not
+  as a submission-time refusal.
 - **The target folder does not exist.** Refused at submission. Creating folders is out of scope.
 - **Two files in one batch carrying the same name.** Each is attempted; the second is subject to
   the same collision rule as a pre-existing name.
@@ -233,7 +238,8 @@ point reached.
   succeeded, failed, or skipped (never attempted).
 - **FR-016**: Every failed per-file result MUST carry a machine-readable reason and a
   human-readable message. The reason MUST distinguish at least: over size limit, disallowed
-  extension, name collision, permission denied, and an unclassified error.
+  extension, name collision, permission denied (a per-file check narrower than the target-folder
+  check in FR-003 — see Edge Cases), and an unclassified error.
 - **FR-017**: The recorded counts MUST be the authoritative report of the run. The number of files
   submitted MUST NOT be used as a stand-in for the number created.
 - **FR-018**: This feature MUST define the batch-outcome shape (counts + per-file results +
