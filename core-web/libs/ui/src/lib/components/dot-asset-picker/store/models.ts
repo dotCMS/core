@@ -1,7 +1,6 @@
 import {
     ComponentStatus,
     DotContentDriveBrowseItem,
-    DotSite,
     TreeNodeItem
 } from '@dotcms/dotcms-models';
 
@@ -73,10 +72,15 @@ export interface DotAssetPickerConfig {
     /**
      * Site the picker was opened from — the editor's current site.
      *
-     * Also the upload fallback when no folder is selected. `SYSTEM_HOST` is not browsable and
-     * suppresses the search.
+     * **Optional, and only a starting point.** {@link browseSite} (the remembered location) wins
+     * over it, and the sidebar can move the picker elsewhere afterwards. Omit it and the picker
+     * resolves the current site itself; pass it when the caller already has one in hand, to save
+     * the request.
+     *
+     * Narrowed to id + hostname because that is all the picker ever reads — a caller holding those
+     * two strings does not need to fetch a whole `DotSite` to open a dialog.
      */
-    site: DotSite;
+    site?: DotAssetPickerSite;
 
     /**
      * Site to open on, when it differs from {@link site} — the remembered last-used site.

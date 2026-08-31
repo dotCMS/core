@@ -1,5 +1,12 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, pipe } from 'rxjs';
 
+import { inject } from '@angular/core';
+
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
+
+import { DotSiteService } from '@dotcms/data-access';
 import { ComponentStatus, LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
 
 import {
@@ -50,7 +57,40 @@ export const DotAssetPickerStore = signalStore(
     withAssetSelection(),
     withAssetBrowse(),
     withAssetFolderTree(),
-    withMethods((store) => {
+    withMethods((store, siteService = inject(DotSiteService)) => {
+        /**
+         * Resolves the site to open on when the caller did not name one.
+         *
+         * `DotSiteService` is already in this component's graph (the folder tree reaches it through
+         * `DotBrowsingService`) and depends on nothing but `HttpClient` — which is exactly why the
+         * picker asks it rather than `GlobalStore`. `@dotcms/ui` is bundled into the legacy Dojo
+         * custom elements, which boot without a `Router`, so anything pulling one in would break
+         * that bundle at load time even though the picker never opens there.
+         */
+        const resolveEntrySite = rxMethod<void>(
+            pipe(
+                switchMap(() =>
+                    siteService.getCurrentSite().pipe(
+                        take(1),
+                        tap((site) => {
+                            if (site) {
+                                patchState(store, {
+                                    browsingSite: {
+                                        identifier: site.identifier,
+                                        hostname: site.hostname
+                                    }
+                                });
+                            }
+                        }),
+                        // No site is not an error state: the sidebar lists every site the user can
+                        // browse, so the picker opens on the tree with nothing selected and they
+                        // pick one. `$isBrowsable` keeps the search from firing until then.
+                        catchError(() => EMPTY)
+                    )
+                )
+            )
+        );
+
         /** Any filter change invalidates the cursor bookmarks and sends the user back to page 1. */
         const resetPaging = () => ({
             pagination: { ...store.pagination(), page: 1 },
@@ -66,13 +106,16 @@ export const DotAssetPickerStore = signalStore(
              * clear them. `config.mimeTypes` does not: it lives outside the filter bag on purpose.
              */
             initPicker: (config: DotAssetPickerConfig): void => {
+                // Starting point only — the sidebar can move the picker to another site. The
+                // remembered location wins, then the caller's own site; with neither, the picker
+                // looks the current one up rather than refusing to open.
+                const entrySite = config.browseSite ?? config.site;
+
                 patchState(store, {
                     config,
-                    // Starting point only — the sidebar can move the picker to another site. Opens
-                    // on the remembered site when there is one, otherwise on the editor's own.
-                    browsingSite: config.browseSite ?? {
-                        identifier: config.site.identifier,
-                        hostname: config.site.hostname
+                    browsingSite: entrySite && {
+                        identifier: entrySite.identifier,
+                        hostname: entrySite.hostname
                     },
                     path: config.path,
                     filters: {
@@ -92,6 +135,10 @@ export const DotAssetPickerStore = signalStore(
                     items: [],
                     selectedAsset: null
                 });
+
+                if (!entrySite) {
+                    resolveEntrySite();
+                }
 
                 store.loadFolders();
             },

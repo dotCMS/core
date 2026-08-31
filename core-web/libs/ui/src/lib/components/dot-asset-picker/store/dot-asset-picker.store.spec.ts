@@ -6,7 +6,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -548,6 +548,72 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
+    describe('entry site resolution', () => {
+        /** What a caller hands over when it does not know, or does not care, which site it is on. */
+        const NO_SITE_CONFIG: DotAssetPickerConfig = {
+            allowedBaseTypes: ASSET_BASE_TYPES
+        };
+
+        beforeEach(() => {
+            siteService.getCurrentSite = jest.fn().mockReturnValue(of(SITE));
+        });
+
+        it('should not ask the server when the caller already supplied a site', () => {
+            // The File field and the Story Block both have one in hand; making them pay for a
+            // request they do not need would be a regression.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should resolve the current site when the caller supplied none', () => {
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(siteService.getCurrentSite).toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should not search until a site is known', () => {
+            // `$isBrowsable` already guards on `browsingSite`, so the request simply waits rather
+            // than firing against an undefined path.
+            siteService.getCurrentSite = jest.fn().mockReturnValue(NEVER);
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(contentDriveService.search).not.toHaveBeenCalled();
+        });
+
+        it('should still open when the lookup fails, leaving the site tree unselected', () => {
+            // Opening on the site tree with nothing chosen beats not opening at all — the sidebar
+            // lists every site the user can browse, so they can pick one.
+            siteService.getCurrentSite = jest
+                .fn()
+                .mockReturnValue(throwError(() => new Error('offline')));
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(store.status()).not.toBe(ComponentStatus.ERROR);
+        });
+
+        it('should prefer the remembered site over the resolved one', () => {
+            // `browseSite` is where the editor last picked something; it already wins over the
+            // caller's site, and it must win over the looked-up one too.
+            store.initPicker({
+                ...NO_SITE_CONFIG,
+                browseSite: { identifier: OTHER_SITE.identifier, hostname: OTHER_SITE.hostname }
+            });
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(OTHER_SITE.identifier);
+        });
+    });
+
     describe('paginator row count across three streams', () => {
         it('should keep Next reachable while folders remain, even with content exhausted', () => {
             // Reported in review of #37273. The paginator total looked only at `hasMoreContent`, so
@@ -729,7 +795,13 @@ describe('DotAssetPickerStore', () => {
         it('should open on the remembered site rather than the one being edited', () => {
             store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: OTHER_SITE });
 
-            expect(store.browsingSite()).toEqual(OTHER_SITE);
+            // Normalised to what `DotAssetPickerSite` actually declares. It used to store whatever
+            // object the caller passed, so a full `DotSite` leaked its `aliases`/`archived` into
+            // state that promises two fields — and only sometimes, depending on the caller.
+            expect(store.browsingSite()).toEqual({
+                identifier: OTHER_SITE.identifier,
+                hostname: OTHER_SITE.hostname
+            });
             expect(store.folders()[0].data?.id).toBe(OTHER_SITE.identifier);
             expect(store.folders()[0].expanded).toBe(true);
         });
