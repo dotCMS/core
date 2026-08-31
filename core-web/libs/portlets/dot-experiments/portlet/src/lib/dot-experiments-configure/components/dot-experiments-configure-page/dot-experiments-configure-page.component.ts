@@ -187,8 +187,18 @@ export class DotExperimentsConfigurePageComponent {
      * nothing explaining — that covers a creation screen with no experiment behind it as well as a
      * draft whose only variant is the control. Everything else has variants to delete, and the
      * dialog is what says so.
+     *
+     * The site is checked here and not only where the picker opens, because between the two sits an
+     * irreversible deletion. Falling through would delete every variant and *then* find nothing to
+     * open the picker against — the user pays the whole cost and gets none of the screen they asked
+     * for. With no site there is nothing worth starting, so the press is the same no-op the picker
+     * itself falls back to.
      */
     protected onChangePage(): void {
+        if (!this.#globalStore.siteDetails()) {
+            return;
+        }
+
         if (this.store.$canChangePage()) {
             this.openPageSelector();
 

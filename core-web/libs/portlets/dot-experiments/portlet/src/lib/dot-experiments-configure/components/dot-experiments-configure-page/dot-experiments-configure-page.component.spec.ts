@@ -442,6 +442,23 @@ describe('DotExperimentsConfigurePageComponent', () => {
             );
         });
 
+        /**
+         * Between the confirmation and the picker sits an irreversible deletion. With no site the
+         * picker could not open afterwards, so the flow must not start — the alternative is
+         * deleting every variant and then finding nothing to open.
+         */
+        it('should not even offer the deletion while no site is resolved yet', () => {
+            withVariants();
+            siteDetails.set(null);
+            spectator.detectChanges();
+
+            spectator.click(selectButton());
+
+            expect(changePageDialogConfig()).toBeUndefined();
+            expect(pickerOpened()).toBe(false);
+            expect(dispatchedEvents()).toEqual([]);
+        });
+
         it('should not open the picker until the variants are actually gone', () => {
             withVariants();
 
