@@ -37,6 +37,7 @@ import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerPermissionInheritanceTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
@@ -110,6 +111,7 @@ import org.junit.runners.Suite;
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
         RoleResourceIntegrationTest.class,
+        FileAssetContainerPermissionInheritanceTest.class
 })
 
 public class MainSuite3a {
