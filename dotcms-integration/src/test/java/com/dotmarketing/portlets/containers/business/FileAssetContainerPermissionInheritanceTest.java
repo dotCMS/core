@@ -159,11 +159,22 @@ public class FileAssetContainerPermissionInheritanceTest {
         // "Reviewer" roles, which are present in the Site's inheritable set while the "Editor"
         // roles are not.
         final Role reviewerRole = new RoleDataGen().nextPersisted();
+        // View on the Site itself, so the picker can resolve the Site for this user at all.
+        // Without it findFolderAssetContainers() catches the DotSecurityException and returns an
+        // empty list, which would fail the assertion below for the wrong reason.
+        APILocator.getPermissionAPI().save(
+                new Permission(scenario.site.getPermissionId(), reviewerRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                scenario.site, systemUser, false);
+        // Inheritable View on the Site's child content. This is the grant the customer's Reviewer
+        // roles hold, and the reason they keep the Container while the Editor roles lose it.
         APILocator.getPermissionAPI().save(
                 new Permission(PERMISSION_TYPE_CONTENTLET, scenario.site.getPermissionId(),
                         reviewerRole.getId(), PermissionAPI.PERMISSION_READ, true),
                 scenario.site, systemUser, false);
-        final User reviewerUser = new UserDataGen().roles(reviewerRole).nextPersisted();
+        final User reviewerUser = new UserDataGen()
+                .roles(reviewerRole, APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
 
         resetPermissionState(scenario.containerVtlId);
         loadPermissionsAsContainer(scenario);
@@ -211,7 +222,13 @@ public class FileAssetContainerPermissionInheritanceTest {
         assertNotNull("The container folder must exist", scenario.containerFolder);
 
         scenario.editorRole = new RoleDataGen().nextPersisted();
-        scenario.limitedUser = new UserDataGen().roles(scenario.editorRole).nextPersisted();
+        // The Back-end User role is required. PermissionBitAPIImpl refuses READ on a non-live
+        // Contentlet for any user that is not a back-end user, and container.vtl only ever has a
+        // working version here -- without this the Container is filtered out of the picker for a
+        // reason that has nothing to do with the defect under test.
+        scenario.limitedUser = new UserDataGen()
+                .roles(scenario.editorRole, APILocator.getRoleAPI().loadBackEndUserRole())
+                .nextPersisted();
 
         // Break inheritance on the container folder and grant the editor role View on the folder
         // and, inheritably, on the folder's child content -- this is the supported way of granting
