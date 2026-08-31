@@ -144,6 +144,12 @@ all covered by integration tests. It has no production callers.
 - Failure messages distinguish removals from additions, so the condition is findable in logs.
 - Correction of documentation in the index-policy provider that states a default which does
   not match the code — it misleads exactly the reader trying to reason about this path.
+- The reindex journal's batch assembly distinguishes a pending removal from a pending reindex
+  for the same identifier. Today the batch is keyed by identifier alone, so the two silently
+  overwrite each other; nothing depends on that today because no production code enqueues
+  removals, but this change makes the pair routine — content is saved, then destroyed. Without
+  it, a removal can be dropped behind a stale reindex and the defect returns through its own
+  fix.
 
 **Explicitly out of scope / non-goals**:
 
@@ -163,6 +169,10 @@ all covered by integration tests. It has no production callers.
   detection and repair of pre-existing drift is desirable but is separate work.
 - **Push-publish delete/unpublish bundle handling.** Not traced; may or may not share the
   path.
+- **Retrying a removal past `REINDEX_MAX_FAILURE_ATTEMPTS`, and repairing entries that have
+  exhausted it.** Once a removal has failed that many times the cause is not transient and a
+  retry loop is not the answer. AC-007 makes the residue visible; acting on it — an operator
+  tool, a slower retry tier, or automated repair — is separate work.
 
 ## Regression Risk *(mandatory)*
 
@@ -172,6 +182,11 @@ all covered by integration tests. It has no production callers.
   **every** index write, not just deletes — additions and reindexing included. Any caller or
   test that currently tolerates a partial failure in silence will begin to see it. Enumerating
   those callers is a prerequisite, not a follow-up.
+  The batch-assembly change is on the hottest path in the reindex pipeline: it is how **every**
+  journal entry reaches the index, full reindex included. It must preserve the existing
+  deduplication of repeated entries for one identifier — collapsing that differently would turn
+  a redundant-entry optimisation into a per-entry bulk operation and regress full-reindex
+  throughput.
 - **Backward compatibility**: The journal table already carries a delete action type and both
   search providers already consume it, so no schema change and no new format are introduced —
   a mixed-version cluster during a rolling deploy will see entries it already understands. The
@@ -186,8 +201,10 @@ all covered by integration tests. It has no production callers.
 ## Acceptance & Verification *(mandatory)*
 
 - **AC-001**: For each reproduction path above, the index document for a destroyed contentlet
-  is eventually removed. The removal survives the triggering condition rather than being lost
-  to it.
+  is removed once the triggering condition clears. The pending removal survives the condition
+  as a durable record rather than being lost to it, and is retried without operator action.
+  The guarantee is at-least-once **up to** `REINDEX_MAX_FAILURE_ATTEMPTS`; behavior beyond
+  exhaustion is AC-007.
 - **AC-002**: After a destroy under a forced index-write failure, a subsequent search returns
   a total that matches the number of contentlets that actually resolve — no inflated count.
 - **AC-003**: An index write that comes back with per-item failures is surfaced to its caller
@@ -199,6 +216,14 @@ all covered by integration tests. It has no production callers.
   failure handling. This is the blast-radius check for AC-003.
 - **AC-006**: Regression — the unpublish/archive path is unchanged in behavior. No language
   that should remain live is removed from the index.
+- **AC-007**: A removal that exhausts its retry attempts is **discoverable**, not silent. The
+  journal entry remains in `dist_reindex_journal` above `ERROR` priority, carrying the
+  identifier and the last failure cause, so the set of removals still owed to the index can be
+  read with a single query. Exhaustion must not delete the record, and must not be reported to
+  the caller as a completed removal.
+- **AC-008**: A pending removal and a pending reindex for the same identifier resolve
+  deterministically to the newer of the two, and the older is not applied afterwards. Existing
+  deduplication of identical repeated entries is preserved.
 - **Verification method**: Integration tests in `dotcms-integration`, named `*Test` and
   registered in the matching suite. At minimum: a test that forces an index write failure
   during a destroy and asserts the document is eventually gone; a test that asserts a partial
