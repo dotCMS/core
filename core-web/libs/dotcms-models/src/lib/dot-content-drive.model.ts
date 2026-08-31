@@ -251,6 +251,16 @@ export interface DotContentDriveSearchRequest {
     workflow?: { scheme: string; step?: string }[];
 
     /**
+     * Content states to filter by. Accepted values: `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     * Entries combine with OR — the result is content in any of the selected states, so adding a
+     * status never shrinks the result set. Omitted or empty means no status filtering, which
+     * preserves the default behavior (archived content hidden).
+     *
+     * @example ["UNPUBLISHED", "LOCKED"]
+     */
+    status?: string[];
+
+    /**
      * Field-based search criteria, keyed by the content-type field variable. Only offered when a
      * single content type is selected and only for fields flagged User Searchable + System Indexed.
      * The value shape depends on the field type:

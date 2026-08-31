@@ -1,12 +1,17 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
 
-import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+import { ComponentStatus, LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
 
 import { DEFAULT_ASSET_PICKER_PAGE, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
-import { DotAssetPickerConfig, DotAssetPickerFilters, DotAssetPickerState } from './models';
+import {
+    DotAssetPickerConfig,
+    DotAssetPickerFilters,
+    DotAssetPickerSite,
+    DotAssetPickerState
+} from './models';
 
 import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
 
@@ -104,6 +109,60 @@ export const DotAssetPickerStore = signalStore(
                 patchState(store, {
                     browsingSite: { identifier, hostname: data.hostname },
                     path: data.type === 'site' ? undefined : data.path || undefined,
+                    ...resetPaging()
+                });
+            },
+
+            /**
+             * Moves the picker to another site.
+             *
+             * Lives here rather than in the folder-tree feature because it touches everything at
+             * once — the tree, the folder scope, the search term and the asset list's paging — and
+             * `resetPaging` is the store's, not the feature's.
+             *
+             * The folder term is cleared on the way: a term is only meaningful against the site it
+             * was typed for. Carrying it over would leave the editor reading site A's results under
+             * a selector that says site B.
+             */
+            setBrowsingSite: (site: DotAssetPickerSite): void => {
+                if (site.identifier === store.browsingSite()?.identifier) {
+                    return;
+                }
+
+                patchState(store, {
+                    browsingSite: site,
+                    path: undefined,
+                    selectedNode: null,
+                    folderSearch: '',
+                    searchResults: null,
+                    searchStatus: ComponentStatus.INIT,
+                    searchHasMore: false,
+                    ...resetPaging()
+                });
+
+                store.loadFolders();
+            },
+
+            /**
+             * Scopes the list to a folder picked out of the flat search results.
+             *
+             * Deliberately **not** `selectNode`: that one resolves the site by walking up to the
+             * tree root, and a search result has no parent in the tree to walk. The result already
+             * belongs to the browsed site, so the site does not change — only the folder does.
+             *
+             * The term and the results are left alone. Keeping the list up is the point: the editor
+             * can try the next match without retyping.
+             */
+            selectSearchResult: (node: TreeNodeItem): void => {
+                const data = node.data;
+
+                if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+                    return;
+                }
+
+                store.setSelectedNode(node);
+                patchState(store, {
+                    path: data.path || undefined,
                     ...resetPaging()
                 });
             },

@@ -17351,6 +17351,9 @@ paths:
       tags:
       - System Configuration
     post:
+      description: "Saves or updates the value of a key in the system table. The change\
+        \ is applied cluster wide: every node is notified and re-resolves the key,\
+        \ so the request does not need to be repeated against each node."
       operationId: save
       requestBody:
         content:
@@ -17367,9 +17370,14 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
           description: default response
+      summary: Saves or updates a system table entry
       tags:
       - System Configuration
     put:
+      description: "Updates the value of an existing key in the system table, or returns\
+        \ a 404 if the key does not exist. The change is applied cluster wide: every\
+        \ node is notified and re-resolves the key, so the request does not need to\
+        \ be repeated against each node."
       operationId: update_8
       requestBody:
         content:
@@ -17386,6 +17394,7 @@ paths:
               schema:
                 $ref: "#/components/schemas/ResponseEntityStringView"
           description: default response
+      summary: Updates an existing system table entry
       tags:
       - System Configuration
   /v1/system-table/_delete:
