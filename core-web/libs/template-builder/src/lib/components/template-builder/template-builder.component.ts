@@ -294,8 +294,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
             });
         }
 
-        if (changes.disabled !== undefined && this.grid) {
-            this.applyGridDisabled(!!changes.disabled.currentValue);
+        if (changes['disabled'] !== undefined && this.grid) {
+            this.applyGridDisabled(!!changes['disabled'].currentValue);
         }
     }
 

@@ -140,10 +140,10 @@ export class DotExperimentsListComponent {
      * renders it when this is set, and it already disables the page arrows on a single page — so the
      * whole bar goes inert together.
      */
-    readonly $rowsPerPageOptions = computed<number[] | null>(() =>
+    readonly $rowsPerPageOptions = computed<number[] | undefined>(() =>
         this.store.totalRecords() > Math.min(...ROWS_PER_PAGE_OPTIONS)
             ? ROWS_PER_PAGE_OPTIONS
-            : null
+            : undefined
     );
     readonly SKELETON_COLUMNS = SKELETON_COLUMNS;
 

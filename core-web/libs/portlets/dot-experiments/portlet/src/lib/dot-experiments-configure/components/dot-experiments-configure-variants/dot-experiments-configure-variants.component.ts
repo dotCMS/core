@@ -355,7 +355,7 @@ export class DotExperimentsConfigureVariantsComponent {
             data
         });
 
-        dialogRef.onClose
+        dialogRef?.onClose
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((result?: DotExperimentsAddVariantDialogResult) => {
                 if (result?.name) {

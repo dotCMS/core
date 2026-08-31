@@ -90,6 +90,15 @@
                                 }}
                                 <span class="text-red-500" aria-hidden="true">*</span>
                             </label>
+                            <!--
+                                `$any()` on [formField]: PrimeNG's Select and DatePicker extend
+                                BaseInput, which declares min/max as number and pattern as string.
+                                Signal forms types those constraints from the field's own value type
+                                (readonly RegExp[] for pattern), so the host is structurally
+                                incompatible and strictTemplates rejects the binding. Runtime is
+                                unaffected — only constraint propagation is untypeable. Controls on
+                                BaseEditableHolder (toggle, radio) and native inputs bind fine.
+                            -->
                             <p-select
                                 inputId="goal-parameter"
                                 class="w-full"
@@ -97,7 +106,7 @@
                                 optionValue="value"
                                 appendTo="body"
                                 [options]="reachPageParameterOptions"
-                                [formField]="$field().parameter"
+                                [formField]="$any($field().parameter)"
                                 [placeholder]="
                                     'experiments.goal.reach_page.form.conditions.parameter.placeholder'
                                         | dm
@@ -118,7 +127,7 @@
                             optionValue="value"
                             appendTo="body"
                             [options]="$operatorOptions()"
-                            [formField]="$field().operator"
+                            [formField]="$any($field().operator)"
                             [placeholder]="
                                 'experiments.goal.reach_page.form.conditions.operator.placeholder'
                                     | dm

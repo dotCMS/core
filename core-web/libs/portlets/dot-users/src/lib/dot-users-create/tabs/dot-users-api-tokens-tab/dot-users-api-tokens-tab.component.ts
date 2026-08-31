@@ -252,7 +252,7 @@ export class DotUsersApiTokensTabComponent {
             return;
         }
 
-        const ref: DynamicDialogRef = this.#dialogService.open(
+        const ref: DynamicDialogRef | null = this.#dialogService.open(
             DotUsersRequestTokenDialogComponent,
             {
                 header: this.#messageService.get('users.dialog.tokens.request.header'),
@@ -265,7 +265,7 @@ export class DotUsersApiTokensTabComponent {
             }
         );
 
-        ref.onClose.pipe(take(1)).subscribe((result: DotApiTokenCreateResult | undefined) => {
+        ref?.onClose.pipe(take(1)).subscribe((result: DotApiTokenCreateResult | undefined) => {
             if (!result) {
                 return;
             }

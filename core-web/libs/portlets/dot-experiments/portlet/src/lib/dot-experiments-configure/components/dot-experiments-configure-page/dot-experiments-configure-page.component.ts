@@ -187,7 +187,7 @@ export class DotExperimentsConfigurePageComponent {
                     hostFolderId: this.#globalStore.currentSiteId()
                 }
             })
-            .onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            ?.onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((page: DotCMSContentlet | undefined) => {
                 if (!page) {
                     return;
