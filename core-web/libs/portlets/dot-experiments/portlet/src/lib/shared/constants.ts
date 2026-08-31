@@ -258,6 +258,24 @@ export const SELECT_PAGE_BROWSER_PARAMS = {
 /** Narrower than the 700px form default: the dialog holds a single optional name field. */
 export const ADD_VARIANT_DIALOG_WIDTH = '440px';
 
+/** The standard confirmation width (see `libs/portlets/CLAUDE.md`), not the 700px form one. */
+export const CHANGE_PAGE_DIALOG_WIDTH = '500px';
+
+/**
+ * Row colours of the Variants card, in the order the rows are drawn.
+ *
+ * Shared with the Change Page dialog, which lists the variants a page change would delete: the two
+ * are looking at the same list, so a variant keeps the same colour in both. The Results screen has
+ * its own palette.
+ */
+export const VARIANT_COLORS: readonly string[] = [
+    '#0ea5e9',
+    '#a855f7',
+    '#fb923c',
+    '#22c55e',
+    '#f43f5e'
+];
+
 /**
  * Kind of the cross-field error the weights raise when they do not add up to 100.
  *

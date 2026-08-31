@@ -66,6 +66,24 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
         removeVariantSucceeded: type<DotExperiment>(),
         removeVariantFailed: type<unknown>(),
 
+        /**
+         * Every variant standing in the way of a page change is gone, and the experiment is the
+         * one the last deletion answered with.
+         */
+        deleteVariantsSucceeded: type<DotExperiment>(),
+        /**
+         * One of those deletions was refused, so the page change does not happen.
+         *
+         * `experiment` is whatever the last deletion that *did* succeed answered with, or `null`
+         * when the first one failed: the calls run one after another, so a rejection halfway
+         * leaves some variants already deleted and the card has to show the list as it now stands.
+         *
+         * Reported unobtrusively — a toast rather than the usual alert dialog — because the Change
+         * Page dialog is still open and stays open: a modal stacked on top of it would bury the
+         * retry. The dialog states the failure inline beside its own buttons.
+         */
+        deleteVariantsFailed: type<{ error: unknown; experiment: DotExperiment | null }>(),
+
         // Transitions. `startRequested` is raised by the handler as the call leaves, on the same
         // contract as `createRequested`: the reducer closes the door on a second Start press
         // before the first one answers.

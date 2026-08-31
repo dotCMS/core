@@ -1,11 +1,11 @@
-import { injectDispatch } from '@ngrx/signals/events';
+import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, DestroyRef, inject, input } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
 import { ButtonModule } from 'primeng/button';
-import { DialogService } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputGroupModule } from 'primeng/inputgroup';
 import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
@@ -14,19 +14,28 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotBrowserSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
 import {
+    CHANGE_PAGE_DIALOG_WIDTH,
     MAX_TRAFFIC_ALLOCATION,
     SELECT_PAGE_BROWSER_PARAMS,
     SELECT_PAGE_DIALOG_MAX_WIDTH,
-    SELECT_PAGE_DIALOG_WIDTH
+    SELECT_PAGE_DIALOG_WIDTH,
+    VARIANT_COLORS
 } from '../../../shared/constants';
 import { DotExperimentConfigurePage } from '../../../shared/models';
+import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import {
+    DotExperimentsChangePageDialogComponent,
+    DotExperimentsChangePageDialogInputs,
+    DotExperimentsChangePageDialogResult,
+    DotExperimentsChangePageDialogVariant
+} from '../dot-experiments-change-page-dialog/dot-experiments-change-page-dialog.component';
 
 /** Title of the Select A Page dialog. Its chrome belongs to the caller, not to the dialog. */
 const SELECT_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.select-page.header';
@@ -37,24 +46,25 @@ const TRAFFIC_HELP_ALL_KEY = 'experiments.configure.page.traffic.help.all';
 /** And below it, where the share left over goes to the Original. */
 const TRAFFIC_HELP_PARTIAL_KEY = 'experiments.configure.page.traffic.help.partial';
 
-/** Why the page is fixed on an experiment that is no longer a draft. */
-const PAGE_IMMUTABLE_TOOLTIP_KEY = 'experiments.configure.page.select.immutable.tooltip';
-
-/**
- * Why the page is fixed on a draft that already has variants.
- *
- * A different message from the one above on purpose: this one names something the user can undo.
- */
-const PAGE_HAS_VARIANTS_TOOLTIP_KEY = 'experiments.configure.page.select.has-variants.tooltip';
+/** Title of the Change Page confirmation. Its chrome belongs to the caller too. */
+const CHANGE_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.page.change.header';
 
 /**
  * Page card of the Configure screen: which page the experiment runs on, and how much of that
  * page's traffic enters it.
  *
  * The page itself is not a form value: picking one is reported to the store directly. It can be
- * changed only while the experiment is a draft whose variants are the control alone — beyond that
- * a non-control variant holds a copy of this page, so the Select button is disabled with a tooltip
- * saying which of the two rules is in the way rather than offering a choice the backend refuses.
+ * changed for as long as the experiment is a draft; past that the button is disabled and says why.
+ *
+ * A draft that already has non-control variants can change its page too, but not for free: each of
+ * those variants holds a copy of *this* page, and the server refuses the change while they exist. So
+ * Change Page confirms first — naming the page and every variant it would delete — and only opens
+ * the picker once the store reports them gone.
+ *
+ * The confirmation is a view: this card owns its dialog reference, hands it the wait and the failure
+ * as store signals, and closes it on `deleteVariantsSucceeded`. Both dialogs go through
+ * `DialogService` so the handover is one chain — the confirmation's `onClose` is what opens the
+ * picker.
  *
  * The allocation is: it is a leaf of the shell's root form, handed over as a field tree and bound
  * to the number input. Its 1–100 rule and its read-only state live in the shell's schema.
@@ -93,36 +103,42 @@ export class DotExperimentsConfigurePageComponent {
     );
 
     /**
-     * The page can be changed while the experiment is a draft whose only variant is the control —
-     * the rule the server enforces. Outside it the button explains itself rather than offering a
-     * choice that would come back a 400.
+     * The variants a page change would delete, as the dialog lists them.
+     *
+     * Their colours are taken from their position in the *whole* variant list, so a variant is the
+     * same colour here as it is on the Variants card the user just read.
      */
-    protected readonly $canChangePage = computed<boolean>(() => this.store.$canChangePage());
+    protected readonly $deletableVariants = computed<DotExperimentsChangePageDialogVariant[]>(
+        () => {
+            const variants = this.store.$variants();
 
-    protected readonly $isSelectDisabled = computed<boolean>(
-        () => this.store.$isLocked() || !this.$canChangePage()
+            return this.store.$deletableVariants().map((variant) => ({
+                id: variant.id,
+                name: variant.name,
+                color: VARIANT_COLORS[
+                    variants.findIndex(({ id }) => id === variant.id) % VARIANT_COLORS.length
+                ]
+            }));
+        }
     );
 
     /**
-     * Why the button is disabled, most specific reason last.
+     * Only a draft may point at a different page — the rule the server enforces on `save()`.
      *
-     * Locked leads, as the strongest and broadest reason. Below it the two halves of the page rule
-     * get different copy on purpose: a non-draft experiment is simply past the point of changing,
-     * while a draft with variants names something the user can act on — delete them and come back.
+     * Existing variants deliberately do *not* disable it: they are a step on the way rather than a
+     * wall, and the confirmation is what turns them into one the user can take.
      */
-    protected readonly $selectTooltipKey = computed<string | null>(() => {
-        if (this.store.$isLocked()) {
-            return this.store.$disabledTooltipKey();
-        }
+    protected readonly $isPageActionDisabled = computed<boolean>(() => this.store.$isLocked());
 
-        if (this.$canChangePage()) {
-            return null;
-        }
-
-        return this.store.$status() === DotExperimentStatus.DRAFT
-            ? PAGE_HAS_VARIANTS_TOOLTIP_KEY
-            : PAGE_IMMUTABLE_TOOLTIP_KEY;
-    });
+    /**
+     * Why the button is disabled, or `null` while it is not.
+     *
+     * There is only one reason left to give: an experiment past draft, which is also what freezes
+     * every other field, so it reads with the same copy they do rather than one of its own.
+     */
+    protected readonly $pageActionTooltipKey = computed<string | null>(() =>
+        this.store.$isLocked() ? this.store.$disabledTooltipKey() : null
+    );
 
     /** Revealed by a Start press, and gone as soon as a page is picked. */
     protected readonly $hasPageError = computed<boolean>(() =>
@@ -151,14 +167,100 @@ export class DotExperimentsConfigurePageComponent {
     protected readonly $trafficErrors = computed(() => this.$field()().errors());
 
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
+    readonly #events = inject(Events);
     readonly #dialogService = inject(DialogService);
     readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
 
-    /** Empties the picker so a different page can be chosen; same rule as picking one. */
-    protected clearPage(): void {
-        this.#dispatch.pageCleared();
+    /** The confirmation while it is open, so it can be closed from outside itself. */
+    #changePageRef: DynamicDialogRef | null = null;
+
+    constructor() {
+        this.#closeConfirmationWhenVariantsAreGone();
+    }
+
+    /**
+     * Change Page: straight to the picker, or through the confirmation the variants earn first.
+     *
+     * `$canChangePage` is the server's own rule, so a page it would accept as it stands needs
+     * nothing explaining — that covers a creation screen with no experiment behind it as well as a
+     * draft whose only variant is the control. Everything else has variants to delete, and the
+     * dialog is what says so.
+     */
+    protected onChangePage(): void {
+        if (this.store.$canChangePage()) {
+            this.openPageSelector();
+
+            return;
+        }
+
+        const variants = this.$deletableVariants();
+
+        // Nothing to delete and still refused means the experiment is past draft, which the
+        // disabled button already covers. Reachable only if the status moved under the click.
+        if (!variants.length) {
+            return;
+        }
+
+        this.#openChangePageDialog(variants);
+    }
+
+    /**
+     * Asks for the confirmation, and opens the picker if it closes with the go-ahead.
+     *
+     * The wait and the failure travel as the store's own signals rather than as values, because
+     * `inputValues` reaches the dialog once at creation — see the dialog's own docs. The press is
+     * reported first so the dialog opens on a clean slate instead of on the error a cancelled
+     * attempt left behind.
+     *
+     * Only `true` opens the picker, and only this card ever closes the dialog with it: a cancelled
+     * dialog, or one closed after a rejection, leaves the page as it is.
+     */
+    #openChangePageDialog(variants: DotExperimentsChangePageDialogVariant[]): void {
+        this.#dispatch.pageChangeRequested();
+
+        const inputValues: DotExperimentsChangePageDialogInputs = {
+            pagePath: this.$selectedPage()?.path ?? '',
+            variants,
+            deleting: this.store.deletingVariants,
+            failed: this.store.deleteVariantsFailed
+        };
+
+        this.#changePageRef = this.#dialogService.open(DotExperimentsChangePageDialogComponent, {
+            header: this.#dotMessageService.get(CHANGE_PAGE_DIALOG_HEADER_KEY),
+            width: CHANGE_PAGE_DIALOG_WIDTH,
+            closable: true,
+            closeOnEscape: true,
+            modal: true,
+            inputValues
+        });
+
+        this.#changePageRef.onClose
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((result?: DotExperimentsChangePageDialogResult) => {
+                this.#changePageRef = null;
+
+                if (result) {
+                    this.openPageSelector();
+                }
+            });
+    }
+
+    /**
+     * Closes the confirmation with the go-ahead the moment the store reports the variants deleted.
+     *
+     * Here rather than inside the dialog: the dialog is created outside this card's injector and so
+     * cannot reach the store at all — listening to the event from in there would be listening to a
+     * global bus for an answer that may not even be this screen's. This card holds the store *and*
+     * the reference, so it is the one place that can tie the two together. A run with no dialog open
+     * closes nothing.
+     */
+    #closeConfirmationWhenVariantsAreGone(): void {
+        this.#events
+            .on(dotExperimentsConfigureApiEvents.deleteVariantsSucceeded)
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => this.#changePageRef?.close(true));
     }
 
     /** Opens the picker and reports the chosen page. Cancelling leaves the card as it was. */

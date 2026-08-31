@@ -715,6 +715,194 @@ describe('DotExperimentsConfigureStore', () => {
         });
     });
 
+    describe('clearing the variants for a page change', () => {
+        /** The draft the Change Page dialog is raised over: the control plus two of its own. */
+        const draftWithTwoVariants = () =>
+            buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [
+                        buildVariant('DEFAULT', 34),
+                        buildVariant('variant-b', 33),
+                        buildVariant('variant-c', 33)
+                    ]
+                }
+            });
+
+        /** What is left once both of them are gone. */
+        const controlOnly = () =>
+            buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [buildVariant('DEFAULT', 100)]
+                }
+            });
+
+        const deletedVariantIds = () => removeVariant.mock.calls.map(([, variantId]) => variantId);
+
+        it('should offer every variant but the control as the ones in the way', () => {
+            initExisting(draftWithTwoVariants());
+
+            expect(store.$deletableVariants().map(({ id }) => id)).toEqual([
+                'variant-b',
+                'variant-c'
+            ]);
+        });
+
+        it('should delete each of them, leaving the control alone', () => {
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(of(controlOnly()));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(deletedVariantIds()).toEqual(['variant-b', 'variant-c']);
+        });
+
+        /**
+         * One at a time, because each deletion has the backend recompute the traffic proportion
+         * over what is left: fired at once, which of the answers describes the experiment
+         * afterwards would come down to arrival order.
+         */
+        it('should wait for each deletion before starting the next', () => {
+            initExisting(draftWithTwoVariants());
+            const firstDeletion = pendingCall(removeVariant);
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(deletedVariantIds()).toEqual(['variant-b']);
+            expect(store.status()).toBe(ComponentStatus.SAVING);
+            // The flag the confirmation's own button spins on, separate from the shared status.
+            expect(store.deletingVariants()).toBe(true);
+
+            removeVariant.mockReturnValue(of(controlOnly()));
+            firstDeletion.next(draftWithTwoVariants());
+            firstDeletion.complete();
+
+            expect(deletedVariantIds()).toEqual(['variant-b', 'variant-c']);
+        });
+
+        it('should take the experiment the last deletion answered with', () => {
+            const remaining = controlOnly();
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(of(remaining));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(store.experiment()).toEqual(remaining);
+            expect(store.$deletableVariants()).toEqual([]);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.deletingVariants()).toBe(false);
+            expect(store.deleteVariantsFailed()).toBe(false);
+        });
+
+        it('should report the go-ahead only once every variant is gone', () => {
+            const settled: string[] = [];
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(of(controlOnly()));
+            events.on(apiEvents.deleteVariantsSucceeded).subscribe(() => settled.push('succeeded'));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(settled).toEqual(['succeeded']);
+        });
+
+        /**
+         * A rejection halfway leaves the deletions that went through gone, so the store keeps the
+         * last answer it did get: the Variants card would otherwise go on offering weights for a
+         * row that no longer exists.
+         */
+        it('should keep the variants that did go when one deletion is refused', () => {
+            const afterFirst = buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [buildVariant('DEFAULT', 50), buildVariant('variant-c', 50)]
+                }
+            });
+            let failure: { experiment: DotExperiment | null } | null = null;
+
+            initExisting(draftWithTwoVariants());
+            removeVariant
+                .mockReturnValueOnce(of(afterFirst))
+                .mockReturnValueOnce(throwError(() => httpError(400)));
+            events
+                .on(apiEvents.deleteVariantsFailed)
+                .subscribe(({ payload }) => (failure = payload));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(store.experiment()).toEqual(afterFirst);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(failure?.experiment).toEqual(afterFirst);
+        });
+
+        /** The confirmation stays open on it, so the message has to outlive the run. */
+        it('should hold on to a refusal until the next attempt', () => {
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(throwError(() => httpError(500)));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(store.deleteVariantsFailed()).toBe(true);
+            expect(store.deletingVariants()).toBe(false);
+
+            // A retry left in flight, so what is observed is the start of the run and not its end.
+            pendingCall(removeVariant);
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(store.deleteVariantsFailed()).toBe(false);
+            expect(store.deletingVariants()).toBe(true);
+        });
+
+        /** So a cancelled failure is not still on screen the next time the dialog opens. */
+        it('should forget a refusal when Change Page is pressed again', () => {
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(throwError(() => httpError(500)));
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            dispatcher.dispatch(pageEvents.pageChangeRequested());
+
+            expect(store.deleteVariantsFailed()).toBe(false);
+            // The press deletes nothing on its own: only the confirmation does.
+            expect(removeVariant).toHaveBeenCalledTimes(1);
+        });
+
+        it('should report a failure as a toast rather than a dialog over the open one', () => {
+            initExisting(draftWithTwoVariants());
+            removeVariant.mockReturnValue(throwError(() => httpError(500)));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(httpErrorManager.handle).toHaveBeenCalledWith(expect.anything(), true);
+        });
+
+        it('should report no experiment when the very first deletion is refused', () => {
+            let failure: { experiment: DotExperiment | null } | null = null;
+            const draft = draftWithTwoVariants();
+
+            initExisting(draft);
+            removeVariant.mockReturnValue(throwError(() => httpError(500)));
+            events
+                .on(apiEvents.deleteVariantsFailed)
+                .subscribe(({ payload }) => (failure = payload));
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(failure?.experiment).toBeNull();
+            expect(store.experiment()).toEqual(draft);
+        });
+
+        it('should call nothing when the control is the only variant there is', () => {
+            initExisting(controlOnly());
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(removeVariant).not.toHaveBeenCalled();
+            // And no in-flight state either: nothing would ever answer to bring it home.
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+            expect(store.deletingVariants()).toBe(false);
+        });
+    });
+
     describe('save draft', () => {
         it('should collapse rapid edits of one field into a single call, sending the last value', () => {
             initExisting();
