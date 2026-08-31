@@ -80,7 +80,7 @@ const find = (items: MenuItem[], label: string): MenuItem | undefined => {
  */
 const SEPARATOR = '\u2014 separator \u2014';
 const labels = (items: MenuItem[]): string[] =>
-    items.map((item) => (item.separator ? SEPARATOR : item.label));
+    items.map((item) => (item.separator ? SEPARATOR : (item.label ?? '')));
 
 /** Invokes a menu entry by label, wherever it lives in the tree. */
 const invoke = (items: MenuItem[], label: string) => {

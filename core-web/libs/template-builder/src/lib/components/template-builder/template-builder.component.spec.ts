@@ -449,6 +449,8 @@ describe('TemplateBuilderComponent', () => {
             let mockGrid: {
                 disable: jest.Mock;
                 enable: jest.Mock;
+                load: jest.Mock;
+                save: jest.Mock;
                 el: { querySelectorAll: jest.Mock };
             };
 

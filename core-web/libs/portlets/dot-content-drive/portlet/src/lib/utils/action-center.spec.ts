@@ -530,7 +530,7 @@ describe('action-center utils', () => {
                 WORKFLOW_ACTION_ID.UNLOCK,
                 ADD_TO_BUNDLE_ACTION_ID,
                 PUSH_PUBLISH_ACTION_ID
-            ] as string[]) {
+            ] as const) {
                 expect(byId.get(id)?.missingAdminRole).toBe(false);
             }
         });

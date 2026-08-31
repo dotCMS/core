@@ -189,14 +189,24 @@ describe('Utility Functions', () => {
         });
 
         it('should encode multiple filters correctly', () => {
-            const result = encodeFilters({ contentType: ['Blog'], status: 'published' });
+            // Scalar `status` on purpose: this covers encodeFilters' non-array branch, a shape the
+            // declared type does not describe. Cast past it, as the null/undefined test below does.
+            const result = encodeFilters({
+                contentType: ['Blog'],
+                status: 'published'
+            } as unknown as DotContentDriveFilters);
             const parts = result.split(';');
             expect(parts.length).toBe(2);
             expect(parts).toEqual(expect.arrayContaining(['contentType:Blog', 'status:published']));
         });
 
         it('should ignore filters with empty string values', () => {
-            const result = encodeFilters({ contentType: ['Blog'], status: '' });
+            // An empty *string* is the case under test — distinct from an empty array, which the
+            // next test shows is encoded rather than skipped.
+            const result = encodeFilters({
+                contentType: ['Blog'],
+                status: ''
+            } as unknown as DotContentDriveFilters);
             expect(result).toBe('contentType:Blog');
         });
 
@@ -219,7 +229,10 @@ describe('Utility Functions', () => {
         });
 
         it('should handle filters with spaces in the value correctly', () => {
-            const result = encodeFilters({ title: 'Some Random Title', status: 'published' });
+            const result = encodeFilters({
+                title: 'Some Random Title',
+                status: 'published'
+            } as unknown as DotContentDriveFilters);
             expect(result).toBe('title:Some Random Title;status:published');
         });
 
