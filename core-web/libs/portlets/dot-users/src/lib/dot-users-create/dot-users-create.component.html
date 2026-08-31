@@ -97,18 +97,17 @@
                         }
                     </div>
                 </p-tabpanel>
-                <p-tabpanel [value]="2" class="block min-h-0 flex-1 overflow-auto">
-                    <div
-                        class="text-color-secondary px-7 pt-6 pb-7 text-sm"
-                        data-testid="users-dialog-permissions-tab-placeholder">
-                        {{ 'users.dialog.tabs.coming-soon' | dm }}
-                    </div>
+                <p-tabpanel [value]="2" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <dot-users-permissions-tab
+                        [userId]="user?.userId ?? null"
+                        class="flex min-h-0 flex-1 flex-col"
+                        data-testid="users-dialog-permissions-tab" />
                 </p-tabpanel>
                 <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
-                    <div
-                        class="text-color-secondary px-7 pt-6 pb-7 text-sm"
-                        data-testid="users-dialog-api-tokens-tab-placeholder">
-                        {{ 'users.dialog.tabs.coming-soon' | dm }}
+                    <div class="px-7 pt-6 pb-7">
+                        <dot-users-api-tokens-tab
+                            [userId]="user?.userId ?? null"
+                            data-testid="users-dialog-api-tokens-tab" />
                     </div>
                 </p-tabpanel>
             </p-tabpanels>
@@ -125,11 +124,25 @@
         [text]="true"
         (onClick)="close()"
         data-testid="users-dialog-cancel-btn" />
-    <p-button
-        [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
-        [disabled]="$isSaveDisabled()"
-        (onClick)="save()"
-        data-testid="users-dialog-save-btn" />
+    <!--
+        The tooltip lives on a wrapper, not on the button: a disabled
+        native button suppresses pointer events, so `pTooltip` bound
+        directly to it would never fire — exactly when we need it to
+        explain why Save is off. Same pattern as
+        `dot-experiments-configuration-targeting`.
+    -->
+    <div
+        class="inline-block"
+        [pTooltip]="'users.dialog.permissions.own-save' | dm"
+        [tooltipDisabled]="!$isPermissionsTabOpen()"
+        tooltipPosition="top"
+        data-testid="users-dialog-save-tooltip">
+        <p-button
+            [label]="(isEdit ? 'users.dialog.save' : 'users.dialog.create') | dm"
+            [disabled]="$isSaveDisabled()"
+            (onClick)="save()"
+            data-testid="users-dialog-save-btn" />
+    </div>
 </footer>
 
 <p-dialog

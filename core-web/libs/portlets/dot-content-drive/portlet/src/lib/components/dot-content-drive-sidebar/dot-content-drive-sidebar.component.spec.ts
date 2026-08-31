@@ -935,7 +935,7 @@ describe('DotContentDriveSidebarComponent', () => {
             // The effect checks currentSite at the start, so if it is unset loadFolders won't be
             // called. We verify this by checking that after unsetting it, loadFolders is not called
             spectator.detectComponentChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             // Asserts the effect's behaviour rather than the mock: this line used to read back
             // `currentSite()`, which only restated the `mockReturnValue` above. The effect's guard

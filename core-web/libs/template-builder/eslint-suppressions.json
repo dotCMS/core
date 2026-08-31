@@ -16,7 +16,7 @@
   },
   "src/lib/components/template-builder/template-builder.component.ts": {
     "@angular-eslint/prefer-signals": {
-      "count": 3
+      "count": 4
     }
   }
 }

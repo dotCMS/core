@@ -33,10 +33,18 @@
                 class="flex min-h-0 flex-1 flex-col gap-8 overflow-y-auto px-6 py-4"
                 data-testid="action-center">
                 @if ($selectedFolderCount() > 0) {
-                    <!-- `no-enter-motion` renders this notice statically; see the component's `styles`. -->
+                    <!--
+                        `no-enter-motion` renders this notice statically; see the component's `styles`.
+
+                        Full-bleed via `[pt]` rather than descendant selectors in `styleClass` —
+                        the padding lives on `.p-message-content`, and pass-through targets that
+                        section by name. See `ACTION_CENTER_FOLDER_NOTICE_PT` for why each rule is
+                        there and why both need `!`.
+                    -->
                     <p-message
                         severity="info"
                         styleClass="no-enter-motion"
+                        [pt]="folderNoticePt"
                         data-testid="folders-limited-message">
                         {{
                             'content-drive.action-center.folders-limited'
@@ -67,6 +75,7 @@
                                         $executing() ||
                                         quickAction.comingSoon ||
                                         quickAction.missingEnvironments ||
+                                        quickAction.missingAdminRole ||
                                         quickAction.count === 0
                                     "
                                     [pTooltip]="quickActionHint(quickAction) | dm"

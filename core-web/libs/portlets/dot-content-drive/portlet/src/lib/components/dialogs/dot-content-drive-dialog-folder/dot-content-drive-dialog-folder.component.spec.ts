@@ -521,6 +521,25 @@ describe('DotContentDriveDialogFolderComponent', () => {
                 ).toBeNull();
             });
 
+            it('should still offer Cancel while loading', () => {
+                // The whole footer used to live inside the ready gate, so the loading state had no
+                // Cancel at all. That matters most when the load never finishes: $fileAssetTypes
+                // comes from toSignal, so a failed getContentTypes never emits and the dialog stays
+                // a spinner — previously with the header X as the only way out.
+                const loading = openWhileLoading();
+
+                expect(loading.query(byTestId('folder-form-loading'))).toBeTruthy();
+                expect(loading.query(byTestId('content-drive-dialog-folder-cancel'))).toBeTruthy();
+            });
+
+            it('should close the dialog when Cancel is clicked while loading', () => {
+                const loading = openWhileLoading();
+
+                loading.click(byTestId('content-drive-dialog-folder-cancel'));
+
+                expect(store.closeDialog).toHaveBeenCalled();
+            });
+
             it('should render the form already populated once they arrive', () => {
                 // The form must never be visible before its values: patching a form the user can
                 // already type into overwrites their input, and on this field it also pruned chips
