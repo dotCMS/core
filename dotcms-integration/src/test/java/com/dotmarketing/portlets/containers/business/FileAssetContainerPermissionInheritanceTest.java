@@ -232,6 +232,18 @@ public class FileAssetContainerPermissionInheritanceTest {
                 new Permission(PERMISSION_TYPE_CONTENTLET, scenario.site.getPermissionId(),
                         reviewerRole.getId(), PermissionAPI.PERMISSION_READ, true),
                 scenario.site, systemUser, false);
+        // View on the container folder itself. The picker resolves each container's folder as the
+        // user and silently skips it on a DotSecurityException
+        // (ContainerFactoryImpl.findContainersAssetsByHost), so without this the reviewer never
+        // reaches the permission check the test is actually about. Deliberately NOT an inheritable
+        // grant on the folder's child content -- the reviewer's view of the Container must still
+        // depend on the Site-level grant above, which is the asymmetry under test and matches how
+        // the customer's Reviewer roles are configured.
+        APILocator.getPermissionAPI().save(
+                new Permission(scenario.containerFolder.getPermissionId(), reviewerRole.getId(),
+                        PermissionAPI.PERMISSION_READ, true),
+                scenario.containerFolder, systemUser, false);
+
         final User reviewerUser = new UserDataGen()
                 .roles(reviewerRole, APILocator.getRoleAPI().loadBackEndUserRole())
                 .nextPersisted();
