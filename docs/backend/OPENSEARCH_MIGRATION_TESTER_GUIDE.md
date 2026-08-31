@@ -39,7 +39,7 @@ neutral names:
 - **Target engine** — **OpenSearch 3.x**, the engine we are migrating *to* (the "new" one).
 
 > In the lab stack below, the source engine is **OpenSearch 1.3** (standing in for a legacy
-> Elasticsearch / OpenSearch 1.x deployment) and the target engine is **OpenSearch 3.4**. The concepts
+> Elasticsearch / OpenSearch 1.x deployment) and the target engine is **OpenSearch 3.8**. The concepts
 > are identical if the source is real Elasticsearch — see the *Elasticsearch variant* note in §4.
 
 ### Concepts in two minutes
@@ -155,8 +155,8 @@ docker compose up -d
 | dotCMS | app under test | http://localhost:8082 | Admin UI + REST API. Login `admin` / `admin`. |
 | Source engine (OpenSearch 1.3) | "old" engine | https://localhost:9200 | HTTPS + auth. |
 | Source dashboards | inspect source indices | http://localhost:5601 | Login `admin` / `admin`. |
-| Target engine (OpenSearch 3.4) | "new" engine | https://localhost:9201 | HTTPS + auth. |
-| Target dashboards | inspect target indices | http://localhost:5602 | Login `admin` / `Dev!Search3-Kx9mP-2026`. |
+| Target engine (OpenSearch 3.8) | "new" engine | https://localhost:9201 | HTTPS + auth. |
+| Target dashboards | inspect target indices | http://localhost:5602 | Login `admin` / `$OS_ADMIN_PW` (see *Credentials*). |
 | Glowroot | JVM profiler | http://localhost:4000 | Optional. |
 | PostgreSQL | database | *(not published to host)* | Reach it via `docker compose exec db …` — see §6. |
 
@@ -166,30 +166,43 @@ docker compose up -d
 2. Provisioning containers wait for health checks, then create the `dotcms-es-user` account on both engines.
 3. dotCMS starts once both provisioners finish.
 
+### Credentials
+
+These are throwaway dev values, but this page does not print them — **`docker-compose.yml` is the
+only place they live**, so a copy of this guide never carries a password and you never work from a
+stale one. Export them once, in the shell you will run the rest of the guide from:
+
+```bash
+cd docker/docker-compose-examples/single-node-os-migration
+export OS_ADMIN_PW=$(grep OPENSEARCH_INITIAL_ADMIN_PASSWORD docker-compose.yml | head -1 | cut -d'"' -f2)
+export ES_USER_PW=$(grep DOT_ES_AUTH_BASIC_PASSWORD  docker-compose.yml | head -1 | cut -d"'" -f2)
+echo "${OS_ADMIN_PW:?not found}" "${ES_USER_PW:?not found}" >/dev/null && echo "credentials loaded"
+```
+
+| Where | User | Password | Where it comes from |
+|---|---|---|---|
+| dotCMS admin UI / REST | `admin` | `admin` | `DOT_INITIAL_ADMIN_PASSWORD` |
+| Source engine — admin | `admin` | `admin` | `opensearch.password`, source provisioner |
+| Target engine — admin | `admin` | `$OS_ADMIN_PW` | `OPENSEARCH_INITIAL_ADMIN_PASSWORD` |
+| Both engines — the account dotCMS uses | `dotcms-es-user` | `$ES_USER_PW` | `DOT_ES_AUTH_BASIC_PASSWORD` |
+
+Every `curl` below assumes those two variables are exported. If a command comes back `401`, that is
+the first thing to check.
+
+> The dashboard consoles (`5601` / `5602`) show a login page — use the matching engine's **admin**
+> credentials (source → `admin`/`admin`, target → `admin`/`$OS_ADMIN_PW`). The `dotcms-es-user`
+> account is dotCMS's service account and also works for direct engine `curl` calls, but log into the
+> consoles as `admin`.
+>
+> Some older copies of the stack's `README.md` quote a different target admin password. Ignore it —
+> `docker-compose.yml` is authoritative, which is why the block above reads from it.
+
 > **Wait for the engines to be healthy before trusting dotCMS.** Health-check both clusters (auth
 > required, self-signed cert so use `-k`):
 > ```bash
-> curl -sk -u admin:admin https://localhost:9200/_cluster/health | jq .status              # source
-> curl -sk -u admin:'Dev!Search3-Kx9mP-2026' https://localhost:9201/_cluster/health | jq .status  # target
+> curl -sk -u admin:admin https://localhost:9200/_cluster/health | jq .status                # source
+> curl -sk -u admin:"$OS_ADMIN_PW" https://localhost:9201/_cluster/health | jq .status        # target
 > ```
-
-### Credentials
-
-| Where | User | Password |
-|---|---|---|
-| dotCMS admin UI / REST | `admin` | `admin` |
-| Source engine — admin | `admin` | `admin` |
-| Target engine — admin | `admin` | `Dev!Search3-Kx9mP-2026` |
-| Both engines — the account dotCMS uses | `dotcms-es-user` | `Dev!dotcms-EsUser-2026` |
-
-> The dashboard consoles (`5601` / `5602`) show a login page — use the matching engine's **admin**
-> credentials above (source → `admin`/`admin`, target → `admin`/`Dev!Search3-Kx9mP-2026`). The
-> `dotcms-es-user` account is dotCMS's service account and also works for direct engine `curl` calls,
-> but log into the consoles as `admin`.
->
-> Some older copies of the stack's `README.md` list the target admin password as
-> `Dev!Strong-OSAdmin-2026` — that is stale; the value the container actually runs with is
-> `Dev!Search3-Kx9mP-2026` (from `OPENSEARCH_INITIAL_ADMIN_PASSWORD` in `docker-compose.yml`).
 
 The default phase in this stack is **Phase 1** (`DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE: '1'`). To test a
 different phase, edit that value in `docker-compose.yml` and restart dotCMS
@@ -226,7 +239,7 @@ built-in default). Keep them in two mental buckets:
 |---|---|---|
 | `DOT_ES_ENDPOINTS` | `https://opensearch1:9200` | Source cluster URL. |
 | `DOT_ES_AUTH_TYPE` | `BASIC` | Auth scheme. |
-| `DOT_ES_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `Dev!dotcms-EsUser-2026` | Source credentials. |
+| `DOT_ES_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `$ES_USER_PW` | Source credentials. |
 
 ### Target engine (OpenSearch 3.x — `DOT_OS_*`)
 
@@ -234,7 +247,7 @@ built-in default). Keep them in two mental buckets:
 |---|---|---|
 | `DOT_OS_ENDPOINTS` | `https://opensearch3:9200` | Target cluster URL. **Must be a separate instance from the source** — pointing it at the source URL is exactly what the safety guards detect. |
 | `DOT_OS_AUTH_TYPE` | `BASIC` | Auth scheme. |
-| `DOT_OS_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `Dev!dotcms-EsUser-2026` | Target credentials. |
+| `DOT_OS_AUTH_BASIC_USER` / `..._PASSWORD` | `dotcms-es-user` / `$ES_USER_PW` | Target credentials. |
 | `DOT_OS_TLS_TRUST_SELF_SIGNED` | `true` | Accept the self-signed dev certificate. |
 
 > Every target-engine key has a source-engine fallback: if a `DOT_OS_*` key is unset, dotCMS tries the
@@ -255,8 +268,8 @@ machine, so **never guess a name — list it.**
 curl -s -u admin:admin http://localhost:8082/api/v1/esindex | jq .
 
 # The exact physical names each engine holds (use THESE for direct curl / dashboards):
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9200/_cat/indices?v   # source (no .os)
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9201/_cat/indices?v   # target (ends in .os)
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9200/_cat/indices?v   # source (no .os)
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9201/_cat/indices?v   # target (ends in .os)
 ```
 
 Or in the UI: **Admin → System → Index**.
@@ -310,8 +323,8 @@ SELECT CASE WHEN index_name LIKE '%.os' THEN 'TARGET' ELSE 'SOURCE' END AS engin
 **Count documents in an index directly** (use the physical names from the listing above):
 
 ```bash
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9200/<source-index-name>/_count
-curl -sk -u dotcms-es-user:'Dev!dotcms-EsUser-2026' https://localhost:9201/<target-index-name.os>/_count
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9200/<source-index-name>/_count
+curl -sk -u dotcms-es-user:"$ES_USER_PW" https://localhost:9201/<target-index-name.os>/_count
 ```
 
 **Recognize an automatic migration shutdown.** When the safety feature fires at startup (Phase 1 or 2),

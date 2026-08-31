@@ -1111,8 +1111,23 @@ docker compose -f docker/docker-compose-examples/os-migration/docker-compose.lim
 
 | User | Password | Role |
 |---|---|---|
-| `admin` | `Dev!Search3-Kx9mP-2026` | cluster admin |
-| `dotcms-es-user` | `Dev!dotcms-EsUser-2026` | `dotcms-role` (limited) |
+| `admin` | `$OS_ADMIN_PW` | cluster admin |
+| `dotcms-es-user` | `$ES_USER_PW` | `dotcms-role` (limited) |
+
+These are throwaway dev values, but this plan does not print them — the compose file is the only
+place they live, so a copy of this document never carries a password and never a stale one. Export
+them once, in the shell you run the cases from:
+
+```bash
+COMPOSE=docker/docker-compose-examples/single-node-os-migration/docker-compose.yml
+export OS_ADMIN_PW=$(grep OPENSEARCH_INITIAL_ADMIN_PASSWORD "$COMPOSE" | head -1 | cut -d'"' -f2)
+export ES_USER_PW=$(grep DOT_ES_AUTH_BASIC_PASSWORD  "$COMPOSE" | head -1 | cut -d"'" -f2)
+echo "${OS_ADMIN_PW:?not found}" "${ES_USER_PW:?not found}" >/dev/null && echo "credentials loaded"
+```
+
+The limited-user stack provisions the same two accounts with the same values, which is why reading
+them from the committed `single-node-os-migration` compose file is safe. Every `curl` below assumes
+both variables are exported; a `401` is the first thing to check.
 
 **Provisioning script `opensearch.py`** — runs once via the `opensearch-provision` service; creates
 per customer an internal user `<customer>-es-user`, action groups, a role `<customer>-role`, and the
@@ -1123,8 +1138,8 @@ role mapping. Run it manually:
 docker compose -f docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml run --rm opensearch-provision
 
 # Or standalone against any reachable cluster:
-./opensearch.py --admin-user admin --admin-pass 'Dev!Search3-Kx9mP-2026' \
-  --password 'Dev!dotcms-EsUser-2026' --customer dotcms --host localhost --port 9201
+./opensearch.py --admin-user admin --admin-pass "$OS_ADMIN_PW" \
+  --password "$ES_USER_PW" --customer dotcms --host localhost --port 9201
 ```
 
 The `dotcms-role` grants:
@@ -1147,7 +1162,7 @@ DOT_ES_ENDPOINTS=http://<host>:9200
 DOT_OS_ENDPOINTS=https://<host>:9201
 DOT_OS_AUTH_TYPE=BASIC
 DOT_OS_AUTH_BASIC_USER=dotcms-es-user
-DOT_OS_AUTH_BASIC_PASSWORD=Dev!dotcms-EsUser-2026
+DOT_OS_AUTH_BASIC_PASSWORD=<the $ES_USER_PW value from the compose file>
 DOT_OS_TLS_TRUST_SELF_SIGNED=true
 DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE=1
 DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
@@ -1160,11 +1175,11 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Steps:**
   1. Launch the limited-user stack; let `opensearch-provision` finish.
   2. List internal users:
-     `curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:'Dev!Search3-Kx9mP-2026'` → `dotcms-es-user` present.
+     `curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:"$OS_ADMIN_PW"` → `dotcms-es-user` present.
   3. Inspect the role:
-     `curl -sk https://localhost:9201/_plugins/_security/api/roles/dotcms-role?pretty -u admin:'Dev!Search3-Kx9mP-2026'`.
+     `curl -sk https://localhost:9201/_plugins/_security/api/roles/dotcms-role?pretty -u admin:"$OS_ADMIN_PW"`.
   4. Confirm the limited user reaches the cluster root:
-     `curl -sk https://localhost:9201/ -u dotcms-es-user:'Dev!dotcms-EsUser-2026'` → HTTP 200.
+     `curl -sk https://localhost:9201/ -u dotcms-es-user:"$ES_USER_PW"` → HTTP 200.
 - **Expected Result:**
   - `dotcms-es-user` and `dotcms-role` exist; the role grants the index/cluster/all-index permissions
     listed in Setup, **including `cluster:monitor/main`**.
@@ -1196,7 +1211,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Steps:**
   1. Create and publish a content item; note its identifier.
   2. As the limited user, confirm it in OS (find the index name first, ends in `.os`):
-     `curl -sk "https://localhost:9201/<cluster_dotcms….working_….os>/_doc/<id>" -u dotcms-es-user:'Dev!dotcms-EsUser-2026'`.
+     `curl -sk "https://localhost:9201/<cluster_dotcms….working_….os>/_doc/<id>" -u dotcms-es-user:"$ES_USER_PW"`.
 - **Expected Result:**
   - The document is present in the OS 3.x working index (200/found).
   - No permission (403) errors in the dotCMS log for the OS write.
@@ -1225,7 +1240,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Preconditions:** content dual-written (TC-055); to exercise OS reads use Phase 2 or query OS directly.
 - **Steps:**
   1. As the limited user, search the OS working index:
-     `curl -sk "https://localhost:9201/<…os>/_search?q=*:*" -u dotcms-es-user:'Dev!dotcms-EsUser-2026'`.
+     `curl -sk "https://localhost:9201/<…os>/_search?q=*:*" -u dotcms-es-user:"$ES_USER_PW"`.
   2. (Phase 2) run a dotCMS content search and confirm results.
 - **Expected Result:**
   - Search returns results (no 403); scroll-based reads succeed.
