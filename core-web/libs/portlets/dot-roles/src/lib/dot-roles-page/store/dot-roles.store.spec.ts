@@ -1,5 +1,5 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, throwError } from 'rxjs';
 
 import {
     DotHttpErrorManagerService,
@@ -68,6 +68,21 @@ const MOCK_USER_FILTER_RESULTS: DotRoleUserResult[] = [
         emailAddress: 'elena.p@dotcms.com'
     }
 ];
+
+/** Depth-first lookup over a state tree, for asserting on spliced nodes. */
+const findRole = (nodes: DotRoleNode[], id: string): DotRoleNode | undefined => {
+    for (const node of nodes) {
+        if (node.id === id) {
+            return node;
+        }
+        const found = findRole(node.roleChildren ?? [], id);
+        if (found) {
+            return found;
+        }
+    }
+
+    return undefined;
+};
 
 describe('DotRolesStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotRolesStore>>;
@@ -224,12 +239,29 @@ describe('DotRolesStore', () => {
 
     describe('loadMembers', () => {
         beforeEach(() => {
+            // The ancestor chain is read out of the loaded tree, and the store
+            // refuses to fan out when it cannot build one — see the empty-chain
+            // case below. In the app `loadMembers` is only ever reached after
+            // the tree has loaded, so the tests load it too.
+            store.loadRootRoles();
             // The store only writes members for the role that is CURRENTLY
             // selected, so a response for a role the admin already left cannot
-            // repaint the tab. In the app `loadMembers` is only ever reached
-            // through the effect that fires after selection, so the tests
-            // select first too.
+            // repaint the tab. Selection comes first here for the same reason:
+            // in the app `loadMembers` runs off the effect that fires after it.
             store.selectRole(SELECTED_ROLE.id);
+        });
+
+        it('refuses to fan out when the role is not in the tree', () => {
+            // A role we cannot place has no resolvable ancestors, and asking
+            // only the role itself would render direct grants as the complete
+            // roster — the reading an admin auditing access would trust.
+            store.selectRole('r-nowhere');
+            jest.clearAllMocks();
+
+            store.loadMembers({ id: 'r-nowhere' });
+
+            expect(service.getUsers).not.toHaveBeenCalled();
+            expect(store.membersStatus()).toBe('ERROR');
         });
 
         it('should load members by role id, with no roleKey branching (#37070)', () => {
@@ -343,6 +375,21 @@ describe('DotRolesStore', () => {
         });
     });
 
+    describe('loadToolGroups', () => {
+        it('refuses to fan out when the role is not in the tree', () => {
+            // Same rule as loadMembers: with no chain there is no way to know
+            // which ancestors grant what, and rendering the catalog anyway
+            // shows every inherited group unchecked — the reading that makes
+            // an admin create a redundant direct grant.
+            service.getAllToolGroups.mockReturnValue(of([{ id: 'tg-1', name: 'Site' }]));
+
+            store.selectRole('r-nowhere');
+
+            expect(service.getToolGroups).not.toHaveBeenCalled();
+            expect(store.toolGroupsStatus()).toBe('ERROR');
+        });
+    });
+
     describe('saveToolGroups', () => {
         const TOOL_GROUPS = [
             { id: 'tg-1', name: 'Site' },
@@ -396,23 +443,7 @@ describe('DotRolesStore', () => {
             store.loadRootRoles();
         });
 
-        const countFor = (id: string) => {
-            const find = (nodes: DotRoleNode[]): DotRoleNode | undefined => {
-                for (const node of nodes) {
-                    if (node.id === id) {
-                        return node;
-                    }
-                    const found = find(node.roleChildren ?? []);
-                    if (found) {
-                        return found;
-                    }
-                }
-
-                return undefined;
-            };
-
-            return find(store.roles())?.userCount;
-        };
+        const countFor = (id: string) => findRole(store.roles(), id)?.userCount;
 
         it('syncs the badge from the direct-grant count after members load', () => {
             service.getUsers.mockImplementation((roleId: string) =>
@@ -501,6 +532,113 @@ describe('DotRolesStore', () => {
             expect(store.toolGroups().every((group) => !group.granted)).toBe(true);
         });
 
+        it('does not prune another role members with a late removal result', async () => {
+            service.getUsers.mockReturnValue(of(MOCK_USER_FILTER_RESULTS));
+            store.selectRole('r-eco');
+            store.loadMembers({ id: 'r-eco' });
+
+            // The DELETE resolves after the admin has moved on. `u-1` is a
+            // member of r-categories too, so pruning against the live slice
+            // would strip a user that role still grants.
+            let resolveRemoval: (value: unknown) => void = () => {
+                /* replaced below */
+            };
+            service.removeUsers.mockReturnValue(
+                new Observable((subscriber) => {
+                    resolveRemoval = (value) => {
+                        subscriber.next(value);
+                        subscriber.complete();
+                    };
+                })
+            );
+
+            const removal = store.removeUsersFromRole(['u-1']);
+            store.selectRole('r-categories');
+            store.loadMembers({ id: 'r-categories' });
+            const membersAfterSwitch = store.members();
+            expect(membersAfterSwitch.some((m) => m.userId === 'u-1')).toBe(true);
+
+            resolveRemoval({ removedUserIds: ['u-1'], skipped: [] });
+            await removal;
+
+            expect(store.members()).toEqual(membersAfterSwitch);
+        });
+
+        it('does not write an update response into a role the admin moved on from', async () => {
+            store.selectRole('r-eco');
+
+            let resolveUpdate: (value: DotRoleDetail) => void = () => {
+                /* replaced below */
+            };
+            service.update.mockReturnValue(
+                new Observable<DotRoleDetail>((subscriber) => {
+                    resolveUpdate = (value) => {
+                        subscriber.next(value);
+                        subscriber.complete();
+                    };
+                })
+            );
+
+            const saving = store.updateRole('r-eco', {} as DotRoleFormValue);
+            // ESC closes the dialog while the PUT is in flight; the mask is
+            // gone, so the tree is clickable again.
+            store.selectRole('r-categories');
+
+            resolveUpdate({ ...MOCK_ROLE_DETAIL, name: 'Renamed Eco' });
+            await saving;
+
+            // The tree still takes the patch — it is keyed by id — but the
+            // pane must keep describing the role the admin is looking at.
+            expect(store.selectedRoleId()).toBe('r-categories');
+            expect(store.selectedRole()?.name).not.toBe('Renamed Eco');
+            expect(findRole(store.roles(), 'r-eco')?.name).toBe('Renamed Eco');
+        });
+
+        it('does not steal the selection when create resolves after a role switch', async () => {
+            store.selectRole('r-eco');
+
+            let resolveCreate: (value: DotRoleDetail) => void = () => {
+                /* replaced below */
+            };
+            service.create.mockReturnValue(
+                new Observable<DotRoleDetail>((subscriber) => {
+                    resolveCreate = (value) => {
+                        subscriber.next(value);
+                        subscriber.complete();
+                    };
+                })
+            );
+
+            const creating = store.createRole({} as DotRoleFormValue);
+            store.selectRole('r-categories');
+
+            resolveCreate({ id: 'r-new', name: 'New Role' });
+            await creating;
+
+            expect(store.selectedRoleId()).toBe('r-categories');
+        });
+
+        it('clears the previous role slices when create takes the selection', async () => {
+            service.getAllToolGroups.mockReturnValue(of([{ id: 'tg-1', name: 'Site' }]));
+            service.getToolGroups.mockImplementation((roleId: string) =>
+                of(roleId === 'r-eco' ? [{ id: 'tg-1', name: 'Site' }] : [])
+            );
+
+            store.selectRole('r-eco');
+            expect(store.toolGroups().some((group) => group.granted)).toBe(true);
+
+            // `selectRole` resets these slices; seeding the selection by hand
+            // has to as well, or the Tools tab keeps painting r-eco's grants
+            // under the new role's name.
+            service.create.mockReturnValue(of({ id: 'r-new', name: 'New Role' }));
+            await store.createRole({} as DotRoleFormValue);
+
+            expect(store.selectedRoleId()).toBe('r-new');
+            expect(store.members()).toEqual([]);
+            expect(service.getToolGroups).toHaveBeenCalledWith('r-new');
+            expect(store.toolGroups().every((group) => !group.granted)).toBe(true);
+        });
+
         it('clears a previous role in-flight save lock on selection', () => {
             service.saveToolGroups.mockReturnValue(NEVER);
             service.getAllToolGroups.mockReturnValue(of([{ id: 'tg-1', name: 'Site' }]));
@@ -580,6 +718,7 @@ describe('DotRolesStore', () => {
 
     describe('member count computeds', () => {
         beforeEach(() => {
+            store.loadRootRoles();
             store.selectRole('r-eco');
             store.loadMembers(SELECTED_ROLE);
         });

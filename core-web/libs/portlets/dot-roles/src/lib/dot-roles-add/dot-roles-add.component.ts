@@ -187,6 +187,11 @@ export class DotRolesAddComponent {
 
         if (query.trim().length < 3) {
             this.#searchResults.set(null);
+            // The token bump above orphans any search still in flight, and an
+            // orphaned run leaves the flag alone (see the `finally`). Clearing
+            // it here is what keeps the picker from spinning forever when the
+            // admin backspaces below three characters mid-request.
+            this.$searching.set(false);
             // Reset the widget's own filter too. `Tree.getRootNode()` keeps
             // serving its cached `filteredNodes` once the filter has run, so
             // reverting the options alone would leave the last search's rows
@@ -197,22 +202,32 @@ export class DotRolesAddComponent {
         }
 
         this.$searching.set(true);
-        const results = await this.#store.searchRoleTree(query);
 
-        // A newer query already landed — drop this one rather than replacing
-        // fresh results with stale ones.
-        if (token !== this.#searchToken) {
-            return;
+        try {
+            const results = await this.#store.searchRoleTree(query);
+
+            // A newer query already landed — drop this one rather than
+            // replacing fresh results with stale ones.
+            if (token !== this.#searchToken) {
+                return;
+            }
+
+            this.#searchResults.set(results);
+
+            // Once the client-side filter has run, `Tree.getRootNode()` returns
+            // its cached `filteredNodes` and stops reading `value` — so
+            // swapping the options in is not enough, the results would never
+            // render. Re-running the filter over the new options is what makes
+            // them visible.
+            this.treeSelect()?.treeViewChild?._filter(query);
+        } finally {
+            // Only the run that is still current owns the flag. A superseded
+            // run clearing it would drop the spinner while the search that
+            // replaced it is still going.
+            if (token === this.#searchToken) {
+                this.$searching.set(false);
+            }
         }
-
-        this.#searchResults.set(results);
-        this.$searching.set(false);
-
-        // Once the client-side filter has run, `Tree.getRootNode()` returns its
-        // cached `filteredNodes` and stops reading `value` — so swapping the
-        // options in is not enough, the results would never render. Re-running
-        // the filter over the new options is what makes them visible.
-        this.treeSelect()?.treeViewChild?._filter(query);
     }
 
     protected onCancel(): void {

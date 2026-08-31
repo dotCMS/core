@@ -9,8 +9,8 @@ import { DotRoleNode } from '../../models/dot-roles.models';
 /**
  * Upper bound on ancestor-chain length. Matches the semantic cap that the
  * Java `RoleAPI.findRoleHierarchy` code path assumes; if the BE ever bumps
- * this it must be raised here too. Also guards against pathological cycles
- * that would otherwise loop forever inside `collectAncestorChain`.
+ * this it must be raised here too. Also bounds the descent inside
+ * `collectAncestorChain` against malformed data.
  */
 export const MAX_ROLE_DEPTH = 20;
 
@@ -156,64 +156,75 @@ export function patchNodeUserCount(
 
 /**
  * Build the ancestor chain for a role, ordered `[role, parent, grandparent,
- * ..., root]`. Matches the Java `RoleAPI.findRoleHierarchy` semantics (a
- * self-referential `parent === id` marks the root). The chain drives the
- * parallel `GET /v1/roles/{roleId}/users` fan-out in `loadMembers`.
+ * ..., root]`. The chain drives the parallel per-ancestor fan-out in
+ * `loadMembers` and `loadToolGroups`, so a chain that is short by one role
+ * silently under-reports inherited grants.
+ *
+ * Walks the tree STRUCTURE rather than following `parent` ids. Both trees this
+ * runs against nest a role beneath its ancestors, but only one of them
+ * populates `parent`: `unwrapLegacySearchNode` keeps id/name/locked and drops
+ * it, so a role reached through the search results produced a one-element
+ * chain and lost every inherited member and tool group. Nesting is present in
+ * both, which also makes the `parent === id` root convention moot here.
+ *
+ * Returns `[]` when the role isn't in the tree at all. That means "the chain
+ * cannot be built", NOT "the role has no ancestors" — the two are
+ * indistinguishable to a caller once a stub stands in for the missing node,
+ * and the caller then renders a direct-grants-only answer as if it were
+ * complete. Callers must surface the empty chain instead of fanning out.
  */
 export function collectAncestorChain(tree: DotRoleNode[], role: { id: string }): DotRoleNode[] {
-    const start = findRoleInTree(tree, role.id) ?? { id: role.id, name: role.id };
-    const chain: DotRoleNode[] = [start];
-    let cursor: DotRoleNode | null = start;
-    // Guard against pathological data — see `MAX_ROLE_DEPTH` doc.
-    for (let i = 0; i < MAX_ROLE_DEPTH; i++) {
-        const parentId = cursor.parent;
-        if (!parentId || parentId === cursor.id) {
-            break;
-        }
-        const parentNode = findRoleInTree(tree, parentId);
-        if (!parentNode) {
-            break;
-        }
-        chain.push(parentNode);
-        cursor = parentNode;
-    }
+    const path = findPathToRole(tree, role.id);
 
-    return chain;
+    // `findPathToRole` returns root-first; the fan-out wants closest-first so
+    // a direct grant wins over an inherited one.
+    return path ? path.reverse() : [];
 }
 
 /**
- * Merge two role trees at the root level so lookups can reach any node in
- * either. When the same id appears in both, prefer the copy that carries a
- * `parent` — search-result nodes lose that field
- * (`unwrapLegacySearchNode` only keeps id/name/locked), and
- * `collectAncestorChain` needs `parent` to climb.
- *
- * Only dedupes at the roots; child branches are not merged deeply because
- * both trees are self-consistent hierarchies rooted at different depths.
+ * Path from a root down to `id`, ordered `[root, ..., role]`, or `null` when
+ * the id isn't in the tree. Depth-capped by {@link MAX_ROLE_DEPTH} so
+ * malformed data (a branch spliced into its own subtree) cannot recurse
+ * forever.
  */
-export function mergeTreesPreferParent(
-    primary: DotRoleNode[],
-    fallback: DotRoleNode[]
-): DotRoleNode[] {
-    if (fallback.length === 0) {
-        return primary;
+function findPathToRole(nodes: DotRoleNode[], id: string, depth = 0): DotRoleNode[] | null {
+    if (depth >= MAX_ROLE_DEPTH) {
+        return null;
     }
-    const seen = new Map<string, DotRoleNode>();
-    for (const node of primary) {
-        seen.set(node.id, node);
-    }
-    for (const node of fallback) {
-        const prior = seen.get(node.id);
-        if (!prior) {
-            seen.set(node.id, node);
-        } else if (!prior.parent && node.parent) {
-            // Fallback carries a `parent`; primary doesn't — prefer the
-            // fallback so the ancestor walk can actually climb.
-            seen.set(node.id, node);
+
+    for (const node of nodes) {
+        if (node.id === id) {
+            return [node];
+        }
+        if (node.roleChildren && node.roleChildren.length > 0) {
+            const below = findPathToRole(node.roleChildren, id, depth + 1);
+            if (below) {
+                return [node, ...below];
+            }
         }
     }
 
-    return Array.from(seen.values());
+    return null;
+}
+
+/**
+ * Put two role trees side by side so {@link collectAncestorChain} can reach a
+ * node in either. Under an active search the tree renders `searchResults`,
+ * which carries branches the lazily-loaded `roles` cache has never fetched;
+ * `roles` in turn holds branches the search never matched.
+ *
+ * Deliberately NOT deduped by id. The same root can appear in both with
+ * different subtrees hydrated — the cache copy unexpanded, the search copy
+ * carrying the matched descendant — and picking one would drop the path the
+ * other holds. `collectAncestorChain` scans roots in order and stops at the
+ * first that contains the target, so a duplicate root costs a miss and the
+ * cache copy stays preferred when both can answer.
+ */
+export function mergeTreesForLookup(
+    primary: DotRoleNode[],
+    fallback: DotRoleNode[]
+): DotRoleNode[] {
+    return fallback.length === 0 ? primary : [...primary, ...fallback];
 }
 
 /** Walk the tree looking for a node id. Returns the node or `null`. */

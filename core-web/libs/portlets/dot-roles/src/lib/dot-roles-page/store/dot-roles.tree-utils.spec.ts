@@ -2,6 +2,7 @@ import {
     appendChildToParent,
     collectAncestorChain,
     findRoleInTree,
+    mergeTreesForLookup,
     patchNodeChildren,
     patchNodeInPlace,
     removeNodeFromTree
@@ -278,31 +279,89 @@ describe('dot-roles.tree-utils', () => {
             expect(chain.map((n) => n.id)).toEqual(['grand-a1a', 'child-a1', 'root-a']);
         });
 
-        it('falls back to a synthetic node when the role is not in the tree', () => {
-            const chain = collectAncestorChain(buildTree(), { id: 'ghost' });
-
-            expect(chain).toHaveLength(1);
-            expect(chain[0]).toEqual({ id: 'ghost', name: 'ghost' });
+        it('returns an empty chain when the role is not in the tree', () => {
+            // Not `[stub]`: a one-element chain is what a root role produces,
+            // so a stub would let the caller fan out to direct grants only and
+            // render the result as the complete picture.
+            expect(collectAncestorChain(buildTree(), { id: 'ghost' })).toEqual([]);
         });
 
-        it('stops when a parent cannot be resolved in the tree', () => {
-            // `orphan` points to `missing` which is nowhere in the tree.
-            const orphan = node('orphan', 'missing');
-            const tree = [orphan];
-            const chain = collectAncestorChain(tree, { id: 'orphan' });
+        it('climbs by nesting, not by `parent` — search nodes carry no parent', () => {
+            // `unwrapLegacySearchNode` keeps id/name/locked and drops `parent`,
+            // so every node in a search result looks parentless. The ancestor
+            // path is still there as nesting, and that is what has to be used
+            // or a role opened from search loses all its inherited grants.
+            const searchTree: DotRoleNode[] = [
+                {
+                    id: 'root-a',
+                    name: 'ROOT-A',
+                    roleChildren: [
+                        {
+                            id: 'child-a1',
+                            name: 'CHILD-A1',
+                            roleChildren: [{ id: 'grand-a1a', name: 'GRAND-A1A' }]
+                        }
+                    ]
+                }
+            ];
+
+            const chain = collectAncestorChain(searchTree, { id: 'grand-a1a' });
+
+            expect(chain.map((n) => n.id)).toEqual(['grand-a1a', 'child-a1', 'root-a']);
+        });
+
+        it('ignores a `parent` that contradicts the nesting', () => {
+            // `orphan` claims a parent that is nowhere in the tree; structurally
+            // it sits at the root, so the chain is just itself.
+            const chain = collectAncestorChain([node('orphan', 'missing')], { id: 'orphan' });
 
             expect(chain.map((n) => n.id)).toEqual(['orphan']);
         });
 
-        it('caps the walk at 20 to break accidental cycles', () => {
-            // Build a chain that self-loops via a two-node cycle: a -> b -> a.
-            const a: DotRoleNode = { id: 'a', name: 'A', parent: 'b' };
-            const b: DotRoleNode = { id: 'b', name: 'B', parent: 'a' };
-            const chain = collectAncestorChain([a, b], { id: 'a' });
+        it('reaches a role that only the search copy of a root has hydrated', () => {
+            // The cache holds `root-a` collapsed; the search result holds the
+            // same root with the matched grandchild nested inside. Deduping
+            // the roots would drop whichever copy holds the path.
+            const cached: DotRoleNode[] = [node('root-a', 'root-a')];
+            const searched: DotRoleNode[] = [
+                {
+                    id: 'root-a',
+                    name: 'ROOT-A',
+                    roleChildren: [
+                        {
+                            id: 'child-a1',
+                            name: 'CHILD-A1',
+                            roleChildren: [{ id: 'grand-a1a', name: 'GRAND-A1A' }]
+                        }
+                    ]
+                }
+            ];
 
-            // Without the guard this would loop forever; with the guard it
-            // returns at most 21 entries (the start + up to 20 iterations).
-            expect(chain.length).toBeLessThanOrEqual(21);
+            const chain = collectAncestorChain(mergeTreesForLookup(cached, searched), {
+                id: 'grand-a1a'
+            });
+
+            expect(chain.map((n) => n.id)).toEqual(['grand-a1a', 'child-a1', 'root-a']);
+        });
+
+        it('caps the descent at MAX_ROLE_DEPTH', () => {
+            // A branch spliced into its own subtree would otherwise recurse
+            // forever. Nest deeper than the cap and the node past it is
+            // unreachable rather than fatal.
+            let deepest: DotRoleNode = { id: 'level-40', name: 'LEVEL-40' };
+            for (let i = 39; i >= 0; i--) {
+                deepest = { id: `level-${i}`, name: `LEVEL-${i}`, roleChildren: [deepest] };
+            }
+
+            expect(collectAncestorChain([deepest], { id: 'level-40' })).toEqual([]);
+            expect(collectAncestorChain([deepest], { id: 'level-5' }).map((n) => n.id)).toEqual([
+                'level-5',
+                'level-4',
+                'level-3',
+                'level-2',
+                'level-1',
+                'level-0'
+            ]);
         });
     });
 });
