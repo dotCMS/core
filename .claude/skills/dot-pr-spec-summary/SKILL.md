@@ -1,5 +1,5 @@
 ---
-name: dot-pr-spec-review
+name: dot-pr-spec-summary
 description: Summarize a spec PR (or any spec document) in simple words — proposed fix, scope, implications, and test coverage — so a reviewer can decide whether to approve without reading the full spec. Use when the user shares a PR URL/number or a spec document and asks to review, summarize, or understand it. Typical input is a Spec-Kit "PR 1 of 2" carrying a spec.md. Works in English and Spanish.
 owner: "@dotcms/scout"
 status: experimental
