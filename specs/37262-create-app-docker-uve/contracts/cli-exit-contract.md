@@ -26,6 +26,14 @@ and a file; the state block is ~5 lines.
 
 ## X2 — Optional steps are non-fatal
 
+> **Single owner.** Both UVE call sites — `src/index.ts:226` (existing instance, `--dotcms-url`) and
+> `src/index.ts:369` (local Docker) — are replaced by one
+> `configureUVE({ host, siteId, token, mode })`, where `mode` is `'local' | 'remote'`. It owns the
+> probe, the retry policy, the non-fatal contract and the messaging, and it **contains no
+> `process.exit`** — it returns an outcome the caller warns on and continues past. The two sites had
+> already drifted apart once; a third could miss the contract entirely. A grep for `process.exit` in
+> the UVE path returning nothing is part of X2.
+
 UVE configuration is **optional**. Its failure MUST:
 
 1. warn — never `process.exit`;
@@ -59,6 +67,17 @@ interrupted first boot and must be recreated:
 ```
 docker compose down -v && docker compose up -d --wait
 ```
+
+**…but only in `mode: 'local'`.** The advice is mode-dependent, because the same status code means
+different things on the two paths:
+
+| `mode` | What a 403 means | What the CLI says |
+|---|---|---|
+| `'local'` | The bricked boot — an interrupted starter import never wrote the site's permission rows | Instance is unrecoverable; recreate with `docker compose down -v`. **Do not** offer manual steps: they fail identically. Reference #37268. |
+| `'remote'` | The user's own server. There is no stack to recreate. The API token lacks permission on the resolved site. | Report the permission problem, name the site ID and app key `dotema-config-v2`, and **do** link the manual steps — on this path they work. |
+
+Suggesting `docker compose down -v` to someone who pointed the CLI at their own dotCMS is actively
+wrong advice, which is why the mode is part of the contract rather than a presentation detail.
 
 Root cause and evidence: see spec.md "Cause 2", and #37268 for the backend defect.
 

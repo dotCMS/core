@@ -69,7 +69,7 @@ two missing health states.
 |---|---|---|---|
 | `db` | exists today (`pg_isready`), **unused** | `unless-stopped` ✓ | `condition: service_healthy` ← **new** |
 | `opensearch` | **none** → add (`curl -sk … \| grep -q cluster_name`, from `single-node-os-migration`) | **none** → `unless-stopped` | `condition: service_healthy` ← **new** |
-| `dotcms` | **none** → add (`curl -f http://127.0.0.1:8090/dotmgt/livez`, `start_period: 120s`) | **none** → `unless-stopped` | — |
+| `dotcms` | **none** → add (`curl -f http://127.0.0.1:8090/dotmgt/livez`, `start_period: 180s`) | **none** → `unless-stopped` | — |
 
 **Health states** (Docker semantics, per research R4):
 

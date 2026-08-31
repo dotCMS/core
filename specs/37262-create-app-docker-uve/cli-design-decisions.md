@@ -272,16 +272,23 @@ Both need the compose file added.
 
 ---
 
-## D5 — How strict is the CLI's file? *(decided: strict, `start_period: 120s`)*
+## D5 — How strict is the CLI's file? *(decided: strict, `start_period: 180s`)*
 
 Now that nothing else consumes it, strictness costs nothing:
 
 - `dotcms` `depends_on` gates on **both** `db` and `opensearch` at `condition: service_healthy`.
 - OpenSearch probe: `curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name`
   — **verified on this stack, succeeds at 15s**; `curl` is present in the OpenSearch image.
-- `dotcms` healthcheck on `http://127.0.0.1:8090/dotmgt/livez`, **`start_period: 120s`**
-  (~2.5× the measured ~46s boot — enough headroom for slower hardware without waiting three
-  minutes to learn something is wrong), plus `restart: unless-stopped`.
+- `dotcms` healthcheck on `http://127.0.0.1:8090/dotmgt/livez`, **`start_period: 180s`**
+  (~4× the measured ~46s boot; above both precedents — lgtm 120s, metrics-monitoring 20s), plus
+  `restart: unless-stopped`. Erring high is free: the first successful probe ends the window, so a
+  46s boot leaves it at 46s regardless. Erring low is not: the container is marked `unhealthy` and
+  `docker compose up --wait` **aborts** on an instance that would have been fine.
+- **Rejected alternative — a credential-free OpenSearch probe** (accept `200` or `401` from the
+  HTTP layer, dropping the `admin:admin` coupling). The coupling is this probe's only real
+  exposure, but it is contained: the image tag is pinned to major `1`, so the `:1 → :2` bump that
+  would invalidate the default credentials requires a deliberate edit to this very file by whoever
+  then owns the probe. A proven probe beats an unproven one on the critical path.
 - Management port published **loopback-only**: `127.0.0.1:8090:8090` (D-rationale in research R3).
 
 ---
@@ -335,7 +342,7 @@ than resolved. Bundling makes this easy to revisit later.
 | D2 | UVE poll budget | Moot — a 403 is terminal. Single probe, retry `5xx` only. |
 | D3 | Reuse when non-interactive | Silent auto-reuse on CI (or no TTY) **with a printed notice**; otherwise prompt offering **reuse or abort**. Reuse only an instance passing readiness + token issuance. |
 | D4 | Compose file ownership | CLI ships its own, bundled; shared demo example untouched; `DOTCMS_COMPOSE_URL` swaps to remote. |
-| D5 | Strictness | Gate on both services healthy; `start_period: 120s`; loopback 8090. |
+| D5 | Strictness | Gate on both services healthy; `start_period: 180s`; loopback 8090. Credential-free probe rejected — coupling contained by the major-tag pin. |
 | D6 | `.env` filename | Always `.env`, write-if-absent. |
 | D7 | `--wait-timeout` | 600s, conditional on continuous feedback. |
 | D8 | Image tag | `latest` for now; drift risk and ADR-0019 alignment stay open. |

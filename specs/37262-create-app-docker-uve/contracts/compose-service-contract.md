@@ -37,9 +37,19 @@ not README readers or other examples.*
 | `opensearch` | `curl -sk https://localhost:9200 -u admin:admin \| grep -q cluster_name` | adapted from `single-node-os-migration` — `-k` for the self-signed cert, `-u` because `DOT_ES_AUTH_BASIC_PASSWORD: 'admin'` |
 | `dotcms` | `curl -f http://127.0.0.1:8090/dotmgt/livez` | matches `lgtm-observability` / `single-node-metrics-monitoring` |
 
-`dotcms` MUST use **`start_period: 120s`** — roughly 2.5x the measured ~46s boot, leaving headroom
-for slower hardware without waiting three minutes to learn something is wrong. (Precedents: lgtm
-120s, metrics-monitoring 20s.)
+`dotcms` MUST use **`start_period: 180s`** — roughly 4x the measured ~46s boot. (Precedents: lgtm
+120s, metrics-monitoring 20s; this is above both.)
+
+Erring high is deliberate and costs nothing: `start_period` is the window in which failing probes do
+not count toward `retries`, and **the first successful probe ends it immediately**, so a stack that
+boots in 46s leaves the window at 46s whatever the ceiling. Erring low does cost. Once the window
+elapses, probes start counting, `retries` is exhausted, the container is marked `unhealthy`, and
+`docker compose up --wait` **aborts** — abandoning an instance that would have been healthy moments
+later. `restart: unless-stopped` cannot rescue it, because Compose restart policies react to
+container *exit*, not health status.
+
+> An earlier draft of this contract recorded the risk of a short window as "`--wait` blocks until
+> timeout". That is backwards; the corrected direction is what justifies 180s over 120s.
 
 The OpenSearch probe is **verified on this stack**: it succeeds at ~15s, and `curl` is present in
 the `opensearchproject/opensearch:1` image.
@@ -81,8 +91,12 @@ Converting that key to a YAML block scalar, an anchor, or `- CUSTOM_STARTER_URL=
 `--starter`.
 
 Less severe than before — the blast radius is now this CLI version rather than every installed one —
-but still a silent break that no test other than the guard in `scripts/verify-cold-start.sh` would
-catch.
+but still a silent break. **Two** guards cover it, and neither subsumes the other:
+
+- `core-web/libs/sdk/create-app/scripts/verify-cold-start.sh --static` (T008) greps the **file** for
+  the line shape installed CLIs depend on. No Docker; safe to run on every PR.
+- A Jest spec runs `updateDockerComposeStarterUrl()` itself against the real bundled asset and
+  asserts the **function's** output (AC-012).
 
 ## C6 — Documentation
 
