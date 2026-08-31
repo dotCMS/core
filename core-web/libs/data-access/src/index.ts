@@ -53,6 +53,8 @@ export * from './lib/dot-page-tools/dot-page-tools.service';
 export * from './lib/dot-page-types/dot-page-types.service';
 export * from './lib/dot-page-workflows-actions/dot-page-workflows-actions.service';
 export * from './lib/dot-permissions/dot-permissions.service';
+export * from './lib/dot-pages/dot-pages-browser.models';
+export * from './lib/dot-pages/dot-pages-browser.service';
 export * from './lib/dot-personalize/dot-personalize.service';
 export * from './lib/dot-personas/dot-personas.service';
 export * from './lib/dot-properties/dot-properties.service';

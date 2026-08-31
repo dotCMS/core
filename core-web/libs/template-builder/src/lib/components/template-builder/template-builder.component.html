@@ -1,5 +1,5 @@
 @if (vm$ | async; as vm) {
-    <p-toolbar>
+    <p-toolbar [attr.inert]="disabled ? '' : null">
         <ng-template #start>
             <ng-content select="[toolbar-left]" />
         </ng-template>
@@ -33,7 +33,8 @@
     <div
         (mousemove)="fixGridStackNodeOptions()"
         [ngStyle]="customStyles"
-        class="overflow-y-auto overflow-x-hidden transition-opacity duration-300 ease-in-out h-full p-6"
+        [attr.inert]="disabled ? '' : null"
+        class="h-full overflow-x-hidden overflow-y-auto p-6 transition-opacity duration-300 ease-in-out"
         #templateContainerRef
         data-testId="template-builder-main">
         @if (vm.layoutProperties.header) {
@@ -114,5 +115,17 @@
                 {{ 'dot.template.builder.footer' | dm }}
             </dotcms-template-builder-section>
         }
+    </div>
+}
+@if (disabled) {
+    <div
+        role="status"
+        aria-busy="true"
+        class="absolute inset-0 z-9999 flex cursor-not-allowed items-center justify-center bg-white/50 backdrop-blur-[2px]"
+        data-testId="template-builder-disabled-overlay">
+        <p-progress-spinner
+            [style]="{ width: '3rem', height: '3rem' }"
+            strokeWidth="4"
+            [attr.aria-label]="'dot.template.builder.saving.layout' | dm" />
     </div>
 }
