@@ -32,11 +32,11 @@ A dotCMS operator runs an A/B experiment with a bounce rate goal. When the CAEM 
 1. **Given** the CAEM switch is enabled and an experiment with a bounce rate goal is active, **When** the experiment evaluation system computes results, **Then** it retrieves total sessions and bounce sessions per variant from the CAEM sessions endpoint and returns a goal rate consistent with `bounceSessions / totalSessions × 100` per variant.
 2. **Given** the CAEM switch is disabled, **When** the experiment evaluation system computes results for the same experiment, **Then** it uses the existing CubeJS implementation with no behavioral change — the CAEM HTTP client is never called.
 3. **Given** the CAEM switch is enabled but no sessions have been recorded for the experiment run, **When** results are requested, **Then** the system returns a zero success rate without an error — the same empty-result behavior as the CubeJS path.
-4. **Given** the CAEM switch is enabled and the CAEM endpoint returns an authentication error, **When** results are requested, **Then** the system surfaces the failure without silently returning incorrect goal rates.
+4. **Given** the CAEM switch is enabled and the CAEM endpoint returns an error (non-2xx response or malformed body), **When** results are requested, **Then** the system surfaces the failure without silently returning incorrect goal rates.
 
 ---
 
-### User Story 2 — Exit Rate Goal Evaluated via CAEM (Priority: P1)
+#US2 — Exit Rate Goal via CAEM
 
 A dotCMS operator runs an experiment with an exit rate goal configured against a specific reference page. When the CAEM backend is enabled, the evaluation system calls the CAEM sessions endpoint with the reference page filter and retrieves exit sessions per variant. The operator sees the same per-variant exit rate breakdown as before, now sourced from CAEM.
 
@@ -48,7 +48,8 @@ A dotCMS operator runs an experiment with an exit rate goal configured against a
 
 1. **Given** the CAEM switch is enabled and an experiment has an exit rate goal with `referencePage=/checkout`, **When** results are computed, **Then** the system queries the CAEM sessions endpoint with `referencePage=/checkout` and the experiment's `experimentId` and `runningId`, returning `exitSessions / totalSessions × 100` per variant.
 2. **Given** sessions exist but none exited on the configured reference page, **When** results are requested with CAEM enabled, **Then** the system returns a zero exit rate per variant without error.
-3. **Given** the CAEM switch is disabled, **When** exit rate results are requested, **Then** the existing CubeJS exit rate query is used unchanged.
+3. **Given** the CAEM switch is enabled and the CAEM endpoint returns an error (non-2xx response or malformed body), **When** exit rate results are requested, **Then** the system surfaces the failure without silently returning incorrect goal rates.
+4. **Given** the CAEM switch is disabled, **When** exit rate results are requested, **Then** the existing CubeJS exit rate query is used unchanged.
 
 ---
 
@@ -56,7 +57,7 @@ A dotCMS operator runs an experiment with an exit rate goal configured against a
 
 A dotCMS operator runs an experiment where the success condition is that a session visited a target page after the reference page. When the CAEM backend is enabled, the evaluation system calls the CAEM sessions behavior endpoint with `behavior=reachTarget`, and returns the per-variant success rate.
 
-**Why this priority**: Reach-target is the most common experiment goal type. It exercises the sessions behavior endpoint integration — a separate HTTP call path from the sessions endpoint used for bounce/exit metrics.
+**Why this priority**: Reach-target exercises the sessions behavior endpoint integration — a separate HTTP call path from the sessions endpoint used for bounce/exit metrics. Validating this path is a prerequisite for URL-parameter goals, which share the same endpoint.
 
 **Independent Test**: Can be verified by seeding sessions with known page-visit sequences (some in the correct order, some reversed), enabling the switch, and confirming that the returned `successSessions` per variant match only sessions where the target was visited strictly after the reference.
 
@@ -64,7 +65,8 @@ A dotCMS operator runs an experiment where the success condition is that a sessi
 
 1. **Given** the CAEM switch is enabled and an experiment has a reach-target goal (`referencePage=/landing`, `targetUrl=/thank-you`), **When** results are computed, **Then** the system queries the CAEM sessions behavior endpoint with `behavior=reachTarget&referencePage=/landing&targetUrl=/thank-you` and the experiment filters, returning `successSessions / totalSessions × 100` per variant.
 2. **Given** sessions exist where the target was visited before the reference page, **When** results are computed with CAEM enabled, **Then** those sessions are excluded from `successSessions` — ordering is enforced by the CAEM backend.
-3. **Given** the CAEM switch is disabled, **When** reach-target results are requested, **Then** the existing CubeJS reach-target query is used unchanged.
+3. **Given** the CAEM switch is enabled and the CAEM endpoint returns an error (non-2xx response or malformed body), **When** reach-target results are requested, **Then** the system surfaces the failure without silently returning incorrect goal rates.
+4. **Given** the CAEM switch is disabled, **When** reach-target results are requested, **Then** the existing CubeJS reach-target query is used unchanged.
 
 ---
 
@@ -80,13 +82,14 @@ A dotCMS operator runs an experiment where success is defined by the presence of
 
 1. **Given** the CAEM switch is enabled and an experiment has a URL-param goal (`paramName=converted`, `paramValue=true`), **When** results are computed, **Then** the system queries the CAEM sessions behavior endpoint with `behavior=urlParam&paramName=converted&paramValue=true` and the experiment filters, returning per-variant success rates.
 2. **Given** a session contains the URL parameter in some events but not all, **When** results are requested with CAEM enabled, **Then** that session is counted in `successSessions` — the CAEM "any event matches" semantics are respected.
-3. **Given** the CAEM switch is disabled, **When** URL-parameter results are requested, **Then** the existing CubeJS URL-parameter query is used unchanged.
+3. **Given** the CAEM switch is enabled and the CAEM endpoint returns an error (non-2xx response or malformed body), **When** URL-parameter results are requested, **Then** the system surfaces the failure without silently returning incorrect goal rates.
+4. **Given** the CAEM switch is disabled, **When** URL-parameter results are requested, **Then** the existing CubeJS URL-parameter query is used unchanged.
 
 ---
 
 ### User Story 5 — Gradual Rollout with Safe Fallback (Priority: P1)
 
-A dotCMS operator or platform engineer wants to enable the CAEM analytics backend for experiment results in a controlled way. They toggle a configuration flag to switch between the legacy CubeJS path and the new CAEM path. Both paths coexist — disabling the flag at any time immediately restores the CubeJS behavior with no data loss or service interruption.
+A dotCMS operator or platform engineer wants to enable the CAEM analytics backend for experiment results in a controlled way. Existing customers are on the legacy CubeJS infrastructure, so the switch defaults to disabled and must only be flipped after the customer's historical experiment data has been migrated to CAEM. They toggle a configuration flag to switch between the legacy CubeJS path and the new CAEM path. Both paths coexist in the codebase — re-disabling the flag immediately restores the CubeJS path, but historical data accumulated while the CAEM path was active will not be visible on CubeJS until a reverse migration is run. The recommended sequence is: migrate data to CAEM first, then enable the flag.
 
 **Why this priority**: The switch is the safety mechanism that makes all other user stories safe to ship. Without it, any CAEM infrastructure issue would directly impact experiment result availability. With it, the team can validate CAEM parity before fully committing to it.
 
@@ -121,11 +124,11 @@ A dotCMS operator or platform engineer wants to enable the CAEM analytics backen
 - **FR-006**: For URL-parameter, the CAEM behavior query MUST use `behavior=urlParam` with the goal's `paramName` and `paramValue`, plus `experimentId`, `runningId`, and `dimensions=variant`.
 - **FR-007**: The system MUST provide an HTTP client component capable of constructing, authenticating, and sending requests to the CAEM analytics API and parsing the response into the experiment result model.
 - **FR-008**: The system MUST include a configuration switch that selects between the legacy CubeJS result query path and the new CAEM result query path at runtime. The switch MUST default to the CubeJS path (CAEM disabled by default).
-- **FR-009**: The switch MUST apply to all four supported goal types simultaneously — partial switching (CAEM for some goals, CubeJS for others) is out of scope.
+- **FR-009**: The switch MUST apply to all four supported goal types simultaneously — per-goal-type switching is not needed and MUST NOT be implemented.
 - **FR-010**: The existing CubeJS-based result query classes (`BounceRateResultQuery`, `ExitRateResultQuery`, `ReachTargetAfterExperimentPageResultQuery`) MUST remain unmodified and fully functional regardless of the switch state.
 - **FR-011**: When the CAEM switch is disabled, the system MUST NOT make any HTTP calls to the CAEM analytics API during experiment result evaluation.
 - **FR-012**: The CAEM HTTP client MUST use the same HMAC Bearer token authentication already used by the existing `EventAnalyticsProxyHelper` — no new credential management is introduced.
-- **FR-013**: The system MUST map CAEM per-variant response rows to the existing `VariantResults` and `GoalResults` model used by the rest of the experiment evaluation pipeline, preserving all downstream consumers without modification.
+- **FR-013**: The system MUST produce an experiment result response that matches the current experiment result format, ensuring all downstream consumers continue to work without modification.
 - **FR-014**: When the CAEM endpoint returns zero rows (no matching sessions), the system MUST produce a zero success rate per variant — not an error and not `null`.
 - **FR-015**: Unit tests MUST cover the switch dispatch logic for all four goal types in both the enabled and disabled states.
 - **FR-016**: Unit tests MUST cover each new CAEM-backed result query class, including parameter construction, response parsing, and the empty-result case.
@@ -133,8 +136,9 @@ A dotCMS operator or platform engineer wants to enable the CAEM analytics backen
 
 ### Key Entities
 
-- **MetricExperimentResultsQuery**: The existing interface that all goal-type result query builders implement. The new CAEM-backed classes implement this same interface.
-- **ExperimentResultsQueryFactory**: The existing factory that maps `MetricType` to a `MetricExperimentResultsQuery` instance. The switch logic lives here — it selects the CubeJS or CAEM implementation based on the configuration flag.
+- **MetricType**: An enum that identifies the experiment goal type — `BOUNCE_RATE`, `EXIT_RATE`, `REACH_PAGE`, `URL_PARAMETER`. Used as the dispatch key to select the correct result query implementation.
+- **MetricExperimentResultsQuery**: The existing interface that all goal-type result query builders implement. Receives experiment context and returns per-variant `GoalResults`. The new CAEM-backed classes implement this same interface.
+- **ExperimentResultsQueryFactory**: The existing factory that receives a `MetricType` and returns the matching `MetricExperimentResultsQuery` implementation. The CAEM switch logic lives here — it routes each goal type to either the CubeJS or CAEM implementation based on the configuration flag.
 - **CAEM HTTP Client**: A new component responsible for sending authenticated HTTP requests to the CAEM analytics API (`/v1/analytics/sessions` and `/v1/analytics/sessions/behavior`) and parsing the standard response envelope into the internal result model.
 - **BounceRateCAEMResultQuery** *(new)*: CAEM-backed implementation of `MetricExperimentResultsQuery` for `BOUNCE_RATE` goals. Queries the CAEM sessions endpoint with bounce metrics and variant dimension.
 - **ExitRateCAEMResultQuery** *(new)*: CAEM-backed implementation for `EXIT_RATE` goals. Queries the CAEM sessions endpoint with exit metrics, `referencePage` filter, and variant dimension.
