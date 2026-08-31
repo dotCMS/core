@@ -488,14 +488,14 @@ jobs:
 
       - name: Create new comment
         if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.check_comment.outputs.existing_comment_id == ''
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           issue-number: ${{ steps.determine_issue.outputs.final_issue_number }}
           body: ${{ steps.check_comment.outputs.pr_list }}
 
       - name: Update existing comment
         if: steps.determine_issue.outputs.is_cross_repo != 'true' && steps.check_comment.outputs.existing_comment_id != ''
-        uses: peter-evans/create-or-update-comment@v4
+        uses: peter-evans/create-or-update-comment@e8674b075228eee787fea43ef493e45ece1004c9 # v5.0.0
         with:
           comment-id: ${{ steps.check_comment.outputs.existing_comment_id }}
           body: ${{ steps.check_comment.outputs.pr_list }}
