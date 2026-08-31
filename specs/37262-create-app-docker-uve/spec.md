@@ -413,35 +413,26 @@ so only a warm npx cache stays behind.
   empty directory by the old behavior simply re-run; the P1 port-reuse work is what makes that
   re-run possible without tearing down a healthy instance.
 
-### Required reviewers for the compose change
+### Compose design decisions
 
-**Rescoped.** These reviewers were selected by `git blame` on the shared
-`single-node-demo-site/docker-compose.yml` back when this work modified it. **It no longer does** —
-the CLI ships its own file — so the blast radius that made their review essential is gone. They are
-still the right people to sanity-check a *new* dotCMS compose stack (healthcheck shapes, ordering,
-port exposure), but this is now a review of new code in the SDK tree rather than a change to
-infrastructure they own. `.github/CODEOWNERS` covers neither path.
+**No `docker/` reviewers are required.** An earlier draft carried a `git blame`-derived reviewer
+list for `single-node-demo-site/docker-compose.yml`, chosen back when this work modified that file.
+The rescope means it does not: what ships is a new compose file inside
+`core-web/libs/sdk/create-app/assets/`, reviewed as SDK code along with the rest of the CLI change.
+There is no change to infrastructure anyone owns, so the list is dropped rather than carried as
+courtesy CCs. (`.github/CODEOWNERS` covers neither path, so PR 2 draws no automatic reviewer
+either way — worth knowing when requesting review.)
 
-| Reviewer | Why they should review |
-| --- | --- |
-| **Will Ezell** (`wezell`) | Authored the OpenSearch 1.x + SSL setup in this file (#27754) and the Postgres 18 upgrade (#34236) that touched both this file and the model stack. Owns the current `db`/`opensearch` shape we are adding healthchecks to, and is the most senior still-active owner of `docker/`. |
-| **Erick González** (`erickgonzalez`) | Most recent semantic change to the `dotcms` service (#36490, 2026-07-13) and prior starter-version work (#36362). Closest to the `CUSTOM_STARTER_URL` / starter-import behavior that the readiness race depends on. |
-| **Jose Castro** (`jcastro-dotcms`) | Not a blame match on this file. Added to cover the gap below: second-most-active contributor to `docker/` over the last 12 months. |
+One piece of guidance from that analysis survives, because it is about the code and not about who
+signs off: **the plan phase should read `lgtm-observability/docker-compose.yml` directly as the
+reference for correct `condition: service_healthy` usage**, rather than assume the pattern was
+copied faithfully. Its author is no longer a collaborator, so there is nobody to ask — the file is
+the specification. Note it binds 8090 on the wildcard (L195), which this design deliberately does
+not copy.
 
-**Unavailable — the two strongest blame signals.** `spbolton` (Steve Bolton) holds dominant blame
-on every hunk in scope *and* authored `lgtm-observability/docker-compose.yml` (#32980), the exact
-`condition: service_healthy` pattern this change copies. `dcolina` (Daniel Colina) holds 13 lines
-of the `opensearch` block via #29915. Neither is a collaborator on `dotCMS/core` any more (last
-commits 2026-03-30 and 2026-04-07 respectively), so GitHub rejects a review request for them.
-
-This leaves a real coverage gap: **nobody currently assignable designed the pattern being copied.**
-The plan phase should treat the lgtm-observability compose as the specification for correct
-usage — reading it directly rather than relying on a reviewer to catch a faithful-copy error.
-
-**All open questions are now settled.** Both review questions this section previously put to
-reviewers have been decided by the issue owner, and the decisions are recorded in Fix Scope rather
-than left for the reviewer to resolve. Kept here with their reasoning so reviewers see what was
-chosen and can object, instead of having to rediscover it:
+**All open questions are now settled.** Both questions this section previously left open have been
+decided by the issue owner, and the decisions are recorded in Fix Scope. Kept here with their
+reasoning so a reviewer can see what was chosen and object, rather than having to rediscover it:
 
 1. **Gate `dotcms` on `opensearch: service_healthy`** — **decided: keep the stricter gate**, using
    `single-node-os-migration`'s proven probe (L61–65). The framing this question originally carried
@@ -461,7 +452,7 @@ chosen and can object, instead of having to rediscover it:
    by arrival port with no credential check and no IP allowlist. Note this deviates from
    `lgtm-observability`, which binds the wildcard (L195); the deviation is deliberate.
 
-What remains for reviewers is not a decision but a **confirmation**: `/dotmgt/livez` must be
+What remains is not a decision but a **confirmation**: `/dotmgt/livez` must be
 verified on the released `dotcms/dotcms:latest` image before the healthcheck can depend on it. Both
 in-repo examples that probe it run `dotcms/dotcms-test`. This is the first step of the plan's
 verification guide, and a failure there invalidates the compose design. See Assumptions.
