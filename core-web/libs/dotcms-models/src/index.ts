@@ -74,6 +74,7 @@ export * from './lib/dot-rendered-page-state.model';
 export * from './lib/dot-rendered-page.model';
 export * from './lib/dot-request-response.model';
 export * from './lib/dot-role.model';
+export * from './lib/dot-tool-group.model';
 export * from './lib/dot-site.model';
 export * from './lib/dot-system-config.model';
 export * from './lib/dot-tag.model';

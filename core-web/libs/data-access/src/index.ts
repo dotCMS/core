@@ -62,6 +62,7 @@ export * from './lib/dot-publishing-queue/dot-publishing-queue.service';
 export * from './lib/dot-push-publish-filters/dot-push-publish-filters.service';
 export * from './lib/dot-resource-links/dot-resource-links.service';
 export * from './lib/dot-roles/dot-roles.service';
+export * from './lib/dot-roles/dot-roles.adapters';
 export * from './lib/dot-router/dot-router.service';
 export * from './lib/dot-seo-meta-tags-utils/dot-seo-meta-tags-util.service';
 export * from './lib/dot-seo-meta-tags/dot-seo-meta-tags.service';

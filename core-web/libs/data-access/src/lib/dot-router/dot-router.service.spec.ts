@@ -336,10 +336,15 @@ describe('DotRouterService', () => {
         );
     });
 
-    it('should resolve the /users URL slug to the users-beta portlet ID', () => {
-        expect(service.getPortletId('/users')).toBe('users-beta');
-        expect(service.getPortletId('/c/users')).toBe('users-beta');
-        expect(service.getPortletId('#/users?test=value')).toBe('users-beta');
+    it('should resolve the Angular Users (Beta) URL to the users-beta portlet ID', () => {
+        expect(service.getPortletId('/users-beta')).toBe('users-beta');
+        expect(service.getPortletId('#/users-beta?test=value')).toBe('users-beta');
+    });
+
+    it('should resolve the legacy /c/users URL to the users portlet ID', () => {
+        expect(service.getPortletId('/c/users')).toBe('users');
+        expect(service.getPortletId('#/c/users?test=value')).toBe('users');
+        expect(service.getPortletId('/c/users/123')).toBe('users');
     });
 
     it('should navigate replacing URL params', () => {

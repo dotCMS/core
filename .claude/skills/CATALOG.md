@@ -3,7 +3,7 @@
 
 Auto-generated inventory of dotCMS skills. **Check here before creating a new skill** — if something close exists, extend it or mark yours `related`, don't fork. See [CONTRIBUTING.md](CONTRIBUTING.md).
 
-_21 first-party · 6 external (symlinked)._
+_22 first-party · 6 external (symlinked)._
 
 ## First-party skills (`dot-*`)
 
@@ -11,6 +11,7 @@ _21 first-party · 6 external (symlinked)._
 | --- | --- | --- | --- | --- |
 | `dot-cicd-diagnose` | active | @dotcms/platform | Use when a GitHub Actions workflow fails, PR build breaks, merge queue rejects, nightly reports failures, or user mentions CI/CD test failures in dotCMS/core. … | — |
 | `dot-issue-manage` | active | @dotcms/scout | Create GitHub issues using repository templates. Use when the user asks to create an issue, bug report, feature request, task, spike, epic, or UX requirement. … | — |
+| `dot-pr-spec-summary` | experimental | @nollymar | Summarize a spec PR (or any spec document) in simple words — proposed fix, scope, implications, and test coverage — so a reviewer can decide whether to approve… | related: `speckit-analyze`, `speckit-clarify` |
 | `dot-release-backport-lts` | active | @dotcms/maintenance | Backport closed GitHub issues labeled LTS Next Patch to the current LTS release branch. Finds linked PRs, applies diffs, commits, and pushes. Use when applying… | — |
 | `dot-release-rollback-check` | active | @dotcms/maintenance | Check whether a dotCMS release can be safely rolled back to a previous version by inspecting all PRs merged between the two versions for rollback-safety labels… | — |
 | `dot-sdk-analytics` | active | @dotcms/falcon | Use this skill when the user asks to install, configure, or set up @dotcms/analytics, sdk-analytics, analytics SDK, add analytics tracking, or mentions install… | — |
