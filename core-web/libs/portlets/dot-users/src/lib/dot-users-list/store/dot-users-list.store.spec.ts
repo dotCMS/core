@@ -4,7 +4,8 @@ import { NEVER, of, throwError } from 'rxjs';
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
-    DotMessageService
+    DotMessageService,
+    DotRolesService
 } from '@dotcms/data-access';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -70,10 +71,12 @@ describe('DotUsersListStore', () => {
         providers: [
             mockProvider(DotUsersService, {
                 getUsersPaginated: jest.fn().mockReturnValue(of(MOCK_RESPONSE)),
-                getUserRoles: jest.fn().mockReturnValue(of([])),
                 deleteUser: jest.fn().mockReturnValue(of({})),
                 createUser: jest.fn().mockReturnValue(of(MOCK_USERS[0])),
                 updateUser: jest.fn().mockReturnValue(of(MOCK_USERS[0]))
+            }),
+            mockProvider(DotRolesService, {
+                getForUser: jest.fn().mockReturnValue(of([]))
             }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotMessageDisplayService, { push: jest.fn() }),
@@ -89,7 +92,6 @@ describe('DotUsersListStore', () => {
         // Implementations set via mockReturnValue are preserved.
         jest.clearAllMocks();
         usersService.getUsersPaginated.mockReturnValue(of(MOCK_RESPONSE));
-        usersService.getUserRoles.mockReturnValue(of([]));
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
         usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
@@ -109,6 +111,21 @@ describe('DotUsersListStore', () => {
         expect(store.users()).toEqual(MOCK_USERS);
         expect(store.totalRecords()).toBe(2);
         expect(store.status()).toBe('loaded');
+    });
+
+    it('resolves each row roles through the shared roles service', () => {
+        const rolesService = spectator.inject(DotRolesService);
+        (rolesService.getForUser as jest.Mock).mockImplementation((userId: string) =>
+            of([{ id: `role-${userId}`, name: 'Publisher', roleKey: 'PUBLISHER' }])
+        );
+
+        store.loadUsers();
+
+        // One lookup per row, and the result actually lands in state — before
+        // this the store fell through to the real root service and the roles
+        // column was never exercised.
+        expect(rolesService.getForUser).toHaveBeenCalledTimes(MOCK_USERS.length);
+        expect(store.userRoles()[MOCK_USERS[0].userId]).toEqual(['Publisher']);
     });
 
     it('setRoleFilter should reset page and trigger a reload with roleKey', () => {
