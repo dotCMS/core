@@ -1,7 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EMPTY, of } from 'rxjs';
 
-import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { CUSTOM_ELEMENTS_SCHEMA, signal } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -131,6 +131,86 @@ describe('DotRolesTreeComponent', () => {
             spectator.detectChanges();
 
             expect(treeNodes()[0].leaf).toBe(true);
+        });
+    });
+
+    describe('revealing the selected role after a move', () => {
+        const treeWithMoveTarget = (parentOfSelected: string) => [
+            {
+                id: 'r-target',
+                name: 'Target',
+                childCount: 1,
+                roleChildren:
+                    parentOfSelected === 'r-target'
+                        ? [{ id: 'r-moved', name: 'Moved', parent: 'r-target', childCount: 0 }]
+                        : []
+            },
+            {
+                id: 'r-origin',
+                name: 'Origin',
+                childCount: 1,
+                roleChildren:
+                    parentOfSelected === 'r-origin'
+                        ? [{ id: 'r-moved', name: 'Moved', parent: 'r-origin', childCount: 0 }]
+                        : []
+            }
+        ];
+
+        const expandedOf = (key: string) =>
+            (
+                spectator.component as unknown as {
+                    $treeNodes: () => { key: string; expanded: boolean }[];
+                }
+            )
+                .$treeNodes()
+                .find((n) => n.key === key)?.expanded;
+
+        /**
+         * The store is a plain jest mock, so its getters are not signals and
+         * nothing downstream would re-evaluate. Back the tree with a real
+         * signal so the computed + effect see the move.
+         */
+        const seedReactiveTree = (parentOfSelected: string) => {
+            const store = spectator.inject(DotRolesStore, true);
+            const tree = signal(treeWithMoveTarget(parentOfSelected));
+            (store.selectedRoleId as jest.Mock).mockReturnValue('r-moved');
+            (store.roleTree as jest.Mock).mockImplementation(() => tree());
+            (store.filteredRoles as jest.Mock).mockImplementation(() => tree());
+            spectator.detectChanges();
+
+            return tree;
+        };
+
+        it('opens the new parent so the moved role stays visible', () => {
+            const tree = seedReactiveTree('r-origin');
+            expect(expandedOf('r-target')).toBe(false);
+
+            // Reparent: the role keeps the selection but lands under a branch
+            // the admin never opened, so without this it vanishes on save.
+            tree.set(treeWithMoveTarget('r-target'));
+            spectator.detectChanges();
+
+            expect(expandedOf('r-target')).toBe(true);
+        });
+
+        it('leaves a branch the admin collapsed alone when the tree is patched', () => {
+            // `roles` is rewritten on every member load (the user-count badge),
+            // and re-expanding on that would fight the admin's own collapses.
+            const tree = seedReactiveTree('r-origin');
+
+            (
+                spectator.component as unknown as {
+                    onNodeCollapse: (e: { node: { data: { id: string } } }) => void;
+                }
+            ).onNodeCollapse({ node: { data: { id: 'r-origin' } } });
+            spectator.detectChanges();
+            expect(expandedOf('r-origin')).toBe(false);
+
+            // Same positions, new object identities — a badge refresh.
+            tree.set(treeWithMoveTarget('r-origin'));
+            spectator.detectChanges();
+
+            expect(expandedOf('r-origin')).toBe(false);
         });
     });
 

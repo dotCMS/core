@@ -227,6 +227,28 @@ export function mergeTreesForLookup(
     return fallback.length === 0 ? primary : [...primary, ...fallback];
 }
 
+/**
+ * Fold repeated ids out of a sibling list, keeping the first occurrence.
+ *
+ * `PUT /v1/roles/{roleId}` reports the updated role's children multiplied —
+ * one child comes back four times, and `childCount` is computed from the same
+ * list so it is inflated to match (dotCMS/core#37303). Only the response body
+ * is affected; the persisted rows are correct, which is why a reload clears
+ * it. Everything the store reads out of that response goes through here first.
+ */
+export function dedupeRolesById(nodes: DotRoleNode[]): DotRoleNode[] {
+    const seen = new Set<string>();
+
+    return nodes.filter((node) => {
+        if (seen.has(node.id)) {
+            return false;
+        }
+        seen.add(node.id);
+
+        return true;
+    });
+}
+
 /** Walk the tree looking for a node id. Returns the node or `null`. */
 export function findRoleInTree(nodes: DotRoleNode[], id: string): DotRoleNode | null {
     for (const node of nodes) {

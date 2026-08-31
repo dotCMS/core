@@ -20,6 +20,7 @@ import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 import {
     appendChildToParent,
     collectAncestorChain,
+    dedupeRolesById,
     findRoleInTree,
     mergeTreesForLookup,
     patchNodeChildren,
@@ -943,44 +944,41 @@ export const DotRolesStore = signalStore(
                     // next save on that pane would target it.
                     const stillSelected = store.selectedRoleId() === roleId;
 
+                    // Nothing downstream may read `updated.roleChildren` or
+                    // `updated.childCount` raw. `PUT /v1/roles/{roleId}` reports
+                    // the role's children multiplied — one child comes back four
+                    // times and the count with it (dotCMS/core#37303) — so both
+                    // are folded here, once, before any branch uses them.
+                    const responseChildren = dedupeRolesById(updated.roleChildren ?? []);
+                    // Prefer what we already hold: the response hydrates two
+                    // levels at most, so its children carry no descendants of
+                    // their own and taking them would drop every lazy-loaded
+                    // grandchild out of the tree.
+                    const knownChildren = previous?.roleChildren ?? [];
+                    const node: DotRoleDetail = {
+                        ...updated,
+                        roleChildren: knownChildren.length ? knownChildren : responseChildren,
+                        childCount: previous?.childCount ?? responseChildren.length
+                    };
+
                     if (previousParentId === nextParentId) {
+                        // `patchNodeInPlace` already preserves the node's
+                        // existing `roleChildren`, but it takes every other
+                        // field from the replacement — `childCount` included,
+                        // which is why the inflated count reached the tree even
+                        // on a plain rename.
                         patchState(store, {
-                            roles: patchNodeInPlace(store.roles(), roleId, updated),
-                            ...(stillSelected ? { selectedRole: updated } : {})
+                            roles: patchNodeInPlace(store.roles(), roleId, node),
+                            ...(stillSelected ? { selectedRole: node } : {})
                         });
                     } else {
-                        // Carry the branch across the move. `patchNodeInPlace`
-                        // keeps the node's existing `roleChildren` on the
-                        // same-parent path because the response hydrates two
-                        // levels at most; the reparent path was the only one
-                        // taking the response's copy, so every lazy-loaded
-                        // descendant below the moved role vanished from the
-                        // tree the moment it was dragged elsewhere.
-                        //
-                        // `childCount` comes from the same place for the same
-                        // reason — and today the response's is not even
-                        // trustworthy: `PUT /v1/roles/{id}` reports the moved
-                        // role's children multiplied (one child comes back
-                        // four times, `childCount` with it) because
-                        // `RoleFactoryImpl.populatChildrenForRolesHelper`
-                        // appends to an already-populated list. The persisted
-                        // rows are correct — a reload shows the real tree — so
-                        // this is a response-body defect, filed separately.
-                        const moved: DotRoleDetail = {
-                            ...updated,
-                            roleChildren: previous?.roleChildren?.length
-                                ? previous.roleChildren
-                                : (updated.roleChildren ?? []),
-                            childCount: previous?.childCount ?? updated.childCount
-                        };
-
                         const detached = removeNodeFromTree(store.roles(), roleId);
                         const inserted = nextParentId
-                            ? appendChildToParent(detached, nextParentId, moved)
-                            : [...detached, moved];
+                            ? appendChildToParent(detached, nextParentId, node)
+                            : [...detached, node];
                         patchState(store, {
                             roles: inserted,
-                            ...(stillSelected ? { selectedRole: updated } : {})
+                            ...(stillSelected ? { selectedRole: node } : {})
                         });
                     }
 

@@ -976,6 +976,68 @@ describe('DotRolesStore', () => {
             expect(moved?.roleChildren?.map((c) => c.id)).toEqual(['r-child']);
         });
 
+        it('folds out the duplicates when the branch was never expanded', async () => {
+            // The regression that reopened this: preferring what we already
+            // hold only helps when we hold something. A node whose children
+            // were never lazy-loaded has `roleChildren: []`, so the response's
+            // copy is all there is — and it has to be deduped, not trusted.
+            seedDeepTree();
+            const collapsed = findRole(store.roles(), 'r-child');
+            expect(collapsed?.roleChildren?.length).toBe(1);
+            // Drop the grandchild so `r-child` looks unexpanded.
+            store.loadRoleChildren('r-child');
+            service.getById.mockReturnValueOnce(
+                of({ id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] })
+            );
+
+            service.update.mockReturnValueOnce(
+                of({
+                    id: 'r-child',
+                    name: 'Child',
+                    parent: 'r-target',
+                    childCount: 4,
+                    roleChildren: [
+                        { id: 'r-grand', name: 'Grand', roleChildren: [] },
+                        { id: 'r-grand', name: 'Grand', roleChildren: [] },
+                        { id: 'r-grand', name: 'Grand', roleChildren: [] },
+                        { id: 'r-grand', name: 'Grand', roleChildren: [] }
+                    ]
+                })
+            );
+
+            await store.updateRole('r-child', {} as DotRoleFormValue);
+
+            const moved = findRole(store.roles(), 'r-child');
+            expect(moved?.roleChildren?.map((c) => c.id)).toEqual(['r-grand']);
+        });
+
+        it('does not let an inflated childCount through on a plain rename', async () => {
+            // No reparent, so `patchNodeInPlace` runs — it preserves
+            // `roleChildren` but takes every other field from the replacement,
+            // `childCount` included.
+            seedDeepTree();
+            service.update.mockReturnValueOnce(
+                of({
+                    id: 'r-eco',
+                    name: 'Renamed',
+                    parent: 'r-categories',
+                    childCount: 4,
+                    roleChildren: [
+                        { id: 'r-child', name: 'Child', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', roleChildren: [] }
+                    ]
+                })
+            );
+
+            await store.updateRole('r-eco', {} as DotRoleFormValue);
+
+            const patched = findRole(store.roles(), 'r-eco');
+            expect(patched?.name).toBe('Renamed');
+            expect(patched?.childCount).toBe(1);
+        });
+
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
             service.update.mockReturnValueOnce(throwError(() => new Error('boom')));
