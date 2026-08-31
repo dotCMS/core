@@ -298,7 +298,13 @@ describe('DotContentDriveStore', () => {
                 expect(request.folderCursor).toBe(0);
                 expect(request.maxResults).toBe(DEFAULT_PAGINATION.limit);
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
-                expect(request.archived).toBe(false);
+                // `archived` is deliberately NOT sent any more (FR-019). The endpoint already
+                // defaults it to false, and pinning it here would contradict an Archived status
+                // selection. Its absence is what keeps the status filter authoritative.
+                expect(request.archived).toBeUndefined();
+                // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
+                // request stays byte-identical to one that never knew about the filter (FR-002).
+                expect(request.status).toBeUndefined();
                 expect(request.showFolders).toBe(true);
             });
 
@@ -563,6 +569,55 @@ describe('DotContentDriveStore', () => {
 
                 const request = store.$request();
 
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should send the status filter and hide folders when a status is selected', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['UNPUBLISHED', 'LOCKED'] },
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.status).toEqual(['UNPUBLISHED', 'LOCKED']);
+                // Folders carry no status, so any selection drops them (FR-015).
+                expect(request.showFolders).toBe(false);
+                // Still absent — the status selection owns the archived decision now (FR-019).
+                expect(request.archived).toBeUndefined();
+            });
+
+            it('should keep the status selection when navigating to another folder', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.setPath('/some/other/folder');
+
+                // Parity with every other filter: browsing does not clear the filter bag, which is
+                // what makes the selection survive folder navigation (FR-016).
+                expect(store.$request().status).toEqual(['ARCHIVED']);
+            });
+
+            it('should drop the status filter when filters are cleared', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.clearFilters();
+
+                const request = store.$request();
+
+                expect(request.status).toBeUndefined();
+                // Folders come back once nothing is narrowing the results (FR-017).
                 expect(request.showFolders).toBe(true);
             });
 

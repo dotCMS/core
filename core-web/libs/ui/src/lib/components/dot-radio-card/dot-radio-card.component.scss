@@ -1,0 +1,45 @@
+/**
+ * The selected state comes straight off the native radio inside, so nothing in the class or the
+ * template tracks it: `:has(:checked)` is the same source of truth the radio itself renders from.
+ *
+ * These live in a stylesheet rather than in Tailwind utilities because a component stylesheet is
+ * unlayered and scoped, so `p-card[_ngcontent-x]` outranks PrimeNG's own `.p-card`, while a utility
+ * sits in `@layer utilities` and loses to it no matter the specificity.
+ */
+.radio-card {
+    display: block;
+    cursor: pointer;
+}
+
+p-card {
+    transition:
+        background var(--p-transition-duration) ease,
+        border-color var(--p-transition-duration) ease;
+}
+
+.radio-card:has(input:checked) p-card {
+    border-color: var(--p-primary-color);
+    background: var(--p-primary-50);
+}
+
+/**
+ * The radio draws its own hover, but only over the circle — and the whole card is the radio, so the
+ * card needs a cue of its own. It is the content hover background rather than the form field's hover
+ * border, which in this theme is `primary`: a hovered card would then be indistinguishable from the
+ * picked one. Measured both, they are the same `#4e65f1`.
+ */
+.radio-card:hover:not(:has(input:checked)):not(:has(input:disabled)) p-card {
+    background: var(--p-content-hover-background);
+}
+
+.radio-card:has(input:disabled) {
+    cursor: default;
+    opacity: 0.6;
+}
+
+// Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
+@media (prefers-reduced-motion: reduce) {
+    p-card {
+        transition: none;
+    }
+}

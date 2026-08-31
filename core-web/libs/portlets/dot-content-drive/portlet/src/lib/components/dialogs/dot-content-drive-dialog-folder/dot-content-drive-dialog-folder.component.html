@@ -159,15 +159,35 @@
             </p-tabpanels>
         </p-tabs>
     </div>
+} @else {
+    <!-- Never render the form before the values that belong in it. Patching an already-visible
+         form would silently overwrite whatever the user had started typing, and on the extensions
+         field it also pruned chips the user could then delete by accident. -->
+    <div class="flex items-center justify-center py-16" data-testid="folder-form-loading">
+        <p-progressSpinner
+            styleClass="h-8! w-8!"
+            strokeWidth="4"
+            ariaLabel="loading folder settings" />
+    </div>
+}
 
-    <div class="mt-4 flex justify-end gap-4 px-6">
-        <button
-            pButton
-            type="button"
-            class="p-button-outlined"
-            data-testid="content-drive-dialog-folder-cancel"
-            [label]="'content-drive.dialog.folder.cancel' | dm"
-            (click)="closeDialog()"></button>
+<!-- Outside the ready gate on purpose: while the form loads the user must still be able to back
+     out. This whole footer used to sit inside the @if, so the loading state offered no Cancel at
+     all — and because $fileAssetTypes comes from toSignal, a failed getContentTypes never emits,
+     leaving the dialog a spinner with no way out but the header X.
+
+     The submit button stays INSIDE its own gate rather than merely disabled: submitting before the
+     values have loaded would persist an empty form over the folder's real data, so it must not
+     exist yet, not just be unclickable. -->
+<div class="mt-4 flex justify-end gap-4 px-6">
+    <button
+        pButton
+        type="button"
+        class="p-button-outlined"
+        data-testid="content-drive-dialog-folder-cancel"
+        [label]="'content-drive.dialog.folder.cancel' | dm"
+        (click)="closeDialog()"></button>
+    @if ($formReady()) {
         <button
             pButton
             type="button"
@@ -182,15 +202,5 @@
             [disabled]="folderForm.invalid"
             [loading]="$isLoading()"
             (click)="$folder() ? saveFolder() : createFolder()"></button>
-    </div>
-} @else {
-    <!-- Never render the form before the values that belong in it. Patching an already-visible
-         form would silently overwrite whatever the user had started typing, and on the extensions
-         field it also pruned chips the user could then delete by accident. -->
-    <div class="flex items-center justify-center py-16" data-testid="folder-form-loading">
-        <p-progressSpinner
-            styleClass="h-8! w-8!"
-            strokeWidth="4"
-            ariaLabel="loading folder settings" />
-    </div>
-}
+    }
+</div>
