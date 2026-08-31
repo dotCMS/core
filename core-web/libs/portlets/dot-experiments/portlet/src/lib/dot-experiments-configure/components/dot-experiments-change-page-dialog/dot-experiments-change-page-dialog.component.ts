@@ -28,8 +28,8 @@ export interface DotExperimentsChangePageDialogVariant {
  * dialog about an irreversible action, content that is already gone.
  */
 export interface DotExperimentsChangePageDialogInputs {
-    /** Path of the page the variants belong to, which the warning names. */
-    pagePath: string;
+    /** Title of the page the variants belong to, which the warning names in quotes. */
+    pageTitle: string;
     /** The variants the change would delete, as they stand now. */
     variants: Signal<DotExperimentsChangePageDialogVariant[]>;
     /** Whether the deletions are on the wire. */
@@ -41,7 +41,12 @@ export interface DotExperimentsChangePageDialogInputs {
 /** `true` once the variants are gone and the page is free to change; `undefined` means cancelled. */
 export type DotExperimentsChangePageDialogResult = true;
 
-/** Copy of the warning, which names the count and therefore has to agree with it. */
+/**
+ * Copy of the warning, which names the count and therefore has to agree with it.
+ *
+ * It states the irreversibility itself rather than leaving it to a line of its own: this is the
+ * house shape for a confirmation — one paragraph saying what happens, then what it costs.
+ */
 const WARNING_ONE_KEY = 'experiments.configure.page.change.warning.one';
 const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
 
@@ -53,6 +58,12 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
  * first. That is a destructive, irreversible step over content the user made, so it is named — with
  * the page it belongs to and every variant by name — rather than folded into the button that
  * triggers it.
+ *
+ * Drawn as the platform's other confirmations are: no icon, a question for a header, one paragraph
+ * of consequence, and the two choices spelled out — "Keep Current Page" against the destructive
+ * one, so neither button is the generic "Cancel"/"OK" pair that says nothing about what it does.
+ * It is not a `p-confirmDialog`, though, which is the usual vehicle: that one closes on accept and
+ * has nowhere to put a wait or a failure, and this operation has both.
  *
  * It reports the go-ahead and renders what it is given, and that is all: the deletions are the
  * store's, and the list, the wait and the failure all arrive as signals over `inputValues`. Closing
@@ -75,7 +86,7 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
     templateUrl: './dot-experiments-change-page-dialog.component.html'
 })
 export class DotExperimentsChangePageDialogComponent {
-    readonly $pagePath = input.required<string>({ alias: 'pagePath' });
+    readonly $pageTitle = input.required<string>({ alias: 'pageTitle' });
 
     /**
      * Signals, so they are read rather than snapshotted — see
@@ -104,7 +115,7 @@ export class DotExperimentsChangePageDialogComponent {
     );
 
     protected readonly $warningArgs = computed<string[]>(() => [
-        this.$pagePath(),
+        this.$pageTitle(),
         String(this.$variantList().length)
     ]);
 

@@ -15,22 +15,23 @@ import {
 
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 
-const WARNING_ONE_COPY = 'Variants belong to {0}. Changing the Page deletes 1 Variant:';
-const WARNING_MANY_COPY = 'Variants belong to {0}. Changing the Page deletes {1} Variants:';
-const IRREVERSIBLE_COPY = 'This action cannot be undone.';
-const ERROR_COPY = 'The Variants could not be deleted';
+const WARNING_ONE_COPY =
+    'If you change the Page, 1 Variant of "{0}" will be deleted. This cannot be undone.';
+const WARNING_MANY_COPY =
+    'If you change the Page, {1} Variants of "{0}" will be deleted. This cannot be undone.';
+const ERROR_COPY = 'Some Variants could not be deleted';
 const CONFIRM_COPY = 'Delete Variants And Change Page';
+const REJECT_COPY = 'Keep Current Page';
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.configure.page.change.warning.one': WARNING_ONE_COPY,
     'experiments.configure.page.change.warning.many': WARNING_MANY_COPY,
-    'experiments.configure.page.change.irreversible': IRREVERSIBLE_COPY,
     'experiments.configure.page.change.error': ERROR_COPY,
     'experiments.configure.page.change.confirm': CONFIRM_COPY,
-    'dot.common.dialog.reject': 'Cancel'
+    'experiments.configure.page.change.reject': REJECT_COPY
 });
 
-const PAGE_PATH = '/pricing/index';
+const PAGE_TITLE = 'Pricing';
 
 const VARIANT_A: DotExperimentsChangePageDialogVariant = {
     id: 'variant-2',
@@ -70,7 +71,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
         spectator = createComponent({
             providers: [{ provide: DynamicDialogRef, useValue: dialogRef }]
         });
-        spectator.setInput({ pagePath: PAGE_PATH, variants, deleting, failed });
+        spectator.setInput({ pageTitle: PAGE_TITLE, variants, deleting, failed });
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
         spectator.detectChanges();
     };
@@ -122,10 +123,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
             mountWith([VARIANT_A]);
 
             expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
-                `Variants belong to ${PAGE_PATH}`
-            );
-            expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
-                'deletes 1 Variant'
+                `1 Variant of "${PAGE_TITLE}"`
             );
         });
 
@@ -133,7 +131,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
             mountWith([VARIANT_A, VARIANT_B]);
 
             expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
-                'deletes 2 Variants'
+                '2 Variants'
             );
         });
 
@@ -154,16 +152,33 @@ describe('DotExperimentsChangePageDialogComponent', () => {
             expect(rows[0].textContent).toContain(VARIANT_B.name);
             // And the count in the warning follows it, rather than still promising two.
             expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
-                'deletes 1 Variant'
+                '1 Variant'
             );
         });
 
         it('should say the deletion cannot be undone', () => {
+            // Part of the warning paragraph now, as the platform's other confirmations read.
             mountWith([VARIANT_A]);
 
-            expect(spectator.query(byTestId('change-page-irreversible'))?.textContent).toContain(
-                IRREVERSIBLE_COPY
+            expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
+                'This cannot be undone.'
             );
+        });
+
+        it('should lead with no icon, the way the other confirmations do', () => {
+            mountWith([VARIANT_A]);
+
+            expect(
+                spectator
+                    .query(byTestId('change-page-dialog'))
+                    ?.querySelector('.material-symbols-rounded')
+            ).toBeNull();
+        });
+
+        it('should name the choice being declined rather than a generic Cancel', () => {
+            mountWith([VARIANT_A]);
+
+            expect(cancelButton().textContent).toContain(REJECT_COPY);
         });
     });
 

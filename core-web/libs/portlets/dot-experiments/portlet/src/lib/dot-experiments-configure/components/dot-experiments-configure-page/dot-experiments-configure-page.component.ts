@@ -225,7 +225,7 @@ export class DotExperimentsConfigurePageComponent {
         this.#dispatch.pageChangeRequested();
 
         const inputValues: DotExperimentsChangePageDialogInputs = {
-            pagePath: this.$selectedPage()?.path ?? '',
+            pageTitle: this.$selectedPage()?.title ?? '',
             variants: this.$deletableVariants,
             deleting: this.store.deletingVariants,
             failed: this.store.deleteVariantsFailed

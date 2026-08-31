@@ -345,7 +345,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
                     modal: true
                 })
             );
-            expect(config.inputValues.pagePath).toBe(SELECTED_PAGE.path);
+            expect(config.inputValues.pageTitle).toBe(SELECTED_PAGE.title);
             expect(config.inputValues.deleting).toBe(storeMock.deletingVariants);
             expect(config.inputValues.failed).toBe(storeMock.deleteVariantsFailed);
             expect(config.inputValues.variants()).toEqual([

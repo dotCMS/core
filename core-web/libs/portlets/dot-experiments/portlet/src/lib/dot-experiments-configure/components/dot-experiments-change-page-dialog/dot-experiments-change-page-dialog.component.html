@@ -1,31 +1,19 @@
 <div class="flex flex-col gap-4" data-testid="change-page-dialog">
-    <div class="flex gap-3">
-        <span class="material-symbols-rounded text-xl! text-red-600" aria-hidden="true">
-            warning
-        </span>
+    <p class="m-0 text-surface-700" data-testid="change-page-warning">
+        {{ $warningKey() | dm: $warningArgs() }}
+    </p>
 
-        <div class="flex min-w-0 flex-col gap-2">
-            <p class="m-0 text-sm text-surface-900" data-testid="change-page-warning">
-                {{ $warningKey() | dm: $warningArgs() }}
-            </p>
-
-            <ul class="m-0 flex list-none flex-col gap-1 p-0">
-                @for (variant of $variantList(); track variant.id) {
-                    <li class="flex min-w-0 items-center gap-2" data-testid="change-page-variant">
-                        <span
-                            class="size-2.5 flex-none rounded-full"
-                            [style.background]="variant.color"
-                            aria-hidden="true"></span>
-                        <span class="truncate text-sm text-surface-900">{{ variant.name }}</span>
-                    </li>
-                }
-            </ul>
-
-            <p class="m-0 text-sm text-surface-500" data-testid="change-page-irreversible">
-                {{ 'experiments.configure.page.change.irreversible' | dm }}
-            </p>
-        </div>
-    </div>
+    <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        @for (variant of $variantList(); track variant.id) {
+            <li class="flex min-w-0 items-center gap-2" data-testid="change-page-variant">
+                <span
+                    class="size-2.5 flex-none rounded-full"
+                    [style.background]="variant.color"
+                    aria-hidden="true"></span>
+                <span class="truncate text-surface-900">{{ variant.name }}</span>
+            </li>
+        }
+    </ul>
 
     @if ($hasFailed()) {
         <small class="p-error" data-testid="change-page-error">
@@ -38,7 +26,7 @@
             type="button"
             severity="secondary"
             [outlined]="true"
-            [label]="'dot.common.dialog.reject' | dm"
+            [label]="'experiments.configure.page.change.reject' | dm"
             [disabled]="$isDeleting()"
             (onClick)="cancel()"
             data-testid="change-page-cancel-btn" />
