@@ -881,6 +881,101 @@ describe('DotRolesStore', () => {
     });
 
     describe('updateRole', () => {
+        /**
+         * Tree with a lazy-loaded grandchild under `r-eco`, plus a second root
+         * to reparent into. Mirrors "expand a branch, then move its owner".
+         */
+        const seedDeepTree = () => {
+            service.getRoots.mockReturnValue(
+                of([
+                    {
+                        id: 'r-categories',
+                        name: 'Categories',
+                        childCount: 1,
+                        roleChildren: [
+                            {
+                                id: 'r-eco',
+                                name: 'Eco Role',
+                                parent: 'r-categories',
+                                childCount: 1,
+                                roleChildren: [
+                                    {
+                                        id: 'r-child',
+                                        name: 'Child',
+                                        parent: 'r-eco',
+                                        childCount: 1,
+                                        roleChildren: [
+                                            {
+                                                id: 'r-grand',
+                                                name: 'Grand',
+                                                parent: 'r-child',
+                                                childCount: 0,
+                                                roleChildren: []
+                                            }
+                                        ]
+                                    }
+                                ]
+                            }
+                        ]
+                    },
+                    { id: 'r-target', name: 'Target', childCount: 0, roleChildren: [] }
+                ])
+            );
+            store.loadRootRoles();
+        };
+
+        it('keeps the moved branch instead of the two levels the response carries', async () => {
+            seedDeepTree();
+            // `PUT` hydrates the role and its direct children only, so the
+            // grandchild is absent from the response. Taking the response's
+            // `roleChildren` wholesale drops it from the tree, and the branch
+            // renders expanded-but-empty until a reload.
+            service.update.mockReturnValueOnce(
+                of({
+                    id: 'r-eco',
+                    name: 'Eco Role',
+                    parent: 'r-target',
+                    childCount: 1,
+                    roleChildren: [
+                        { id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] }
+                    ]
+                })
+            );
+
+            await store.updateRole('r-eco', {} as DotRoleFormValue);
+
+            const moved = findRole(store.roles(), 'r-eco');
+            expect(findRole(store.roles(), 'r-target')?.roleChildren?.[0]?.id).toBe('r-eco');
+            expect(findRole([moved as DotRoleNode], 'r-grand')).toBeDefined();
+        });
+
+        it('ignores a childCount the response inflated', async () => {
+            seedDeepTree();
+            // `PUT /v1/roles/{id}` reports the moved role's children multiplied
+            // — one child comes back four times, `childCount` with it. The
+            // persisted rows are correct, so the count we already hold wins.
+            service.update.mockReturnValueOnce(
+                of({
+                    id: 'r-eco',
+                    name: 'Eco Role',
+                    parent: 'r-target',
+                    childCount: 4,
+                    roleChildren: [
+                        { id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] },
+                        { id: 'r-child', name: 'Child', parent: 'r-eco', roleChildren: [] }
+                    ]
+                })
+            );
+
+            await store.updateRole('r-eco', {} as DotRoleFormValue);
+
+            const moved = findRole(store.roles(), 'r-eco');
+            expect(moved?.childCount).toBe(1);
+            expect(moved?.roleChildren?.map((c) => c.id)).toEqual(['r-child']);
+        });
+
         it('should delegate to httpErrorManager and return null on failure', async () => {
             const errorManager = spectator.inject(DotHttpErrorManagerService);
             service.update.mockReturnValueOnce(throwError(() => new Error('boom')));

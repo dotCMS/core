@@ -174,15 +174,25 @@ export class DotRolesTreeComponent {
 
         this.#openNodeIds.update((set) => new Set(set).add(id));
 
-        if (this.#fetchedRoleIds().has(id)) {
+        const loadedChildren = node.data.roleChildren?.length ?? 0;
+
+        // A branch can lose children it had already fetched — a reparent
+        // replaces the moved role with a response that hydrates two levels at
+        // most, and a lazy-load that failed marked the node fetched before it
+        // resolved. The marker is add-only, so on its own it leaves that branch
+        // permanently empty: expanded, showing a chevron, and rendering
+        // nothing. `childCount` is independent of hydration and still says the
+        // children are there, so it is what re-opens the gate.
+        const lostChildren = loadedChildren === 0 && (node.data.childCount ?? 0) > 0;
+
+        if (this.#fetchedRoleIds().has(id) && !lostChildren) {
             return;
         }
 
         this.#fetchedRoleIds.update((set) => new Set(set).add(id));
 
         // Only fetch when we don't already have children populated.
-        const hasLoadedChildren = (node.data.roleChildren?.length ?? 0) > 0;
-        if (!hasLoadedChildren && !node.data.user) {
+        if (loadedChildren === 0 && !node.data.user) {
             this.store.loadRoleChildren(id);
         }
     }

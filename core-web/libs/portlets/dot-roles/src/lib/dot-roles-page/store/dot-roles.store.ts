@@ -949,10 +949,35 @@ export const DotRolesStore = signalStore(
                             ...(stillSelected ? { selectedRole: updated } : {})
                         });
                     } else {
+                        // Carry the branch across the move. `patchNodeInPlace`
+                        // keeps the node's existing `roleChildren` on the
+                        // same-parent path because the response hydrates two
+                        // levels at most; the reparent path was the only one
+                        // taking the response's copy, so every lazy-loaded
+                        // descendant below the moved role vanished from the
+                        // tree the moment it was dragged elsewhere.
+                        //
+                        // `childCount` comes from the same place for the same
+                        // reason — and today the response's is not even
+                        // trustworthy: `PUT /v1/roles/{id}` reports the moved
+                        // role's children multiplied (one child comes back
+                        // four times, `childCount` with it) because
+                        // `RoleFactoryImpl.populatChildrenForRolesHelper`
+                        // appends to an already-populated list. The persisted
+                        // rows are correct — a reload shows the real tree — so
+                        // this is a response-body defect, filed separately.
+                        const moved: DotRoleDetail = {
+                            ...updated,
+                            roleChildren: previous?.roleChildren?.length
+                                ? previous.roleChildren
+                                : (updated.roleChildren ?? []),
+                            childCount: previous?.childCount ?? updated.childCount
+                        };
+
                         const detached = removeNodeFromTree(store.roles(), roleId);
                         const inserted = nextParentId
-                            ? appendChildToParent(detached, nextParentId, updated)
-                            : [...detached, updated];
+                            ? appendChildToParent(detached, nextParentId, moved)
+                            : [...detached, moved];
                         patchState(store, {
                             roles: inserted,
                             ...(stillSelected ? { selectedRole: updated } : {})

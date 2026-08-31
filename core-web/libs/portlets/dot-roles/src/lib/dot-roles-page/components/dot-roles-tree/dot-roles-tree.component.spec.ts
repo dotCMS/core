@@ -134,6 +134,61 @@ describe('DotRolesTreeComponent', () => {
         });
     });
 
+    describe('lazy-load gate on expand', () => {
+        beforeEach(() => {
+            (spectator.inject(DotRolesStore, true).loadRoleChildren as jest.Mock).mockClear();
+        });
+
+        const expand = (data: Record<string, unknown>) =>
+            (
+                spectator.component as unknown as {
+                    onNodeExpand: (e: { node: { data: Record<string, unknown> } }) => void;
+                }
+            ).onNodeExpand({ node: { data } });
+
+        it('fetches on first expand and not on a re-open', () => {
+            const store = spectator.inject(DotRolesStore, true);
+
+            expand({ id: 'r-a', name: 'A', childCount: 2, roleChildren: [] });
+            // The load populated the branch, so re-opening it must not hit the
+            // backend again.
+            expand({
+                id: 'r-a',
+                name: 'A',
+                childCount: 2,
+                roleChildren: [{ id: 'r-b' }, { id: 'r-c' }]
+            });
+
+            expect(store.loadRoleChildren).toHaveBeenCalledTimes(1);
+        });
+
+        it('re-fetches a branch that lost the children it had already loaded', () => {
+            // A reparent replaces the moved role with a response that hydrates
+            // two levels, so its grandchildren leave state. The fetched marker
+            // is add-only, so without this the branch stays expanded and empty
+            // until a full reload.
+            const store = spectator.inject(DotRolesStore, true);
+
+            expand({ id: 'r-a', name: 'A', childCount: 1, roleChildren: [{ id: 'r-b' }] });
+            expect(store.loadRoleChildren).not.toHaveBeenCalled();
+
+            expand({ id: 'r-a', name: 'A', childCount: 1, roleChildren: [] });
+
+            expect(store.loadRoleChildren).toHaveBeenCalledWith('r-a');
+        });
+
+        it('does not re-fetch a confirmed leaf', () => {
+            // `childCount: 0` means the emptiness is the truth, not a loss.
+            const store = spectator.inject(DotRolesStore, true);
+            const node = { id: 'r-a', name: 'A', childCount: 0, roleChildren: [] };
+
+            expand(node);
+            expand(node);
+
+            expect(store.loadRoleChildren).toHaveBeenCalledTimes(1);
+        });
+    });
+
     describe('revealing a newly created role', () => {
         beforeEach(() => {
             // `mockProvider` shares its jest.fn()s across tests, so call
