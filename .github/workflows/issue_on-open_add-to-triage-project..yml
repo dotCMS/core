@@ -12,7 +12,7 @@ jobs:
     if: github.event.issue.assignee == null
     steps:
       - name: Check team labels and add to project
-        uses: actions/github-script@v8
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         with:
           github-token: ${{ secrets.TRIAGE_PROJECT_TOKEN }}
           script: |

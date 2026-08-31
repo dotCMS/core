@@ -84,7 +84,7 @@ jobs:
     steps:
       - name: Download Build Artifact
         id: data-download
-        uses: dawidd6/action-download-artifact@v24
+        uses: dawidd6/action-download-artifact@d63b86af1b34672e53c440b1b83979861906bad7 # v24
         if: ${{ inputs.reuse-previous-build == true }}
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -128,12 +128,12 @@ jobs:
       # JSON array of filter names that matched (from dorny/paths-filter)
       changes: ${{ steps.filter.outputs.changes }}
     steps:
-      - uses: actions/checkout@v7.0.1
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: ${{ inputs.change-detection == 'enabled' }}
 
       # Execute the paths-filter step to determine changes
       # For PRs, paths-filter automatically uses GitHub API to get changed files
-      - uses: dorny/paths-filter@v4.0.3
+      - uses: dorny/paths-filter@ceb8a2b8f2d89434be7ff52d3de7ec3738c5cc9d # v4.0.3
         if: ${{ inputs.change-detection == 'enabled' }}
         id: filter
         with:
