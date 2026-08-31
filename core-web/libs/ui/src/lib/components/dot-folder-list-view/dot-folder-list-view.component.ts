@@ -299,11 +299,12 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @type {InputSignal<DotContentDriveItem | DotContentDriveItem[] | null | undefined>}
      * @alias selection
      */
-    $selection = input<
-        DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null | undefined
-    >(undefined, {
-        alias: 'selection'
-    });
+    $selection = input<DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null | undefined>(
+        undefined,
+        {
+            alias: 'selection'
+        }
+    );
 
     /** Checked set while uncontrolled. Ignored as long as `selection` is provided. */
     readonly #internalSelection = signal<DotContentDriveBrowseItem[]>([]);
@@ -943,7 +944,10 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param totalCount The total number of items
      * @returns The drag image element
      */
-    private createDragImage(items: DotContentDriveBrowseItem[], totalCount: number): HTMLElement | null {
+    private createDragImage(
+        items: DotContentDriveBrowseItem[],
+        totalCount: number
+    ): HTMLElement | null {
         const container = this.renderer.createElement('div');
         this.renderer.addClass(container, 'drag-image-container');
 

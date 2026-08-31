@@ -1,8 +1,4 @@
-import {
-    ComponentStatus,
-    DotContentDriveBrowseItem,
-    TreeNodeItem
-} from '@dotcms/dotcms-models';
+import { ComponentStatus, DotContentDriveBrowseItem, TreeNodeItem } from '@dotcms/dotcms-models';
 
 /**
  * Everything the host hands the picker when it opens.
