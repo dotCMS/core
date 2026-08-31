@@ -56,18 +56,63 @@ describe('DotKeyValueFieldComponent', () => {
     });
 
     describe('writing values back', () => {
-        it('should map pairs back into a record in the order given', () => {
+        const sentKeys = (onChange: jest.Mock) =>
+            [...onChange.mock.calls[0][0].matchAll(/"([^"]+)":/g)].map((m) => m[1]);
+
+        it('should report the pairs as JSON text, not as an object', () => {
+            // The shape is the guard: an object would silently reorder the keys, so
+            // if this ever regresses to `onChange({...})` the ordering is gone.
             const onChange = jest.fn();
             spectator.component.registerOnChange(onChange);
 
-            const pairs = [
+            spectator.component.updateField([{ key: 'a', value: '1' }]);
+
+            expect(typeof onChange.mock.calls[0][0]).toBe('string');
+        });
+
+        it('should report the pairs in the order given', () => {
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.updateField([
                 { key: 'zeta', value: 'last' },
                 { key: 'alpha', value: 'first' }
-            ];
-            spectator.component.updateField(pairs);
+            ]);
 
-            expect(Object.keys(onChange.mock.calls[0][0])).toEqual(['zeta', 'alpha']);
-            expect(onChange).toHaveBeenCalledWith({ zeta: 'last', alpha: 'first' });
+            expect(onChange).toHaveBeenCalledWith('{"zeta":"last","alpha":"first"}');
+        });
+
+        it('should keep an integer-like key where the user put it', () => {
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.updateField([
+                { key: 'orden 1', value: 'a' },
+                { key: '123', value: 'b' },
+                { key: 'orden 2', value: 'c' }
+            ]);
+
+            expect(sentKeys(onChange)).toEqual(['orden 1', '123', 'orden 2']);
+        });
+
+        it('should escape keys and values the way JSON requires', () => {
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.updateField([{ key: 'a"b', value: 'c\\d' }]);
+
+            const sent = onChange.mock.calls[0][0];
+            expect(() => JSON.parse(sent)).not.toThrow();
+            expect(JSON.parse(sent)).toEqual({ 'a"b': 'c\\d' });
+        });
+
+        it('should emit valid JSON for an empty list', () => {
+            const onChange = jest.fn();
+            spectator.component.registerOnChange(onChange);
+
+            spectator.component.updateField([]);
+
+            expect(JSON.parse(onChange.mock.calls[0][0])).toEqual({});
         });
 
         it('should mark the control touched when the list changes', () => {
@@ -88,7 +133,7 @@ describe('DotKeyValueFieldComponent', () => {
             spectator.component.registerOnChange(onChange);
             spectator.component.updateField(spectator.component.$initialValue());
 
-            expect(onChange).toHaveBeenCalledWith(stored);
+            expect(JSON.parse(onChange.mock.calls[0][0])).toEqual(stored);
         });
     });
 

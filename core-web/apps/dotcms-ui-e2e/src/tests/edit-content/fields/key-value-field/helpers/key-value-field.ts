@@ -119,16 +119,84 @@ export class KeyValueField {
         await row.getByTestId('dot-key-value-delete-button').click();
     }
 
+    /** Asserts the full list, in order. Only usable where the field starts empty. */
     async expectKeyOrder(keys: string[]): Promise<void> {
         await expect(this.keyCells).toHaveText(keys, { timeout: 10000 });
     }
 
+    /**
+     * Asserts `keys` appear in this relative order, ignoring anything else present.
+     *
+     * The Apps consumer edits a real app configuration that already holds
+     * properties, so asserting the whole list there would be asserting someone
+     * else's data.
+     */
+    async expectRelativeKeyOrder(keys: string[]): Promise<void> {
+        await expect(async () => {
+            const all = await this.keyCells.allInnerTexts();
+            const positions = keys.map((key) => all.map((t) => t.trim()).indexOf(key));
+
+            expect(positions).not.toContain(-1);
+            expect(positions).toEqual([...positions].sort((a, b) => a - b));
+        }).toPass({ timeout: 10000 });
+    }
+
     /** Drags the row owning `key` onto the row currently at `targetIndex`. */
     async dragRowTo(key: string, targetIndex: number): Promise<void> {
-        const handle = this.rowForKey(key).getByTestId('dot-key-value-drag-handle');
-        await this.rowForKey(key).hover();
-        await expect(handle).toBeVisible({ timeout: 10000 });
+        await this.dragRowOnto(key, this.rows.nth(targetIndex));
+    }
 
-        await handle.dragTo(this.rows.nth(targetIndex));
+    /** Drags the row owning `key` onto the row owning `targetKey`. */
+    async dragRowToKey(key: string, targetKey: string): Promise<void> {
+        await this.dragRowOnto(key, this.rowForKey(targetKey));
+    }
+
+    private async dragRowOnto(key: string, target: Locator): Promise<void> {
+        const row = this.rowForKey(key);
+        const handle = row.getByTestId('dot-key-value-drag-handle');
+
+        // The handle is `opacity-0` until hover — present and focusable, but not
+        // something a pointer drag should start from unrevealed.
+        await row.hover();
+        await expect(handle).toHaveCSS('opacity', '1', { timeout: 10000 });
+
+        /*
+         * Drop into the half of the target row that faces the travel direction.
+         *
+         * PrimeNG decides "insert above" vs "insert below" from which half of the
+         * target the pointer is in, then subtracts one when inserting below. Dropping
+         * on the exact centre — Playwright's default — lands on the "above" side, and
+         * for a one-row move downwards that resolves to the row's own index: a silent
+         * no-op that still reports a successful drag.
+         */
+        const [source, destination] = await Promise.all([row.boundingBox(), target.boundingBox()]);
+
+        const movingDown = !!source && !!destination && destination.y > source.y;
+        const height = destination?.height ?? 0;
+
+        await handle.dragTo(target, {
+            targetPosition: {
+                x: (destination?.width ?? 0) / 2,
+                y: movingDown ? height * 0.75 : height * 0.25
+            }
+        });
+    }
+
+    /**
+     * Asserts a row action is present but not revealed (FR-017).
+     *
+     * Not `toBeHidden()`: these controls use `opacity-0` precisely so they stay in
+     * the accessibility tree and the tab order (FR-019, research R-03), and
+     * Playwright counts a transparent element as visible. Opacity is the real
+     * assertion.
+     */
+    async expectActionUnrevealed(key: string, testId: string): Promise<void> {
+        await expect(this.rowForKey(key).getByTestId(testId)).toHaveCSS('opacity', '0');
+    }
+
+    async expectActionRevealedOnHover(key: string, testId: string): Promise<void> {
+        const row = this.rowForKey(key);
+        await row.hover();
+        await expect(row.getByTestId(testId)).toHaveCSS('opacity', '1', { timeout: 10000 });
     }
 }

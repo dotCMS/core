@@ -30,16 +30,50 @@
             [forbiddenkeys]="$forbiddenkeys()"></tr>
     </ng-template>
 
+    <!--
+        The table is bound to the WHOLE list and rows are withheld here instead.
+        PrimeNG's row reorder mutates the very array given to `[value]`, so binding a
+        shortened copy would drop the move; and because only a prefix is rendered,
+        `rowIndex` stays a true index into the full list for every handler below.
+    -->
     <ng-template #body let-variable let-rowIndex="rowIndex">
-        <tr
-            dotKeyValueTableRow
-            [pReorderableRow]="rowIndex"
-            (delete)="deleteVariable(rowIndex)"
-            (save)="updateKeyValue($event, rowIndex)"
-            [showHiddenField]="showHiddenField"
-            [variable]="variable"
-            [index]="rowIndex"
-            #tableRow></tr>
+        @if (rowIndex < $visibleCount()) {
+            <tr
+                dotKeyValueTableRow
+                [pReorderableRow]="rowIndex"
+                (delete)="deleteVariable(rowIndex)"
+                (save)="updateKeyValue($event, rowIndex)"
+                [showHiddenField]="showHiddenField"
+                [variable]="variable"
+                [index]="rowIndex"
+                #tableRow></tr>
+        }
+    </ng-template>
+
+    <ng-template #footer>
+        @if ($remaining() > 0) {
+            <tr data-testId="dot-key-value-load-more-row">
+                <!--
+                    Left-aligned under the drag column, like the site/folder selector.
+                    The separator is this row's top border: the last body row has its own
+                    suppressed, so that it never doubles up with the table's outer frame.
+                -->
+                <td
+                    [attr.colspan]="colspan"
+                    class="border-t border-t-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3">
+                    <button
+                        (click)="loadMore()"
+                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                        data-testId="dot-key-value-load-more"
+                        type="button">
+                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                            add_circle
+                        </span>
+                        {{ 'keyValue.action.load_more' | dm }}
+                    </button>
+                </td>
+            </tr>
+        }
     </ng-template>
 
     <ng-template #emptymessage>

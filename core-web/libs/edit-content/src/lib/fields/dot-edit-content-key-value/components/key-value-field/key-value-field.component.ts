@@ -5,6 +5,7 @@ import { NG_VALUE_ACCESSOR } from '@angular/forms';
 
 import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 
+import { parseOrderedKeyValue } from '../../../../utils/key-value-order.util';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
 @Component({
@@ -40,26 +41,57 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
     }
 
     /**
-     * Updates the field.
-     * It is used to update the field.
+     * Reports the pairs to the form as JSON **text**, assembled from the array
+     * rather than from an object.
+     *
+     * A plain object cannot carry this order: ECMAScript enumerates integer-like
+     * keys first, so a key such as `123` jumps to the front the moment it is
+     * assigned, wherever the user dragged it. Building the text directly skips
+     * that step, and the backend parses it into a `LinkedHashMap`, so the order
+     * reaches storage intact.
+     *
+     * Each key and value still goes through `JSON.stringify` individually, so
+     * quotes and backslashes are escaped exactly as they would be otherwise.
      */
     updateField(value: DotKeyValue[]): void {
-        const keyValue = value.reduce((acc, item) => {
-            acc[item.key] = item.value;
+        const entries = value.map(
+            (item) => `${JSON.stringify(item.key)}:${JSON.stringify(item.value ?? '')}`
+        );
 
-            return acc;
-        }, {});
-
-        this.onChange(keyValue);
+        this.onChange(`{${entries.join(',')}}`);
         this.onTouched();
     }
 
     /**
-     * Parses the data to a DotKeyValue array.
-     * It is used to parse the data to a DotKeyValue array.
+     * Normalises whatever the form control holds into the editor's pair list.
+     *
+     * The control carries JSON **text** — `getContentById` puts it there in the
+     * response's own order, and {@link updateField} writes it back the same way.
+     * Text is parsed with the order-preserving reader so integer-like keys keep
+     * their position; a plain object is still accepted for any caller outside that
+     * path, at the cost of losing it.
      */
-    private parseToDotKeyValue(data: Record<string, string | null>): DotKeyValue[] {
-        if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    private parseToDotKeyValue(
+        data: string | Record<string, string | null> | DotKeyValue[]
+    ): DotKeyValue[] {
+        if (typeof data === 'string') {
+            return parseOrderedKeyValue(data);
+        }
+
+        if (Array.isArray(data)) {
+            // Only an array of actual pairs counts. Anything else is malformed data
+            // — a bare `['a','b']` must not be read as two half-built entries.
+            const pairs = data.filter(
+                (entry): entry is DotKeyValue =>
+                    !!entry && typeof entry === 'object' && typeof entry.key === 'string'
+            );
+
+            return pairs.length === data.length
+                ? pairs.map(({ key, value }) => ({ key, value: value ?? 'null' }))
+                : [];
+        }
+
+        if (!data || typeof data !== 'object') {
             return [];
         }
 
@@ -73,8 +105,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<Record<string, string | null>>((value) => {
-        const initialValue = this.parseToDotKeyValue(value);
-        this.$initialValue.set(initialValue);
+    readonly handleChangeValue = signalMethod<
+        string | Record<string, string | null> | DotKeyValue[]
+    >((value) => {
+        this.$initialValue.set(this.parseToDotKeyValue(value));
     });
 }

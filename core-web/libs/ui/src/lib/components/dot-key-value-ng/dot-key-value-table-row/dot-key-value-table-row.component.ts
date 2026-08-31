@@ -14,8 +14,6 @@ import {
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { IconFieldModule } from 'primeng/iconfield';
-import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
 import { TableModule } from 'primeng/table';
 
@@ -35,30 +33,24 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     // eslint-disable-next-line @angular-eslint/component-selector
     selector: 'tr[dotKeyValueTableRow]',
     templateUrl: './dot-key-value-table-row.component.html',
-    host: { class: 'group' },
-    imports: [
-        ButtonModule,
-        IconFieldModule,
-        InputIconModule,
-        InputTextModule,
-        ReactiveFormsModule,
-        TableModule,
-        DotMessagePipe
-    ],
+    // `group` drives the hover reveal of this row's actions. The row's own class is
+    // how e2e locates a row from a cell inside it, and predates the redesign.
+    host: { class: 'group dot-key-value-table-row' },
+    imports: [ButtonModule, InputTextModule, ReactiveFormsModule, TableModule, DotMessagePipe],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueTableRowComponent {
     #fb = inject(FormBuilder);
 
-        save = output<DotKeyValue>();
+    save = output<DotKeyValue>();
 
-        delete = output<void>();
+    delete = output<void>();
 
-        $showHiddenField = input.required<boolean>({ alias: 'showHiddenField' });
+    $showHiddenField = input.required<boolean>({ alias: 'showHiddenField' });
 
-        $index = input.required<number>({ alias: 'index' });
+    $index = input.required<number>({ alias: 'index' });
 
-        $variable = model.required<DotKeyValue>({ alias: 'variable' });
+    $variable = model.required<DotKeyValue>({ alias: 'variable' });
 
     /**
      * The value input, which only exists while this row is being edited.
@@ -71,23 +63,17 @@ export class DotKeyValueTableRowComponent {
      */
     $isEditing = signal(false);
 
-        editControl = this.#fb.nonNullable.control('');
-
-    /**
-     * What a hidden value renders as. Masking is a UI concern only — it keeps a
-     * secret off a shoulder-surfer's screen, it is not a security boundary.
-     */
-    protected readonly maskedValue = '•'.repeat(12);
+    editControl = this.#fb.nonNullable.control('');
 
     /** Value captured when editing started, so Escape can put it back. */
     #valueBeforeEdit = '';
 
     /**
-     * Whether this row renders masked.
+     * Whether this row's value is withheld, in which case the row states that and
+     * shows nothing else — no value, no input, no control.
      *
-     * Gated on the capability, not just the flag: a consumer with no visibility
-     * affordance could otherwise render a masked row the user has no way to
-     * unmask (FR-024).
+     * Gated on the capability, not just the flag: only the consumer that deals in
+     * secrets should render the withheld state (FR-024).
      */
     $isHiddenField = computed(() => this.$showHiddenField() && !!this.$variable()?.hidden);
 
@@ -101,7 +87,7 @@ export class DotKeyValueTableRowComponent {
         });
     }
 
-        startEdit(): void {
+    startEdit(): void {
         this.#valueBeforeEdit = this.$variable().value;
         this.editControl.setValue(this.#valueBeforeEdit);
         this.$isEditing.set(true);
@@ -134,14 +120,5 @@ export class DotKeyValueTableRowComponent {
     cancelEdit(event?: Event): void {
         event?.preventDefault();
         this.$isEditing.set(false);
-    }
-
-    /**
-     * Flips this pair between masked and readable. Reversible on purpose: a
-     * one-way control would leave the user with a value they can never see or
-     * edit again.
-     */
-    toggleHidden(): void {
-        this.save.emit({ ...this.$variable(), hidden: !this.$isHiddenField() });
     }
 }

@@ -2,22 +2,24 @@
     class="w-12 min-w-12 border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3"
     data-testId="drag-column"></td>
 
+<!--
+    Cells align to the top rather than the middle: a message makes its own cell
+    taller, and centred content would drift, leaving the inputs on different lines.
+-->
 <td
-    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-middle"
-    [formGroup]="form">
+    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
     <input
         (keydown.escape)="onCancel($event)"
         (keydown.enter)="handleKeyInputEnter($event)"
         [placeholder]="'keyValue.key_input.placeholder' | dm"
         class="w-full"
-        formControlName="key"
+        [formControl]="keyControl"
         #keyCell
         autocomplete="false"
         data-testId="key-input"
         pInputText
         pSize="small"
         type="text" />
-    <!-- Rendered only when there is something to say, so the input stays centred. -->
     @if (keyControl.dirty && keyControl.hasError('required')) {
         <small class="mt-1 block text-xs text-red-500">
             {{ 'keyValue.key_input.required' | dm }}
@@ -30,8 +32,7 @@
 </td>
 
 <td
-    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-middle"
-    [formGroup]="form">
+    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
     <p-iconfield class="block w-full">
         <input
             (keydown.escape)="onCancel($event)"
@@ -39,7 +40,7 @@
             [placeholder]="'keyValue.value_input.placeholder' | dm"
             [type]="hiddenControl.value ? 'password' : 'text'"
             class="w-full"
-            formControlName="value"
+            [formControl]="valueControl"
             #valueCell
             autocomplete="false"
             data-testId="value-input"
@@ -69,7 +70,7 @@
 </td>
 
 <td
-    class="w-16 min-w-12 border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-middle">
+    class="w-16 min-w-12 border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
     <button
         (click)="saveVariable()"
         [attr.aria-label]="'add' | dm"

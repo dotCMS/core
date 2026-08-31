@@ -7,6 +7,7 @@ import {
     output
 } from '@angular/core';
 
+import { ButtonModule } from 'primeng/button';
 import { TableModule } from 'primeng/table';
 
 import { DotKeyValueTableHeaderRowComponent } from './dot-key-value-table-header-row/dot-key-value-table-header-row.component';
@@ -33,6 +34,7 @@ export interface DotKeyValue {
     selector: 'dot-key-value-ng',
     templateUrl: './dot-key-value-ng.component.html',
     imports: [
+        ButtonModule,
         TableModule,
         DotKeyValueTableHeaderRowComponent,
         DotKeyValueTableRowComponent,
@@ -76,8 +78,36 @@ export class DotKeyValueComponent {
         )
     );
 
-    /** Column count for the empty-state row: drag handle + key + value + actions. */
+    /** Column count for the full-width rows: drag handle + key + value + actions. */
     readonly colspan = 4;
+
+    /** Rows revealed per step, matching the site/folder selector's page size. */
+    static readonly PAGE_SIZE = 40;
+
+    /**
+     * How many rows are currently rendered.
+     *
+     * Re-seeded whenever the consumer supplies a new list, so reopening a field
+     * never starts part-way down a previous one.
+     */
+    $visibleCount = linkedSignal<DotKeyValue[], number>({
+        source: this.$variables,
+        computation: () => DotKeyValueComponent.PAGE_SIZE
+    });
+
+    /** Rows still hidden below the last rendered one. */
+    $remaining = computed(() => Math.max(0, this.$variableList().length - this.$visibleCount()));
+
+    /**
+     * Reveals the next page.
+     *
+     * Purely a rendering limit: the whole list is already in memory, so unlike the
+     * site/folder selector this fetches nothing. Rows are withheld from the DOM,
+     * never from the data — every operation below still indexes the full list.
+     */
+    loadMore(): void {
+        this.$visibleCount.update((count) => count + DotKeyValueComponent.PAGE_SIZE);
+    }
 
     saveVariable(variable: DotKeyValue): void {
         this.$variableList.update((variables) => [variable, ...variables]);

@@ -37,6 +37,25 @@ Duplicate detection lives in the entry-row component's key validator, against th
 Position is **implicit** — it is the index of the pair within the array the editor holds and emits.
 There is no `order` field on `DotKeyValue`, and none is added.
 
+An array carries position; a JavaScript **object does not**, for keys made only of digits. ECMAScript
+enumerates integer-like keys first, ascending, in any object, so `{"123": …, "zzz": …}` is read back in
+that order no matter how it was written. The pair list is therefore only ever converted to and from
+**JSON text**, never through an intermediate object.
+
+This constrains what the Edit Content form control may hold: **JSON text**, in the field's own order.
+
+| Form control holds | Order kept | Save without editing |
+|---|---|---|
+| **JSON text** ← in use | yes | accepted (server takes a JSON string) |
+| Object | **no** — digits hoisted | accepted |
+| Array of pairs | yes | **rejected** — `KeyValueField.fieldValue` takes a `String` or `Map`, never a `List` |
+
+Rationale, alternatives, and the safety guard: [research.md R-09](./research.md#r-09--key-order-survival-across-the-json-boundary).
+
+**Paging does not touch any of this.** Long lists render 40 rows at a time, but the pair list itself is
+never shortened or re-indexed — positions, emitted payloads and the JSON text are identical whether a
+row is on screen or not (FR-040).
+
 ---
 
 ## Editor capability (per consumer)

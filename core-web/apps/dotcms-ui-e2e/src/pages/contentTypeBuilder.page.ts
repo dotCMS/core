@@ -131,9 +131,17 @@ export class ContentTypeBuilderPage {
         return this.fieldDialog().locator('dot-content-type-fields-variables');
     }
 
+    /**
+     * Closes the field dialog with Escape.
+     *
+     * Not the Cancel button: `hideButtons` is true on every tab but Overview (and
+     * Settings, where the field has them), so on the Field Variables tab there is no
+     * footer to click. Escape works on all of them — dialogs in this repo are
+     * required to set `closeOnEscape`.
+     */
     async closeFieldDialog() {
         const dialog = this.fieldDialog();
-        await dialog.getByTestId('dotDialogCancelAction').click();
-        await expect(dialog).toBeHidden();
+        await dialog.press('Escape');
+        await expect(dialog).toBeHidden({ timeout: 10000 });
     }
 }

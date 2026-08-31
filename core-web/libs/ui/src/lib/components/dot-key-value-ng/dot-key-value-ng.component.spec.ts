@@ -32,6 +32,7 @@ const messageServiceMock = new MockDotMessageService({
     'keyValue.value_input.required': 'This field is required',
     'keyValue.key_input.duplicated': 'This key already exists',
     'keyValue.value_hidden': 'Value hidden',
+    'keyValue.action.load_more': 'Load more',
     Delete: 'Delete',
     Reorder: 'Reorder',
     add: 'Add'
@@ -242,6 +243,96 @@ describe('DotKeyValueComponent', () => {
         });
     });
 
+    describe('paging long lists', () => {
+        const manyPairs = (count: number): DotKeyValue[] =>
+            Array.from({ length: count }, (_, i) => ({
+                key: `key-${String(i).padStart(3, '0')}`,
+                value: `value-${i}`
+            }));
+
+        const renderedKeys = () =>
+            spectator.queryAll(byTestId('dot-key-value-key')).map((el) => el.textContent.trim());
+
+        it('should render every row when the list fits in one page', () => {
+            create({ variables: manyPairs(40) });
+
+            expect(renderedKeys()).toHaveLength(40);
+            expect(spectator.query(byTestId('dot-key-value-load-more-row'))).toBeFalsy();
+        });
+
+        it('should render only the first page of a longer list', () => {
+            create({ variables: manyPairs(95) });
+
+            expect(renderedKeys()).toHaveLength(40);
+            expect(renderedKeys()[0]).toBe('key-000');
+            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
+                'Load more'
+            );
+        });
+
+        it('should reveal the next page on each click, in order', () => {
+            create({ variables: manyPairs(95) });
+
+            spectator.click(byTestId('dot-key-value-load-more'));
+            spectator.detectChanges();
+            expect(renderedKeys()).toHaveLength(80);
+            expect(renderedKeys()[79]).toBe('key-079');
+
+            spectator.click(byTestId('dot-key-value-load-more'));
+            spectator.detectChanges();
+            expect(renderedKeys()).toHaveLength(95);
+        });
+
+        it('should drop the control once nothing is left to reveal', () => {
+            create({ variables: manyPairs(50) });
+
+            spectator.click(byTestId('dot-key-value-load-more'));
+            spectator.detectChanges();
+
+            expect(renderedKeys()).toHaveLength(50);
+            expect(spectator.query(byTestId('dot-key-value-load-more-row'))).toBeFalsy();
+        });
+
+        it('should keep the same label whatever is left to reveal', () => {
+            // Matches the site/folder selector, which never states a count.
+            create({ variables: manyPairs(50) });
+
+            expect(spectator.query(byTestId('dot-key-value-load-more')).textContent).toContain(
+                'Load more'
+            );
+        });
+
+        it('should keep the whole list bound to the table, not just the rendered part', () => {
+            // Withheld rows stay in the data: PrimeNG reorders the array it is given,
+            // so a shortened one would silently drop a drag.
+            create({ variables: manyPairs(95) });
+
+            expect(spectator.component.$variableList()).toHaveLength(95);
+        });
+
+        it('should still emit the whole list when a visible row is removed', () => {
+            create({ variables: manyPairs(95) });
+            const spy = jest.spyOn(spectator.component.updatedList, 'emit');
+
+            spectator.component.deleteVariable(0);
+
+            expect(spy).toHaveBeenCalledWith(expect.any(Array));
+            expect(spy.mock.calls[0][0]).toHaveLength(94);
+        });
+
+        it('should start again at the first page when the consumer supplies a new list', () => {
+            create({ variables: manyPairs(95) });
+            spectator.click(byTestId('dot-key-value-load-more'));
+            spectator.detectChanges();
+            expect(renderedKeys()).toHaveLength(80);
+
+            spectator.setInput('variables', manyPairs(95));
+            spectator.detectChanges();
+
+            expect(renderedKeys()).toHaveLength(40);
+        });
+    });
+
     describe('hidden values are the only per-consumer capability', () => {
         it('should always render a drag handle per row, in every consumer', () => {
             expect(spectator.queryAll(byTestId('dot-key-value-drag-handle')).length).toBe(
@@ -254,11 +345,13 @@ describe('DotKeyValueComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-new-visibility-toggle'))).toBeFalsy();
         });
 
-        it('should render the visibility affordance when hidden values are on', () => {
+        it('should offer the visibility choice only where a pair is created', () => {
             create({ showHiddenField: true });
 
-            expect(spectator.query(byTestId('dot-key-value-visibility-toggle'))).toBeTruthy();
+            // The entry row decides it once; existing rows never revisit it, because
+            // the server sends a mask rather than the secret it stands for.
             expect(spectator.query(byTestId('dot-key-value-new-visibility-toggle'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-visibility-toggle'))).toBeFalsy();
         });
     });
 });

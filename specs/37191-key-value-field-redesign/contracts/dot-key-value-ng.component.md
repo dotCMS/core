@@ -40,6 +40,11 @@ The dual channel is intentional and must be preserved: Edit Content consumes `up
 array), while Field Variables consumes `save`/`update`/`delete` to persist per row. Collapsing them
 would break consumer 2.
 
+**`updatedList` is order-bearing, and the array is the only thing carrying that order.** A consumer
+that funnels it through a JavaScript object — `reduce` into `{}`, spread, `Object.fromEntries` — loses
+the position of every key made only of digits, silently and unrecoverably. Serialize from the array
+directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-the-json-boundary).
+
 ---
 
 ## Rendering contract
@@ -51,9 +56,26 @@ would break consumer 2.
 | Body row value | always | plain text; becomes an input on activation | FR-005, FR-006 |
 | Drag handle | always | **`opacity-0`**, revealed on hover/focus-within | FR-017, FR-019 |
 | Remove control | always | **`opacity-0`**, revealed on hover/focus-within | FR-017, FR-019 |
-| Eye toggle (in-field) | `showHiddenField === true` | visible within the value control | FR-021 |
-| Hidden indicator | row's `hidden === true` | **permanently visible** — never hover-gated | FR-018, FR-023 |
+| Eye control (in-field) | `showHiddenField === true`, **entry row only** | visible within the value control | FR-021, FR-023a |
+| Withheld indicator | `showHiddenField === true` **and** row's `hidden === true` | **permanently visible** — lock + "Value hidden", no value, no input | FR-018, FR-022, FR-023 |
+| Any visibility control on an existing row | never | absent | FR-023a |
 | Empty state | list is empty | icon + message, entry row still usable above | FR-014 |
+| Load-more row | more than 40 rows remain unrendered | appended after the last row; **left-aligned** "Load more", no count | FR-037 to FR-039 |
+
+### Paging must not shorten the bound array
+
+Only 40 rows are rendered, but `[value]` still receives the **entire** list, with rows withheld in the
+body template. PrimeNG reorders the array it is given, so binding a slice loses the drag silently. A
+rendered prefix also keeps `rowIndex` a true index, which every row handler depends on. See
+[research.md R-10](../research.md#r-10--row-paging-render-limit-not-a-data-limit).
+
+### Visibility is chosen at creation only
+
+The eye lives in the **entry row** and nowhere else. An existing row has no visibility control — not to
+reveal, not to hide. This is not an oversight to be "fixed": the server sends `*****` instead of the
+stored secret, so revealing shows the mask, and saving that mask — or flagging it as a new secret —
+overwrites the real secret. Any change here must first establish that the true value actually reaches
+the client.
 
 ### The one rule most likely to be implemented wrongly
 
@@ -75,7 +97,9 @@ Icon name is the element's **text content**, not a class:
 |---|---|---|
 | Drag handle | `pi pi-bars` | `drag_indicator` |
 | Remove row | `pi pi-times` | `close` |
-| Hidden indicator | `pi pi-lock` | `visibility_off` |
+| Withheld indicator | `pi pi-lock` | `lock` |
+| Hide control (eye) | — | `visibility` |
+| Load more | — | `add_circle` |
 | Empty state | `pi pi-folder-open` | `key` |
 
 Icons PrimeNG renders internally (e.g. inside `p-cellEditor`) are a theming concern and out of
@@ -112,6 +136,10 @@ All already exist in `Language.properties` — **no new key is required**.
 | `keyValue.value_hidden` | Value hidden |
 | `keyValue.value_no_rows.label` | **Add your key and value here** — matches the mockup copy exactly |
 
+One key **is** added: `keyValue.action.load_more` = *Load more*. Same wording as
+`dot.file.field.host.folder.action.load.more`, kept as its own key because that one is namespaced to
+the host/folder field.
+
 ---
 
 ## Test selectors
@@ -122,6 +150,8 @@ the same change:
 
 `dot-key-value-key`, `dot-key-value-editable-column`, `dot-key-value-input`,
 `dot-key-value-delete-button`, `dot-key-value-hidden-switch`, `dot-key-value-label`, `no-rows`
+
+Added by paging: `dot-key-value-load-more-row`, `dot-key-value-load-more`.
 
 > `dot-key-value-hidden-switch` names a control being removed. Rename it to something the eye
 > affordance actually is, and update `apps/dotcms-ui-e2e/.../helpers/key-value-field.ts` in the same
@@ -137,6 +167,7 @@ the same change:
 | Row component internals (not exported) | ✅ yes |
 | Removing the hidden-value **column** | ✅ yes — presentation, not contract |
 | Removing `dragAndDrop` | ✅ done — the capability is now universal, so the input had nothing to gate |
+| Adding row paging | ✅ done — internal rendering; no input, output or payload changed |
 | Adding an input/output | ⚠️ only with a stated reason |
 | Renaming or removing an input/output | ❌ no — breaks 3 consumers |
 | Changing `DotKeyValue`'s shape | ❌ no — breaks persistence in all 3 |

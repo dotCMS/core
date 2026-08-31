@@ -25,62 +25,49 @@
 </td>
 
 <!--
-    One cell for both states: the value swaps inside it, but the field and the eye
-    never move, and the eye stays a button so hiding is reversible.
+    Whether a value is withheld is decided when the pair is created, and never after.
+    The server sends a mask rather than the stored secret, so there is no reveal to
+    offer, and no way to re-hide a value without persisting the mask over the secret.
+    An existing row therefore carries no visibility control at all.
 -->
 <td data-testId="dot-key-value-editable-column">
-    <p-iconfield class="block w-full">
-        @if (isHiddenField) {
+    @if (isHiddenField) {
+        <span
+            class="inline-flex items-center gap-1 text-surface-500 dark:text-surface-400"
+            data-testId="dot-key-value-label">
             <span
-                class="block w-full truncate pr-8 tracking-widest"
-                data-testId="dot-key-value-masked-value">
-                {{ maskedValue }}
+                class="material-symbols-outlined text-base!"
+                aria-hidden="true"
+                data-testId="dot-key-value-hidden-icon">
+                lock
             </span>
-        } @else if (isEditing) {
-            <input
-                (keydown.enter)="commitEdit($event)"
-                (keydown.escape)="cancelEdit($event)"
-                (blur)="commitEdit($event)"
-                [formControl]="editControl"
-                [placeholder]="'keyValue.value_input.placeholder' | dm"
-                class="w-full"
-                #valueInput
-                autocomplete="false"
-                data-testId="dot-key-value-input"
-                pInputText
-                pSize="small"
-                type="text" />
-        } @else {
-            <span
-                (click)="startEdit()"
-                (keydown.enter)="startEdit()"
-                class="block w-full cursor-text truncate pr-8"
-                role="button"
-                tabindex="0"
-                data-testId="dot-key-value-value-output">
-                {{ variable.value }}
-            </span>
-        }
-        @if (showHiddenField) {
-            <p-inputicon>
-                <!-- Never hover-gated: which values are secret must be readable at a glance. -->
-                <button
-                    (click)="toggleHidden()"
-                    [attr.aria-label]="'keyValue.value_hidden' | dm"
-                    [attr.aria-pressed]="isHiddenField"
-                    class="inline-flex size-4 cursor-pointer items-center justify-center text-surface-500 dark:text-surface-400"
-                    data-testId="dot-key-value-visibility-toggle"
-                    type="button">
-                    <span
-                        class="material-symbols-outlined text-base!"
-                        aria-hidden="true"
-                        data-testId="dot-key-value-visibility-icon">
-                        {{ isHiddenField ? 'visibility_off' : 'visibility' }}
-                    </span>
-                </button>
-            </p-inputicon>
-        }
-    </p-iconfield>
+            {{ 'keyValue.value_hidden' | dm }}
+        </span>
+    } @else if (isEditing) {
+        <input
+            (keydown.enter)="commitEdit($event)"
+            (keydown.escape)="cancelEdit($event)"
+            (blur)="commitEdit($event)"
+            [formControl]="editControl"
+            [placeholder]="'keyValue.value_input.placeholder' | dm"
+            class="w-full"
+            #valueInput
+            autocomplete="false"
+            data-testId="dot-key-value-input"
+            pInputText
+            pSize="small"
+            type="text" />
+    } @else {
+        <span
+            (click)="startEdit()"
+            (keydown.enter)="startEdit()"
+            class="block w-full cursor-text truncate"
+            role="button"
+            tabindex="0"
+            data-testId="dot-key-value-value-output">
+            {{ variable.value }}
+        </span>
+    }
 </td>
 
 <td class="w-16 min-w-12">

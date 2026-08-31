@@ -28,6 +28,39 @@ version and rolls that version out to all three consumers.
 
 Reordering is offered in all three consumers, unconditionally — there is no per-consumer switch.
 
+### Row paging (added during implementation)
+
+Not in the original request. Raised by the developer after seeing the site/folder field page its
+results, and asked for here so a field holding dozens of pairs does not render every row at once.
+Requirements: [FR-037 to FR-041](#functional-requirements).
+
+The two are not the same mechanism, and the difference is the whole design: the site/folder selector
+pages because it **fetches** a page at a time, while a Key/Value field already holds its entire list in
+memory. Here nothing is fetched — rows are withheld from the DOM and the data is untouched. See
+[research.md R-10](./research.md#r-10--row-paging-render-limit-not-a-data-limit).
+
+### Key ordering defect (found during implementation)
+
+Reordering rows in Edit Content worked on screen, then came back wrong after a save and reload:
+keys made only of digits had jumped to the front of the list, sorted numerically, wherever the user
+had dragged them. `orden 1 · orden 2 · 123 · zzz` returned as `123 · orden 1 · orden 2 · zzz`.
+
+**This is not a backend defect.** A controlled round-trip confirmed the server stores and returns the
+order it is given, so the fix for issue #31904 is intact. The loss is a language rule: ECMAScript
+enumerates integer-like keys first, in ascending numeric order, in **any** object. The moment a
+Key/Value field is put into a JavaScript object — on the way in by `JSON.parse`, on the way out by
+building an object from the row list — those keys move, and no amount of reordering the object
+afterwards puts them back, because re-assigning them re-hoists them.
+
+The field therefore carries **JSON text**, never an object, from the response through the form control
+and back to the server. The order is only ever read from, or written to, text. Requirements are
+unchanged by this — FR-026 to FR-032 already state the guarantee; this records why meeting it in the
+browser needed more than reading the response.
+
+Covered by the ordering requirements ([FR-026 to FR-032](#functional-requirements)) and by
+[SC-002](#measurable-outcomes), whose round-trip is the check that catches this. Mechanism and the
+alternatives weighed: [research.md R-09](./research.md#r-09--key-order-survival-across-the-json-boundary).
+
 ### Process note
 
 The developer has chosen to carry **spec and implementation in a single PR**, rather than the
@@ -234,9 +267,15 @@ persist.
 
 - **FR-021**: In consumers that enable hidden values, the visibility affordance MUST be attached to the
   value control rather than occupying its own column.
-- **FR-022**: A pair marked hidden MUST have its value rendered masked in the list.
-- **FR-023**: A row whose value is hidden MUST carry a permanently visible hidden indicator
-  distinguishing it from plain rows (see FR-018).
+- **FR-022**: A pair marked hidden MUST NOT render its value. The value cell states that the value is
+  withheld, under a lock icon, and offers no editing — matching the behaviour this redesign replaced.
+- **FR-023**: The withheld state MUST be permanently visible, never hover-gated (see FR-018).
+- **FR-023a**: Whether a value is hidden is chosen **when the pair is created, and never after**. The
+  entry row offers the choice; an existing row MUST offer no visibility control at all, whether it is
+  hidden or not. *Why*: the server returns a fixed mask in place of a stored secret, so revealing a
+  hidden value would display the mask rather than the secret, and saving it would overwrite the secret
+  with the mask — as would flagging a value that is already the mask. Changing a withheld value means
+  removing the pair and adding it again.
 - **FR-024**: Hidden values are enabled for the **Apps custom properties** consumer only. The Edit
   Content field and the Field Variables editor MUST render no visibility affordance and no
   hidden-value column.
@@ -255,6 +294,21 @@ persist.
 - **FR-031**: Removing a pair MUST leave the relative order of the remaining pairs intact.
 - **FR-032**: If persisting a reorder fails, the system MUST surface the failure rather than leaving
   the displayed order silently diverged from the stored order.
+
+**Row paging**
+
+- **FR-037**: When the list is longer than one page (40 rows), the editor MUST render only the first
+  page and withhold the rest from the DOM.
+- **FR-038**: A row MUST be appended after the last rendered one carrying a control that reveals the
+  next page. It MUST read **"Load more"**, with no count, and sit on the **left** of the row — matching
+  the site/folder selector, which is the existing precedent for this pattern in the product.
+- **FR-039**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
+  list that fits in one page.
+- **FR-040**: Withholding is a **rendering** limit only. Every pair MUST remain in the editor's list
+  and in what it emits, so reorder, edit, remove and the emitted payload behave as though all rows
+  were on screen. In particular, a drag MUST NOT lose the withheld rows.
+- **FR-041**: Supplying a new list to the editor MUST reset it to the first page, so reopening a field
+  never starts part-way down the previous one.
 
 **Consumer integration & data safety**
 
@@ -309,7 +363,10 @@ user-observable behavior. All three align with existing repository standards.
 - **SC-001**: All three consumers render the redesigned editor; a reviewer comparing them side by side
   finds no visual or interaction differences other than the hidden-value affordance.
 - **SC-002**: 100% of existing key/value data in each of the three consumers loads and saves without
-  loss or alteration — verified by round-tripping a populated example in each surface.
+  loss or alteration, **order included** — verified by round-tripping a populated example in each
+  surface. The example must contain at least one key made only of digits and must not be in
+  alphabetical or numeric order, or it cannot catch the defect described in
+  [Key ordering defect](#key-ordering-defect-found-during-implementation).
 - **SC-003**: A user can add a key/value pair from an empty field in under 10 seconds using only the
   keyboard, without reaching for the pointer.
 - **SC-004**: Zero regressions in existing behavior: duplicate-key rejection, empty-input rejection,
@@ -321,6 +378,9 @@ user-observable behavior. All three align with existing repository standards.
 - **SC-007**: Automated unit coverage exercises add, edit, cancel-edit, remove, reorder, duplicate-key
   rejection, empty-input rejection, hidden-value rendering, and empty-state rendering; one
   end-to-end smoke per consumer confirms values persist across save and reload.
+- **SC-008**: A field holding 70 pairs renders 40 rows and stays fully operable: revealing the rest is
+  one action, and a reorder performed while rows are withheld loses, duplicates and reorders nothing
+  outside the drag.
 
 ---
 
@@ -338,10 +398,11 @@ user-observable behavior. All three align with existing repository standards.
 - **"Column" means "row"**: the request said each *column* can be dragged to change order. The editor
   has two fixed columns (KEY, VALUE); the orderable axis is the list of pairs, so this is read as *row*
   reordering. Column reordering is out of scope.
-- **Ordering already works in Edit Content**: the platform preserves insertion order for the Edit
-  Content Key/Value field end to end, storing the value as an ordered array specifically to defeat the
-  alphabetical re-sorting applied elsewhere. Story 1 therefore requires no persistence work; Stories 4
-  and 5 exist to bring the other two consumers up to that same guarantee.
+- **Ordering in Edit Content — assumption corrected**: this was first recorded as "already works end to
+  end, no persistence work needed". Testing during implementation disproved it for one class of key.
+  The platform does store and return the order faithfully; the loss happened in the browser, on keys
+  made only of digits. It is corrected in place rather than deleted so the original reasoning stays
+  auditable. See [Key ordering defect](#key-ordering-defect-found-during-implementation).
 - **Hidden-value semantics are preserved**: the eye affordance in the mockup carries the same persisted
   hidden flag the current toggle switch carries — it relocates and restyles the control rather than
   redefining it. Masking is a UI concern, not a security boundary; the underlying value is transmitted

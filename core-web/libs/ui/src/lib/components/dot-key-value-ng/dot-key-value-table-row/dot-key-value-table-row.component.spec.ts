@@ -227,63 +227,33 @@ describe('DotKeyValueTableRowComponent', () => {
         const mountHidden = (hidden: boolean) =>
             setProps({ showHiddenField: true, variable: { ...mockVariable, hidden } });
 
-        it('should attach the toggle to the value control, not a column of its own', () => {
-            mountHidden(false);
-            const toggle = spectator.query(byTestId('dot-key-value-visibility-toggle'));
-
-            expect(toggle).toBeTruthy();
-            expect(spectator.query(byTestId('dot-key-value-hidden-switch'))).toBeFalsy();
-            expect(toggle.closest('[data-testId="dot-key-value-editable-column"]')).toBeTruthy();
-        });
-
-        it('should keep the toggle in the same cell whether the value is masked or not', () => {
-            // The eye must not jump position when a value is hidden.
-            mountHidden(false);
-            const plainCell = spectator
-                .query(byTestId('dot-key-value-visibility-toggle'))
-                .closest('td');
-
+        it('should state that a hidden value is withheld, under a lock', () => {
             mountHidden(true);
-            const maskedCell = spectator
-                .query(byTestId('dot-key-value-visibility-toggle'))
-                .closest('td');
 
-            expect(plainCell.getAttribute('data-testId')).toBe('dot-key-value-editable-column');
-            expect(maskedCell.getAttribute('data-testId')).toBe('dot-key-value-editable-column');
-        });
-
-        it('should keep the toggle visible without hover or focus', () => {
-            mountHidden(true);
-            const toggle = spectator.query(byTestId('dot-key-value-visibility-toggle'));
-
-            // State, not just an action — so it must NOT carry the hover-reveal
-            // classes the drag handle and remove control use.
-            expect(toggle.className).not.toContain('opacity-0');
-            expect(getComputedStyle(toggle).display).not.toBe('none');
-        });
-
-        it('should show which state the value is in', () => {
-            mountHidden(true);
-            expect(
-                spectator.query(byTestId('dot-key-value-visibility-icon')).textContent.trim()
-            ).toBe('visibility_off');
-
-            mountHidden(false);
-            expect(
-                spectator.query(byTestId('dot-key-value-visibility-icon')).textContent.trim()
-            ).toBe('visibility');
-        });
-
-        it('should mask a hidden value and show a plain one as text', () => {
-            mountHidden(true);
-            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-hidden-icon')).textContent.trim()).toBe(
+                'lock'
+            );
+            expect(spectator.query(byTestId('dot-key-value-label'))).toBeTruthy();
             expect(spectator.element.textContent).not.toContain('John');
+        });
 
+        it('should keep the withheld state visible without hover or focus', () => {
+            mountHidden(true);
+            const label = spectator.query(byTestId('dot-key-value-label'));
+
+            // State, not an action — so it must NOT carry the hover-reveal classes
+            // the drag handle and remove control use.
+            expect(label.className).not.toContain('opacity-0');
+            expect(getComputedStyle(label).display).not.toBe('none');
+        });
+
+        it('should show a plain value as editable text', () => {
             mountHidden(false);
+
             expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
                 'John'
             );
-            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-label'))).toBeFalsy();
         });
 
         it('should offer no in-place editing for a hidden value', () => {
@@ -293,34 +263,26 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
         });
 
-        it('should hide a plain value when the toggle is used', () => {
-            mountHidden(false);
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+        it('should offer no visibility control on an existing row, hidden or not', () => {
+            // Visibility is settled when the pair is created and never revisited. The
+            // server sends `*****` in place of a stored secret, so a reveal would show
+            // that mask, and saving it — or re-hiding a value already masked — would
+            // overwrite the real secret with five asterisks.
+            for (const hidden of [true, false]) {
+                mountHidden(hidden);
 
-            spectator.click(byTestId('dot-key-value-visibility-toggle'));
-            spectator.detectChanges();
-
-            expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden: true }));
+                expect(spectator.query(byTestId('dot-key-value-visibility-toggle'))).toBeFalsy();
+                expect(spectator.query(byTestId('dot-key-value-hidden-switch'))).toBeFalsy();
+            }
         });
 
-        it('should reveal a hidden value again when the toggle is used', () => {
-            // Without this, hiding a value is a one-way trip and the user can
-            // never read or edit it again.
-            mountHidden(true);
-            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
-
-            spectator.click(byTestId('dot-key-value-visibility-toggle'));
-            spectator.detectChanges();
-
-            expect(saveSpy).toHaveBeenCalledWith(expect.objectContaining({ hidden: false }));
-        });
-
-        it('should render no visibility affordance at all when the consumer opts out', () => {
+        it('should render no withheld state when the consumer opts out', () => {
             setProps({ showHiddenField: false, variable: { ...mockVariable, hidden: true } });
 
-            expect(spectator.query(byTestId('dot-key-value-visibility-toggle'))).toBeFalsy();
-            // A masked row in a consumer with no eye would be a dead end (FR-024).
-            expect(spectator.query(byTestId('dot-key-value-masked-value'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-label'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent).toContain(
+                'John'
+            );
         });
     });
 });
