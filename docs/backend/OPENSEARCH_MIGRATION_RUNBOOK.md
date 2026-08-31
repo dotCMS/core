@@ -260,8 +260,23 @@ You can set it in two places, and **they are not equivalent**:
 
 | Where | Reaches | Notes |
 |---|---|---|
-| Config file / environment variable | **One node.** You must set it on every node yourself. | The usual way. |
-| The dotCMS system table (`POST /api/v1/system-table`) | **The whole cluster**, in one call. | Stored in the database. **It wins over the environment variable** — so if you ever set it here, remember that clearing it is part of your rollback. |
+| Config file / environment variable | **One node.** You must set it on every node yourself. | The usual way, and the way most containerized installs already do it. |
+| The dotCMS system table (`POST /api/v1/system-table`) | **The whole cluster**, in one call. | Stored in the database. Wins over the properties file — but **not** over a real `DOT_`-prefixed environment variable. |
+
+**Precedence, highest first:**
+
+```
+  DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE   (a real environment variable)
+    ↓  beats
+  the system table
+    ↓  beats
+  dotmarketing-config.properties  and  dotCMS's own in-memory writes
+```
+
+> **⚠ The trap.** On a node where `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` is set — which is the normal
+> containerized setup — the system table is **never consulted for this key**. Setting the phase
+> through the system table on such a node silently does nothing, and so does clearing it. Check for
+> the environment variable *before* you decide which mechanism to use. Details: [R10](#r10-the-phase-setting-and-the-restart-rule).
 
 Pick one mechanism per customer and stick to it. Mixing them is how you end up with nodes disagreeing
 about what phase they are in.
@@ -875,9 +890,17 @@ curl -su admin:<pass> -X POST https://<host>/api/v1/system-table \
   -d '{"key":"FEATURE_FLAG_OPEN_SEARCH_PHASE","value":"1"}'
 ```
 
-> **The system table wins over the configuration file and the environment variable.** If you use
-> Option B, remember that **clearing it is part of your rollback procedure** — otherwise a later
-> change to the environment variable will appear to do nothing. Do not mix the two mechanisms.
+> **Check for the environment variable before you choose Option B.** The system table wins over the
+> properties file, but a real `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` environment variable wins over the
+> system table — and on a node where it is set, the system table is never consulted for this key at
+> all. So:
+>
+> - **If any node sets `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE`, use Option A.** Option B would appear to
+>   succeed and change nothing.
+> - **If you use Option B**, remember that **clearing it is part of your rollback procedure** —
+>   otherwise a later change to the *properties file* will appear to do nothing.
+>
+> Do not mix the two mechanisms. Full precedence: [R10](#r10-the-phase-setting-and-the-restart-rule).
 
 ---
 
@@ -1532,8 +1555,15 @@ curl -su admin:<pass> -X DELETE \
   https://<host>/api/v1/system-table/FEATURE_FLAG_OPEN_SEARCH_PHASE
 ```
 
-Otherwise the system-table value keeps winning over the environment variable and your change does
-nothing.
+Otherwise the system-table value keeps winning over the properties file and your change does nothing.
+
+> **If the nodes set `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` as an environment variable, this DELETE
+> changes nothing** — the environment variable outranks the system table, and on those nodes the
+> system table was never being read for this key. The downgrade in step 2 has to be made where the
+> node actually reads the phase from, which for a containerized install means the environment
+> variable and a node restart. In Phase 2 the read fallback still covers you while you arrange that —
+> a failing OpenSearch read is re-run against Elasticsearch. In Phase 3 there is no fallback, which is
+> what makes getting the value changed the emergency.
 
 **4. Verify.** Re-read `phase.current` from each node and confirm the customer's search works.
 
@@ -1566,7 +1596,7 @@ anything is restarted — a restart can clear the evidence you need.
 | `docCount: -1` | The count could not be measured. **Not zero.** Treated as out of sync on purpose. | [R9](#r9-the-readiness-report-field-by-field) |
 | Readiness endpoint returns 403 | Missing the migration role, or not a CMS Admin. Both required. | [Step 3.1](#step-31--give-yourself-access-to-the-readiness-endpoint) |
 | `.os` indices not visible in the admin UI | Expected in Phases 0/1/2 — hidden from everyone | [Step 3.6](#step-36--confirm-the-opensearch-indices-were-created) |
-| You changed the phase and nothing happened | The system table is set and wins over your change | [R10](#r10-the-phase-setting-and-the-restart-rule) |
+| You changed the phase and nothing happened | Something higher in the precedence chain wins: a `DOT_` environment variable beats the system table, and the system table beats the properties file | [R10](#r10-the-phase-setting-and-the-restart-rule) |
 
 ---
 
@@ -2009,16 +2039,31 @@ To settle one specific write, ask for the **document** — see
 `FEATURE_FLAG_OPEN_SEARCH_PHASE` (environment: `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE`), values `0`–`3`.
 An absent or unrecognised value means Phase 0.
 
-| Where | Reach | Survives restart | Notes |
-|---|---|:---:|---|
-| Environment variable / `dotmarketing-config.properties` | **One node** | ✅ | You must set it on every node yourself. |
-| The dotCMS **system table** (`POST /api/v1/system-table`, CMS Admin) | **The whole cluster** | ✅ | Stored in the database and shared. **Wins over the environment variable.** |
-| Runtime reset by dotCMS itself | One node, in memory | ❌ | What happens on a failed startup validation. |
+| Where | Reach | Survives restart | Precedence | Notes |
+|---|---|:---:|:---:|---|
+| `DOT_FEATURE_FLAG_OPEN_SEARCH_PHASE` as a real **environment variable** | **One node** | ✅ | **1 (highest)** | The normal containerized setup. You must set it on every node yourself. |
+| The dotCMS **system table** (`POST /api/v1/system-table`, CMS Admin) | **The whole cluster** | ✅ | 2 | Stored in the database and shared. Beats the properties file — but is **skipped entirely** on a node whose environment sets the key. |
+| `dotmarketing-config.properties` | **One node** | ✅ | 3 | |
+| Runtime reset by dotCMS itself (in-memory write) | One node, in memory | ❌ | 3 | What happens on a failed startup validation. |
 
-> **The system table takes precedence.** If the phase was ever set there, that value wins — and
-> dotCMS's own emergency reset to Phase 0 becomes a no-op, because the reset writes to the in-memory
-> store while the system-table value keeps winning. **Clearing it is part of your rollback
-> procedure.** Pick one mechanism per customer and stick to it.
+**Why that order.** `MigrationPhase.current()` reads the phase with
+`Config.getIntProperty("FEATURE_FLAG_OPEN_SEARCH_PHASE", 0)`. `Config` records every `DOT_`-prefixed
+variable it found in the environment at startup, and `getIntProperty` checks that list **first**: if
+the key is in it, the environment/in-memory value is returned and the system table is **never
+queried**. Only when the key was not set in the environment does the system table get consulted, and
+only if that misses does the properties file answer.
+
+> **Two consequences that matter during an incident:**
+>
+> 1. **On a node with the environment variable set, the system table is inert for this key.** Setting
+>    the phase with `POST /api/v1/system-table` appears to succeed and changes nothing; the `DELETE`
+>    in the [emergency stop](#emergency-stop) likewise changes nothing. The "one call, all nodes"
+>    convenience of the system table only exists on nodes that do *not* set the variable.
+> 2. **Where the system table *is* in play, it makes dotCMS's own emergency reset to Phase 0 a
+>    no-op** — that reset writes to the in-memory store, which sits below the system table. Clearing
+>    the system-table entry is then part of your rollback procedure.
+>
+> Pick one mechanism per customer, check the environment first, and stick to it.
 
 ### The restart rule
 

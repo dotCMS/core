@@ -281,7 +281,7 @@ Or in the UI: **Admin → System → Index**.
 > 3. Assign that role to the dotCMS user you test with (who must also be a CMS Admin).
 >
 > Anyone missing either condition gets a 403. See
-> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) §16 for how to read the report.
+> [`OPENSEARCH_MIGRATION_RUNBOOK.md`](OPENSEARCH_MIGRATION_RUNBOOK.md) R9 for how to read the report.
 
 **Which phase did the system end up in?**
 - **Startup log (most reliable):** find the line stating the migration phase. If the automatic shutdown
@@ -478,10 +478,10 @@ Total: $ss.totalResults
   etc.; each result exposes `getTitle()`, `getUrl()`, `getHost()`, `getMimeType()`, `getScore()`,
   `getHighlights()`, `getMap()`. Facets come from `getAggregations(indexName, query)` (the older
   `getFacets(...)` is deprecated).
-- **This is where the Site Search operational edge in §11 becomes visible:** if the target-engine twin
+- **This is where the Site Search operational edge in §11 becomes visible:** if the target-engine counterpart
   was auto-created with a *dynamic* mapping (an incremental crawl over a Phase-0 index), term facets on
   fields like `mimeType` / `host` / `url` come back wrong or empty. Run the facet snippet against a
-  properly full-crawled index vs a dynamically-created twin to reproduce it.
+  properly full-crawled index vs a dynamically-created counterpart to reproduce it.
 
 > **Where the working example templates live.** The classic Site Search demo templates (`ss-aggs.vtl`,
 > `ss-facets.vtl`, `search-results.vtl`) are **not** in this repo — they ship inside the **dotCMS demo
@@ -618,16 +618,16 @@ ordinary content publishing. That has consequences during migration:
 
 - **Changing the phase does not create mirror indexes retroactively.** A Site Search index created in
   Phase 0 lives only on the source engine; switching to Phase 1 does **not** create its target-engine
-  twin. The twin appears only when a **full crawl runs while in a dual-write phase (1 or 2)**.
+  counterpart. It appears only when a **full crawl runs while in a dual-write phase (1 or 2)**.
 - **Before advancing a phase, let the scheduled crawls run at least once in the current phase.** The rule
   of thumb is *"transition when every Site Search crawl has run at least once in the current phase"* — not
-  merely *"the flag is set to N"*. Otherwise indexes from the previous phase have no target-engine twin
-  yet, and search in the new phase falls back or hits an incorrectly-mapped twin.
+  merely *"the flag is set to N"*. Otherwise indexes from the previous phase have no target-engine counterpart
+  yet, and search in the new phase falls back or hits an incorrectly-mapped counterpart.
 - **After moving to Phase 1, run one full (not incremental) crawl per index before trusting incrementals.**
-  A full crawl builds the target-engine twin with the correct field mapping. An incremental crawl reuses
-  the existing index and can auto-create a target-engine twin with the *wrong* (dynamic) mapping — which
+  A full crawl builds the target-engine counterpart with the correct field mapping. An incremental crawl reuses
+  the existing index and can auto-create a target-engine counterpart with the *wrong* (dynamic) mapping — which
   silently breaks term aggregations / facets.
-- **Verify the twins match:** `GET _cat/indices/*sitesearch*?v` on both engines should agree on name and
+- **Verify the counterparts match:** `GET _cat/indices/*sitesearch*?v` on both engines should agree on name and
   document count.
 
 ### Rollback during dual-write leaves the target ahead (drift)
