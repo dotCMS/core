@@ -11,6 +11,7 @@ import {
 import { FormsModule } from '@angular/forms';
 
 import { AccordionModule } from 'primeng/accordion';
+import { MessageService } from 'primeng/api';
 import { BadgeModule } from 'primeng/badge';
 import { ButtonModule } from 'primeng/button';
 import { MessageModule } from 'primeng/message';
@@ -20,16 +21,12 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { finalize, map, take } from 'rxjs/operators';
 
-import {
-    DotMessageService,
-    DotWorkflowsActionsService,
-    PushPublishService
-} from '@dotcms/data-access';
+import { DotMessageService, DotWorkflowsActionsService } from '@dotcms/data-access';
 import {
     DotActionCenterScheme,
     DotActionCenterWorkflowAction,
     DotBundle,
-    DotCMSContentlet
+    DotContentDriveItem
 } from '@dotcms/dotcms-models';
 import {
     DotMessagePipe,
@@ -46,15 +43,18 @@ import {
 import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
+import { ACTION_CENTER_FOLDER_NOTICE_PT } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
     DotActionCenterQuickAction,
     PUSH_PUBLISH_ACTION_ID,
+    REFRESH_ACTION_ID,
     DotActionInputKind,
     eligibleContentlets,
     excludeFolders,
     getQuickActions,
+    supportsFolders,
     groupByContentType,
     isLockedByAnotherUser,
     mergeActionCenterSchemes,
@@ -79,9 +79,10 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
  * Two sections:
  *
  * 1. **Quick Actions** — the bulk operations the old search toolbar offered outside its workflow
- *    dropdown: Lock, Unlock, Add to Bundle, and placeholders for Push Publish and Refresh. Lock and
+ *    dropdown: Lock, Unlock, Add to Bundle, Refresh, and a placeholder for Push Publish. Lock and
  *    Unlock fire over the whole eligible selection in one request via
- *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`. Counts are derived client-side
+ *    `POST /api/v1/workflow/actions/default/fire/{systemAction}`; Refresh goes to its own job-backed
+ *    `POST /api/v1/content/_bulkrefresh`, and its completion is pushed over the websocket. Counts are derived client-side
  *    from row state (see `getQuickActions`).
  * 2. **Workflow Actions** — one collapsible panel per workflow scheme, from
  *    `POST /api/v1/workflow/contentlet/actions/bulk`, queried **once per content type** in the
@@ -169,8 +170,12 @@ type DotActionCenterConfigureKind = DotActionInputKind | 'bundle';
 export class DotContentDriveActionCenterComponent implements OnInit {
     readonly #store = inject(DotContentDriveStore);
     readonly #dotMessageService = inject(DotMessageService);
+    /**
+     * Resolves to the shell's instance, so a toast added here survives this dialog closing immediately
+     * afterwards.
+     */
+    readonly #messageService = inject(MessageService);
     readonly #workflowsActionsService = inject(DotWorkflowsActionsService);
-    readonly #pushPublishService = inject(PushPublishService);
 
     protected readonly $selectedItems = this.#store.selectedItems;
 
@@ -246,11 +251,18 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /**
      * Whether any push publish environment is reachable by this user's role.
      *
-     * `undefined` until the lookup lands, which keeps the Push Publish row disabled in the meantime
-     * rather than enabling it and then retracting. A failed lookup settles on `false` for the same
-     * reason: offering a push with nowhere to send it is worse than one disabled row.
+     * Read from the store, resolved once on portlet init, for the same reason the admin flag is: the
+     * folder context menu gates on this too, and two independent lookups would mean two copies of
+     * the three-state handling to keep in step.
+     *
+     * `undefined` means the lookup has not landed and reads as "disabled", so the row never enables
+     * and then retracts. A failed lookup settles on `false` for the same reason: offering a push
+     * with nowhere to send it is worse than one disabled row.
      */
-    protected readonly $hasPushPublishEnvironments = signal<boolean | undefined>(undefined);
+    protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
+
+    /** @see ACTION_CENTER_FOLDER_NOTICE_PT */
+    protected readonly folderNoticePt = ACTION_CENTER_FOLDER_NOTICE_PT;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -457,7 +469,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * Separate from the grid selection on purpose: unchecking a row here must not deselect it in the
      * grid behind the dialog.
      */
-    protected readonly $includedItems = signal<DotCMSContentlet[]>([]);
+    protected readonly $includedItems = signal<DotContentDriveItem[]>([]);
     /**
      * The quick action drilled into, or `null` when the preview belongs to a workflow action.
      *
@@ -469,19 +481,26 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     /** Contentlets in the selection — folders are ignored by every bulk endpoint. */
     protected readonly $contentlets = computed(() => excludeFolders(this.$selectedItems()));
     protected readonly $contentletCount = computed(() => this.$contentlets().length);
-    /** Number of folders silently excluded, surfaced as a hint so the count is not confusing. */
-    protected readonly $ignoredFolderCount = computed(
+    /**
+     * Folders in the selection, surfaced as a hint so the per-action counts are not confusing.
+     *
+     * They are no longer excluded outright: Add to Bundle and Push Publish take a folder identifier,
+     * and the rest of the actions drop themselves from the list instead. The notice says which,
+     * rather than claiming folders are ignored.
+     */
+    protected readonly $selectedFolderCount = computed(
         () => this.$selectedItems().length - this.$contentletCount()
     );
     protected readonly $quickActions = computed<DotActionCenterQuickAction[]>(() =>
-        // Fed the already-filtered contentlets rather than the raw selection, so folder exclusion is
-        // derived once here instead of again inside the util.
+        // Fed the whole selection: folder exclusion is per action now, and `getQuickActions` owns
+        // that decision from the registry. Pre-filtering here would hide folders from the two
+        // actions that accept them.
         //
         // The admin flag comes from the store, resolved once on portlet init, rather than being
         // fetched when this dialog opens: reopening the Action Center is cheap and common, and a
         // per-open request would leave the first render of every open warning as a non-admin until
         // it answered. Read as a signal so a late resolution still recomputes the rows.
-        getQuickActions(this.$contentlets(), {
+        getQuickActions(this.$selectedItems(), {
             isAdmin: this.#store.currentUserIsAdmin(),
             hasPushPublishEnvironments: this.$hasPushPublishEnvironments()
         })
@@ -527,7 +546,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     });
 
     /**
-     * The contentlets the selected action can run on — the preview's rows.
+     * The items the selected action can run on — the preview's rows.
      *
      * Narrowed by content type so an action from one scheme never lists contentlets of a type that
      * scheme is not assigned to.
@@ -538,13 +557,44 @@ export class DotContentDriveActionCenterComponent implements OnInit {
         if (quickAction) {
             // Filtered against the action's own `eligibleInodes` rather than re-deriving the
             // predicate, so the rows shown are exactly the set the row's count was built from.
+            // That key is identifiers for the folder-capable actions and inodes for the rest, so the
+            // row's own id has to be read the same way — matching a folder on `inode` would drop it
+            // from the preview of the very action it is about to be fired on.
             const eligible = new Set(quickAction.eligibleInodes);
+            // Resolved once: it is a registry lookup with the same answer for every row, and the
+            // `filter` below would otherwise repeat it per item.
+            const takesFolders = supportsFolders(quickAction.id);
+            const pool = takesFolders ? this.$selectedItems() : this.$contentlets();
 
-            return this.$contentlets().filter((item) => eligible.has(item.inode));
+            return this.#inTableOrder(
+                pool.filter((item) => eligible.has(takesFolders ? item.identifier : item.inode))
+            );
         }
 
-        return eligibleContentlets(this.$selectedAction(), this.$contentlets());
+        return this.#inTableOrder(eligibleContentlets(this.$selectedAction(), this.$contentlets()));
     });
+
+    /**
+     * Reorders preview rows to match the table behind the dialog.
+     *
+     * Selection is stored exactly as PrimeNG hands it over (`setSelectedItems`), which is the order
+     * rows were *ticked*, not the order they are listed in. A preview built straight off it comes
+     * out shuffled relative to the grid the user was just reading, which makes a confirmation list
+     * hard to check.
+     *
+     * Keyed on `inode`, which every row carries — folders included, since the drive-search response
+     * is backfilled at the service boundary. Anything not found in the current page keeps its
+     * relative position at the end rather than being dropped.
+     */
+    #inTableOrder<T extends DotContentDriveItem>(items: T[]): T[] {
+        const order = new Map(this.#store.items().map((item, index) => [item.inode, index]));
+
+        return [...items].sort(
+            (a, b) =>
+                (order.get(a.inode) ?? Number.MAX_SAFE_INTEGER) -
+                (order.get(b.inode) ?? Number.MAX_SAFE_INTEGER)
+        );
+    }
 
     /** Number of rows the preview lists for the selected action. */
     protected readonly $previewCount = computed(() => this.$previewItems().length);
@@ -562,36 +612,14 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     protected readonly $lockedByOthers = computed(() => {
         const context = { isAdmin: this.#store.currentUserIsAdmin() };
 
-        return this.$previewItems()
+        // Narrowed first: a folder carries no lock state, and the predicate reads it.
+        return excludeFolders(this.$previewItems())
             .filter((item) => isLockedByAnotherUser(item, context))
             .map((item) => item.inode);
     });
 
     ngOnInit(): void {
         this.loadWorkflowActions();
-        this.loadPushPublishEnvironments();
-    }
-
-    /**
-     * Resolves whether Push Publish has anywhere to send to.
-     *
-     * Runs beside the workflow lookup rather than after it: the two answer different questions and
-     * neither needs the other, so chaining them would only delay the quick actions behind a request
-     * they do not depend on.
-     *
-     * A failure settles on "none", which disables the row. The alternative — treating an unreachable
-     * lookup as "probably fine" — offers a push that has nowhere to go and fails at the servlet with
-     * a message the user cannot act on.
-     */
-    private loadPushPublishEnvironments(): void {
-        this.#pushPublishService
-            .getEnvironments()
-            .pipe(take(1))
-            .subscribe({
-                next: (environments) =>
-                    this.$hasPushPublishEnvironments.set(environments.length > 0),
-                error: () => this.$hasPushPublishEnvironments.set(false)
-            });
     }
 
     /**
@@ -626,6 +654,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 : 'content-drive.action-center.no-environments';
         }
 
+        if (quickAction.missingAdminRole) {
+            // Names the requirement rather than the refusal: the row is out of reach because of who
+            // is asking, and nothing about the selection will change that.
+            return 'content-drive.action-center.requires-admin';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -639,9 +673,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // Guarded here as well as by the disabled row: a placeholder has no preview to open, and a
-        // push with no environment has nowhere to go, so a stray call must not reach the preview.
-        if (!quickAction.count || quickAction.comingSoon || quickAction.missingEnvironments) {
+        // Guarded here as well as by the disabled row: a placeholder has no preview to open, a push
+        // with no environment has nowhere to go, and a reindex the endpoint would refuse should not
+        // get as far as a confirmation screen. A stray call must not reach the preview.
+        if (
+            !quickAction.count ||
+            quickAction.comingSoon ||
+            quickAction.missingEnvironments ||
+            quickAction.missingAdminRole
+        ) {
             return;
         }
 
@@ -710,6 +750,32 @@ export class DotContentDriveActionCenterComponent implements OnInit {
             return;
         }
 
+        // Refresh speaks inodes like the workflow quick actions, but goes to its own job-backed
+        // endpoint rather than the system-action fire, so it branches here rather than falling through.
+        if (quickAction.id === REFRESH_ACTION_ID) {
+            const actionName = this.#dotMessageService.get(quickAction.name);
+            this.#store.executeRefresh(actionName, inodes);
+
+            // The only feedback for a reindex until it finishes. It gets no "Applying ..." indicator,
+            // because it runs for minutes and the endpoint reports no progress — so saying up front
+            // that it is backgrounded is the honest substitute, and it is why the Action Center is left
+            // usable rather than locked.
+            this.#messageService.add({
+                severity: 'info',
+                summary: this.#dotMessageService.get(
+                    'content-drive.action-center.toast.reindex-started'
+                ),
+                detail: this.#dotMessageService.get(
+                    'content-drive.action-center.toast.reindex-started-detail',
+                    actionName,
+                    String(inodes.length)
+                )
+            });
+            this.handOffToToolbar();
+
+            return;
+        }
+
         this.#store.executeQuickAction(
             quickAction.id,
             this.#dotMessageService.get(quickAction.name),
@@ -774,12 +840,21 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * it is modal, so it dims the toolbar that is reporting the run, and it blocks the grid while
      * work happens that no longer needs the dialog to be alive. Closing here is what makes the
      * toolbar indicator observable — otherwise the only window to see it is the milliseconds between
-     * the user manually closing the dialog and the request settling.
+     * the user manually closing the dialog and the request settling. Refresh is the exception: it shows
+     * no indicator at all, having already said by toast that it runs in the background.
      *
      * Counts are also stale from this point on: the contentlets are moving to a new step, so the
      * numbers this dialog is showing no longer hold.
      */
     private handOffToToolbar(): void {
+        // The selection has served its purpose the moment an action is fired, and leaving the rows
+        // ticked invited firing a second action over content already being changed. Cleared here rather
+        // than after the run settles, because the settle path never runs on an error or a timeout — and
+        // for a reindex it is minutes away, so the boxes would sit checked for the whole job.
+        //
+        // Deliberately only on hand-off: dismissing the dialog with X, ESC or the mask keeps the
+        // selection, because the user may still be building it.
+        this.#store.setSelectedItems([]);
         this.#store.closeDialog();
     }
 
@@ -907,7 +982,7 @@ export class DotContentDriveActionCenterComponent implements OnInit {
     }
 
     /** Tracks the preview's checked rows, keeping the dialog header's count in step. */
-    protected onIncludedItemsChange(items: DotCMSContentlet[]): void {
+    protected onIncludedItemsChange(items: DotContentDriveItem[]): void {
         this.$includedItems.set(items);
 
         const quickAction = this.$pendingQuickAction();

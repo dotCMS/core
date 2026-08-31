@@ -65,6 +65,15 @@ export const DEFAULT_TREE_EXPANDED = true;
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
 
+/**
+ * The site root as a browsable path.
+ *
+ * Distinct from {@link DEFAULT_PATH}: that is the *absence* of a path in the URL, while this is an
+ * explicit "go to the root" the drive can be sent to — used when the folder being browsed stops
+ * existing.
+ */
+export const ROOT_PATH = '/';
+
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
     hasMoreFolders: true,
@@ -213,6 +222,40 @@ export const TITLE_FIELD_VARIABLE = 'title';
 /** Separator joining multi-select values and date-range `from,to` in the flat filter string. */
 export const USER_SEARCHABLE_VALUE_SEPARATOR = ',';
 
+/**
+ * Filter-bag key backing the Status filter (Archived / Unpublished / Locked).
+ *
+ * Lives in the flat `filters` bag rather than its own query param so it inherits every navigation
+ * mechanism the other filters already use: deep link, reload, folder browsing, browser
+ * Back/Forward, and the legacy-editor `CD_` round-trip. Giving it a dedicated param would mean
+ * bespoke handling in all four places.
+ *
+ * Unlike `languageId` and {@link SHARED_ASSETS_FILTER_KEY}, it is deliberately NOT seeded by
+ * `withFilterDefaults` — an empty selection genuinely means "no status filtering", so leaving it
+ * unseeded makes "Clear all" appear and clear correctly with no extra code.
+ */
+export const STATUS_FILTER_KEY = 'status';
+
+/** Content states the Status filter offers. Values match the backend `ContentStatus` enum. */
+export const CONTENT_STATUS = {
+    ARCHIVED: 'ARCHIVED',
+    UNPUBLISHED: 'UNPUBLISHED',
+    LOCKED: 'LOCKED'
+} as const;
+
+/**
+ * Status options in display order. Archived leads: it is the capability people currently leave
+ * Content Drive to get.
+ *
+ * Selections combine with OR — checking more boxes returns more content, consistent with the
+ * content-type and locale filters beside it.
+ */
+export const STATUS_FILTER_OPTIONS: { value: string; labelKey: string }[] = [
+    { value: CONTENT_STATUS.ARCHIVED, labelKey: 'content-drive.status-filter.archived' },
+    { value: CONTENT_STATUS.UNPUBLISHED, labelKey: 'content-drive.status-filter.unpublished' },
+    { value: CONTENT_STATUS.LOCKED, labelKey: 'content-drive.status-filter.locked' }
+];
+
 export const PANEL_SCROLL_HEIGHT = '25rem';
 
 // Dialog type
@@ -256,6 +299,27 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     'min-height': '0',
     overflow: 'hidden',
     padding: '0'
+} as const;
+
+/**
+ * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
+ * spans the dialog edge to edge instead of sitting inset like the sections around it.
+ *
+ * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
+ * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
+ * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
+ * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
+ *
+ * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
+ * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
+ * at equal specificity it lands after Tailwind's and wins.
+ *
+ * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
+ * the dialog header and the sections below it.
+ */
+export const ACTION_CENTER_FOLDER_NOTICE_PT = {
+    root: { class: '-mx-6 rounded-none!' },
+    content: { class: 'px-6!' }
 } as const;
 
 export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];

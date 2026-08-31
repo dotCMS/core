@@ -950,14 +950,29 @@ public class ContentletAjax {
 
 									fieldValueStr = fieldValueStr.replaceAll(specialCharsToEscape, "\\\\$1");
 
-							        if(fieldName.equals("languageId") || fieldValueStr.contains("-")){
+							        if("catchall".equals(fieldName)) {
+										// Mandatory gate: match either a catchall token PREFIX (fast, existing
+										// behavior) OR the raw title via wildcard. Unlike catchall (which
+										// aggregates every field of the document), title_dotraw is scoped to a
+										// single field, so this alternative recovers mid-token and
+										// exact-full-value matches -- e.g. a file named "IMG_0004.jpeg"
+										// tokenizes to "img_0004"+"jpeg", so "0004" or a full-name search never
+										// satisfies a catchall-only prefix gate -- without reintroducing an
+										// unscoped, whole-document wildcard like the old broad catchall:*value*.
+										// Boosts are deliberately asymmetric: catchall (a real token-prefix hit)
+										// outranks title_dotraw (a raw substring hit that can land anywhere,
+										// including mid-word). Mirrors GlobalSearchAttributeStrategy, which is
+										// the equivalent gate for the new Content Search / Content Drive path.
+										luceneQuery.append("+(catchall:" + fieldValueStr + "*^10 OR title_dotraw:*"
+												+ fieldValueStr + "*^2) ");
+									} else if(fieldName.equals("languageId") || fieldValueStr.contains("-")){
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + " ");
 									}else{
 										luceneQuery.append("+" + fieldName +":" + fieldValueStr + "* ");
 									}
-							        
+
 							        if("catchall".equals(fieldName)) {
-							           
+
 							            luceneQuery.append(" title:'" + fieldValueStr + "'^15 ");
                                         final String[] titleSplit = fieldValueStr.split("[,|\\s+]");
                                         if (titleSplit.length > 1) {
@@ -965,7 +980,6 @@ public class ContentletAjax {
                                                 luceneQuery.append(" title:" + term + "^5 ");
                                             }
                                         }
-							            luceneQuery.append(" title_dotraw:*" + fieldValueStr + "*^5 ");
 							        }
 							        
 							        

@@ -12,22 +12,31 @@ import { Editor } from '@tiptap/core';
 import { DotMessageService, DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotGeneratedAIImage, DotSite } from '@dotcms/dotcms-models';
 import {
+    ASSET_PICKER_LAUNCHER,
     ASSET_PICKER_TITLE_KEYS,
     DotAIImagePromptComponent,
-    DotAssetPickerComponent,
     DotAssetPickerMediaMode,
-    buildAssetPickerConfig,
-    buildAssetPickerDialogConfig
+    DotBrowserSelectorComponent
 } from '@dotcms/ui';
 
 import { AiContentDialogComponent } from '../components/ai-content-dialog/ai-content-dialog.component';
-import { OVERLAY_ABOVE_FULLSCREEN_Z_INDEX } from '../config.utils';
+import { OVERLAY_ABOVE_FULLSCREEN_Z_INDEX, buildBrowserSelectorConfig } from '../config.utils';
 import {
     insertDotAudioFromContentlet,
     insertDotImageFromContentlet,
     insertDotVideoFromContentlet
 } from '../editor.utils';
 import { EditorStore } from '../store/editor.store';
+
+/**
+ * Dialog header per media mode for the legacy `DotBrowserSelectorComponent`, which — unlike the new
+ * picker — has no header of its own and takes its title from PrimeNG's chrome.
+ */
+const LEGACY_PICKER_TITLE_KEYS: Record<DotAssetPickerMediaMode, string> = {
+    image: 'dot.block-editor.extension.image.dotcms.dialog-title',
+    video: 'dot.block-editor.extension.video.dotcms.dialog-title',
+    audio: 'dot.block-editor.extension.audio.dotcms.dialog-title'
+};
 
 /** Inserts the picked contentlet as the node the media mode corresponds to. */
 const INSERT_BY_MODE: Record<
@@ -58,6 +67,13 @@ export class EditorModalService implements OnDestroy {
     private readonly destroyRef = inject(DestroyRef);
 
     /**
+     * Present only in the Angular Edit Content, which is the sole host the new AssetPicker was built
+     * for. In the legacy Dojo editor — where the Story Block renders as the `<dotcms-block-editor>`
+     * custom element — it is absent and the pickers fall back to `DotBrowserSelectorComponent`.
+     */
+    private readonly assetPickerLauncher = inject(ASSET_PICKER_LAUNCHER, { optional: true });
+
+    /**
      * Live picker refs by media mode; an entry is cleared when its dialog closes or the service
      * tears down.
      */
@@ -77,9 +93,10 @@ export class EditorModalService implements OnDestroy {
      * mounted, so three pickers asking separately would be three requests for one answer.
      * `refCount: false` keeps the value once the first subscriber has gone away.
      *
-     * `defer` so nothing is requested until a picker is actually opened — most editing sessions never
-     * open one — and so a failed lookup is retried on the next attempt instead of being cached as a
-     * permanent failure (`shareReplay` resets itself on error).
+     * `defer` so nothing is requested until the new picker is actually opened — most editing sessions
+     * never open one, and the legacy picker never needs a site at all — and so a failed lookup is
+     * retried on the next attempt instead of being cached as a permanent failure (`shareReplay`
+     * resets itself on error).
      */
     private readonly currentSite$: Observable<DotSite> = defer(() =>
         this.siteService.getCurrentSite()
@@ -98,43 +115,53 @@ export class EditorModalService implements OnDestroy {
     private aiContentDialogRef: DynamicDialogRef | null = null;
 
     /**
-     * Opens {@link DotAssetPickerComponent} scoped to image-mime contentlets. On accept, inserts the
-     * picked contentlet as a `dotImage` node at the editor's current selection.
+     * Opens the picker scoped to image-mime contentlets. On accept, inserts the picked contentlet as
+     * a `dotImage` node at the editor's current selection.
      */
     openImagePicker(editor: Editor): void {
         this.openAssetPicker(editor, 'image');
     }
 
     /**
-     * Opens {@link DotAssetPickerComponent} scoped to video-mime contentlets. On accept, inserts the
-     * picked contentlet as a `dotVideo` node at the editor's current selection.
+     * Opens the picker scoped to video-mime contentlets. On accept, inserts the picked contentlet as
+     * a `dotVideo` node at the editor's current selection.
      */
     openVideoPicker(editor: Editor): void {
         this.openAssetPicker(editor, 'video');
     }
 
     /**
-     * Opens {@link DotAssetPickerComponent} scoped to audio-mime contentlets. On accept, inserts the
-     * picked contentlet as a `dotAudio` node at the editor's current selection.
+     * Opens the picker scoped to audio-mime contentlets. On accept, inserts the picked contentlet as
+     * a `dotAudio` node at the editor's current selection.
      */
     openAudioPicker(editor: Editor): void {
         this.openAssetPicker(editor, 'audio');
     }
 
     /**
-     * The one asset-picker flow, shared by image, video and audio — the same picker the Edit Content
-     * File and Image fields open, so browsing for an asset looks the same everywhere.
+     * The one asset-picker flow, shared by image, video and audio.
      *
-     * The site lookup makes this asynchronous, which is the only real wrinkle: the picker cannot be
-     * configured without a `DotSite`, and there is nowhere in the editor that already holds one. A
-     * mode with a lookup in flight or a dialog already open is skipped, so repeated clicks can never
-     * stack two pickers.
+     * *Which* picker opens is the host's call, not this service's: with {@link assetPickerLauncher}
+     * present (the Angular Edit Content) it is `DotAssetPickerComponent`, the same picker the File
+     * and Image fields open; without it (the legacy Dojo editor, where the Story Block is a custom
+     * element) it is `DotBrowserSelectorComponent`, which is what this entry point opened before the
+     * new picker existed. The old editor was never designed for the new one.
      *
-     * If the site cannot be resolved, nothing opens. A picker that can't browse anything is worse
-     * than no picker, and there is nothing useful to say about it beyond that.
+     * Only the new picker is asynchronous, and that is the one real wrinkle: it cannot be configured
+     * without a `DotSite` and there is nowhere in the editor that already holds one. A mode with a
+     * lookup in flight or a dialog already open is skipped, so repeated clicks can never stack two
+     * pickers on either path. If the site cannot be resolved, nothing opens — a picker that can't
+     * browse anything is worse than no picker, and there is nothing useful to say about it beyond
+     * that. The legacy path needs no site at all, so it never pays for the lookup.
      */
     private openAssetPicker(editor: Editor, mode: DotAssetPickerMediaMode): void {
         if (this.pickerRefs.has(mode) || this.pickerPending.has(mode)) return;
+
+        if (!this.assetPickerLauncher) {
+            this.mountLegacyPicker(editor, mode);
+
+            return;
+        }
 
         this.pickerPending.add(mode);
 
@@ -149,22 +176,51 @@ export class EditorModalService implements OnDestroy {
         });
     }
 
-    /** Opens the dialog for a resolved site. Split out so the lookup above stays readable. */
+    /** Opens the new picker for a resolved site. Split out so the lookup above stays readable. */
     private mountAssetPicker(editor: Editor, mode: DotAssetPickerMediaMode, site: DotSite): void {
-        const ref = this.dialogService.open(
-            DotAssetPickerComponent,
-            buildAssetPickerDialogConfig(
-                buildAssetPickerConfig({
-                    mode,
-                    site,
-                    title: this.dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
-                    languageId: String(this.editorStore.languageId())
-                }),
-                // The fullscreen editor shell's `z-[9998]` backdrop would otherwise cover the modal.
-                { baseZIndex: OVERLAY_ABOVE_FULLSCREEN_Z_INDEX }
-            )
+        const ref = this.assetPickerLauncher.open(
+            // The launcher borrows this service's `DialogService` so the picker stays scoped to this
+            // editor instance — see `ASSET_PICKER_LAUNCHER`.
+            this.dialogService,
+            {
+                mode,
+                site,
+                title: this.dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
+                languageId: String(this.editorStore.languageId())
+            },
+            // The fullscreen editor shell's `z-[9998]` backdrop would otherwise cover the modal.
+            { baseZIndex: OVERLAY_ABOVE_FULLSCREEN_Z_INDEX }
         );
 
+        this.trackPicker(editor, mode, ref);
+    }
+
+    /**
+     * Opens the pre-AssetPicker browser selector — the picker the legacy Dojo editor has always
+     * shown. Synchronous, because it browses without a `DotSite`.
+     */
+    private mountLegacyPicker(editor: Editor, mode: DotAssetPickerMediaMode): void {
+        const ref = this.dialogService.open(
+            DotBrowserSelectorComponent,
+            buildBrowserSelectorConfig({
+                header: this.dotMessageService.get(LEGACY_PICKER_TITLE_KEYS[mode]),
+                // The selector takes bare mime *prefixes*, unlike the new picker's `image/*` globs.
+                mimeTypes: [mode]
+            })
+        );
+
+        this.trackPicker(editor, mode, ref);
+    }
+
+    /**
+     * Holds the live ref for `mode` and inserts whatever the dialog closes with. Shared by both
+     * pickers: they differ in what the user browses, not in what a selection means.
+     */
+    private trackPicker(
+        editor: Editor,
+        mode: DotAssetPickerMediaMode,
+        ref: DynamicDialogRef
+    ): void {
         this.pickerRefs.set(mode, ref);
 
         ref.onClose.subscribe((contentlet?: DotCMSContentlet) => {

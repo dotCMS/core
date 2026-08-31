@@ -23,7 +23,8 @@ import {
     DotCMSContentTypeField,
     DotContentDriveItem,
     DotContentDriveSearchRequest,
-    FeaturedFlags
+    FeaturedFlags,
+    PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { GlobalStore, withFlags } from '@dotcms/store';
 
@@ -31,7 +32,9 @@ import { withActionExecution } from './features/action-execution/withActionExecu
 import { withContextMenu } from './features/context-menu/withContextMenu';
 import { withDialog } from './features/dialog/withDialog';
 import { withDragging } from './features/dragging/withDragging';
+import { withPushPublishEnvironments } from './features/push-publish-environments/withPushPublishEnvironments';
 import { withSidebar } from './features/sidebar/withSidebar';
+import { withSitePermissions } from './features/site-permissions/withSitePermissions';
 
 import {
     DEFAULT_PAGE,
@@ -152,12 +155,27 @@ export const DotContentDriveStore = signalStore(
                             folderCursor: page.folderCursor ?? 0,
                             maxResults: paginationSignal?.limit,
                             sortBy: sort()?.field + ':' + sort()?.order,
-                            archived: false,
+                            // Sent only when non-empty: an absent key leaves the request
+                            // byte-identical to one that never mentioned status, which is what
+                            // keeps the unfiltered drive exactly as it was. The `archived: false`
+                            // pin that used to sit here is gone — the endpoint already defaults it,
+                            // and pinning it would contradict an Archived selection.
+                            status: filters()?.status?.length ? filters()?.status : undefined,
                             showFolders:
                                 page.hasMoreFolders &&
                                 !filters()?.baseType?.length &&
                                 !filters()?.contentType?.length &&
                                 !filters()?.workflow?.length &&
+                                // Folders carry no status, so any status selection hides them.
+                                //
+                                // This rule lives HERE, not in the endpoint. `POST /drive/search`
+                                // honours whatever `showFolders` it is sent — deliberately, so the
+                                // response always matches the request and the folder cursors never
+                                // describe a query the caller did not make. Keeping the policy on
+                                // the client also means that if we ever add a control for folder
+                                // visibility, honouring it is a change to this line and nothing
+                                // else: no backend refactor, no API contract change.
+                                !filters()?.status?.length &&
                                 // A field-based filter narrows to content, so hide folders too —
                                 // consistent with the other filters above.
                                 !userSearchable
@@ -629,5 +647,45 @@ export const DotContentDriveStore = signalStore(
     withDialog(),
     withSidebar(),
     withDragging(),
-    withActionExecution()
+    withActionExecution(),
+    withPushPublishEnvironments(),
+    withSitePermissions(),
+    withComputed(({ selectedNode, siteCanAddChildren }) => ({
+        /**
+         * Whether the browsed folder accepts new children.
+         *
+         * A new folder needs CAN_ADD_CHILDREN on the parent (`FolderAPIImpl:673`) and moving a
+         * contentlet needs it on the destination (`ESContentletAPIImpl:607`). An **upload does not**:
+         * the contentlet checkin path never checks it, so that one is gated here for consistency
+         * rather than as a preview of a refusal — otherwise uploading would quietly allow what
+         * creating a folder in the same place forbids.
+         *
+         * Computed here rather than in each consumer because three surfaces gate on it — the New
+         * menu, the Upload button and the drop zone — and three copies of the folder-then-site
+         * fallback would be three chances to disagree.
+         *
+         * A node with no permissions is the site root, whose parent is the host rather than a
+         * folder; `siteCanAddChildren` answers that case. Both unknowns read as allowed: a lookup
+         * in flight, and an instance too old to report the field. Starting disabled would flicker
+         * the affordances off and on for the common case, and the server refuses the write anyway.
+         */
+        $canAddChildren: computed(() => {
+            const permissions = (selectedNode()?.data as { permissions?: string[] } | undefined)
+                ?.permissions;
+
+            if (!permissions?.length) {
+                return siteCanAddChildren() !== false;
+            }
+
+            return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
+        })
+    })),
+    withHooks((store) => ({
+        onInit() {
+            // Fed the signal rather than called on each site change: `rxMethod` re-runs on every
+            // emission and `switchMap` drops the previous site's in-flight answer, so switching
+            // sites quickly can never settle the gate with the wrong site's result.
+            store.loadSitePermissions(store.currentSite);
+        }
+    }))
 );
