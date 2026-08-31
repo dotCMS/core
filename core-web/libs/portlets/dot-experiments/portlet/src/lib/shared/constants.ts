@@ -232,23 +232,18 @@ export const GOAL_TYPES_WITH_CONDITIONS: readonly GOAL_TYPES[] = [
     GOAL_TYPES.URL_PARAMETER
 ];
 
-/** Same proportions the other consumers of the shared browser open it at. */
-export const SELECT_PAGE_DIALOG_WIDTH = '90%';
-export const SELECT_PAGE_DIALOG_MAX_WIDTH = '1040px';
-
 /**
- * What the shared site browser is asked to list: pages, and only pages. An experiment runs on one, so
- * links, files, assets and folders are noise — and with files and assets both off the browser drops
- * its upload button, which would promise something a page picker cannot do.
+ * How the AssetPicker browses when it is opened to choose the page an experiment runs on.
+ *
+ * Only what the picker's browse options can say: what the list may *contain* is settled by
+ * `allowedBaseTypes`, which narrows it to pages. Folders and menu links are turned off because an
+ * experiment runs on a page, and neither of those can be returned as one.
  *
  * `showWorking` keeps unpublished pages in: an experiment can be configured against a draft, and the
  * old screen listed them too.
  */
 export const SELECT_PAGE_BROWSER_PARAMS = {
-    showPages: true,
     showFolders: false,
-    showFiles: false,
-    showDotAssets: false,
     showLinks: false,
     showWorking: true,
     showArchived: false,

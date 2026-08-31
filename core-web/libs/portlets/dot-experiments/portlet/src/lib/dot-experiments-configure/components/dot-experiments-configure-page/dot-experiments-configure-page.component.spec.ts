@@ -11,14 +11,16 @@ import { DotMessageService } from '@dotcms/data-access';
 import {
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotExperiment,
     DotExperimentStatus,
+    DotSite,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotBrowserSelectorComponent } from '@dotcms/ui';
+import { AngularAssetPickerLauncher, DotAssetPickerComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsConfigurePageComponent } from './dot-experiments-configure-page.component';
@@ -63,10 +65,15 @@ const SELECTED_PAGE: DotExperimentConfigurePage = {
     path: '/pricing/index'
 };
 
-/** The site the browser must open on — anything else lands on System Host, which holds no pages. */
-const SITE_ID = 'site-1';
+/** The AssetPicker browses a site, and GlobalStore is what supplies it. */
+const SITE_MOCK: DotSite = {
+    identifier: 'site-1',
+    hostname: 'demo.dotcms.com',
+    aliases: null,
+    archived: false
+};
 
-/** What the shared browser closes with: the chosen page's contentlet. */
+/** What the picker closes with: the chosen page's contentlet. */
 const PICKED_PAGE = {
     identifier: 'page-2',
     title: 'About us',
@@ -105,13 +112,14 @@ describe('DotExperimentsConfigurePageComponent', () => {
     let spectator: Spectator<DotExperimentsConfigurePageComponent>;
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
-    /** What the shared site browser closes with. */
+    /** What the AssetPicker closes with. */
     let dialogClosed: Subject<DotCMSContentlet | undefined>;
     /** What the Change Page confirmation closes with: `true` once the variants are gone. */
     let changePageClosed: Subject<true | undefined>;
     /** The reference the card holds on to, so a test can see it being closed. */
     let changePageRef: { onClose: Subject<true | undefined>; close: jest.Mock };
     let dialogService: { open: jest.Mock };
+    let siteDetails: WritableSignal<DotSite | null>;
     let trafficAllocation: WritableSignal<number>;
 
     // The tooltip's overlay queries `matchMedia`, which jsdom does not implement.
@@ -136,10 +144,15 @@ describe('DotExperimentsConfigurePageComponent', () => {
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: GlobalStore, useValue: { currentSiteId: signal(SITE_ID) } }
+            { provide: GlobalStore, useFactory: () => ({ siteDetails }) }
         ],
-        // The card provides `DialogService` itself, so it is replaced at component level.
-        componentProviders: [{ provide: DialogService, useFactory: () => dialogService }],
+        // Spectator REPLACES the card's own `providers` rather than merging into it, so both of
+        // what the card declares are restated here: a stubbed `DialogService` and the real
+        // launcher, which is what turns the press into an open picker.
+        componentProviders: [
+            { provide: DialogService, useFactory: () => dialogService },
+            AngularAssetPickerLauncher
+        ],
         detectChanges: false
     });
 
@@ -195,6 +208,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
         storeMock = createStoreMock();
         dialogClosed = new Subject<DotCMSContentlet | undefined>();
         changePageClosed = new Subject<true | undefined>();
+        siteDetails = signal<DotSite | null>(SITE_MOCK);
         // Closing the confirmation is the card's job, so the ref answers like the real one: what it
         // is closed with is what its `onClose` emits.
         changePageRef = {
@@ -243,17 +257,32 @@ describe('DotExperimentsConfigurePageComponent', () => {
     });
 
     describe('picking a page', () => {
-        it('should open the shared site browser on the current site, asked for pages only', () => {
+        it('should open the AssetPicker on the current site, asked for pages only', () => {
             spectator.click(selectButton());
 
             expect(dialogService.open).toHaveBeenCalledWith(
-                DotBrowserSelectorComponent,
+                DotAssetPickerComponent,
                 expect.objectContaining({
-                    header: SELECT_PAGE_HEADER_COPY,
-                    modal: true,
-                    data: { ...SELECT_PAGE_BROWSER_PARAMS, hostFolderId: SITE_ID }
+                    data: expect.objectContaining({
+                        site: SITE_MOCK,
+                        title: SELECT_PAGE_HEADER_COPY,
+                        allowedBaseTypes: [DotCMSBaseTypesContentTypes.HTMLPAGE],
+                        browse: SELECT_PAGE_BROWSER_PARAMS
+                    })
                 })
             );
+        });
+
+        it('should open nothing while no site is resolved yet', () => {
+            // The picker browses a site and has no System Host to fall back on, so with none
+            // resolved the press is a no-op rather than a dialog opened against nothing.
+            siteDetails.set(null);
+            spectator.detectChanges();
+
+            spectator.click(selectButton());
+
+            expect(dialogService.open).not.toHaveBeenCalled();
+            expect(dispatchedEvents()).toEqual([]);
         });
 
         it('should report the picked page as the selected page', () => {
@@ -303,7 +332,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
         const pickerOpened = () =>
             dialogService.open.mock.calls.some(
-                ([component]) => component === DotBrowserSelectorComponent
+                ([component]) => component === DotAssetPickerComponent
             );
 
         it('should ask to change the page rather than to select one once a page is in place', () => {

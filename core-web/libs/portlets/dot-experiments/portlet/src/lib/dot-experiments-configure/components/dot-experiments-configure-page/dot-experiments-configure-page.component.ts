@@ -14,16 +14,14 @@ import { TooltipModule } from 'primeng/tooltip';
 import { take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet } from '@dotcms/dotcms-models';
+import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { DotBrowserSelectorComponent, DotMessagePipe } from '@dotcms/ui';
+import { AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
 import {
     CHANGE_PAGE_DIALOG_WIDTH,
     MAX_TRAFFIC_ALLOCATION,
     SELECT_PAGE_BROWSER_PARAMS,
-    SELECT_PAGE_DIALOG_MAX_WIDTH,
-    SELECT_PAGE_DIALOG_WIDTH,
     VARIANT_COLORS
 } from '../../../shared/constants';
 import { DotExperimentConfigurePage } from '../../../shared/models';
@@ -37,7 +35,7 @@ import {
     DotExperimentsChangePageDialogVariant
 } from '../dot-experiments-change-page-dialog/dot-experiments-change-page-dialog.component';
 
-/** Title of the Select A Page dialog. Its chrome belongs to the caller, not to the dialog. */
+/** Title of the Select A Page dialog, resolved here: the picker takes it already translated. */
 const SELECT_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.select-page.header';
 
 /** How the allocation reads at 100%, where there is no remainder to mention. */
@@ -88,8 +86,9 @@ const CHANGE_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.page.change.header'
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-configure-page.component.html',
-    // The dialog is opened from here, so this component owns its service instance.
-    providers: [DialogService]
+    // The dialogs are opened from here, so this component owns its service instance. The launcher
+    // is stateless and carries no `providedIn`, so it is provided alongside it.
+    providers: [DialogService, AngularAssetPickerLauncher]
 })
 export class DotExperimentsConfigurePageComponent {
     /** Traffic-allocation leaf of the root form, carrying its 1–100 rule. */
@@ -169,6 +168,7 @@ export class DotExperimentsConfigurePageComponent {
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
     readonly #events = inject(Events);
     readonly #dialogService = inject(DialogService);
+    readonly #assetPickerLauncher = inject(AngularAssetPickerLauncher);
     readonly #globalStore = inject(GlobalStore);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
@@ -287,31 +287,27 @@ export class DotExperimentsConfigurePageComponent {
             });
     }
 
-    /** Opens the picker and reports the chosen page. Cancelling leaves the card as it was. */
     /**
-     * Picks the page through the shared site browser — the same dialog the file fields and the block
-     * editor open, asked for pages only. It answers with the chosen contentlet, and the three fields
-     * the experiment needs are on it.
+     * Picks the page through the AssetPicker — the same dialog the file fields and the block editor
+     * open, in browse mode narrowed to pages. It answers with the chosen contentlet, and the three
+     * fields the experiment needs are on it. Cancelling leaves the card as it was.
      */
     protected openPageSelector(): void {
-        this.#dialogService
-            .open(DotBrowserSelectorComponent, {
-                header: this.#dotMessageService.get(SELECT_PAGE_DIALOG_HEADER_KEY),
-                appendTo: 'body',
-                closable: true,
-                closeOnEscape: true,
-                draggable: false,
-                keepInViewport: false,
-                maskStyleClass: 'p-dialog-mask-dynamic',
-                resizable: false,
-                modal: true,
-                width: SELECT_PAGE_DIALOG_WIDTH,
-                style: { 'max-width': SELECT_PAGE_DIALOG_MAX_WIDTH },
-                data: {
-                    ...SELECT_PAGE_BROWSER_PARAMS,
-                    // Without it the browser opens on System Host, which holds no pages.
-                    hostFolderId: this.#globalStore.currentSiteId()
-                }
+        const site = this.#globalStore.siteDetails();
+
+        // The picker browses a `DotSite` and, unlike the legacy browser it replaced, has no System
+        // Host to fall back on: with no site resolved yet there is nothing to open it against.
+        if (!site) {
+            return;
+        }
+
+        this.#assetPickerLauncher
+            .open(this.#dialogService, {
+                mode: 'browse',
+                site,
+                title: this.#dotMessageService.get(SELECT_PAGE_DIALOG_HEADER_KEY),
+                allowedBaseTypes: [DotCMSBaseTypesContentTypes.HTMLPAGE],
+                browse: SELECT_PAGE_BROWSER_PARAMS
             })
             .onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((page: DotCMSContentlet | undefined) => {
