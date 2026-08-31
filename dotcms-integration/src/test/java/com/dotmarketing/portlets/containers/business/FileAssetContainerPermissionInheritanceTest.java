@@ -89,7 +89,7 @@ public class FileAssetContainerPermissionInheritanceTest {
      */
     @After
     public void cleanUp() {
-        createdUsers.forEach(user -> Try.run(() -> UserDataGen.remove(user)));
+        createdUsers.forEach(user -> Try.run(() -> UserDataGen.remove(user, true)));
         createdRoles.forEach(role -> Try.run(() -> RoleDataGen.remove(role)));
         createdSites.forEach(site -> Try.run(() -> {
             APILocator.getHostAPI().archive(site, systemUser, false);
@@ -241,11 +241,21 @@ public class FileAssetContainerPermissionInheritanceTest {
         resetPermissionState(scenario.containerVtlId);
         loadPermissionsFor(vtlAsContainer);
 
-        assertTrue("Sanity check: the Site-level grant makes the Container visible to the reviewer",
+        final String observed = String.format(
+                "%n  container folder inode : %s"
+              + "%n  site id                : %s"
+              + "%n  after Container load   : %s%n",
+                scenario.containerFolder.getInode(), scenario.site.getIdentifier(),
+                referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE));
+
+        assertTrue("Sanity check: the reviewer holds an inheritable View on the Site's child "
+                        + "content, so a reference resolving to the Site keeps the Container "
+                        + "visible to them." + observed,
                 isContainerVisibleTo(scenario, reviewerUser));
 
         assertTrue("The editor role was granted View on the container folder, so it must see the "
-                        + "Container too", isContainerVisibleTo(scenario, scenario.limitedUser));
+                        + "Container too." + observed,
+                isContainerVisibleTo(scenario, scenario.limitedUser));
     }
 
     // ------------------------------------------------------------------ helpers
