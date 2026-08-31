@@ -27,7 +27,6 @@ This GitHub Action sets up and runs a Maven job with extensive configuration opt
 | `dotcms-license` | The license key for dotCMS | No | `''` |
 | `artifacts-from` | Download artifacts from a previous job | No | `''` |
 | `github-token` | GitHub token for authentication | Yes | - |
-| `restore-classes` | Restore build classes | No | `false` |
 | `stage-name` | Stage name for the build | Yes | - |
 | `maven-args` | Arguments for Maven build | Yes | - |
 | `generates-test-results` | Generate test results artifacts | No | `false` |

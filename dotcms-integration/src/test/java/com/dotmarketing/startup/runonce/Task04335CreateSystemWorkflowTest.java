@@ -50,7 +50,7 @@ public class Task04335CreateSystemWorkflowTest extends BaseWorkflowIntegrationTe
                     .loadResult();
         } catch (Exception e) {
 
-            Assert.fail("Could not insert on the db: " + dbType + ", a permission");
+            throw new AssertionError("Could not insert on the db: " + dbType + ", a permission", e);
         }
     }
 }

@@ -344,59 +344,69 @@ public class FolderResourceTest {
 
     /**
      * Method to test: findSubFoldersByPath in the FolderResource
-     * Given Scenario: Create 30 subfolders; call with limit=10
-     * ExpectedResult: 10 results (the parent + 9 subfolders)
+     * Given Scenario: Create more subfolders than the requested limit
+     * ExpectedResult: exactly `limit` results (the parent + limit-1 subfolders)
      */
     @Test
     public void test_findSubFoldersByPath_withCustomLimit_returnsLimitedResults() throws DotDataException, DotSecurityException {
+        // Unlike the cap tests above, no production constant is pinned here - all this
+        // needs is more subfolders than the limit, so keep both small.
+        final int limit = 5;
+        final int subFolders = limit * 2;
+
         final Host site = new SiteDataGen().nextPersisted();
         final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < subFolders; i++) {
             new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
         }
 
         final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
         final Response res = resource.findSubFoldersByPath(
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
-                new SearchByPathForm(path), 0, 10);
+                new SearchByPathForm(path), 0, limit);
 
         Assert.assertEquals(Status.OK.getStatusCode(), res.getStatus());
         final ResponseEntityView<?> entity = ResponseEntityView.class.cast(res.getEntity());
         final List<FolderSearchResultView> results = (List<FolderSearchResultView>) entity.getEntity();
-        Assert.assertEquals("Expected 10 results with limit=10", 10, results.size());
+        Assert.assertEquals("Expected " + limit + " results with limit=" + limit, limit, results.size());
     }
 
     /**
      * Method to test: findSubFoldersByPath in the FolderResource
-     * Given Scenario: Create 30 named subfolders; call with offset=10, limit=10
-     * ExpectedResult: 10 results that do NOT include the first 10 items
+     * Given Scenario: Create enough named subfolders for two full pages; page through them
+     * ExpectedResult: a second page of `limit` results that does NOT overlap the first
      */
     @Test
     public void test_findSubFoldersByPath_withOffset_returnsCorrectPage() throws DotDataException, DotSecurityException {
+        // Only needs enough subfolders to fill two pages; no production constant is
+        // pinned here, so keep the page size and the dataset small.
+        final int limit = 5;
+        final int subFolders = limit * 2;
+
         final Host site = new SiteDataGen().nextPersisted();
         final Folder parent = new FolderDataGen().site(site).name("parent").nextPersisted();
-        for (int i = 0; i < 30; i++) {
+        for (int i = 0; i < subFolders; i++) {
             new FolderDataGen().parent(parent).name(String.format("subfolder%02d", i)).nextPersisted();
         }
 
         final String path = String.format("//%s/%s/", site.getHostname(), parent.getName());
 
-        // page 1: first 10
+        // page 1
         final Response page1Res = resource.findSubFoldersByPath(
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
-                new SearchByPathForm(path), 0, 10);
+                new SearchByPathForm(path), 0, limit);
         final List<FolderSearchResultView> page1 = (List<FolderSearchResultView>)
                 ResponseEntityView.class.cast(page1Res.getEntity()).getEntity();
 
-        // page 2: next 10
+        // page 2
         final Response page2Res = resource.findSubFoldersByPath(
                 getHttpRequest(adminUser.getEmailAddress(), "admin"), response,
-                new SearchByPathForm(path), 10, 10);
+                new SearchByPathForm(path), limit, limit);
         final List<FolderSearchResultView> page2 = (List<FolderSearchResultView>)
                 ResponseEntityView.class.cast(page2Res.getEntity()).getEntity();
 
-        Assert.assertEquals(10, page1.size());
-        Assert.assertEquals(10, page2.size());
+        Assert.assertEquals(limit, page1.size());
+        Assert.assertEquals(limit, page2.size());
 
         // No overlap between pages
         final List<String> page1Paths = page1.stream().map(FolderSearchResultView::getPath).toList();

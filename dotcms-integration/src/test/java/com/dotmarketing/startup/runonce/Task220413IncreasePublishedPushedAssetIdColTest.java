@@ -61,7 +61,7 @@ public class Task220413IncreasePublishedPushedAssetIdColTest {
             try {
                 insertPublishedAsset(ASSET_ID);
             } catch (DotDataException e) {
-                Assert.fail();
+                throw new AssertionError("Unexpected exception", e);
             }
         } finally {
             final Connection conn = DbConnectionFactory.getConnection();
