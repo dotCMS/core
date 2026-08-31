@@ -101,12 +101,18 @@ original report read it as transient — it is not. See Root-Cause Hypothesis, C
 
 - **Affected area**: Three surfaces, in priority order.
   1. **Docker compose examples** — `docker/docker-compose-examples/single-node-demo-site/docker-compose.yml`.
-     This is the least hardened example in that directory. **Three** siblings already use
-     `condition: service_healthy` (`lgtm-observability`, `single-node-metrics-monitoring`,
-     `experiments`, plus `single-node-os-migration` via provision jobs) —
-     `lgtm-observability/docker-compose.yml` is the model. Note none of them gates `dotcms`
-     on OpenSearch being *healthy*; every one uses `db: service_healthy` +
-     `opensearch: service_started`. See Fix Scope for why this fix goes further.
+     This is the least hardened example in that directory. **Four** files in it use
+     `condition: service_healthy`; **three** of them gate `dotcms` directly
+     (`lgtm-observability` L88–96, `single-node-metrics-monitoring` L86–90, `experiments`
+     L137–141), and all three use `db: service_healthy` + `opensearch: service_started`.
+     `lgtm-observability/docker-compose.yml` is the model for the healthcheck shape — but note
+     it publishes 8090 on the **wildcard** (L195), which this fix deliberately does not copy.
+     The fourth, `single-node-os-migration`, gates `dotcms` on two provision jobs
+     (`service_completed_successfully`, L229–235) that each require
+     `opensearch: service_healthy` (L167–169, L189–191) — so it **does** gate on OpenSearch
+     health, transitively. This fix's stricter gate therefore has prior art in this repo, one
+     step removed; it is not the clean break from precedent an earlier draft of this spec
+     claimed. See Fix Scope.
      Verified in-repo: `dotcms` has `depends_on: [db, opensearch]` with no condition, no
      `restart:`, no healthcheck, and does not publish 8090; `opensearch` has no healthcheck and
      no `restart:`; only `db` defines a healthcheck, which nothing consumes.
@@ -213,9 +219,17 @@ missing is a backend question, not a CLI one.
 **Cause 3 — the CLI discards recoverable state.** Independent of causes 1 and 2, and the reason
 a transient failure becomes total loss. Verified in-repo:
 
-- UVE setup exits at `src/index.ts:370`; the clone and `npm install` at `:377` never run.
+- UVE setup exits at `src/index.ts:369–371` (the `process.exit(1)` is `:371`, the `spinner.fail`
+  is `:370`); the compose move at `:376`, the clone and `npm install` at `:377` never run.
+- **The same fatal block exists twice.** `src/index.ts:226–228` is byte-for-byte the same check on
+  the existing-instance (`--dotcms-url`) path, with `startScaffoldingFrontEnd()` at `:232` and
+  `displayFinalSteps()` at `:235` equally downstream of it. Both sites discard a working token.
+  The two paths need *opposite* 403 advice, however: on the local-Docker path a 403 means the
+  bricked boot and `docker compose down -v` is the fix, while on the existing-instance path the
+  user supplied their own server, there is no compose stack to recreate, and a 403 means a genuine
+  token or site-permission problem. See Fix Scope for the single owner that resolves this.
 - Token and site ID are obtained successfully but only printed by `displayFinalSteps()`, which
-  is downstream of the exit.
+  is downstream of the exit on both paths.
 - The UVE call has no retry, while authentication retries 3×.
 - `checkPortsAvailability()` (`src/utils/index.ts:479`) hard-fails on 8082/8443/9200/9600 —
   exactly the ports a successful previous run now holds.
@@ -259,11 +273,21 @@ dotCMS to **never start** if that probe later broke, e.g. an `opensearch:1` → 
 invalidating `admin:admin`.
 
 - `db` and `opensearch` both get healthchecks and `restart: unless-stopped`. The OpenSearch probe
-  is the one proven in `single-node-os-migration`, **verified on this stack at ~15s**.
+  is the one proven in `single-node-os-migration` (L61–65),
+  `curl -sk https://localhost:9200 -u admin:admin | grep -q cluster_name`,
+  **verified on this stack at ~15s**. **Decided** over a credential-free variant (accept `200` or
+  `401` from the HTTP layer, which would drop the `admin:admin` coupling entirely): the coupling is
+  the probe's only real exposure, and it is contained — the image tag is pinned to major `1`, so
+  the `opensearch:1` → `:2` bump that would invalidate the default credentials requires a
+  deliberate edit to *this* file by someone who then owns the probe. A proven probe beats an
+  unproven one on the critical path.
 - `dotcms` `depends_on` gates on `condition: service_healthy` for **both**. Safe here in a way it
-  was not on the shared file: nothing else reads this one.
-- `dotcms` healthcheck on `http://127.0.0.1:8090/dotmgt/livez`, `start_period: 120s` (~2.5× the
-  measured ~46s boot), plus `restart: unless-stopped`.
+  was not on the shared file: nothing else reads this one. There is also transitive prior art for
+  it in `single-node-os-migration` — see Scope of Investigation.
+- `dotcms` healthcheck on `http://127.0.0.1:8090/dotmgt/livez`, `start_period: 180s` (~4× the
+  measured ~46s boot), plus `restart: unless-stopped`. Overshooting `start_period` is free — the
+  first successful probe ends the window immediately — while undershooting it is not: see
+  Regression Risk.
 - Management port published **loopback-only**: `127.0.0.1:8090:8090`. It is authorized purely by
   arrival port — no credential check, no IP allowlist — so a wildcard binding would put
   `/dotmgt/health` and `/dotmgt/metrics` on the local network.
@@ -279,14 +303,27 @@ so only a warm npx cache stays behind.
 
 *CLI (P0):*
 
+- **A single owner for UVE configuration.** Both call sites — `src/index.ts:226` (existing
+  instance) and `:369` (local Docker) — are replaced by one
+  `configureUVE({ host, siteId, token, mode })`, where `mode` is `'local' | 'remote'`. It owns the
+  probe, the retry policy, the non-fatal contract and the cause-specific messaging, and it **never
+  calls `process.exit`** — it returns an outcome the caller warns on and continues past.
+  **Decided** over fixing the two sites in place: the exit contract then lives in one place rather
+  than two that have already drifted once, and a third call site cannot silently miss it. This is
+  the only structural change in scope — the `Result` type, prompt flow and scaffolding logic stay
+  untouched (see non-goals).
 - The CLI never exits without printing recoverable state (host, token, site ID), and writes the
-  `.env` it already has every value for.
-- UVE setup failure is non-fatal: warn and continue to scaffolding. The message depends on why
-  it failed, because the two cases need opposite advice:
-  - **403 (terminal)** — the instance's permissions were never written by an interrupted first
-    boot. Manual UVE configuration would fail identically, so **do not** offer the manual steps.
-    Tell the user the instance is unrecoverable and to run
+  `.env` it already has every value for. This holds on **both** paths.
+- UVE setup failure is non-fatal: warn and continue to scaffolding. The message depends on why it
+  failed **and on which path is running**, because the cases need opposite advice:
+  - **403, `mode: 'local'` (terminal)** — the instance's permissions were never written by an
+    interrupted first boot. Manual UVE configuration would fail identically, so **do not** offer
+    the manual steps. Tell the user the instance is unrecoverable and to run
     `docker compose down -v && docker compose up -d --wait`, and reference #37268.
+  - **403, `mode: 'remote'`** — the user supplied their own server. There is no stack to recreate,
+    so `docker compose down -v` would be nonsense advice here. Report that the API token lacks
+    permission on the resolved site, name the site ID and app key `dotema-config-v2`, and link the
+    guide below so the setting can be applied by hand — which on this path will work.
   - **anything else** — link the official headless UVE configuration guide,
     <https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config>,
     alongside the concrete values needed (host, site ID, app key `dotema-config-v2`), so the one
@@ -321,9 +358,12 @@ so only a warm npx cache stays behind.
 - **Landing the E2E suite from #35096.** That issue owns it. This fix adds unit-level tests for
   the logic it changes; the fault-injection E2E case (kill dotCMS mid-run) belongs to #35096.
 - Rewriting the CLI's `Result` type, prompt flow, or framework-scaffolding logic beyond the
-  specific defects listed above.
+  specific defects listed above. The one exception, stated in Fix Scope, is extracting
+  `configureUVE()` so the two duplicated UVE call sites share a single owner — that is a
+  precondition for AC-003 holding on both paths, not a general refactor.
 - Hardening the other compose examples in `docker/docker-compose-examples/`. Only
-  `single-node-demo-site` is fetched by the CLI; the rest are out of this fix's blast radius.
+  `single-node-demo-site` is fetched by CLI versions ≤1.2.5; the rest are out of this fix's blast
+  radius, and from this version on the CLI fetches none of them.
 - Any change to the Apps REST API contract or the UVE app definition itself.
 
 ## Regression Risk *(mandatory)*
@@ -351,8 +391,16 @@ so only a warm npx cache stays behind.
     fail. Intended, but a visible behavior change.
   - *`CUSTOM_STARTER_URL`:* the file must keep a line matching
     `/^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m`, or `updateDockerComposeStarterUrl` throws
-    and `--starter` breaks. Now scoped to this CLI version rather than every installed one, but
-    still a silent break that only the guard in `scripts/verify-cold-start.sh` would catch.
+    and `--starter` breaks. Substantially de-risked by the rescope: the regex and the file it
+    rewrites now ship in the same package, same repo, same version, so they cannot drift
+    independently the way they could when the file was fetched from `main` at runtime. Guarded by a
+    Jest spec that runs the rewrite against the real bundled asset — see AC-012.
+  - *`start_period` too short:* if the window elapses while dotCMS is still booting, probe failures
+    begin counting toward `retries` and the container is marked `unhealthy`, at which point
+    `docker compose up --wait` **aborts** rather than waiting — the CLI gives up on an instance that
+    would have been healthy moments later, and `restart: unless-stopped` will not rescue it because
+    restart policies react to exit, not health. This is why `start_period` is set generously at
+    `180s`: the first successful probe ends the window immediately, so overshooting costs nothing.
 - **Backward compatibility**: No dotCMS API contract, serialized state, DB schema or ES mapping
   changes. Publishing 8090 exposes an **unauthenticated** management surface
   (`/dotmgt/health`, `/dotmgt/metrics`) to whoever can reach the binding — which is why it is bound
@@ -390,25 +438,33 @@ This leaves a real coverage gap: **nobody currently assignable designed the patt
 The plan phase should treat the lgtm-observability compose as the specification for correct
 usage — reading it directly rather than relying on a reviewer to catch a faithful-copy error.
 
-Two review questions to put to them explicitly. Both were sharpened by the plan-phase research —
-question 1 now carries a recommendation rather than being open, and question 2 was reframed
-because its original premise was wrong:
+**All open questions are now settled.** Both review questions this section previously put to
+reviewers have been decided by the issue owner, and the decisions are recorded in Fix Scope rather
+than left for the reviewer to resolve. Kept here with their reasoning so reviewers see what was
+chosen and can object, instead of having to rediscover it:
 
-1. **Gating `dotcms` on `opensearch: service_healthy`** goes further than all four existing
-   examples, which use `service_started` there. Is the stricter gate right for a stack driven by
-   an unattended CLI, or should this match the house pattern? *(Recommendation: keep the stricter
-   gate, using `single-node-os-migration`'s proven probe.)*
-2. **Is `start_period: 180s` enough headroom** for a cold demo-starter import on a slow machine?
-   This is above both precedents (lgtm 120s, metrics-monitoring 20s). The original question —
-   whether `restart: unless-stopped` would flap the container — turned out to rest on a false
-   premise: Compose restart policies react to container exit, not health status, so flapping
-   cannot occur. The real exposure is that a too-short `start_period` makes
-   `docker compose up --wait` block until timeout.
+1. **Gate `dotcms` on `opensearch: service_healthy`** — **decided: keep the stricter gate**, using
+   `single-node-os-migration`'s proven probe (L61–65). The framing this question originally carried
+   was wrong: it is not a clean break from precedent, because `single-node-os-migration` already
+   gates `dotcms` on OpenSearch health transitively, via provision jobs. A credential-free probe was
+   considered and rejected — the `admin:admin` coupling is contained by the major-version tag pin,
+   and a proven probe beats an unproven one on the critical path. See Scope of Investigation.
+2. **`start_period`** — **decided: `180s`**, ~4× the measured ~46s boot and above both precedents
+   (lgtm 120s, metrics-monitoring 20s). Two earlier premises here were both wrong. The original
+   question, whether `restart: unless-stopped` would flap the container, rests on a false premise:
+   Compose restart policies react to container exit, not health status, so flapping cannot occur.
+   Its replacement — that a too-short `start_period` makes `docker compose up --wait` block until
+   timeout — is also wrong, and backwards: a too-short window marks the container `unhealthy` and
+   makes `--wait` **abort early**, which is the worse failure. Because the first successful probe
+   ends the window immediately, overshooting is free. See Regression Risk.
+3. **Publishing 8090** — **decided: bind to `127.0.0.1`**, because the management port is authorized
+   by arrival port with no credential check and no IP allowlist. Note this deviates from
+   `lgtm-observability`, which binds the wildcard (L195); the deviation is deliberate.
 
-*(Publishing 8090 was the third open question. It is now settled in Fix Scope: bind to
-`127.0.0.1`, because the management port is authorized by arrival port with no credential check
-and no IP allowlist. Flagging it here so reviewers see the decision rather than having to
-rediscover the reasoning.)*
+What remains for reviewers is not a decision but a **confirmation**: `/dotmgt/livez` must be
+verified on the released `dotcms/dotcms:latest` image before the healthcheck can depend on it. Both
+in-repo examples that probe it run `dotcms/dotcms-test`. This is the first step of the plan's
+verification guide, and a failure there invalidates the compose design. See Assumptions.
 
 ## Acceptance & Verification *(mandatory)*
 
@@ -419,8 +475,11 @@ rediscover the reasoning.)*
 - **AC-002**: The CLI's "containers started successfully" message is only printed when the
   containers are actually running and healthy.
 - **AC-003**: When the UVE configuration call fails for any reason, the CLI prints a warning,
-  **continues to scaffolding**, and exits 0 with a complete project. Reproduction step 5 no
-  longer aborts the run. The warning includes the headless UVE configuration guide
+  **continues to scaffolding**, and exits 0 with a complete project. This holds on **both** entry
+  paths — local Docker and existing instance (`--dotcms-url`) — because both go through the single
+  `configureUVE()` owner, which contains no `process.exit`. A grep for `process.exit` in the UVE
+  path returning nothing is part of this criterion. Reproduction step 5 no longer aborts the run.
+  The warning includes the headless UVE configuration guide
   (<https://dev.dotcms.com/docs/author/pages-and-visual-editing/universal-visual-editor/uve-headless-config>)
   and the run-specific values needed to follow it — host, site ID, and app key
   `dotema-config-v2`. A user who hits this path can finish the setup by hand without leaving
@@ -434,9 +493,13 @@ rediscover the reasoning.)*
 - **AC-005**: The UVE write is gated on a single successful `GET` of the same resource. Retry
   applies to `5xx` only. It must **not** retry or poll on 403: a 403 here means the instance's
   permissions were never written by an interrupted starter import, and that never clears — 193
-  consecutive attempts over ~7 minutes all returned 403. On 403 the CLI skips the write and tells
-  the user their instance is unrecoverable and must be recreated with `docker compose down -v`,
-  rather than offering manual UVE setup steps that would fail identically.
+  consecutive attempts over ~7 minutes all returned 403. On 403 the CLI skips the write; the
+  message it then prints is **mode-dependent**. In `mode: 'local'` it reports the instance
+  unrecoverable and to recreate it with `docker compose down -v`, and does **not** offer manual UVE
+  setup steps, which would fail identically. In `mode: 'remote'` it reports instead that the API
+  token lacks permission on the resolved site and links the manual steps, which on a user-supplied
+  server will work — `docker compose down -v` must never be suggested there, as there is no stack
+  to recreate.
 - **AC-006** *(P1)*: With a healthy dotCMS already answering on 8082, a second run offers to
   reuse it instead of aborting with "Required ports are already in use". Reproduction step 6 no
   longer blocks.
@@ -456,26 +519,36 @@ rediscover the reasoning.)*
   the management surface is not exposed to the network.
 - **AC-012**: `npx @dotcms/create-app --starter <url>` still works against the bundled compose
   file — the `CUSTOM_STARTER_URL` rewrite regex in `updateDockerComposeStarterUrl` must still match.
+  Enforced by a **Jest spec that loads the real bundled asset**, asserts the regex matches it and
+  asserts the rewritten line, so a reformat of that line fails CI on the PR that causes it. No
+  Docker and no cold start are required, which is what makes this cheap enough to gate every PR;
+  it is available because the rescope put the regex and the file it rewrites in the same package.
 - **AC-013**: The bundled compose file is actually present in the published package. `package.json`
   `files` and `project.json`'s esbuild `assets` must both list it, or it ships missing and every
   local-Docker run fails at the first step.
 
 - **Verification method**:
-  - *Compose:* `docker compose -f docker/docker-compose-examples/single-node-demo-site/docker-compose.yml up -d --wait`
+  - *Compose:* against **the bundled asset**,
+    `docker compose -f core-web/libs/sdk/create-app/assets/docker-compose.yml up -d --wait --wait-timeout 600`
     from a cold state (no volumes, no cached images), asserting `dotcms` reaches healthy without
     manual start; plus a fault-injection run (`docker kill` the `dotcms` container) asserting it
-    is restarted.
+    is restarted. **Not** the shared `single-node-demo-site` file — AC-010 requires that one to be
+    unchanged, and it has no `dotcms` healthcheck for `--wait` to assess, so it cannot satisfy this
+    assertion. (An earlier draft named it here; that was pre-rescope language.)
   - *CLI unit tests:* the package contains **no spec file**, but the Jest harness is already in
     place (`jest.config.ts`, `tsconfig.spec.json`, `@nx/jest/plugin`), so this fix adds specs
     rather than a harness. Run with `pnpm nx test sdk-create-app` — note `project.json` sets
     `passWithNoTests: true`, so an empty run reports green; confirm the new specs are actually
-    collected before trusting a pass. Jest specs covering, at minimum: the `Result` truthiness fix, the non-fatal UVE
-    path, the read-before-write gate with a mocked 403-then-200 sequence, the `try/finally`
-    compose move, and the port-reuse probe. Per constitution Principle V these are written and
-    confirmed failing (Red) before the implementation lands.
+    collected before trusting a pass. Jest specs covering, at minimum: the `Result` truthiness fix;
+    `configureUVE()` returning a non-fatal outcome instead of exiting, exercised for **both**
+    `mode: 'local'` and `mode: 'remote'` so the two 403 messages are asserted separately; the
+    read-before-write gate with a mocked 403-then-200 sequence; the `try/finally` compose move; the
+    port-reuse probe; and the `CUSTOM_STARTER_URL` rewrite run against the real bundled asset
+    (AC-012). Per constitution Principle V these are written and confirmed failing (Red) before the
+    implementation lands.
   - *Manual end-to-end:* the reproduction steps above, run cold on macOS + Docker Desktop,
     verifying AC-001 through AC-006, plus AC-011 (a `curl` to the host's LAN address on 8090
-    must be refused) and AC-012 (a `--starter` run against the edited file).
+    must be refused).
   - The full fault-injection E2E suite is #35096's scope, not this fix's.
   - **Prerequisite**: `pnpm install` in `core-web/`. Without it `pnpm nx test` fails with
     `nx: command not found`, and constitution Principle V's Red gate cannot be demonstrated.
