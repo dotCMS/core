@@ -6,7 +6,7 @@ name: evergreen-tracks-admin
 # completed taint before (2026-08-31, run 33434507975).
 run-name: >-
   ${{ inputs.mode == 'apply' && 'APPLY' || 'DRY-RUN (no changes)' }}
-  — ${{ inputs.action }} ${{ inputs.version }}${{ inputs.track }}
+  — ${{ inputs.action }}${{ inputs.track && format(' {0}', inputs.track) || '' }}${{ inputs.version && format(' {0}', inputs.version) || '' }}
 
 on:
   workflow_dispatch:
