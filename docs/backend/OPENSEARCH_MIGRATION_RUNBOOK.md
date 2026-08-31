@@ -1,9 +1,13 @@
 # ES → OpenSearch Migration Guide
 
-> **Who this is for.** A Support or Cloud engineer who has been handed a customer instance and has to
-> migrate it from Elasticsearch to OpenSearch. It assumes you can reach the customer's dotCMS admin
-> UI, its configuration, its database, and both search clusters. It assumes **nothing** about Java or
-> about how the migration works internally.
+> **Who this is for.** Anyone who has to move a dotCMS install onto OpenSearch 3.x — a Support or
+> Cloud engineer handed a customer instance, or a customer running the migration on their own
+> installation. It assumes you can reach the instance's dotCMS admin UI, its configuration, its
+> database, and both search clusters. It assumes **nothing** about Java or about how the migration
+> works internally.
+>
+> The guide says "the customer" throughout, because that is the party whose search must not break.
+> If you are migrating your own installation, that is you.
 >
 > **How to use it.** Work through the stages in order. Each stage tells you what to do, what to type,
 > what you should see, and what to do when you see something else. Each stage ends with a **gate** —
@@ -77,22 +81,36 @@ the guide is a procedure you follow: [Stage 0](#stage-0--assess-the-customer) on
 
 ## 1. Why this migration exists
 
-dotCMS is standardising its search infrastructure on **OpenSearch 3.x**. Every install currently
-running Elasticsearch has to move.
+dotCMS is standardising its search infrastructure on **OpenSearch 3.x**. Every install that is not
+already there has to move.
+
+**Two starting points end up in the same guide.** Whatever the customer runs today is the **source
+engine**, and it is always configured through the `ES_*` properties — that naming is historical, not
+a statement about the product:
+
+| What the customer runs today | Source engine (`ES_*`) | Target engine (`OS_*`) |
+|---|---|---|
+| Elasticsearch | their Elasticsearch cluster | a new OpenSearch **3.x** cluster |
+| OpenSearch **1.x** | their OpenSearch 1.x cluster | a new OpenSearch **3.x** cluster |
+
+An OpenSearch 1.x install migrates by exactly the same procedure as an Elasticsearch one. Everywhere
+this guide says "Elasticsearch", read "the engine you are coming from".
 
 **The obvious question first: why can't we just change the URL?**
 
-Because dotCMS's existing Elasticsearch client **cannot write content to an OpenSearch 3.x
-cluster**. Repointing `ES_ENDPOINTS` at OpenSearch does not work — the connection may look fine while
-content indexing fails. Talking to OpenSearch 3.x needs a different client, which dotCMS ships
-alongside the old one.
+Because dotCMS's existing client — the one behind `ES_*` — **cannot write content to an OpenSearch
+3.x cluster**. That is as true coming from OpenSearch 1.x as from Elasticsearch: 3.x is a breaking
+change for the client, not a version bump. Repointing `ES_ENDPOINTS` at the new cluster does not
+work — the connection may look fine while content indexing fails. Talking to OpenSearch 3.x needs a
+different client, which dotCMS ships alongside the old one.
 
 **So dotCMS temporarily runs two clients at once**, one per engine, and the migration is the
 controlled handover between them:
 
-- The two engines start out completely unrelated: Elasticsearch has all the customer's content,
-  OpenSearch has nothing.
-- You need OpenSearch to end up holding the same content, kept current, before anything starts
+- The two engines start out completely unrelated. The source engine has all the customer's content;
+  the **new OpenSearch 3.x cluster is empty** — even if the source engine is itself an OpenSearch,
+  the target is a separate cluster with nothing in it.
+- You need that new cluster to end up holding the same content, kept current, before anything starts
   depending on it.
 - And you need a way back at every point, because a search index is not something a customer can be
   without.
@@ -147,8 +165,9 @@ your way back.
 
 ### Phase 0 — where every customer starts
 
-**What it is:** the state every dotCMS is in today. Only Elasticsearch exists. dotCMS never contacts
-OpenSearch, even if you have configured it.
+**What it is:** the state every dotCMS is in today. Only the source engine exists — Elasticsearch, or
+the customer's existing OpenSearch 1.x. dotCMS never contacts the new OpenSearch 3.x cluster, even if
+you have configured it.
 
 **What the customer sees:** normal operation.
 
@@ -516,7 +535,7 @@ indices on.
 ### Step 1.1 — Confirm the version and the separation
 
 **Why:** dotCMS asserts at startup that the cluster is OpenSearch **3.x** and that it is **not the
-same server** as Elasticsearch. Either check failing halts the migration.
+same server** as the source engine. Either check failing halts the migration.
 
 **Do this:**
 
@@ -528,8 +547,15 @@ curl -sk -u <os-admin>:<pass> "https://<os-host>:9200/" | jq .version.number
 
 **Confirm separation yourself.** dotCMS compares the two endpoint strings, which means
 `127.0.0.1:9200` and `localhost:9200` are the same machine but will **not** be detected as
-overlapping. Verify by hand that the OpenSearch endpoint is a genuinely different cluster from the
-Elasticsearch one.
+overlapping. Verify by hand that the OpenSearch 3.x endpoint is a genuinely different cluster from
+the source engine's.
+
+> **If the customer is already on OpenSearch 1.x**, this is the step where the temptation is to
+> upgrade their existing cluster in place and point both `ES_*` and `OS_*` at it. Do not. The whole
+> migration depends on two independent clusters, so that the source engine stays intact and you can
+> fall back to it at every phase. Stand up a separate OpenSearch 3.x cluster; the 1.x one is
+> decommissioned at the end of [Stage 5](#stage-5--cut-over-phase-2--3), like any other source
+> engine.
 
 ---
 
