@@ -11,14 +11,25 @@
 #      of the plan phase, so every plan treats relevant dotCMS/platform-adrs decisions
 #      as input.
 #
-#   2. after_implement -> after_converge -- make convergence the AUTOMATIC, mandatory
-#      closing step of the flow. When /speckit-implement finishes its task list, converge
-#      assesses the code against spec/plan/tasks; docs-converge then extends that
-#      assessment to documentation drift (docs/, CLAUDE.md, openapi.yaml, Javadoc). Both
-#      are append-only: they add tasks to tasks.md and never edit docs, code, spec.md or
-#      plan.md. The developer re-runs implement on the appended tasks; the loop ends when
-#      converge reports `converged` (or every remaining finding has been consciously
-#      accepted).
+#   2. after_implement -- RECOMMEND convergence at the end of implement. Deliberately
+#      `optional: true`: the shipped skills print the recommendation with the command
+#      ready to run, and do NOT execute it. Convergence IS part of the flow, but the
+#      developer decides WHEN.
+#
+#      Why not mandatory: firing automatically at the end of implement assesses the
+#      LEAST final state of the work. In practice a developer finishes the task list and
+#      then makes several manual corrections; an automatic run would sign off on the code
+#      as it stood before that polishing, and a stale `converged` verdict is worse than
+#      none because nobody re-reads it. Only the developer knows when they are actually
+#      done, so only the developer can pick the moment.
+#
+#   3. after_converge -- this one IS mandatory, and that is not a contradiction. By the
+#      time it fires the developer has already chosen to converge; extending that single
+#      decision to documentation drift (docs/, CLAUDE.md, openapi.yaml, Javadoc) needs no
+#      second prompt. One intent, complete coverage.
+#
+#      Both converge commands are append-only: they add tasks to tasks.md and never edit
+#      docs, code, spec.md or plan.md.
 #
 # See .specify/CUSTOMIZATIONS.md customizations #2, #7 and #8 for the full rationale.
 
@@ -30,8 +41,9 @@ hooks:
 
   after_implement:
     command: speckit.converge
-    optional: false
-    description: "Assess the codebase against spec/plan/tasks and append remaining work; the mandatory closing step before PR 2"
+    optional: true
+    description: "Recommended before PR 2: assess the codebase against spec/plan/tasks and append remaining work"
+    prompt: "Task list complete. Once you have finished any manual corrections, run /speckit-converge to check the final state against the approved spec — then open PR 2. Run it when YOU judge the work done, not now if you still have edits to make."
 
   after_converge:
     command: speckit.docs-converge

@@ -92,6 +92,40 @@ workflow and the repo's own documentation.
   accepted (task marked `[X]`). §9 explains the accept-and-proceed rule and why it exists. The
   docs are explicit that this gate is human-judged, not script-enforced.
 
+#### Trigger decision (2026-08-31) — converge is recommended, not automatic
+
+- Q: `after_implement` fires converge the instant `/speckit-implement` completes its task list.
+  But a developer normally makes several **manual corrections** after that. Those corrections are
+  never assessed, and the `converged` verdict the developer sees is already stale by the time they
+  open PR 2. Where should the trigger live? → A: **Nowhere automatic — the developer triggers it.**
+  The hook becomes `optional: true`, which makes the shipped skills *print* the recommendation
+  with the command ready instead of executing it. Convergence stays part of the flow (§1, §2, §3
+  keep it unparenthesized); only the **timing** moves to the developer, because only the developer
+  knows when their edits have stopped.
+
+  **Why not the alternatives.** Firing at the end of implement assesses the least-final state of
+  the work, and the docs saying "runs automatically; nothing to type" actively trained the reader
+  to trust a verdict nobody re-reads — worse than having no verdict. A `git push`-time hook was
+  considered and rejected: it leaks (pushing from a terminal outside Claude Code skips it) and
+  adds machinery the issue never asked for.
+
+  **Scope consequence**: this contradicts issue #37267's AC B (`optional: false`, "runs without
+  the developer typing the command"). `spec.md` is still Draft and PR 1 is not open, so no
+  re-approval is owed — but **the issue's AC B is now out of date and must be renegotiated there
+  before the issue is closed.**
+
+#### Delivery decision (2026-08-31) — one PR, not two
+
+- Q: Commit `a572f07be1` is already pushed and bundles `spec.md`, `data-model.md` and
+  `contracts/` together with the implementation. Quick Start §3 — the very policy this feature
+  documents — says PR 1 carries `spec.md` **alone** and is approved before planning starts. That
+  order can no longer be followed. → A: **Ship as a single PR and say so in its description**,
+  asking the reviewer to read `spec.md` first, as a spec, before the rest of the diff. Chosen
+  because the history is already published and mixed, and because this change is process tooling
+  rather than product code, so the risk of having skipped the up-front spec approval is low.
+  Recorded here rather than quietly ignored: **this feature's own PR did not follow the two-PR
+  flow it documents.**
+
 #### Follow-up decisions (T003 gate + T002 finding)
 
 - Q: Quick Start §9 is titled "The other commands". If converge is mandatory it is no longer one
@@ -329,20 +363,28 @@ The reproduction steps 1–5 now produce the expected behavior:
   converged; and converge running after `/speckit-implement` halted at a `[GATE]` (its output is
   advisory — finish the task list, then let the chain run again).
 
-### AC-002 — Converge runs automatically after implement
+### AC-002 — Converge is part of the flow, recommended at the end of implement, triggered by the developer
+
+> **Supersedes the issue's AC B** (2026-08-31, developer decision). The issue specified
+> `optional: false` and *"converge runs without the developer typing the command"*. Both are
+> deliberately **not** implemented; see the Clarifications entry for the reasoning. This
+> divergence must be renegotiated on the issue before it is closed.
 
 - `.specify/extensions.yml` declares an `after_implement` hook pointing at `speckit.converge`
-  with `optional: false`, using the same schema and comment style as the existing `before_plan`
-  → `speckit.adr-context` hook.
-- Completing a `tasks.md` with `/speckit-implement` fires that hook and converge runs without the
-  developer typing the command.
-- Re-running `/speckit-implement` on the appended Convergence tasks fires converge again, so the
-  loop is self-sustaining — and, per AC-004's dedupe rule, **terminating**: each pass has strictly
-  fewer new findings than the last.
-- When `/speckit-implement` halts partway (parked at a TDD `[GATE]`, or stopped on a failed task)
-  the chain stays quiet: the documentation pass detects the incomplete run and appends nothing.
-- The hook is recorded in `.specify/CUSTOMIZATIONS.md` as a numbered customization stating
-  whether it is upgrade-safe, consistent with how customization #2 is recorded.
+  with **`optional: true`** and a `prompt`, using the same schema and comment style as the
+  existing `before_plan` → `speckit.adr-context` hook.
+- Completing a `tasks.md` with `/speckit-implement` **prints the recommendation with the command
+  ready to run, and does not execute it.**
+- The developer runs `/speckit-converge` when they judge the work finished — after their manual
+  corrections, not before. Fix, re-run, repeat; per AC-004's dedupe rule the loop **terminates**:
+  each pass has strictly fewer new findings than the last.
+- Running converge mid-flight is allowed and useful; the documentation pass detects an incomplete
+  task list and appends nothing, so an early run is quiet rather than noisy.
+- `after_converge` → `speckit.docs-converge` **stays `optional: false`**: by the time it fires the
+  developer has already chosen to converge, so extending that single decision to documentation
+  needs no second prompt.
+- Both hooks are recorded in `.specify/CUSTOMIZATIONS.md` as numbered customizations stating
+  upgrade-safety, consistent with how customization #2 is recorded.
 
 ### AC-003 — Documentation drift is part of the gap analysis
 

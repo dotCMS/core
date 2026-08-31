@@ -140,7 +140,7 @@ anyway, our patch has `get_feature_paths()` assign `REPO_ROOT`, `CURRENT_BRANCH`
 sites (`setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh`) call it plainly —
 no output string is ever re-parsed as code.
 
-### 7. Convergence as the mandatory closing step — UPGRADE-SAFE (no shipped files edited)
+### 7. Convergence as the closing step, developer-triggered — UPGRADE-SAFE (no shipped files edited)
 
 Upstream ships `/speckit-converge` as step 9 of its quickstart, but nothing in our flow invoked
 it, so the question *"does the code actually match the spec approved in PR 1?"* was never asked
@@ -149,10 +149,20 @@ the two-PR flow exists to avoid.
 
 One additive piece closes that:
 
-- **`.specify/extensions.yml`** — registers `speckit.converge` as a **mandatory `after_implement`
-  hook**, so `/speckit-implement` auto-invokes it on completing the task list. The shipped
-  `/speckit-implement` skill **already** dispatches `after_implement` (its "Mandatory
-  Post-Execution Hooks" section) — we did not edit it, or any other shipped skill.
+- **`.specify/extensions.yml`** — registers `speckit.converge` as an **`after_implement` hook with
+  `optional: true`**, so `/speckit-implement` *recommends* it on completing the task list,
+  printing the command without running it. The shipped `/speckit-implement` skill **already**
+  dispatches `after_implement` (its "Mandatory Post-Execution Hooks" section) — we did not edit
+  it, or any other shipped skill.
+
+**Why recommended and not mandatory.** An automatic run fires at the end of the task list, which
+is the *least* final state of the work: in practice a developer finishes the tasks and then makes
+several manual corrections. Converge would sign off on the code as it stood before that polishing,
+and a stale `converged` verdict is worse than no verdict, because nobody re-reads it — while the
+docs telling you it "runs automatically" actively train you not to. Only the developer knows when
+their edits have stopped. So convergence stays part of the flow (Quick Start §1, §2, §3) with the
+*timing* left to the developer. Note this diverges from dotCMS/core#37267's AC B, which specified
+`optional: false`; the divergence and its reason are recorded in that issue.
 
 Append-only by construction: converge's only write is a `## Phase N: Convergence` section at the
 end of `tasks.md`, which is gitignored (see the commit policy above) and therefore never reaches
@@ -183,7 +193,9 @@ Two additive pieces close that:
   `openapi.yaml` + REST annotations, `spec.md`/`plan.md` divergence, and Javadoc. It **never**
   edits a document, never edits `spec.md`/`plan.md`, and never runs a build — a stale
   `openapi.yaml` becomes a task carrying the `./mvnw compile` command, not a regeneration.
-- **`.specify/extensions.yml`** — registers it as a mandatory `after_converge` hook. The shipped
+- **`.specify/extensions.yml`** — registers it as a **mandatory** `after_converge` hook. Mandatory
+  here is not a contradiction of #7: by the time it fires, the developer has already chosen to
+  converge, so extending that one decision to documentation needs no second prompt. The shipped
   `/speckit-converge` skill **already** dispatches `after_converge` (its Execution Step 9) — we
   did not edit it.
 

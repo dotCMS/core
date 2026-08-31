@@ -20,8 +20,9 @@ hooks:
 
   after_implement:
     command: speckit.converge
-    optional: false
-    description: "Assess the codebase against spec/plan/tasks and append remaining work; the mandatory closing step before PR 2"
+    optional: true
+    description: "Recommended before PR 2: assess the codebase against spec/plan/tasks and append remaining work"
+    prompt: "Task list complete. Once you have finished any manual corrections, run /speckit-converge …"
 
   after_converge:
     command: speckit.docs-converge
@@ -38,7 +39,8 @@ style (it currently explains only the ADR hook's purpose).
 python3 -c "
 import yaml; h = yaml.safe_load(open('.specify/extensions.yml'))['hooks']
 assert h['after_implement']['command'] == 'speckit.converge'
-assert h['after_implement']['optional'] is False
+assert h['after_implement']['optional'] is True      # deliberate — developer-triggered
+assert h['after_implement'].get('prompt')
 assert h['after_converge']['command'] == 'speckit.docs-converge'
 assert h['after_converge']['optional'] is False
 assert h['before_plan']['command'] == 'speckit.adr-context'   # unchanged
@@ -65,7 +67,9 @@ Both implement the identical algorithm:
    HookExecutor that does not exist here).
 5. Map `command` to a slash command: `.` → `-`.
 6. `optional: false` → emit the `EXECUTE_COMMAND:` block **and actually invoke** the command,
-   waiting for it to finish.
+   waiting for it to finish. `optional: true` → print the command, the description and the
+   `prompt` as a recommendation, and **do not run it**. That second branch is what makes
+   `after_implement` a recommendation rather than an automatic gate.
 
 ### Two failure modes this creates, both silent
 
@@ -85,19 +89,21 @@ Neither produces a message. The only defense is asserting the parse and the key 
 ```
 /speckit-implement
         │ completes the task list
-        ▼ after_implement (optional: false)
+        ▼ after_implement (optional: TRUE — prints a recommendation, runs nothing)
+   [ developer makes manual corrections ]        ← the reason it is not automatic
+        │
+        ▼ developer runs /speckit-converge when they judge the work done
 /speckit-converge ──── code findings ────▶ appends "## Phase N: Convergence"
         │
-        ▼ after_converge (optional: false)
+        ▼ after_converge (optional: false — one decision, complete coverage)
 /speckit-docs-converge ── doc findings ──▶ appends "## Phase N+1: Documentation Convergence"
         │
-        ├── either appended tasks ──▶ developer re-runs /speckit-implement ──▶ (loop)
+        ├── either appended tasks ──▶ developer fixes ──▶ converges again ──▶ (loop)
         └── both converged ─────────▶ open PR 2
 ```
 
-**The loop is developer-driven.** Neither skill re-invokes `/speckit-implement`; the chain runs
-once per implement invocation and terminates. This is what makes a mandatory automatic hook safe
-to add.
+**The loop is developer-driven at both ends** — the developer picks when to start it, and neither
+skill re-invokes `/speckit-implement`. The chain runs once per converge invocation and terminates.
 
 ## Non-goals for this contract
 
