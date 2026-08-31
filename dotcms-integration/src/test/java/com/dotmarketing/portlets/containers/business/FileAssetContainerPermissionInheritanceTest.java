@@ -59,6 +59,9 @@ public class FileAssetContainerPermissionInheritanceTest {
     private static final String PERMISSION_TYPE_CONTENTLET =
             Contentlet.class.getCanonicalName();
 
+    /** Stand-in for a missing permission_reference row, so failures read clearly. */
+    private static final String NO_REFERENCE = "<no reference row>";
+
     private static User systemUser;
 
     @BeforeClass
@@ -89,21 +92,41 @@ public class FileAssetContainerPermissionInheritanceTest {
 
         // ---- Control: rebuild the reference through the Contentlet (file asset) path ----
         resetPermissionState(scenario.containerVtlId);
+        final String afterResetOne = referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE);
         loadPermissionsAsContentlet(scenario);
-
-        assertEquals("Loaded as a Contentlet, container.vtl must inherit from its container folder",
-                scenario.containerFolder.getInode(),
-                referenceIdFor(scenario.containerVtlId).orElse(null));
+        final String afterContentletLoad =
+                referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE);
 
         // ---- Same asset, rebuilt through the FileAssetContainer path ----
         resetPermissionState(scenario.containerVtlId);
+        final String afterResetTwo = referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE);
         loadPermissionsAsContainer(scenario);
+        final String afterContainerLoad =
+                referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE);
+
+        // Everything observed, reported on either outcome so a failure explains itself.
+        final String observed = String.format(
+                "%n  container folder inode : %s"
+              + "%n  site id                : %s"
+              + "%n  after 1st reset        : %s"
+              + "%n  after Contentlet load  : %s"
+              + "%n  after 2nd reset        : %s"
+              + "%n  after Container  load  : %s%n",
+                scenario.containerFolder.getInode(), scenario.site.getIdentifier(),
+                afterResetOne, afterContentletLoad, afterResetTwo, afterContainerLoad);
+
+        assertEquals("Both resets must actually clear the reference row, otherwise neither load "
+                        + "below performs a parent walk-up and this test proves nothing." + observed,
+                NO_REFERENCE + "|" + NO_REFERENCE, afterResetOne + "|" + afterResetTwo);
+
+        assertEquals("Loaded as a Contentlet, container.vtl must inherit from its container "
+                        + "folder." + observed,
+                scenario.containerFolder.getInode(), afterContentletLoad);
 
         assertEquals("Loaded as a FileAssetContainer, container.vtl must STILL inherit from its "
-                        + "container folder -- inheriting from the Site skips the folder's "
-                        + "individual permissions",
-                scenario.containerFolder.getInode(),
-                referenceIdFor(scenario.containerVtlId).orElse(null));
+                        + "container folder -- resolving to the Site or System Host skips the "
+                        + "folder's permissions entirely." + observed,
+                scenario.containerFolder.getInode(), afterContainerLoad);
     }
 
     /**
