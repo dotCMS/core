@@ -52,17 +52,12 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
-import { stripDocStats } from './utils/doc-stats.utils';
+import { contentMatchesEditorDocument } from './utils/content-match.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import {
     preserveUnknownNodesInDocument,
     restoreUnknownBlockNodes
 } from './utils/unknown-block.utils';
-
-/** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
-function editorDocumentJsonText(editor: Editor): string {
-    return JSON.stringify(stripDocStats(editor.getJSON()));
-}
 
 /**
  * Keeps "scroll the caret into view" confined to the editor's own scroll container.
@@ -131,27 +126,6 @@ function parseAllowedContentTypes(field: DotCMSContentTypeField | undefined): st
 
 function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
-}
-
-/** True when {@link parsed} represents the same document already in {@link editor}. */
-function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
-    const currentJson = editorDocumentJsonText(editor);
-    if (typeof parsed === 'string') {
-        const trimmed = parsed.trimStart();
-        if (trimmed.startsWith('{')) {
-            try {
-                return JSON.stringify(stripDocStats(JSON.parse(parsed))) === currentJson;
-            } catch {
-                return false;
-            }
-        }
-        return parsed === editor.getHTML();
-    }
-    return (
-        JSON.stringify(
-            stripDocStats(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)))
-        ) === currentJson
-    );
 }
 
 /**
@@ -793,14 +767,15 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             return;
         }
         if (ed.view.dragging) return;
-        const parsed = normalizeEditorContent(content);
-        if (editorContentMatchesParsed(ed, parsed)) return;
-        ed.commands.setContent(
-            typeof parsed === 'string'
-                ? parsed
-                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
-            { emitUpdate: false }
-        );
+
+        // The only call site that still compares documents. Angular reactive forms can
+        // legitimately write more than once — `setValue`, `patchValue`, `reset` — and unlike the
+        // `value` input there is no stable reference to latch on, because the host stringifies.
+        // The value effect uses an identity latch instead, and `commitEditor` is a one-shot
+        // drain that needs no guard at all.
+        if (contentMatchesEditorDocument(ed, content ?? '')) return;
+
+        this.loadContent(ed, content ?? '');
     }
 
     /** @inheritdoc */
