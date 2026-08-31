@@ -1,12 +1,28 @@
 import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import { rxMethod } from '@ngrx/signals/rxjs-interop';
+import { EMPTY, pipe } from 'rxjs';
 
-import { LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+import { inject } from '@angular/core';
 
-import { DEFAULT_ASSET_PICKER_PAGE, DEFAULT_ASSET_PICKER_PAGINATION } from './constants';
+import { catchError, switchMap, take, tap } from 'rxjs/operators';
+
+import { DotSiteService } from '@dotcms/data-access';
+import { ComponentStatus, LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+
+import {
+    DEFAULT_ASSET_PICKER_PAGE,
+    DEFAULT_ASSET_PICKER_PAGINATION,
+    DEFAULT_ASSET_PICKER_SORT
+} from './constants';
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
-import { DotAssetPickerConfig, DotAssetPickerFilters, DotAssetPickerState } from './models';
+import {
+    DotAssetPickerConfig,
+    DotAssetPickerFilters,
+    DotAssetPickerSite,
+    DotAssetPickerState
+} from './models';
 
 import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
 
@@ -41,7 +57,40 @@ export const DotAssetPickerStore = signalStore(
     withAssetSelection(),
     withAssetBrowse(),
     withAssetFolderTree(),
-    withMethods((store) => {
+    withMethods((store, siteService = inject(DotSiteService)) => {
+        /**
+         * Resolves the site to open on when the caller did not name one.
+         *
+         * `DotSiteService` is already in this component's graph (the folder tree reaches it through
+         * `DotBrowsingService`) and depends on nothing but `HttpClient` — which is exactly why the
+         * picker asks it rather than `GlobalStore`. `@dotcms/ui` is bundled into the legacy Dojo
+         * custom elements, which boot without a `Router`, so anything pulling one in would break
+         * that bundle at load time even though the picker never opens there.
+         */
+        const resolveEntrySite = rxMethod<void>(
+            pipe(
+                switchMap(() =>
+                    siteService.getCurrentSite().pipe(
+                        take(1),
+                        tap((site) => {
+                            if (site) {
+                                patchState(store, {
+                                    browsingSite: {
+                                        identifier: site.identifier,
+                                        hostname: site.hostname
+                                    }
+                                });
+                            }
+                        }),
+                        // No site is not an error state: the sidebar lists every site the user can
+                        // browse, so the picker opens on the tree with nothing selected and they
+                        // pick one. `$isBrowsable` keeps the search from firing until then.
+                        catchError(() => EMPTY)
+                    )
+                )
+            )
+        );
+
         /** Any filter change invalidates the cursor bookmarks and sends the user back to page 1. */
         const resetPaging = () => ({
             pagination: { ...store.pagination(), page: 1 },
@@ -57,13 +106,16 @@ export const DotAssetPickerStore = signalStore(
              * clear them. `config.mimeTypes` does not: it lives outside the filter bag on purpose.
              */
             initPicker: (config: DotAssetPickerConfig): void => {
+                // Starting point only — the sidebar can move the picker to another site. The
+                // remembered location wins, then the caller's own site; with neither, the picker
+                // looks the current one up rather than refusing to open.
+                const entrySite = config.browseSite ?? config.site;
+
                 patchState(store, {
                     config,
-                    // Starting point only — the sidebar can move the picker to another site. Opens
-                    // on the remembered site when there is one, otherwise on the editor's own.
-                    browsingSite: config.browseSite ?? {
-                        identifier: config.site.identifier,
-                        hostname: config.site.hostname
+                    browsingSite: entrySite && {
+                        identifier: entrySite.identifier,
+                        hostname: entrySite.hostname
                     },
                     path: config.path,
                     filters: {
@@ -71,10 +123,22 @@ export const DotAssetPickerStore = signalStore(
                         ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {})
                     },
                     pagination: DEFAULT_ASSET_PICKER_PAGINATION,
+                    // Seeded, not pinned: `sortByDesc` sets the direction the picker opens with,
+                    // and the user can still re-sort from the table header afterwards.
+                    sort: config.browse
+                        ? {
+                              field: config.browse.sortField ?? DEFAULT_ASSET_PICKER_SORT.field,
+                              order: config.browse.sortByDesc === false ? 'asc' : 'desc'
+                          }
+                        : DEFAULT_ASSET_PICKER_SORT,
                     pages: [DEFAULT_ASSET_PICKER_PAGE],
                     items: [],
                     selectedAsset: null
                 });
+
+                if (!entrySite) {
+                    resolveEntrySite();
+                }
 
                 store.loadFolders();
             },
@@ -104,6 +168,60 @@ export const DotAssetPickerStore = signalStore(
                 patchState(store, {
                     browsingSite: { identifier, hostname: data.hostname },
                     path: data.type === 'site' ? undefined : data.path || undefined,
+                    ...resetPaging()
+                });
+            },
+
+            /**
+             * Moves the picker to another site.
+             *
+             * Lives here rather than in the folder-tree feature because it touches everything at
+             * once — the tree, the folder scope, the search term and the asset list's paging — and
+             * `resetPaging` is the store's, not the feature's.
+             *
+             * The folder term is cleared on the way: a term is only meaningful against the site it
+             * was typed for. Carrying it over would leave the editor reading site A's results under
+             * a selector that says site B.
+             */
+            setBrowsingSite: (site: DotAssetPickerSite): void => {
+                if (site.identifier === store.browsingSite()?.identifier) {
+                    return;
+                }
+
+                patchState(store, {
+                    browsingSite: site,
+                    path: undefined,
+                    selectedNode: null,
+                    folderSearch: '',
+                    searchResults: null,
+                    searchStatus: ComponentStatus.INIT,
+                    searchHasMore: false,
+                    ...resetPaging()
+                });
+
+                store.loadFolders();
+            },
+
+            /**
+             * Scopes the list to a folder picked out of the flat search results.
+             *
+             * Deliberately **not** `selectNode`: that one resolves the site by walking up to the
+             * tree root, and a search result has no parent in the tree to walk. The result already
+             * belongs to the browsed site, so the site does not change — only the folder does.
+             *
+             * The term and the results are left alone. Keeping the list up is the point: the editor
+             * can try the next match without retyping.
+             */
+            selectSearchResult: (node: TreeNodeItem): void => {
+                const data = node.data;
+
+                if (!data || data.type === LOAD_MORE_NODE_TYPE) {
+                    return;
+                }
+
+                store.setSelectedNode(node);
+                patchState(store, {
+                    path: data.path || undefined,
                     ...resetPaging()
                 });
             },
