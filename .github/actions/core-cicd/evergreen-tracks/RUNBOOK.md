@@ -38,9 +38,11 @@ from eligibility, so no track will advance onto it.
    | `repo` | `dotcms/dotcms` |
    | `action` | `taint` |
    | `version` | the bad GA version, e.g. `26.07.06-3` |
-   | `apply` | `false` ← **dry-run first** |
-2. Read the output, confirm it targets the version you intended.
-3. Re-run with `apply` = `true`.
+   | `mode` | `dry-run` ← **the default; changes nothing** |
+2. Read the output, confirm it targets the version you intended. A dry-run logs
+   `DRY-RUN would point ...` and the run is titled `DRY-RUN (no changes)`.
+3. Re-dispatch with `mode` = `apply`. Only then does the marker actually get pushed
+   (`pointing ... -> sha256:...`).
 
 ### Verify
 
@@ -82,7 +84,7 @@ skips the track and self-heals the floating tag back to the held digest if it dr
    | `action` | `hold` |
    | `track` | `standard`, `trailing`, or `latest` |
    | `version` | the version to freeze on, e.g. `26.06.22-03` |
-   | `apply` | `false` → then `true` |
+   | `mode` | `dry-run` → then `apply` |
 2. Holding onto a **tainted** version is refused unless you also set `force` = `true`. Don't,
    unless you're deliberately choosing the least-bad option and have said so in the ticket.
 

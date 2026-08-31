@@ -1,7 +1,26 @@
 name: evergreen-tracks-admin
+
+# The run title carries the mode, so a dry-run is distinguishable from a real
+# mutation in the Actions list and at the top of the run page — not just buried
+# in the step log. A dry-run that was meant to apply has been mistaken for a
+# completed taint before (2026-08-31, run 33434507975).
+run-name: >-
+  ${{ inputs.mode == 'apply' && 'APPLY' || 'DRY-RUN (no changes)' }}
+  — ${{ inputs.action }} ${{ inputs.version }}${{ inputs.track }}
+
 on:
   workflow_dispatch:
     inputs:
+      # FIRST input deliberately: the dispatch form renders inputs in declaration
+      # order, and this one was previously last — under five other fields, as a
+      # free-text box pre-filled with the word "false", which is easy to skim past.
+      # A choice dropdown spelling out "dry-run" forces a deliberate pick.
+      mode:
+        description: 'Mode — dry-run prints the plan and changes NOTHING; apply mutates tags'
+        required: true
+        type: choice
+        default: 'dry-run'
+        options: [dry-run, apply]
       repo:
         description: 'Docker repo to operate on'
         required: true
@@ -22,11 +41,8 @@ on:
       force:
         description: 'Allow holding onto a tainted version'
         required: false
-        default: 'false'
-      apply:
-        description: 'Actually mutate tags (false = dry-run)'
-        required: true
-        default: 'false'
+        type: boolean
+        default: false
 
 # Share the registry-mutation lock with the promote workflows so an admin
 # taint/hold can never overlap a promote run on the same tags.
@@ -53,16 +69,20 @@ jobs:
           # delete calls read them); other steps/actions don't need them.
           DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
           DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
-          REPO: ${{ github.event.inputs.repo }}
-          ACTION: ${{ github.event.inputs.action }}
-          VERSION: ${{ github.event.inputs.version }}
-          TRACK: ${{ github.event.inputs.track }}
-          FORCE: ${{ github.event.inputs.force }}
-          APPLY: ${{ github.event.inputs.apply }}
+          REPO: ${{ inputs.repo }}
+          ACTION: ${{ inputs.action }}
+          VERSION: ${{ inputs.version }}
+          TRACK: ${{ inputs.track }}
+          FORCE: ${{ inputs.force }}
+          MODE: ${{ inputs.mode }}
         run: |
           EXTRA=""
           if [ "$FORCE" = "true" ]; then EXTRA="$EXTRA --force"; fi
-          if [ "$APPLY" = "true" ]; then EXTRA="$EXTRA --apply"; fi
+          if [ "$MODE" = "apply" ]; then
+            EXTRA="$EXTRA --apply"
+          else
+            echo "::notice::DRY-RUN — printing the plan only. Nothing in the registry will change. Re-dispatch with mode=apply to make it real."
+          fi
           uv run evergreen-tracks admin \
             --repo "$REPO" \
             --action "$ACTION" \
