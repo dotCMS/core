@@ -5,12 +5,17 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vavr.control.Try;
 
@@ -102,6 +107,53 @@ public class FileAssetContainer extends Container {
     @Override
     public String getPermissionType() {
         return Contentlet.class.getCanonicalName();
+    }
+
+    /**
+     * A File Asset Container is not a database Container: it is the {@code container.vtl} file living
+     * in a folder under {@code /application/containers/}, and that is why {@link #getPermissionType()}
+     * makes it behave as a {@link Contentlet}. Since the very same asset id is also loaded as a plain
+     * {@link Contentlet} -- whose parent Permissionable is the folder that holds it -- this Container
+     * must inherit from that same Container folder.
+     * <p>Falling back to the {@link Container} behavior (the Site) would make both views of the asset
+     * disagree: the {@code permission_reference} row is keyed by asset id alone, so whichever view
+     * resolved it last would overwrite the other one, and every permission granted on the Container
+     * folder would be silently replaced by the ones inherited from the Site.</p>
+     *
+     * @return The Container {@link Folder}, or the default {@link Container} parent Permissionable
+     * (the Site) when this instance does not hold enough information to resolve such a folder.
+     *
+     * @throws DotDataException An error occurred when interacting with the data source.
+     */
+    @JsonIgnore
+    @Override
+    public Permissionable getParentPermissionable() throws DotDataException {
+        final Folder containerFolder = this.findContainerFolder();
+        return null != containerFolder ? containerFolder : super.getParentPermissionable();
+    }
+
+    /**
+     * Resolves the folder that makes up this File Asset Container. Both the Site and the path are set
+     * when the Container is built from the file system, but a partially built instance -- such as the
+     * one created when the {@code container.vtl} file is being deleted -- may have neither of them.
+     *
+     * @return The Container {@link Folder}, or {@code null} if it cannot be resolved.
+     */
+    @JsonIgnore
+    private Folder findContainerFolder() {
+        if (null == this.host || !UtilMethods.isSet(this.path)) {
+            return null;
+        }
+        final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
+        final String folderPath = fileAssetContainerUtil.isFullPath(this.path)
+                ? fileAssetContainerUtil.getRelativePath(this.path)
+                : this.path;
+        final Folder containerFolder = Try.of(() -> APILocator.getFolderAPI()
+                        .findFolderByPath(folderPath, this.host, APILocator.systemUser(), false))
+                .getOrNull();
+        return null != containerFolder && UtilMethods.isSet(containerFolder.getInode())
+                && !FolderAPI.SYSTEM_FOLDER.equals(containerFolder.getInode())
+                ? containerFolder : null;
     }
 
     public void addMetaData(final String key, final Object value) {
