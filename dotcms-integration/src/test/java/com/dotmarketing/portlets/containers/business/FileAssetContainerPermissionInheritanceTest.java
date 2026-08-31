@@ -1,6 +1,7 @@
 package com.dotmarketing.portlets.containers.business;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
@@ -199,14 +200,26 @@ public class FileAssetContainerPermissionInheritanceTest {
 
     /**
      * Method to test: {@link com.dotmarketing.business.PermissionBitFactoryImpl} permission
-     * reference resolution.
+     * reference resolution when the Site itself carries an inheritable grant.
      * <p>
-     * Given Scenario: the reference is rebuilt through the {@link Container} path, so it points at
-     * the Site instead of the container folder. A Site-level inheritable View grant exists for a
-     * <i>different</i> role (the "reviewer" role in the customer's environment).
+     * Given Scenario: the customer's exact role split. One role ("editor") is granted View on the
+     * container folder only; another role ("reviewer") is granted an inheritable View on the
+     * <i>Site's</i> child content and nothing inheritable on the folder. The reference is then
+     * rebuilt through the {@link Container} code path.
      * <p>
-     * Expected Result: the role that was granted View on the folder must keep View on the
-     * Container, and must not be overtaken by the Site-level grant given to another role.
+     * This is what makes the scenario different from
+     * {@link #permissionReferenceForFileAssetContainerMustResolveToContainerFolder()}: because the
+     * Site holds an inheritable {@code Contentlet} grant, the parent walk-up has somewhere to stop
+     * before System Host, so a Container that inherits from the Site resolves to the <b>Site id</b>
+     * -- both values seen in the customer's database.
+     * <p>
+     * Expected Result: the reference must resolve to the container folder anyway, and the role that
+     * was granted View on the folder must keep View on the Container. The reviewer must get exactly
+     * what the folder grants them and nothing more: once the folder carries its own inheritable
+     * permissions it is the nearest ancestor with an inheritable {@code Contentlet} set, so the
+     * walk-up stops there and the Site's grants no longer reach the asset -- which is already how
+     * {@code container.vtl} behaves when it is read as a file
+     * ({@code PermissionBitFactoryImpl._loadParentPermissions()}).
      */
     @Test
     public void folderGrantedRoleMustNotLoseViewToSiteLevelGrantOfAnotherRole()
@@ -227,7 +240,8 @@ public class FileAssetContainerPermissionInheritanceTest {
                         PermissionAPI.PERMISSION_READ, true),
                 scenario.site, systemUser, false);
         // Inheritable View on the Site's child content. This is the grant the customer's Reviewer
-        // roles hold, and the reason they keep the Container while the Editor roles lose it.
+        // roles hold, and it is what gives the broken walk-up somewhere to stop: with it in place a
+        // Container that inherits from the Site resolves to the Site id rather than to System Host.
         APILocator.getPermissionAPI().save(
                 new Permission(PERMISSION_TYPE_CONTENTLET, scenario.site.getPermissionId(),
                         reviewerRole.getId(), PermissionAPI.PERMISSION_READ, true),
@@ -236,9 +250,9 @@ public class FileAssetContainerPermissionInheritanceTest {
         // user and silently skips it on a DotSecurityException
         // (ContainerFactoryImpl.findContainersAssetsByHost), so without this the reviewer never
         // reaches the permission check the test is actually about. Deliberately NOT an inheritable
-        // grant on the folder's child content -- the reviewer's view of the Container must still
-        // depend on the Site-level grant above, which is the asymmetry under test and matches how
-        // the customer's Reviewer roles are configured.
+        // grant on the folder's child content: the reviewer must reach the Container's own
+        // permission check holding nothing but the Site-level grant, which is how the customer's
+        // Reviewer roles are configured.
         APILocator.getPermissionAPI().save(
                 new Permission(scenario.containerFolder.getPermissionId(), reviewerRole.getId(),
                         PermissionAPI.PERMISSION_READ, true),
@@ -249,6 +263,7 @@ public class FileAssetContainerPermissionInheritanceTest {
                 .nextPersisted();
         createdUsers.add(reviewerUser);
 
+        final Contentlet vtlAsContentlet = resolveAsContentlet(scenario);
         final Container vtlAsContainer = resolveAsContainer(scenario);
         resetPermissionState(scenario.containerVtlId);
         loadPermissionsFor(vtlAsContainer);
@@ -260,14 +275,32 @@ public class FileAssetContainerPermissionInheritanceTest {
                 scenario.containerFolder.getInode(), scenario.site.getIdentifier(),
                 referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE));
 
-        assertTrue("Sanity check: the reviewer holds an inheritable View on the Site's child "
-                        + "content, so a reference resolving to the Site keeps the Container "
-                        + "visible to them." + observed,
-                isContainerVisibleTo(scenario, reviewerUser));
+        assertEquals("The Site holds an inheritable grant of its own, so a Container that inherits "
+                        + "from the Site stops there instead of at System Host. The reference must "
+                        + "still resolve to the container folder." + observed,
+                scenario.containerFolder.getInode(),
+                referenceIdFor(scenario.containerVtlId).orElse(NO_REFERENCE));
 
         assertTrue("The editor role was granted View on the container folder, so it must see the "
-                        + "Container too." + observed,
+                        + "Container." + observed,
                 isContainerVisibleTo(scenario, scenario.limitedUser));
+
+        // The reviewer is the counterpart. Both identities read the same reference row, so this
+        // guard cannot fail while the row is correct -- it is here to state the invariant the whole
+        // class exists for: one asset id and one permission type must never yield two answers
+        // depending on which object was loaded.
+        assertEquals("The Container and the file must resolve the reviewer's access identically. "
+                        + "Disagreeing here is the defect itself: same asset id, same permission "
+                        + "type, two different answers." + observed,
+                APILocator.getPermissionAPI().doesUserHavePermission(
+                        vtlAsContentlet, PermissionAPI.PERMISSION_READ, reviewerUser, false),
+                APILocator.getPermissionAPI().doesUserHavePermission(
+                        vtlAsContainer, PermissionAPI.PERMISSION_READ, reviewerUser, false));
+
+        assertFalse("The reviewer holds no inheritable grant on the container folder, and the "
+                        + "folder is the nearest ancestor with an inheritable Contentlet set, so "
+                        + "the Site-level grant must not reach the Container." + observed,
+                isContainerVisibleTo(scenario, reviewerUser));
     }
 
     // ------------------------------------------------------------------ helpers
