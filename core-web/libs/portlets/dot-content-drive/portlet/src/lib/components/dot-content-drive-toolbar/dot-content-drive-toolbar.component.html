@@ -1,4 +1,4 @@
-<p-toolbar class="h-full justify-start gap-1 border-none! px-3">
+<p-toolbar class="h-full justify-start gap-1 border-x-0! border-t-0! px-3">
     <div
         class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-x-1 gap-y-4 py-3 transition-all duration-300 ease-in-out">
         <!-- Stays put whether the tree is open or closed, the way UVE keeps its palette and
@@ -79,6 +79,10 @@
             <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
+            <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
+                 goes after rather than before, because the workflow filter derives its scheme list
+                 from the content-type selection and the two must stay adjacent. -->
+            <dot-content-drive-status-filter data-testid="status-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
 
             @for (field of $activeFieldFilters(); track field.variable) {

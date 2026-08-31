@@ -479,6 +479,46 @@ describe('action-center utils', () => {
             expect(refresh?.eligibleInodes).toEqual(['a', 'b']);
         });
 
+        it('should block Refresh for a non-admin, matching the endpoint gate', () => {
+            // `BulkRefreshHelper.canRefresh` ORs a CMS Power User check with a CMS Administrator
+            // check, but the Power User half resolves a role *key* that ships with no role, so it is
+            // always false. What is left is `User.isAdmin()`, which is the same call that feeds
+            // `currentUserIsAdmin` here — so the row can predict the 403 instead of firing into it.
+            const refresh = getQuickActions([contentlet({ inode: 'a' })], { isAdmin: false }).find(
+                (action) => action.id === REFRESH_ACTION_ID
+            );
+
+            expect(refresh?.missingAdminRole).toBe(true);
+        });
+
+        it('should release Refresh for an admin and still count every contentlet', () => {
+            const refresh = getQuickActions(
+                [contentlet({ inode: 'a' }), contentlet({ inode: 'b' })],
+                { isAdmin: true }
+            ).find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(refresh?.missingAdminRole).toBe(false);
+            // The role gates the row, not the rows it would fire on: no content state disqualifies
+            // a reindex.
+            expect(refresh?.count).toBe(2);
+        });
+
+        it('should never block the other rows on the admin role', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a', locked: true })], {
+                    isAdmin: false
+                }).map((action) => [action.id, action])
+            );
+
+            for (const id of [
+                WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
+                PUSH_PUBLISH_ACTION_ID
+            ] as string[]) {
+                expect(byId.get(id)?.missingAdminRole).toBe(false);
+            }
+        });
+
         it('should block Push Publish on the environments, not on coming-soon', () => {
             // Nothing is missing from dotCMS here, something is missing from the configuration, and
             // the fix belongs to an administrator. The two states read differently on the row.

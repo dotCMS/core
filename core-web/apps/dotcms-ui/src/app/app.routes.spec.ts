@@ -32,10 +32,11 @@ describe('appRoutes', () => {
             expect(experimentsRoutes[0].canActivateChild).toContain(MenuGuardService);
         });
 
-        it('should not reuse the route', () => {
-            expect(experimentsRoutes[0].data).toEqual(
-                expect.objectContaining({ reuseRoute: false })
-            );
+        it('should not force `reuseRoute: false` on its subtree', () => {
+            // Route `data` is inherited, so this flag would recreate the Configure shell — and
+            // its store, mid-autosave — on the `new → :id/configuration` swap that follows
+            // creating a draft. The portlet's own routes opt in per screen instead.
+            expect(experimentsRoutes[0].data?.['reuseRoute']).toBeUndefined();
         });
 
         it('should lazily load the portlet route array', async () => {
