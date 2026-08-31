@@ -1,24 +1,13 @@
-import { of, Subject } from 'rxjs';
-
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    inject,
-    input,
-    output,
-    signal
-} from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, input, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { AutoCompleteCompleteEvent, AutoCompleteModule } from 'primeng/autocomplete';
 
-import { catchError, switchMap, tap } from 'rxjs/operators';
-
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { DotUserListItem, DotUsersService } from '../../services/dot-users.service';
+import { DotUsersReplacementPickerStore } from './store/dot-users-replacement-picker.store';
+
+import { DotUserListItem } from '../../services/dot-users.service';
 
 /**
  * Server-backed replacement-user picker used by the delete flows.
@@ -34,12 +23,11 @@ import { DotUserListItem, DotUsersService } from '../../services/dot-users.servi
     selector: 'dot-users-replacement-picker',
     imports: [FormsModule, AutoCompleteModule, DotMessagePipe],
     templateUrl: './dot-users-replacement-picker.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { class: 'block' }
+    host: { class: 'block' },
+    providers: [DotUsersReplacementPickerStore]
 })
 export class DotUsersReplacementPickerComponent {
-    readonly #usersService = inject(DotUsersService);
-    readonly #destroyRef = inject(DestroyRef);
+    readonly #store = inject(DotUsersReplacementPickerStore);
 
     /** ID passed to the underlying <input> so an external <label for> hooks up. */
     readonly inputId = input<string>('users-replacement-picker');
@@ -63,51 +51,27 @@ export class DotUsersReplacementPickerComponent {
     /** Emits every selection change (user or null when cleared). */
     readonly selectionChange = output<DotUserListItem | null>();
 
-    protected readonly $suggestions = signal<DotUserListItem[]>([]);
-    protected readonly $isLoading = signal(false);
-    /**
-     * Distinct from "no matches" so a 500 doesn't look like an empty
-     * result set. The empty-template reads this to swap the copy.
-     */
-    protected readonly $hasError = signal(false);
+    protected readonly $isLoading = this.#store.isLoading;
+    protected readonly $hasError = this.#store.hasError;
 
     /**
-     * Search queries flow through a Subject so `switchMap` can cancel
-     * an in-flight request the moment a newer query arrives. The 300ms
-     * PrimeNG delay narrows the race but a slow early response can
-     * still overwrite a newer one if we subscribe per keystroke.
+     * Server suggestions minus any user id the caller marked as
+     * excluded. The filter runs client-side on top of the store's
+     * raw list so the store never has to know about a picker-level
+     * concern (the caller decides who can't be picked as a
+     * replacement — usually the users being deleted).
      */
-    readonly #query$ = new Subject<string>();
+    protected readonly $suggestions = computed(() => {
+        const excluded = new Set(this.excludedUserIds());
+        if (excluded.size === 0) {
+            return this.#store.suggestions();
+        }
 
-    constructor() {
-        this.#query$
-            .pipe(
-                tap(() => {
-                    this.$isLoading.set(true);
-                    this.$hasError.set(false);
-                }),
-                switchMap((query) =>
-                    this.#usersService
-                        .getUsersPaginated({ filter: query, page: 1, perPage: 10 })
-                        .pipe(catchError(() => of(null)))
-                ),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((response) => {
-                this.$isLoading.set(false);
-                if (response === null) {
-                    this.$hasError.set(true);
-                    this.$suggestions.set([]);
-
-                    return;
-                }
-                const excluded = new Set(this.excludedUserIds());
-                this.$suggestions.set(response.entity.filter((user) => !excluded.has(user.userId)));
-            });
-    }
+        return this.#store.suggestions().filter((user) => !excluded.has(user.userId));
+    });
 
     protected onSearch(event: AutoCompleteCompleteEvent): void {
-        this.#query$.next(event.query);
+        this.#store.search(event.query);
     }
 
     protected onSelect(value: DotUserListItem | null): void {
