@@ -71,7 +71,12 @@ describe('DotUsersCreateComponent', () => {
                         i18nMessagesMap: {},
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
-                )
+                ),
+                getApiTokens: jest.fn().mockReturnValue(of([])),
+                getApiTokenJwt: jest.fn().mockReturnValue(of('mock-jwt')),
+                createApiToken: jest.fn(),
+                revokeApiToken: jest.fn(),
+                deleteApiToken: jest.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
         ]

@@ -104,10 +104,10 @@
                         data-testid="users-dialog-permissions-tab" />
                 </p-tabpanel>
                 <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
-                    <div
-                        class="text-color-secondary px-7 pt-6 pb-7 text-sm"
-                        data-testid="users-dialog-api-tokens-tab-placeholder">
-                        {{ 'users.dialog.tabs.coming-soon' | dm }}
+                    <div class="px-7 pt-6 pb-7">
+                        <dot-users-api-tokens-tab
+                            [userId]="user?.userId ?? null"
+                            data-testid="users-dialog-api-tokens-tab" />
                     </div>
                 </p-tabpanel>
             </p-tabpanels>
