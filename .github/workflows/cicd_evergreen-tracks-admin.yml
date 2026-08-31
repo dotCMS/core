@@ -38,8 +38,11 @@ on:
         description: 'Track (for hold/release-hold): latest|standard|trailing'
         required: false
         default: ''
+      # Only consulted by `hold`; inert on taint/untaint/release-hold. Lifts the guard
+      # against pinning a track to a KNOWN-BAD release, and a held track bypasses the
+      # planner, so promote actively re-pins it there until release-hold. See RUNBOOK.
       force:
-        description: 'Allow holding onto a tainted version'
+        description: 'hold only — pin onto a TAINTED version (last resort, see RUNBOOK)'
         required: false
         type: boolean
         default: false
