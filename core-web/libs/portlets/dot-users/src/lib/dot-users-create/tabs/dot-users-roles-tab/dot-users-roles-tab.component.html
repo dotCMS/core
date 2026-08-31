@@ -102,20 +102,16 @@
                 @for (role of $grantedList(); track role.id) {
                     <!--
                         `track role.id` because `role.id` is always
-                        unique; `role.roleKey` can be empty for
-                        keyless roles which would collide on @for
-                        (Angular NG0955). Click / data-testid use
-                        the grantIdentifier the internal
-                        `selectedGranted` state is keyed by
-                        (`roleKey || id`), and we suffix with
-                        `role.id` so keyless-role testids stay
-                        unique too.
+                        unique across the tree. Since #37218 landed we
+                        key selection state and the outbound payload
+                        entirely by `role.id`, so keyless custom roles
+                        no longer need a fallback path.
                     -->
                     <button
                         type="button"
                         class="flex w-full items-start gap-2 rounded-sm p-2 text-left hover:bg-surface-100"
-                        [class.bg-primary-50]="isSelectedGranted(grantIdentifier(role))"
-                        (click)="toggleGrantedSelection(grantIdentifier(role))"
+                        [class.bg-primary-50]="isSelectedGranted(role.id)"
+                        (click)="toggleGrantedSelection(role.id)"
                         [attr.data-testid]="'users-roles-granted-item-' + role.id">
                         <!--
                             `text-*!` needed on every Material Symbols icon:

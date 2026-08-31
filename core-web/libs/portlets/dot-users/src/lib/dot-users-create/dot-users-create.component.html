@@ -91,7 +91,7 @@
                         -->
                         @defer (when $activeTab() === 1) {
                             <dot-users-roles-tab
-                                [initialGrantedKeys]="initialGrantedRoleKeys()"
+                                [initialGrantedIds]="initialGrantedRoleIds()"
                                 (grantedChange)="onGrantedRolesChange($event)"
                                 data-testid="users-dialog-roles-tab" />
                         }

@@ -199,7 +199,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('drops Root B once granted', () => {
-            spectator.component['$granted'].set(['ROOT_B']);
+            spectator.component['$granted'].set(['6']); // Root B is a bare grantable leaf
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -207,7 +207,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('drops Root A once all three of its grantable leaves are granted', () => {
-            spectator.component['$granted'].set(['A1A', 'A1B', 'A2']);
+            spectator.component['$granted'].set(['3', '4', '5']); // A1a, A1b, A2
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -215,7 +215,7 @@ describe('DotUsersRolesTabComponent', () => {
         });
 
         it('keeps Root A while at least one grantable leaf is still ungranted', () => {
-            spectator.component['$granted'].set(['A1A', 'A1B']); // A2 still ungranted
+            spectator.component['$granted'].set(['3', '4']); // A2 (id=5) still ungranted
             const rootIds = (spectator.component['$availableTree']() as AvailableNode[]).map(
                 (node) => node.role.id
             );
@@ -226,26 +226,28 @@ describe('DotUsersRolesTabComponent', () => {
     describe('grant / revoke', () => {
         it('grant() moves the selected leaves to the granted list and clears selection', () => {
             let emitted: string[] | undefined;
-            spectator.component.grantedChange.subscribe((keys) => (emitted = keys));
+            spectator.component.grantedChange.subscribe((ids) => (emitted = ids));
 
             spectator.component['$selectedAvailable'].set(['3']); // Leaf A1a
             spectator.component['grant']();
 
-            expect(spectator.component['$granted']()).toContain('A1A');
+            // Since #37218 the shuttle emits role IDs unconditionally
+            // — no more roleKey fallback for keyless roles.
+            expect(spectator.component['$granted']()).toContain('3');
             expect(spectator.component['$selectedAvailable']()).toEqual([]);
-            expect(emitted).toContain('A1A');
+            expect(emitted).toContain('3');
         });
 
-        it('revoke() removes the selected granted keys and re-emits', () => {
+        it('revoke() removes the selected granted ids and re-emits', () => {
             let emitted: string[] | undefined;
-            spectator.component.grantedChange.subscribe((keys) => (emitted = keys));
+            spectator.component.grantedChange.subscribe((ids) => (emitted = ids));
 
-            spectator.component['$granted'].set(['A1A', 'A1B']);
-            spectator.component['$selectedGranted'].set(['A1B']);
+            spectator.component['$granted'].set(['3', '4']); // A1a, A1b
+            spectator.component['$selectedGranted'].set(['4']);
             spectator.component['revoke']();
 
-            expect(spectator.component['$granted']()).toEqual(['A1A']);
-            expect(emitted).toEqual(['A1A']);
+            expect(spectator.component['$granted']()).toEqual(['3']);
+            expect(emitted).toEqual(['3']);
         });
     });
 

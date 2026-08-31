@@ -59,8 +59,12 @@ interface RoleTreeNode {
  * middle to move selection across.
  *
  * The shell owns the source-of-truth `roles` list on the outbound
- * save payload — this component takes the initial granted keys as
- * an input and emits every change through `grantedChange`.
+ * save payload — this component takes the initial granted role IDs
+ * as an input and emits every change (also as IDs) through
+ * `grantedChange`. Since #37218 the backend accepts both `roleKey`
+ * and `id` on the users endpoint, so we send IDs unconditionally —
+ * keyless custom roles that used to be dropped now round-trip
+ * cleanly.
  */
 @Component({
     selector: 'dot-users-roles-tab',
@@ -83,25 +87,25 @@ export class DotUsersRolesTabComponent {
     readonly #destroyRef = inject(DestroyRef);
 
     /**
-     * Role KEYS the user currently holds — sourced from the parent
+     * Role IDs the user currently holds — sourced from the parent
      * dialog's `getUserRoles` fetch. `granted` is seeded from this
      * value on the first non-empty change; subsequent parent
      * mutations don't clobber in-flight user edits.
      */
-    readonly initialGrantedKeys = input<string[]>([]);
+    readonly initialGrantedIds = input<string[]>([]);
 
     /**
-     * Emits the full set of currently granted role KEYS every time
+     * Emits the full set of currently granted role IDs every time
      * the user grants or revokes anything. The shell listens and
      * plugs the value into the save payload.
      */
     readonly grantedChange = output<string[]>();
 
     readonly #$allRoles = signal<RoleOption[]>([]);
-    readonly #$rolesByKey = computed(() => {
+    readonly #$rolesById = computed(() => {
         const map = new Map<string, RoleOption>();
         for (const role of this.#$allRoles()) {
-            map.set(this.grantIdentifier(role), role);
+            map.set(role.id, role);
         }
 
         return map;
@@ -131,13 +135,6 @@ export class DotUsersRolesTabComponent {
      * the parent's own role. `editUsers=false` roles are excluded
      * because `addRoleToUser` throws on them and rolls the whole
      * transactional PUT back.
-     *
-     * `roleKey` is intentionally NOT required: dotCMS auto-generates
-     * keys on role creation but legacy or manually-imported roles
-     * can end up keyless, and callers still expect them in the
-     * shuttle. When emitting on save we use `roleKey` when present
-     * and fall back to the role `id` — worst case the backend
-     * `loadRoleByKey` call silently no-ops.
      */
     private isGrantableLeaf(role: RoleOption): boolean {
         if (this.#$rolesWithChildren().has(role.id)) {
@@ -145,17 +142,6 @@ export class DotUsersRolesTabComponent {
         }
 
         return role.editUsers !== false;
-    }
-
-    /**
-     * The identifier we hand up on `grantedChange` for a given role.
-     * `roleKey` when the backend has one; the role `id` otherwise
-     * so the shell can still preserve/save the assignment.
-     * Exposed to the template so click handlers and selection state
-     * key off the same value the internal `granted` signal holds.
-     */
-    protected grantIdentifier(role: RoleOption): string {
-        return role.roleKey || role.id;
     }
 
     /**
@@ -271,17 +257,8 @@ export class DotUsersRolesTabComponent {
      */
     protected readonly $availableTree = computed<RoleTreeNode[]>(() => {
         const query = this.$availableFilter().toLowerCase().trim();
-        const grantedKeys = new Set(this.$granted());
+        const grantedIds = new Set(this.$granted());
         const grantableLeaves = this.#$grantableLeavesByRole();
-
-        // Map granted `roleKey`s back to leaf ids so we can ask "is
-        // every grantable descendant of this parent already granted?"
-        const grantedLeafIds = new Set<string>();
-        for (const role of this.#$allRoles()) {
-            if (grantedKeys.has(this.grantIdentifier(role))) {
-                grantedLeafIds.add(role.id);
-            }
-        }
 
         // A parent stays in the tree if either:
         //   - it never had any grantable descendants (workflow-only
@@ -298,7 +275,7 @@ export class DotUsersRolesTabComponent {
                 return true;
             }
 
-            return leaves.some((leafId) => !grantedLeafIds.has(leafId));
+            return leaves.some((leafId) => !grantedIds.has(leafId));
         };
 
         const pool = this.#$allRoles().filter((role) => {
@@ -308,7 +285,7 @@ export class DotUsersRolesTabComponent {
 
             // Leaves are moved between panels: keep only when not yet
             // granted.
-            return !grantedKeys.has(this.grantIdentifier(role));
+            return !grantedIds.has(role.id);
         });
         const byParent = new Map<string, RoleOption[]>();
         for (const role of pool) {
@@ -346,10 +323,10 @@ export class DotUsersRolesTabComponent {
 
     protected readonly $grantedList = computed<RoleOption[]>(() => {
         const query = this.$grantedFilter().toLowerCase().trim();
-        const map = this.#$rolesByKey();
+        const map = this.#$rolesById();
         const list: RoleOption[] = [];
-        for (const key of this.$granted()) {
-            const role = map.get(key);
+        for (const id of this.$granted()) {
+            const role = map.get(id);
             if (role && (!query || role.name.toLowerCase().includes(query))) {
                 list.push(role);
             }
@@ -365,17 +342,18 @@ export class DotUsersRolesTabComponent {
     constructor() {
         this.loadRoles();
 
-        // Seed the local `granted` signal from the parent's `initialGrantedKeys`
-        // exactly once, the first time it delivers a non-empty value. Later
-        // parent mutations don't clobber in-flight user edits.
+        // Seed the local `granted` signal from the parent's
+        // `initialGrantedIds` exactly once, the first time it delivers
+        // a non-empty value. Later parent mutations don't clobber
+        // in-flight user edits.
         let seeded = false;
         effect(() => {
-            const keys = this.initialGrantedKeys();
+            const ids = this.initialGrantedIds();
             if (seeded) {
                 return;
             }
-            if (keys.length > 0) {
-                this.$granted.set([...keys]);
+            if (ids.length > 0) {
+                this.$granted.set([...ids]);
                 seeded = true;
             }
         });
@@ -448,10 +426,10 @@ export class DotUsersRolesTabComponent {
         // (see toggleAvailableSelection); the isGrantableLeaf check
         // is kept as defence-in-depth in case anything slipped in
         // between renders (e.g. tree refetch demoted a role).
-        const keysToAdd = roles
+        const idsToAdd = roles
             .filter((role) => selectedIds.has(role.id) && this.isGrantableLeaf(role))
-            .map((role) => this.grantIdentifier(role));
-        this.$granted.update((current) => Array.from(new Set([...current, ...keysToAdd])));
+            .map((role) => role.id);
+        this.$granted.update((current) => Array.from(new Set([...current, ...idsToAdd])));
         this.$selectedAvailable.set([]);
         this.grantedChange.emit(this.$granted());
     }
@@ -461,13 +439,13 @@ export class DotUsersRolesTabComponent {
         if (toRemove.size === 0) {
             return;
         }
-        this.$granted.update((current) => current.filter((key) => !toRemove.has(key)));
+        this.$granted.update((current) => current.filter((id) => !toRemove.has(id)));
         this.$selectedGranted.set([]);
         this.grantedChange.emit(this.$granted());
     }
 
-    protected isSelectedGranted(key: string): boolean {
-        return this.$selectedGranted().includes(key);
+    protected isSelectedGranted(id: string): boolean {
+        return this.$selectedGranted().includes(id);
     }
 
     private loadRoles(): void {
@@ -488,7 +466,8 @@ export class DotUsersRolesTabComponent {
                     // `Publisher / Legal`) don't have a roleKey but
                     // still need to render so their children have a
                     // parent node. Roles without a key are just not
-                    // grantable (see the `grant()` filter below).
+                    // grantable when the backend refuses via
+                    // `editUsers=false` (see the `grant()` filter).
                     this.#$allRoles.set(roles.map((role) => toRoleOption(role)));
                     this.$isLoading.set(false);
                 },

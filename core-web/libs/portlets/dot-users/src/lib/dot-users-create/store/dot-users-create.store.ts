@@ -12,15 +12,30 @@ import { DotUserDetail, DotUsersService } from '../../services/dot-users.service
 
 export type DotUsersCreateStatus = 'idle' | 'loading' | 'loaded' | 'error';
 
+/**
+ * Compact projection of a role membership we care about on save — both
+ * the stable `id` (what the roles tab emits after #37218) and the
+ * `roleKey` (what the Access toggles compare against, and what the
+ * shell still sends for those three well-known roles). Empty `roleKey`
+ * means "keyless custom role" — kept, not dropped, per #37218.
+ */
+export interface DotUsersCreateRole {
+    id: string;
+    roleKey: string;
+}
+
 export interface DotUsersCreateState {
     status: DotUsersCreateStatus;
     /** Full profile returned by getUser — additionalInfo/birthday/etc. */
     detail: DotUserDetail | null;
     /**
-     * Every role KEY currently on the user. Feeds Access-toggle
-     * hydration and the "preserve unrelated roles" merge on save.
+     * Every role currently on the user. Feeds Access-toggle hydration
+     * (by `roleKey`) and the "preserve unrelated roles" merge on save
+     * (by `id`). Both fields are always populated; `roleKey` may be
+     * empty for user-created keyless roles — those are preserved,
+     * since #37218 lets the backend resolve them by id.
      */
-    roleKeys: string[];
+    roles: DotUsersCreateRole[];
     /**
      * Full additionalInfo map returned by getUser. Persisted here so
      * the shell can spread unmanaged keys through on save — the
@@ -34,7 +49,7 @@ export interface DotUsersCreateState {
 const initialState: DotUsersCreateState = {
     status: 'idle',
     detail: null,
-    roleKeys: [],
+    roles: [],
     additionalInfo: {},
     gettingStarted: false
 };
@@ -79,12 +94,18 @@ export const DotUsersCreateStore = signalStore(
                                 .pipe(catchError(() => of(false)))
                         }).pipe(
                             tap(({ user, userRoles, gettingStarted }) => {
-                                const roleKeys = userRoles
-                                    .map((role) => role.roleKey)
-                                    .filter((key): key is string => !!key);
+                                // Preserve every role, keyless included —
+                                // #37218 lets the backend resolve either
+                                // id or key per entry, so we no longer
+                                // silently strip roles whose `roleKey`
+                                // is empty.
+                                const roles: DotUsersCreateRole[] = userRoles.map((role) => ({
+                                    id: role.id,
+                                    roleKey: role.roleKey ?? ''
+                                }));
                                 patchState(store, {
                                     detail: user,
-                                    roleKeys,
+                                    roles,
                                     additionalInfo: user.additionalInfo ?? {},
                                     gettingStarted,
                                     status: 'loaded'
