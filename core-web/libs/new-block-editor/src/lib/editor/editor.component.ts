@@ -133,6 +133,10 @@ function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
 }
 
+function getKnownMarkNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.marks));
+}
+
 /** True when {@link parsed} represents the same document already in {@link editor}. */
 function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
     const currentJson = editorDocumentJsonText(editor);
@@ -149,7 +153,13 @@ function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent
     }
     return (
         JSON.stringify(
-            stripDocStats(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)))
+            stripDocStats(
+                preserveUnknownNodesInDocument(
+                    parsed,
+                    getKnownNodeNames(editor),
+                    getKnownMarkNames(editor)
+                )
+            )
         ) === currentJson
     );
 }
@@ -499,7 +509,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
                 editor.commands.setContent(
                     typeof parsed === 'string'
                         ? parsed
-                        : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)),
+                        : preserveUnknownNodesInDocument(
+                              parsed,
+                              getKnownNodeNames(editor),
+                              getKnownMarkNames(editor)
+                          ),
                     { emitUpdate: false }
                 );
             }
@@ -626,7 +640,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             ed.commands.setContent(
                 typeof parsed === 'string'
                     ? parsed
-                    : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+                    : preserveUnknownNodesInDocument(
+                          parsed,
+                          getKnownNodeNames(ed),
+                          getKnownMarkNames(ed)
+                      ),
                 { emitUpdate: false }
             );
         });
@@ -748,7 +766,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         ed.commands.setContent(
             typeof parsed === 'string'
                 ? parsed
-                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
+                : preserveUnknownNodesInDocument(
+                      parsed,
+                      getKnownNodeNames(ed),
+                      getKnownMarkNames(ed)
+                  ),
             { emitUpdate: false }
         );
     }

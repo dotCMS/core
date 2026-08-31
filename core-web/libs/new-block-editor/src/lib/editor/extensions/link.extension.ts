@@ -21,5 +21,19 @@ export const DotLink = Link.extend({
                     attrs['aria-label'] ? { 'aria-label': attrs['aria-label'] } : {}
             }
         };
+    },
+
+    /**
+     * The base extension returns its URL paste rule unconditionally — `linkOnPaste` only
+     * governs wrapping the *selection*, so pasting text that merely contains a URL still
+     * created a link mark on a field where `link` is not an allowed block (#37175).
+     *
+     * The mark stays in the schema either way (dropping it aborts `Node.fromJSON` for the
+     * whole document); what `allowedBlocks` gates is authoring, and auto-linking pasted text
+     * is an authoring path. Compare `@tiptap/extension-youtube`, which guards its own paste
+     * handler with `addPasteHandler`.
+     */
+    addPasteRules() {
+        return this.options.linkOnPaste ? (this.parent?.() ?? []) : [];
     }
 });
