@@ -455,22 +455,31 @@ public class ReindexThreadTest {
      * {@code finalizeReIndex()} is only reached when the queue empties — the same branch the
      * terminal-state change touches.
      *
-     * <p><strong>@Ignore-d, with evidence.</strong> This test times out waiting for the switchover
-     * after 240 s. It was run against the <em>unmodified</em> {@code ReindexThread} from {@code main}
-     * (issue #36922 changes reverted, everything else identical) and failed in exactly the same way
-     * at 244.0 s. It is therefore a <strong>pre-existing limitation of the integration harness, not
-     * a regression</strong> from the shutdown/liveness fix — consistent with the other full-reindex
-     * tests in this class, which have long been {@code @Ignore}-d.</p>
+     * <p><strong>@Ignore-d — the integration harness never runs a ReindexThread.</strong> Diagnosed
+     * from a full-log run: the reindex starts correctly ({@code reindex_working} is populated), but
+     * the log contains <em>zero</em> {@code ReindexThread} lifecycle lines and zero
+     * {@code "Running Reindex Switchover"} lines, so nothing ever drains the rebuild queue and
+     * {@code switchOverIfNeeded()} is never reached. The {@code reindex_working: null} that appears
+     * exactly 240 s later is this test's own {@code fullReindexAbort()} in {@code finally}, not a
+     * switchover.</p>
      *
-     * <p>It is kept rather than deleted because the scenario is worth covering and the scaffolding
-     * here is the starting point. Whoever picks it up should first establish whether
-     * {@code fullReindexStart()} actually reaches a switchover in this harness at all —
-     * {@code switchOverIfNeeded()} requires both {@code ESReindexationProcessStatus.inFullReindexation()}
-     * and an empty queue, and {@code reindexSwitchover(false)} may decline to switch. Until then
-     * AC-013 is verified manually.</p>
+     * <p>Cause: {@code ReindexThread.startThread()} delegates to {@code unpause()}, which (unless
+     * {@code ALLOW_MANUAL_REINDEX_UNPAUSE} is set) only registers a Hibernate <em>commit
+     * listener</em>. With no committing transaction in the harness bootstrap the listener never
+     * fires and the worker never starts. The sibling tests in this class pass because saving a
+     * contentlet commits a transaction, which fires the listener as a side effect.</p>
+     *
+     * <p>This is a pre-existing harness gap, not a regression: the same test fails identically at
+     * 244.0 s against the <em>unmodified</em> {@code ReindexThread} from {@code main}. It is also
+     * distinct from the switchover guard issues #37281 / #37282, which would log
+     * {@code "Running Reindex Switchover"} every 3 s — this run logs none. The same operation
+     * succeeds in ~30 s on a real server. Tracked as #37302 — remove this {@code @Ignore} to verify
+     * that fix. AC-013 is verified manually meanwhile.</p>
      */
-    @Ignore("Pre-existing harness limitation, not a regression: fails identically on unmodified "
-            + "main (244.0s, same assertion). See Javadoc. AC-013 verified manually meanwhile.")
+    @Ignore("Integration harness never starts a ReindexThread (startThread() only registers a "
+            + "commit listener that never fires here), so the rebuild queue is never drained and "
+            + "switchover is never reached. Pre-existing: fails identically on unmodified main. "
+            + "Not #37281/#37282 - no 'Running Reindex Switchover' lines at all. See #37302.")
     @Test
     public void test_full_reindex_completes_and_switches_over() throws Exception {
 
