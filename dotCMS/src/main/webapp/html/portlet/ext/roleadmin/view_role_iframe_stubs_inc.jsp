@@ -50,13 +50,14 @@
     <%-- Users-grid init @ view_roles_js_inc.jsp:765-818. --%>
     <div id="usersGrid"></div>
 
-    <%-- NOTE: `portletList` is NOT stubbed here. Injecting one would run
-         BEFORE `view_role_tools_inc.jsp`'s real `<select id="portletList">`
-         is parsed, so `dijit.form.FilteringSelect` would upgrade THE STUB
-         (first-in-DOM wins for `getElementById`) — leaving the real select
-         inside the New Layout dialog with no widget and an empty dropdown.
-         Wrappers that DO need the stub (currently `view_role_permissions_wrapper.jsp`)
-         should inject their own. --%>
+    <%-- NOTE: `portletList` is NOT stubbed here — each wrapper injects its
+         own if it needs one. The rule dates from when a tools wrapper shipped
+         the real `<select id="portletList">`: a stub here would parse first,
+         `dijit.form.FilteringSelect` would upgrade THE STUB (first-in-DOM wins
+         for `getElementById`), and the real select would be left with no
+         widget. That wrapper is gone (the Tools tab is Angular now), but the
+         per-wrapper rule stays: it keeps this include free of markup only one
+         consumer wants. `view_role_permissions_wrapper.jsp` injects its own. --%>
 </div>
 
 <script type="text/javascript">

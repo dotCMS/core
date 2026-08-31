@@ -61,12 +61,41 @@
                     <span
                         class="material-symbols-outlined text-color-secondary text-base leading-none"
                         [attr.data-testid]="'node-icon-' + data.id">
-                        {{ isLeaf ? 'shield' : 'folder' }}
+                        {{ isLeaf ? 'shield_person' : 'folder' }}
                     </span>
                     <span class="flex-1 truncate">{{ node.label }}</span>
+                    <!-- Direct-grant count (#37071). Hidden at zero to keep
+                         the row quiet, and absent entirely on legacy search
+                         nodes, which don't carry the field. -->
+                    @if (data.userCount) {
+                        <span
+                            class="inline-flex shrink-0 items-center gap-1"
+                            [attr.data-testid]="'node-user-count-' + data.id"
+                            [attr.aria-label]="
+                                data.userCount + ' ' + ('roles.tree.user-count' | dm)
+                            ">
+                            <!--
+                                `text-gray-400`, not `text-color-secondary`:
+                                the latter is a PrimeFlex leftover and
+                                PrimeFlex is no longer installed, so it
+                                resolves to nothing and the element inherits
+                                the node label's near-black. Set on both
+                                children rather than the wrapper so neither
+                                depends on inheritance.
+                            -->
+                            <span
+                                class="material-symbols-outlined text-sm leading-none text-gray-400"
+                                aria-hidden="true">
+                                person
+                            </span>
+                            <span class="text-sm leading-none text-gray-400">
+                                {{ data.userCount }}
+                            </span>
+                        </span>
+                    }
                     <button
                         type="button"
-                        class="text-color-secondary inline-flex size-5 items-center justify-center rounded-sm opacity-0 transition-opacity group-hover:opacity-100 hover:bg-surface-100 hover:text-color"
+                        class="inline-flex size-5 cursor-pointer items-center justify-center rounded-sm text-primary opacity-0 transition-opacity group-hover:opacity-100 hover:bg-primary-50"
                         (click)="onAddRole(data.id); $event.stopPropagation()"
                         [attr.aria-label]="'roles.action.add-child' | dm">
                         <span class="material-symbols-outlined text-base leading-none">add</span>

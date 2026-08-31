@@ -30,7 +30,7 @@
                 <p class="text-color-secondary mt-0.5 mb-0 text-sm">
                     {{ store.memberCount() }} {{ 'roles.header.users' | dm }}
                     <span class="mx-1">·</span>
-                    {{ 'roles.header.tools-granted' | dm }}
+                    {{ store.toolGroupCount() }} {{ 'roles.header.tools-granted' | dm }}
                 </p>
             </div>
             @if (role.system) {

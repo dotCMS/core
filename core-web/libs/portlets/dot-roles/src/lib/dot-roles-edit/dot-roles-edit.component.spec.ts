@@ -2,6 +2,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 import { EMPTY } from 'rxjs';
 
 import { CUSTOM_ELEMENTS_SCHEMA } from '@angular/core';
+import { fakeAsync, flushMicrotasks, tick } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -12,6 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRolesEditComponent } from './dot-roles-edit.component';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
+import { DotRoleNode } from '../models/dot-roles.models';
 
 const MESSAGES = {
     'roles.edit.title': 'Edit Role',
@@ -65,6 +67,7 @@ describe('DotRolesEditComponent', () => {
             mockProvider(DynamicDialogRef, { close: jest.fn() }),
             mockProvider(DotRolesStore, {
                 roleTree: jest.fn().mockReturnValue([]),
+                searchRoleTree: jest.fn().mockResolvedValue([]),
                 updateRole: jest.fn().mockResolvedValue(BASE_ROLE),
                 deleteRole: jest
                     .fn()
@@ -87,6 +90,66 @@ describe('DotRolesEditComponent', () => {
             roleId: 'r-eco',
             usersAffected: 2
         });
+        // `mockProvider` builds its jest.fn()s once at factory scope, so an
+        // implementation set by one test would otherwise become every later
+        // test's behaviour.
+        (store.searchRoleTree as jest.Mock).mockReset().mockResolvedValue([]);
+    });
+
+    describe('parent picker search', () => {
+        it('clears the busy flag when a search is superseded by a shorter query', fakeAsync(() => {
+            // The picker binds `[loading]` to this flag. The superseded run
+            // returns through the token guard, so nothing else clears it —
+            // leaving it set spins the picker for the rest of the dialog.
+            spectator.detectChanges();
+            const store = spectator.inject(DotRolesStore, true);
+
+            let resolveSearch: (value: DotRoleNode[]) => void = () => {
+                /* replaced below */
+            };
+            (store.searchRoleTree as jest.Mock).mockReturnValueOnce(
+                new Promise<DotRoleNode[]>((resolve) => {
+                    resolveSearch = resolve;
+                })
+            );
+
+            spectator.component['onFilter']({ filter: 'fou' });
+            tick(300);
+            expect(spectator.component['$searching']()).toBe(true);
+
+            spectator.component['onFilter']({ filter: 'fo' });
+            tick(300);
+            resolveSearch([]);
+            flushMicrotasks();
+
+            expect(spectator.component['$searching']()).toBe(false);
+        }));
+
+        it('keeps the busy flag set while a newer search is still running', fakeAsync(() => {
+            spectator.detectChanges();
+            const store = spectator.inject(DotRolesStore, true);
+
+            let resolveFirst: (value: DotRoleNode[]) => void = () => {
+                /* replaced below */
+            };
+            (store.searchRoleTree as jest.Mock)
+                .mockReturnValueOnce(
+                    new Promise<DotRoleNode[]>((resolve) => {
+                        resolveFirst = resolve;
+                    })
+                )
+                .mockReturnValueOnce(new Promise<DotRoleNode[]>(() => undefined));
+
+            spectator.component['onFilter']({ filter: 'fou' });
+            tick(300);
+            spectator.component['onFilter']({ filter: 'four' });
+            tick(300);
+
+            resolveFirst([]);
+            flushMicrotasks();
+
+            expect(spectator.component['$searching']()).toBe(true);
+        }));
     });
 
     it('prefills the form with the role fields', () => {
