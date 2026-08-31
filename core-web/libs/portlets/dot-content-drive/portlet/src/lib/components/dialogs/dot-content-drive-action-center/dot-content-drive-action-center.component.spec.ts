@@ -591,7 +591,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             }
         });
 
-        it('should render Refresh as a selectable action', () => {
+        it('should render Refresh as a selectable action for an admin', () => {
+            mockCurrentUserIsAdmin.set(true);
             spectator.detectChanges();
 
             const row = spectator.query(
@@ -601,6 +602,36 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(row).toBeTruthy();
             expect(row.disabled).toBe(false);
             expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
+        });
+
+        it('should disable Refresh without the coming-soon badge for a non-admin', () => {
+            // The endpoint answers 403 for anyone who is not a CMS Administrator, and the client can
+            // see that in advance. Disabled rather than hidden, so the row still says the capability
+            // exists and why it is out of reach, the same as Push Publish with no environment.
+            spectator.detectChanges();
+
+            const row = spectator.query(
+                '[data-testid="quick-action-REFRESH"]'
+            ) as HTMLButtonElement;
+
+            expect(row).toBeTruthy();
+            expect(row.disabled).toBe(true);
+            expect(spectator.query('[data-testid="quick-action-coming-soon-REFRESH"]')).toBeNull();
+        });
+
+        it('should not open a preview for Refresh when the user is not an admin', () => {
+            spectator.detectChanges();
+
+            // Disabled, so a real click cannot land — called directly to prove the guard holds if
+            // one ever does.
+            spectator.component['onSelectQuickAction'](
+                spectator.component['$quickActions']().find((action) => action.id === 'REFRESH')!
+            );
+
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="action-preview"]')).toBeNull();
+            expect(store.executeRefresh).not.toHaveBeenCalled();
         });
 
         it('should disable Push Publish without the coming-soon badge when no environment exists', () => {
@@ -622,7 +653,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             spectator.detectChanges();
 
             // Disabled, so a real click cannot land — called directly to prove the guard holds if
-            // one ever does. Push Publish has nowhere to send to; Refresh is no longer blocked.
+            // one ever does. Push Publish has nowhere to send to.
             spectator.component['onSelectQuickAction'](
                 spectator.component['$quickActions']().find(
                     (action) => action.id === 'PUSH_PUBLISH'
@@ -639,6 +670,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // Refresh speaks inodes like Lock and Unlock but goes to a job-backed endpoint of its
             // own, so routing it through `executeQuickAction` would fire a system action that does
             // not exist.
+            mockCurrentUserIsAdmin.set(true);
             executeQuickAction('REFRESH');
 
             expect(store.executeRefresh).toHaveBeenCalledWith(expect.any(String), [
@@ -649,6 +681,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should send only the rows left checked in the Refresh preview', () => {
+            mockCurrentUserIsAdmin.set(true);
             openQuickActionPreview('REFRESH');
             toggleRow(0);
             spectator.click('[data-testid="action-preview-execute"]');
@@ -660,6 +693,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should not ask for configuration before refreshing', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Nothing to collect: a reindex takes no assignee, no destination and no environments,
             // so it goes straight to the preview like Lock and Unlock do.
             openQuickActionPreview('REFRESH');
@@ -668,6 +702,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should toast at trigger that the reindex runs in the background', () => {
+            mockCurrentUserIsAdmin.set(true);
             // The only feedback the user gets now: there is no "Applying ..." indicator for a reindex,
             // because it runs for minutes and cannot report progress.
             const messageService = spectator.inject(MessageService);
@@ -683,6 +718,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should not claim a reindex started when nothing was submitted', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Toasting with nothing submitted tells the user their reindex is running when it is not,
             // and the hand-off clears their selection on the way out, so they lose the rows too. With
             // the in-flight guard gone, an emptied preview is the remaining way to reach that.
@@ -718,6 +754,7 @@ describe('DotContentDriveActionCenterComponent', () => {
         });
 
         it('should clear the grid selection when a reindex is handed off', () => {
+            mockCurrentUserIsAdmin.set(true);
             // Matters most here: a reindex runs for minutes, so without this the rows stay ticked for
             // the whole run.
             executeQuickAction('REFRESH');

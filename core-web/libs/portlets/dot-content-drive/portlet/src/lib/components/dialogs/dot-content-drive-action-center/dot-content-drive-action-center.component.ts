@@ -43,6 +43,7 @@ import {
 import { DotContentDriveActionMoveTargetComponent } from './components/dot-content-drive-action-move-target/dot-content-drive-action-move-target.component';
 import { DotContentDriveActionPreviewComponent } from './components/dot-content-drive-action-preview/dot-content-drive-action-preview.component';
 
+import { ACTION_CENTER_FOLDER_NOTICE_PT } from '../../../shared/constants';
 import { DotContentDriveStore } from '../../../store/dot-content-drive.store';
 import {
     ADD_TO_BUNDLE_ACTION_ID,
@@ -259,6 +260,9 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * with nowhere to send it is worse than one disabled row.
      */
     protected readonly $hasPushPublishEnvironments = this.#store.hasPushPublishEnvironments;
+
+    /** @see ACTION_CENTER_FOLDER_NOTICE_PT */
+    protected readonly folderNoticePt = ACTION_CENTER_FOLDER_NOTICE_PT;
     /** The single workflow action currently selected, across every scheme. */
     protected readonly $selectedActionId = signal<string | null>(null);
     /**
@@ -650,6 +654,12 @@ export class DotContentDriveActionCenterComponent implements OnInit {
                 : 'content-drive.action-center.no-environments';
         }
 
+        if (quickAction.missingAdminRole) {
+            // Names the requirement rather than the refusal: the row is out of reach because of who
+            // is asking, and nothing about the selection will change that.
+            return 'content-drive.action-center.requires-admin';
+        }
+
         return quickAction.count === 0 ? 'content-drive.action-center.not-applicable' : '';
     }
 
@@ -663,9 +673,15 @@ export class DotContentDriveActionCenterComponent implements OnInit {
      * @param quickAction - The quick action chosen by the user
      */
     protected onSelectQuickAction(quickAction: DotActionCenterQuickAction): void {
-        // Guarded here as well as by the disabled row: a placeholder has no preview to open, and a
-        // push with no environment has nowhere to go, so a stray call must not reach the preview.
-        if (!quickAction.count || quickAction.comingSoon || quickAction.missingEnvironments) {
+        // Guarded here as well as by the disabled row: a placeholder has no preview to open, a push
+        // with no environment has nowhere to go, and a reindex the endpoint would refuse should not
+        // get as far as a confirmation screen. A stray call must not reach the preview.
+        if (
+            !quickAction.count ||
+            quickAction.comingSoon ||
+            quickAction.missingEnvironments ||
+            quickAction.missingAdminRole
+        ) {
             return;
         }
 

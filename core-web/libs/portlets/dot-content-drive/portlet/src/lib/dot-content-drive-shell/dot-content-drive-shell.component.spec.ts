@@ -609,7 +609,7 @@ describe('DotContentDriveShellComponent', () => {
             // the current path.
             filtersSignal.set({ sharedAssets: 'true' });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             (location.go as jest.Mock).mockClear();
             (location.replaceState as jest.Mock).mockClear();
@@ -617,7 +617,7 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/second');
             filtersSignal.set({ sharedAssets: 'true' });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(location.go).toHaveBeenCalledWith(expect.stringContaining('path=%2Fsecond'));
         });
@@ -634,11 +634,11 @@ describe('DotContentDriveShellComponent', () => {
 
             filtersSignal.set({ sharedAssets: 'true' });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             filtersSignal.set({ sharedAssets: 'true', languageId: ['1'] });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(location.go).not.toHaveBeenCalled();
             expect(location.replaceState).toHaveBeenCalled();
@@ -649,7 +649,7 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/another/path');
             filtersSignal.set({ contentType: ['Blog'], baseType: ['1', '2', '3'] });
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
@@ -666,7 +666,7 @@ describe('DotContentDriveShellComponent', () => {
 
             filtersSignal.set({});
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith([], {
                 queryParams: {
@@ -691,7 +691,7 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/about-us/');
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).not.toHaveBeenCalled();
         });
@@ -704,7 +704,7 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('');
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).toHaveBeenCalledWith('/about-us/');
         });
@@ -717,7 +717,7 @@ describe('DotContentDriveShellComponent', () => {
             store.path.mockReturnValue('/about-us/');
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).not.toHaveBeenCalled();
         });
@@ -761,7 +761,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should have a dialog when dialog is set', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -777,7 +777,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should not have a dialog when dialog is not set', () => {
             dialogSignal.set(undefined);
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialog = spectator.query('[data-testid="dialog"]');
@@ -793,7 +793,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should render the Action Center inside the shared dialog', () => {
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
@@ -806,7 +806,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should make the Action Center content box the only scroll container', () => {
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             expect(spectator.component.$dialogContentStyle()).toEqual(
@@ -820,7 +820,7 @@ describe('DotContentDriveShellComponent', () => {
             // computed is first read — it has no signal dependency to invalidate its cache.
             store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-subheader"]')).toBeTruthy();
@@ -833,7 +833,7 @@ describe('DotContentDriveShellComponent', () => {
                 { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             expect(spectator.component.$actionCenterSelectionCount()).toBe(2);
@@ -845,7 +845,7 @@ describe('DotContentDriveShellComponent', () => {
             store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-header"]')?.textContent?.trim()).toBe(
@@ -859,7 +859,7 @@ describe('DotContentDriveShellComponent', () => {
             store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             dialogDrillDownSignal.set(undefined);
@@ -873,7 +873,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should not render the sub-header for other dialog types', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             // The header template is shared, so the default branch must still render the plain title.
@@ -883,7 +883,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should not apply the Action Center sizing to other dialog types', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             expect(spectator.query('[data-testId="dialog-action-center"]')).toBeNull();
@@ -894,7 +894,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should configure the dialog as closable and closeOnEscape', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialogDebugElement = spectator.debugElement.query(
@@ -907,7 +907,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should show dialog-folder component when folder dialog type is set', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Create Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectChanges();
 
             const dialogFolder = spectator.query('[data-testId="dialog-folder"]');
@@ -1155,7 +1155,7 @@ describe('DotContentDriveShellComponent', () => {
     describe('dialog close', () => {
         it('should close the dialog in the store on a user-driven close (visibleChange false)', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectComponentChanges();
 
             const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
@@ -1168,7 +1168,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should not close the dialog in the store when it becomes visible', () => {
             dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
-            spectator.flushEffects();
+            spectator.detectChanges();
             spectator.detectComponentChanges();
 
             const dialogComponent = spectator.debugElement.query(By.css('[data-testid="dialog"]'))
@@ -2594,7 +2594,7 @@ describe('DotContentDriveShellComponent', () => {
             store.setPath.mockClear();
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
         });
@@ -2604,7 +2604,7 @@ describe('DotContentDriveShellComponent', () => {
             store.setPath.mockClear();
 
             spectator.detectChanges();
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(store.setPath).not.toHaveBeenCalled();
         });
@@ -2831,7 +2831,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('reflects an open edit panel as an editContent identifier in the URL', () => {
             setPanelRequest(EDIT_REQUEST);
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith(
                 [],
@@ -2843,7 +2843,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('reflects an open new-mode panel as editContent=new (push), so Back has an entry to pop (AC8)', () => {
             setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(router.createUrlTree).toHaveBeenCalledWith(
                 [],
@@ -2856,12 +2856,12 @@ describe('DotContentDriveShellComponent', () => {
 
         it('uses replaceState (not go) when the panel closes, so Back cannot resurrect the removed param', () => {
             setPanelRequest(EDIT_REQUEST);
-            spectator.flushEffects();
+            spectator.detectChanges();
             (location.go as jest.Mock).mockClear();
             (location.replaceState as jest.Mock).mockClear();
 
             setPanelRequest(null);
-            spectator.flushEffects();
+            spectator.detectChanges();
 
             expect(location.replaceState).toHaveBeenCalledTimes(1);
             expect(location.go).not.toHaveBeenCalled();
@@ -2935,23 +2935,23 @@ describe('DotContentDriveShellComponent', () => {
         describe('folder tree force-collapse (transient, decoupled from the real preference)', () => {
             it('forces the tree visually collapsed while the panel is open on narrow viewports, and clears the override on close', () => {
                 sidePanelNav.shouldCollapse.mockReturnValue(true);
-                spectator.flushEffects();
+                spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
-                spectator.flushEffects();
+                spectator.detectChanges();
                 expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(true);
 
                 setPanelRequest(null);
-                spectator.flushEffects();
+                spectator.detectChanges();
                 expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
             });
 
             it('does not force a collapse on wide viewports', () => {
                 sidePanelNav.shouldCollapse.mockReturnValue(false);
-                spectator.flushEffects();
+                spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
-                spectator.flushEffects();
+                spectator.detectChanges();
 
                 expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
             });
@@ -2963,14 +2963,14 @@ describe('DotContentDriveShellComponent', () => {
             it('is independent of the real tree expanded/collapsed preference', () => {
                 store.isTreeExpanded.mockReturnValue(false);
                 sidePanelNav.shouldCollapse.mockReturnValue(true);
-                spectator.flushEffects();
+                spectator.detectChanges();
 
                 setPanelRequest(EDIT_REQUEST);
-                spectator.flushEffects();
+                spectator.detectChanges();
                 expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(true);
 
                 setPanelRequest(null);
-                spectator.flushEffects();
+                spectator.detectChanges();
                 expect(store.setTreeForceCollapsed).toHaveBeenCalledWith(false);
 
                 // Never touches the real preference.
