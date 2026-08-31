@@ -294,6 +294,54 @@ describe('DotCMSEditorComponent — #36985 value-load gating', () => {
         });
     });
 
+    describe('codeBlock — the other Angular node view', () => {
+        // T038 — `dotContent` and `codeBlock` are the only two nodes in the editor using
+        // AngularNodeViewRenderer (contentlet.extension.ts:91, code-block.extension.ts:20), so
+        // codeBlock carried exactly the same latent defect: selecting it writes `selected` on an
+        // Angular node view, which dirties every ancestor view and re-runs the value effect.
+        // Not covered by any AC; asserted here so the fix is known to cover both.
+        it('keeps a codeBlock NodeSelection on a legacy-shaped body', async () => {
+            const body = {
+                type: 'doc',
+                attrs: { chartCount: 40, wordCount: 6, readingTime: 1 },
+                content: [
+                    {
+                        type: 'heading',
+                        attrs: { textAlign: 'left', level: 2 },
+                        content: [{ type: 'text', text: 'Heading above the block' }]
+                    },
+                    {
+                        type: 'codeBlock',
+                        attrs: { language: null },
+                        content: [{ type: 'text', text: 'const x = 1;' }]
+                    }
+                ]
+            };
+
+            const fixture = await mountEditor(body);
+            const editor = editorOf(fixture);
+
+            let pos = -1;
+            editor.state.doc.descendants((node, at) => {
+                if (node.type.name === 'codeBlock') {
+                    pos = at;
+
+                    return false;
+                }
+
+                return true;
+            });
+            expect(pos).toBeGreaterThanOrEqual(0);
+
+            const docChanges = trackDocChanges(editor);
+            editor.chain().focus().setNodeSelection(pos).run();
+            await settle(fixture);
+
+            expect(docChanges()).toBe(0);
+            expect(editor.state.selection).toBeInstanceOf(NodeSelection);
+        });
+    });
+
     describe('drag guard (#36976)', () => {
         // T012 — Contract A row A7. Dragging must suppress the load AND must not latch,
         // otherwise the value would never load once the drag ends.
