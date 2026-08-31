@@ -19,15 +19,19 @@ export interface DotExperimentsChangePageDialogVariant {
 /**
  * What the dialog is opened with, as PrimeNG {@link DynamicDialogConfig}.inputValues.
  *
- * The two states are handed over as *signals* rather than as values: `inputValues` reaches the
- * component through `setInput` once, when it is created, so a boolean would be frozen at whatever
- * it was the moment the dialog opened. The signal keeps reading the store.
+ * Everything that can move is handed over as a *signal* rather than as a value: `inputValues`
+ * reaches the component through `setInput` once, when it is created, so a plain value would be
+ * frozen at whatever it was the moment the dialog opened. The signals keep reading the store.
+ *
+ * `variants` is one of them, and has to be: a run that is refused halfway has really deleted the
+ * variants it got through, and a frozen list would go on offering them for deletion — naming, in a
+ * dialog about an irreversible action, content that is already gone.
  */
 export interface DotExperimentsChangePageDialogInputs {
     /** Path of the page the variants belong to, which the warning names. */
     pagePath: string;
-    /** The variants the change deletes. Never empty — the dialog is only opened over them. */
-    variants: DotExperimentsChangePageDialogVariant[];
+    /** The variants the change would delete, as they stand now. */
+    variants: Signal<DotExperimentsChangePageDialogVariant[]>;
     /** Whether the deletions are on the wire. */
     deleting: Signal<boolean>;
     /** Whether the last run was refused, which is what the inline message states. */
@@ -51,10 +55,14 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
  * triggers it.
  *
  * It reports the go-ahead and renders what it is given, and that is all: the deletions are the
- * store's, and the wait and the failure arrive as signals over `inputValues`. Closing is the
- * caller's too — the Page card holds the `DynamicDialogRef` and closes it with `true` once the
- * store says the variants are gone, which is that card's cue to open the page picker. Cancel, the X
- * and ESC close with `undefined` and leave the experiment exactly as it was.
+ * store's, and the list, the wait and the failure all arrive as signals over `inputValues`. Closing
+ * is the caller's too — the Page card holds the `DynamicDialogRef` and closes it with `true` once
+ * the store says the variants are gone, which is that card's cue to open the page picker.
+ *
+ * Cancel, the X and ESC close with `undefined` and leave the experiment exactly as it was — and
+ * while a run is on the wire none of the three is available: Cancel disables itself, and the card
+ * withdraws `closable`/`closeOnEscape` for as long as it lasts. A half-finished cascade of
+ * deletions has nothing to offer a user who dismissed the only thing reporting on it.
  *
  * Opened with `DialogService.open(..., { inputValues: DotExperimentsChangePageDialogInputs, header:
  * dm('experiments.configure.page.change.header'), width: CHANGE_PAGE_DIALOG_WIDTH, closable: true,
@@ -68,31 +76,36 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
 })
 export class DotExperimentsChangePageDialogComponent {
     readonly $pagePath = input.required<string>({ alias: 'pagePath' });
-    readonly $variants = input.required<DotExperimentsChangePageDialogVariant[]>({
-        alias: 'variants'
-    });
 
     /**
      * Signals, so they are read rather than snapshotted — see
      * {@link DotExperimentsChangePageDialogInputs}. Hence the double call at every use.
      */
+    readonly $variants = input.required<Signal<DotExperimentsChangePageDialogVariant[]>>({
+        alias: 'variants'
+    });
     readonly $deleting = input.required<Signal<boolean>>({ alias: 'deleting' });
     readonly $failed = input.required<Signal<boolean>>({ alias: 'failed' });
 
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dispatch = injectDispatch(dotExperimentsConfigurePageEvents);
 
+    /** The list as it stands, which is what the rows and the count are drawn from. */
+    protected readonly $variantList = computed<DotExperimentsChangePageDialogVariant[]>(() =>
+        this.$variants()()
+    );
+
     protected readonly $isDeleting = computed<boolean>(() => this.$deleting()());
     protected readonly $hasFailed = computed<boolean>(() => this.$failed()());
 
     /** Singular and plural are different sentences, not a count spliced into one. */
     protected readonly $warningKey = computed<string>(() =>
-        this.$variants().length === 1 ? WARNING_ONE_KEY : WARNING_MANY_KEY
+        this.$variantList().length === 1 ? WARNING_ONE_KEY : WARNING_MANY_KEY
     );
 
     protected readonly $warningArgs = computed<string[]>(() => [
         this.$pagePath(),
-        String(this.$variants().length)
+        String(this.$variantList().length)
     ]);
 
     /** Reports the go-ahead. What happens next — including this dialog closing — is the card's. */

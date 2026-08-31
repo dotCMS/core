@@ -334,27 +334,59 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
             spectator.click(selectButton());
 
-            expect(changePageDialogConfig()).toEqual(
+            const config = changePageDialogConfig();
+
+            expect(config).toEqual(
                 expect.objectContaining({
                     header: CHANGE_PAGE_COPY,
                     width: CHANGE_PAGE_DIALOG_WIDTH,
                     closable: true,
                     closeOnEscape: true,
-                    inputValues: {
-                        pagePath: SELECTED_PAGE.path,
-                        variants: [
-                            {
-                                id: EXTRA_VARIANT.id,
-                                name: EXTRA_VARIANT.name,
-                                // Its position in the whole list, so it matches the Variants card.
-                                color: VARIANT_COLORS[1]
-                            }
-                        ],
-                        deleting: storeMock.deletingVariants,
-                        failed: storeMock.deleteVariantsFailed
-                    }
+                    modal: true
                 })
             );
+            expect(config.inputValues.pagePath).toBe(SELECTED_PAGE.path);
+            expect(config.inputValues.deleting).toBe(storeMock.deletingVariants);
+            expect(config.inputValues.failed).toBe(storeMock.deleteVariantsFailed);
+            expect(config.inputValues.variants()).toEqual([
+                {
+                    id: EXTRA_VARIANT.id,
+                    name: EXTRA_VARIANT.name,
+                    // Its position in the whole list, so it matches the Variants card.
+                    color: VARIANT_COLORS[1]
+                }
+            ]);
+        });
+
+        /**
+         * The list is a signal for the same reason the two flags are: `inputValues` is applied once,
+         * and a run refused halfway has really deleted what it got through.
+         */
+        it('should hand the variant list over live, so a partial deletion shortens it', () => {
+            withVariants();
+            spectator.click(selectButton());
+
+            storeMock.$deletableVariants.set([]);
+
+            expect(changePageDialogConfig().inputValues.variants()).toEqual([]);
+        });
+
+        /**
+         * The deletions do not stop when the dialog does, so dismissing it mid-run would let a
+         * half-finished cascade finish with nothing on screen reporting it.
+         */
+        it('should withdraw the X and ESC while the deletions are on the wire', () => {
+            withVariants();
+            spectator.click(selectButton());
+            const config = changePageDialogConfig();
+
+            expect(config.closable).toBe(true);
+            expect(config.closeOnEscape).toBe(true);
+
+            storeMock.deletingVariants.set(true);
+
+            expect(config.closable).toBe(false);
+            expect(config.closeOnEscape).toBe(false);
         });
 
         /**
@@ -404,7 +436,11 @@ describe('DotExperimentsConfigurePageComponent', () => {
             expect(pickerOpened()).toBe(true);
         });
 
-        it('should close nothing when a deletion settles with no confirmation open', () => {
+        /**
+         * The answer can outlive the dialog — the deletions keep going if it is dismissed, and the
+         * component is not destroyed with it. There is still a picker to open.
+         */
+        it('should open the picker even when the answer arrives with no confirmation left', () => {
             storeMock.selectedPage.set(SELECTED_PAGE);
             spectator.detectChanges();
 
@@ -414,7 +450,7 @@ describe('DotExperimentsConfigurePageComponent', () => {
             spectator.detectChanges();
 
             expect(changePageRef.close).not.toHaveBeenCalled();
-            expect(pickerOpened()).toBe(false);
+            expect(pickerOpened()).toBe(true);
         });
 
         it('should leave the page alone when the confirmation is cancelled', () => {

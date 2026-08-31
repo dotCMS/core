@@ -195,43 +195,53 @@ export class DotExperimentsConfigurePageComponent {
             return;
         }
 
-        const variants = this.$deletableVariants();
-
         // Nothing to delete and still refused means the experiment is past draft, which the
         // disabled button already covers. Reachable only if the status moved under the click.
-        if (!variants.length) {
+        if (!this.$deletableVariants().length) {
             return;
         }
 
-        this.#openChangePageDialog(variants);
+        this.#openChangePageDialog();
     }
 
     /**
      * Asks for the confirmation, and opens the picker if it closes with the go-ahead.
      *
-     * The wait and the failure travel as the store's own signals rather than as values, because
-     * `inputValues` reaches the dialog once at creation — see the dialog's own docs. The press is
-     * reported first so the dialog opens on a clean slate instead of on the error a cancelled
-     * attempt left behind.
+     * Everything that can move — the list, the wait, the failure — travels as the store's own
+     * signals rather than as values, because `inputValues` reaches the dialog once at creation (see
+     * the dialog's own docs). The press is reported first so the dialog opens on a clean slate
+     * instead of on the error a cancelled attempt left behind.
+     *
+     * `closable` and `closeOnEscape` are getters, not booleans: PrimeNG reads both off this config
+     * on every change detection, so a getter is what lets them close for as long as a deletion is
+     * on the wire. It matters because the deletions do not stop when the dialog does — dismissing
+     * it mid-run would let a half-finished cascade finish with nothing on screen reporting it, and
+     * would leave this card holding a reference it can no longer close.
      *
      * Only `true` opens the picker, and only this card ever closes the dialog with it: a cancelled
      * dialog, or one closed after a rejection, leaves the page as it is.
      */
-    #openChangePageDialog(variants: DotExperimentsChangePageDialogVariant[]): void {
+    #openChangePageDialog(): void {
         this.#dispatch.pageChangeRequested();
 
         const inputValues: DotExperimentsChangePageDialogInputs = {
             pagePath: this.$selectedPage()?.path ?? '',
-            variants,
+            variants: this.$deletableVariants,
             deleting: this.store.deletingVariants,
             failed: this.store.deleteVariantsFailed
         };
 
+        const isDeleting = () => this.store.deletingVariants();
+
         this.#changePageRef = this.#dialogService.open(DotExperimentsChangePageDialogComponent, {
             header: this.#dotMessageService.get(CHANGE_PAGE_DIALOG_HEADER_KEY),
             width: CHANGE_PAGE_DIALOG_WIDTH,
-            closable: true,
-            closeOnEscape: true,
+            get closable() {
+                return !isDeleting();
+            },
+            get closeOnEscape() {
+                return !isDeleting();
+            },
             modal: true,
             inputValues
         });
@@ -248,19 +258,33 @@ export class DotExperimentsConfigurePageComponent {
     }
 
     /**
-     * Closes the confirmation with the go-ahead the moment the store reports the variants deleted.
+     * Hands over to the picker the moment the store reports the variants deleted.
      *
      * Here rather than inside the dialog: the dialog is created outside this card's injector and so
      * cannot reach the store at all — listening to the event from in there would be listening to a
      * global bus for an answer that may not even be this screen's. This card holds the store *and*
-     * the reference, so it is the one place that can tie the two together. A run with no dialog open
-     * closes nothing.
+     * the reference, so it is the one place that can tie the two together.
+     *
+     * The picker opens either way. Closing the dialog is what normally leads to it, through the
+     * `onClose` above; but the deletions outlive the dialog, so an answer that arrives with no
+     * dialog left to close still has a promise to keep.
      */
     #closeConfirmationWhenVariantsAreGone(): void {
         this.#events
             .on(dotExperimentsConfigureApiEvents.deleteVariantsSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe(() => this.#changePageRef?.close(true));
+            .subscribe(() => {
+                const confirmation = this.#changePageRef;
+
+                if (confirmation) {
+                    // `onClose` takes it from here: it nulls the reference and opens the picker.
+                    confirmation.close(true);
+
+                    return;
+                }
+
+                this.openPageSelector();
+            });
     }
 
     /** Opens the picker and reports the chosen page. Cancelling leaves the card as it was. */

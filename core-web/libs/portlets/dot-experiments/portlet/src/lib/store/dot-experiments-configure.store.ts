@@ -525,18 +525,17 @@ export const DotExperimentsConfigureStore = signalStore(
          * the same `SAVING` a single deletion does — plus a flag of its own, which is what the
          * confirmation's button spins on.
          *
-         * Nothing to delete leaves every one of them alone, on the same condition the handler
-         * filters on: raising them would strand the dialog waiting on a call that never went out.
+         * Keyed on the request the handler raises rather than on the confirmation that triggers it.
+         * Two reasons, and the second is the one that forces it: nothing rises for a run that never
+         * goes out (the dialog would hang waiting on it), and the handler's own re-entrancy guard
+         * reads this flag — a reducer on the intent would set it before the handler ran and the
+         * guard would refuse the very first press.
          */
-        on(pageEvents.pageChangeConfirmed, (_event, state) =>
-            deletableVariants(state.experiment).length
-                ? {
-                      status: ComponentStatus.SAVING,
-                      deletingVariants: true,
-                      deleteVariantsFailed: false
-                  }
-                : {}
-        ),
+        on(apiEvents.deleteVariantsRequested, () => ({
+            status: ComponentStatus.SAVING,
+            deletingVariants: true,
+            deleteVariantsFailed: false
+        })),
         on(apiEvents.deleteVariantsSucceeded, ({ payload }) => ({
             experiment: payload,
             status: ComponentStatus.LOADED,
@@ -904,35 +903,55 @@ export const DotExperimentsConfigureStore = signalStore(
                  * to the *last* one that describes the experiment afterwards. Firing them in
                  * parallel would leave which of the answers is current up to arrival order.
                  *
-                 * Guarded rather than answered when there is nothing to delete: the dialog is only
-                 * opened over variants that exist, so this event cannot arrive without them.
+                 * `deletingVariants` is what makes a second confirmation a no-op rather than a
+                 * second run: the dialog guards its own button, but the guard that matters is here,
+                 * where every dispatcher passes — the same contract `create$` and `start$` keep. A
+                 * `switchMap` alone would not do: it would cancel a run whose deletions have
+                 * already partly landed and start another from a list that has not caught up yet.
+                 *
+                 * Nothing left to delete is answered as success rather than dropped. It is
+                 * reachable — the variants can go from another tab between opening the dialog and
+                 * confirming it — and the page is free either way, so the alternative is a
+                 * confirmation that sits there having done nothing with nothing to show for it.
                  */
                 deleteVariantsForPageChange$: events.on(pageEvents.pageChangeConfirmed).pipe(
-                    filter(() => !!store.experiment() && !!store.$deletableVariants().length),
+                    filter(() => !!store.experiment() && !store.deletingVariants()),
                     switchMap(() => {
-                        const experimentId = store.experiment()?.id ?? '';
+                        const experiment = store.experiment() as DotExperiment;
                         const variantIds = store.$deletableVariants().map(({ id }) => id);
+
+                        if (!variantIds.length) {
+                            return of(apiEvents.deleteVariantsSucceeded(experiment));
+                        }
 
                         // What the last successful deletion answered with, so a rejection halfway
                         // can still report the variants that did go.
                         let deleted: DotExperiment | null = null;
 
-                        return from(variantIds).pipe(
-                            concatMap((variantId) =>
-                                experimentsService.removeVariant(experimentId, variantId)
-                            ),
-                            tap((experiment) => (deleted = experiment)),
-                            last(),
-                            map((experiment) => apiEvents.deleteVariantsSucceeded(experiment)),
-                            catchError((error: HttpErrorResponse) => {
-                                // Unobtrusive on purpose: the Change Page dialog is still open and
-                                // stays open for the retry, which an alert on top of it would bury.
-                                httpErrorManager.handle(error, true);
+                        return merge(
+                            of(apiEvents.deleteVariantsRequested()),
+                            from(variantIds).pipe(
+                                concatMap((variantId) =>
+                                    experimentsService.removeVariant(experiment.id, variantId)
+                                ),
+                                tap((settled) => (deleted = settled)),
+                                last(),
+                                map((settled) => apiEvents.deleteVariantsSucceeded(settled)),
+                                catchError((error: HttpErrorResponse) => {
+                                    // Unobtrusive on purpose: the Change Page dialog cannot be
+                                    // dismissed while this runs, so the inline message beside its
+                                    // buttons is what carries the failure. An alert would only bury
+                                    // the retry it offers.
+                                    httpErrorManager.handle(error, true);
 
-                                return of(
-                                    apiEvents.deleteVariantsFailed({ error, experiment: deleted })
-                                );
-                            })
+                                    return of(
+                                        apiEvents.deleteVariantsFailed({
+                                            error,
+                                            experiment: deleted
+                                        })
+                                    );
+                                })
+                            )
                         );
                     })
                 ),

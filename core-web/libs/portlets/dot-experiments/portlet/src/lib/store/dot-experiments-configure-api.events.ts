@@ -67,8 +67,19 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
         removeVariantFailed: type<unknown>(),
 
         /**
+         * The deletions are on the wire. Raised by the handler as the first call leaves, on the
+         * same contract as `createRequested` and `startRequested`: the reducer closes the door on a
+         * second run before the first one answers, which a reducer keyed on the *intent* could not
+         * do — it runs before the handler, so the handler's own guard would already see the flag it
+         * had just set.
+         */
+        deleteVariantsRequested: type<void>(),
+        /**
          * Every variant standing in the way of a page change is gone, and the experiment is the
          * one the last deletion answered with.
+         *
+         * Also the answer when there was nothing left to delete: the page is free either way, and
+         * the confirmation waiting on this would otherwise hang on a run that never went out.
          */
         deleteVariantsSucceeded: type<DotExperiment>(),
         /**

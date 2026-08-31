@@ -891,15 +891,42 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.experiment()).toEqual(draft);
         });
 
-        it('should call nothing when the control is the only variant there is', () => {
+        /**
+         * Reachable: the variants can go from another tab between opening the confirmation and
+         * pressing it. Answered rather than dropped, or the dialog waits on a run that never went.
+         */
+        it('should answer a confirmation with nothing left to delete as done', () => {
+            const settled: string[] = [];
             initExisting(controlOnly());
+            events.on(apiEvents.deleteVariantsSucceeded).subscribe(() => settled.push('succeeded'));
 
             dispatcher.dispatch(pageEvents.pageChangeConfirmed());
 
             expect(removeVariant).not.toHaveBeenCalled();
-            // And no in-flight state either: nothing would ever answer to bring it home.
+            expect(settled).toEqual(['succeeded']);
+            // And no in-flight state was ever raised: nothing was on the wire to bring home.
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.deletingVariants()).toBe(false);
+        });
+
+        /**
+         * The same contract `create$` and `start$` keep: the flag closes the door as the first call
+         * leaves, so an impatient second confirmation is dropped here rather than cancelling a run
+         * whose deletions have already partly landed.
+         */
+        it('should ignore a second confirmation while the first run is still going', () => {
+            initExisting(draftWithTwoVariants());
+            pendingCall(removeVariant);
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            expect(deletedVariantIds()).toEqual(['variant-b']);
+            expect(store.deletingVariants()).toBe(true);
+
+            dispatcher.dispatch(pageEvents.pageChangeConfirmed());
+
+            // No second call for a variant whose deletion is already on the wire.
+            expect(deletedVariantIds()).toEqual(['variant-b']);
         });
     });
 

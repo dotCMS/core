@@ -50,6 +50,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
     let dispatch: jest.SpyInstance;
 
     /** The store slices the card hands over, as the signals they are on its side. */
+    let variants: WritableSignal<DotExperimentsChangePageDialogVariant[]>;
     let deleting: WritableSignal<boolean>;
     let failed: WritableSignal<boolean>;
 
@@ -60,10 +61,12 @@ describe('DotExperimentsChangePageDialogComponent', () => {
     });
 
     /**
-     * Mounts the dialog the way `DialogService` does: `inputValues` reaches it as inputs, and the
-     * two states arrive as signals rather than as values, so they keep reading the store.
+     * Mounts the dialog the way `DialogService` does: `inputValues` reaches it as inputs, and every
+     * one of them that can move arrives as a signal rather than as a value, so they keep reading
+     * the store instead of freezing at creation.
      */
-    const mountWith = (variants: DotExperimentsChangePageDialogVariant[]) => {
+    const mountWith = (rows: DotExperimentsChangePageDialogVariant[]) => {
+        variants.set(rows);
         spectator = createComponent({
             providers: [{ provide: DynamicDialogRef, useValue: dialogRef }]
         });
@@ -87,6 +90,7 @@ describe('DotExperimentsChangePageDialogComponent', () => {
 
     beforeEach(() => {
         dialogRef = { close: jest.fn() };
+        variants = signal<DotExperimentsChangePageDialogVariant[]>([]);
         deleting = signal(false);
         failed = signal(false);
     });
@@ -130,6 +134,27 @@ describe('DotExperimentsChangePageDialogComponent', () => {
 
             expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
                 'deletes 2 Variants'
+            );
+        });
+
+        /**
+         * A run that is refused halfway really deleted the variants it got through, so a frozen
+         * list would go on naming content that is already gone — in a dialog about an irreversible
+         * action, and while offering to do it again.
+         */
+        it('should drop a variant from the list once the store reports it deleted', () => {
+            mountWith([VARIANT_A, VARIANT_B]);
+
+            variants.set([VARIANT_B]);
+            spectator.detectChanges();
+
+            const rows = spectator.queryAll(byTestId('change-page-variant'));
+
+            expect(rows.length).toBe(1);
+            expect(rows[0].textContent).toContain(VARIANT_B.name);
+            // And the count in the warning follows it, rather than still promising two.
+            expect(spectator.query(byTestId('change-page-warning'))?.textContent).toContain(
+                'deletes 1 Variant'
             );
         });
 

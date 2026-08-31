@@ -10,7 +10,7 @@
             </p>
 
             <ul class="m-0 flex list-none flex-col gap-1 p-0">
-                @for (variant of $variants(); track variant.id) {
+                @for (variant of $variantList(); track variant.id) {
                     <li class="flex min-w-0 items-center gap-2" data-testid="change-page-variant">
                         <span
                             class="size-2.5 flex-none rounded-full"
