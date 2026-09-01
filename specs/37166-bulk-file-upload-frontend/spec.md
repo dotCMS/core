@@ -523,7 +523,8 @@ recorded here as a planning obligation so it cannot be discovered during review.
   acting on, rather than only *what* is running, is a separate mechanism with its own semantics to
   settle. It is excluded because **this feature cannot exercise it**: an upload has no rows, since
   the items do not exist until the run creates them. Its real first consumers are the context menu,
-  the drag-and-drop move between folders, and the Action Center. Follow-up ticket.
+  the drag-and-drop move between folders, and the Action Center. Filed as
+  [#37322](https://github.com/dotCMS/core/issues/37322).
 - **Bulk reindex's reporting.** Its exclusion from the in-flight indicator is a deliberate existing
   decision, and the notification record already covers its outcome. Unchanged here.
 - **Directory upload.** Dropping a whole folder from the author's computer and recreating its
