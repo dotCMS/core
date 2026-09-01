@@ -11,6 +11,9 @@ import {
     DotContentDriveDateRange,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
+    DotContentDriveBrowseItem,
+    DotContentDriveItem,
+    DotContentDriveLink,
     DotContentDriveUserSearchableValue,
     DotFolder,
     DotSite,
@@ -843,6 +846,36 @@ export function isFolder(
     item: DotContentDriveActionableItem
 ): item is DotContentDriveActionableFolder {
     return item != null && 'type' in item && item.type === 'folder';
+}
+
+/**
+ * Drops the menu Links from a browse result, narrowing it to what Content Drive handles.
+ *
+ * The shared folder list view emits {@link DotContentDriveBrowseItem} because the asset picker's
+ * browse mode asks for links. Content Drive never sends `showLinks`, so a link cannot actually
+ * reach these handlers — but the emitted type says it could, and every consumer downstream
+ * (`isFolder`, the action centre, the workflow counters, drag handling) reads the narrower
+ * {@link DotContentDriveItem} as "a folder, or else a contentlet". This is the boundary where that
+ * assumption is made true instead of asserted.
+ *
+ * @param {DotContentDriveBrowseItem[]} items - The emitted browse selection
+ * @returns {DotContentDriveItem[]} The same items without any Link rows
+ */
+export function excludeLinks(items: DotContentDriveBrowseItem[]): DotContentDriveItem[] {
+    return items.filter((item): item is DotContentDriveItem => !isLink(item));
+}
+
+/**
+ * Checks if a browse result row is a menu Link.
+ *
+ * The backend stamps `extension: 'link'`, which is what tells a Link apart from a contentlet or a
+ * folder in a mixed list.
+ *
+ * @param {DotContentDriveBrowseItem} item - The item to check
+ * @returns {boolean} True if the item is a Link, false otherwise
+ */
+export function isLink(item: DotContentDriveBrowseItem): item is DotContentDriveLink {
+    return item != null && 'type' in item && item.type === 'link';
 }
 
 /** True when the field type stores a `{ from, to }` date range (Date / Date-and-Time / Time). */

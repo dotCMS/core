@@ -267,6 +267,12 @@ export class DotRolesTreeComponent {
             data: { parentRoleId: parentRoleId ?? null }
         });
 
+        // `open()` returns null when it refuses a duplicate — the add-role
+        // dialog is already up, and the open one keeps its own subscription.
+        if (!ref) {
+            return;
+        }
+
         ref.onClose
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((created?: DotRoleNode) => {

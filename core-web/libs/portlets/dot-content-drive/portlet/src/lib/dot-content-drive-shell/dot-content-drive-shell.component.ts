@@ -42,6 +42,7 @@ import {
     DotContentDriveActionableFolder,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
+    DotContentDriveBrowseItem,
     isTreeNodeContentData
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
@@ -92,7 +93,13 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
+import {
+    canAddChildrenTo,
+    encodeFilters,
+    excludeLinks,
+    isFolder,
+    isLink
+} from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -736,7 +743,13 @@ export class DotContentDriveShellComponent {
      * Handles double click event on a content item
      * @param contentlet The content item that was double clicked
      */
-    protected onDoubleClick(contentlet: DotContentDriveItem) {
+    protected onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+        // Content Drive never asks for links, so this is unreachable — but the shared list view's
+        // output says it is possible, and nothing below this line handles a third row kind.
+        if (isLink(contentlet)) {
+            return;
+        }
+
         if (isFolder(contentlet)) {
             this.#store.setSelectedNode({
                 data: {
@@ -1272,8 +1285,8 @@ export class DotContentDriveShellComponent {
         };
     }
 
-    protected onSelectItems(items: DotContentDriveItem[]) {
-        this.#store.setSelectedItems(items);
+    protected onSelectItems(items: DotContentDriveBrowseItem[]) {
+        this.#store.setSelectedItems(excludeLinks(items));
     }
 
     protected onTableScroll() {

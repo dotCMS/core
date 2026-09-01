@@ -711,7 +711,7 @@ export const DotRolesStore = signalStore(
 
                     return true;
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
                     // Roll the optimistic patch back — but only onto the role it
                     // came from. `previous` is role A's snapshot; writing it
                     // while role B is on screen would replace B's real grants,
@@ -769,7 +769,7 @@ export const DotRolesStore = signalStore(
                 try {
                     return await firstValueFrom(rolesService.searchTree(query).pipe(take(1)));
                 } catch (error) {
-                    httpErrorManager.handle(error);
+                    httpErrorManager.handle(error as HttpErrorResponse);
 
                     return [];
                 }
