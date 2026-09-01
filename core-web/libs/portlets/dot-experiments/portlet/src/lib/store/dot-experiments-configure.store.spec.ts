@@ -1747,6 +1747,69 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$isScheduledStart()).toBe(false);
         });
 
+        /**
+         * The backend validates a start against what is *persisted*, so a goal picked and never
+         * flushed is a goal the server has never seen — `ExperimentsAPIImpl.start()` answers "The
+         * Experiment needs to have the Goal set." for a form the screen considers complete.
+         */
+        it('should flush the pending form before starting', () => {
+            const withGoal = buildExperiment();
+            patchExperiment.mockReturnValue(of(withGoal));
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).toHaveBeenCalledWith(
+                EXPERIMENT_ID,
+                expect.objectContaining({ goals: buildGoals() })
+            );
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should start without a write when the screen holds nothing unsaved', () => {
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting();
+
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+        });
+
+        it('should not start when the flush is refused', () => {
+            patchExperiment.mockReturnValue(throwError(() => httpError(400, {})));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            // The refused write leaves the screen dirty and startable again, rather than
+            // transitioning an experiment the server never received the goal for.
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(false);
+            expect(store.$hasUnsavedChanges()).toBe(true);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('should wait for the flush before the start leaves', () => {
+            const flushed = pendingCall(patchExperiment);
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(true);
+
+            flushed.next(buildExperiment());
+
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+        });
+
         it('should not fire a second start while the first one is in flight', () => {
             const started = new Subject<DotExperiment>();
             start.mockReturnValue(started);

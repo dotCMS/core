@@ -1,7 +1,7 @@
 import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { from, merge, of, SubscriptionLike } from 'rxjs';
+import { defer, from, merge, Observable, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
@@ -606,6 +606,48 @@ export const DotExperimentsConfigureStore = signalStore(
             dotMessageService = inject(DotMessageService),
             globalStore = inject(GlobalStore)
         ) => {
+            /**
+             * The accumulated diff as a request, or `null` when there is nothing worth writing.
+             *
+             * Shared by Save draft and Start, because the backend validates a *start* against what
+             * is persisted, not against what the screen holds: a goal picked and never flushed is a
+             * goal the server has never seen, and `ExperimentsAPIImpl.start()` rejects it with
+             * "The Experiment needs to have the Goal set." Start therefore writes before it
+             * transitions, rather than trusting that a save happened to have gone out.
+             *
+             * Nothing to patch before the draft exists: those values reach the server through the
+             * creation POST, and the rest follows as soon as it answers. Nothing to patch either
+             * when the form is not in a state worth sending — the same question the Save button
+             * asks. That matters most on the run that follows `createSucceeded`, where the POST has
+             * just written the form and a second call would carry the identical body.
+             *
+             * The page travels only when it actually moved. Sending the stored one back on every
+             * save would put `pageId` in the body of an experiment that has variants, which is the
+             * one shape `ExperimentsAPIImpl.save()` refuses with a 400 — for a change the user
+             * never made.
+             */
+            const pendingSave = (): {
+                form: ConfigureFormModel;
+                save$: Observable<DotExperiment>;
+            } | null => {
+                const experiment = store.experiment();
+                const model = store.formValue();
+
+                if (!experiment || !model || !store.$canSave()) {
+                    return null;
+                }
+
+                const selectedPageId = store.selectedPage()?.pageId;
+                const body = toConfigurePatch(
+                    model,
+                    store.formValidity(),
+                    experiment.trafficProportion?.variants ?? [],
+                    selectedPageId === experiment.pageId ? undefined : selectedPageId
+                );
+
+                return { form: model, save$: experimentsService.patch(experiment.id, body) };
+            };
+
             /** Routes a failed call through the shared manager, then reports it as its event. */
             const toFailure =
                 <T>(failed: (error: HttpErrorResponse) => T) =>
@@ -614,6 +656,16 @@ export const DotExperimentsConfigureStore = signalStore(
 
                     return failed(error);
                 };
+
+            /** The pending write as its own outcome — what Save draft reports and nothing more. */
+            const savedBy = (pending: NonNullable<ReturnType<typeof pendingSave>>) =>
+                pending.save$.pipe(
+                    mapResponse({
+                        next: (updated: DotExperiment) =>
+                            apiEvents.saveSucceeded({ experiment: updated, form: pending.form }),
+                        error: toFailure(apiEvents.saveFailed)
+                    })
+                );
 
             /** Resolves `?pageId=` / `?url=` to the page the Page card shows. */
             const resolvePrefill = ({ pageId, url }: ConfigurePagePrefill) => {
@@ -800,52 +852,16 @@ export const DotExperimentsConfigureStore = signalStore(
                     events.on(apiEvents.createSucceeded)
                 ).pipe(
                     switchMap(() => {
-                        const experiment = store.experiment();
-                        const model = store.formValue();
+                        const pending = pendingSave();
 
-                        /**
-                         * Nothing to patch before the draft exists: those values reach the server
-                         * through the creation POST, and the rest follows as soon as it answers.
-                         *
-                         * And nothing to patch when the form is not in a state worth sending —
-                         * the same question the button asks. It matters most on the run that
-                         * follows `createSucceeded`, where the POST has just written the form and
-                         * a second call would carry the identical body.
-                         */
-                        if (!experiment || !model || !store.$canSave()) {
+                        if (!pending) {
                             return of(apiEvents.saveSkipped());
                         }
-
-                        /**
-                         * The page travels only when it actually moved. Sending the stored one
-                         * back on every save would put `pageId` in the body of an experiment that
-                         * has variants, which is the one shape `ExperimentsAPIImpl.save()` refuses
-                         * with a 400 — for a change the user never made.
-                         */
-                        const selectedPageId = store.selectedPage()?.pageId;
-                        const body = toConfigurePatch(
-                            model,
-                            store.formValidity(),
-                            experiment.trafficProportion?.variants ?? [],
-                            selectedPageId === experiment.pageId ? undefined : selectedPageId
-                        );
 
                         // `saveRequested` marks the moment a real request leaves — the visible
                         // progress indicator keys on it, so it runs for the flight only, not for
                         // the whole debounce window while the user is still typing.
-                        return merge(
-                            of(apiEvents.saveRequested()),
-                            experimentsService.patch(experiment.id, body).pipe(
-                                mapResponse({
-                                    next: (updated) =>
-                                        apiEvents.saveSucceeded({
-                                            experiment: updated,
-                                            form: model
-                                        }),
-                                    error: toFailure(apiEvents.saveFailed)
-                                })
-                            )
-                        );
+                        return merge(of(apiEvents.saveRequested()), savedBy(pending));
                     })
                 ),
 
@@ -987,10 +1003,13 @@ export const DotExperimentsConfigureStore = signalStore(
                             !!store.experiment() &&
                             !store.starting()
                     ),
-                    switchMap(() =>
-                        merge(
-                            of(apiEvents.startRequested()),
-                            experimentsService.start(store.experiment()?.id ?? '').pipe(
+                    switchMap(() => {
+                        const experimentId = store.experiment()?.id ?? '';
+                        // `defer` so the transition is only asked for once the write ahead of it
+                        // has been accepted: built eagerly, a refused flush would still have
+                        // called `start`.
+                        const started$ = defer(() =>
+                            experimentsService.start(experimentId).pipe(
                                 mapResponse({
                                     next: (experiment) => apiEvents.startSucceeded(experiment),
                                     error: (error: HttpErrorResponse) => {
@@ -1010,8 +1029,39 @@ export const DotExperimentsConfigureStore = signalStore(
                                     }
                                 })
                             )
-                        )
-                    )
+                        );
+                        const pending = pendingSave();
+
+                        return merge(
+                            of(apiEvents.startRequested()),
+                            pending
+                                ? pending.save$.pipe(
+                                      switchMap((updated) =>
+                                          merge(
+                                              of(
+                                                  apiEvents.saveSucceeded({
+                                                      experiment: updated,
+                                                      form: pending.form
+                                                  })
+                                              ),
+                                              started$
+                                          )
+                                      ),
+                                      catchError((error: HttpErrorResponse) => {
+                                          httpErrorManager.handle(error);
+
+                                          // Both, and in this order: the refused write leaves the
+                                          // screen dirty and usable, and the start that never left
+                                          // has to release `starting` or the button stays dead.
+                                          return of(
+                                              apiEvents.saveFailed(error),
+                                              apiEvents.startFailed(error)
+                                          );
+                                      })
+                                  )
+                                : started$
+                        );
+                    })
                 ),
 
                 stop$: events.on(pageEvents.stopRequested).pipe(
