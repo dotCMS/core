@@ -27,8 +27,9 @@ delivered separately by another developer. The two halves meet at the contract t
 The same contract is reused by the folder copy and bulk delete work
 ([#37062](https://github.com/dotCMS/core/issues/37062) /
 [#37063](https://github.com/dotCMS/core/issues/37063)). Neither of those is built yet, so **this
-feature defines the shared batch-outcome contract and they consume it** (decision recorded in
-§Decisions, Q1).
+feature generalizes the outcome shape the bulk refresh work already ships and they consume it**
+(decision recorded in §Decisions, Q1 — note this reverses the dependency direction #37166 states,
+which is why that issue needs amending).
 
 ---
 
@@ -94,8 +95,9 @@ succeeded / 2 failed, naming both failures with a distinguishable reason.
    failed, and carries both a machine-readable reason and a human-readable message.
 4. **Given** a batch where every file fails, **When** the run finishes, **Then** the outcome shows
    zero successes and names every failure — the run is not recorded as a success.
-5. **Given** a file exceeding the configured per-file size limit, **When** the run reaches it,
-   **Then** that file is recorded as failed with a size-specific reason and the batch continues.
+5. **Given** a file its content type would reject for size, **When** the run reaches it, **Then**
+   that file is recorded as failed with a size-specific reason and the batch continues — and the
+   same file uploaded alone is rejected too, for the same reason.
 6. **Given** a file whose name collides with an existing asset in the target folder, **When** the
    run reaches it, **Then** it is recorded as that file's failure — never a silent success and
    never a silent overwrite.
@@ -223,20 +225,27 @@ point reached.
 
 **Limits**
 
-- **FR-010**: The system MUST enforce a configurable maximum number of files per batch, with a
-  documented default. Exceeding it is a submission-time refusal (FR-003).
-- **FR-011**: The system MUST enforce a configurable maximum size **per file**, with a documented
-  default. A file exceeding it MUST be recorded as that file's own failure with a size-specific
-  reason, and MUST NOT fail the batch.
-- **FR-012**: The system MUST enforce the file-extension rules the product already applies to
-  uploads. A file rejected by them MUST be recorded as that file's own failure, and MUST NOT fail
-  the batch.
-- **FR-013**: Both limits MUST be operator-configurable through the product's standard
-  configuration mechanism and MUST NOT be hardcoded.
-- **FR-013a**: The per-file size limit of FR-011 MUST be enforced by the system itself. It MUST NOT
-  rely on a limit supplied by the caller, because a caller that omits it would fall back to an
-  unlimited default. Where the staging mechanism has its own size ceiling, the effective limit is
-  the stricter of the two, and the plan MUST state which is expected to bind.
+- **FR-010**: The system MUST enforce a configurable maximum number of files per batch, defaulting
+  to **50**. Exceeding it is a submission-time refusal (FR-003). This limit is new — nothing caps a
+  selection today — and MUST be operator-configurable through the product's standard configuration
+  mechanism rather than hardcoded.
+- **FR-011**: A file rejected for its **size** MUST be recorded as that file's own failure with a
+  size-specific reason, and MUST NOT fail the batch. The product already enforces a per-file size
+  ceiling on the single-file upload path, declared per content type on the binary field and
+  unlimited where an operator has not set one. This feature MUST apply **that** ceiling, not a
+  bulk-specific one: FR-006 requires a file to be accepted or rejected identically whether it
+  arrives alone or in a batch, so a batch that rejected a file the single-file upload accepts would
+  violate it. The requirement here is therefore about **surfacing** the existing rejection per
+  file rather than aborting the run — not about introducing a second limit.
+- **FR-012**: A file rejected for its **type** MUST likewise be recorded as that file's own
+  failure and MUST NOT fail the batch. As with size, the allowed-types rule is declared per content
+  type on the binary field and is applied as-is.
+- **FR-013**: The system MUST NOT rely on a size limit supplied by the caller. A caller that omits
+  one would fall back to an unlimited default, so any caller-supplied ceiling can tighten what the
+  system enforces but MUST NOT be the enforcement point.
+- **FR-013a**: Where a chosen staging mechanism imposes its own size ceiling, the effective limit
+  is the stricter of it and FR-011's, and the plan MUST state which is expected to bind — so that
+  a file rejected by staging is not reported to the author as a content-type rule it did not break.
 
 **Staged file content**
 
@@ -437,9 +446,16 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
   This reverses the dependency direction #37166 states ("depends on #37062 … which the folder
   endpoints define first"). Both #37062 and #37063 are open and unbuilt, so the reversal holds —
   but **#37166 must be amended to match**, or #37062's author defines a third shape in good faith.
-- **Q2 — Limits**: A configurable **maximum file count per batch**, enforced as a submission-time
-  refusal (FR-010). A configurable **maximum size per file** — not per batch — enforced as a
-  per-file failure that leaves the batch running (FR-011). There is no batch-total size limit.
+- **Q2 — Limits**: A **maximum file count per batch of 50**, configurable, enforced as a
+  submission-time refusal (FR-010). Size is enforced **per file, not per batch**, as a per-file
+  failure that leaves the batch running (FR-011). There is no batch-total size limit.
+
+  Refined after review: the size ceiling is **not** a new bulk-specific knob. The product already
+  declares one per content type on the binary field, applied on the single-file path, and FR-006's
+  equivalence requirement means a batch must not reject what a single upload would accept. So this
+  feature applies the existing ceiling and makes its rejection a per-file outcome. The consequence
+  is that where an operator has configured nothing, there is no size ceiling — accepted knowingly,
+  because diverging from the single-file path would be the worse defect.
 - **Q3 — Outcome after navigating away**: The server notifies the submitter on any terminal state,
   both by push and by a durable record (FR-019 … FR-023), following the bulk refresh precedent.
   This removes the need for the frontend to build a jobs screen to satisfy #37166's "its outcome
@@ -486,9 +502,13 @@ explicitly rather than meet them during implementation.
 
 - The interface resolves one upload type per batch before submitting, and prompts the author when
   the target folder expresses no preference. The server receives one type and never infers one.
-- The per-file size limit (FR-011) is **new**. The Content Drive upload path applies no explicit
-  size limit today, so this is a new control rather than the reuse of an existing rule. The
-  extension rules (FR-012), by contrast, already exist and are reused.
+- Neither the per-file size rule (FR-011) nor the allowed-types rule (FR-012) is new. Both already
+  apply to the single-file upload: they are declared per content type on the binary field and
+  enforced during contentlet validation, which the creation path runs. Both surface as a validation
+  failure the run can catch per file, which is what makes per-file reporting natural rather than
+  bespoke. Both default to unconstrained where an operator has set nothing, so out of the box this
+  feature inherits no size or type ceiling — that is a deliberate consequence of FR-006's
+  equivalence requirement, not an oversight. Only the batch file-count cap (FR-010) is new.
 - The product's existing staging mechanism carries its own size ceiling, unlimited by default and
   narrowable per call but only downward — and narrowable by the *caller*, which is why FR-013a
   requires the system to enforce FR-011 itself rather than delegate to it. Its content-lifetime
