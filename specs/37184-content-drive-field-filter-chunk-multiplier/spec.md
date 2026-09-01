@@ -1,6 +1,6 @@
 # Feature Specification: Content Drive Field-Filter Chunk Multiplier
 
-**Feature Branch**: `37148-field-filter-chunk-multiplier`
+**Feature Branch**: `issue-37184-content-drive-field-filter-chunk-multiplier`
 
 **Created**: 2026-08-24
 
@@ -96,10 +96,19 @@ are unchanged from today's behavior in every combination.
 - **FR-001**: System MUST determine, for each field-filter search request, whether every
   requested field criterion is resolvable purely against the search index (i.e., no criterion
   requires the database to preserve immediate visibility of recent writes).
-- **FR-002**: When that condition holds, and the request has no workflow filter and no free-text
-  or file-name term, System MUST resolve the request without repeatedly re-scanning the database
-  candidate set — the underlying database scan MUST execute at most once per request, regardless
-  of folder size or how sparse the matches are.
+- **FR-002 — implementation named (2026-08-31, per review): hybrid single-scan, not
+  index-only.** When that condition holds, and the request has no workflow filter and no
+  free-text or file-name term, System MUST resolve the request without repeatedly re-scanning
+  the database candidate set — the underlying database scan MUST execute at most once per
+  request, regardless of folder size or how sparse the matches are. This is a **hybrid** fix:
+  the existing database-first candidate scan still runs (fixing only its repeat-execution
+  count from ~4 down to 1), it does not switch to `buildPureESQuery`/index-only resolution.
+  That alternative was considered and rejected: `buildPureESQuery` (`BrowserAPIImpl.java:605`)
+  has no folder/parentPath filter today (only host-level scoping), and moving structural
+  filtering there would conflict with this spec's own cited ADR-0018 requirement that
+  structural/metadata filtering stay database-first always (see Legacy Considerations). FR-003,
+  FR-004, and FR-007 below describe *preserving* existing database-sourced behavior, not
+  building new index-side folder/permission/pagination logic.
 - **FR-003**: The single-pass resolution in FR-002 MUST still be scoped to the folder (and site)
   the user is browsing — it must never return content from outside the requested folder.
 - **FR-004**: System MUST still apply the mandatory read-permission filter, sourced from the
@@ -117,13 +126,18 @@ are unchanged from today's behavior in every combination.
   pagination behavior).
 - **FR-008**: Combining a content-type field filter with a Tag filter MUST continue to return the
   same correct results as today.
-- **FR-009 — RESOLVED (2026-08-24): no dedicated kill switch.** No independently-toggleable
-  operator flag for the single-pass behavior in FR-002. Decision reasoning: the freshness
-  trade-off it would guard (see Assumptions) is narrow and scoped — it applies only when zero
-  database-required criteria are present — and mirrors a trade-off ADR-0018 already accepts by
-  default for free-text search, without a dedicated flag for that case either. The existing
-  general search-strategy configuration (`BROWSE_API_HEURISTIC_TYPE`) remains the escape hatch of
-  last resort if the single-pass path needs to be disabled entirely.
+- **FR-009 — RESOLVED (2026-08-24, correction 2026-08-31): no dedicated kill switch, and no
+  existing config already covers this.** No independently-toggleable operator flag for the
+  single-pass behavior in FR-002. Decision reasoning: the freshness trade-off it would guard
+  (see Assumptions) is narrow and scoped — it applies only when zero database-required criteria
+  are present — and mirrors a trade-off ADR-0018 already accepts by default for free-text
+  search, without a dedicated flag for that case either. Correction: `BROWSE_API_HEURISTIC_TYPE`
+  (`SearchHeuristicType`, `BrowserAPIImpl.java:465-470`) does **not** apply here — it toggles
+  between `HYBRID_SINGLE_CHUNKED_QUERY_ES` and `PURE_ES` for the free-text-filtering code path
+  (`doElasticSearchTextFiltering`) only, and has no effect on `getContentByChunks`'s repeat-scan
+  loop, which is what FR-002 changes. There is genuinely no existing config-level escape hatch
+  for this fix; if the single-pass path ever needs disabling, that would require a new flag
+  added at that time, not one that exists today.
 
 ### Key Entities
 
@@ -145,7 +159,13 @@ are unchanged from today's behavior in every combination.
   four to at most one.
 - **SC-002**: Response time for that same case falls to within 20% of the response time of the
   closest equivalent content-search operation (matching the threshold already used to evaluate
-  Content Drive elsewhere in this investigation).
+  Content Drive elsewhere in this investigation). **Dependency**: because FR-002 is a
+  hybrid single-scan fix (the database candidate-scan query still runs once, per FR-002's
+  resolution above), this target is only reachable once that single scan itself is fast on
+  large folders — i.e., once issue #37148 item 1's fix (spec'd separately in #37230, materialized
+  folder-first CTE) has landed. Before #37230 lands, a single scan over a ~20,000-item folder is
+  still expected to take roughly the same ~470-490ms that motivated #37230, so SC-002 cannot be
+  validated in isolation from that dependency.
 - **SC-003**: 100% of tested combinations of a field filter with a Tag filter, a Relationship
   filter, a workflow filter, or a free-text term return results identical to today's behavior.
 - **SC-004**: 100% of tested field-filter-only cases (Text, Date-range, Multi-select, Category)
@@ -171,13 +191,17 @@ are unchanged from today's behavior in every combination.
 
 ## Dependencies & Coordination
 
-- **Shared query with item 1 (separate spec, out of scope here)**: A separate, parallel effort
-  (issue #37148 item 1) is reworking the same database candidate-scan query this fix's chunk loop
-  currently calls repeatedly, to fix an unrelated planner-instability problem on very large
-  folders. This fix reduces how often that query is invoked for the field-filter-only case
-  addressed here, which lowers this case's exposure to item 1's problem, but does not fix it. Item
-  1's eventual change to that query must continue to behave correctly when invoked at most once
-  per request, as this fix will do for its case. Coordinate before either change merges independently.
+- **Shared query with item 1 (separate spec, out of scope here) — hard dependency for SC-002.**
+  A separate, parallel effort (issue #37148 item 1, spec'd in #37230) is reworking the same
+  database candidate-scan query this fix's chunk loop currently calls repeatedly, to fix an
+  unrelated planner-instability problem on very large folders. This fix reduces how often that
+  query is invoked for the field-filter-only case addressed here (from ~4 to 1), which is a real
+  win regardless of #37230's status — but SC-002's search-comparable latency target additionally
+  requires that single remaining scan itself to be fast, which is exactly what #37230 delivers.
+  In other words: FR-002 (scan count) can ship and be verified independently of #37230; SC-002
+  (latency target) cannot. Item 1's eventual change to that query must continue to behave
+  correctly when invoked at most once per request, as this fix will do for its case. Coordinate
+  before either change merges independently, and sequence SC-002's validation after #37230 lands.
 
 ## Assumptions
 
@@ -197,3 +221,7 @@ are unchanged from today's behavior in every combination.
 - The existing per-field index query logic (already used by the current hybrid strategy) is
   assumed to be reusable as-is for the single-pass case; no new field-to-index translation logic is
   expected to be needed.
+- Test-first development (Constitution Principle V) applies: expected home for these tests is
+  `BrowserAPITest` (integration — scan-count assertions for FR-002, result-set parity for
+  FR-005/FR-007/FR-008) plus a dedicated timing assertion for SC-002 that is only meaningful
+  once #37230 lands — exact test design deferred to the planning phase.
