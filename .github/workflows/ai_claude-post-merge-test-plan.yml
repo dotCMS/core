@@ -105,7 +105,7 @@ jobs:
       # (that comes from the API) and never history. Sparse + shallow keeps this job seconds long
       # on a repository this size.
       - name: Checkout scripts and prompt
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           sparse-checkout: |
@@ -148,7 +148,7 @@ jobs:
 
       - name: Discover related issues
         id: discover
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
           PR_BRANCH: ${{ steps.meta.outputs.branch }}

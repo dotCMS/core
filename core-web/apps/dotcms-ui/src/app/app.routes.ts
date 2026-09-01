@@ -215,7 +215,7 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
     },
     {
-        path: 'users',
+        path: 'users-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },

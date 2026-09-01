@@ -18,6 +18,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, DotCustomFieldApiWindow, FormBridge } from '@dotcms/edit-content-bridge';
 import { SafeUrlPipe } from '@dotcms/ui';
@@ -180,6 +181,9 @@ export class IframeFieldComponent implements OnDestroy {
      * It is used to manage dialog interactions within the component.
      */
     readonly #dialogService = inject(DialogService);
+
+    /** Resolves the site `openBrowserModal` browses; see `createFormBridge`. */
+    readonly #siteService = inject(DotSiteService);
     /**
      * The form to get the form.
      */
@@ -309,7 +313,9 @@ export class IframeFieldComponent implements OnDestroy {
             type: 'angular',
             form,
             zone: this.#zone,
-            dialogService: this.#dialogService
+            dialogService: this.#dialogService,
+            // The bridge has no injector of its own, so the site lookup is handed to it.
+            resolveSite: () => this.#siteService.getCurrentSite()
         });
     }
 

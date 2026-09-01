@@ -1,26 +1,30 @@
-import { Component, computed, inject, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Subject } from 'rxjs';
+
+import { Component, DestroyRef, computed, inject, signal, viewChild } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 
-import { ConfirmationService } from 'primeng/api';
+import { ConfirmationService, TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
-import { SelectModule } from 'primeng/select';
 import { TextareaModule } from 'primeng/textarea';
 import { TooltipModule } from 'primeng/tooltip';
+import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
+
+import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import {
+    DotFieldRequiredDirective,
+    DotFieldValidationMessageComponent,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
 import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
-
-interface ParentOption {
-    label: string;
-    value: string | null;
-}
 
 /**
  * Edit Role dialog. Wired to PUT /v1/roles/{roleId} via the store (#36936).
@@ -35,21 +39,21 @@ interface ParentOption {
  */
 @Component({
     selector: 'dot-roles-edit',
-    standalone: true,
     imports: [
         ReactiveFormsModule,
         ButtonModule,
         InputTextModule,
         TextareaModule,
         CheckboxModule,
-        SelectModule,
+        TreeSelectModule,
         TooltipModule,
         ConfirmDialogModule,
-        DotMessagePipe
+        DotMessagePipe,
+        DotFieldRequiredDirective,
+        DotFieldValidationMessageComponent
     ],
     providers: [ConfirmationService],
-    templateUrl: './dot-roles-edit.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-roles-edit.component.html'
 })
 export class DotRolesEditComponent {
     readonly #store = inject(DotRolesStore);
@@ -58,6 +62,32 @@ export class DotRolesEditComponent {
     readonly #config = inject(DynamicDialogConfig);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #messageService = inject(DotMessageService);
+    readonly #destroyRef = inject(DestroyRef);
+
+    /**
+     * Deep-search results, scoped to this dialog — see the Add dialog for why
+     * this is not routed through the store's shared `searchResults`.
+     */
+    readonly #searchResults = signal<DotRoleNode[] | null>(null);
+
+    /**
+     * Open branches. PrimeNG records expansion by mutating `node.expanded`,
+     * but our options come from a `computed` that hands it new objects on
+     * every store change — see the Add dialog for the full rationale.
+     */
+    readonly #expandedKeys = signal(new Set<string>());
+
+    // `protected`, not `#`: Angular rejects `viewChild` on an ES-private field.
+    protected readonly treeSelect = viewChild(TreeSelect);
+    protected readonly $searching = signal(false);
+    readonly #filterInput$ = new Subject<string>();
+
+    /**
+     * Guards against an older search overwriting a newer one. The debounce
+     * gates how often a search STARTS, not the order responses come back, and
+     * these calls are plain promises with no switchMap to cancel the loser.
+     */
+    #searchToken = 0;
 
     protected readonly role: DotRoleDetail = this.#config.data?.role;
 
@@ -69,31 +99,67 @@ export class DotRolesEditComponent {
     protected readonly form = this.#fb.nonNullable.group({
         roleName: [this.role?.name ?? '', Validators.required],
         roleKey: [this.role?.roleKey ?? ''],
-        parentRoleId: [this.#normalizeParentId(this.role) as string | null],
+        parent: [null as TreeNode | null],
         canEditUsers: [this.role?.editUsers ?? true],
         canEditPermissions: [this.role?.editPermissions ?? true],
         canEditLayouts: [this.role?.editLayouts ?? true],
         description: [this.role?.description ?? '']
     });
 
-    protected readonly $parentOptions = computed<ParentOption[]>(() => {
+    /**
+     * Parent candidates as a tree. The role itself and every descendant are
+     * excluded — reparenting under your own subtree is a cycle, which the BE
+     * rejects with a 400 anyway.
+     */
+    protected readonly $parentTree = computed<TreeNode[]>(() => {
         // Defensive: the dialog can theoretically be opened without
-        // `data.role` (misconfigured caller) — bail out with an empty list
+        // `data.role` (misconfigured caller) — bail out with an empty tree
         // instead of crashing on `this.role.id`.
         if (!this.role) {
             return [];
         }
+        const cached = this.#store.roleTree();
+        const searchResults = this.#searchResults();
+        const source = searchResults ?? cached;
+
+        // Collect descendants from BOTH datasets, not just the one being
+        // rendered. The cached tree holds only the branches that were expanded,
+        // while search results carry full ancestor paths from a different
+        // endpoint — so each can contain a descendant the other is missing.
+        // Excluding from only one lets the search path offer a real descendant
+        // as the new parent, which is the cycle this guard exists to prevent.
         const exclude = new Set<string>();
-        this.#collectDescendantIds(this.#findInTree(this.#store.roleTree(), this.role.id), exclude);
+        this.#collectDescendantIds(this.#findInTree(cached, this.role.id), exclude);
+        if (searchResults) {
+            this.#collectDescendantIds(this.#findInTree(searchResults, this.role.id), exclude);
+        }
         exclude.add(this.role.id);
 
-        return [
-            { label: this.#messageService.get('roles.form.parent.root'), value: null },
-            ...this.#flattenRoles(this.#store.roleTree(), exclude)
-        ];
+        return this.#toTreeNodes(source, exclude, this.#expandedKeys());
     });
 
     constructor() {
+        this.#filterInput$
+            .pipe(debounceTime(300), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((query) => this.#runSearch(query));
+
+        // Seed the picker from the role's current parent. A root role has a
+        // self-referential `parent`, which `#normalizeParentId` maps to null.
+        const currentParentId = this.#normalizeParentId(this.role);
+        if (currentParentId) {
+            // The fallback is what stops a silent reparent: a role reached
+            // through the page's search can have its parent chain missing from
+            // the cached tree, and leaving the picker empty would send
+            // `parentRoleId: null` — moving the role to root on a Save the
+            // admin only opened to rename it.
+            this.form.controls.parent.setValue(
+                this.#findNode(this.$parentTree(), currentParentId) ?? {
+                    key: currentParentId,
+                    label: this.#parentLabel(currentParentId)
+                }
+            );
+        }
+
         if (this.readOnly) {
             this.form.disable();
         }
@@ -107,7 +173,12 @@ export class DotRolesEditComponent {
         this.$submitting.set(true);
         this.$error.set(null);
 
-        const value = this.form.getRawValue() as DotRoleFormValue;
+        const { parent, ...rest } = this.form.getRawValue();
+        // An empty picker means the role becomes a root.
+        const value: DotRoleFormValue = {
+            ...rest,
+            parentRoleId: (parent?.key as string | undefined) ?? null
+        };
 
         this.#store.updateRole(this.role.id, value).then((updated) => {
             this.$submitting.set(false);
@@ -117,6 +188,82 @@ export class DotRolesEditComponent {
                 this.$error.set('roles.edit.error');
             }
         });
+    }
+
+    /**
+     * The backend hydrates only two levels per request, so hydrate on expand
+     * and let the admin drill as deep as the hierarchy goes.
+     */
+    protected onNodeExpand(event: { node: TreeNode }): void {
+        const key = event.node?.key;
+        if (!key) {
+            return;
+        }
+        this.#expandedKeys.update((keys) => new Set(keys).add(key));
+        this.#store.loadRoleChildren(key);
+    }
+
+    protected onNodeCollapse(event: { node: TreeNode }): void {
+        const key = event.node?.key;
+        if (!key) {
+            return;
+        }
+        this.#expandedKeys.update((keys) => {
+            const next = new Set(keys);
+            next.delete(key);
+
+            return next;
+        });
+    }
+
+    protected onFilter(event: { filter: string }): void {
+        this.#filterInput$.next(event.filter ?? '');
+    }
+
+    async #runSearch(query: string): Promise<void> {
+        const token = ++this.#searchToken;
+
+        if (query.trim().length < 3) {
+            this.#searchResults.set(null);
+            // The token bump above orphans any search still in flight, and an
+            // orphaned run leaves the flag alone (see the `finally`). Clearing
+            // it here is what keeps the picker from spinning forever when the
+            // admin backspaces below three characters mid-request.
+            this.$searching.set(false);
+            // Reset the widget's own filter too. `Tree.getRootNode()` keeps
+            // serving its cached `filteredNodes` once the filter has run, so
+            // reverting the options alone would leave the last search's rows
+            // on screen after the admin backspaces out of the query.
+            this.treeSelect()?.treeViewChild?._filter('');
+
+            return;
+        }
+
+        this.$searching.set(true);
+
+        try {
+            const results = await this.#store.searchRoleTree(query);
+
+            // A newer query already landed — drop this one rather than
+            // replacing fresh results with stale ones.
+            if (token !== this.#searchToken) {
+                return;
+            }
+
+            this.#searchResults.set(results);
+
+            // `Tree.getRootNode()` returns its cached `filteredNodes` once the
+            // client filter has run, ignoring `value` — so the new options only
+            // render if the filter is re-applied over them.
+            this.treeSelect()?.treeViewChild?._filter(query);
+        } finally {
+            // Only the run that is still current owns the flag. A superseded
+            // run clearing it would drop the spinner while the search that
+            // replaced it is still going.
+            if (token === this.#searchToken) {
+                this.$searching.set(false);
+            }
+        }
     }
 
     protected onCancel(): void {
@@ -186,23 +333,49 @@ export class DotRolesEditComponent {
         return role.parent;
     }
 
-    #flattenRoles(nodes: DotRoleNode[], exclude: Set<string>, depth = 0): ParentOption[] {
-        return nodes.reduce<ParentOption[]>((acc, node) => {
+    #toTreeNodes(
+        nodes: DotRoleNode[],
+        exclude: Set<string>,
+        expandedKeys: Set<string>
+    ): TreeNode[] {
+        return nodes.reduce<TreeNode[]>((acc, node) => {
             if (exclude.has(node.id)) {
                 return acc;
             }
-            // Non-breaking spaces so the select renderer doesn't collapse
-            // leading whitespace and lose the hierarchy hint.
             acc.push({
-                label: `${'  '.repeat(depth)}${node.name}`,
-                value: node.id
+                key: node.id,
+                label: node.name,
+                expanded: expandedKeys.has(node.id),
+                // `leaf: false` gives PrimeNG a toggler for a node whose
+                // children have not been fetched yet — see the Add dialog.
+                leaf:
+                    node.childCount !== undefined
+                        ? node.childCount === 0
+                        : (node.roleChildren?.length ?? 0) === 0,
+                children: this.#toTreeNodes(node.roleChildren ?? [], exclude, expandedKeys)
             });
-            if (node.roleChildren?.length) {
-                acc.push(...this.#flattenRoles(node.roleChildren, exclude, depth + 1));
-            }
 
             return acc;
         }, []);
+    }
+
+    /** Best-effort display name for a parent that is not in the loaded tree. */
+    #parentLabel(parentId: string): string {
+        return this.#findInTree(this.#store.roleTree(), parentId)?.name ?? parentId;
+    }
+
+    #findNode(nodes: TreeNode[], key: string): TreeNode | null {
+        for (const node of nodes) {
+            if (node.key === key) {
+                return node;
+            }
+            const found = this.#findNode(node.children ?? [], key);
+            if (found) {
+                return found;
+            }
+        }
+
+        return null;
     }
 
     #findInTree(nodes: DotRoleNode[], id: string): DotRoleNode | null {

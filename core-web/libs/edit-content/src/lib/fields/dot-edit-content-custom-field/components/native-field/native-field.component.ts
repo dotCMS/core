@@ -22,6 +22,7 @@ import { DialogModule } from 'primeng/dialog';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 
+import { DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { createFormBridge, DotCustomFieldApiWindow, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
@@ -78,6 +79,9 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
      * It is used to manage dialog interactions within the component.
      */
     readonly #dialogService = inject(DialogService);
+
+    /** Resolves the site `openBrowserModal` browses; see `createFormBridge`. */
+    readonly #siteService = inject(DotSiteService);
     /**
      * The template code of the field.
      * This content is expected to be sanitized on the backend before reaching this component.
@@ -131,6 +135,8 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             form,
             zone: this.#zone,
             dialogService: this.#dialogService,
+            // The bridge has no injector of its own, so the site lookup is handed to it.
+            resolveSite: () => this.#siteService.getCurrentSite(),
             onFieldVisibilityChange: (fieldVariable, visible) => {
                 this.#store.setFieldVisibility(fieldVariable, visible);
             }

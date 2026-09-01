@@ -482,10 +482,5 @@ const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = 
     // URL is kebab-case; backend portlet-name stays snake_case for DB compat (#35809).
     'velocity-playground': () => {
         return 'velocity_playground';
-    },
-    // The Angular Users portlet is registered under `users-beta` in portlet.xml
-    // with a `<portlet-url>/users</portlet-url>` override, so the URL is `/users`
-    // while the menu id stays `users-beta`. Without this mapping the
-    // MenuGuardService can't match the menu entry and bounces to Getting Started.
-    users: () => 'users-beta'
+    }
 };
