@@ -683,7 +683,7 @@ pass on the new Angular screen today, so naming the host matters.
 | **AC-005** *(latch)* | Pushing the **same object reference** into `value` any number of times loads the content exactly once. Pushing a **different** object reference loads again. |
 | **AC-006** *(load path)* | On the web-component host, initial content still loads with no `value` effect involvement — i.e. `commitEditor` loads it. On the reactive-forms host, `writeValue` → `pendingValue` → `commitEditor` still loads it. Neither renders an empty field. |
 | **AC-007** *(comparator)* | The structural comparison reports "unchanged" for all four trigger shapes — `chartCount`, missing `indent`, `listItem.textAlign`, and attrs re-serialized in alphabetical key order — and "changed" for a genuinely different document. |
-| **AC-008** *(regression, #37145)* | A body carrying a **mark** the schema can't deserialize still triggers `setContent` rather than throwing or blanking the field. |
+| **AC-008** *(regression, #37145 / #37175)* | A body carrying an unknown **mark** loads without blanking the field, and compares **equal** — `dotUnsupportedMark` preserves it, so it round-trips like an unknown node. A document that genuinely cannot be deserialized still triggers `setContent` rather than throwing. |
 | **AC-009** *(regression, #37149)* | An array-shaped value (UVE side panel) loads correctly and compares equal. Measured `false` today under the string comparison, required `true` — **expect this to fail at Red.** |
 | **AC-010** *(regression)* | The emitted value still carries root `charCount`, `wordCount` and `readingTime` when the document is non-empty. |
 | **AC-011** *(branch symmetry)* | A document containing a node type unknown to the schema compares equal through **both** entry points — string-valued `writeValue` and object-valued `value` — so `customBlocks` content stops triggering an avoidable `setContent` at load. |
@@ -696,10 +696,14 @@ Jest: mount `DotCMSEditorComponent`, set `field` and `value`, run
 transaction was dispatched and the selection is still a `NodeSelection`. This reproduces the
 defect headlessly, so it is a genuine Red-phase test rather than a documentation exercise.
 
-**On AC-008, the node/mark split is deliberate.** `Node.fromJSON` raises `RangeError` for an
-unknown mark, so the comparator's `catch` returns "not equal" and the load proceeds as today.
-Unknown *nodes* are different — they deserialize fine via the `dotUnsupportedBlock` placeholder and
-must compare equal, which is AC-011. Nodes degrade to a placeholder; marks abort deserialization.
+**AC-008 changed shape mid-flight, and it is worth saying why.** When this spec was written,
+`Node.fromJSON` raised `RangeError` for an unknown mark, so the comparator's `catch` returned "not
+equal" — nodes degraded to a placeholder, marks aborted deserialization. #37175 (`53f5ba760f`)
+closed that asymmetry on `main` with `dotUnsupportedMark`, the mark-side twin of
+`dotUnsupportedBlock`. Unknown marks now round-trip and must compare **equal**, exactly like
+unknown nodes in AC-011. Measured after merging `main`: parsing the raw JSON still throws, but the
+comparator preserves first, so it parses and matches. The fail-closed requirement survives, now
+expressed against genuinely malformed input rather than an unknown mark.
 
 ### How we'll verify
 
