@@ -34,6 +34,7 @@ import { SelectionPreserveExtension } from './selection-preserve.extension';
 import { createSlashCommandExtension } from './slash-command.extension';
 import { TableActiveCellsPlugin } from './table-active-cells.plugin';
 import { createDotTableExtensions } from './table-extensions';
+import { UnsupportedMark } from './unsupported-mark.extension';
 
 import { EditorPopoverService } from '../services/editor-popover.service';
 
@@ -96,6 +97,7 @@ export function createEditorExtensions(
             horizontalRule: has('horizontalRule') ? {} : false
         }),
         UnsupportedBlock,
+        UnsupportedMark,
         ...(has('codeBlock') ? [createCodeBlock(injector, lowlight)] : []),
         createBlockGutterDragHandle(t('dot.block.editor.gutter.add-block')),
         CharacterCount,
