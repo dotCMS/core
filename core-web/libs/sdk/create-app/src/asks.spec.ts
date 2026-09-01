@@ -25,7 +25,18 @@ describe('prompt types are the ones inquirer 13 actually registers', () => {
     });
 
     it('uses only prompt types this inquirer version registers', () => {
-        const registered = ['input', 'select', 'checkbox', 'confirm', 'password', 'expand', 'editor', 'number', 'rawlist', 'search'];
+        const registered = [
+            'input',
+            'select',
+            'checkbox',
+            'confirm',
+            'password',
+            'expand',
+            'editor',
+            'number',
+            'rawlist',
+            'search'
+        ];
         const used = [...source.matchAll(/^\s*type:\s*['"]([a-z]+)['"]/gm)].map((m) => m[1]);
 
         expect(used.length).toBeGreaterThan(0);

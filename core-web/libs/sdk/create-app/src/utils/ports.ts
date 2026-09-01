@@ -44,7 +44,10 @@ export interface ResolvePortConflictOptions {
      * Asks the user what to do. `canReplace` is false when nothing owns the ports that we could
      * safely stop — something started outside compose is not ours to destroy.
      */
-    askAction: (context: { description: string; canReplace: boolean }) => Promise<PortConflictAction>;
+    askAction: (context: {
+        description: string;
+        canReplace: boolean;
+    }) => Promise<PortConflictAction>;
     notify: (message: string) => void;
     owner?: PortOwner;
 }

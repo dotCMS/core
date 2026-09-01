@@ -5,11 +5,7 @@ import { FailedToGetDefaultSiteError } from '../errors';
 import { Ok, type Result, Err } from '../result';
 import { httpPost, httpGet, isHttpError } from '../utils/http';
 
-import type {
-    DefaultSiteResponse,
-    GetUserTokenRequest,
-    GetUserTokenResponse,
-} from '../types';
+import type { DefaultSiteResponse, GetUserTokenRequest, GetUserTokenResponse } from '../types';
 
 function getSafeErrorDetails(err: unknown): string {
     if (isHttpError(err)) {
@@ -103,5 +99,4 @@ export class DotCMSApi {
             return Err(new FailedToGetDefaultSiteError());
         }
     }
-
 }

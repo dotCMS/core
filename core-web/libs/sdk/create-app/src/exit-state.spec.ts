@@ -273,7 +273,12 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
 
             const report = flushRecoverableState();
 
-            expect(report).toMatchObject({ wroteEnv: true, filename: '.env', host: HOST, siteId: SITE_ID });
+            expect(report).toMatchObject({
+                wroteEnv: true,
+                filename: '.env',
+                host: HOST,
+                siteId: SITE_ID
+            });
             expect(fs.readFileSync(envPath, 'utf8')).toContain(TOKEN);
         });
 
@@ -393,7 +398,8 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
         });
 
         it('leaves an existing .env untouched and prints the paste block instead', () => {
-            const existing = '# shipped by the scaffolded example\nNEXT_PUBLIC_DOTCMS_HOST=keep-me\n';
+            const existing =
+                '# shipped by the scaffolded example\nNEXT_PUBLIC_DOTCMS_HOST=keep-me\n';
             fs.writeFileSync(envPath, existing, 'utf8');
 
             recordRecoverableState({
