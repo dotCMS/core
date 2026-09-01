@@ -126,8 +126,19 @@ export class DotExperimentsConfigurePageComponent {
      *
      * Existing variants deliberately do *not* disable it: they are a step on the way rather than a
      * wall, and the confirmation is what turns them into one the user can take.
+     *
+     * What does disable it is a refusal no deletion could lift. `save()` accepts a page change only
+     * when the experiment carries exactly one variant and it is the control
+     * (`hasOnlyTheControlVariant`, `variants.size() == 1`), so a draft carrying *none* is refused
+     * with nothing the user could act on. Unreachable while the creation POST always makes the
+     * control — but a click that silently does nothing is a worse way to meet that than a button
+     * that is plainly off.
      */
-    protected readonly $isPageActionDisabled = computed<boolean>(() => this.store.$isLocked());
+    protected readonly $isPageActionDisabled = computed<boolean>(
+        () =>
+            this.store.$isLocked() ||
+            (!this.store.$canChangePage() && !this.$deletableVariants().length)
+    );
 
     /**
      * Why the button is disabled, or `null` while it is not.
@@ -175,6 +186,17 @@ export class DotExperimentsConfigurePageComponent {
 
     /** The confirmation while it is open, so it can be closed from outside itself. */
     #changePageRef: DynamicDialogRef | null = null;
+
+    /**
+     * Whether a page change *this card* asked for is still waiting on the store.
+     *
+     * The success event is a global one, and the card's reaction to it is to open a picker. Today
+     * only this dialog can produce it, so the flag changes nothing — it is here so that the
+     * invariant is written down rather than left resting on there being a single producer. Without
+     * it, the day anything else clears variants, a page picker appears on a screen the user was not
+     * interacting with.
+     */
+    #awaitingPageChange = false;
 
     constructor() {
         this.#closeConfirmationWhenVariantsAreGone();
@@ -233,6 +255,7 @@ export class DotExperimentsConfigurePageComponent {
      */
     #openChangePageDialog(): void {
         this.#dispatch.pageChangeRequested();
+        this.#awaitingPageChange = true;
 
         const inputValues: DotExperimentsChangePageDialogInputs = {
             pageTitle: this.$selectedPage()?.title ?? '',
@@ -263,7 +286,12 @@ export class DotExperimentsConfigurePageComponent {
 
                 if (result) {
                     this.openPageSelector();
+
+                    return;
                 }
+
+                // Closed with nothing: no run of ours is outstanding any more.
+                this.#awaitingPageChange = false;
             });
     }
 
@@ -278,12 +306,20 @@ export class DotExperimentsConfigurePageComponent {
      * The picker opens either way. Closing the dialog is what normally leads to it, through the
      * `onClose` above; but the deletions outlive the dialog, so an answer that arrives with no
      * dialog left to close still has a promise to keep.
+     *
+     * Only for a run this card started, though — see `#awaitingPageChange`.
      */
     #closeConfirmationWhenVariantsAreGone(): void {
         this.#events
             .on(dotExperimentsConfigureApiEvents.deleteVariantsSucceeded)
             .pipe(takeUntilDestroyed(this.#destroyRef))
             .subscribe(() => {
+                if (!this.#awaitingPageChange) {
+                    return;
+                }
+
+                this.#awaitingPageChange = false;
+
                 const confirmation = this.#changePageRef;
 
                 if (confirmation) {

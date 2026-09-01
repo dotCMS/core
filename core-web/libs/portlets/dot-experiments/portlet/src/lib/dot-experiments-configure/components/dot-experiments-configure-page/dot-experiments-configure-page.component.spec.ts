@@ -483,10 +483,11 @@ describe('DotExperimentsConfigurePageComponent', () => {
         });
 
         /**
-         * The answer can outlive the dialog — the deletions keep going if it is dismissed, and the
-         * component is not destroyed with it. There is still a picker to open.
+         * The success event is global and this card's reaction to it is to open a picker, so it has
+         * to be sure the run was its own. Otherwise the day anything else clears variants, a picker
+         * appears on a screen the user was not interacting with.
          */
-        it('should open the picker even when the answer arrives with no confirmation left', () => {
+        it('should ignore a deletion answer for a run it never started', () => {
             storeMock.selectedPage.set(SELECTED_PAGE);
             spectator.detectChanges();
 
@@ -496,7 +497,41 @@ describe('DotExperimentsConfigurePageComponent', () => {
             spectator.detectChanges();
 
             expect(changePageRef.close).not.toHaveBeenCalled();
-            expect(pickerOpened()).toBe(true);
+            expect(pickerOpened()).toBe(false);
+        });
+
+        it('should ignore a second answer once its own run has been served', () => {
+            withVariants();
+            spectator.click(selectButton());
+            const dispatcher = spectator.inject(Dispatcher);
+
+            dispatcher.dispatch(
+                dotExperimentsConfigureApiEvents.deleteVariantsSucceeded(EXPERIMENT)
+            );
+            spectator.detectChanges();
+            const opensAfterOwnRun = dialogService.open.mock.calls.length;
+
+            dispatcher.dispatch(
+                dotExperimentsConfigureApiEvents.deleteVariantsSucceeded(EXPERIMENT)
+            );
+            spectator.detectChanges();
+
+            expect(dialogService.open.mock.calls.length).toBe(opensAfterOwnRun);
+        });
+
+        it('should stop waiting on a run once its confirmation is cancelled', () => {
+            withVariants();
+            spectator.click(selectButton());
+
+            changePageClosed.next(undefined);
+            spectator.detectChanges();
+
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.deleteVariantsSucceeded(EXPERIMENT));
+            spectator.detectChanges();
+
+            expect(pickerOpened()).toBe(false);
         });
 
         it('should leave the page alone when the confirmation is cancelled', () => {
@@ -509,6 +544,22 @@ describe('DotExperimentsConfigurePageComponent', () => {
 
             expect(pickerOpened()).toBe(false);
             expect(dispatchedEvents()).toHaveLength(dispatchedOnOpen);
+        });
+
+        /**
+         * `save()` takes a page change only for an experiment carrying exactly one variant, the
+         * control — so a draft with none is refused with nothing the user could act on. Unreachable
+         * today, but a dead click is a worse way to meet it than a button that is off.
+         */
+        it('should disable the button when no deletion could make the change possible', () => {
+            storeMock.experiment.set(EXPERIMENT);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            storeMock.$variants.set([]);
+            storeMock.$deletableVariants.set([]);
+            storeMock.$canChangePage.set(false);
+            spectator.detectChanges();
+
+            expect(selectButton().disabled).toBe(true);
         });
 
         it('should leave the button enabled and unexplained before the experiment exists', () => {
