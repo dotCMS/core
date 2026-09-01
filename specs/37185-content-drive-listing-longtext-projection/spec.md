@@ -32,6 +32,12 @@ The cost is paid on serialization, on the wire, and in browser memory: both fron
 store the returned `list` array verbatim (`dot-content-drive.store.ts:498`,
 `with-asset-browse.feature.ts:181`), so the bodies are retained for as long as the page is open.
 
+**Framing caveat**: this fix reduces the *response* payload only. The full long-text field value
+is still loaded from the database into the `Contentlet` before this fix's truncation step
+discards the excess — no query changes, no reduction in database read volume or row-fetch cost.
+The ≈65ms figure attributed to this item is serialization/transfer cost, not database load; it
+is a distinct saving from the database-side fixes in the sibling items (#37183/#37184).
+
 **Severity / Impact**: Medium. Affects every backend user browsing a folder that contains
 generic Content with long-text fields, in both the Content Drive portlet and Site Browser (they
 share the code path — see Blast radius). It is a latency and bandwidth tax, not a correctness
@@ -106,6 +112,19 @@ present by default and must be actively removed to be excluded.
    use `webAssetOptions()` / `dotAssetOptions()`, which are narrower — but per (2) that is **not**
    why they are small. They are small because File Asset, dotAsset and Page content types do not
    carry article-length long-text fields in the first place.
+5. **Strategy execution order defeats a naive truncation for Story Block (confirmed by review,
+   2026-08-28).** `StrategyResolverImpl.resolveStrategies` (`StrategyResolverImpl.java:122-146`)
+   always applies the default-property strategy (where a naive truncation would live) *before*
+   the option-triggered strategies, which are iterated in `TransformOptions`' enum-ordinal order
+   because `defaultOptions` is an `EnumSet` (`DotContentletTransformerImpl.java:41`). Both
+   `STORY_BLOCK_VIEW` and `JSON_VIEW` are option-triggered, so `StoryBlockViewStrategy`
+   (`StoryBlockViewStrategy.java:41-74`) and `JSONViewStrategy` (`JSONViewStrategy.java:37-63`)
+   run *after* any truncation done in the default strategy — and both read the field's value from
+   `source` (the original, untouched Contentlet), not from `map`, then `map.put` the full,
+   untruncated value back in as a parsed `LinkedHashMap`. A truncation implemented naively inside
+   the default strategy is silently undone for every Story Block field, and the field's value is
+   an object, not a string, by the time it reaches the response — "cut to 150 characters" does
+   not apply to it as written. See "Recommended direction" for the fix.
 
 > **Correction to the issue text.** Issue #37148 item 3 says *"Restricting the listing projection
 > (as `webAssetOptions()` already does for file assets and pages …) would remove it."* That is
@@ -118,24 +137,45 @@ present by default and must be actively removed to be excluded.
 
 **In scope**:
 
-- **Decision (resolves OQ-1, 2026-08-24):** truncate long-text field values (option **iii** in
-  the original OQ-1) rather than remove them. Bound: **150 characters**. Applied uniformly to
-  every long-text field in the listing row, regardless of whether the field is flagged Show In
-  List — a `listed` WYSIWYG/TextArea/Story Block field keeps rendering in its grid column, as a
-  preview instead of the full body. This was chosen over unconditional removal because the grid
-  today has no field-type restriction on Show In List
-  (`dot-content-drive-field-filter-menu.component.ts:133`) and removing the key would blank that
-  column silently; truncating preserves the column while still bounding payload. It was chosen
-  over "preserve full body for listed fields only" because that makes the payload win
-  configuration-dependent — any content type with a listed long-text field would keep shipping
-  full bodies. The frontend already visually clips these cells with CSS `truncate`
-  (`dot-folder-list-view.component.html:215`, Tailwind `overflow:hidden`/`text-overflow:ellipsis`)
-  — that is display-only clipping of the full string already in the DOM/response, so it does not
-  reduce payload or memory on its own; server-side truncation is what actually removes the bytes.
-  No frontend change is required: the component reads whatever string is in `item[column.field]`
-  and applies the same CSS truncation to a short string as it does to a long one today.
+- **Decision (resolves OQ-1, 2026-08-24; mechanism and rationale corrected 2026-08-31 per
+  review).** Truncate long-text field values (option **iii** in the original OQ-1) rather than
+  remove them. Bound: **150 characters**. Applied uniformly to every long-text field in the
+  listing row, regardless of whether the field is flagged Show In List — a `listed`
+  WYSIWYG/TextArea field keeps rendering in its grid column as a preview instead of the full
+  body. **Field types in scope: WYSIWYG, TextArea, and Story Block only (resolves OQ-4)** —
+  JSON Field and Custom Field are not part of this fix; they were not in the issue's original
+  measurement and are not measured here either.
+  - **Corrected rationale.** The original reasoning — "truncating preserves the column, removal
+    would blank it" — only holds for WYSIWYG/TextArea, which are plain strings the grid already
+    renders correctly (`dot-folder-list-view.component.html:271-273`, the default `{{ value }}`
+    interpolation). It does **not** hold for Story Block as originally analyzed: today, a
+    `listed` Story Block field already renders as `[object Object]` in that same interpolation,
+    because `StoryBlockViewStrategy` turns it into a `LinkedHashMap` (see Root-Cause Hypothesis,
+    point 5) — the column is already broken before this fix. Truncating Story Block to a plain
+    preview string (below) is a **strict improvement** for that column, not just a payload
+    reduction: it goes from unreadable object notation to readable truncated text.
+  - **Story Block mechanism (resolves the ordering defect in Root-Cause Hypothesis point 5).**
+    Truncation for Story Block MUST be applied *after* `StoryBlockViewStrategy` (and, if JSON
+    Field is ever brought into scope, `JSONViewStrategy`) has already run — not inside the
+    default strategy where it would be overwritten. Concretely: the new truncation option's
+    `TransformOptions` constant MUST be declared after `STORY_BLOCK_VIEW` and `JSON_VIEW` in the
+    enum, so `EnumSet` iteration order (which `StrategyResolverImpl.resolveStrategies` relies on)
+    places its strategy last, seeing the fully-decorated map. For a Story Block field, that
+    strategy extracts a plain-text preview from the parsed block content (not the raw JSON) and
+    replaces the map entry with a truncated **string** — the field's type changes from object to
+    string in the listing response specifically (see the rollback-classification exception in
+    Regression Risk).
+  - The frontend already visually clips these cells with CSS `truncate`
+    (`dot-folder-list-view.component.html:215`, Tailwind `overflow:hidden`/`text-overflow:ellipsis`)
+    — that is display-only clipping of the full string already in the DOM/response, so it does
+    not reduce payload or memory on its own; server-side truncation is what actually removes the
+    bytes. No frontend code change is required for WYSIWYG/TextArea/Story Block: the component
+    reads whatever value is in `item[column.field]` and renders it via the same default
+    interpolation — a truncated string now renders correctly where an object previously rendered
+    as `[object Object]`.
 - Truncate long-text field values in the listing rows produced by
-  `BrowserAPIImpl#createContentMap`'s generic-Content branch (`dotContentMap`) to 150 characters.
+  `BrowserAPIImpl#createContentMap`'s generic-Content branch (`dotContentMap`) to 150 characters,
+  applied identically for Content Drive and Site Browser (resolves OQ-2 — see below).
 - Keep every field the Content Drive grid, its toolbar/action menu, and the asset-picker
   actually consume.
 - Update the `@Operation`/`@Schema` documentation on `ContentDriveResource#search` so the
@@ -205,11 +245,17 @@ present by default and must be actively removed to be excluded.
   - **Rollback classification is not as stated in the issue.** Issue #37148's item-3 acceptance
     criteria say *"Labelled for rollback safety, since this changes a REST response shape."* Per
     `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`, M-3 is rollback-unsafe because **N-1 lacks a
-    contract that N introduced**. Here N *removes* a field, so rolling back to N-1 **restores**
-    it — this is a forward-compatibility concern (breaks on N if something reads the field), not
-    a rollback one, exactly as the H-8 removal note spells out. On the analysis in this spec the
-    change looks **rollback-safe**. See **OQ-6**; note also that dotCMS/core auto-applies
-    rollback-safety labels to PRs, so this should not be hand-set.
+    contract that N introduced**. The resolved fix (OQ-1: truncate, not remove) never drops a
+    key — for WYSIWYG/TextArea, N ships a *shorter string value* under the same key; rolling back
+    to N-1 restores the full string, which is a forward-compatibility concern at most (breaks on
+    N if something reads more than 150 characters), not a rollback one. **Exception**: Story
+    Block's fix changes the field's *type*, not just its length (object → truncated preview
+    string, per the strategy-ordering fix below) — rolling back to N-1 restores the object shape,
+    so any N-side consumer that started relying on the string shape would break on rollback. This
+    is still the same forward-compatibility pattern (N-1 restores what N changed), not a
+    rollback-unsafe one, exactly as the H-8 removal note's reasoning extends to a shape change.
+    On this analysis the change looks **rollback-safe**. See **OQ-6**; note also that dotCMS/core
+    auto-applies rollback-safety labels to PRs, so this should not be hand-set.
 
 - **Data considerations**: None. No schema change, no ES mapping change, no stored data is
   transformed or migrated. Nothing needs repair on downgrade.
@@ -254,10 +300,10 @@ present by default and must be actively removed to be excluded.
 - **AC-003 (Show In List)**: A content type with a `listed` long-text field still renders that
   grid column; its cell value is the 150-character truncation, not the full body and not blank.
   Covered by a test asserting both that the key is present and that its length is bounded.
-- **AC-004 (Site Browser)**: `POST /api/v1/browser` behaviour matches whatever **OQ-2** resolves
-  to. If the reduction is intended to apply there too, Site Browser listings are verified
-  unchanged in every field it renders and no slower; if not, Site Browser rows are verified
-  byte-identical to the pre-change build.
+- **AC-004 (Site Browser) — RESOLVED (OQ-2: apply to both).** `POST /api/v1/browser` gets the
+  same truncation as Content Drive, since both share `dotContentMap`. Site Browser listings are
+  verified to have the same reduced long-text values Content Drive gets, and every other field
+  it renders is unchanged and no slower.
 - **AC-005 (`@Schema`)**: The endpoint's Swagger annotation is accurate.
   *Caveat on the issue's wording:* item 3's AC *"The `@Schema` annotation on the endpoint matches
   the reduced payload"* is close to a no-op as the code stands. The annotation is
@@ -279,10 +325,12 @@ present by default and must be actively removed to be excluded.
   Editor, and the asset picker / File field are unaffected — verified by the new option being
   opt-in and by the asset picker's base-type pinning, not by assumption.
 - **AC-008 (title safety)**: A content type whose **title field is itself** a WYSIWYG or TextArea
-  field still returns a correct `title` in the listing. (`COMMON_PROPS` populates `title`
-  independently of the field key, so this is expected to hold — but it is unverified and is the
-  one place where removing a long-text key could plausibly blank a rendered column even under
-  OQ-1's narrowest answer.)
+  field still returns a correct, untruncated `title` in the listing. (`COMMON_PROPS` populates
+  `title` independently of the field key, so this is expected to hold — but it is unverified.
+  Since the resolved fix truncates rather than removes, the risk here is not a blanked column but
+  a title silently cut to 150 characters if `title` is ever derived from the same truncated map
+  entry instead of `COMMON_PROPS`'s independent population — this AC exists to confirm that
+  cross-contamination does not happen.)
 
 **Verification method**:
 
@@ -293,10 +341,14 @@ present by default and must be actively removed to be excluded.
   present (AC-002) *and* long-text keys absent (AC-001). Run targeted:
   `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=BrowserAPITest`
   (plus the new test class, once named).
-- **Unit (new)** — `dotCMS/src/test`, in the transform package: the option's removal logic over a
-  content type carrying WYSIWYG + TextArea + Story Block + Text fields, asserting exactly which
-  keys survive, and asserting that a transformer built **without** the new option is byte-identical
-  to today (AC-007).
+- **Unit (new)** — `dotCMS/src/test`, in the transform package: the option's truncation logic
+  over a content type carrying WYSIWYG + TextArea + Story Block + Text fields, asserting: values
+  are cut to 150 characters (WYSIWYG/TextArea), Story Block resolves to a truncated preview
+  **string** (not an object) despite running after `StoryBlockViewStrategy`, all keys survive
+  (nothing is removed), and a transformer built **without** the new option is byte-identical to
+  today (AC-007). Also assert the new option's `TransformOptions` ordinal places it after
+  `STORY_BLOCK_VIEW`/`JSON_VIEW` so `EnumSet` iteration order doesn't silently regress if the
+  enum is reordered later.
 - **Postman** — `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false
   -Dpostman.collections=ContentDriveResource` after the AC-006 edit.
 - **Jest** — `dot-content-drive.store.spec.ts` and `with-asset-browse.feature.spec.ts` still pass;
@@ -311,8 +363,9 @@ present by default and must be actively removed to be excluded.
 
 Issue #37148 sketched two implementations. Evaluated against the code:
 
-**(a) Idiomatic — a new `TransformOptions` value. Recommended.** A close precedent already
-exists: `DefaultTransformStrategy#addBinaries` (`DefaultTransformStrategy.java:222-236`) handles
+**(a) Idiomatic — a new `TransformOptions` value with its own strategy, ordered last.
+Recommended, mechanism corrected 2026-08-31 per review.** A close precedent partially exists:
+`DefaultTransformStrategy#addBinaries` (`DefaultTransformStrategy.java:222-236`) handles
 `FILTER_BINARIES` at the same point in the same class —
 
 ```java
@@ -323,16 +376,23 @@ if (options.contains(FILTER_BINARIES)) {
 }
 ```
 
-The resolved operation for this item is a `map.put` with a truncated value, not a `map.remove` —
-`WysiwygField.class`, `TextAreaField.class` and `StoryBlockField.class` fields (all three exist
-under `com.dotcms.contenttype.model.field`) get their string value cut to 150 characters in place
-of the removal shown above. The mechanism is otherwise identical: same strategy, same trigger
-point, same per-field-type iteration. Because `DefaultTransformStrategy` already runs whenever
-`COMMON_PROPS` is set — and `defaultOptions` sets it — **no new strategy class is needed**. This
-makes (a) roughly **four** files, not the seven the issue estimated:
-`TransformOptions.java` (one enum constant), `DefaultTransformStrategy.java` (~15 lines beside the
-binaries block), `DotTransformerBuilder.java` (expose it), `BrowserAPIImpl.java` (opt in at
-`dotContentMap`). The new option must **not** be added to
+The resolved operation for this item is a `map.put` with a truncated value, not a `map.remove`,
+which is a close analog **for WYSIWYG/TextArea only**. It is **not** a close analog for Story
+Block: `DefaultTransformStrategy` runs *before* `StoryBlockViewStrategy` (per Root-Cause
+Hypothesis point 5), so a truncation placed alongside `addBinaries` would be silently overwritten
+for every Story Block field. The truncation logic for WYSIWYG/TextArea/Story Block therefore
+needs its **own new strategy class** (not a method added to `DefaultTransformStrategy`),
+registered as option-triggered in `StrategyResolverImpl.getStrategyTriggeredByOptionMap`, with
+its `TransformOptions` constant declared **after** `STORY_BLOCK_VIEW` and `JSON_VIEW` in the enum
+so `EnumSet` iteration guarantees it runs last and sees the fully-decorated map. Inside it:
+`WysiwygField`/`TextAreaField` values (already strings) are cut to 150 characters; `StoryBlockField`
+values (by then a `LinkedHashMap`, per `StoryBlockViewStrategy`) are converted to a plain-text
+preview and *that* string is cut to 150 characters, replacing the map entry. This makes (a)
+roughly **five** files, not the seven the issue estimated nor the four this spec originally
+proposed: `TransformOptions.java` (one new constant, `LONG_TEXT_TRUNCATE`, placed after
+`STORY_BLOCK_VIEW`/`JSON_VIEW`), a new strategy class (e.g. `LongTextTruncationStrategy`),
+`StrategyResolverImpl.java` (register it), `DotTransformerBuilder.java` (expose the option),
+`BrowserAPIImpl.java` (opt in at `dotContentMap`). The new option must **not** be added to
 `DotContentletTransformerImpl.defaultOptions`, or every transformer consumer changes at once
 (AC-007).
 
@@ -352,29 +412,35 @@ It is a larger, additive API change. Recorded as **OQ-3**.
 
 Each of these is a decision a human owner must make. None is guessed here.
 
-- **OQ-1 — RESOLVED (2026-08-24).** Decision: option **(iii)**, truncate to **150 characters**,
-  applied uniformly whether or not the field is `listed`. See "Decision (resolves OQ-1)" under
-  Fix Scope & Non-Goals for the reasoning. Options (i) remove-unconditionally and (ii)
-  preserve-full-body-if-listed were rejected — (i) blanks a configured column silently, (ii)
-  makes the payload win configuration-dependent. Option (iv), client-declared projection, remains
-  recorded as OQ-3 for a possible future generalization but is not required to close this item.
-- **OQ-2 — Should Site Browser change too?** `dotContentMap` is shared, so the default outcome is
-  that `POST /api/v1/browser` gets the same reduction. Is that desired (consistent, and Site
-  Browser benefits too), or must Site Browser be held byte-identical — which requires splitting
-  the generic-Content branch so Drive and Site Browser use different option sets, and means the
-  two endpoints' row shapes permanently diverge? Note Site Browser has no internal-API
-  disclaimer, while the Drive endpoint does.
+- **OQ-1 — RESOLVED (2026-08-24; rationale corrected 2026-08-31 per review).** Decision: option
+  **(iii)**, truncate to **150 characters**, applied uniformly whether or not the field is
+  `listed`. See "Decision (resolves OQ-1)" under Fix Scope & Non-Goals for the reasoning,
+  corrected to note that the "preserves the column" argument only ever held for WYSIWYG/TextArea
+  — Story Block's column already rendered `[object Object]` before this fix, so truncating it is
+  a strict improvement (payload **and** readability), not a preservation. Options (i)
+  remove-unconditionally and (ii) preserve-full-body-if-listed were rejected — (i) blanks a
+  configured column silently, (ii) makes the payload win configuration-dependent. Option (iv),
+  client-declared projection, remains recorded as OQ-3 for a possible future generalization but
+  is not required to close this item.
+- **OQ-2 — RESOLVED (2026-08-31): apply to both.** `dotContentMap` is shared, so `POST
+  /api/v1/browser` (Site Browser) gets the same truncation as Content Drive — no branch
+  splitting. Accepted trade-off: Site Browser has no internal-API disclaimer, unlike the Drive
+  endpoint, so this is the contract with the weaker escape hatch absorbing the change; judged
+  acceptable since the change is a value-shape/length change under an existing key, not a removed
+  key (see the corrected rollback classification in Regression Risk).
 - **OQ-3 — Client-declared projection instead of a server-side denylist?** Should
   `DriveRequestForm` gain an optional `fields` parameter so the caller lists the field values it
   needs (the frontend already knows its `showInListFields`)? This resolves OQ-1 by construction
   and generalizes, but it is an additive API change with its own design and a default-behaviour
   decision (omitted `fields` = today's full map, or = the reduced projection?).
-- **OQ-4 — Which field types count as "long text"?** The issue names WYSIWYG, TextArea and Story
-  Block. Should the set also include Custom Field, Key/Value, JSON-typed fields, Constant fields
-  holding long values, or plain Text fields (which are length-capped but numerous)? Defining this
-  as a fixed list of `Field` classes is simple and predictable; deriving it from `dataType`
-  (`LONG_TEXT`) is broader and would catch future field types automatically but is harder to
-  reason about. Which does the team want?
+- **OQ-4 — RESOLVED (2026-08-31): fixed list, WYSIWYG/TextArea/Story Block only.** JSON Field,
+  Custom Field, Key/Value, Constant fields, and plain Text fields are explicitly out of scope —
+  they were not part of the issue's original measurement and are not measured here. This is a
+  fixed list of `Field` classes (`WysiwygField`, `TextAreaField`, `StoryBlockField`), not a
+  `dataType`-derived rule; broadening it to catch future field types automatically is deferred to
+  a follow-up if a similar payload problem is ever measured for one of them (JSON Field has the
+  same `JSONViewStrategy`-ordering issue as Story Block, so including it later would reuse the
+  same mechanism, not require new investigation).
 - **OQ-5 — Typed response schema?** AC-005 as written only updates a prose description, because
   the endpoint's `@Schema` is `type = "object"` with no field list and the endpoint is `@Hidden`
   (so it is not even in `openapi.yaml`). Is that sufficient to satisfy the issue's `@Schema`
