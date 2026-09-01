@@ -1,9 +1,9 @@
-import axios from 'axios';
 import chalk from 'chalk';
 
 import { DOTCMS_SITE_API, DOTCMS_EMA_CONFIG_API, DOTCMS_TOKEN_API } from '../constants';
 import { FailedToGetDefaultSiteError } from '../errors';
 import { Ok, type Result, Err } from '../result';
+import { httpPost, httpGet, isHttpError } from '../utils/http';
 
 import type {
     DefaultSiteResponse,
@@ -12,7 +12,7 @@ import type {
 } from '../types';
 
 function getSafeErrorDetails(err: unknown): string {
-    if (axios.isAxiosError(err)) {
+    if (isHttpError(err)) {
         const details = [
             err.response?.status ? `status=${err.response.status}` : null,
             err.response?.statusText ? `statusText=${err.response.statusText}` : null,
@@ -46,11 +46,11 @@ export class DotCMSApi {
         const endpoint = url || this.defaultTokenApi;
 
         try {
-            const res = await axios.post<GetUserTokenResponse>(endpoint, payload);
+            const res = await httpPost<GetUserTokenResponse>(endpoint, payload);
             return Ok(res.data.entity.token);
         } catch (err) {
             // Provide specific error messages based on error type
-            if (axios.isAxiosError(err)) {
+            if (isHttpError(err)) {
                 if (err.response?.status === 401) {
                     return Err(
                         chalk.red('\n❌ Authentication failed\n\n') +
@@ -94,8 +94,8 @@ export class DotCMSApi {
     }): Promise<Result<DefaultSiteResponse, FailedToGetDefaultSiteError>> {
         try {
             const endpoint = (url || this.defaultSiteApi) + 'defaultSite';
-            const res = await axios.get<DefaultSiteResponse>(endpoint, {
-                headers: { Authorization: `Bearer ${authenticationToken}` }
+            const res = await httpGet<DefaultSiteResponse>(endpoint, {
+                token: authenticationToken
             });
             return Ok(res.data);
         } catch (err) {

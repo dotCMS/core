@@ -35,23 +35,28 @@
  */
 
 import { describeRequestFailure, formatRetryReport, isSuccessStatus } from './fetch-retry';
+import { HttpError } from './http';
 
 describe('describeRequestFailure', () => {
-    function axiosError(extra: Record<string, unknown>) {
-        return Object.assign(new Error('request failed'), { isAxiosError: true, ...extra });
-    }
+    // The CLI no longer uses axios (see utils/http.ts), so failures arrive as HttpError.
+    const httpError = (init: { status?: number | null; code?: string; statusText?: string }) =>
+        new HttpError('request failed', init);
 
     it('names a refused connection in words the user can act on', () => {
-        expect(describeRequestFailure(axiosError({ code: 'ECONNREFUSED' }))).toMatch(/refus/i);
+        expect(describeRequestFailure(httpError({ status: null, code: 'ECONNREFUSED' }))).toMatch(
+            /refus/i
+        );
     });
 
     it('names a timeout', () => {
-        expect(describeRequestFailure(axiosError({ code: 'ETIMEDOUT' }))).toMatch(/timeout/i);
+        expect(describeRequestFailure(httpError({ status: null, code: 'ETIMEDOUT' }))).toMatch(
+            /timeout/i
+        );
     });
 
     it('reports an HTTP status when the server did answer', () => {
         const described = describeRequestFailure(
-            axiosError({ response: { status: 503, statusText: 'Service Unavailable' } })
+            httpError({ status: 503, statusText: 'Service Unavailable' })
         );
 
         expect(described).toContain('503');

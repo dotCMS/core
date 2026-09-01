@@ -1,4 +1,3 @@
-import axios from 'axios';
 import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -50,6 +49,7 @@ import {
 } from './utils';
 import { withComposeFileMovedAside } from './utils/compose-move';
 import { formatRetryReport, isSuccessStatus, type RetryReporter } from './utils/fetch-retry';
+import { httpGet } from './utils/http';
 import { reportInstallResult } from './utils/install';
 import { describePortOwner, resolvePortConflict } from './utils/ports';
 import { waitForReadiness } from './utils/readiness';
@@ -406,7 +406,7 @@ program
             const readiness = await waitForReadiness({
                 readyzUrl: `${LOCAL_MANAGEMENT_HOST}/dotmgt/readyz`,
                 fallbackUrl: DOTCMS_HEALTH_API,
-                get: (url) => axios.get(url, { timeout: 10000, validateStatus: () => true }),
+                get: (url) => httpGet(url, { timeoutMs: 10000, acceptAnyStatus: true }),
                 attempts: LOCAL_HEALTH_CHECK_RETRIES,
                 delayMs: 5000,
                 onAttempt: (attempt, attempts, detail) => {

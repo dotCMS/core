@@ -77,25 +77,23 @@
  * Data model: specs/37262-create-app-docker-uve/data-model.md — §3 `UVEAppConfig`.
  */
 
-import axios from 'axios';
-
 import { configureUVE } from './configure-uve';
 
 import { getUVEConfigValue } from '../utils';
+import { HttpError, httpGet, httpPost } from '../utils/http';
 
-jest.mock('axios', () => {
-    const get = jest.fn();
-    const post = jest.fn();
-    const isAxiosError = (err: unknown): boolean =>
-        Boolean(err && typeof err === 'object' && (err as { isAxiosError?: boolean }).isAxiosError);
+// The CLI dropped axios for native fetch (utils/http.ts) after semgrep flagged the
+// Proxy-Authorization redirect leak. The http module is mocked rather than `fetch` itself so
+// these cases stay about configureUVE's CONTRACT — probe once, retry 5xx only, mode-dependent
+// guidance — while http.spec.ts covers the transport. HttpError stays real, because the
+// outcome's `status` is derived from it.
+jest.mock('../utils/http', () => {
+    const actual = jest.requireActual('../utils/http');
 
-    const instance: Record<string, unknown> = { get, post, isAxiosError };
-    instance['create'] = jest.fn(() => instance);
-
-    return { __esModule: true, default: instance, ...instance };
+    return { ...actual, httpGet: jest.fn(), httpPost: jest.fn() };
 });
 
-const mockedAxios = axios as unknown as { get: jest.Mock; post: jest.Mock };
+const mockedHttp = { get: httpGet as jest.Mock, post: httpPost as jest.Mock };
 
 const HOST = 'http://localhost:8082';
 const SITE_ID = '48190c8c-42c4-46af-8d1a-0cd5db894797';
@@ -119,30 +117,18 @@ const baseOptions = {
     maxRetries: 3
 };
 
-/** An axios-shaped rejection carrying an HTTP status, as axios produces for non-2xx. */
+/** A non-2xx, as utils/http throws it. */
 function httpError(status: number, statusText = 'Error') {
-    return Object.assign(new Error(`Request failed with status code ${status}`), {
-        isAxiosError: true,
-        code: status >= 500 ? 'ERR_BAD_RESPONSE' : 'ERR_BAD_REQUEST',
-        config: {},
-        toJSON: () => ({}),
-        response: { status, statusText, data: {}, headers: {}, config: {} }
-    });
+    return new HttpError(`Request failed with status code ${status}`, { status, statusText });
 }
 
 /** A transport-level failure: no HTTP response at all. */
 function networkError(code = 'ECONNREFUSED') {
-    return Object.assign(new Error(`connect ${code} 127.0.0.1:8082`), {
-        isAxiosError: true,
-        code,
-        config: {},
-        toJSON: () => ({}),
-        response: undefined
-    });
+    return new HttpError(`connect ${code} 127.0.0.1:8082`, { status: null, code });
 }
 
 function okResponse(data: unknown = { entity: 'Ok' }) {
-    return { status: 200, statusText: 'OK', data, headers: {}, config: {} };
+    return { status: 200, data };
 }
 
 /** Strip chalk styling so message assertions are about words, not escape codes. */
@@ -182,8 +168,8 @@ describe('configureUVE', () => {
     };
 
     beforeEach(() => {
-        mockedAxios.get.mockReset();
-        mockedAxios.post.mockReset();
+        mockedHttp.get.mockReset();
+        mockedHttp.post.mockReset();
 
         reported = [];
         printed = [];
@@ -212,8 +198,8 @@ describe('configureUVE', () => {
 
     describe('X2 — the UVE step is non-fatal: it never calls process.exit', () => {
         it('does not exit on a 403 in mode "local"', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
@@ -222,8 +208,8 @@ describe('configureUVE', () => {
         });
 
         it('does not exit on a 403 in mode "remote"', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'remote', report });
 
@@ -232,8 +218,8 @@ describe('configureUVE', () => {
         });
 
         it('does not exit on a 500 once the retry budget is exhausted', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(500, 'Internal Server Error'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(500, 'Internal Server Error'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
@@ -242,7 +228,7 @@ describe('configureUVE', () => {
         });
 
         it('does not exit on a network error', async () => {
-            mockedAxios.get.mockRejectedValue(networkError());
+            mockedHttp.get.mockRejectedValue(networkError());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'remote', report });
 
@@ -254,8 +240,8 @@ describe('configureUVE', () => {
         });
 
         it('does not throw — the caller warns and continues to scaffolding', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             await expect(
                 configureUVE({ ...baseOptions, mode: 'local', report })
@@ -263,8 +249,8 @@ describe('configureUVE', () => {
         });
 
         it("reports failure through kind === 'failed', not a truthy Err", async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
@@ -275,8 +261,8 @@ describe('configureUVE', () => {
         });
 
         it('carries a non-empty, printable message on every failure', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(500, 'Internal Server Error'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(500, 'Internal Server Error'));
 
             const failure = expectFailure(
                 await configureUVE({ ...baseOptions, mode: 'local', report })
@@ -289,27 +275,27 @@ describe('configureUVE', () => {
 
     describe('X3 — the GET is a single probe, not a poll', () => {
         it('probes the UVE app resource exactly once before writing', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.get).toHaveBeenCalledTimes(1);
 
-            const [probeUrl] = mockedAxios.get.mock.calls[0];
+            const [probeUrl] = mockedHttp.get.mock.calls[0];
             expect(probeUrl).toContain(HOST);
             expect(probeUrl).toContain(UVE_APP_KEY);
             expect(probeUrl).toContain(SITE_ID);
         });
 
         it('writes to the same resource it probed', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            const [probeUrl] = mockedAxios.get.mock.calls[0];
-            const [writeUrl, body] = mockedAxios.post.mock.calls[0];
+            const [probeUrl] = mockedHttp.get.mock.calls[0];
+            const [writeUrl, body] = mockedHttp.post.mock.calls[0];
 
             expect(writeUrl).toBe(probeUrl);
             // NOT a bare `FRONTEND_URL`. The endpoint takes the serialized UVE config object
@@ -322,35 +308,37 @@ describe('configureUVE', () => {
         });
 
         it('authenticates both calls with the run token', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            const [, getConfig] = mockedAxios.get.mock.calls[0];
-            const [, , postConfig] = mockedAxios.post.mock.calls[0];
+            // The `Authorization: Bearer` header itself is http.spec.ts's business; what matters
+            // here is that configureUVE passes the run's token to BOTH calls, not just the write.
+            const [, getOptions] = mockedHttp.get.mock.calls[0];
+            const [, , postOptions] = mockedHttp.post.mock.calls[0];
 
-            expect(getConfig?.headers?.Authorization).toBe(`Bearer ${TOKEN}`);
-            expect(postConfig?.headers?.Authorization).toBe(`Bearer ${TOKEN}`);
+            expect(getOptions?.token).toBe(TOKEN);
+            expect(postOptions?.token).toBe(TOKEN);
         });
 
         it('proceeds to the POST when the probe returns 200', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.post).toHaveBeenCalledTimes(1);
             expect(outcome.kind).toBe('configured');
         });
 
         it('never POSTs when the probe is forbidden, and never re-probes', async () => {
-            mockedAxios.get.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-            expect(mockedAxios.post).not.toHaveBeenCalled();
+            expect(mockedHttp.get).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.post).not.toHaveBeenCalled();
 
             const failure = expectFailure(outcome);
             expect(failure.phase).toBe('probe');
@@ -359,33 +347,33 @@ describe('configureUVE', () => {
         });
 
         it('never polls the probe on a network error', async () => {
-            mockedAxios.get.mockRejectedValue(networkError());
+            mockedHttp.get.mockRejectedValue(networkError());
 
             await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-            expect(mockedAxios.post).not.toHaveBeenCalled();
+            expect(mockedHttp.get).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.post).not.toHaveBeenCalled();
         });
     });
 
     describe('X3 — the POST retries on 5xx only', () => {
         it('retries a 500 and succeeds on the second attempt', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post
                 .mockRejectedValueOnce(httpError(500, 'Internal Server Error'))
                 .mockResolvedValueOnce(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.post).toHaveBeenCalledTimes(2);
+            expect(mockedHttp.post).toHaveBeenCalledTimes(2);
             // Still a single probe — the retry re-POSTs, it does not re-GET.
-            expect(mockedAxios.get).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.get).toHaveBeenCalledTimes(1);
             expect(outcome.kind).toBe('configured');
         });
 
         it('gives up after the retry budget on a persistent 5xx', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(503, 'Service Unavailable'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(503, 'Service Unavailable'));
 
             const outcome = await configureUVE({
                 ...baseOptions,
@@ -394,7 +382,7 @@ describe('configureUVE', () => {
                 report
             });
 
-            expect(mockedAxios.post).toHaveBeenCalledTimes(3);
+            expect(mockedHttp.post).toHaveBeenCalledTimes(3);
 
             const failure = expectFailure(outcome);
             expect(failure.phase).toBe('write');
@@ -403,33 +391,33 @@ describe('configureUVE', () => {
         });
 
         it('NEVER retries a 403 — the second attempt is never made', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
             // If the implementation retried, this queued 200 would turn the run green and
             // hide the defect. A 403 here is terminal: measured at 193 consecutive
             // failures over ~7 minutes with zero successes.
-            mockedAxios.post
+            mockedHttp.post
                 .mockRejectedValueOnce(httpError(403, 'Forbidden'))
                 .mockResolvedValueOnce(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
-            expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.post).toHaveBeenCalledTimes(1);
             expect(outcome.kind).toBe('failed');
             expect(expectFailure(outcome).status).toBe(403);
         });
 
         it('does not retry any other 4xx either', async () => {
             for (const status of [400, 401, 404, 422]) {
-                mockedAxios.get.mockReset();
-                mockedAxios.post.mockReset();
-                mockedAxios.get.mockResolvedValue(okResponse());
-                mockedAxios.post
+                mockedHttp.get.mockReset();
+                mockedHttp.post.mockReset();
+                mockedHttp.get.mockResolvedValue(okResponse());
+                mockedHttp.post
                     .mockRejectedValueOnce(httpError(status))
                     .mockResolvedValueOnce(okResponse());
 
                 const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
-                expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+                expect(mockedHttp.post).toHaveBeenCalledTimes(1);
                 expect(outcome.kind).toBe('failed');
             }
 
@@ -441,8 +429,8 @@ describe('configureUVE', () => {
         let output: string;
 
         beforeEach(async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
             output = visibleOutput(outcome, reported, printed);
@@ -470,8 +458,8 @@ describe('configureUVE', () => {
         let output: string;
 
         beforeEach(async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockRejectedValue(httpError(403, 'Forbidden'));
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockRejectedValue(httpError(403, 'Forbidden'));
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'remote', report });
             output = visibleOutput(outcome, reported, printed);
@@ -503,8 +491,8 @@ describe('configureUVE', () => {
 
     describe('success', () => {
         it('reports success when the probe is 200 and the POST succeeds', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
 
@@ -514,19 +502,19 @@ describe('configureUVE', () => {
         });
 
         it('reports success in mode "remote" the same way', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'remote', report });
 
             expect(outcome.kind).toBe('configured');
-            expect(mockedAxios.get).toHaveBeenCalledTimes(1);
-            expect(mockedAxios.post).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.get).toHaveBeenCalledTimes(1);
+            expect(mockedHttp.post).toHaveBeenCalledTimes(1);
         });
 
         it('emits no failure guidance on the happy path', async () => {
-            mockedAxios.get.mockResolvedValue(okResponse());
-            mockedAxios.post.mockResolvedValue(okResponse());
+            mockedHttp.get.mockResolvedValue(okResponse());
+            mockedHttp.post.mockResolvedValue(okResponse());
 
             const outcome = await configureUVE({ ...baseOptions, mode: 'local', report });
             const output = visibleOutput(outcome, reported, printed);

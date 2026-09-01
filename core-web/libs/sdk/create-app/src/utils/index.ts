@@ -1,11 +1,11 @@
-import axios from 'axios';
 import chalk from 'chalk';
 import { execa } from 'execa';
 
 import net from 'net';
 import path from 'path';
 
-import { describeRequestFailure, isSuccessStatus, type RetryReporter } from './fetch-retry';
+import { describeRequestFailure, type RetryReporter } from './fetch-retry';
+import { httpGet, isHttpError } from './http';
 import { REQUIRED_PORTS } from './ports';
 import { escapeShellPath } from './validation';
 
@@ -30,7 +30,7 @@ import type { SupportedFrontEndFrameworks } from '../types';
  * @param retries - Number of retry attempts (default: 5)
  * @param delay - Delay between retries in milliseconds (default: 5000)
  * @param requestTimeout - Per-request timeout in milliseconds (default: 10000)
- * @returns Promise resolving to axios response
+ * @returns Promise resolving to the HTTP response
  * @throws Error with detailed failure information after all retries exhausted
  *
  * @remarks
@@ -55,12 +55,9 @@ export async function fetchWithRetry(
 
     for (let i = 0; i < retries; i++) {
         try {
-            return await axios.get(url, {
-                timeout: requestTimeout,
-                // Any 2xx is success — the same rule isDotcmsRunning applies, so a 204 cannot be
-                // accepted here and rejected there.
-                validateStatus: isSuccessStatus
-            });
+            // Any 2xx is success — the same rule isDotcmsRunning applies, so a 204 cannot be
+            // accepted here and rejected there. httpGet throws on anything else.
+            return await httpGet(url, { timeoutMs: requestTimeout });
         } catch (err) {
             lastError = err;
 
@@ -71,10 +68,9 @@ export async function fetchWithRetry(
             if (i === retries - 1) {
                 // Last attempt failed - provide comprehensive error
                 const errorType =
-                    axios.isAxiosError(lastError) && lastError.code === 'ECONNREFUSED'
+                    isHttpError(lastError) && lastError.code === 'ECONNREFUSED'
                         ? 'Connection Refused'
-                        : axios.isAxiosError(lastError) &&
-                            (lastError.code === 'ETIMEDOUT' || lastError.code === 'ECONNABORTED')
+                        : isHttpError(lastError) && lastError.code === 'ETIMEDOUT'
                           ? 'Timeout'
                           : 'Connection Failed';
 
@@ -181,7 +177,15 @@ export function renderConnectionSummary(report: {
             report.filename
                 ? `   Add these to your ${report.filename}:\n`
                 : '   Configuration for your project:\n'
-        ) + chalk.gray(report.contents.trimEnd().split('\n').map((l) => `     ${l}`).join('\n')) + '\n'
+        ) +
+            chalk.gray(
+                report.contents
+                    .trimEnd()
+                    .split('\n')
+                    .map((l) => `     ${l}`)
+                    .join('\n')
+            ) +
+            '\n'
     );
 }
 

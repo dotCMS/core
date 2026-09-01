@@ -8,19 +8,25 @@
             "currentVersionResolver": "git-tag",
             "fallbackCurrentVersionResolver": "disk",
             "preserveLocalDependencyProtocols": false,
-            "manifestRootsToUpdate": ["dist/{projectRoot}"]
+            "manifestRootsToUpdate": [
+                "dist/{projectRoot}"
+            ]
         }
     },
     "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/esbuild:esbuild",
-            "outputs": ["{options.outputPath}"],
+            "outputs": [
+                "{options.outputPath}"
+            ],
             "defaultConfiguration": "production",
             "options": {
                 "platform": "node",
                 "outputPath": "dist/libs/sdk/create-app",
-                "format": ["esm"],
+                "format": [
+                    "esm"
+                ],
                 "bundle": true,
                 "thirdParty": true,
                 "external": [
@@ -29,7 +35,6 @@
                     "inquirer",
                     "execa",
                     "cfonts",
-                    "axios",
                     "fs-extra",
                     "commander"
                 ],
@@ -76,7 +81,10 @@
             }
         },
         "test": {
-            "dependsOn": ["verify-package", "verify-compose-static"],
+            "dependsOn": [
+                "verify-package",
+                "verify-compose-static"
+            ],
             "options": {
                 "passWithNoTests": true
             },
@@ -89,7 +97,9 @@
         },
         "verify-package": {
             "executor": "nx:run-commands",
-            "dependsOn": ["build"],
+            "dependsOn": [
+                "build"
+            ],
             "options": {
                 "command": "bash libs/sdk/create-app/scripts/verify-package.sh",
                 "cwd": "."
@@ -105,7 +115,10 @@
         "verify-compose-static": {
             "executor": "nx:run-commands",
             "cache": true,
-            "inputs": ["{projectRoot}/assets/**", "{projectRoot}/scripts/verify-cold-start.sh"],
+            "inputs": [
+                "{projectRoot}/assets/**",
+                "{projectRoot}/scripts/verify-cold-start.sh"
+            ],
             "options": {
                 "command": "bash libs/sdk/create-app/scripts/verify-cold-start.sh --static",
                 "cwd": "."

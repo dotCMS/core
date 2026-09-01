@@ -1,4 +1,4 @@
-import axios from 'axios';
+import { isHttpError } from './http';
 
 /**
  * Retry reporting, split out so it can be rendered by whoever owns the terminal.
@@ -32,12 +32,12 @@ export function isSuccessStatus(status: number): boolean {
 
 /** Turns a request failure into something worth showing a user mid-wait. */
 export function describeRequestFailure(error: unknown): string {
-    if (axios.isAxiosError(error)) {
+    if (isHttpError(error)) {
         if (error.code === 'ECONNREFUSED') {
             return 'Connection refused - service not accepting connections yet';
         }
 
-        if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
+        if (error.code === 'ETIMEDOUT') {
             return 'Connection timeout - service too slow or not responding';
         }
 

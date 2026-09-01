@@ -1,6 +1,5 @@
-import axios from 'axios';
-
 import { getUVEConfigValue } from '../utils';
+import { httpGet, httpPost } from '../utils/http';
 
 /**
  * Single owner of Universal Visual Editor configuration.
@@ -63,10 +62,6 @@ const DEFAULT_RETRY_DELAY_MS = 2000;
 
 function uveResourceUrl(host: string, siteId: string): string {
     return `${host.replace(/\/+$/, '')}/api/v1/apps/${UVE_APP_KEY}/${siteId}`;
-}
-
-function authHeaders(token: string) {
-    return { headers: { Authorization: `Bearer ${token}` } };
 }
 
 function statusOf(error: unknown): number | null {
@@ -182,7 +177,7 @@ export async function configureUVE(options: ConfigureUveOptions): Promise<UveOut
     // Read before write, exactly once. A poll would be wrong here: the failure this guards
     // against never clears, so waiting for it to clear never terminates (contract X3).
     try {
-        await axios.get(url, authHeaders(token));
+        await httpGet(url, { token });
     } catch (error) {
         const status = statusOf(error);
         const reason = reasonFor(status);
@@ -218,7 +213,7 @@ export async function configureUVE(options: ConfigureUveOptions): Promise<UveOut
 
     for (let attempt = 1; attempt <= Math.max(1, maxRetries); attempt++) {
         try {
-            await axios.post(url, payload, authHeaders(token));
+            await httpPost(url, payload, { token });
 
             return { kind: 'configured' };
         } catch (error) {
