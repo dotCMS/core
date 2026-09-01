@@ -123,7 +123,7 @@ test.describe('WYSIWYG — insert an image through the AssetPicker', () => {
 
         await picker.expectTitle('Add Image');
         await expect(picker.sidebar).toBeVisible();
-        await expect(picker.treeSearch).toBeVisible();
+        await expect(picker.folderSearch).toBeVisible();
         await picker.expectNoRowActions();
     });
 

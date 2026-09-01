@@ -29,7 +29,7 @@ jobs:
         env:
           AUTHOR: ${{ github.event.pull_request.user.login }}
         run: |
-          PILOT_AUTHORS='["dsolistorres","gortiz-dotcms","dsilvam"]'
+          PILOT_AUTHORS='["danielsolis-dotcms","gortiz-dotcms","danielsilva-dotcms"]'
           if echo "$PILOT_AUTHORS" | jq -e --arg a "$AUTHOR" 'index($a) != null' > /dev/null; then
             echo "authorized=true" >> $GITHUB_OUTPUT
             echo "✅ $AUTHOR is in the pilot list"
@@ -51,7 +51,7 @@ jobs:
     outputs:
       has_java: ${{ steps.check.outputs.has_java }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
 

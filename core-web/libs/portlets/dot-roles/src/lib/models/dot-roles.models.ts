@@ -1,50 +1,26 @@
+import { DotRole, DotToolGroup } from '@dotcms/dotcms-models';
+
+// `DotRoleFormValue` moved to `@dotcms/dotcms-models` when create/update moved
+// to the shared service. Re-exported so this portlet's call sites keep a
+// single import for role types.
+export type { DotRoleFormValue } from '@dotcms/dotcms-models';
+
 /**
- * Shape returned by `GET /v1/roles` and `GET /v1/roles/{roleid}` — mirrors
- * the backend `RoleView`. The wire response is **nested**: each node carries
- * its direct children under `roleChildren`. The backend loads only 2 levels
- * per request, so grandchildren come back as `roleChildren: []` even when
- * they exist. The store lazy-loads deeper levels on `onNodeExpand` in the
- * roles tree.
+ * A node of the roles tree. Alias of the shared {@link DotRole} — the wire
+ * shape is identical and there is one role model for the workspace.
  *
- * `user: true` marks the role as an individual user-role (roleKey = userId).
- * User-roles are always leaves in the tree.
+ * The names are kept because they carry the tree's intent at each call site
+ * (a node in the hierarchy vs. the detail of the selected role) and because
+ * the store, tree utils and components read better with them.
+ *
+ * Reminder for consumers: the backend hydrates only 2 levels per request, so
+ * `roleChildren: []` is not evidence of a leaf — the store lazy-loads deeper
+ * levels on `onNodeExpand`, and leaf status comes from `childCount`.
  */
-export interface DotRoleNode {
-    readonly id: string;
-    readonly name: string;
-    readonly roleKey?: string;
-    readonly parent?: string;
-    readonly system?: boolean;
-    readonly locked?: boolean;
-    readonly user?: boolean;
-    readonly editUsers?: boolean;
-    readonly editPermissions?: boolean;
-    readonly editLayouts?: boolean;
-    /** Direct children — populated by `/v1/roles?loadChildrenRoles=true`. */
-    readonly roleChildren?: DotRoleNode[];
-}
+export type DotRoleNode = DotRole;
 
-/** Full role detail. Same shape as `DotRoleNode` today. */
-export type DotRoleDetail = DotRoleNode & {
-    readonly description?: string;
-    readonly DBFQN?: string;
-    readonly FQN?: string;
-};
-
-/**
- * Payload for POST /v1/roles (RoleForm).
- * Also the shape the Angular Edit Role dialog collects; it PUTs the same
- * body against /v1/roles/{roleId} once the endpoint ships (see #36936).
- */
-export interface DotRoleFormValue {
-    roleName: string;
-    roleKey?: string;
-    parentRoleId?: string | null;
-    canEditUsers: boolean;
-    canEditPermissions: boolean;
-    canEditLayouts: boolean;
-    description?: string;
-}
+/** Detail of the selected role. Same shape — see {@link DotRoleNode}. */
+export type DotRoleDetail = DotRole;
 
 /**
  * User row rendered in the Users tab table.
@@ -63,6 +39,21 @@ export interface DotRoleMember {
     readonly emailAddress: string;
     readonly grantedFromRoleId: string;
     readonly grantedFromRoleName: string;
+}
+
+/**
+ * A tool group row in the Tools tab: the catalog entry plus where (if
+ * anywhere) the selected role gets it from.
+ *
+ * `grantedFrom*` follows the same rule as `DotRoleMember`: when it matches the
+ * selected role the grant is direct and can be toggled here; when it matches
+ * an ancestor the grant is inherited and can only be revoked on that ancestor,
+ * so the checkbox renders checked but disabled.
+ */
+export interface DotRoleToolGroupRow extends DotToolGroup {
+    readonly granted: boolean;
+    readonly grantedFromRoleId: string | null;
+    readonly grantedFromRoleName: string | null;
 }
 
 export type DotRoleTab = 'users' | 'permissions' | 'tools';

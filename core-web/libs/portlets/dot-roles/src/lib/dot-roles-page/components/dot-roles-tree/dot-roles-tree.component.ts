@@ -1,13 +1,6 @@
 import { Subject } from 'rxjs';
 
-import {
-    ChangeDetectionStrategy,
-    Component,
-    DestroyRef,
-    computed,
-    inject,
-    signal
-} from '@angular/core';
+import { Component, DestroyRef, computed, effect, inject, signal, untracked } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
@@ -26,7 +19,7 @@ import {
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
 
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
 import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
@@ -35,6 +28,7 @@ import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.compo
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
 import { DotRoleNode } from '../../../models/dot-roles.models';
 import { DotRolesStore } from '../../store/dot-roles.store';
+import { collectAncestorChain } from '../../store/dot-roles.tree-utils';
 
 interface DotRolePrimeTreeNode extends TreeNode {
     data: DotRoleNode;
@@ -45,7 +39,6 @@ interface DotRolePrimeTreeNode extends TreeNode {
 
 @Component({
     selector: 'dot-roles-tree',
-    standalone: true,
     imports: [
         FormsModule,
         ButtonModule,
@@ -60,8 +53,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
     ],
     providers: [DialogService, ConfirmationService],
     templateUrl: './dot-roles-tree.component.html',
-    host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'flex flex-col flex-1 min-h-0 p-4 gap-3' }
 })
 export class DotRolesTreeComponent {
     protected readonly store = inject(DotRolesStore);
@@ -156,10 +148,61 @@ export class DotRolesTreeComponent {
         return this.#findNode(this.$treeNodes(), id);
     });
 
+    /**
+     * Ancestor path of the selected role, as a comparable key.
+     *
+     * Keyed on the path rather than the tree so it changes when the role
+     * MOVES and not merely when `roles` is rewritten — a member load patches
+     * `userCount` into the tree on every selection, and reacting to that would
+     * re-open branches the admin had just collapsed.
+     */
+    readonly #selectedAncestorPath = computed(() => {
+        const id = this.store.selectedRoleId();
+        if (!id) {
+            return '';
+        }
+
+        return collectAncestorChain(this.store.roleTree(), { id })
+            .map((node) => node.id)
+            .join('/');
+    });
+
+    /** Path last opened by the reveal effect, so it only acts on a change. */
+    #revealedPath = '';
+
     constructor() {
         this.#filterInput$
             .pipe(debounceTime(200), distinctUntilChanged(), takeUntilDestroyed(this.#destroyRef))
             .subscribe((value) => this.store.setFilter(value));
+
+        // Reparenting from the Edit dialog keeps the role selected but moves it
+        // under a parent that is very often collapsed — the admin saves and the
+        // role they were just editing disappears from the tree. Open the new
+        // path so it stays where they can see it.
+        //
+        // Only the ancestors: expanding the role itself would unfold a branch
+        // the admin never asked to open.
+        effect(() => {
+            const path = this.#selectedAncestorPath();
+            if (!path || path === this.#revealedPath) {
+                return;
+            }
+            this.#revealedPath = path;
+
+            const ancestorIds = path.split('/').slice(1);
+            if (ancestorIds.length === 0) {
+                return;
+            }
+
+            untracked(() =>
+                this.#openNodeIds.update((set) => {
+                    const next = new Set(set);
+                    ancestorIds.forEach((id) => next.add(id));
+
+                    return next;
+                })
+            );
+        });
     }
 
     protected onFilterChange(value: string): void {
@@ -182,15 +225,25 @@ export class DotRolesTreeComponent {
 
         this.#openNodeIds.update((set) => new Set(set).add(id));
 
-        if (this.#fetchedRoleIds().has(id)) {
+        const loadedChildren = node.data.roleChildren?.length ?? 0;
+
+        // A branch can lose children it had already fetched — a reparent
+        // replaces the moved role with a response that hydrates two levels at
+        // most, and a lazy-load that failed marked the node fetched before it
+        // resolved. The marker is add-only, so on its own it leaves that branch
+        // permanently empty: expanded, showing a chevron, and rendering
+        // nothing. `childCount` is independent of hydration and still says the
+        // children are there, so it is what re-opens the gate.
+        const lostChildren = loadedChildren === 0 && (node.data.childCount ?? 0) > 0;
+
+        if (this.#fetchedRoleIds().has(id) && !lostChildren) {
             return;
         }
 
         this.#fetchedRoleIds.update((set) => new Set(set).add(id));
 
         // Only fetch when we don't already have children populated.
-        const hasLoadedChildren = (node.data.roleChildren?.length ?? 0) > 0;
-        if (!hasLoadedChildren && !node.data.user) {
+        if (loadedChildren === 0 && !node.data.user) {
             this.store.loadRoleChildren(id);
         }
     }
@@ -206,13 +259,55 @@ export class DotRolesTreeComponent {
     }
 
     protected onAddRole(parentRoleId?: string): void {
-        this.#dialogService.open(DotRolesAddComponent, {
-            header: undefined,
+        const ref = this.#dialogService.open(DotRolesAddComponent, {
+            header: this.#messageService.get('roles.add.title'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
             data: { parentRoleId: parentRoleId ?? null }
         });
+
+        ref.onClose
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe((created?: DotRoleNode) => {
+                if (created) {
+                    this.#revealCreatedRole(created);
+                }
+            });
+    }
+
+    /**
+     * Open the branch the new role landed in.
+     *
+     * The store already selects it, and `$selectedNode` follows — but selection
+     * is invisible inside a collapsed parent, so the admin gets no feedback that
+     * anything happened.
+     */
+    #revealCreatedRole(created: DotRoleNode): void {
+        // A self-referential `parent` marks a root; those are visible already.
+        const parentId = created.parent && created.parent !== created.id ? created.parent : null;
+        if (!parentId) {
+            return;
+        }
+
+        // Expand the whole ancestor path, not just the immediate parent — that
+        // parent may itself sit inside a collapsed branch.
+        const chain = collectAncestorChain(this.store.roleTree(), { id: parentId });
+        this.#openNodeIds.update((set) => {
+            const next = new Set(set);
+            chain.forEach((node) => next.add(node.id));
+
+            return next;
+        });
+
+        // If this parent's children were never fetched, the tree holds only the
+        // role we just spliced in — expanding would show it alone and hide its
+        // siblings, which reads as "the others were deleted". Fetch the real
+        // set; the backend already has the new role, so nothing is lost.
+        if (!this.#fetchedRoleIds().has(parentId)) {
+            this.#fetchedRoleIds.update((set) => new Set(set).add(parentId));
+            this.store.loadRoleChildren(parentId);
+        }
     }
 
     /**
@@ -243,6 +338,7 @@ export class DotRolesTreeComponent {
         }
 
         this.#dialogService.open(DotRolesEditComponent, {
+            header: this.#messageService.get('roles.edit.title'),
             width: '700px',
             closable: true,
             closeOnEscape: true,
@@ -287,11 +383,18 @@ export class DotRolesTreeComponent {
         return nodes.map((node) => {
             const children = this.#toTreeNodes(node.roleChildren ?? [], expandAll);
             const hasChildren = children.length > 0;
-            // A node is a confirmed leaf when it's a user-role, OR we've
-            // fetched its children and got none back. Otherwise we keep
-            // the chevron so admins can drill into deeper levels.
+            // `childCount` (#37071) is authoritative and independent of whether
+            // `roleChildren` was hydrated, so leaf-vs-chevron is correct at every
+            // depth on first paint — no more chevrons that expand into nothing.
+            //
+            // Legacy search nodes (`/api/role/loadbyname`) don't carry it, so
+            // `undefined` falls back to the old heuristic: a leaf is confirmed
+            // only once we've fetched the children and got none back.
             const confirmedLeaf =
-                node.user === true || (this.#fetchedRoleIds().has(node.id) && !hasChildren);
+                node.user === true ||
+                (node.childCount !== undefined
+                    ? node.childCount === 0
+                    : this.#fetchedRoleIds().has(node.id) && !hasChildren);
 
             return {
                 key: node.id,
