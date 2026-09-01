@@ -25,6 +25,7 @@ import {
     LOCAL_HEALTH_CHECK_RETRIES
 } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
+import { installExitStateHandler, recordRecoverableState } from './exit-state';
 import {
     cloneFrontEndSample,
     downloadDockerCompose,
@@ -44,7 +45,6 @@ import {
     getDockerDiagnostics,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
-    getUVEConfigValue,
     installDependenciesForProject
 } from './utils';
 import { applyStarterUrl } from './utils/starter-url';
@@ -55,6 +55,7 @@ import {
     validateProjectName,
     validateUrl
 } from './utils/validation';
+import { configureUVE } from './uve/configure-uve';
 
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 
@@ -62,6 +63,13 @@ import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 const COMPOSE_WAIT_TIMEOUT_SECONDS = 600;
 
 // Supported values
+
+/** Host the bundled compose stack publishes dotCMS on. */
+const LOCAL_DOTCMS_HOST = 'http://localhost:8082';
+
+// Registered before anything can fail: once a token exists, every terminal path — including
+// the 17 process.exit() sites that `finally` cannot reach — prints it and writes .env (X1).
+installExitStateHandler();
 
 const program = new Command();
 
@@ -122,8 +130,6 @@ program
                 const urlDotcmsInstance = normalizeUrl(urlInput);
 
                 const healthApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_HEALTH_API;
-                const emaConfigApiURL =
-                    getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_EMA_CONFIG_API;
                 const siteApiURL = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_SITE_API;
                 const tokenApiUrl = getDotcmsApisByBaseUrl(urlDotcmsInstance).DOTCMS_TOKEN_API;
 
@@ -213,25 +219,29 @@ program
 
                 const selectedFramework = validatedFramework ?? (await askFramework());
 
-                const setUpUVE = await DotCMSApi.setupUVEConfig({
-                    payload: {
-                        configuration: {
-                            hidden: false,
-                            value: getUVEConfigValue(
-                                `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
-                            )
-                        }
-                    },
+                recordRecoverableState({
+                    host: urlDotcmsInstance,
+                    token: dotcmsToken.val,
                     siteId: defaultSite.val.entity.identifier,
-                    authenticationToken: dotcmsToken.val,
-                    url: emaConfigApiURL
+                    projectDirectory: finalDirectory,
+                    framework: selectedFramework
                 });
 
-                if (!setUpUVE.ok) {
-                    spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                    process.exit(1);
-                } else {
+                // Optional step: a failure here must not cost the user the run (contract X2).
+                const uveOutcome = await configureUVE({
+                    host: urlDotcmsInstance,
+                    siteId: defaultSite.val.entity.identifier,
+                    token: dotcmsToken.val,
+                    mode: 'remote',
+                    frontendUrl: `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`,
+                    report: (message) => spinner.info(message)
+                });
+
+                if (uveOutcome.kind === 'configured') {
                     spinner.succeed(`Configured the Universal Visual Editor`);
+                } else {
+                    spinner.warn('Skipped Universal Visual Editor configuration.');
+                    console.log(chalk.yellow(uveOutcome.message));
                 }
                 await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
                 console.log(chalk.white(`✅ Project setup complete!`));
@@ -357,24 +367,29 @@ program
                 spinner.succeed(`Retrieved default site (${defaultSite.val.entity.identifier})`);
             }
 
-            const setUpUVE = await DotCMSApi.setupUVEConfig({
-                payload: {
-                    configuration: {
-                        hidden: false,
-                        value: getUVEConfigValue(
-                            `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`
-                        )
-                    }
-                },
+            recordRecoverableState({
+                host: LOCAL_DOTCMS_HOST,
+                token: dotcmsToken.val,
                 siteId: defaultSite.val.entity.identifier,
-                authenticationToken: dotcmsToken.val
+                projectDirectory: finalDirectory,
+                framework: selectedFramework
             });
 
-            if (!setUpUVE.ok) {
-                spinner.fail('Failed to setup UVE configuration in Dotcms.');
-                process.exit(1);
-            } else {
+            // Optional step: a failure here must not cost the user the run (contract X2).
+            const uveOutcome = await configureUVE({
+                host: LOCAL_DOTCMS_HOST,
+                siteId: defaultSite.val.entity.identifier,
+                token: dotcmsToken.val,
+                mode: 'local',
+                frontendUrl: `http://localhost:${getPortByFramework(selectedFramework as SupportedFrontEndFrameworks)}`,
+                report: (message) => spinner.info(message)
+            });
+
+            if (uveOutcome.kind === 'configured') {
                 spinner.succeed(`Configured the Universal Visual Editor`);
+            } else {
+                spinner.warn('Skipped Universal Visual Editor configuration.');
+                console.log(chalk.yellow(uveOutcome.message));
             }
             // required since git requires empty directory
             moveDockerComposeOneLevelUp(finalDirectory);
