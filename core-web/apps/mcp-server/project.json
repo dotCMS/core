@@ -16,6 +16,7 @@
             ],
             "options": {
                 "commands": [
+                    "node scripts/check-tools-dir.mjs",
                     "npx xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
@@ -40,6 +41,7 @@
         },
         "test": {
             "dependsOn": [
+                "build",
                 {
                     "target": "generate-spec",
                     "projects": ["sdk-ai"]
