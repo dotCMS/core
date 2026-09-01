@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertSame;
 import static org.mockito.Mockito.any;
 import static org.mockito.Mockito.mock;
@@ -200,6 +201,96 @@ public class FolderSearchPaginatorTest {
                 paginator.getItems(user, name, 20, 0, "mod_date", OrderDirection.DESC, extraParams);
 
         assertSame(results, items);
+        verify(folderAPI).searchFolders(expected);
+    }
+
+    /**
+     * Method to test: {@link FolderSearchPaginator#getItems} <br>
+     * Given Scenario: includePermissions=true in the extra params <br>
+     * Expected Result: FolderAPI called with includePermissions=true
+     */
+    @Test
+    public void test_getItems_includePermissionsTrue_passedThrough() throws Exception {
+        final String siteId = "site-1";
+        final User user = new User();
+        final FolderSearchParams expected = FolderSearchParams.builder()
+                .siteId(siteId)
+                .user(user)
+                .limit(40)
+                .offset(0)
+                .includePermissions(true)
+                .build();
+
+        when(folderAPI.searchFolders(expected)).thenReturn(results);
+
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("siteId", siteId);
+        extraParams.put("includePermissions", true);
+
+        final PaginatedArrayList<FolderSearchView> items =
+                paginator.getItems(user, null, 40, 0, null, null, extraParams);
+
+        assertSame(results, items);
+        verify(folderAPI).searchFolders(expected);
+    }
+
+    /**
+     * Method to test: {@link FolderSearchPaginator#getItems} <br>
+     * Given Scenario: includePermissions explicitly false in the extra params <br>
+     * Expected Result: FolderAPI called with includePermissions=false
+     */
+    @Test
+    public void test_getItems_includePermissionsFalse_passedThrough() throws Exception {
+        final String siteId = "site-1";
+        final User user = new User();
+        final FolderSearchParams expected = FolderSearchParams.builder()
+                .siteId(siteId)
+                .user(user)
+                .limit(40)
+                .offset(0)
+                .includePermissions(false)
+                .build();
+
+        when(folderAPI.searchFolders(expected)).thenReturn(results);
+
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("siteId", siteId);
+        extraParams.put("includePermissions", false);
+
+        final PaginatedArrayList<FolderSearchView> items =
+                paginator.getItems(user, null, 40, 0, null, null, extraParams);
+
+        assertSame(results, items);
+        verify(folderAPI).searchFolders(expected);
+    }
+
+    /**
+     * Method to test: {@link FolderSearchPaginator#getItems} <br>
+     * Given Scenario: includePermissions absent from the extra params <br>
+     * Expected Result: FolderAPI called with includePermissions=false (the builder default)
+     */
+    @Test
+    public void test_getItems_includePermissionsAbsent_defaultsToFalse() throws Exception {
+        final String siteId = "site-1";
+        final User user = new User();
+        final FolderSearchParams expected = FolderSearchParams.builder()
+                .siteId(siteId)
+                .user(user)
+                .limit(40)
+                .offset(0)
+                .build();
+
+        when(folderAPI.searchFolders(expected)).thenReturn(results);
+
+        final Map<String, Object> extraParams = new HashMap<>();
+        extraParams.put("siteId", siteId);
+
+        final PaginatedArrayList<FolderSearchView> items =
+                paginator.getItems(user, null, 40, 0, null, null, extraParams);
+
+        assertSame(results, items);
+        assertFalse("absent extra param must not enable permission computation",
+                expected.includePermissions());
         verify(folderAPI).searchFolders(expected);
     }
 

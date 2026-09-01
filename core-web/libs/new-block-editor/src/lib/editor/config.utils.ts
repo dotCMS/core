@@ -24,15 +24,23 @@ export const FULLSCREEN_AWARE_OVERLAY_OPTIONS: OverlayOptions = {
 
 /**
  * Shared centered-modal configuration for editor dialogs that mount
- * `DotBrowserSelectorComponent` from `@dotcms/ui` (currently the dotCMS image,
- * video, and audio pickers). Locking sizing, mask styling, and the picker's
- * data-payload defaults in one place keeps every browse-an-asset flow consistent
- * and avoids drift when a new mime-type variant is added.
+ * `DotBrowserSelectorComponent` from `@dotcms/ui` — the image, video and audio pickers as they
+ * appear in the **legacy Dojo editor**.
+ *
+ * In the Angular Edit Content those same entry points open `DotAssetPickerComponent` instead, whose
+ * dialog flags are its own contract and live in `buildAssetPickerDialogConfig` (`@dotcms/ui`). This
+ * builder is what the other host still needs: see `EditorModalService`, which picks between them on
+ * the presence of `ASSET_PICKER_LAUNCHER`.
  *
  * Callers provide only the dialog header and the contentlet mime-type allowlist
- * (e.g. `['image']`, `['video']`, or `['audio']`). Everything else mirrors the file-field's
- * configuration so customers see the same UX whether they're picking an asset
- * for a file field or for a Story Block.
+ * (e.g. `['image']`, `['video']`, or `['audio']`).
+ *
+ * The rest deliberately tracks the File field's own legacy dialog (`DotFileFieldComponent`) so
+ * customers see the same picker whether they are filling a file field or a Story Block — with two
+ * differences this host needs and that one does not, both carried over from the pre-#36944 config:
+ * `style.overflow: 'hidden'` and a viewport-clamped `contentStyle['min-height']`
+ * (`min(45rem, 80vh)` rather than a flat `45rem`). The editor opens this from inside its
+ * full-screen shell, where an unclamped min-height can push the dialog past the viewport.
  */
 export function buildBrowserSelectorConfig(opts: {
     header: string;

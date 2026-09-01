@@ -1,5 +1,8 @@
 package com.dotcms.rendering.velocity.directive;
 
+import com.dotcms.business.interceptor.RequestCostHandler;
+import com.dotcms.cost.RequestPrices.Price;
+import com.dotmarketing.business.APILocator;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
@@ -116,6 +119,12 @@ abstract class DotDirective extends InputBase {
         return true;
       }
       Template t = loadTemplate(context, templatePath);
+
+      // Charged here, past the getFromCache() short-circuit above, so a directive served from
+      // cache stays cheap. Without this every #dotParse/#parseContainer on a page is free and
+      // a 30-container page costs the same as a 1-container page.
+      RequestCostHandler.incrementCost(Price.VELOCITY_MERGE, DotDirective.class,
+              "render", new Object[]{templatePath});
 
       final Writer innerWriter = new StringWriter();
       final boolean result = this.renderTemplate(context, innerWriter, t, templatePath);

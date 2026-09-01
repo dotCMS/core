@@ -21,11 +21,12 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter, map } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
 import {
     DotAiService,
     DotMessageService,
+    DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import {
@@ -33,10 +34,13 @@ import {
     DotCMSContentTypeField,
     DotCMSTempFile,
     DotFileMetadata,
-    DotGeneratedAIImage
+    DotGeneratedAIImage,
+    DotSite
 } from '@dotcms/dotcms-models';
 import { isImageFile } from '@dotcms/image-editor';
 import {
+    ASSET_PICKER_LAUNCHER,
+    ASSET_PICKER_TITLE_KEYS,
     DotAIImagePromptComponent,
     DotBrowserSelectorComponent,
     DotDropZoneComponent,
@@ -47,6 +51,7 @@ import {
 } from '@dotcms/ui';
 import { getFileMetadata } from '@dotcms/utils';
 
+import { DotEditContentStore } from './../../../../store/edit-content.store';
 import {
     LegacyDialogImageEditorLauncher,
     LegacyDojoImageEditorLauncher
@@ -125,6 +130,13 @@ export class DotFileFieldComponent
      */
     readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
     /**
+     * New AssetPicker launcher. Provided only by the Angular Edit Content hosts, which are the only
+     * ones the picker was built for. Injected as `{ optional: true }`: when absent — the field
+     * rendered as the legacy `dotcms-binary-field` custom element — "Select Existing File" opens
+     * {@link DotBrowserSelectorComponent} instead, exactly as it did before the picker existed.
+     */
+    readonly #assetPickerLauncher = inject(ASSET_PICKER_LAUNCHER, { optional: true });
+    /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
      * It is used to manage dialog interactions within the component.
@@ -150,12 +162,29 @@ export class DotFileFieldComponent
      * editor (SVGs), mirroring the store's editableAsText hydration.
      */
     readonly #http = inject(HttpClient);
+    /** Site the AssetPicker browses. Root-provided, so always available. */
+    readonly #siteService = inject(DotSiteService);
+    /**
+     * Supplies the locale when there is no contentlet yet (creating). Injected as `{ optional: true }`
+     * because only the Angular edit-content layout provides it — the legacy web-component host
+     * ({@link DotBinaryFieldCeBridgeComponent}) builds this same component without it.
+     */
+    readonly #editContentStore = inject(DotEditContentStore, { optional: true });
     /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * True from the moment "Select Existing File" is clicked until the picker closes.
+     *
+     * `#dialogRef` cannot serve as this guard: it is shared with the other three dialogs this
+     * component opens and is never reset on close, so checking it would block the picker forever
+     * after any of them ran. See `showSelectExistingFileDialog`.
+     */
+    #assetPickerPending = false;
     /**
      * DotCMS Content Type Field
      *
@@ -285,6 +314,22 @@ export class DotFileFieldComponent
         }
 
         return '';
+    });
+
+    /**
+     * Locale the AssetPicker pre-selects.
+     *
+     * The contentlet's own language wins when editing. When creating there is no contentlet yet, so
+     * it falls back to the locale currently selected in the editor — without that fallback the
+     * picker would open unfiltered on every new contentlet.
+     *
+     * @returns {string | undefined} the language id as a string, or `undefined` when neither source has one
+     */
+    $pickerLanguageId = computed(() => {
+        const languageId =
+            this.$contentlet()?.languageId ?? this.#editContentStore?.currentLocale()?.id;
+
+        return languageId ? String(languageId) : undefined;
     });
 
     constructor() {
@@ -787,66 +832,164 @@ export class DotFileFieldComponent
             });
     }
     /**
-     * Shows the select existing file dialog.
+     * Opens the AssetPicker to choose an asset that already exists in the system.
      *
-     * If the field is disabled, nothing happens.
-     * Opens the dialog with the `DotSelectExistingFileComponent` component
-     * and passes the field type and accepted files as data to the component.
+     * The picker is a compact Content Drive scoped to what this field can hold: an Image field
+     * narrows it to the dotAsset / File Asset base types and silently to images, a File field
+     * doesn't narrow it at all. It browses `api/v1/drive/search`, unlike the browser selector the
+     * block editor and custom fields still use.
      *
-     * When the dialog is closed, gets the uploaded file from the component
-     * and sets it as the preview file in the store.
+     * Nothing happens when the field is disabled, or when no site resolves — the picker would have
+     * nothing to browse.
+     *
+     * The site comes from `DotSiteService`, deliberately not from `GlobalStore`: this component also
+     * renders inside the legacy Dojo editor as the `dotcms-binary-field` custom element, which
+     * bootstraps without a router and without the app-shell providers. `GlobalStore` composes
+     * `withSystem`/`withBreadcrumbs`, so injecting it there threw NG0201 (`DotSystemConfigService`,
+     * then `Router`) and the whole Binary Field rendered blank. One HTTP call on an explicit click
+     * is a cheap price for a component that has to run in both hosts.
      *
      * @memberof DotEditContentFileFieldComponent
      */
     showSelectExistingFileDialog() {
-        if (this.$isDisabled()) {
+        if (this.$isDisabled() || this.#assetPickerPending) {
             return;
         }
 
-        const fieldType = this.$field().fieldType;
-        const title =
-            fieldType === INPUT_TYPES.Image
-                ? 'dot.file.field.dialog.select.existing.image.header'
-                : 'dot.file.field.dialog.select.existing.file.header';
-        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+        // The site lookup is what makes opening asynchronous, so `#dialogRef` alone is not a
+        // sufficient guard — it is still null while the request is in flight, and a second click
+        // would sail past it and stack a second dialog whose `onClose` stays live but unreachable.
+        // It guards the legacy path too, which is synchronous but must not stack either.
+        this.#assetPickerPending = true;
 
-        const header = this.#dotMessageService.get(title);
+        // No launcher means a legacy host, which browses without a site — so it skips the lookup
+        // entirely rather than paying for a request it has no use for.
+        if (!this.#assetPickerLauncher) {
+            this.#releasePendingIfOpenThrows(() => this.#openLegacyBrowserSelector());
 
-        this.#dialogRef = this.#dialogService.open(DotBrowserSelectorComponent, {
-            header,
-            appendTo: 'body',
-            closeOnEscape: true,
-            closable: true,
-            dismissableMask: true,
-            draggable: false,
-            keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-dynamic',
-            resizable: false,
-            modal: true,
-            width: '90%',
-            style: { 'max-width': '1040px' },
-            contentStyle: { overflow: 'auto', 'min-height': '45rem' },
-            data: {
-                mimeTypes,
-                showLinks: false,
-                showDotAssets: true,
-                showPages: false,
-                showFiles: true,
-                showFolders: false,
-                showWorking: true,
-                showArchived: false,
-                sortByDesc: true
+            return;
+        }
+
+        this.#siteService
+            .getCurrentSite()
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (site) => {
+                    // Opening a picker that can't browse anything is worse than not opening it.
+                    if (site) {
+                        // Stays set until the dialog closes, so the open picker blocks a re-entry too.
+                        this.#releasePendingIfOpenThrows(() => this.#openAssetPicker(site));
+
+                        return;
+                    }
+
+                    this.#assetPickerPending = false;
+                },
+                // Nothing to browse and nothing to say beyond that — the picker simply doesn't open.
+                error: () => {
+                    this.#assetPickerPending = false;
+                }
+            });
+    }
+
+    /**
+     * Runs an open, releasing {@link #assetPickerPending} if it throws.
+     *
+     * Nothing else can release it in that case: the guard is cleared by the picker's `onClose`, and
+     * an open that threw never got as far as wiring one — so "Select Existing File" would stay dead
+     * for the rest of the session, with no toast and no log. The error is deliberately rethrown
+     * rather than swallowed; a button that silently does nothing is harder to diagnose than one that
+     * leaves a stack trace.
+     */
+    #releasePendingIfOpenThrows(open: () => void) {
+        try {
+            open();
+        } catch (error) {
+            this.#assetPickerPending = false;
+
+            throw error;
+        }
+    }
+
+    /** Opens the picker for a resolved site. Split out so the site lookup above stays readable. */
+    #openAssetPicker(site: DotSite) {
+        const mode = this.$field().fieldType === INPUT_TYPES.Image ? 'image' : 'file';
+
+        this.#trackPicker(
+            this.#assetPickerLauncher.open(
+                // The launcher borrows this field's own `DialogService` so the picker stays scoped
+                // to it — see `ASSET_PICKER_LAUNCHER`.
+                this.#dialogService,
+                // No explicit path: the picker reopens on the globally remembered folder.
+                {
+                    mode,
+                    site,
+                    title: this.#dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
+                    languageId: this.$pickerLanguageId()
+                }
+            )
+        );
+    }
+
+    /**
+     * Opens the pre-AssetPicker browser selector — what the legacy Dojo host has always shown for
+     * "Select Existing File". Synchronous, and it needs no `DotSite`.
+     */
+    #openLegacyBrowserSelector() {
+        const isImage = this.$field().fieldType === INPUT_TYPES.Image;
+
+        this.#trackPicker(
+            this.#dialogService.open(DotBrowserSelectorComponent, {
+                header: this.#dotMessageService.get(
+                    isImage
+                        ? 'dot.file.field.dialog.select.existing.image.header'
+                        : 'dot.file.field.dialog.select.existing.file.header'
+                ),
+                appendTo: 'body',
+                closeOnEscape: true,
+                closable: true,
+                dismissableMask: true,
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-dynamic',
+                resizable: false,
+                modal: true,
+                width: '90%',
+                style: { 'max-width': '1040px' },
+                contentStyle: { overflow: 'auto', 'min-height': '45rem' },
+                data: {
+                    // An Image field takes images only; a File field takes anything.
+                    mimeTypes: isImage ? ['image'] : [],
+                    showLinks: false,
+                    showDotAssets: true,
+                    showPages: false,
+                    showFiles: true,
+                    showFolders: false,
+                    showWorking: true,
+                    showArchived: false,
+                    sortByDesc: true
+                }
+            })
+        );
+    }
+
+    /**
+     * Holds the live ref and applies whatever the dialog closes with. Shared by both pickers: they
+     * close with the same hydrated contentlet, so everything downstream of here — preview,
+     * `fileName` auto-fill, the legacy binary-field contract — keeps working either way.
+     */
+    #trackPicker(ref: DynamicDialogRef) {
+        this.#dialogRef = ref;
+
+        // Not filtered on a truthy file: the guard has to be released on *every* close, cancel
+        // included, or the button is dead for the rest of the session.
+        ref.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {
+            this.#assetPickerPending = false;
+
+            if (file) {
+                this.store.setPreviewFile({ source: 'contentlet', file });
             }
         });
-
-        this.#dialogRef.onClose
-            .pipe(
-                filter((file) => !!file),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((file) => {
-                this.store.setPreviewFile({ source: 'contentlet', file });
-            });
     }
 
     /**

@@ -490,16 +490,8 @@ public class ContentTypeResource implements Serializable {
 											 description = "Accepts either a single content-type object or an array. " +
 														   "The body is the content-type object directly (not wrapped in a 'contentType' envelope).\n\n" +
 														   "**Required properties:**\n" +
-														   "- `clazz` *(string)* — fully-qualified class name. One of: " +
-														   "`com.dotcms.contenttype.model.type.ImmutableSimpleContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableWidgetContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableFormContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableFileAssetContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutablePageContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutablePersonaContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableVanityUrlContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableKeyValueContentType`, " +
-														   "`com.dotcms.contenttype.model.type.ImmutableDotAssetContentType`\n" +
+														   "- `clazz` *(string)* — the base type, as a case-insensitive base-type name: " +
+														   "`CONTENT`, `WIDGET`, `FORM`, `FILEASSET`, `HTMLPAGE`, `PERSONA`, `VANITY_URL`, `KEY_VALUE`, or `DOTASSET`.\n" +
 														   "- `name` *(string)* — display name\n\n" +
 														   "**Common optional properties:**\n" +
 														   "- `variable` *(string)* — Velocity variable name (unique, alphanumeric, starts with a letter; auto-generated if omitted)\n" +
@@ -509,15 +501,24 @@ public class ContentTypeResource implements Serializable {
 														   "- `workflow` *(array of workflow scheme UUIDs)* — e.g. `[\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]` for System Workflow. " +
 														   "⚠️ **Note:** this is `workflow` (singular) in the request. GET responses return `workflows` (plural, array of objects) — " +
 														   "clients round-tripping an object must rename this key.\n" +
-														   "- `fields` *(array of field objects)* — see field schema below\n" +
+														   "- `fields` *(array of field objects)* — see field schema below (`ContentTypeFieldView`)\n" +
 														   "- `metadata` *(object)* — known keys: `CONTENT_EDITOR2_ENABLED` (boolean), `DOT_STYLE_EDITOR_SCHEMA` (JSON string)\n" +
 														   "- `systemActionMappings` *(object)* — maps system actions (`NEW`, `EDIT`, `PUBLISH`, `UNPUBLISH`, `ARCHIVE`, `UNARCHIVE`, `DELETE`, `DESTROY`) to workflow action UUIDs\n\n" +
+														   "**WIDGET content types:** Creating `clazz: WIDGET` automatically adds `widgetTitle`, `widgetUsage`, `widgetCode`, and `widgetPreexecute`. " +
+														   "`widgetCode` is an `ImmutableConstantField`; set the field's `values` property on the content type. " +
+														   "Putting `widgetCode` in a workflow contentlet body is silently ignored.\n\n" +
 														   "**Field object schema** (each item in `fields[]`):\n" +
-														   "- `clazz` *(string, required)* — e.g. `com.dotcms.contenttype.model.field.ImmutableTextField`, `ImmutableTextAreaField`, " +
-														   "`ImmutableStoryBlockField`, `ImmutableBinaryField`, `ImmutableTagField`, `ImmutableRadioField`, `ImmutableSelectField`, " +
-														   "`ImmutableDateField`, `ImmutableDateTimeField`, `ImmutableRowField` *(layout marker)*, `ImmutableColumnField` *(layout marker)*\n" +
+														   "- `clazz` *(string, required)* — the field type as a case-insensitive short name: " +
+														   "`TEXT`, `TEXT_AREA`, `STORY_BLOCK_FIELD`, `WYSIWYG`, `BINARY`, `IMAGE`, `FILE`, `TAG`, `CATEGORY`, " +
+														   "`CHECKBOX`, `RADIO`, `SELECT`, `MULTI_SELECT`, `DATE`, `TIME`, `DATE_TIME`, `KEY_VALUE`, `JSON_FIELD`, " +
+														   "`CONSTANT`, `HIDDEN`, `CUSTOM_FIELD`, `RELATIONSHIP`, `ROW_FIELD` *(layout marker)*, `COLUMN_FIELD` *(layout marker)*. " +
+														   "The fully-qualified `Immutable*` class name is also accepted.\n" +
 														   "- `name`, `variable`, `dataType` (one of `TEXT`, `LONG_TEXT`, `SYSTEM`, `BOOL`, `INTEGER`, `FLOAT`, `DATE`), " +
 														   "`required`, `indexed`, `listed`, `sortOrder` *(integer, position in the fields array)*\n" +
+														   "- ⚠️ **`dataType` is the storage type, not the UI type.** Asset-reference fields — " +
+														   "`ImmutableImageField`, `ImmutableFileField`, `ImmutableBinaryField` — use `dataType: TEXT` " +
+														   "(they store a reference in a text column), **never** `SYSTEM`. Reserve `SYSTEM` for true " +
+														   "layout/tab/relationship system fields (rows, columns, dividers, permission/relationship tabs).\n" +
 														   "- `values` *(string)* — for Radio/Select/Checkbox: newline-separated `Display|value` pairs. " +
 														   "For a boolean field use `ImmutableRadioField` + `dataType: BOOL` + `values: 'True|true\\r\\nFalse|false'` — there is no dedicated Boolean field class.\n\n" +
 														   "**Layout encoding:** Rows and columns are regular field entries placed in `fields[]`. " +
@@ -525,12 +526,12 @@ public class ContentTypeResource implements Serializable {
 														   "following content fields belong to the most-recent column until the next marker.",
 											 required = true,
 											 content = @Content(
-													 schema = @Schema(implementation = ContentTypeForm.class),
+													 schema = @Schema(implementation = ContentTypeRequestView.class),
 													 examples = {
 															 @ExampleObject(
 																	 value = "[\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 1\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
@@ -549,7 +550,7 @@ public class ContentTypeResource implements Serializable {
 																			 "    ]\n" +
 																			 "  },\n" +
 																			 "  {\n" +
-																			 "    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n" +
+																			 "    \"clazz\": \"CONTENT\",\n" +
 																			 "    \"defaultType\": false,\n" +
 																			 "    \"name\": \"The Content Type 2\",\n" +
 																			 "    \"description\": \"THE DESCRIPTION\",\n" +
@@ -741,7 +742,7 @@ public class ContentTypeResource implements Serializable {
 												"schemes to be associated with the content type.",
 										required = true,
 										content = @Content(
-												schema = @Schema(implementation = ContentTypeForm.class),
+												schema = @Schema(implementation = ContentTypeRequestView.class),
 												examples = {
 														@ExampleObject(
 																value = "{\n" +

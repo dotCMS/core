@@ -9,12 +9,14 @@ import {
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
-import { signal } from '@angular/core';
+import { computed, signal } from '@angular/core';
+
+import { MessageService } from 'primeng/api';
 
 import {
     DotCategoriesService,
-    DotContentletService,
     DotContentTypeService,
+    DotContentletService,
     DotHttpErrorManagerService,
     DotLanguagesService,
     DotMessageService,
@@ -22,12 +24,14 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { createFakeTextField, MockDotMessageService } from '@dotcms/utils-testing';
+import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
+import { DotContentDriveActionExecution } from '../../shared/models';
+import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
 /**
@@ -51,15 +55,23 @@ describe('DotContentDriveToolbarComponent', () => {
     const isTreeExpandedSignal = signal(false);
     const filtersSignal = signal<Record<string, unknown>>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
-    const selectedNodeSignal = signal<{ data?: { defaultBaseType?: string | null } } | undefined>(
-        undefined
-    );
+    const selectedNodeSignal = signal<
+        { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
+    >(undefined);
+    const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
+                // The toolbar now renders from the visual (panel-aware) computed; reusing the same
+                // signal keeps these tests driving one value, since they don't need to distinguish
+                // the real preference from a panel-forced override.
+                isTreeVisuallyExpanded: isTreeExpandedSignal,
+                // The toggler disables itself while the side panel holds the tree collapsed.
+                isTreeForceCollapsed: jest.fn().mockReturnValue(false),
                 setIsTreeExpanded: jest.fn(),
                 getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
@@ -73,7 +85,24 @@ describe('DotContentDriveToolbarComponent', () => {
                 userSearchableActive: signal<string[]>([]),
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
-                clearUserSearchableFilters: jest.fn()
+                clearUserSearchableFilters: jest.fn(),
+                actionExecution: actionExecutionSignal,
+                siteCanAddChildren: siteCanAddChildrenSignal,
+                // Mirrors the store's own computed so the toolbar tests still drive the gate
+                // through the two signals it derives from, not through a hardcoded answer.
+                $canAddChildren: computed(() => {
+                    const permissions = selectedNodeSignal()?.data?.permissions;
+
+                    if (!permissions?.length) {
+                        return siteCanAddChildrenSignal() !== false;
+                    }
+
+                    return permissions.includes('CAN_ADD_CHILDREN');
+                }),
+                // Read by the Locale chip this toolbar renders: the store resolves the languages
+                // once and seeds the environment default into the `languageId` filter.
+                languages: signal(mockLocales),
+                defaultLanguageId: jest.fn().mockReturnValue(1)
             }),
             mockProvider(DotContentTypeService, {
                 getContentTypes: jest.fn().mockReturnValue(of(MOCK_CONTENT_TYPES)),
@@ -89,8 +118,11 @@ describe('DotContentDriveToolbarComponent', () => {
                 ),
                 getAllContentTypes: jest.fn().mockReturnValue(of(MOCK_BASE_TYPES))
             }),
+            // The shared DotLanguageFilterComponent fetches the language list on init, so without
+            // this the toolbar's render reaches for /api/v2/languages and the spec fails on a
+            // NetworkError rather than on anything it is testing.
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of())
+                get: jest.fn().mockReturnValue(of(mockLocales))
             }),
             mockProvider(DotHttpErrorManagerService),
             // Field-filter chips render inside the toolbar; provide their dependencies.
@@ -109,6 +141,13 @@ describe('DotContentDriveToolbarComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             },
+            // Needed once a selection exists: that mounts the workflow-actions child, which injects
+            // both of these.
+            mockProvider(MessageService, { add: jest.fn() }),
+            mockProvider(DotContentDriveNavigationService, {
+                editContent: jest.fn(),
+                editPage: jest.fn()
+            }),
             provideHttpClient()
         ],
         detectChanges: false
@@ -126,6 +165,7 @@ describe('DotContentDriveToolbarComponent', () => {
         filtersSignal.set({});
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
+        actionExecutionSignal.set(undefined);
     });
 
     it('should render toolbar container', () => {
@@ -174,21 +214,48 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(toggler).toBeDefined();
         });
 
-        it('should hide the tree toggler with styles when tree is expanded', () => {
+        it('should keep the tree toggler in place when the tree is expanded', () => {
+            // The toggler used to collapse to nothing once the tree opened, handing over to a
+            // second copy inside the sidebar. It now stays beside the search input in both states,
+            // which is how UVE keeps its palette and quick-edit toggles in the toolbar.
             isTreeExpandedSignal.set(true);
             spectator.detectChanges();
 
             const toggler = spectator.query('[data-testid="tree-toggler"]') as HTMLElement;
+
             expect(toggler).toBeTruthy();
-            expect(toggler.style.opacity).toBe('0');
-            expect(toggler.style.visibility).toBe('hidden');
-            expect(toggler.style.width).toBe('0px');
+            expect(toggler.style.visibility).not.toBe('hidden');
+            expect(toggler.style.opacity).not.toBe('0');
+            expect(toggler.style.width).not.toBe('0px');
         });
     });
 
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should not render when only the seeded defaults are set', () => {
+            // The default language and the shared-assets toggle are always present, so counting
+            // filter keys would leave this button on screen permanently.
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
+        });
+
+        it('should render once shared assets are turned off', () => {
+            filtersSignal.set({ languageId: ['1'], sharedAssets: 'false' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
+        });
+
+        it('should render once a non-default language is picked', () => {
+            filtersSignal.set({ languageId: ['2'], sharedAssets: 'true' });
+            spectator.detectChanges();
+
+            expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
         it('should render when at least one filter is applied', () => {
@@ -407,6 +474,182 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
+    describe('Workflow Center button', () => {
+        it('should not offer it with no selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should offer it from the first selected contentlet', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should keep the workflow action buttons alongside it', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            await settleToolbarAnimation(spectator);
+
+            // The two are offered together, not one instead of the other.
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+            expect(spectator.query(byTestId('workflow-actions'))).toBeTruthy();
+        });
+
+        it('should offer it for a folder-only selection', async () => {
+            // Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+            // selection has something to act on even though the rest of the actions do not apply.
+            selectedItemsSignal.set([
+                { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
+            ]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeTruthy();
+        });
+
+        it('should not offer it for an empty selection', async () => {
+            selectedItemsSignal.set([]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.query(byTestId('action-center-button'))).toBeNull();
+        });
+
+        it('should open the ACTION_CENTER dialog when clicked', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            spectator.click(byTestId('action-center-button'));
+
+            expect(store.setDialog).toHaveBeenCalledWith({
+                type: DIALOG_TYPE.ACTION_CENTER,
+                header: 'content-drive.action-center.header'
+            });
+        });
+
+        it('should be disabled while an action is running', async () => {
+            // Reopening mid-run gives a dialog with every row greyed out that then closes itself
+            // when the run settles. Refusing to open it is the honest version of that state.
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(true);
+        });
+
+        it('should explain why it is disabled while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe(
+                'content-drive.action-center.busy'
+            );
+        });
+
+        it('should carry no tooltip when nothing is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            await settleToolbarAnimation(spectator);
+
+            expect(spectator.component.$actionCenterTooltip()).toBe('');
+        });
+
+        it('should not open the dialog while an action is running', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            // Guards the handler too: a disabled attribute alone would leave the store reachable.
+            spectator.component['onOpenActionCenter']();
+
+            expect(store.setDialog).not.toHaveBeenCalled();
+        });
+
+        it('should become available again once the run settles', async () => {
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            await settleToolbarAnimation(spectator);
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            const button = spectator
+                .query(byTestId('action-center-button'))
+                ?.querySelector('button');
+
+            expect(button?.disabled).toBe(false);
+        });
+    });
+
+    describe('running-action indicator', () => {
+        it('should stay hidden when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        it('should report the action and the number of items once a run starts', () => {
+            // The toolbar is the only place still reporting the run after the Action Center dialog is
+            // closed, which is the whole reason the indicator lives out here.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        it('should not render markup carried by the action name', () => {
+            // Workflow action names come from the backend verbatim (`$selectedAction()?.name`), and
+            // the label is placed in the DOM as HTML so the message's own `<b>` renders. A name
+            // carrying markup must not become live DOM — an event-handler attribute least of all.
+            //
+            // The shared mock returns the bare key, which would make this pass without rendering
+            // anything; the real message has to be in play for the assertion to mean something.
+            const messageService = spectator.inject(DotMessageService);
+
+            jest.spyOn(messageService, 'get').mockImplementation(
+                (key: string, ...args: string[]) =>
+                    key === 'content-drive.action-center.applying'
+                        ? `Applying <b>${args[0]}</b> to ${args[1]} item(s)…`
+                        : key
+            );
+
+            actionExecutionSignal.set({
+                actionName: '<img src=x onerror="window.__xss = true">',
+                total: 3
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            // Asserted structurally rather than by searching the markup for "onerror": once the name
+            // is escaped it renders as visible text that legitimately still contains that word.
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            // …and the name is still shown to the user, just as text.
+            expect(indicator?.textContent).toContain('<img src=x');
+        });
+
+        it('should disappear again once the run settles', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
+            spectator.detectChanges();
+
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+    });
+
     describe('field-filter chips', () => {
         it('should render a chip only for active variables resolved against loaded fields', () => {
             store.userSearchableFields.set([
@@ -421,6 +664,94 @@ describe('DotContentDriveToolbarComponent', () => {
             ]);
             expect(spectator.query(byTestId('field-filter-chip-body'))).toBeTruthy();
             expect(spectator.query(byTestId('field-filter-chip-ghost'))).toBeNull();
+        });
+    });
+
+    describe('creating in a folder that refuses children', () => {
+        // Both creation paths enforce CAN_ADD_CHILDREN on the destination folder server-side:
+        // FolderAPIImpl:673 for a folder. An upload is NOT refused server-side — the contentlet
+        // checkin path does not check this permission — so the gate is there to keep one route into
+        // a folder from quietly allowing what creating a folder forbids.
+        const withPermissions = async (permissions: string[]) => {
+            selectedNodeSignal.set({ data: { permissions } });
+            await settleToolbarAnimation(spectator);
+        };
+
+        it('should disable Upload and Add New without CAN_ADD_CHILDREN', async () => {
+            await withPermissions(['READ', 'EDIT']);
+
+            expect(spectator.query(byTestId('upload-asset-button'))).toBeTruthy();
+            expect(spectator.component.$canAddChildren()).toBe(false);
+        });
+
+        it('should enable them when the folder accepts children', async () => {
+            await withPermissions(['READ', 'EDIT', 'CAN_ADD_CHILDREN']);
+
+            expect(spectator.component.$canAddChildren()).toBe(true);
+        });
+
+        // The site root: the parent is the host, not a folder, so the tree's site node carries no
+        // permissions and the answer comes from the store's own lookup on the site instead.
+        describe('at the site root', () => {
+            const atRootWithSite = async (canAdd: boolean | undefined) => {
+                siteCanAddChildrenSignal.set(canAdd);
+                await withPermissions([]);
+            };
+
+            it('should refuse creation when the site root refuses children', async () => {
+                await atRootWithSite(false);
+
+                expect(spectator.component.$canAddChildren()).toBe(false);
+            });
+
+            it('should allow creation when the site root accepts children', async () => {
+                await atRootWithSite(true);
+
+                expect(spectator.component.$canAddChildren()).toBe(true);
+            });
+
+            // Optimistic while in flight, so the buttons do not start disabled and then flip on for
+            // the common case. The server still refuses the write if the guess was wrong.
+            it('should allow creation while the site lookup is still in flight', async () => {
+                await atRootWithSite(undefined);
+
+                expect(spectator.component.$canAddChildren()).toBe(true);
+            });
+
+            // A folder's own permissions are the more specific answer and must win: the root can
+            // refuse children while a folder inside it accepts them.
+            it('should prefer the folder permissions over the site answer', async () => {
+                siteCanAddChildrenSignal.set(false);
+                await withPermissions(['READ', 'CAN_ADD_CHILDREN']);
+
+                expect(spectator.component.$canAddChildren()).toBe(true);
+            });
+        });
+
+        it('should say why the buttons are off', async () => {
+            await withPermissions(['READ']);
+
+            expect(spectator.component.$addChildrenTooltip()).toBe(
+                'content-drive.add-new.no-add-children'
+            );
+        });
+
+        // A disabled button computes `pointer-events: none`, so a tooltip bound to it would never
+        // fire. It has to hang off a wrapper that can still receive the hover.
+        it('should hang the tooltip off a wrapper, not the disabled button', async () => {
+            await withPermissions(['READ']);
+
+            const wrapper = spectator.query(byTestId('add-new-tooltip'));
+            const button = spectator.query(byTestId('add-new-button'));
+
+            expect(wrapper).toBeTruthy();
+            expect(wrapper?.contains(button)).toBe(true);
+        });
+
+        it('should carry no tooltip when creation is allowed', async () => {
+            await withPermissions(['CAN_ADD_CHILDREN']);
+
+            expect(spectator.component.$addChildrenTooltip()).toBe('');
         });
     });
 });

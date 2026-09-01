@@ -254,58 +254,48 @@
                             }}
                         </span>
                     </div>
+                } @else if (isSearching) {
+                    <!-- Search results render from the shared list (#37208), not from the tree.
+                         A recursive result set is flat: there is nothing to expand, so the tree's
+                         indentation and togglers had to be styled away here anyway. The row itself
+                         is unchanged — it moved to `@dotcms/ui` so the AssetPicker renders the
+                         identical thing instead of a second copy of it. -->
+                    <dot-folder-search-results
+                        class="min-h-0 min-w-0 flex-1"
+                        [results]="store.displayedFolders()"
+                        [selectedKey]="store.treeSelection()?.key ?? null"
+                        [loading]="store.searchLoading()"
+                        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+                        listTestId="host-folder-search-results"
+                        rowTestId="host-folder-search-result"
+                        loadMoreTestId="host-folder-load-more"
+                        (resultSelect)="onSearchResultSelect($event)"
+                        (loadMore)="onLoadMoreNode($event)" />
                 } @else {
-                    <p-tree
+                    <dot-folder-tree
                         #folderTree
                         class="min-h-0 min-w-0 flex-1 overflow-hidden"
-                        [value]="store.displayedFolders()"
-                        [selection]="store.treeSelection()"
+                        [folders]="store.displayedFolders()"
+                        [selectedNode]="store.treeSelection()"
                         [loading]="store.foldersLoading() && store.displayedFolders().length > 0"
                         selectionMode="single"
                         scrollHeight="flex"
-                        loadingMode="icon"
                         [pt]="treePt()"
-                        data-testid="host-folder-tree"
+                        treeTestId="host-folder-tree"
+                        loadMoreTestId="host-folder-load-more"
+                        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+                        [showLoadMorePlusIcon]="true"
                         (onNodeSelect)="onFolderSelect($event)"
-                        (onNodeExpand)="onFolderExpand($event)">
-                        <ng-template let-node pTemplate="default">
-                            <span class="flex w-full min-w-0 flex-col gap-1 overflow-hidden">
-                                <span
-                                    class="block w-full min-w-0 truncate"
-                                    [class.font-semibold]="isSearching"
-                                    [class.leading-normal]="isSearching">
-                                    {{ node.label | dotTruncatePath }}
-                                </span>
-                                @if (isSearching && node.data?.path) {
-                                    <span
-                                        class="block w-full min-w-0 truncate text-sm leading-normal text-surface-500"
-                                        data-testid="host-folder-search-result-path">
-                                        {{ formatSearchNodePath(node) }}
-                                    </span>
-                                }
+                        (onNodeExpand)="onFolderExpand($event)"
+                        (loadMore)="onLoadMoreNode($event)">
+                        <ng-template #folderTreeNodeLabel let-node>
+                            <!-- One line now: the two-line search row moved to the shared list, so
+                                 this branch only ever renders a folder being browsed. -->
+                            <span class="block w-full min-w-0 truncate">
+                                {{ node.label | dotFolderName }}
                             </span>
                         </ng-template>
-                        <ng-template let-node pTemplate="load-more">
-                            <button
-                                type="button"
-                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-sm text-primary-500 hover:underline"
-                                data-testid="host-folder-load-more"
-                                (click)="onLoadMoreNode(node, $event)">
-                                <i class="pi pi-plus-circle"></i>
-                                {{ 'dot.file.field.host.folder.action.load.more' | dm }}
-                            </button>
-                        </ng-template>
-                        <ng-template pTemplate="togglericon" let-expanded let-loading="loading">
-                            @if (loading) {
-                                <i class="pi pi-spin pi-spinner text-sm text-surface-400"></i>
-                            } @else {
-                                <i
-                                    class="pi text-sm"
-                                    [class.pi-chevron-down]="expanded"
-                                    [class.pi-chevron-right]="!expanded"></i>
-                            }
-                        </ng-template>
-                    </p-tree>
+                    </dot-folder-tree>
                 }
             </div>
         </div>

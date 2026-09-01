@@ -12,6 +12,7 @@ import static com.dotmarketing.util.UtilMethods.isNotSet;
 import static com.dotmarketing.util.UtilMethods.isSet;
 import static java.util.Collections.emptyMap;
 
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.apps.view.SecretView.SecretViewSerializer;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.LicenseValiditySupplier;
@@ -424,8 +425,51 @@ public class AppsAPIImpl implements AppsAPI {
             try {
                 return hasAnySecrets(key, id, user);
             } catch (DotDataException | DotSecurityException e) {
+                // Pre-existing behaviour: this method's contract is "if the secrets for this site
+                // cannot be determined, treat it as having none".
                 Logger.error(AppsAPIImpl.class,
                         String.format("Error getting secret from `%s` ", key), e);
+            } catch (DotRuntimeException e) {
+                // Since issue #36724 an unreadable store raises instead of silently wiping itself.
+                // That must degrade here: EMAWebInterceptor reaches this method on every /api/*
+                // request and the interceptor chain does not guard it, so raising returns a 500 for
+                // the whole API.
+                //
+                // Matched on the CAUSE CHAIN rather than the thrown type. SecretsStoreUnreadableException
+                // does not survive the journey: there are nine `catch (Exception e) { throw new
+                // DotRuntimeException(e); }` re-wraps between where it is raised and here --
+                // SecretCachedKeyStoreImpl.containsKey is the one on this path -- so catching the
+                // specific type alone never matches in production. Matching the chain is robust to
+                // however many layers re-wrap it, and to a tenth being added later.
+                if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                    // A database blip, a cache failure, a programming error. Those stay loud rather
+                    // than reading as "0 configurations".
+                    throw e;
+                }
+                // Deliberate consequence: against an unreadable store this method counts 0 for every
+                // site, while opening an app's DETAIL raises, because getSecrets() is not swallowed.
+                // The count is best-effort, the detail view authoritative.
+                //
+                // A bare 0 here would read as "your secrets are gone" on the Apps portlet, so the
+                // listing does not rely on it alone: AppsHelper.getAvailableDescriptorViewsWithErrors
+                // reports the condition explicitly through the endpoint's partial-failure channel
+                // (issue #37061, fixed in this PR). Note that guard has to live there rather than
+                // here, because appKeysByHost() raises while being evaluated as this method's own
+                // argument -- before this catch is ever reached.
+                // debug, not error, and deliberately so. This fires once per site per call, and
+                // EMAWebInterceptor.existsConfiguration reaches this method on every /api/* request
+                // -- measured at 32 ERROR lines from 16 requests on a two-site instance. Because the
+                // condition persists until an operator fixes it, logging at ERROR here reproduces
+                // exactly the flood this PR throttles inside the helper: an actionable message
+                // repeated thousands of times stops being actionable.
+                //
+                // Nothing is lost. SecretsKeyStoreHelper.handleUnrecoverableLoad already logs the
+                // one ERROR that carries the diagnosis and the remediation, rate-limited to one per
+                // SECRETS_STORE_LOAD_FAILURE_REPORT_INTERVAL_MILLIS. This line only restated that a
+                // particular app is being reported as unconfigured, which adds no new information.
+                Logger.debug(AppsAPIImpl.class, () -> String.format(
+                        "App secrets store is unreadable; reporting no secrets for `%s`: %s",
+                        key, e.getMessage()));
             }
             return false;
         }).collect(Collectors.toCollection(LinkedHashSet::new));

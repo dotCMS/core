@@ -7,8 +7,10 @@
             <dot-sidebar
                 [folders]="folders.data"
                 [loading]="store.foldersIsLoading()"
+                [selectedId]="$folderParams().hostFolderId"
                 (onNodeSelect)="onNodeSelect($event)"
-                (onNodeExpand)="onNodeExpand($event)" />
+                (onNodeExpand)="onNodeExpand($event)"
+                (loadMore)="onLoadMore($event)" />
         </div>
         <div class="h-full flex-1 overflow-auto">
             <dot-dataview
@@ -17,6 +19,7 @@
                 [error]="content.error"
                 [accept]="$acceptAttr()"
                 [uploadDisabled]="$uploadDisabled()"
+                [showUpload]="$canUpload()"
                 [selectedContent]="store.selectedContent()"
                 (onRowSelect)="store.setSelectedContent($event)"
                 (onUploadFile)="onFileUpload($event)" />

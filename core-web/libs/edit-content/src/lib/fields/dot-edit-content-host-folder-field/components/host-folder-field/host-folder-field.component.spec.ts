@@ -255,8 +255,8 @@ describe('DotHostFolderFieldComponent', () => {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-folder-open',
-            collapsedIcon: 'pi pi-folder'
+            expandedIcon: 'pi pi-globe',
+            collapsedIcon: 'pi pi-globe'
         });
 
         const queryInOverlay = (testId: string): Element | null =>
@@ -414,6 +414,98 @@ describe('DotHostFolderFieldComponent', () => {
             expect(queryInOverlay('host-folder-folders-empty')).toHaveText('No folders found');
         }));
 
+        it('should render search results from the shared list, not from the folder tree', fakeAsync(() => {
+            // #37208 extracts this row into `@dotcms/ui` so the AssetPicker renders the identical
+            // thing. What the editor sees must not change; what renders it does.
+            const searchResult: TreeNodeItem = {
+                key: 'ai',
+                label: 'demo.dotcms.com/application/apivtl/ai/',
+                data: {
+                    id: 'ai',
+                    hostname: 'demo.dotcms.com',
+                    path: '/application/apivtl/ai/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockImplementation((params) => {
+                if (params.recursive) {
+                    return of({
+                        folders: [searchResult],
+                        pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                    });
+                }
+
+                // Browsing returns a folder, so "the tree renders" is a real assertion rather than
+                // one that trips over the empty state.
+                return of({
+                    folders: [TREE_SELECT_MOCK[0].children[0]],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                });
+            });
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            // Browsing: the tree, and no result list.
+            expect(document.querySelector('dot-folder-tree')).toBeTruthy();
+            expect(document.querySelector('dot-folder-search-results')).toBeNull();
+
+            store.search('ai');
+            tick(300);
+            spectator.detectChanges();
+
+            // Searching: the list replaces it.
+            expect(document.querySelector('dot-folder-search-results')).toBeTruthy();
+            expect(document.querySelector('dot-folder-tree')).toBeNull();
+
+            // The row still reads the same, from the shared testids.
+            expect(queryInOverlay('folder-search-result-name')).toHaveText('ai');
+            expect(queryInOverlay('folder-search-result-path')).toHaveText(
+                'demo.dotcms.com / application / apivtl / ai'
+            );
+        }));
+
+        it('should keep offering "load more" in search mode, which the picker does not', fakeAsync(() => {
+            // FR-028: the shared list carries presentation, never paging policy. This field pages
+            // its results and must keep doing so; the AssetPicker caps at one page.
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockImplementation((params) =>
+                of({
+                    folders: params.recursive
+                        ? Array.from({ length: 40 }, (_, index) => ({
+                              key: `f${index}`,
+                              label: `demo.dotcms.com/f${index}/`,
+                              data: {
+                                  id: `f${index}`,
+                                  hostname: 'demo.dotcms.com',
+                                  path: `/f${index}/`,
+                                  type: 'folder' as const
+                              },
+                              leaf: true
+                          }))
+                        : [],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 100 }
+                })
+            );
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+            store.search('f');
+            tick(300);
+            spectator.detectChanges();
+
+            expect(queryInOverlay('host-folder-load-more')).toBeTruthy();
+        }));
+
         it('should show search result path on a second gray line as breadcrumb', fakeAsync(() => {
             const searchResult: TreeNodeItem = {
                 key: 'ai',
@@ -451,15 +543,16 @@ describe('DotHostFolderFieldComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            const pathEl = queryInOverlay('host-folder-search-result-path');
+            // Same row, rendered by the shared list now — hence the shared test ids. The text and
+            // the muted second line are the part that must not change.
+            const pathEl = queryInOverlay('folder-search-result-path');
             expect(pathEl).toBeTruthy();
             expect(pathEl).toHaveText('demo.dotcms.com / application / apivtl / ai');
             expect(pathEl?.textContent).not.toMatch(/\(/);
             expect(pathEl).toHaveClass('text-surface-500');
 
-            const nodeContent = document.querySelector('.p-tree-node-content');
-            expect(nodeContent?.className).toContain('items-start');
-            expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
+            // The icon sits on the name's line rather than centred across both.
+            expect(queryInOverlay('host-folder-search-result')?.className).toContain('items-start');
         }));
 
         it('should not show expand chevrons in search mode because results are flat leaves', fakeAsync(() => {
@@ -499,44 +592,18 @@ describe('DotHostFolderFieldComponent', () => {
             tick(300);
             spectator.detectChanges();
 
-            expect(document.querySelector('.p-tree-node-leaf')).toBeTruthy();
+            // Stronger than the old assertion, which checked that tree nodes were marked as leaves
+            // so `p-tree` would not draw a chevron. There is no tree in search mode now, so there
+            // is nothing that could draw one.
+            expect(document.querySelector('.p-tree-node-toggle-button')).toBeNull();
+            expect(document.querySelector('dot-folder-tree')).toBeNull();
             expect(store.searchResults()[0]?.leaf).toBe(true);
         }));
     });
 
-    describe('formatSearchNodePath', () => {
-        it('should format nested folder path as breadcrumb with hostname', () => {
-            const node: TreeNodeItem = {
-                key: 'ai',
-                label: 'demo.dotcms.com/application/apivtl/ai/',
-                data: {
-                    id: 'ai',
-                    hostname: 'demo.dotcms.com',
-                    path: '/application/apivtl/ai/',
-                    type: 'folder'
-                }
-            };
-
-            expect(spectator.component['formatSearchNodePath'](node)).toBe(
-                'demo.dotcms.com / application / apivtl / ai'
-            );
-        });
-
-        it('should return hostname only for site root path', () => {
-            const node: TreeNodeItem = {
-                key: 'root',
-                label: 'demo.dotcms.com/',
-                data: {
-                    id: 'root',
-                    hostname: 'demo.dotcms.com',
-                    path: '/',
-                    type: 'folder'
-                }
-            };
-
-            expect(spectator.component['formatSearchNodePath'](node)).toBe('demo.dotcms.com');
-        });
-    });
+    // `formatSearchNodePath` moved to `formatFolderSearchPath` in `@dotcms/ui` when the row was
+    // extracted (#37208). Its cases live in `folder-search-path.utils.spec.ts` — the same two that
+    // were here, plus stray-slash, missing-hostname and no-leading-`//` variants.
 
     describe('onLoadMoreNode', () => {
         it('should load more root folders when the sentinel has no parent', () => {
@@ -592,7 +659,13 @@ describe('DotHostFolderFieldComponent', () => {
     describe('onOverlayShow', () => {
         const stubFolderTree = (root: HTMLElement | undefined) => {
             Object.defineProperty(spectator.component, '$folderTree', {
-                value: () => (root ? { el: { nativeElement: root } } : undefined),
+                value: () =>
+                    root
+                        ? {
+                              tree: () => ({ el: { nativeElement: root } }),
+                              elementRef: { nativeElement: root }
+                          }
+                        : undefined,
                 writable: true
             });
         };

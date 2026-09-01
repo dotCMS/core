@@ -84,12 +84,116 @@ export const UVEStore = signalStore(
 
 Each feature slice owns a named prefix in the flat state (e.g. `editor*`, `view*`, `page*`) and exposes only the methods and computeds relevant to its domain. See `libs/portlets/edit-ema/portlet/README.md` for a full example.
 
+## Events-Plugin Pattern (NgRx Signals)
+
+`withState` + store methods stays the default for simple CRUD (`dot-tags`). Reach for the events plugin when:
+
+- Many components dispatch into one store and you do not want to thread method calls through inputs/outputs
+- You want an auditable action log (every state change has a named, typed event)
+- State transitions and async work should be separated so each can be reasoned about (and tested) on its own
+
+### The pieces
+
+| Piece | Where | Rule |
+|-------|-------|------|
+| `eventGroup({ source, events: { name: type<Payload>() } })` | `*.events.ts` | One group per source; async flows use `Requested → Succeeded → Failed` triples |
+| `withReducer(on(event, ({ payload }, state) => newState))` | store | **Only** place state changes |
+| `withEventHandlers` | store | **Only** place for async/HTTP. Handlers **return** their events — `withEventHandlers` dispatches whatever they emit, so no `Dispatcher` here. Use `switchMap` for loads so a re-trigger cancels the in-flight request, and `mergeMap` for per-row actions so acting on one row does not cancel another |
+| `injectDispatch(eventGroup)` | component | The store exposes **no methods** for state changes |
+
+### Version note (critical)
+
+The async hook in the installed `@ngrx/signals` (**21.1.1**) is **`withEventHandlers`**. **`withEffects` does not exist** and will not compile — many online examples use that name. Verified exports of `@ngrx/signals/events`:
+
+`event`, `eventGroup`, `on`, `withReducer`, `withEventHandlers`, `injectDispatch`, `Dispatcher`, `Events`, `ReducerEvents`, `mapToScope`, `provideDispatcher`, `toScope`
+
+### Error handling
+
+Same rules as the rest of this guide: the `Failed` handler routes through `DotHttpErrorManagerService.handle(error)` — no custom error UI. A failed LOAD sets `status: ERROR`; a failed CRUD action returns `status` to `LOADED` so the list stays usable. Statuses come from the shared `ComponentStatus` in `@dotcms/dotcms-models` — do not declare a local union.
+
+Split the events by *source*, as the NgRx guide does: what the page asks for, and what the API
+answered. The page dispatches only the first group; handlers raise only the second, so the two
+halves of an async flow can never be confused. Name page events as commands.
+
+```typescript
+// experiments-list-page.events.ts — user intent and lifecycle
+export const experimentsListPageEvents = eventGroup({
+    source: 'Experiments List Page',
+    events: {
+        loadExperiments: type<void>()
+    }
+});
+
+// experiments-api.events.ts — what came back
+export const experimentsApiEvents = eventGroup({
+    source: 'Experiments API',
+    events: {
+        listSucceeded: type<DotExperiment[]>(),
+        listFailed: type<unknown>()
+    }
+});
+
+// experiments-list.store.ts
+export const ExperimentsListStore = signalStore(
+    withState(initialState),
+    withReducer(
+        // Both groups fold into the one reducer, so reading it tells you who caused each change.
+        on(experimentsListPageEvents.loadExperiments, (_event, state) => ({
+            ...state,
+            status: ComponentStatus.LOADING
+        })),
+        on(experimentsApiEvents.listSucceeded, ({ payload }, state) => ({
+            ...state,
+            experiments: payload,
+            status: ComponentStatus.LOADED
+        })),
+        on(experimentsApiEvents.listFailed, (_event, state) => ({
+            ...state,
+            status: ComponentStatus.ERROR
+        }))
+    ),
+    withEventHandlers(() => {
+        const events = inject(Events);
+        const service = inject(DotExperimentsService);
+        const httpErrorManager = inject(DotHttpErrorManagerService);
+
+        return {
+            // Handlers RETURN their events; `withEventHandlers` dispatches whatever they emit, so
+            // no `Dispatcher` is injected here. `Dispatcher` is still needed in `withHooks`,
+            // where there is no stream to return into.
+            loadList$: events.on(experimentsListPageEvents.loadExperiments).pipe(
+                switchMap(() =>
+                    service.getAll().pipe(
+                        mapResponse({
+                            next: (experiments) => experimentsApiEvents.listSucceeded(experiments),
+                            error: (error: HttpErrorResponse) => {
+                                httpErrorManager.handle(error);
+
+                                return experimentsApiEvents.listFailed(error);
+                            }
+                        })
+                    )
+                )
+            )
+        };
+    })
+);
+
+// component — dispatches page events only; API events are listened to, never dispatched here
+readonly #dispatch = injectDispatch(experimentsListPageEvents);
+```
+
+### Reference implementations
+
+- `libs/image-editor/src/lib/store/` — feature-sliced: `image-editor.events.ts` + `features/with-*.feature.ts`
+- `libs/portlets/dot-experiments/portlet/src/lib/store/` — single-store list example, with the page/API event split below
+
 ## Nx Generator Post-Setup
 
 After running the generator:
 
 ```bash
-yarn nx generate @nx/angular:library --name=portlet \
+pnpm nx generate @nx/angular:library --name=portlet \
   --directory=libs/portlets/dot-{feature} \
   --tags=type:feature,scope:dotcms-ui,portlet:{feature} \
   --prefix=dot --standalone --no-interactive
@@ -103,6 +207,42 @@ yarn nx generate @nx/angular:library --name=portlet \
 4. **tsconfig.spec.json**: add `isolatedModules: true` in transform options (required for transitive deps)
 5. **tsconfig.spec.json**: keep minimal — only `module`, `target`, `types`
 6. **Delete** generated `README.md` and boilerplate component in `src/lib/portlet/`
+
+## Making the portlet reachable
+
+A row in `cms_layouts_portlets` is **not** enough. `MenuHelper.getMenuItems()` resolves every
+layout portlet id through `PortletAPI` and silently skips ids it cannot find, so an undeclared
+portlet never reaches the menu, `MenuGuardService` rejects the route, and the app redirects to the
+first portlet instead. The symptom is a route that "does not exist" with nothing in the console.
+
+1. Declare it in `dotCMS/src/main/webapp/WEB-INF/portlet.xml`.
+2. **Bump the count in `SerializationHelperTest.testFromXmlFile`** — it asserts an exact number of
+   declared portlets, so adding one turns it red (`expected:<N> but was:<N+1>`). Pin the new
+   portlet by id there too, as the existing entries do; the count alone would still pass if some
+   other portlet were swapped for yours. This has been part of every portlet migration.
+3. The portlet id must equal the **whole first URL segment** of the route: `MenuGuardService`
+   matches that segment against `/api/v1/menu`.
+
+Declaring is not registering. Without an UpgradeTask or a starter change the portlet stays
+invisible to customers until someone adds it to a layout by hand, which is usually what you want
+while the screens are still landing.
+
+`portlet.xml` is a webapp resource, so testing this needs a rebuilt image.
+
+## Before you push
+
+CI runs `nx affected -t lint`, `nx affected -t test` and `nx format:check` against `origin/main` —
+**every affected project, not just yours**. Linting one project locally is what lets an import-order
+error in an app or a sibling lib reach CI. Run what CI runs:
+
+```bash
+npx nx affected -t lint --base=origin/main --exclude=tag:skip:lint
+npx nx affected -t test --base=origin/main
+npx nx format:check --base=origin/main
+```
+
+Backend suites run only in a full PR run, so a portlet.xml change can look green in a partial run
+and fail later on `SerializationHelperTest`.
 
 ## Anti-Patterns
 

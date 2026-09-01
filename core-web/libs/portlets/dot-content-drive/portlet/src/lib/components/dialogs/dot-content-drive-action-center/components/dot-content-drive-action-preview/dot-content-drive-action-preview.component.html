@@ -1,0 +1,29 @@
+<!--
+    The Content Drive grid, configured as a confirmation list:
+
+    - `dataKey="inode"` — the grid keys on `identifier`, but language variants of one contentlet
+      share one and inodes are what gets fired; keying on identifier would collapse two variants
+      into a single selection entry.
+    - `lazy="false"` — the whole selection is already in memory, so the table pages it itself
+      instead of asking a parent that has nothing more to fetch.
+    - `readOnly` — no drag, context menu, open-on-click, kebab or column sorting. There is nowhere
+      to drag to, opening an item would navigate away from the dialog, and re-ordering a list the
+      user is checking off only loses their place.
+    - `visibleColumns` — just enough to recognise a row. The dialog is far narrower than the
+      portlet, and the grid's full set overflows it: the title collapses to an ellipsis and the
+      trailing columns disappear behind the dialog edge.
+
+    Selection is a one-way `[selection]` binding plus `(selectionChange)`, rather than `[(selection)]`,
+    so the parent stays the single owner of the included set.
+-->
+<dot-folder-list-view
+    [items]="items()"
+    [selection]="selection()"
+    [disabled]="disabled()"
+    [lockedByOthers]="lockedByOthers()"
+    [visibleColumns]="PREVIEW_COLUMNS"
+    [readOnly]="true"
+    [lazy]="false"
+    dataKey="inode"
+    data-testId="action-preview-table"
+    (selectionChange)="onSelectionChange($event)" />

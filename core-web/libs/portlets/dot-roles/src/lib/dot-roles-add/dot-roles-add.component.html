@@ -1,0 +1,113 @@
+<form [formGroup]="form" (ngSubmit)="onSave()" class="form flex flex-col gap-4">
+    <div class="field">
+        <label dotFieldRequired for="roleName">{{ 'roles.form.name' | dm }}</label>
+        <input
+            pInputText
+            id="roleName"
+            formControlName="roleName"
+            data-testid="input-role-name"
+            [attr.aria-required]="true" />
+        <dot-field-validation-message [field]="form.get('roleName')" />
+    </div>
+
+    <div class="field">
+        <label for="roleKey">{{ 'roles.form.key' | dm }}</label>
+        <input pInputText id="roleKey" formControlName="roleKey" data-testid="input-role-key" />
+    </div>
+
+    <div class="field">
+        <label for="parentRoleId">{{ 'roles.form.parent' | dm }}</label>
+        <!--
+            A tree rather than a flat indented list: the hierarchy is the
+            whole point of picking a parent, and indentation alone gets
+            ambiguous past two levels. Clearing the selection means "no
+            parent" (a root role) — hence `showClear` instead of a synthetic
+            "Root" entry that would sit oddly inside a tree.
+        -->
+        <p-treeSelect
+            id="parentRoleId"
+            class="w-full"
+            formControlName="parent"
+            [options]="$parentTree()"
+            [showClear]="true"
+            [filter]="true"
+            [loading]="$searching()"
+            (onNodeExpand)="onNodeExpand($event)"
+            (onNodeCollapse)="onNodeCollapse($event)"
+            (onFilter)="onFilter($event)"
+            appendTo="body"
+            [placeholder]="'roles.form.parent.root' | dm"
+            data-testid="select-parent" />
+    </div>
+
+    <div class="field" role="group" aria-labelledby="canGrantLabel">
+        <span id="canGrantLabel" class="mb-1 block font-medium">
+            {{ 'roles.form.can-grant' | dm }}
+        </span>
+        <div class="flex flex-wrap gap-6">
+            <div class="inline-flex items-center gap-1.5">
+                <p-checkbox
+                    inputId="canEditUsers"
+                    formControlName="canEditUsers"
+                    [binary]="true"
+                    data-testid="cb-users" />
+                <label for="canEditUsers" class="cursor-pointer text-sm">
+                    {{ 'roles.form.users' | dm }}
+                </label>
+            </div>
+            <div class="inline-flex items-center gap-1.5">
+                <p-checkbox
+                    inputId="canEditPermissions"
+                    formControlName="canEditPermissions"
+                    [binary]="true"
+                    data-testid="cb-permissions" />
+                <label for="canEditPermissions" class="cursor-pointer text-sm">
+                    {{ 'roles.form.permissions' | dm }}
+                </label>
+            </div>
+            <div class="inline-flex items-center gap-1.5">
+                <p-checkbox
+                    inputId="canEditLayouts"
+                    formControlName="canEditLayouts"
+                    [binary]="true"
+                    data-testid="cb-tools" />
+                <label for="canEditLayouts" class="cursor-pointer text-sm">
+                    {{ 'roles.form.tools' | dm }}
+                </label>
+            </div>
+        </div>
+    </div>
+
+    <div class="field">
+        <label for="description">{{ 'roles.form.description' | dm }}</label>
+        <textarea
+            pTextarea
+            id="description"
+            formControlName="description"
+            rows="3"
+            data-testid="input-description"></textarea>
+    </div>
+
+    @if ($error()) {
+        <p class="m-0 text-red-700" data-testid="add-error">{{ $error() | dm }}</p>
+    }
+
+    <footer class="mt-2 flex justify-end gap-2">
+        <button
+            pButton
+            type="button"
+            [outlined]="true"
+            (click)="onCancel()"
+            data-testid="btn-cancel">
+            {{ 'roles.action.cancel' | dm }}
+        </button>
+        <button
+            pButton
+            type="submit"
+            [disabled]="form.invalid || $submitting()"
+            [loading]="$submitting()"
+            data-testid="btn-save">
+            {{ 'roles.action.save' | dm }}
+        </button>
+    </footer>
+</form>

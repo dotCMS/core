@@ -114,7 +114,7 @@ if (!form.isValid()) {
 }
 
 // Business rule validation
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Access denied")
     );
@@ -289,7 +289,7 @@ if (user == null || !user.isLoggedIn()) {
 ### Permission Validation
 ```java
 // Check specific permissions
-if (!securityAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
     return ResponseUtil.mapExceptionResponse(
         new DotSecurityException("Read permission required")
     );
@@ -306,7 +306,7 @@ if (!user.isAdmin()) {
 ### Input Sanitization
 ```java
 // Sanitize user input
-String sanitizedInput = HTMLUtils.htmlEscape(userInput);
+String sanitizedInput = Xss.encodeForHTML(userInput);
 
 // Validate against patterns
 if (!userInput.matches("^[a-zA-Z0-9\\s\\-_\\.]+$")) {
@@ -492,7 +492,7 @@ public Response bulkOperation(
 ## Location Information
 - **REST endpoints**: Located in `com.dotcms.rest.*` packages but the ones under `com.dotcms.rest.v*` are considered the new endpoints, the ones under `com.dotcms.rest` are considered legacy endpoints. For example: `com.dotcms.rest.ContentResource` is the legacy one and `com.dotcms.rest.api.v1.ContentResource` is the new one.
 - **WebResource**: Found in `com.dotcms.rest.WebResource`
-- **ResponseUtil**: Located in `com.dotcms.rest.ResponseUtil`
+- **ResponseUtil**: Located in `com.dotcms.rest.api.v1.authentication.ResponseUtil`
 - **Forms**: Typically in same package as resource or `*.form` subpackage
 - **View / query records**: Same package as the resource or a `*.view` / `*.query` subpackage
 - **Integration tests**: Located in `dotcms-integration` module

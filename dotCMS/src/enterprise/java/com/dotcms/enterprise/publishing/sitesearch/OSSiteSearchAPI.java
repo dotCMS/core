@@ -123,6 +123,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     private static final JsonpDeserializer<SearchResponse<Object>> SEARCH_RESPONSE_DESERIALIZER =
             SearchResponse.createSearchResponseDeserializer(JsonpDeserializer.of(Object.class));
 
+    /**
+     * The single field Site Search highlights. Both the highlight request and the per-hit fragment
+     * lookup must name the same field, so it lives here instead of being spelled out twice.
+     */
+    private static final String HIGHLIGHTED_FIELD = "content";
+
+    /** Max characters per highlight fragment, matching the Elasticsearch Site Search path. */
+    private static final int HIGHLIGHT_FRAGMENT_SIZE = 255;
+
     private final OSClientProvider clientProvider;
     private final IndexAPI indexApi;
 
@@ -162,6 +171,48 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         Collections.reverse(indices);
         setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Single-engine leaf: whether this OpenSearch cluster holds the index. The physical OS index is
+     * {@code .os}-tagged, so the tag is (re)applied at this physical boundary before the existence
+     * check — matching {@link #physicalName(String)} / create / search. The router aggregates this
+     * across all write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(osTagged(indexName));
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this OpenSearch {@code .os} twin. Sends a
+     * {@code size:0} match-all with {@code track_total_hits:true} so the total is not capped at 10,000
+     * like a default search, which would hide content drift above 10k docs in the mirror parity gate
+     * (issue #36360). Returns {@code 0} when the twin is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!existsOnAllWriteEngines(indexName)) {
+            return 0L;
+        }
+        try {
+            final JSONObject body = new JSONObject();
+            body.put("size", 0);
+            body.put("track_total_hits", true);
+            body.put("query", new JSONObject().put("match_all", new JSONObject()));
+            final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
+            return response.hits().getTotalHits().value();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for OS index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
     }
 
     /**
@@ -320,22 +371,7 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
             }
             results.setIndex(indexName);
 
-            final JSONObject body;
-            if (!isJson) {
-                body = new JSONObject();
-                body.put("query", new JSONObject().put("query_string",
-                        new JSONObject().put("query", query).put("default_field", "*")));
-                if (limit > 0) {
-                    body.put("size", limit);
-                }
-                if (offset > 0) {
-                    body.put("from", offset);
-                }
-                body.put("highlight", new JSONObject().put("fields",
-                        new JSONObject().put("content", new JSONObject().put("fragment_size", 255))));
-            } else {
-                body = new JSONObject(query);
-            }
+            final JSONObject body = searchBody(query, isJson, offset, limit);
 
             final ContentSearchResponse response = rawSearch(physicalName(indexName), body);
             results.setTook(response.tookMillis() + "ms");
@@ -351,10 +387,11 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                 final SiteSearchResult ssr = new SiteSearchResult(new HashMap<>(hit.getSourceAsMap()));
                 ssr.setScore(hit.getScore());
                 maxScore = Math.max(maxScore, hit.getScore());
-                // TODO OS: the neutral SearchHit DTO does not carry per-field highlights yet.
-                // Site-search highlights are a best-effort extra (the ES path also swallows
-                // highlight failures); set empty until the neutral hit exposes highlight fragments.
-                ssr.setHighLight(new String[0]);
+                // The search body above asks OpenSearch to highlight the `content` field; the neutral
+                // hit carries those fragments so the result snippets keep their <em> emphasis in the
+                // phases where OpenSearch serves reads (issue #36360).
+                final List<String> highlights = hit.highlightsFor(HIGHLIGHTED_FIELD);
+                ssr.setHighLight(highlights.toArray(new String[0]));
                 results.getResults().add(ssr);
             }
             results.setMaxScore(maxScore);
@@ -365,6 +402,67 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         }
 
         return results;
+    }
+
+    /**
+     * Builds the OpenSearch request body for a Site Search query, in either of the two shapes a
+     * caller can hand in: a plain text query this wraps in a {@code query_string}, or a complete
+     * JSON body it takes as given.
+     *
+     * <p><strong>Both shapes get a {@code highlight} clause</strong> — the fragments read back by
+     * {@link SearchHit#highlightsFor(String)} are what puts the {@code <em>} emphasis in a result
+     * snippet, and a caller-supplied body almost never asks for them. This mirrors
+     * {@code ESSiteSearchAPI}, which does the same for both shapes; omitting it on the JSON branch
+     * meant {@code $sitesearch.search($alias, $jsonQuery, ...)} lost its emphasis in the phases where
+     * OpenSearch serves reads, the same defect as issue #36360.</p>
+     *
+     * <p>A body that already carries a {@code highlight} is left alone, so a caller keeps full
+     * control (including over the fragment size, which is why the default added here leaves the
+     * engine's — the ES branch it mirrors passes none either). The check reads the parsed body rather
+     * than grepping the raw string as the ES path does, so a document value that merely contains the
+     * word "highlight" no longer suppresses the clause.</p>
+     *
+     * @param query  the caller's query, already escaped
+     * @param isJson whether {@code query} is a complete JSON body rather than query text
+     * @param offset first hit to return, applied only to the non-JSON shape
+     * @param limit  max hits to return, applied only to the non-JSON shape
+     * @return the body to send
+     */
+    static JSONObject searchBody(final String query, final boolean isJson, final int offset,
+            final int limit) {
+        if (isJson) {
+            final JSONObject body = new JSONObject(query);
+            if (!body.has("highlight")) {
+                body.put("highlight", highlightClause(null));
+            }
+            return body;
+        }
+        final JSONObject body = new JSONObject();
+        body.put("query", new JSONObject().put("query_string",
+                new JSONObject().put("query", query).put("default_field", "*")));
+        if (limit > 0) {
+            body.put("size", limit);
+        }
+        if (offset > 0) {
+            body.put("from", offset);
+        }
+        body.put("highlight", highlightClause(HIGHLIGHT_FRAGMENT_SIZE));
+        return body;
+    }
+
+    /**
+     * Builds the {@code highlight} clause Site Search sends for the {@link #HIGHLIGHTED_FIELD}
+     * field, the one {@link SearchHit#highlightsFor(String)} is read back with.
+     *
+     * @param fragmentSize max characters per fragment, or {@code null} to leave the engine default
+     * @return the clause, ready to be put on a search body
+     */
+    private static JSONObject highlightClause(final Integer fragmentSize) {
+        final JSONObject field = new JSONObject();
+        if (fragmentSize != null) {
+            field.put("fragment_size", fragmentSize);
+        }
+        return new JSONObject().put("fields", new JSONObject().put(HIGHLIGHTED_FIELD, field));
     }
 
     @Override
@@ -421,8 +519,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // =========================================================================
 
     @Override
+    public Optional<String> defaultIndexName() {
+        return defaultSiteSearchIndex();
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-        return indexName != null && indexName.equals(defaultSiteSearchIndex().orElse(null));
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override
@@ -981,31 +1086,24 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
                 .getOrElse(Optional.empty());
     }
 
-    /** Builder seeded with every present slot of the default versioned indices. */
+    /**
+     * Builder seeded with every slot of the default versioned indices.
+     *
+     * <p>Seeding matters because {@code saveIndices()} is a delete-by-version followed by a
+     * re-insert: a slot the builder omits is erased, not left alone. The content pointers share this
+     * version row and belong to {@code ContentletIndexAPI}, so the site-search rebuilds here must
+     * hand them back untouched — the mirror image of issue #36360, where the content side dropped
+     * the site-search slot.</p>
+     */
     private VersionedIndicesImpl.Builder copyDefaultIndices() {
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
-        loadDefaultIndices().ifPresent(info -> {
-            builder.version(info.version());
-            info.live().ifPresent(builder::live);
-            info.working().ifPresent(builder::working);
-            info.reindexLive().ifPresent(builder::reindexLive);
-            info.reindexWorking().ifPresent(builder::reindexWorking);
-            info.siteSearch().ifPresent(builder::siteSearch);
-        });
-        return builder;
+        return loadDefaultIndices()
+                .map(VersionedIndicesImpl::builder)
+                .orElseGet(VersionedIndicesImpl::builder);
     }
 
-    /** Builder seeded with every present slot of the default versioned indices except site-search. */
+    /** Builder seeded with every slot of the default versioned indices except site-search. */
     private VersionedIndicesImpl.Builder copyDefaultIndicesExceptSiteSearch() {
-        final VersionedIndicesImpl.Builder builder = VersionedIndicesImpl.builder();
-        loadDefaultIndices().ifPresent(info -> {
-            builder.version(info.version());
-            info.live().ifPresent(builder::live);
-            info.working().ifPresent(builder::working);
-            info.reindexLive().ifPresent(builder::reindexLive);
-            info.reindexWorking().ifPresent(builder::reindexWorking);
-        });
-        return builder;
+        return copyDefaultIndices().siteSearch(Optional.empty());
     }
 
     private void saveDefaultIndices(final VersionedIndicesImpl.Builder builder) throws DotDataException {

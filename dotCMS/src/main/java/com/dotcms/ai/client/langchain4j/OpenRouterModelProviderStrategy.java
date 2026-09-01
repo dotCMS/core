@@ -6,9 +6,12 @@ import dev.langchain4j.model.chat.StreamingChatModel;
 import dev.langchain4j.model.embedding.EmbeddingModel;
 import dev.langchain4j.model.image.ImageModel;
 import dev.langchain4j.model.openai.OpenAiChatModel;
+import dev.langchain4j.model.openai.OpenAiEmbeddingModel;
 import dev.langchain4j.model.openai.OpenAiStreamingChatModel;
 
 import java.time.Duration;
+import java.util.List;
+import java.util.Set;
 
 /**
  * {@link ModelProviderStrategy} implementation for OpenRouter.
@@ -21,8 +24,8 @@ import java.time.Duration;
  * <p>Model IDs use the OpenRouter namespaced form, e.g. {@code openai/gpt-4o},
  * {@code anthropic/claude-sonnet-4}, {@code deepseek/deepseek-r1}.
  *
- * <p>Supports chat (streaming and non-streaming) only. OpenRouter does not offer
- * embeddings or image-generation endpoints.
+ * <p>Supports chat (streaming and non-streaming) and embeddings. Image generation is
+ * not supported: OpenRouter's {@code /api/v1/images} endpoint is not OpenAI-shaped.
  */
 class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
 
@@ -31,6 +34,38 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
     @Override
     public String providerName() {
         return "openrouter";
+    }
+
+    @Override
+    public Set<Capability> supportedCapabilities() {
+        return Set.of(Capability.CHAT, Capability.EMBEDDINGS);
+    }
+
+    @Override
+    public List<ProviderField> configFields(final Capability capability) {
+        return switch (capability) {
+            case CHAT -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING, "Namespaced model ID, e.g. openai/gpt-4o"),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING,
+                            "Defaults to " + DEFAULT_BASE_URL),
+                    ProviderField.optional("temperature", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxTokens", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER, "Not applied to streaming requests"),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case EMBEDDINGS -> List.of(
+                    ProviderField.required("apiKey", ProviderFieldType.SECRET),
+                    ProviderField.required("model", ProviderFieldType.STRING,
+                            "Namespaced model ID, e.g. openai/text-embedding-3-small"),
+                    ProviderField.optional("endpoint", ProviderFieldType.STRING,
+                            "Defaults to " + DEFAULT_BASE_URL),
+                    ProviderField.optional("dimensions", ProviderFieldType.NUMBER),
+                    ProviderField.optional("maxRetries", ProviderFieldType.NUMBER),
+                    ProviderField.optional("timeout", ProviderFieldType.NUMBER));
+            case IMAGE -> throw new UnsupportedOperationException(
+                    "OpenRouter image generation is not supported: the /api/v1/images endpoint "
+                    + "is not OpenAI-shaped and cannot be driven by OpenAiImageModel.");
+        };
     }
 
     @Override
@@ -55,7 +90,7 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
                 .modelName(config.model())
                 .baseUrl(baseUrl(config));
         if (config.maxRetries() != null) {
-            Logger.warn(OpenRouterModelProviderStrategy.class,
+            Logger.debug(OpenRouterModelProviderStrategy.class,
                     "maxRetries is not supported by the OpenRouter streaming chat model and will be ignored");
         }
         if (config.temperature() != null) { builder.temperature(config.temperature()); }
@@ -66,14 +101,22 @@ class OpenRouterModelProviderStrategy implements ModelProviderStrategy {
 
     @Override
     public EmbeddingModel buildEmbeddingModel(final ProviderConfig config, final String modelType) {
-        throw new UnsupportedOperationException(
-                "Embeddings are not supported by OpenRouter (no embeddings endpoint)");
+        validate(config, modelType);
+        final OpenAiEmbeddingModel.OpenAiEmbeddingModelBuilder builder = OpenAiEmbeddingModel.builder()
+                .apiKey(config.apiKey())
+                .modelName(config.model())
+                .baseUrl(baseUrl(config));
+        if (config.dimensions() != null) { builder.dimensions(config.dimensions()); }
+        if (config.maxRetries() != null) { builder.maxRetries(config.maxRetries()); }
+        if (config.timeout() != null) { builder.timeout(Duration.ofSeconds(config.timeout())); }
+        return builder.build();
     }
 
     @Override
     public ImageModel buildImageModel(final ProviderConfig config, final String modelType) {
         throw new UnsupportedOperationException(
-                "Image generation is not supported by OpenRouter via LangChain4J");
+                "OpenRouter image generation is not supported: the /api/v1/images endpoint "
+                + "is not OpenAI-shaped and cannot be driven by OpenAiImageModel.");
     }
 
     private void validate(final ProviderConfig config, final String modelType) {

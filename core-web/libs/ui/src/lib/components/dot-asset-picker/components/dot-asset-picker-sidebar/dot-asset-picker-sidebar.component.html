@@ -1,0 +1,94 @@
+<!-- The site scopes the search, and the search replaces the tree — so they stack in that order.
+     All three share `px-4`: that is what lines the tree's rows up with the two inputs above them
+     instead of leaving the tree inset by a different amount. `pt-4` mirrors the right column's
+     padding, which is what puts the site selector on the same line as the asset search. -->
+<div class="px-4 pt-4" data-testid="asset-picker-site-selector">
+    <dot-site
+        [value]="store.browsingSite()?.identifier ?? null"
+        [showSystemHost]="false"
+        icon="pi pi-globe"
+        panelStyleClass="mt-1"
+        (siteChange)="onSiteChange($event)" />
+</div>
+
+<div class="px-4 pt-3 pb-2">
+    <dot-search-input
+        data-testid="asset-picker-folder-search"
+        testId="asset-picker-folder-search-input"
+        placeholder="dot.asset.picker.sidebar.folder.search.placeholder"
+        [value]="store.folderSearch()"
+        (search)="store.setFolderSearch($event)" />
+</div>
+
+@if (store.isSearchingFolders()) {
+    <!-- Replaces the tree rather than sitting beside it: two folder views at once would give two
+         different answers to "where am I browsing". -->
+    @if ($searchFailed()) {
+        <!-- Distinct from the empty state on purpose (FR-018). The empty state is gated on a
+             LOADED search, so without this branch a failure fell through to a result list of `[]`
+             and rendered nothing — a blank panel that looks like "no matches". -->
+        <div
+            class="flex min-h-0 flex-col items-center justify-center gap-2 px-4 pb-4 text-red-600"
+            data-testid="asset-picker-search-error">
+            <i class="pi pi-exclamation-triangle text-2xl"></i>
+            <span class="text-sm">{{ 'dot.asset.picker.error.folders' | dm }}</span>
+        </div>
+    } @else if (store.showResultsEmptyState()) {
+        <div
+            class="flex min-h-0 flex-col items-center justify-center gap-2 px-4 pb-4 text-surface-500"
+            data-testid="asset-picker-search-empty">
+            <i class="pi pi-search-minus text-2xl text-surface-400"></i>
+            <span class="text-sm">{{ 'dot.asset.picker.sidebar.search.empty' | dm }}</span>
+        </div>
+    } @else {
+        <div class="flex min-h-0 flex-col overflow-hidden px-4 pb-4">
+            <dot-folder-search-results
+                class="min-h-0 flex-1"
+                [results]="store.displayedResults()"
+                [selectedKey]="store.selectedResultKey()"
+                [loading]="$searching()"
+                listTestId="asset-picker-folder-search-results"
+                (resultSelect)="store.selectSearchResult($event)" />
+
+            @if (store.showRefineHint()) {
+                <!-- A hint, never a "load more": the results come from a recursive query and the
+                     tree's paging is not, so paging here would return different folders. -->
+                <span
+                    class="block shrink-0 pt-2 text-xs text-surface-500"
+                    data-testid="asset-picker-search-refine">
+                    {{ 'dot.asset.picker.sidebar.search.refine' | dm }}
+                </span>
+            }
+        </div>
+    }
+} @else {
+    <dot-folder-tree
+        class="min-h-0 overflow-auto px-4 pb-4"
+        [folders]="store.folders()"
+        [loading]="$loading()"
+        [selectedNode]="store.selectedNode()"
+        selectionMode="single"
+        styleClass="size-full min-w-0"
+        [pt]="treePt"
+        treeTestId="asset-picker-folder-tree"
+        loadMoreTestId="asset-picker-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+        [showLoadMorePlusIcon]="true"
+        (onNodeSelect)="onNodeSelect($event)"
+        (onNodeExpand)="onNodeExpand($event)"
+        (loadMore)="onLoadMore($event)">
+        <ng-template #folderTreeNodeLabel let-node>
+            <span class="block min-w-0 truncate font-normal" data-testid="tree-node-label">
+                @if (node.data?.type === 'site') {
+                    <!-- The one root stands for the whole site, and the selector above already names
+                     it — repeating the hostname here would say the same thing twice. Overridden at
+                     render time on purpose: `mapSiteToTreeNode` still labels site nodes with the
+                     hostname, which is what Content Drive's sidebar wants from its own root. -->
+                    {{ 'dot.asset.picker.sidebar.tree.root' | dm }}
+                } @else {
+                    {{ node.label | dotFolderName }}
+                }
+            </span>
+        </ng-template>
+    </dot-folder-tree>
+}

@@ -168,10 +168,31 @@ runs:
         echo "${DOTCMS_LICENSE_KEY}" > ${DOTCMS_LICENSE_PATH}/license.dat
         echo "DOTCMS_LICENSE_FILE=${DOTCMS_LICENSE_PATH}/license.dat" >> "$GITHUB_ENV"
 
+    # The Maven distribution itself, which mvnw downloads from Maven Central on a
+    # cold runner. Without this every job in a run fetches the same ~40MB zip --
+    # around 26 downloads per run -- and Maven Central eventually answers 429,
+    # killing the job before any dotCMS code runs (and, under fail-fast, taking
+    # the rest of the matrix with it).
+    #
+    # Unlike the caches below this uses the combined action rather than the
+    # restore/save split: the content is an immutable versioned download, so
+    # there is no risk of persisting a polluted cache, and letting every job save
+    # means the first one to run on a cold key repairs it for the rest.
+    - id: cache-maven-wrapper
+      name: Cache Maven Wrapper Distribution
+      # Pinned to a commit SHA, not the mutable v6 tag: a tag can be repointed by
+      # the action owner, which is how the trivy-action and kics-github-action
+      # compromises worked. Bump deliberately when updating.
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.m2/wrapper
+        # Changes only when the Maven version does, so this key is ~always a hit.
+        key: ${{ runner.os }}-maven-wrapper-${{ hashFiles('.mvn/wrapper/maven-wrapper.properties') }}
+
     - id: restore-cache-maven
       name: Restore Maven Repository Cache
       if: ${{ inputs.artifacts-from == '' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ runner.os }}-mavencore-${{ hashFiles('**/pom.xml') }}
@@ -181,7 +202,7 @@ runs:
     - id: restore-cache-node
       name: Restore Node Binary Cache
       if: ${{ inputs.requires-node == 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: installs
         # hash nodejs-parent/pom.xml so the pnpm-era layout (install-node-and-npm
@@ -205,7 +226,7 @@ runs:
 
     - name: Set up pnpm
       if: ${{ inputs.requires-node == 'true' }}
-      uses: pnpm/action-setup@v4
+      uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
       with:
         package_json_file: core-web/package.json
         run_install: false
@@ -221,7 +242,7 @@ runs:
     - id: restore-cache-pnpm
       name: Restore pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.pnpm-info.outputs.dir }}
         key: ${{ runner.os }}-pnpm-${{ steps.pnpm-info.outputs.version }}-${{ hashFiles('core-web/pnpm-lock.yaml') }}
@@ -233,7 +254,7 @@ runs:
     - id: cache-sonar
       name: Cache SonarQube Packages
       if: ${{ inputs.cache-sonar == 'true' }}
-      uses: actions/cache/restore@v4
+      uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.sonar/cache
         key: ${{ runner.os }}-sonar
@@ -242,8 +263,9 @@ runs:
     - id: restore-artifact-maven-repo
       name: Restore Maven Build Repo
       if: ${{ inputs.artifacts-from != '' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
+        digest-mismatch: error
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
@@ -252,8 +274,9 @@ runs:
     - id: restore-artifact-docker-image
       name: Restore Docker Image
       if: ${{ inputs.needs-docker-image == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
+        digest-mismatch: error
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
         path: /tmp/docker-image
 
@@ -265,15 +288,16 @@ runs:
     - id: restore-artifact-classes
       name: Restore Classes
       if: ${{ inputs.restore-classes == 'true' }}
-      uses: actions/download-artifact@v4
+      uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
       with:
+        digest-mismatch: error
         run-id: ${{ inputs.artifacts-from }}
         github-token: ${{ inputs.github-token }}
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
 
     - name: Docker Hub Login
       if: ${{ inputs.docker-io-username != '' && inputs.docker-io-token != '' }}
-      uses: docker/login-action@v3.0.0
+      uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
       with:
         username: ${{ inputs.docker-io-username }}
         password: ${{ inputs.docker-io-token }}
@@ -307,7 +331,8 @@ runs:
           echo "Defaulting dotcms.core.compiler.release=${JAVA_MAJOR} to match java-version"
         fi
 
-        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
+        # Set by the build-cache-remote action when the S3 cache is wired up; empty otherwise.
+        FINAL_ARGS=$(echo "$DEFAULT_ARGS $COMPILER_ARGS ${BUILD_CACHE_ARGS:-} $MAVEN_ARGS" | tr ' ' '\n' | awk '!seen[$0]++' | tr '\n' ' ')
 
         if [[ "${{ runner.os }}" == "Windows" && "${{ inputs.native }}" == "true" ]]; then
           echo "Building Maven with args $FINAL_ARGS"
@@ -323,7 +348,7 @@ runs:
     - id: persist-maven-repo
       name: Persist Maven Repo
       if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: maven-repo${{ steps.artifact-suffix.outputs.suffix }}
         path: ~/.m2/repository
@@ -331,7 +356,7 @@ runs:
     - id: persist-docker-build-context
       name: Persist Docker Build Context
       if: ${{ inputs.generate-docker == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: docker-build-context${{ steps.artifact-suffix.outputs.suffix }}
         path: dotCMS/target/docker-build.tar
@@ -377,7 +402,7 @@ runs:
 
     - id: upload-docker-image
       name: Upload Docker Image as Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: ${{ inputs.generate-docker == 'true' }}
       with:
         name: docker-image${{ steps.artifact-suffix.outputs.suffix }}
@@ -386,7 +411,7 @@ runs:
     - id: persist-build-classes
       name: Persist Build Classes
       if: ${{ inputs.generate-artifacts == 'true' }}
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       with:
         name: build-classes${{ steps.artifact-suffix.outputs.suffix }}
         path: |
@@ -404,7 +429,7 @@ runs:
     - id: save-cache-maven
       name: Save Maven Repository Cache
       if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-maven.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.m2/repository
         key: ${{ steps.restore-cache-maven.outputs.cache-primary-key }}
@@ -412,7 +437,7 @@ runs:
     - id: save-cache-node
       name: Save Node Binary Cache
       if: ${{ inputs.generate-artifacts == 'true' && steps.restore-cache-node.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: installs
         key: ${{ steps.restore-cache-node.outputs.cache-primary-key }}
@@ -420,7 +445,7 @@ runs:
     - id: save-cache-pnpm
       name: Save pnpm Store Cache
       if: ${{ inputs.requires-node == 'true' && inputs.generate-artifacts == 'true' && steps.restore-cache-pnpm.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ${{ steps.pnpm-info.outputs.dir }}
         key: ${{ steps.restore-cache-pnpm.outputs.cache-primary-key }}
@@ -428,7 +453,7 @@ runs:
     - id: save-cache-sonar
       name: Save SonarQube Cache
       if: ${{ inputs.cache-sonar == 'true' && steps.cache-sonar.outputs.cache-hit != 'true' }}
-      uses: actions/cache/save@v4
+      uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
       with:
         path: ~/.sonar/cache
         key: ${{ steps.cache-sonar.outputs.cache-primary-key }}
@@ -436,7 +461,7 @@ runs:
     # ---------------------------- Generate Reports Artifacts ----------------------------
     - id: generate-build-reports-artifact
       name: Generate Build Reports Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: always()
       with:
         name: "build-reports-${{ inputs.stage-name }}"
@@ -447,7 +472,7 @@ runs:
 
     - id: create-test-reports-artifact
       name: Create Test Reports Artifact
-      uses: actions/upload-artifact@v4
+      uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
       if: always() && inputs.generates-test-results == 'true'
       with:
         name: "build-reports-test-${{ inputs.stage-name }}"

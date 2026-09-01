@@ -15,6 +15,16 @@ on:
   pull_request:
     types: [opened, synchronize]
 
+# Only push-triggered runs supersede each other. The fallback chain matters:
+#   comment.id        -> unique per comment, so two @claude comments in a row never
+#                        cancel each other; an in-flight interactive reply survives
+#   pull_request.number -> shared across pushes to one PR, so a new push cancels the
+#                        review of the commit it just replaced
+#   run_id            -> unique, so manual workflow_dispatch runs are never cancelled
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.comment.id || github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: true
+
 jobs:
   # Security gate: Check if user is dotCMS organization member
   #
@@ -34,7 +44,7 @@ jobs:
       authorized: ${{ steps.membership-check.outputs.is_member }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Check organization membership
         id: membership-check
@@ -118,7 +128,7 @@ jobs:
     outputs:
       prompt: ${{ steps.build.outputs.prompt }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - id: build
         env:
           GH_TOKEN: ${{ github.token }}

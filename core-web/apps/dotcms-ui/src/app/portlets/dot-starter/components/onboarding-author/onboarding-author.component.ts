@@ -1,7 +1,15 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, EventEmitter, inject, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    EventEmitter,
+    inject,
+    OnInit,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 
@@ -28,6 +36,7 @@ import { DotAccountService } from '../../../../api/services/dot-account-service'
     templateUrl: './onboarding-author.component.html',
     providers: [DotAccountService],
     standalone: true,
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [ButtonModule, AsyncPipe, DotMessagePipe, CheckboxModule, RouterLink]
 })
 export class DotOnboardingAuthorComponent implements OnInit {

@@ -17,33 +17,58 @@ export interface DotContentDriveLazyLoadEvent {
     forceUpdate?: () => void;
 }
 
-export interface DotContentDriveFolder {
-    __icon__: 'folderIcon';
+/**
+ * The folder fields required to drive the shared folder actions — the context menu's permission
+ * gating and the "Edit folder" dialog's payload.
+ *
+ * Deliberately narrower than {@link DotContentDriveFolder}: the table sources folders from
+ * `POST /api/v1/drive/search` (a full folder row), while the sidebar tree sources them from
+ * `GET /api/v1/folder/search`, which returns only the fields listed here. Rather than fabricate
+ * the table-only fields (`modDate`, `owner`, `iDate`, …) for sidebar folders, both views converge
+ * on this contract, and only consumers that genuinely need the full row ask for
+ * `DotContentDriveFolder`.
+ */
+export interface DotContentDriveActionableFolder {
+    type: 'folder';
+    identifier: string;
+    /** The folder's own name (last path segment). */
+    name: string;
+    /** The folder's own full path, e.g. `/application/blog/`. */
+    path: string;
+    title: string;
+    sortOrder: number;
+    showOnMenu: boolean;
+    /** Comma-separated file-name masks allowed in this folder, e.g. `*.jpg,*.png`. */
+    filesMasks: string;
     defaultFileType: string;
     /**
      * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
      * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
      */
     defaultBaseType?: string | null;
+    /**
+     * Permission types the requesting user holds on this folder.
+     *
+     * Required, and always an array by the time a folder reaches an action: whoever builds this
+     * object resolves the folder's permissions first (or substitutes `[]` when they cannot be
+     * resolved), so gating never runs against `null`/`undefined`. The "not yet resolved" state
+     * lives upstream, on `DotFolder.permissions` / the tree node's data.
+     */
+    permissions: PermissionType[];
+}
+
+export interface DotContentDriveFolder extends DotContentDriveActionableFolder {
+    __icon__: 'folderIcon';
     description: string;
     extension: 'folder';
-    filesMasks: string;
     hasTitleImage: boolean;
     hostId: string;
     iDate: number;
-    identifier: string;
     inode: string;
     mimeType: string;
     modDate: number;
-    name: string;
     owner: string | null;
     parent: string;
-    path: string;
-    permissions: PermissionType[];
-    showOnMenu: boolean;
-    sortOrder: number;
-    title: string;
-    type: 'folder';
 }
 
 export const PERMISSIONS_TYPE = {
@@ -58,7 +83,52 @@ export type PermissionType = (typeof PERMISSIONS_TYPE)[keyof typeof PERMISSIONS_
 
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response
+/**
+ * A menu Link listed alongside folders and contentlets.
+ *
+ * A Link is not a contentlet and not a `BaseContentType`, so it is a third variant rather than a
+ * shape either of the other two could carry. The backend stamps `extension: 'link'` on it
+ * (`BrowserAPIImpl`), which is what tells the three apart in a result list.
+ *
+ * Returned only when a caller asks for links, and never together with a mimetype filter — a Link
+ * has no file metadata to match one against.
+ */
+export interface DotContentDriveLink {
+    type: 'link';
+    /** What the backend stamps; the row-kind discriminator in a mixed list. */
+    extension: 'link';
+    identifier: string;
+    inode: string;
+    title: string;
+    /** The link's target — the value a browse selection reports as its URL. */
+    url: string;
+    hostId: string;
+    modDate: number;
+}
+
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * A browse result that may also contain menu Links.
+ *
+ * Deliberately NOT folded into {@link DotContentDriveItem}: Content Drive never asks for links, and
+ * every one of its consumers reads that union as "a folder, or else a contentlet". Widening it
+ * there would force `isFolder`, the action centre, the workflow counters and the drag handling to
+ * reason about a third kind that cannot reach them.
+ *
+ * Only a caller that sends `showLinks: true` — today, the asset picker's browse mode — receives
+ * these, and only that caller uses this type.
+ */
+export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
+
+/**
+ * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
+ *
+ * Wider than {@link DotContentDriveItem} on the folder side: the table passes a full
+ * {@link DotContentDriveFolder} and the sidebar tree passes a {@link DotContentDriveActionableFolder},
+ * so one gating implementation serves both. Every `DotContentDriveItem` is assignable to this.
+ */
+export type DotContentDriveActionableItem = DotCMSContentlet | DotContentDriveActionableFolder;
 
 /**
  * Pagination event emitted by the folder list view,
@@ -70,11 +140,12 @@ export type DotContentDrivePaginateEvent = DotContentDriveLazyLoadEvent & { page
  * Interface representing data needed for context menu interactions
  * @interface ContextMenuData
  * @property {Event} event - The DOM event that triggered the context menu
- * @property {DotContentDriveItem} contentlet - The content item associated with the context menu
+ * @property {DotContentDriveActionableItem} contentlet - The item associated with the context menu.
+ * Accepts folders from either the table (full row) or the sidebar tree (search view).
  */
 export interface ContextMenuData {
     event: Event;
-    contentlet: DotContentDriveItem;
+    contentlet: DotContentDriveActionableItem;
 }
 
 /**
@@ -175,6 +246,24 @@ export interface DotContentDriveSearchRequest {
     folderCursor?: number;
 
     /**
+     * Whether to include menu Links in the results.
+     *
+     * Ignored by the endpoint whenever `mimeTypes` is set: a Link carries no file metadata, so it
+     * could never satisfy a mimetype filter.
+     * @default false
+     */
+    showLinks?: boolean;
+
+    /**
+     * Index into the link list to start from — the `nextLinkCursor` of the previous page.
+     *
+     * Links page independently of folders and contentlets, so a page of results is described by
+     * three cursors rather than one.
+     * @default 0
+     */
+    linkCursor?: number;
+
+    /**
      * Maximum number of results to return.
      * @default 2000
      */
@@ -214,6 +303,16 @@ export interface DotContentDriveSearchRequest {
      * @example [{ scheme: "d61a59e1-…", step: "dc3c9cd0-…" }, { scheme: "2a4e1d2e-…" }]
      */
     workflow?: { scheme: string; step?: string }[];
+
+    /**
+     * Content states to filter by. Accepted values: `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     * Entries combine with OR — the result is content in any of the selected states, so adding a
+     * status never shrinks the result set. Omitted or empty means no status filtering, which
+     * preserves the default behavior (archived content hidden).
+     *
+     * @example ["UNPUBLISHED", "LOCKED"]
+     */
+    status?: string[];
 
     /**
      * Field-based search criteria, keyed by the content-type field variable. Only offered when a
@@ -268,4 +367,66 @@ export interface DotContentDriveSearchResponse {
     hasMoreFolders: boolean;
     nextContentCursor: number;
     nextFolderCursor: number;
+    /**
+     * Whether more menu Links remain beyond this page.
+     *
+     * Optional because only responses to a `showLinks` request carry it. When it comes back
+     * `false`, the next request should set `showLinks: false` to skip the link query entirely.
+     */
+    hasMoreLinks?: boolean;
+    /** Link-list index the next page should start from. Present alongside {@link hasMoreLinks}. */
+    nextLinkCursor?: number;
+}
+
+/**
+ * The `202 Accepted` body of `POST /api/v1/content/_bulkrefresh`.
+ *
+ * Reindexing a selection is job-backed: the submit call only accepts the work, so this carries the
+ * handle to follow it rather than any outcome.
+ */
+export interface DotBulkRefreshSubmitResponse {
+    /** The job's id — the handle for the cancel call. */
+    jobId: string;
+    /**
+     * Inodes accepted, before the server collapses them by identifier. The de-duplicated `total`
+     * arrives with the result and is often smaller, so this is not a count of reindexed items.
+     */
+    submitted: number;
+}
+
+/**
+ * Counters a finished bulk refresh reports.
+ *
+ * `successCount + failedCount + skippedCount === total` in every terminal state, which is what lets a
+ * caller know it can stop waiting and settle every row it asked about.
+ */
+export interface DotBulkRefreshCounts {
+    /** Unique identifiers reindexed, after de-duplication — not the submitted inode count. */
+    total: number;
+    successCount: number;
+    failedCount: number;
+    /** Never attempted, because the run was cancelled before reaching them. */
+    skippedCount: number;
+    /** Index writes across the whole run; higher than `total` when content has several versions. */
+    versionsIndexed: number;
+}
+
+/**
+ * The payload of a `BULK_REFRESH_COMPLETED` system event.
+ *
+ * Pushed over the websocket when a run settles, scoped to whoever submitted it. The counter fields are
+ * all optional: a job that finished without reporting any carries only `state`, and a caller must treat
+ * that as a failure rather than as a clean run over nothing, which is what all-zero counters would look
+ * like.
+ */
+export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCounts> {
+    state: string;
+    /**
+     * The run this settles.
+     *
+     * The event is scoped to the submitting user, not to a browser tab, so a client receives runs it
+     * never started — another tab, another window, a Login-As session. Without this a grid reacts to
+     * all of them: it toasts counts for content it never selected and reloads itself for no reason.
+     */
+    jobId?: string;
 }

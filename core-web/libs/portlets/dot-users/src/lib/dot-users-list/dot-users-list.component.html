@@ -1,0 +1,234 @@
+<p-toolbar class="justify-start gap-1 border-x-0! border-t-0! px-3">
+    <div class="flex w-full items-center gap-2 py-3">
+        <p-iconField iconPosition="left">
+            <p-inputIcon>
+                <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
+                    search
+                </span>
+            </p-inputIcon>
+            <input
+                pInputText
+                type="text"
+                [ngModel]="store.filter()"
+                (ngModelChange)="onSearch($event)"
+                [placeholder]="'users.search.placeholder' | dm"
+                [attr.aria-label]="'users.search.placeholder' | dm"
+                data-testid="users-search-input"
+                class="w-80" />
+        </p-iconField>
+
+        <dot-users-filter-by data-testid="users-filter-by" />
+
+        <div class="ml-auto flex items-center gap-4">
+            @if (store.selectedUsers().length > 0) {
+                <span class="text-color-secondary text-sm" data-testid="users-selected-count">
+                    {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
+                </span>
+                <p-button
+                    [label]="'users.delete' | dm"
+                    [outlined]="true"
+                    (onClick)="confirmDelete()"
+                    data-testid="users-delete-btn" />
+            }
+            <p-button
+                [label]="'users.new' | dm"
+                (onClick)="openCreateDialog()"
+                data-testid="users-new-btn" />
+        </div>
+    </div>
+</p-toolbar>
+
+<div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="users-table-wrapper">
+    <p-table
+        [value]="store.users()"
+        [lazy]="true"
+        (onLazyLoad)="onLazyLoad($event)"
+        [paginator]="true"
+        [rows]="store.rows()"
+        [totalRecords]="store.totalRecords()"
+        [first]="(store.page() - 1) * store.rows()"
+        [rowsPerPageOptions]="[20, 40, 100]"
+        [rowHover]="true"
+        [scrollable]="true"
+        scrollHeight="flex"
+        [sortField]="store.sortField()"
+        [sortOrder]="store.sortOrder() === 'DESC' ? -1 : 1"
+        [selection]="store.selectedUsers()"
+        (selectionChange)="store.setSelectedUsers($event)"
+        dataKey="userId"
+        data-testid="users-table">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width: 3rem">
+                    <p-tableHeaderCheckbox />
+                </th>
+                <th pSortableColumn="firstName">
+                    {{ 'users.table.header.user' | dm }}
+                    <p-sortIcon field="firstName" />
+                </th>
+                <th pSortableColumn="emailAddress">
+                    {{ 'users.table.header.email' | dm }}
+                    <p-sortIcon field="emailAddress" />
+                </th>
+                <th>{{ 'users.table.header.roles' | dm }}</th>
+                <th>{{ 'users.table.header.access' | dm }}</th>
+                <th pSortableColumn="lastLoginDate" style="width: 12rem">
+                    {{ 'users.table.header.last-login' | dm }}
+                    <p-sortIcon field="lastLoginDate" />
+                </th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-user>
+            @if (store.status() === 'loading') {
+                <tr data-testid="users-loading-row" class="cursor-default hover:bg-transparent!">
+                    <td><p-skeleton height="1.5rem" width="1.5rem" /></td>
+                    <td><p-skeleton height="1.5rem" width="60%" /></td>
+                    <td><p-skeleton height="1.5rem" width="50%" /></td>
+                    <td><p-skeleton height="1.5rem" width="50%" /></td>
+                    <td><p-skeleton height="1.5rem" width="40%" /></td>
+                    <td><p-skeleton height="1.5rem" width="70%" /></td>
+                </tr>
+            } @else {
+                <tr data-testid="users-row" class="cursor-pointer" (click)="openEditDialog(user)">
+                    <td (click)="$event.stopPropagation()">
+                        <p-tableCheckbox [value]="user" />
+                    </td>
+                    <td data-testid="users-cell-user">
+                        <div class="flex items-center gap-3">
+                            <p-avatar
+                                [label]="initials(user)"
+                                shape="circle"
+                                size="normal"
+                                data-testid="users-cell-avatar" />
+                            <div class="flex flex-col">
+                                <span class="flex items-center gap-2 font-medium">
+                                    {{ user.fullName || user.name }}
+                                    @if (!user.active) {
+                                        <p-tag
+                                            [value]="'users.inactive' | dm"
+                                            severity="secondary"
+                                            data-testid="users-inactive-chip" />
+                                    }
+                                </span>
+                                <span class="text-color-secondary text-xs">{{ user.userId }}</span>
+                            </div>
+                        </div>
+                    </td>
+                    <td data-testid="users-cell-email">{{ user.emailAddress }}</td>
+                    <td data-testid="users-cell-roles">
+                        @if ($rolesByUserId()[user.userId]; as roles) {
+                            <span>{{ roles.visible }}</span>
+                            @if (roles.more > 0) {
+                                <span class="text-color-secondary italic">
+                                    {{ 'users.roles.and-more' | dm: [roles.more.toString()] }}
+                                </span>
+                            }
+                        }
+                    </td>
+                    <td data-testid="users-cell-access">
+                        <div class="flex flex-wrap gap-1">
+                            @if (user.backendUser) {
+                                <p-tag
+                                    [value]="'users.access.backend' | dm"
+                                    severity="info"
+                                    styleClass="whitespace-nowrap"
+                                    data-testid="users-access-backend-chip" />
+                            }
+                            @if (user.frontendUser) {
+                                <p-tag
+                                    [value]="'users.access.frontend' | dm"
+                                    severity="success"
+                                    styleClass="whitespace-nowrap"
+                                    data-testid="users-access-frontend-chip" />
+                            }
+                        </div>
+                    </td>
+                    <td data-testid="users-cell-last-login">
+                        @if (user.lastLoginDate) {
+                            {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
+                        }
+                    </td>
+                </tr>
+            }
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr class="hover:bg-transparent!">
+                <td colspan="6" class="border-none p-0 text-center">
+                    <div
+                        class="mx-auto flex h-full max-w-100 flex-col items-center justify-center gap-4 p-6"
+                        data-testid="users-empty-state">
+                        <div class="flex size-20 items-center justify-center rounded-full">
+                            <span
+                                class="material-symbols-rounded text-6xl! text-surface-500"
+                                aria-hidden="true">
+                                group
+                            </span>
+                        </div>
+                        <div class="flex flex-col text-center">
+                            <h3 class="m-0 text-lg font-medium text-gray-800">
+                                {{ 'users.empty.state.title' | dm }}
+                            </h3>
+                            <p class="m-0 text-base leading-6 text-color">
+                                {{ 'users.empty.state.description' | dm }}
+                            </p>
+                        </div>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<p-dialog
+    [visible]="$bulkDeleteVisible()"
+    (visibleChange)="$bulkDeleteVisible.set($event)"
+    [modal]="true"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [draggable]="false"
+    [style]="{ width: '500px' }"
+    [header]="'users.confirm.delete.header' | dm"
+    data-testid="users-bulk-delete-dialog">
+    <div class="flex flex-col gap-4">
+        <p class="m-0 text-color">
+            {{ 'users.confirm.delete.message' | dm: [store.selectedUsers().length.toString()] }}
+        </p>
+        <div class="field flex flex-col gap-2">
+            <label for="users-bulk-delete-replacement-picker">
+                {{ 'users.dialog.delete-confirm.replacement-label' | dm }}
+                <span class="text-red-500" aria-hidden="true">*</span>
+            </label>
+            <dot-users-replacement-picker
+                inputId="users-bulk-delete-replacement-picker"
+                [value]="$bulkReplacementUser()"
+                [excludedUserIds]="$bulkExcludedIds()"
+                [invalid]="!!$bulkReplacementError()"
+                (selectionChange)="onBulkReplacementSelect($event)"
+                data-testid="users-bulk-delete-replacement-picker" />
+            @if ($bulkReplacementError(); as key) {
+                <small class="text-red-600" data-testid="users-bulk-delete-replacement-error">
+                    {{ key | dm }}
+                </small>
+            } @else {
+                <small class="text-color-secondary">
+                    {{ 'users.dialog.delete-confirm.replacement-help' | dm }}
+                </small>
+            }
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'users.cancel' | dm"
+            severity="secondary"
+            [text]="true"
+            (onClick)="closeBulkDelete()"
+            data-testid="users-bulk-delete-cancel-btn" />
+        <p-button
+            [label]="'users.delete' | dm"
+            severity="danger"
+            (onClick)="confirmBulkDelete()"
+            data-testid="users-bulk-delete-confirm-btn" />
+    </ng-template>
+</p-dialog>

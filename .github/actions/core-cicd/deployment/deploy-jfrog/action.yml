@@ -38,12 +38,7 @@ inputs:
 runs:
   using: "composite"
   steps:
-    - uses: actions/checkout@v4
-
-    - name: Install xmllint
-      run: |
-        sudo apt-get update && sudo apt-get install -y libxml2-utils
-      shell: bash
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
     - uses: ./.github/actions/core-cicd/maven-job
       with:
@@ -153,7 +148,7 @@ runs:
         echo "NODE_TYPE=$NODE_TYPE"
 
         # Extract the repository URL from the POM file
-        REPO=$(xmllint --xpath "//*[local-name()='distributionManagement']/*[local-name()='$NODE_TYPE']/*[local-name()='url']/text()" "$POM_FILE" 2>/dev/null)
+        REPO=$(mvn -f "$POM_FILE" -N help:evaluate -Dexpression=project.distributionManagement.$NODE_TYPE.url -q -DforceStdout 2>/dev/null)
         
         if [[ "$REPO" =~ ^(https://[^/]+/[^/]+)/(.+)$ ]]; then
           SERVER_URL="${BASH_REMATCH[1]}"

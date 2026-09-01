@@ -227,16 +227,52 @@ public class WorkflowResource {
             "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
             "leave the default.";
 
-    private static final String BLOCK_EDITOR_FIELD_NOTE =
+    /**
+     * OpenAPI note describing how Story Block fields accept Markdown/HTML — including the
+     * {@code dotcms-*} rich-node vocabulary (#36658 fences, #36659 elements). Public so every
+     * endpoint that funnels through the same populator seam (e.g.
+     * {@code ContentResource#saveDraft}) documents the identical contract from one source.
+     */
+    public static final String BLOCK_EDITOR_FIELD_NOTE =
             "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — " +
             "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
             "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
             "back as structured content with no editor round-trip required. A value that is already a " +
-            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. Markdown and HTML are " +
-            "intended for plain content: if the field already holds rich blocks that they cannot represent " +
-            "(embedded contentlets, video or layout blocks), the value is ignored and the existing " +
-            "document is preserved — to modify such a field, send a full Tiptap/ProseMirror JSON document. " +
-            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`.";
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`." +
+            "\n\n**Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as " +
+            "fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON " +
+            "object. Example — embed a contentlet:" +
+            "\n\n```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n```" +
+            "\n\nSupported labels and payload fields (**bold** = required):" +
+            "\n- `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). " +
+            "The server rebuilds the full embed data from the identifier on every read." +
+            "\n- `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional " +
+            "`alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external " +
+            "images need no fence — standard `![alt](url \"title\")` works." +
+            "\n- `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, " +
+            "`height`, `languageId`." +
+            "\n- `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`." +
+            "\n- `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON " +
+            "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
+            "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
+            "fallback for custom blocks." +
+            "\n\n**Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar " +
+            "payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, " +
+            "so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): " +
+            "`<dotcms-content identifier=\"<contentlet-id>\" language-id=\"1\"></dotcms-content>`. " +
+            "`dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's " +
+            "text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an " +
+            "explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would " +
+            "swallow the content after it. Both carriers produce identical stored documents." +
+            "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
+            "immediately before the block it decorates, in Markdown and HTML alike: " +
+            "`<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
+            "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
+            "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
+            "over as fences or elements to preserve them. An invalid payload degrades to an ordinary " +
+            "code block (or is dropped when it carries no text to keep), never an error.";
 
     private static final String BULK_FIRE_CONTRACT_NOTES =
             "⚠️ **Important contract notes:**\n\n" +
@@ -1554,7 +1590,13 @@ public class WorkflowResource {
     @Operation(operationId = "getSystemActionMappingsByContentType", summary = "Find default system actions mapped to a content type",
             description = "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#DefaultActions) associated with a specified [content type](https://www.dotcms.com" +
-                    "/docs/latest/content-types).",
+                    "/docs/latest/content-types).\n\n" +
+                    "An empty list means only that no *default system-action mappings* (e.g. NEW, PUBLISH) are " +
+                    "configured for this content type — it does **not** mean the content type lacks a workflow or " +
+                    "that publishing will fail. You can still fire actions on its content by ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire`, or fire a default system action via " +
+                    "`PUT /api/v1/workflow/actions/default/fire/{systemAction}` (which resolves the action from " +
+                    "the scheme attached to the content type). Do not treat an empty response as a blocker.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully from content type",
@@ -3083,13 +3125,34 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
-        final List<MessageEntity> messages = ignoredSystemFieldsMessages(ignoredSystemFields);
+        // Advisory warnings only — the save itself succeeded with 200. Story Block conversion
+        // warnings (e.g. rich blocks replaced by a Markdown write, see #36658) are popped off
+        // the contentlets BEFORE the entity map is built so the transient key never leaks.
+        final List<MessageEntity> messages = mergeMessages(
+                ignoredSystemFieldsMessages(ignoredSystemFields),
+                MapToContentletPopulator.popStoryBlockConversionMessages(
+                        contentlet, basicContentlet, hydratedContentlet));
         final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
                 null != messages
                         ? new ResponseEntityView<>(entity, messages)
                         : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /** Null-tolerant concat: returns {@code null} when both lists are null/empty. */
+    private static List<MessageEntity> mergeMessages(final List<MessageEntity> first,
+                                                     final List<MessageEntity> second) {
+        if (null == first || first.isEmpty()) {
+            return (null == second || second.isEmpty()) ? null : second;
+        }
+        if (null == second || second.isEmpty()) {
+            return first;
+        }
+        final List<MessageEntity> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
     }
 
     /**
@@ -3153,7 +3216,8 @@ public class WorkflowResource {
                 // (see 'pathToMove').
                 Logger.warn(this, String.format(
                         "Fire action payload contains system field(s) %s; these are ignored by "
-                                + "this endpoint. To change a contentlet's location, fire a workflow "
+                                + "this endpoint. Did you mean 'contentHost' (host id) or 'hostFolder' "
+                                + "(folder id)? To change a contentlet's location, fire a workflow "
                                 + "action that includes the Move actionlet (see 'pathToMove').",
                         protectedFields));
 
@@ -3177,9 +3241,10 @@ public class WorkflowResource {
 
         return List.of(new MessageEntity(String.format(
                 "System field(s) %s were ignored: this endpoint does not set a contentlet's "
-                        + "location. The content was saved at its existing/default location. To "
-                        + "place or move content, fire a workflow action that includes the Move "
-                        + "actionlet and pass 'pathToMove'.",
+                        + "location. Did you mean 'contentHost' (host id) or 'hostFolder' (folder "
+                        + "id)? The content was saved at its existing/default location. To place or "
+                        + "move content, fire a workflow action that includes the Move actionlet and "
+                        + "pass 'pathToMove'.",
                 ignoredFields)));
     }
 
@@ -3233,6 +3298,12 @@ public class WorkflowResource {
                     "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
                     "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use `PUT` for a single contentlet.** This path also accepts `POST`, but that is a " +
+                    "**different** operation that fires over *multiple* contentlets and returns a different envelope " +
+                    "(`entity.results[]`, a list). Sending a single-contentlet body via `POST` will not return the " +
+                    "created contentlet's `identifier` where you expect it, even though the record may still be " +
+                    "(half-)created by the content type's default workflow — a common silent trap. For one item, " +
+                    "always use `PUT`.\n\n" +
                     "**Request body** — wrap field values in a `contentlet` key:\n\n" +
                     "```json\n" +
                     "{\n" +
@@ -3363,7 +3434,8 @@ public class WorkflowResource {
                                                       allowableValues = {
                                                               "NEW", "EDIT", "PUBLISH",
                                                               "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                              "DELETE", "DESTROY"
+                                                              "DELETE", "DESTROY",
+                                                              "LOCK", "UNLOCK"
                                                       }
                                               ),
                                               description = "Default system action."
@@ -3522,7 +3594,10 @@ public class WorkflowResource {
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
             "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-            "services that handle automatically assigning workflow schemes to content with none.",
+            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+            "This is the **multi-contentlet** variant and returns a list envelope (`entity.results[]`). " +
+            "To fire on a **single** contentlet, use `PUT` on this same path instead — it returns the single " +
+            "resultant contentlet map (with its `identifier`) directly.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
@@ -3595,7 +3670,8 @@ public class WorkflowResource {
                                                                     allowableValues = {
                                                                             "NEW", "EDIT", "PUBLISH",
                                                                             "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                                            "DELETE", "DESTROY"
+                                                                            "DELETE", "DESTROY",
+                                                                            "LOCK", "UNLOCK"
                                                                     }
                                                             ),
                                                             description = "Default system action."
@@ -3814,7 +3890,12 @@ public class WorkflowResource {
                     "body to select all resulting content items.\n\n" +
                     "Returns a list of resultant contentlet maps, each with an additional  " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**`LOCK` and `UNLOCK` are not supported by this endpoint** and are rejected with a " +
+                    "`400`. Locking is per-user state on the contentlet's version info rather than a " +
+                    "content change, so there is nothing for a merge to apply — accepting the call would " +
+                    "lock the contentlet and silently discard the submitted field values. Use " +
+                    "`POST` or `PUT /v1/workflow/actions/default/fire/{systemAction}` for those two.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
@@ -3983,6 +4064,19 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
+
+        // LOCK/UNLOCK are fireable everywhere else, but not here. This endpoint's contract is
+        // "assign these field values, then run the action", and the lock commands deliberately
+        // ignore `needSave` — a lock is per-user state on the version info, so there is nothing to
+        // check in. Accepting the call would lock the contentlet and silently drop the submitted
+        // field values, so it is refused rather than half-honoured. Rejecting here also keeps the
+        // behaviour in step with this path's published `allowableValues`, which omit both.
+        if (SystemAction.LOCK == systemAction || SystemAction.UNLOCK == systemAction) {
+
+            throw new IllegalArgumentException("The system action: " + systemAction +
+                    " is not supported by the merge endpoint; it carries no field changes to apply. " +
+                    "Use POST/PUT /v1/workflow/actions/default/fire/" + systemAction + " instead.");
+        }
 
         // host/folder in the contentlet body are not applied by this endpoint (they are system
         // fields, not content-type fields). We warn rather than reject so long-standing callers are
@@ -4235,7 +4329,7 @@ public class WorkflowResource {
     /**
      * Check preconditions.
      * If contentlet can not be found, 404
-     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY
+     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK
      * @param contentlet
      * @param systemAction
      * @throws NotFoundInDbException
@@ -4250,12 +4344,17 @@ public class WorkflowResource {
 
         if (contentlet.isNew()) {
 
+            // LOCK/UNLOCK act on the version info of an existing contentlet. On a new one there is
+            // nothing to lock, and `lock` would otherwise fail deeper with a blank-inode state
+            // exception rather than a clear bad request.
             if (    systemAction == SystemAction.UNPUBLISH ||
                     systemAction == SystemAction.UNARCHIVE ||
                     systemAction == SystemAction.DELETE    ||
-                    systemAction == SystemAction.DESTROY) {
+                    systemAction == SystemAction.DESTROY   ||
+                    systemAction == SystemAction.LOCK      ||
+                    systemAction == SystemAction.UNLOCK) {
 
-                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY]");
+                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK]");
             }
         }
     }
@@ -4488,7 +4587,8 @@ public class WorkflowResource {
                             allowableValues = {
                                     "NEW", "EDIT", "PUBLISH",
                                     "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                    "DELETE", "DESTROY"
+                                    "DELETE", "DESTROY",
+                                    "LOCK", "UNLOCK"
                             }
                     ),
                     description = "Default system action."

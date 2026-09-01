@@ -25,10 +25,14 @@ import { Popover, PopoverModule } from 'primeng/popover';
 import { ScrollerLazyLoadEvent, ScrollerModule } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
-import { Tree, TreeModule } from 'primeng/tree';
 
 import { TreeNodeItem, TreeNodeSelectItem } from '@dotcms/dotcms-models';
-import { DotMessagePipe, DotTruncatePathPipe } from '@dotcms/ui';
+import {
+    DotFolderSearchResultsComponent,
+    DotFolderTreeComponent,
+    DotFolderNamePipe,
+    DotMessagePipe
+} from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
 
@@ -50,14 +54,15 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         PopoverModule,
         ScrollerModule,
         SkeletonModule,
-        TreeModule,
+        DotFolderTreeComponent,
+        DotFolderSearchResultsComponent,
         ButtonModule,
         TooltipModule,
         IconFieldModule,
         InputIconModule,
         InputTextModule,
         DotMessagePipe,
-        DotTruncatePathPipe
+        DotFolderNamePipe
     ],
     templateUrl: './host-folder-field.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -96,7 +101,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Reference to the folders tree, used to scroll the selected node into view when the
      * overlay opens.
      */
-    $folderTree = viewChild<Tree>('folderTree');
+    $folderTree = viewChild<DotFolderTreeComponent>('folderTree');
     /**
      * A readonly instance of the HostFolderFiledStore injected into the component.
      * This store is used to manage the state and actions related to the host folder field.
@@ -239,6 +244,16 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
     }
 
     /**
+     * Stages a folder picked from the flat search results.
+     *
+     * Separate from {@link onFolderSelect} only because the shared list emits the node directly,
+     * while `p-tree` wraps it in a select event. Same effect.
+     */
+    onSearchResultSelect(node: TreeNodeItem): void {
+        this.store.setPendingNode(node);
+    }
+
+    /**
      * Lazily loads a folder's children the first time it's expanded.
      */
     onFolderExpand(event: TreeNodeSelectItem): void {
@@ -342,21 +357,6 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * Formats a search-result folder node as a human-readable breadcrumb for the
      * secondary label line (hostname + folder segments joined with ` / `).
      */
-    protected formatSearchNodePath(node: TreeNodeItem): string {
-        const hostname = node.data?.hostname?.replace('//', '') ?? '';
-        const path = node.data?.path;
-
-        if (!path || path === '/') {
-            return hostname;
-        }
-
-        const segments = path
-            .replace(/^\/+|\/+$/g, '')
-            .split('/')
-            .filter(Boolean);
-
-        return [hostname, ...segments].join(' / ');
-    }
 
     /**
      * Loads the next page for the level owning the "Load more" sentinel node clicked.
@@ -364,8 +364,8 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
      * the folder whose children are being paginated, or `undefined` for the root-level
      * sentinel (which maps to `loadMore(null)`).
      */
-    onLoadMoreNode(node: TreeNodeItem, event: Event): void {
-        event.stopPropagation();
+    onLoadMoreNode(node: TreeNodeItem, event?: Event): void {
+        event?.stopPropagation();
 
         if (this.store.isSearching()) {
             this.store.loadMoreSearchResults();
@@ -418,7 +418,9 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
             return;
         }
 
-        const treeRoot = this.$folderTree()?.el?.nativeElement as HTMLElement | undefined;
+        const folderTree = this.$folderTree();
+        const treeRoot = (folderTree?.tree()?.el?.nativeElement ??
+            folderTree?.elementRef.nativeElement) as HTMLElement | undefined;
         const selectedNode = treeRoot?.querySelector<HTMLElement>(
             '.p-tree-node-content.p-tree-node-selected'
         );

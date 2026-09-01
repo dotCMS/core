@@ -12,7 +12,8 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
@@ -111,7 +112,13 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Mock Message')
+                // The create-new title is now i18n: `get('contenttypes.content.create.contenttype', name)`.
+                // Resolve that key to keep the header assertion meaningful; other keys stay generic.
+                get: jest.fn((key: string, ...args: string[]) =>
+                    key === 'contenttypes.content.create.contenttype'
+                        ? `Create ${args[0] ?? ''}`
+                        : 'Mock Message'
+                )
             }),
             mockProvider(DotContentTypeService, {
                 getContentType: jest.fn().mockReturnValue(of(mockContentType))
@@ -120,6 +127,16 @@ describe('DotEditContentRelationshipFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotCurrentUserService),
+            // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+            // must be mocked (not just `getFeatureFlag`) or the real store throws on construction.
+            // Side panel off by default → showCreateNewContentDialog uses the centered dialog.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                    )
+            }),
             mockProvider(DotEditContentStore, {
                 contentType: jest.fn().mockReturnValue(null),
                 currentLocale: jest.fn().mockReturnValue(null),
@@ -616,6 +633,15 @@ describe('DotEditContentRelationshipFieldComponent', () => {
             handle: jest.fn()
         }),
         mockProvider(DotCurrentUserService),
+        // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+        // must be mocked or the real store throws on construction.
+        mockProvider(DotPropertiesService, {
+            getFeatureFlags: jest
+                .fn()
+                .mockReturnValue(
+                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                )
+        }),
         mockProvider(DotEditContentStore, {
             contentType: jest.fn().mockReturnValue(null),
             currentLocale: jest.fn().mockReturnValue(null),

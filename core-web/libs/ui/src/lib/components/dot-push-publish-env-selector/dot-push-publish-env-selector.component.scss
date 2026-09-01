@@ -1,0 +1,26 @@
+@use "variables" as *;
+@use "mixins";
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/spacing";
+
+.p-multiselect {
+    width: 100%;
+}
+
+.environment-selector__list {
+    height: 140px;
+    margin: spacing.$spacing-1 0;
+    overflow-x: hidden;
+    border: 1px solid colors.$color-palette-gray-700;
+    padding: 0;
+}
+
+.environment-selector__list-item {
+    @include mixins.naked-list;
+    border-top: 1px solid colors.$color-palette-gray-200;
+    padding: spacing.$spacing-1 0;
+
+    &:first-child {
+        border-top: none;
+    }
+}

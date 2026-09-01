@@ -498,6 +498,12 @@
     </portlet>
 
     <portlet>
+        <portlet-name>experiments</portlet-name>
+        <display-name>Experiments</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
         <portlet-name>usage</portlet-name>
         <display-name>Usage</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
@@ -521,6 +527,27 @@
         <portlet-name>publishing-queue-beta</portlet-name>
         <display-name>Content Publishing Tools (Beta)</display-name>
         <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
+
+    <portlet>
+        <portlet-name>users-beta</portlet-name>
+        <display-name>Users (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/users-beta</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>roles-beta</portlet-name>
+        <display-name>Roles (Beta)</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/roles-beta</portlet-url>
+    </portlet>
+
+    <portlet>
+        <portlet-name>dotAuth</portlet-name>
+        <display-name>dotAuth</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+        <portlet-url>/dotAuth</portlet-url>
     </portlet>
 
 </portlet-app>

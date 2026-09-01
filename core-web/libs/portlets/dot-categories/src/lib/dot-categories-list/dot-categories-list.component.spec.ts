@@ -306,6 +306,10 @@ describe('DotCategoriesListComponent', () => {
 
             expect(confirmSpy).toHaveBeenCalledWith(
                 expect.objectContaining({
+                    message: 'categories.confirm.delete.message',
+                    header: 'categories.confirm.delete.header',
+                    acceptLabel: 'categories.confirm.delete.accept',
+                    rejectLabel: 'categories.cancel',
                     closable: true,
                     closeOnEscape: true
                 })
@@ -320,7 +324,7 @@ describe('DotCategoriesListComponent', () => {
     });
 
     describe('openPermissionsDialog', () => {
-        it('should open dialog with DotPermissionsIframeDialogComponent and correct config', () => {
+        it('should open dialog with DotJspIframeDialogComponent and correct config', () => {
             const dialogService = spectator.inject(DialogService, true);
             const openSpy = jest.spyOn(dialogService, 'open').mockReturnValue(null as never);
 
@@ -616,6 +620,8 @@ describe('DotCategoriesListComponent', () => {
                 expect.objectContaining({
                     message: 'categories.confirm.delete.message',
                     header: 'categories.confirm.delete.header',
+                    acceptLabel: 'categories.confirm.delete.accept',
+                    rejectLabel: 'categories.cancel',
                     defaultFocus: 'reject',
                     closable: true,
                     closeOnEscape: true

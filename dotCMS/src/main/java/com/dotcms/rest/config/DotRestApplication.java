@@ -41,6 +41,7 @@ import org.glassfish.jersey.server.ServerProperties;
 						description = "dotCMS Server",
 						url = "/"),
 		tags = {
+				@Tag(name = "Accessibility Agent", description = "Streaming a11y-fix agent proxy"),
 				@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance"),
 				@Tag(name = "Administration", description = "System administration and management tools"),
 				@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints"),
@@ -67,6 +68,7 @@ import org.glassfish.jersey.server.ServerProperties;
 						url = "https://www.dotcms.com/docs/latest/content-type-api")),
 				@Tag(name = "Content Type Field", description = "Content type field definitions and configuration"),
 				@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution"),
+				@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST is the global default) and headless OIDC token exchange"),
 				@Tag(name = "Environment", description = "Publishing environment management and configuration"),
 				@Tag(name = "Experiments", description = "A/B testing and experimentation management"),
 				@Tag(name = "File Assets", description = "File asset management and download operations"),
@@ -143,6 +145,7 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
+				"com.dotcms.auth.dotAuth.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));
 

@@ -26,10 +26,12 @@ const buildStoreMock = (overrides: StoreOverrides = {}) => ({
     output: jest.fn().mockReturnValue(''),
     outputContentType: jest.fn().mockReturnValue('plaintext'),
     elapsedMs: jest.fn().mockReturnValue(null),
-    errorMessage: jest.fn().mockReturnValue(null),
+    error: jest.fn().mockReturnValue(null),
+    warnings: jest.fn().mockReturnValue([]),
     isLoading: jest.fn().mockReturnValue(false),
     hasOutput: jest.fn().mockReturnValue(false),
     hasError: jest.fn().mockReturnValue(false),
+    hasWarnings: jest.fn().mockReturnValue(false),
     canRun: jest.fn().mockReturnValue(false),
     hasHistory: jest.fn().mockReturnValue(false),
     setCode: jest.fn(),
@@ -71,9 +73,18 @@ describe('DotVelocityPlaygroundPageComponent', () => {
         ]
     });
 
-    const setup = (storeOverrides: StoreOverrides = {}) => {
+    const setup = (
+        storeOverrides: StoreOverrides = {},
+        messageGetter: (key: string) => string = () => ''
+    ) => {
         pendingStoreOverrides = storeOverrides;
-        spectator = createComponent();
+        spectator = createComponent({
+            providers: [
+                mockProvider(DotMessageService, {
+                    get: jest.fn().mockImplementation(messageGetter)
+                })
+            ]
+        });
         return spectator.inject(DotVelocityPlaygroundStore, true);
     };
 
@@ -144,9 +155,9 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(spectator.component.$editorOptions().wordWrap).toBe('off');
         });
 
-        it('applies the dot-velocity-dark Monaco theme', () => {
+        it('inherits the shared Monaco light theme — consistent with the other dev-tool portlets', () => {
             setup();
-            expect(spectator.component.$editorOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$editorOptions().theme).toBe('vs');
         });
     });
 
@@ -157,25 +168,169 @@ describe('DotVelocityPlaygroundPageComponent', () => {
             expect(spectator.component.$outputOptions().readOnly).toBe(true);
         });
 
-        it('uses the same custom dark theme as the editor', () => {
+        it('inherits the shared Monaco light theme', () => {
             setup();
-            expect(spectator.component.$outputOptions().theme).toBe('dot-velocity-dark');
+            expect(spectator.component.$outputOptions().theme).toBe('vs');
         });
     });
 
     describe('error banner', () => {
-        it('renders when hasError is true', () => {
-            setup({
-                hasError: jest.fn().mockReturnValue(true),
-                errorMessage: jest.fn().mockReturnValue('Velocity failed'),
-                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
-            });
+        it('renders the message when an error is present', () => {
+            // Echo the message back so $errorSummary's DotMessageService.get is a pass-through,
+            // matching the real behavior for unknown keys (raw backend messages are not i18n keys).
+            setup(
+                {
+                    hasError: jest.fn().mockReturnValue(true),
+                    error: jest.fn().mockReturnValue({
+                        message: 'Velocity failed',
+                        structured: null,
+                        warnings: []
+                    }),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
             expect(spectator.query(byTestId('velocity-playground-error-banner'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('velocity-playground-error-message'))?.textContent?.trim()
+            ).toBe('Velocity failed');
+            // Unstructured error → no detail row.
+            expect(spectator.query(byTestId('velocity-playground-error-detail'))).toBeFalsy();
         });
 
-        it('is hidden when hasError is false', () => {
-            setup({ hasError: jest.fn().mockReturnValue(false) });
+        it('collapses a multi-line message to a single line in the banner', () => {
+            const multi =
+                'Encountered "<EOF>" at line 5, column 39\nWas expecting one of:\n  "[" ...';
+            setup(
+                {
+                    hasError: jest.fn().mockReturnValue(true),
+                    error: jest
+                        .fn()
+                        .mockReturnValue({ message: multi, structured: null, warnings: [] }),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            // Banner shows only the first line…
+            expect(
+                spectator.query(byTestId('velocity-playground-error-message'))?.textContent?.trim()
+            ).toBe('Encountered "<EOF>" at line 5, column 39');
+            // …while the trace pane keeps the full multi-line detail.
+            expect(spectator.component.$errorTrace()).toBe(multi);
+        });
+
+        it('renders the errorType chip and line/column locator for a structured error', () => {
+            setup({
+                hasError: jest.fn().mockReturnValue(true),
+                error: jest.fn().mockReturnValue({
+                    message: 'Encountered "#end"',
+                    warnings: [],
+                    structured: {
+                        message: 'Encountered "#end"',
+                        errorType: 'ParseErrorException',
+                        line: 12,
+                        column: 3
+                    }
+                }),
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-error-detail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('velocity-playground-error-type'))?.textContent?.trim()
+            ).toBe('ParseErrorException');
+            expect(spectator.query(byTestId('velocity-playground-error-location'))).toBeTruthy();
+        });
+
+        it('is hidden when there is no error', () => {
+            setup({ error: jest.fn().mockReturnValue(null) });
             expect(spectator.query(byTestId('velocity-playground-error-banner'))).toBeFalsy();
+        });
+
+        it('renders the error trace pane instead of the output editor on error', () => {
+            setup({
+                hasError: jest.fn().mockReturnValue(true),
+                error: jest.fn().mockReturnValue({
+                    message: 'Velocity failed',
+                    structured: null,
+                    warnings: []
+                }),
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-error-editor'))).toBeTruthy();
+            // The normal output editor + "Ready" stats bar must not show alongside an error.
+            expect(spectator.query(byTestId('velocity-playground-output-editor'))).toBeFalsy();
+            expect(spectator.query(byTestId('velocity-playground-stats-bar'))).toBeFalsy();
+        });
+
+        it('$errorTrace composes the header and location lines from the structured error', () => {
+            setup(
+                {
+                    hasError: jest.fn().mockReturnValue(true),
+                    error: jest.fn().mockReturnValue({
+                        message: 'Encountered "#end"',
+                        warnings: [],
+                        structured: {
+                            message: 'Encountered "#end"',
+                            errorType: 'ParseErrorException',
+                            line: 12,
+                            column: 3
+                        }
+                    }),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            expect(spectator.component.$errorTrace()).toBe(
+                ['ParseErrorException: Encountered "#end"', '    at line 12, column 3'].join('\n')
+            );
+        });
+    });
+
+    describe('warnings banner', () => {
+        const warning = {
+            type: 'UNDEFINED_REFERENCE',
+            message: "Undefined reference '$x'",
+            reference: '$x',
+            line: 2,
+            column: 1
+        };
+
+        it('renders on a successful run that has warnings', () => {
+            setup(
+                {
+                    hasWarnings: jest.fn().mockReturnValue(true),
+                    warnings: jest.fn().mockReturnValue([warning]),
+                    hasError: jest.fn().mockReturnValue(false),
+                    status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+                },
+                (key: string) => key
+            );
+
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeTruthy();
+            expect(spectator.queryAll(byTestId('velocity-playground-warning-item')).length).toBe(1);
+        });
+
+        it('is suppressed when there is also an error (the trace pane carries warnings)', () => {
+            setup({
+                hasWarnings: jest.fn().mockReturnValue(true),
+                warnings: jest.fn().mockReturnValue([warning]),
+                hasError: jest.fn().mockReturnValue(true),
+                error: jest
+                    .fn()
+                    .mockReturnValue({ message: 'boom', structured: null, warnings: [warning] }),
+                status: jest.fn().mockReturnValue(ComponentStatus.LOADED)
+            });
+
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeFalsy();
+        });
+
+        it('is hidden when there are no warnings', () => {
+            setup({ hasWarnings: jest.fn().mockReturnValue(false) });
+            expect(spectator.query(byTestId('velocity-playground-warnings-banner'))).toBeFalsy();
         });
     });
 

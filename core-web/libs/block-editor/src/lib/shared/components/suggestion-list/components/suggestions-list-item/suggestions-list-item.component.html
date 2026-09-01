@@ -5,7 +5,7 @@
         @if (data?.contentlet) {
             <dot-content-thumbnail [contentlet]="data.contentlet" iconSize="42px" />
         } @else {
-            <img [src]="url" alt="" />
+            <img [src]="safeUrl" alt="" />
         }
     }
 </div>

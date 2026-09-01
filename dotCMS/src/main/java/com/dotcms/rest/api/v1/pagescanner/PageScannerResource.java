@@ -57,6 +57,9 @@ public class PageScannerResource {
     static final String DEFAULT_API_URL =
             "https://a11y.api.dotcms.site";
 
+    /** Version prefix the upstream Page Scanner service exposes its check endpoints under. */
+    static final String UPSTREAM_API_VERSION = "v1";
+
     private static final String NOT_CONFIGURED_MSG =
             "Page Scanner service is not available.";
 
@@ -77,7 +80,7 @@ public class PageScannerResource {
     }
 
     /**
-     * Proxies a POST request to the upstream {@code /a11y/check} endpoint.
+     * Proxies a POST request to the upstream {@code /v1/a11y/check} endpoint.
      *
      * @param request  the HTTP servlet request
      * @param response the HTTP servlet response
@@ -98,7 +101,7 @@ public class PageScannerResource {
     }
 
     /**
-     * Proxies a POST request to the upstream {@code /geo/check} endpoint.
+     * Proxies a POST request to the upstream {@code /v1/geo/check} endpoint.
      *
      * @param request  the HTTP servlet request
      * @param response the HTTP servlet response
@@ -219,7 +222,7 @@ public class PageScannerResource {
 
     private String buildUpstreamUrl(final String apiUrl, final CheckType checkType) {
         final String base = apiUrl.endsWith("/") ? apiUrl.substring(0, apiUrl.length() - 1) : apiUrl;
-        return base + "/" + checkType.pathSegment() + "/check";
+        return base + "/" + UPSTREAM_API_VERSION + "/" + checkType.pathSegment() + "/check";
     }
 
     private Response forwardRequest(
