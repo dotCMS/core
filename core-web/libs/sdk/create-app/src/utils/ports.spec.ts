@@ -41,12 +41,26 @@
  * Contract: contracts/cli-exit-contract.md X6. Decision: cli-design-decisions.md D3.
  */
 
-import { resolvePortConflict } from './ports';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+import { REQUIRED_PORTS, resolvePortConflict } from './ports';
 
 const HOST = 'http://localhost:8082';
 
 const DOTCMS_HTTP: { port: number; service: string } = { port: 8082, service: 'dotCMS HTTP' };
-const ES_HTTP: { port: number; service: string } = { port: 9200, service: 'Elasticsearch HTTP' };
+const DOTCMS_HTTPS: { port: number; service: string } = { port: 8443, service: 'dotCMS HTTPS' };
+const FOREIGN: { port: number; service: string } = { port: 9200, service: 'Elasticsearch HTTP' };
+
+/**
+ * What a previous run of THIS CLI actually leaves behind. Measured end to end (T054 step 5b):
+ * the bundled stack publishes 8082 and 8443, so a reusable instance holds BOTH.
+ *
+ * The original fixtures used 8082 alone, which no real stack ever produces — so every test
+ * passed while the reuse path could not trigger in practice, and reproduction step 6 stayed
+ * broken. The realistic set is the point of these cases.
+ */
+const A_REAL_RUNNING_STACK = [DOTCMS_HTTP, DOTCMS_HTTPS];
 
 function options(overrides: Partial<Parameters<typeof resolvePortConflict>[0]> = {}) {
     return {
@@ -87,7 +101,7 @@ describe('resolvePortConflict', () => {
 
     describe('a healthy dotCMS is already on 8082', () => {
         it('reuses it without prompting when non-interactive', async () => {
-            const opts = options({ busyPorts: [DOTCMS_HTTP], isInteractive: false });
+            const opts = options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: false });
 
             const outcome = await resolvePortConflict(opts);
 
@@ -96,7 +110,7 @@ describe('resolvePortConflict', () => {
         });
 
         it('still prints a notice when it auto-reuses (D3: silent means no prompt, not no output)', async () => {
-            const opts = options({ busyPorts: [DOTCMS_HTTP], isInteractive: false });
+            const opts = options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: false });
 
             await resolvePortConflict(opts);
 
@@ -110,7 +124,7 @@ describe('resolvePortConflict', () => {
 
         it('asks the user when interactive, and reuses on yes', async () => {
             const opts = options({
-                busyPorts: [DOTCMS_HTTP],
+                busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
                 askReuse: jest.fn().mockResolvedValue(true)
             });
@@ -123,7 +137,7 @@ describe('resolvePortConflict', () => {
 
         it('aborts on no — the prompt is a real choice, not a formality', async () => {
             const opts = options({
-                busyPorts: [DOTCMS_HTTP],
+                busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
                 askReuse: jest.fn().mockResolvedValue(false)
             });
@@ -166,7 +180,7 @@ describe('resolvePortConflict', () => {
         });
 
         it('aborts when a required port other than 8082 is taken', async () => {
-            const opts = options({ busyPorts: [ES_HTTP], isInteractive: false });
+            const opts = options({ busyPorts: [FOREIGN], isInteractive: false });
 
             const outcome = await resolvePortConflict(opts);
 
@@ -178,15 +192,57 @@ describe('resolvePortConflict', () => {
         });
     });
 
+    describe("the busy set must match what this CLI's own stack publishes", () => {
+        it('reuses when 8082 AND 8443 are held — the shape a real previous run leaves', async () => {
+            const opts = options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: false });
+
+            expect(await resolvePortConflict(opts)).toEqual({ kind: 'reuse', host: HOST });
+        });
+
+        it('aborts when a port this stack does not publish is also held', async () => {
+            const opts = options({
+                busyPorts: [...A_REAL_RUNNING_STACK, FOREIGN],
+                isInteractive: false
+            });
+
+            const outcome = await resolvePortConflict(opts);
+
+            expect(outcome.kind).toBe('abort');
+        });
+
+        it('aborts when 8443 is held but 8082 is free — nothing is answering to reuse', async () => {
+            const opts = options({ busyPorts: [DOTCMS_HTTPS], isInteractive: false });
+
+            expect((await resolvePortConflict(opts)).kind).toBe('abort');
+        });
+    });
+
     describe('contract X2 — abort is a value, not an exit', () => {
         it('never calls process.exit on any path', async () => {
             await resolvePortConflict(options());
             await resolvePortConflict(options({ busyPorts: [DOTCMS_HTTP] }));
             await resolvePortConflict(
-                options({ busyPorts: [ES_HTTP], probeInstance: jest.fn().mockResolvedValue(false) })
+                options({ busyPorts: [FOREIGN], probeInstance: jest.fn().mockResolvedValue(false) })
             );
 
             expect(exitSpy).not.toHaveBeenCalled();
         });
+    });
+});
+
+/**
+ * Guards against the drift that broke this in the first place: the CLI checked 9200/9600,
+ * inherited from the shared compose example, while the bundled stack publishes neither. Anyone
+ * running their own OpenSearch on 9200 was blocked for ports this stack never uses.
+ */
+describe('the ports the CLI checks match the ports its stack publishes', () => {
+    it('checks exactly the published ports, no more and no fewer', () => {
+        const asset = readFileSync(resolve(__dirname, '../../assets/docker-compose.yml'), 'utf8');
+        const published = [...asset.matchAll(/^\s*-\s*'(?:[\d.]+:)?(\d+):\d+'/gm)].map((m) =>
+            Number(m[1])
+        );
+
+        expect(published.length).toBeGreaterThan(0);
+        expect([...REQUIRED_PORTS].map((p) => p.port).sort()).toEqual([...published].sort());
     });
 });

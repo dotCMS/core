@@ -6,6 +6,7 @@ import net from 'net';
 import path from 'path';
 
 import { describeRequestFailure, isSuccessStatus, type RetryReporter } from './fetch-retry';
+import { REQUIRED_PORTS } from './ports';
 import { escapeShellPath } from './validation';
 
 import {
@@ -345,7 +346,10 @@ export function getEnvFileSpec(
     token: string
 ): EnvFileSpec {
     if (framework === 'astro') {
-        return { filename: '.env', contents: dedentEnv(getEnvVariablesForAstro(host, siteId, token)) };
+        return {
+            filename: '.env',
+            contents: dedentEnv(getEnvVariablesForAstro(host, siteId, token))
+        };
     }
 
     if (framework === 'angular' || framework === 'angular-ssr') {
@@ -506,12 +510,6 @@ function isPortAvailable(port: number): Promise<boolean> {
  * Checks if required dotCMS ports are available
  * @returns Result with true if all ports available, or error message with busy ports
  */
-const REQUIRED_PORTS = [
-    { port: 8082, service: 'dotCMS HTTP' },
-    { port: 8443, service: 'dotCMS HTTPS' },
-    { port: 9200, service: 'Elasticsearch HTTP' },
-    { port: 9600, service: 'Elasticsearch Transport' }
-];
 
 /**
  * Which of the required ports are taken.

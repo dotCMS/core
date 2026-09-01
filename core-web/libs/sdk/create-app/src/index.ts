@@ -330,6 +330,13 @@ program
                     : 'All required ports are available'
             );
 
+            // STEPS 3 & 4 — provision the stack, UNLESS we are reusing one that is already up.
+            //
+            // Skipping these is the entire point of the reuse decision. Writing a second compose
+            // file and running `up` against ports the existing stack already holds fails with
+            // "port is already allocated" — turning a recoverable situation back into the dead
+            // end AC-006 exists to remove.
+            if (!reusingExistingInstance) {
             // STEP 3 — Download docker-compose
             spinner.start('Downloading Docker Compose configuration...');
             const downloaded = await downloadTheDockerCompose({
@@ -369,6 +376,7 @@ program
             }
 
             spinner.succeed('dotCMS containers started successfully.');
+            }
 
             spinner.start('Verifying if dotCMS is running...');
 
