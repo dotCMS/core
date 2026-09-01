@@ -2,15 +2,13 @@ import axios from 'axios';
 import chalk from 'chalk';
 
 import { DOTCMS_SITE_API, DOTCMS_EMA_CONFIG_API, DOTCMS_TOKEN_API } from '../constants';
-import { FailedToGetDefaultSiteError, FailedToSetUpUVEConfig } from '../errors';
+import { FailedToGetDefaultSiteError } from '../errors';
 import { Ok, type Result, Err } from '../result';
 
 import type {
     DefaultSiteResponse,
     GetUserTokenRequest,
     GetUserTokenResponse,
-    UVEConfigRequest,
-    UVEConfigResponse
 } from '../types';
 
 function getSafeErrorDetails(err: unknown): string {
@@ -106,27 +104,4 @@ export class DotCMSApi {
         }
     }
 
-    /** Setup UVE Config */
-    static async setupUVEConfig({
-        payload,
-        siteId,
-        authenticationToken,
-        url
-    }: {
-        payload: UVEConfigRequest;
-        siteId: string;
-        authenticationToken: string;
-        url?: string;
-    }): Promise<Result<'Ok', FailedToSetUpUVEConfig>> {
-        try {
-            const endpoint = (url || this.defaultUveConfigApi) + siteId;
-            const res = await axios.post<UVEConfigResponse>(endpoint, payload, {
-                headers: { Authorization: `Bearer ${authenticationToken}` }
-            });
-            return Ok(res.data.entity);
-        } catch (err) {
-            console.error(`failed to setup UVE config: ${getSafeErrorDetails(err)}`);
-            return Err(new FailedToSetUpUVEConfig());
-        }
-    }
 }

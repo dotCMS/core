@@ -1,9 +1,7 @@
 import axios from 'axios';
 import chalk from 'chalk';
 import { execa } from 'execa';
-import fs from 'fs-extra';
 
-import https from 'https';
 import net from 'net';
 import path from 'path';
 
@@ -152,26 +150,6 @@ export function getDotcmsApisByBaseUrl(baseUrl: string) {
     };
 }
 
-/** Utility to download a file using https */
-export function downloadFile(url: string, dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(dest);
-
-        https
-            .get(url, (response) => {
-                if (response.statusCode !== 200) {
-                    return reject(new Error(`Failed to download file: ${response.statusCode}`));
-                }
-
-                response.pipe(file);
-                file.on('finish', () => file.close(() => resolve()));
-            })
-            .on('error', (err) => {
-                fs.unlink(dest);
-                reject(err);
-            });
-    });
-}
 export function finalStepsForNextjs({
     projectPath,
     urlDotCMSInstance,
