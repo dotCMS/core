@@ -27,7 +27,11 @@ import {
     LOCAL_HEALTH_CHECK_RETRIES
 } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
-import { installExitStateHandler, recordRecoverableState } from './exit-state';
+import {
+    flushRecoverableState,
+    installExitStateHandler,
+    recordRecoverableState
+} from './exit-state';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import { type Result, Ok, Err } from './result';
 import {
@@ -720,11 +724,16 @@ function displayFinalSteps({
     siteId: string;
     host: string;
 }) {
+    // Claim the reporting before the summary prints, so the connection details land INSIDE it
+    // rather than being appended by the exit handler afterwards.
+    const connection = flushRecoverableState();
+
     switch (selectedFramework) {
         case 'nextjs': {
             finalStepsForNextjs({
                 projectPath: relativePath,
-                urlDotCMSInstance: host
+                urlDotCMSInstance: host,
+                connection
             });
             break;
         }
@@ -749,7 +758,8 @@ function displayFinalSteps({
         case 'astro': {
             finalStepsForAstro({
                 projectPath: relativePath,
-                urlDotCMSInstance: host
+                urlDotCMSInstance: host,
+                connection
             });
             break;
         }

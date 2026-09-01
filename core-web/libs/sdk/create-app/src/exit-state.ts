@@ -35,6 +35,20 @@ export interface RecoverableState {
 
 let recorded: Partial<RecoverableState> = {};
 let handler: (() => void) | null = null;
+/** Set once someone has surfaced the state, so the exit handler does not repeat it. */
+let reported = false;
+
+/** What the caller needs to render the connection details itself. */
+export interface RecoverableReport {
+    wroteEnv: boolean;
+    /** The dotenv file written, or null for frameworks that use none (Angular). */
+    filename: string | null;
+    host: string;
+    siteId: string;
+    token: string;
+    /** The env body, for the cases where the caller must show it rather than a file path. */
+    contents: string;
+}
 
 /**
  * Records what the run knows so far. Callers merge in values as they arrive — the project
@@ -63,15 +77,24 @@ function envFileFor(state: RecoverableState) {
     return getEnvFileSpec(state.framework, state.host, state.siteId, state.token);
 }
 
-function emit(state: RecoverableState): void {
-    const directory = state.projectDirectory;
+/**
+ * Writes the env file if it is missing and claims responsibility for reporting.
+ *
+ * The success path calls this so the details can appear inside its own summary; the exit
+ * handler then has nothing left to say. Without it the handler could only ever append, which
+ * is how a run came to print its connection details twice.
+ */
+export function flushRecoverableState(): RecoverableReport | null {
+    if (!hasRecoverableState(recorded)) {
+        return null;
+    }
+
+    const state = recorded as RecoverableState;
     const envFile = envFileFor(state);
     let wroteEnv = false;
 
-    // `filename === null` means this framework does not use a dotenv file (Angular reads a
-    // TypeScript environment object), so there is nothing to write — only to print.
-    if (directory && envFile.filename) {
-        const envPath = path.join(directory, envFile.filename);
+    if (state.projectDirectory && envFile.filename) {
+        const envPath = path.join(state.projectDirectory, envFile.filename);
 
         // Write-if-absent (D6). An existing file is the user's — or the scaffolded example's —
         // and silently overwriting it would trade one kind of data loss for another.
@@ -84,44 +107,58 @@ function emit(state: RecoverableState): void {
                 );
                 wroteEnv = true;
             } catch {
-                // Never let recovery reporting be the thing that fails the run. Falling through
-                // prints the block, which still gets the values to the user.
+                // Never let recovery reporting be the thing that fails the run.
             }
         }
     }
 
-    if (wroteEnv) {
-        // The credentials are safely on disk, so say so and stop. Echoing the token here as well
-        // put a JWT in scrollback and CI logs for no benefit — and the CLI used to do it twice,
-        // alongside a "paste this into .env" block for a file it had already written.
+    reported = true;
+
+    return {
+        wroteEnv,
+        filename: envFile.filename,
+        host: state.host,
+        siteId: state.siteId,
+        token: state.token,
+        contents: envFile.contents
+    };
+}
+
+/** Standalone report, used only when nothing else surfaced the state. */
+function emit(): void {
+    const report = flushRecoverableState();
+
+    if (!report) {
+        return;
+    }
+
+    if (report.wroteEnv) {
         console.log(
             [
                 '',
-                `Wrote ${envFile.filename} with your dotCMS connection details.`,
-                `  host    : ${state.host}`,
-                `  site id : ${state.siteId}`,
-                `  token   : stored in ${envFile.filename}`
+                `Wrote ${report.filename} with your dotCMS connection details.`,
+                `  host    : ${report.host}`,
+                `  site id : ${report.siteId}`,
+                `  token   : stored in ${report.filename}`
             ].join('\n')
         );
 
         return;
     }
 
-    // Nothing was written — either the framework has no dotenv file, the file already existed,
-    // or the write failed. The terminal is now the only place this run survives, so print
-    // everything (contract X1).
+    // Nothing written, so the terminal is the only place this run survives (contract X1).
     console.log(
         [
             '',
             'dotCMS connection details for this run:',
-            `  host    : ${state.host}`,
-            `  site id : ${state.siteId}`,
-            `  token   : ${state.token}`,
+            `  host    : ${report.host}`,
+            `  site id : ${report.siteId}`,
+            `  token   : ${report.token}`,
             '',
-            envFile.filename
-                ? `Add these to your ${envFile.filename}:`
+            report.filename
+                ? `Add these to your ${report.filename}:`
                 : 'Configuration for your project:',
-            ...envFile.contents.trimEnd().split('\n')
+            ...report.contents.trimEnd().split('\n')
         ].join('\n')
     );
 }
@@ -140,11 +177,13 @@ export function installExitStateHandler(): void {
     }
 
     handler = () => {
-        if (!hasRecoverableState(recorded)) {
+        // Silent when the run already reported for itself — this is a fallback, not a second
+        // announcement.
+        if (reported) {
             return;
         }
 
-        emit(recorded as RecoverableState);
+        emit();
     };
 
     process.on('exit', handler);
@@ -158,4 +197,5 @@ export function resetExitState(): void {
     }
 
     recorded = {};
+    reported = false;
 }

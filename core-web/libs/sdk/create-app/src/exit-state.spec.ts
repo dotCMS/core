@@ -77,7 +77,12 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 
-import { installExitStateHandler, recordRecoverableState, resetExitState } from './exit-state';
+import {
+    flushRecoverableState,
+    installExitStateHandler,
+    recordRecoverableState,
+    resetExitState
+} from './exit-state';
 
 type ExitListener = (code: number) => unknown;
 
@@ -247,6 +252,68 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
      * `environment` object. A .env that looks plausible but names the token wrong is worse than
      * no .env: `npm run dev` fails to authenticate and nothing says why.
      */
+    /**
+     * The handler runs at process exit, so anything it prints necessarily lands AFTER the
+     * "Next Steps" block — which meant a successful run reported its connection details twice,
+     * once inside the summary and once tacked on the end.
+     *
+     * `flushRecoverableState()` lets the success path do the write and claim the reporting, so
+     * the details appear inside Next Steps where they belong. The handler then stays silent —
+     * it is a fallback for paths that never reach the summary, not a second announcement.
+     */
+    describe('who reports the state', () => {
+        it('flush writes the file and hands back what to render', () => {
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+
+            const report = flushRecoverableState();
+
+            expect(report).toMatchObject({ wroteEnv: true, filename: '.env', host: HOST, siteId: SITE_ID });
+            expect(fs.readFileSync(envPath, 'utf8')).toContain(TOKEN);
+        });
+
+        it('the exit handler stays silent once flush has reported', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+
+            flushRecoverableState();
+            fireExit(0);
+
+            // No second announcement after the summary the caller already printed.
+            expect(output()).toBe('');
+        });
+
+        it('the exit handler still speaks when nothing flushed — the recovery case', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+
+            fireExit(0);
+
+            expect(output()).toContain(HOST);
+        });
+
+        it('flush returns null when there is nothing to report', () => {
+            expect(flushRecoverableState()).toBeNull();
+        });
+    });
+
     describe('the written file matches what the scaffolded app reads', () => {
         it('uses NEXT_PUBLIC_ names for a Next.js project', () => {
             installExitStateHandler();

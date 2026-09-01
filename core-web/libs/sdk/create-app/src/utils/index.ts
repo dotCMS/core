@@ -151,17 +151,57 @@ export function getDotcmsApisByBaseUrl(baseUrl: string) {
     };
 }
 
+/**
+ * The connection details, rendered inside the Next Steps block.
+ *
+ * This used to be printed by the exit handler, which necessarily runs last — so a successful
+ * run showed its details after the summary that was supposed to contain them. It belongs here,
+ * where the reader is already looking.
+ */
+export function renderConnectionSummary(report: {
+    wroteEnv: boolean;
+    filename: string | null;
+    host: string;
+    siteId: string;
+    contents: string;
+}) {
+    if (report.wroteEnv && report.filename) {
+        console.log(
+            chalk.green(`   ✔ Your dotCMS credentials are already in ${report.filename}\n`) +
+                chalk.gray(`     host    : ${report.host}\n`) +
+                chalk.gray(`     site id : ${report.siteId}\n`)
+        );
+
+        return;
+    }
+
+    // No file was written — the framework has none, one already exists, or the write failed.
+    console.log(
+        chalk.white(
+            report.filename
+                ? `   Add these to your ${report.filename}:\n`
+                : '   Configuration for your project:\n'
+        ) + chalk.gray(report.contents.trimEnd().split('\n').map((l) => `     ${l}`).join('\n')) + '\n'
+    );
+}
+
 export function finalStepsForNextjs({
     projectPath,
-    urlDotCMSInstance
+    urlDotCMSInstance,
+    connection
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
+    connection?: Parameters<typeof renderConnectionSummary>[0] | null;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
     console.log(chalk.greenBright('📋 Next Steps:\n'));
+
+    if (connection) {
+        renderConnectionSummary(connection);
+    }
 
     console.log(
         chalk.white('1. Navigate to your project:\n') +
@@ -193,15 +233,21 @@ export function finalStepsForNextjs({
 
 export function finalStepsForAstro({
     projectPath,
-    urlDotCMSInstance
+    urlDotCMSInstance,
+    connection
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
+    connection?: Parameters<typeof renderConnectionSummary>[0] | null;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
     console.log(chalk.greenBright('📋 Next Steps:\n'));
+
+    if (connection) {
+        renderConnectionSummary(connection);
+    }
 
     console.log(
         chalk.white('1. Navigate to your project:\n') +
