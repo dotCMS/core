@@ -137,42 +137,57 @@ present by default and must be actively removed to be excluded.
 
 **In scope**:
 
-- **Decision (resolves OQ-1, 2026-08-24; mechanism and rationale corrected 2026-08-31 per
-  review).** Truncate long-text field values (option **iii** in the original OQ-1) rather than
-  remove them. Bound: **150 characters**. Applied uniformly to every long-text field in the
-  listing row, regardless of whether the field is flagged Show In List — a `listed`
-  WYSIWYG/TextArea field keeps rendering in its grid column as a preview instead of the full
-  body. **Field types in scope: WYSIWYG, TextArea, and Story Block only (resolves OQ-4)** —
-  JSON Field and Custom Field are not part of this fix; they were not in the issue's original
-  measurement and are not measured here either.
-  - **Corrected rationale.** The original reasoning — "truncating preserves the column, removal
-    would blank it" — only holds for WYSIWYG/TextArea, which are plain strings the grid already
-    renders correctly (`dot-folder-list-view.component.html:271-273`, the default `{{ value }}`
-    interpolation). It does **not** hold for Story Block as originally analyzed: today, a
-    `listed` Story Block field already renders as `[object Object]` in that same interpolation,
-    because `StoryBlockViewStrategy` turns it into a `LinkedHashMap` (see Root-Cause Hypothesis,
-    point 5) — the column is already broken before this fix. Truncating Story Block to a plain
-    preview string (below) is a **strict improvement** for that column, not just a payload
-    reduction: it goes from unreadable object notation to readable truncated text.
-  - **Story Block mechanism (resolves the ordering defect in Root-Cause Hypothesis point 5).**
-    Truncation for Story Block MUST be applied *after* `StoryBlockViewStrategy` (and, if JSON
-    Field is ever brought into scope, `JSONViewStrategy`) has already run — not inside the
-    default strategy where it would be overwritten. Concretely: the new truncation option's
+- **Decision (resolves OQ-1, 2026-08-24; mechanism and rationale corrected 2026-09-01, per
+  review — second correction after an earlier one on 2026-08-31 was itself wrong about
+  WYSIWYG).** Truncate long-text field values (option **iii** in the original OQ-1) rather than
+  remove them. Bound: **150 characters of extracted plain-text preview**, not 150 characters of
+  the raw stored value. Applied uniformly to every long-text field in the listing row, regardless
+  of whether the field is flagged Show In List. **Field types in scope: WYSIWYG, TextArea, and
+  Story Block only (resolves OQ-4)** — JSON Field and Custom Field are not part of this fix; they
+  were not in the issue's original measurement and are not measured here either.
+  - **Corrected rationale (both fields types, not just Story Block).** The original reasoning —
+    "truncating preserves the column, removal would blank it" — does not hold for a raw
+    `substring(0, 150)` on **either** type. Story Block: after `StoryBlockViewStrategy` runs, the
+    value is a `LinkedHashMap`, not a string, so a substring doesn't apply and the column already
+    renders `[object Object]` today. **WYSIWYG/TextArea are strings, but they store raw HTML** —
+    `#columnTypeForField` (`dot-content-drive-shell.component.ts:433-458`) gives them no
+    dedicated case, so they fall to the `TEXT`/default column type, rendered via `{{ value }}`
+    (`dot-folder-list-view.component.html:271-273`), which HTML-escapes the string — the cell
+    shows raw markup source (`<p>Some text<b>...`), not rendered or readable content, and a
+    `substring(0, 150)` of a real article body is very often mid-tag garbage. Both field types
+    are already effectively broken in the grid today; truncating **extracted plain text** for
+    both is a strict improvement (payload **and** readability), not a preservation of something
+    that worked.
+  - **Shared preview-extraction mechanism (resolves the ordering defect in Root-Cause Hypothesis
+    point 5, and the raw-HTML problem above).** A single new strategy performs, per field type:
+    - **WYSIWYG/TextArea**: extract plain text from the stored HTML via `Jsoup.parse(html).text()`
+      (`com.dotcms.repackage.org.jsoup.Jsoup` — already a repackaged dependency used elsewhere in
+      the codebase, e.g. `StringUtils.java:8,62` — no new dependency needed), then truncate that
+      plain text to 150 characters.
+    - **Story Block**: extract plain text via a **new** recursive traversal of the block's JSON
+      tree (walking `content` arrays, collecting `text` leaf-node values, concatenating with
+      spaces) — confirmed this does not exist today: `StoryBlockUtil`
+      (`dotCMS/src/main/java/com/dotcms/contenttype/util/StoryBlockUtil.java`) only has
+      `isEmptyStoryBlock`/`isEmptyBlock` (shallow emptiness checks, explicitly not recursive into
+      non-text blocks) and `getCharCount` (reads a pre-computed `attrs.charCount` metadata field,
+      does not extract text). This traversal is new code, not a reused utility. Then truncate the
+      extracted text to 150 characters.
+    Truncation for Story Block (and, if JSON Field is ever brought into scope, for JSON Field)
+    MUST be applied *after* `StoryBlockViewStrategy`/`JSONViewStrategy` have already run — not
+    inside the default strategy where it would be overwritten. Concretely: the new option's
     `TransformOptions` constant MUST be declared after `STORY_BLOCK_VIEW` and `JSON_VIEW` in the
     enum, so `EnumSet` iteration order (which `StrategyResolverImpl.resolveStrategies` relies on)
-    places its strategy last, seeing the fully-decorated map. For a Story Block field, that
-    strategy extracts a plain-text preview from the parsed block content (not the raw JSON) and
-    replaces the map entry with a truncated **string** — the field's type changes from object to
-    string in the listing response specifically (see the rollback-classification exception in
-    Regression Risk).
+    places its strategy last, seeing the fully-decorated map. For a Story Block field, the map
+    entry is replaced with the truncated preview **string** — the field's type changes from
+    object to string in the listing response specifically (see the rollback-classification
+    exception in Regression Risk).
   - The frontend already visually clips these cells with CSS `truncate`
     (`dot-folder-list-view.component.html:215`, Tailwind `overflow:hidden`/`text-overflow:ellipsis`)
-    — that is display-only clipping of the full string already in the DOM/response, so it does
+    — that is display-only clipping of whatever string is already in the DOM/response, so it does
     not reduce payload or memory on its own; server-side truncation is what actually removes the
-    bytes. No frontend code change is required for WYSIWYG/TextArea/Story Block: the component
-    reads whatever value is in `item[column.field]` and renders it via the same default
-    interpolation — a truncated string now renders correctly where an object previously rendered
-    as `[object Object]`.
+    bytes. No frontend code change is required: the component reads whatever value is in
+    `item[column.field]` and renders it via the same default interpolation — a truncated plain-text
+    preview now renders correctly where raw HTML markup or `[object Object]` rendered before.
 - Truncate long-text field values in the listing rows produced by
   `BrowserAPIImpl#createContentMap`'s generic-Content branch (`dotContentMap`) to 150 characters,
   applied identically for Content Drive and Site Browser (resolves OQ-2 — see below).
@@ -285,11 +300,13 @@ present by default and must be actively removed to be excluded.
 
 ## Acceptance & Verification *(mandatory)*
 
-- **AC-001**: For the reproduction above, long-text field values in the response are truncated to
-  150 characters rather than transferred in full. Payload for a 40-row page of long-body generic
-  Content drops by at least **half** versus the same request on the pre-change build (in practice
-  far more than half, since bodies measured in the hundreds-to-thousands of characters collapse to
-  ≤150), measured on the same folder and dataset.
+- **AC-001**: For the reproduction above, long-text field values in the response are replaced
+  with a ≤150-character **extracted plain-text preview** (HTML stripped for WYSIWYG/TextArea via
+  Jsoup, text nodes concatenated for Story Block via the new traversal) rather than the raw
+  value transferred in full. Payload for a 40-row page of long-body generic Content drops by at
+  least **half** versus the same request on the pre-change build (in practice far more than
+  half, since bodies measured in the hundreds-to-thousands of characters collapse to ≤150),
+  measured on the same folder and dataset.
 - **AC-002 (blast-radius regression)**: Every field the Content Drive grid, its toolbar and its
   action menu consume is still present and unchanged — at minimum `identifier`, `inode`, `title`,
   `contentType`, `baseType`, `languageId`, `live`, `working`, `archived`, `hasLiveVersion`,
@@ -297,9 +314,12 @@ present by default and must be actively removed to be excluded.
   `hasTitleImage`, `owner`, `url`/`path` where applicable. The exact list is derived from
   `DotFolderListViewColumnField` (`dot-folder-list-view/models.ts`) plus the action-menu inputs,
   and is pinned by a test (see below) rather than by inspection.
-- **AC-003 (Show In List)**: A content type with a `listed` long-text field still renders that
-  grid column; its cell value is the 150-character truncation, not the full body and not blank.
-  Covered by a test asserting both that the key is present and that its length is bounded.
+- **AC-003 (Show In List) — corrected to assert readable preview, not raw truncation.** A
+  content type with a `listed` long-text field still renders that grid column; its cell value is
+  a ≤150-character **plain-text preview** — free of HTML tags for WYSIWYG/TextArea, and free of
+  JSON/object structure for Story Block — not the full body, not blank, and not a mid-tag or
+  mid-JSON fragment. Covered by a test asserting the key is present, its length is bounded, AND
+  it contains no `<`/`>` HTML markers or `{`/`}` JSON structure for content that had both.
 - **AC-004 (Site Browser) — RESOLVED (OQ-2: apply to both).** `POST /api/v1/browser` gets the
   same truncation as Content Drive, since both share `dotContentMap`. Site Browser listings are
   verified to have the same reduced long-text values Content Drive gets, and every other field
@@ -341,14 +361,19 @@ present by default and must be actively removed to be excluded.
   present (AC-002) *and* long-text keys absent (AC-001). Run targeted:
   `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=BrowserAPITest`
   (plus the new test class, once named).
-- **Unit (new)** — `dotCMS/src/test`, in the transform package: the option's truncation logic
-  over a content type carrying WYSIWYG + TextArea + Story Block + Text fields, asserting: values
-  are cut to 150 characters (WYSIWYG/TextArea), Story Block resolves to a truncated preview
-  **string** (not an object) despite running after `StoryBlockViewStrategy`, all keys survive
-  (nothing is removed), and a transformer built **without** the new option is byte-identical to
-  today (AC-007). Also assert the new option's `TransformOptions` ordinal places it after
-  `STORY_BLOCK_VIEW`/`JSON_VIEW` so `EnumSet` iteration order doesn't silently regress if the
-  enum is reordered later.
+- **Unit (new)** — `dotCMS/src/test`, in the transform package: the option's preview-extraction
+  and truncation logic over a content type carrying WYSIWYG + TextArea + Story Block + Text
+  fields, asserting: WYSIWYG/TextArea values are stripped of HTML tags (Jsoup) and cut to 150
+  characters of *plain text* — not 150 characters of raw HTML with tags still embedded — Story
+  Block resolves to a truncated plain-text preview **string** (not an object, not raw JSON)
+  extracted via the new recursive traversal despite running after `StoryBlockViewStrategy`, all
+  keys survive (nothing is removed), and a transformer built **without** the new option is
+  byte-identical to today (AC-007). Also assert the new option's `TransformOptions` ordinal
+  places it after `STORY_BLOCK_VIEW`/`JSON_VIEW` so `EnumSet` iteration order doesn't silently
+  regress if the enum is reordered later. Cover the traversal against a Story Block with nested
+  lists/tables (not just flat paragraphs), and against malformed/non-JSON Story Block content
+  (`StoryBlockViewStrategy` falls back to the raw string, or `null` on parse failure — the
+  traversal must handle both without throwing).
 - **Postman** — `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false
   -Dpostman.collections=ContentDriveResource` after the AC-006 edit.
 - **Jest** — `dot-content-drive.store.spec.ts` and `with-asset-browse.feature.spec.ts` still pass;
@@ -364,7 +389,8 @@ present by default and must be actively removed to be excluded.
 Issue #37148 sketched two implementations. Evaluated against the code:
 
 **(a) Idiomatic — a new `TransformOptions` value with its own strategy, ordered last.
-Recommended, mechanism corrected 2026-08-31 per review.** A close precedent partially exists:
+Recommended, mechanism corrected 2026-08-31 and 2026-09-01 per review.** A close precedent
+partially exists:
 `DefaultTransformStrategy#addBinaries` (`DefaultTransformStrategy.java:222-236`) handles
 `FILTER_BINARIES` at the same point in the same class —
 
@@ -384,13 +410,24 @@ for every Story Block field. The truncation logic for WYSIWYG/TextArea/Story Blo
 needs its **own new strategy class** (not a method added to `DefaultTransformStrategy`),
 registered as option-triggered in `StrategyResolverImpl.getStrategyTriggeredByOptionMap`, with
 its `TransformOptions` constant declared **after** `STORY_BLOCK_VIEW` and `JSON_VIEW` in the enum
-so `EnumSet` iteration guarantees it runs last and sees the fully-decorated map. Inside it:
-`WysiwygField`/`TextAreaField` values (already strings) are cut to 150 characters; `StoryBlockField`
-values (by then a `LinkedHashMap`, per `StoryBlockViewStrategy`) are converted to a plain-text
-preview and *that* string is cut to 150 characters, replacing the map entry. This makes (a)
+so `EnumSet` iteration guarantees it runs last and sees the fully-decorated map. Inside it, both
+field types go through plain-text **extraction** before truncation, not a raw substring — a
+raw substring of stored HTML is mid-tag garbage, not a preview (see the corrected rationale
+under "Decision (resolves OQ-1)"):
+- `WysiwygField`/`TextAreaField` values (strings containing HTML) are parsed with
+  `Jsoup.parse(html).text()` to strip markup, then the resulting plain text is cut to 150
+  characters. Jsoup is already a repackaged dependency (`com.dotcms.repackage.org.jsoup.Jsoup`,
+  used today in `StringUtils.java`) — no new dependency.
+- `StoryBlockField` values (by then a `LinkedHashMap`, per `StoryBlockViewStrategy` — or, for
+  malformed content, the raw string or `null`, per that same strategy's fallback branches) are
+  walked by a **new** recursive traversal (no existing extractor covers this — `StoryBlockUtil`
+  only checks emptiness and reads a precomputed `charCount` metadata field) that collects `text`
+  leaf-node values from the block tree and concatenates them into plain text, which is then cut
+  to 150 characters, replacing the map entry.
+This makes (a)
 roughly **five** files, not the seven the issue estimated nor the four this spec originally
-proposed: `TransformOptions.java` (one new constant, `LONG_TEXT_TRUNCATE`, placed after
-`STORY_BLOCK_VIEW`/`JSON_VIEW`), a new strategy class (e.g. `LongTextTruncationStrategy`),
+proposed: `TransformOptions.java` (one new constant, `LONG_TEXT_PREVIEW`, placed after
+`STORY_BLOCK_VIEW`/`JSON_VIEW`), a new strategy class (e.g. `LongTextPreviewStrategy`),
 `StrategyResolverImpl.java` (register it), `DotTransformerBuilder.java` (expose the option),
 `BrowserAPIImpl.java` (opt in at `dotContentMap`). The new option must **not** be added to
 `DotContentletTransformerImpl.defaultOptions`, or every transformer consumer changes at once
@@ -412,16 +449,20 @@ It is a larger, additive API change. Recorded as **OQ-3**.
 
 Each of these is a decision a human owner must make. None is guessed here.
 
-- **OQ-1 — RESOLVED (2026-08-24; rationale corrected 2026-08-31 per review).** Decision: option
-  **(iii)**, truncate to **150 characters**, applied uniformly whether or not the field is
-  `listed`. See "Decision (resolves OQ-1)" under Fix Scope & Non-Goals for the reasoning,
-  corrected to note that the "preserves the column" argument only ever held for WYSIWYG/TextArea
-  — Story Block's column already rendered `[object Object]` before this fix, so truncating it is
-  a strict improvement (payload **and** readability), not a preservation. Options (i)
-  remove-unconditionally and (ii) preserve-full-body-if-listed were rejected — (i) blanks a
-  configured column silently, (ii) makes the payload win configuration-dependent. Option (iv),
-  client-declared projection, remains recorded as OQ-3 for a possible future generalization but
-  is not required to close this item.
+- **OQ-1 — RESOLVED (2026-08-24; rationale corrected 2026-08-31, then corrected again
+  2026-09-01 per review).** Decision: option **(iii)**, truncate — specifically, truncate an
+  **extracted plain-text preview**, not the raw stored value — to **150 characters**, applied
+  uniformly whether or not the field is `listed`. See "Decision (resolves OQ-1)" under Fix Scope
+  & Non-Goals for the full reasoning: the "preserves the column" argument held for **neither**
+  field type against a raw substring — Story Block's column already rendered `[object Object]`
+  before this fix, and WYSIWYG/TextArea's raw HTML renders as escaped markup source, not
+  readable text. Extracting plain text before truncating (Jsoup for WYSIWYG/TextArea, a new
+  recursive traversal for Story Block) is a strict improvement for both (payload **and**
+  readability), not a preservation of something that worked. Options (i) remove-unconditionally
+  and (ii) preserve-full-body-if-listed were rejected — (i) blanks a configured column silently,
+  (ii) makes the payload win configuration-dependent. Option (iv), client-declared projection,
+  remains recorded as OQ-3 for a possible future generalization but is not required to close
+  this item.
 - **OQ-2 — RESOLVED (2026-08-31): apply to both.** `dotContentMap` is shared, so `POST
   /api/v1/browser` (Site Browser) gets the same truncation as Content Drive — no branch
   splitting. Accepted trade-off: Site Browser has no internal-API disclaimer, unlike the Drive
@@ -446,12 +487,17 @@ Each of these is a decision a human owner must make. None is guessed here.
   (so it is not even in `openapi.yaml`). Is that sufficient to satisfy the issue's `@Schema`
   criterion, or does the team want a real typed view class for the listing row — which would be a
   meaningfully larger change and would start documenting an endpoint deliberately marked internal?
-- **OQ-6 — Rollback labelling.** The issue's AC says to label this rollback-unsafe as an API
-  contract change (M-3). This spec's reading of `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md` is that
-  removing a field is a **forward**-compatibility risk, not a rollback risk (N-1 restores the
-  field), and that the change is therefore rollback-**safe** — the same reasoning the H-8 removal
-  note makes explicit. Does the team accept that reclassification? (Separately: dotCMS/core
-  auto-applies rollback-safety labels to PRs within ~5 minutes, so these should not be hand-set.)
+- **OQ-6 — RESOLVED (rollback labelling; migrated to truncation framing 2026-09-01, per
+  review).** The issue's AC says to label this rollback-unsafe as an API contract change (M-3).
+  This spec's reading of `docs/core/ROLLBACK_UNSAFE_CATEGORIES.md`: the resolved fix truncates
+  rather than removes, so for WYSIWYG/TextArea, N-1 restores a longer *value* under the same
+  key — a forward-compatibility concern, not a rollback risk. For Story Block, the fix also
+  changes the field's *type* (object → truncated preview string, per the shared preview-helper
+  mechanism above); rolling back to N-1 restores the object shape, which is the same
+  forward-compatibility pattern (N-1 restores what N changed), not a rollback-unsafe one — see
+  the corrected rollback classification in Regression Risk for the full reasoning. The change is
+  therefore rollback-**safe**. (Separately: dotCMS/core auto-applies rollback-safety labels to
+  PRs within ~5 minutes, so these should not be hand-set.)
 - **OQ-7 — Config escape hatch?** Should the reduction sit behind a `Config` property so an
   operator can restore the old payload without a redeploy — useful given the endpoint feeds the
   admin UI and the blast radius includes Site Browser and OSGi — or is a feature flag here
