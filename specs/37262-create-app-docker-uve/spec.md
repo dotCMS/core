@@ -107,12 +107,15 @@ original report read it as transient — it is not. See Root-Cause Hypothesis, C
      L137–141), and all three use `db: service_healthy` + `opensearch: service_started`.
      `lgtm-observability/docker-compose.yml` is the model for the healthcheck shape — but note
      it publishes 8090 on the **wildcard** (L195), which this fix deliberately does not copy.
-     The fourth, `single-node-os-migration`, gates `dotcms` on two provision jobs
-     (`service_completed_successfully`, L229–235) that each require
-     `opensearch: service_healthy` (L167–169, L189–191) — so it **does** gate on OpenSearch
-     health, transitively. This fix's stricter gate therefore has prior art in this repo, one
-     step removed; it is not the clean break from precedent an earlier draft of this spec
-     claimed. See Fix Scope.
+     The fourth, `single-node-os-migration`, does gate `dotcms` on OpenSearch health, but only
+     transitively and for an unrelated reason: it is the tester harness for the **unreleased**
+     OpenSearch 3.x migration, and its provision jobs (`service_completed_successfully`,
+     L229–235, each requiring `opensearch: service_healthy` at L167–169 and L189–191) exist so
+     search users are created before dotCMS connects — not as a boot-ordering practice. It is
+     therefore not precedent for what this fix does. **Gating `dotcms` on OpenSearch health is a
+     deliberate deviation from every non-migration example in this repo**, and Regression Risk
+     owns the failure mode it introduces. An earlier revision of this spec called it "prior art,
+     one step removed"; that was too generous and is withdrawn. See Fix Scope.
      Verified in-repo: `dotcms` has `depends_on: [db, opensearch]` with no condition, no
      `restart:`, no healthcheck, and does not publish 8090; `opensearch` has no healthcheck and
      no `restart:`; only `db` defines a healthcheck, which nothing consumes.
@@ -242,9 +245,15 @@ a transient failure becomes total loss. Verified in-repo:
   but `src/index.ts:597` tests `if (!result)`. `Err()` returns `{ ok: false, val }` — a truthy
   object, so the failure branch never fires and a failed install reports success.
 - Orphaned compose file: `moveDockerComposeOneLevelUp()` runs at `src/index.ts:376`; if
-  scaffolding fails it calls `process.exit(1)` internally, so `moveDockerComposeBack()` at
-  `:378` never runs and `docker-compose.yml` is stranded in the parent directory. Needs
-  `try/finally`.
+  scaffolding fails, `startScaffoldingFrontEnd()` exits the process (`:588`, `:599`) so
+  `moveDockerComposeBack()` at `:378` never runs and `docker-compose.yml` is stranded in the
+  parent directory. Needs `try/finally`. (An earlier revision attributed the exit to
+  `moveDockerComposeOneLevelUp()` itself; that was wrong, the conclusion is unaffected.)
+- **Both moves are also unawaited.** `moveDockerComposeOneLevelUp()` and
+  `moveDockerComposeBack()` are `async` (`src/git/index.ts:76`, `:82`, each awaiting
+  `fs.rename`) and are called without `await`, so the rename may not have landed before the git
+  clone runs against a directory that must be empty. `try/finally` alone does not fix a floating
+  promise.
 - Multi-minute silence: `execa('docker', ['compose','up','-d'])` swallows image-pull progress,
   leaving a frozen spinner for the length of a ~1.5GB pull on a cold machine.
 - Unguarded download: `downloadFile()` uses raw `https.get` with no timeout, no retry and no
@@ -333,12 +342,22 @@ so only a warm npx cache stays behind.
   terminal (193 consecutive failures over ~7 minutes), so a poll would spin forever. On 403 the
   CLI reports the instance as unrecoverable and stops — see the terminal-403 message below.
 
+- **`docker compose up -d --wait` is P0, not P1.** An earlier revision listed it under P1, which
+  was wrong: AC-001 ("brings the stack up **without manual intervention**") and AC-002 ("only
+  printed when the containers are actually running and healthy") are both P0 and have no other
+  stated mechanism. Shipping P0 without `--wait` would leave them unsatisfiable. The continuous
+  feedback AC-009 requires travels with it, for the same reason — a ten-minute silent wait is the
+  symptom this issue was reported for.
+
 *CLI (P1):*
+
+**All P1 items below are in scope for this fix**, not a follow-up. They are tiered to say what
+must land for the fix to be coherent (P0) versus what makes it good (P1), not to split delivery.
 
 - Port check probes before failing: if dotCMS already answers on 8082, offer to reuse it rather
   than exiting.
-- Use `docker compose up -d --wait` and stream pull progress so the wait is visible.
-- Fix the truthy-`Result` check at `src/index.ts:597`; wrap the compose move in `try/finally`.
+- Fix the truthy-`Result` check at `src/index.ts:597`; wrap the compose move in `try/finally`
+  **and await both moves** — they are `async` and currently called without `await`.
 - Switch readiness to `/dotmgt/readyz` on 8090 once the compose publishes it, keeping
   `/api/v1/appconfiguration` as fallback.
 
@@ -442,8 +461,9 @@ reasoning so a reviewer can see what was chosen and object, rather than having t
 
 1. **Gate `dotcms` on `opensearch: service_healthy`** — **decided: keep the stricter gate**, using
    `single-node-os-migration`'s proven probe (L61–65). The framing this question originally carried
-   was wrong: it is not a clean break from precedent, because `single-node-os-migration` already
-   gates `dotcms` on OpenSearch health transitively, via provision jobs. A credential-free probe was
+   was wrong in the other direction: `single-node-os-migration` is a migration harness whose gate
+   serves provision ordering, so it is **not** precedent, and the stricter gate is a deliberate
+   deviation from every non-migration example. A credential-free probe was
    considered and rejected — the `admin:admin` coupling is contained by the major-version tag pin,
    and a proven probe beats an unproven one on the critical path. See Scope of Investigation.
 2. **`start_period`** — **decided: `180s`**, ~4× the measured ~46s boot and above both precedents
@@ -503,8 +523,10 @@ verification guide, and a failure there invalidates the compose design. See Assu
 - **AC-007** *(P1)*: A failed `npm install` causes the CLI to report failure — the branch at
   `src/index.ts:597` is reachable and correct.
 - **AC-008** *(P1)*: If scaffolding fails after `moveDockerComposeOneLevelUp()`, the compose
-  file is restored to the project directory (no orphan in the parent).
-- **AC-009**: Feedback is **continuous for the entire wait**, which may be up to ten minutes
+  file is restored to the project directory (no orphan in the parent). Both moves must also be
+  **awaited** — they are `async`, and `try/finally` around a floating promise does not guarantee
+  the rename landed before the clone runs against a directory that must be empty.
+- **AC-009** *(P0 — it is what makes AC-001/AC-002 observable)*: Feedback is **continuous for the entire wait**, which may be up to ten minutes
   (`--wait-timeout 600`). Both required: `docker compose up --wait`'s own per-container
   `Waiting → Healthy` transitions are streamed rather than swallowed, and a ticker shows elapsed
   time plus per-service state, refreshed every ~2s. Image-pull progress is visible. Retry messages
@@ -525,9 +547,16 @@ verification guide, and a failure there invalidates the compose design. See Assu
   nothing created; **that was wrong** — it exists, it ships in this package, and it was already
   written against the bundled asset. What was genuinely wrong was the path: it is under the
   package's own `scripts/`, not the repository root.
-- **AC-013**: The bundled compose file is actually present in the published package. `package.json`
-  `files` and `project.json`'s esbuild `assets` must both list it, or it ships missing and every
-  local-Docker run fails at the first step.
+- **AC-013**: The bundled compose file is actually present in the **published package**.
+  `package.json` `files` and `project.json`'s esbuild `assets` must both list it, or it ships
+  missing and every local-Docker run fails at the first step.
+  **Verified against the build output, not the source tree.** Asserting the two manifests is
+  necessary but not sufficient: a wrong `output:` in the esbuild `assets` entry satisfies a
+  manifest check and still puts the file somewhere the package does not carry. Equally, a Jest
+  spec or `verify-cold-start.sh --static` that resolves the asset relative to `src/` passes
+  identically whether or not it ever ships. The gate is therefore a post-build assertion over
+  `dist/libs/sdk/create-app` — the file exists at the path the CLI resolves at runtime, and
+  `npm pack --dry-run` lists it in the tarball contents.
 
 - **Verification method**:
   - *Compose:* against **the bundled asset**,
@@ -548,6 +577,12 @@ verification guide, and a failure there invalidates the compose design. See Assu
     port-reuse probe; and the `CUSTOM_STARTER_URL` rewrite run against the real bundled asset
     (AC-012). Per constitution Principle V these are written and confirmed failing (Red) before the
     implementation lands.
+  - *Packaging (AC-013):* a post-build check over `dist/libs/sdk/create-app` asserting the
+    compose asset exists at the path the CLI resolves at runtime, plus `npm pack --dry-run`
+    listing it in the tarball contents. This is deliberately **not** a source-tree assertion:
+    checking `package.json`/`project.json`, or resolving the asset relative to `src/`, passes
+    identically whether or not the file ever ships — which is the exact failure AC-013 exists to
+    catch. Cheap enough to gate every PR; no Docker required.
   - *Manual end-to-end:* the reproduction steps above, run cold on macOS + Docker Desktop,
     verifying AC-001 through AC-006, plus AC-011 (a `curl` to the host's LAN address on 8090
     must be refused).
