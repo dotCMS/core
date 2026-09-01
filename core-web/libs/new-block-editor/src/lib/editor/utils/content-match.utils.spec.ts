@@ -90,26 +90,17 @@ describe('contentMatchesEditorDocument — #36985', () => {
             expect(contentMatchesEditorDocument(editor(), DIFFERENT_BODY)).toBe(false);
         });
 
-        // B9 — unknown MARKS abort deserialization; fail closed so the content still loads.
-        it('does NOT match a body carrying an undeserializable mark', () => {
-            const withUnknownMark: JSONContent = {
+        // B9 — fail closed on input that genuinely cannot be deserialized, so the caller still
+        // loads it and the field never blanks (#37145). Note this is now the *defensive* path:
+        // since #37175 an unknown mark is preserved rather than fatal — see the unknown-mark
+        // case below — so this uses a structurally invalid document instead.
+        it('does NOT match a document that cannot be deserialized at all', () => {
+            const malformed = {
                 type: 'doc',
-                content: [
-                    {
-                        type: 'paragraph',
-                        attrs: { textAlign: 'left', indent: 0 },
-                        content: [
-                            {
-                                type: 'text',
-                                marks: [{ type: 'someMarkThatDoesNotExist' }],
-                                text: 'x'
-                            }
-                        ]
-                    }
-                ]
-            };
+                content: [{ type: 'paragraph', content: [{ type: 'text' }] }]
+            } as unknown as JSONContent;
 
-            expect(contentMatchesEditorDocument(editor(), withUnknownMark)).toBe(false);
+            expect(contentMatchesEditorDocument(editor(), malformed)).toBe(false);
         });
     });
 
@@ -136,7 +127,8 @@ describe('contentMatchesEditorDocument — #36985', () => {
             editorHolding(
                 preserveUnknownNodesInDocument(
                     JSON.parse(JSON.stringify(withUnknownNode)) as JSONContent,
-                    new Set(Object.keys(schema.nodes))
+                    new Set(Object.keys(schema.nodes)),
+                    new Set(Object.keys(schema.marks))
                 ) as JSONContent
             );
 
@@ -153,6 +145,53 @@ describe('contentMatchesEditorDocument — #36985', () => {
                 contentMatchesEditorDocument(
                     holderWithPlaceholder(),
                     JSON.stringify(withUnknownNode)
+                )
+            ).toBe(true);
+        });
+    });
+
+    describe('unknown mark types (#37175)', () => {
+        /**
+         * Unknown MARKS used to abort `Node.fromJSON` outright — `RangeError: There is no mark
+         * type X in this schema` — which is why an earlier revision of this contract expected
+         * "not equal" for them. #37175 gave marks the same placeholder treatment nodes already
+         * had (`dotUnsupportedMark`), so they now round-trip and must compare EQUAL, exactly
+         * like unknown nodes. Measured: the raw JSON still throws if parsed directly, but the
+         * comparator preserves first, so it parses and matches.
+         */
+        const withUnknownMark: JSONContent = {
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    attrs: { textAlign: 'left', indent: 0 },
+                    content: [
+                        { type: 'text', marks: [{ type: 'someMarkNobodyRegistered' }], text: 'x' }
+                    ]
+                }
+            ]
+        };
+
+        const holderWithMarkPlaceholder = () =>
+            editorHolding(
+                preserveUnknownNodesInDocument(
+                    JSON.parse(JSON.stringify(withUnknownMark)) as JSONContent,
+                    new Set(Object.keys(schema.nodes)),
+                    new Set(Object.keys(schema.marks))
+                ) as JSONContent
+            );
+
+        it('matches a body carrying an unknown mark, through the object entry point', () => {
+            expect(contentMatchesEditorDocument(holderWithMarkPlaceholder(), withUnknownMark)).toBe(
+                true
+            );
+        });
+
+        it('matches a body carrying an unknown mark, through the string entry point', () => {
+            expect(
+                contentMatchesEditorDocument(
+                    holderWithMarkPlaceholder(),
+                    JSON.stringify(withUnknownMark)
                 )
             ).toBe(true);
         });

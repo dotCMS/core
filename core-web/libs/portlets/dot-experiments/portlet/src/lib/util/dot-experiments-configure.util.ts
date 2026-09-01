@@ -78,6 +78,19 @@ export function canChangePage(experiment: DotExperiment | null): boolean {
     );
 }
 
+/**
+ * The variants standing in the way of a page change: everything but the control.
+ *
+ * The control is exempt because it holds no copy of the page — it *is* the page — which is why an
+ * experiment whose only variant is the control may already repoint freely ({@link canChangePage}).
+ * These are the ones the Change Page dialog lists, and the ones confirming it deletes.
+ */
+export function deletableVariants(experiment: DotExperiment | null): Variant[] {
+    const variants = experiment?.trafficProportion?.variants ?? [];
+
+    return variants.filter((variant) => !isControlVariant(variant));
+}
+
 /** Sum of the weights, rounded to the precision they are stored at. A cleared one counts as zero. */
 export function totalWeight(items: readonly WeightedVariant[]): number {
     const total = items.reduce((sum, { weight }) => sum + (weight ?? 0), 0);

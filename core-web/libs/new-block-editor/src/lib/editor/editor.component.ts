@@ -128,6 +128,10 @@ function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
 }
 
+function getKnownMarkNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.marks));
+}
+
 /**
  * Normalizes incoming editor content to either an HTML string or a JSONContent object.
  * dotCMS stores block editor fields as ProseMirror JSON (object or stringified).
@@ -484,7 +488,11 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
         editor.commands.setContent(
             typeof parsed === 'string'
                 ? parsed
-                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)),
+                : preserveUnknownNodesInDocument(
+                      parsed,
+                      getKnownNodeNames(editor),
+                      getKnownMarkNames(editor)
+                  ),
             { emitUpdate: false }
         );
     }
