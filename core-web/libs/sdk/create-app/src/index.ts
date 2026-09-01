@@ -47,6 +47,7 @@ import {
     getUVEConfigValue,
     installDependenciesForProject
 } from './utils';
+import { applyStarterUrl } from './utils/starter-url';
 import {
     normalizeUrl,
     validateAndNormalizeFramework,
@@ -56,6 +57,9 @@ import {
 } from './utils/validation';
 
 import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
+
+/** Budget for `docker compose up --wait`: a cold run pulls ~2GB and imports the demo starter. */
+const COMPOSE_WAIT_TIMEOUT_SECONDS = 600;
 
 // Supported values
 
@@ -466,10 +470,27 @@ async function runDockerCompose({
 
         const env = starterUrl ? { ...process.env, CUSTOM_STARTER_URL: starterUrl } : process.env;
 
-        await execa('docker', ['compose', 'up', '-d'], { cwd: directory, env });
-        await execa('docker', ['ps'], { cwd: directory });
-
-        // console.log(chalk.green("✔ Docker containers started successfully!\n"));
+        // `--wait` blocks until every service with a healthcheck reports healthy, so the
+        // success message below is only reached when the stack is genuinely usable. Without
+        // it, `up -d` returns as soon as the containers are *created* — which is how the CLI
+        // came to report "containers started successfully" about a dotcms that had already
+        // exited (issue #37262, AC-002).
+        //
+        // The timeout is generous because a cold run pulls ~2GB and then imports the demo
+        // starter. The bundled compose file sets `start_period: 180s` on dotcms; a boot
+        // measured at ~46s leaves plenty of head-room inside this budget.
+        await execa(
+            'docker',
+            [
+                'compose',
+                'up',
+                '-d',
+                '--wait',
+                '--wait-timeout',
+                String(COMPOSE_WAIT_TIMEOUT_SECONDS)
+            ],
+            { cwd: directory, env }
+        );
 
         return Ok(undefined);
     } catch (err) {
@@ -486,16 +507,9 @@ async function updateDockerComposeStarterUrl({
 }): Promise<void> {
     const composePath = path.join(directory, 'docker-compose.yml');
     const composeContents = await fs.readFile(composePath, 'utf-8');
-    const updatedContents = composeContents.replace(
-        /^(\s*["']?CUSTOM_STARTER_URL["']?\s*:\s*).+$/m,
-        `$1"${starterUrl}"`
-    );
-
-    if (updatedContents === composeContents) {
-        throw new Error(
-            'CUSTOM_STARTER_URL entry not found in docker-compose.yml. Unable to apply --starter value.'
-        );
-    }
+    // The string rewrite lives in ./utils/starter-url so a Jest spec can pin it against the
+    // real bundled asset — it throws when the CUSTOM_STARTER_URL entry is missing.
+    const updatedContents = applyStarterUrl(composeContents, starterUrl);
 
     await fs.writeFile(composePath, updatedContents);
 }

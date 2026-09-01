@@ -11,7 +11,7 @@ Beta. Behavior and flags may change.
 - Node.js + npm
 - Git
 - Docker (for `--local` or `--starter`)
-- Internet access (downloads templates and docker-compose)
+- Internet access (downloads templates; pulls Docker images)
 
 ## Which SDK Version Should I Use?
 
@@ -99,8 +99,9 @@ Flow:
 
 1. Validates Docker availability.
 2. Validates required ports: `8082`, `8443`, `9200`, `9600`.
-3. Downloads docker-compose from dotCMS main repo.
-4. Runs `docker compose up -d`.
+3. Writes the **bundled** `docker-compose.yml` into the project directory (see
+   [The bundled Docker stack](#the-bundled-docker-stack)).
+4. Runs `docker compose up -d --wait`, which blocks until every service reports healthy.
 5. Waits for local health check.
 6. Authenticates with default local credentials (`admin@dotcms.com` / `admin`).
 7. Reads `defaultSite`, configures UVE, scaffolds frontend, runs `npm install`.
@@ -113,13 +114,49 @@ Flow:
 Flow:
 
 1. Same Docker and port checks as local mode.
-2. Downloads docker-compose.
+2. Writes the bundled `docker-compose.yml`.
 3. Rewrites `CUSTOM_STARTER_URL` in `docker-compose.yml`.
 4. Also passes `CUSTOM_STARTER_URL` in compose environment at runtime.
 5. Starts containers and waits for health check.
 6. Skips frontend scaffold and dotCMS frontend settings flow (token, default site lookup, UVE setup).
 
 Use this when your starter is not compatible with the default frontend sample flow.
+
+## The bundled Docker stack
+
+`--local` and `--starter` write a `docker-compose.yml` that **ships inside this package**. It is
+no longer downloaded from the `dotCMS/core` repository at run time, so the stack you get is the one
+this CLI version was tested against, rather than whatever is currently on `main`.
+
+The stack is `db` (PostgreSQL), `opensearch`, and `dotcms`. `dotcms` starts only after both
+dependencies report **healthy**, and carries `restart: unless-stopped`, so it no longer races
+Postgres and exit at startup.
+
+### Published ports
+
+| Port | Binding | Purpose |
+| --- | --- | --- |
+| `8082` | all interfaces | dotCMS HTTP |
+| `8443` | all interfaces | dotCMS HTTPS |
+| `9200`, `9600` | all interfaces | OpenSearch |
+| `8090` | **`127.0.0.1` only** | dotCMS management endpoints |
+
+> **Why 8090 is loopback-only.** It serves `/dotmgt/livez`, `/dotmgt/readyz`, `/dotmgt/health` and
+> `/dotmgt/metrics`, and dotCMS authorizes those purely by the port a request arrives on — there is
+> no credential check and no IP allow-list. Binding it to `0.0.0.0` would expose your instance's
+> health and metrics to everyone on your network. It is bound to `127.0.0.1` deliberately; do not
+> "fix" it to a wildcard.
+
+### Using a different compose file
+
+Set `DOTCMS_COMPOSE_URL` to fetch one from a URL instead of using the bundled file:
+
+```bash
+DOTCMS_COMPOSE_URL=https://example.com/my-compose.yml npx @dotcms/create-app my-app --local
+```
+
+This is an escape hatch for hotfixes. The file must keep a single-line `CUSTOM_STARTER_URL:` entry
+or `--starter` will fail against it.
 
 ## Examples
 

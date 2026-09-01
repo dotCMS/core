@@ -3,7 +3,7 @@ import fs from 'fs-extra';
 
 import path from 'path';
 
-import { downloadFile } from '../utils';
+import { resolveComposeSource } from '../compose/compose-source';
 
 import type { SupportedFrontEndFrameworks } from '../types';
 
@@ -63,14 +63,25 @@ export const cloneFrontEndSample = async ({
     }
 };
 
+/**
+ * Writes the docker-compose file into the project directory.
+ *
+ * The file is **bundled with this package** rather than fetched from `main` at run
+ * time. The previous behaviour downloaded
+ * `docker/docker-compose-examples/single-node-demo-site/docker-compose.yml`, which
+ * meant every installed CLI silently picked up whatever was on `main` — so the
+ * shared example could not be hardened without shipping that change, unversioned,
+ * to consumers who never asked for it. Owning the file removes that coupling; the
+ * shared example is now left untouched (issue #37262, AC-010).
+ *
+ * `DOTCMS_COMPOSE_URL` keeps remote fetching one env var away for field hotfixes.
+ */
 export async function downloadDockerCompose(directory: string) {
-    // 6. Download docker-compose file
-    const dockerUrl =
-        'https://raw.githubusercontent.com/dotCMS/core/main/docker/docker-compose-examples/single-node-demo-site/docker-compose.yml';
-
+    const source = resolveComposeSource();
     const dockerComposePath = path.join(directory, 'docker-compose.yml');
 
-    await downloadFile(dockerUrl, dockerComposePath);
+    const contents = await source.read();
+    await fs.writeFile(dockerComposePath, contents);
 }
 
 export async function moveDockerComposeOneLevelUp(directory: string) {

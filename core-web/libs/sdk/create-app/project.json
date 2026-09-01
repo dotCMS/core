@@ -45,6 +45,11 @@
                         "input": "libs/sdk/create-app",
                         "glob": "package.json",
                         "output": "."
+                    },
+                    {
+                        "input": "libs/sdk/create-app/assets",
+                        "glob": "**/*",
+                        "output": "assets"
                     }
                 ],
                 "esbuildOptions": {
