@@ -19,25 +19,31 @@
 A content author or administrator browsing a folder with thousands of items applies a filter on
 a content-type field (for example, a Text, Select, Date-range, Multi-select, or Category field).
 Today, once the filter is entirely resolvable against the search index, the system still repeats
-its full database scan of the folder's contents multiple times before it has gathered enough
-matches to fill a page — on a ~20,000-item folder this took roughly four repeats and made the
-response six times slower than an equivalent search. The user should instead get their filtered
-results back in roughly the time a comparable search takes, without repeated re-scanning.
+its full database scan of the folder's contents — and, per matching chunk, a separate
+Elasticsearch filtering call — before it has gathered enough matches to fill a page. On a
+~20,000-item folder with sparse matches this can iterate up to ~23 times (chunk size 900); the
+issue's own reference case measured roughly four repeats and a six-fold slowdown versus an
+equivalent search, but that reference case is a specific measured point, not the worst case (a
+folder with even sparser matches or a larger size iterates more). The user should instead get
+their filtered results back in roughly the time a comparable search takes, without repeated
+re-scanning or repeated ES round trips.
 
 **Why this priority**: This is the dominant remaining performance gap Content Drive has against
 its baselines once the highest-cost item (item 1) is addressed; field filtering over large
 folders is a normal, frequent authoring action.
 
 **Independent Test**: Can be fully tested by applying a single content-type field filter (no Tag,
-no Relationship, no workflow, no free-text term) against a folder with a large number of children
-and confirming both that the number of times the underlying candidate scan runs drops to at most
-one, and that the returned result set is unchanged from today's behavior.
+no Relationship, no workflow, no free-text term) against a folder with a large number of sparse
+matches and confirming both that the number of times the underlying candidate scan runs AND the
+number of Elasticsearch filtering calls each drop to at most one, and that the returned result
+set is unchanged from today's behavior.
 
 **Acceptance Scenarios**:
 
-1. **Given** a folder with ~20,000 children and a filter on a Text field that matches 40 items,
-   **When** the user applies the filter, **Then** the system scans the folder's candidate content
-   at most once (not four times as today) and returns the same 40 matching items.
+1. **Given** a folder with ~20,000 children and a filter on a Text field that matches 40 sparse
+   items, **When** the user applies the filter, **Then** the system scans the folder's candidate
+   content at most once and issues at most one Elasticsearch filtering call (not up to ~23 of
+   each as today's sparse worst case) and returns the same 40 matching items.
 2. **Given** the same folder and filter, **When** the user applies a Date-range, Multi-select, or
    Category filter instead, **Then** results are identical to today's behavior and the same
    single-scan improvement applies.
@@ -96,19 +102,35 @@ are unchanged from today's behavior in every combination.
 - **FR-001**: System MUST determine, for each field-filter search request, whether every
   requested field criterion is resolvable purely against the search index (i.e., no criterion
   requires the database to preserve immediate visibility of recent writes).
-- **FR-002 — implementation named (2026-08-31, per review): hybrid single-scan, not
-  index-only.** When that condition holds, and the request has no workflow filter and no
-  free-text or file-name term, System MUST resolve the request without repeatedly re-scanning
-  the database candidate set — the underlying database scan MUST execute at most once per
-  request, regardless of folder size or how sparse the matches are. This is a **hybrid** fix:
-  the existing database-first candidate scan still runs (fixing only its repeat-execution
-  count from ~4 down to 1), it does not switch to `buildPureESQuery`/index-only resolution.
-  That alternative was considered and rejected: `buildPureESQuery` (`BrowserAPIImpl.java:605`)
-  has no folder/parentPath filter today (only host-level scoping), and moving structural
-  filtering there would conflict with this spec's own cited ADR-0018 requirement that
-  structural/metadata filtering stay database-first always (see Legacy Considerations). FR-003,
-  FR-004, and FR-007 below describe *preserving* existing database-sourced behavior, not
-  building new index-side folder/permission/pagination logic.
+- **FR-002 — implementation named (2026-08-31) and mechanism corrected (2026-09-01, per
+  review): hybrid single-pass, bounding both DB scans and ES round trips as one criterion.**
+  When that condition holds, and the request has no workflow filter and no free-text or
+  file-name term, System MUST resolve the request in a **single pass** over the folder's
+  candidate content: at most one database scan AND at most one Elasticsearch filtering call for
+  the whole request, regardless of folder size or how sparse the matches are. This is a
+  **hybrid** fix: the existing database-first candidate scan still runs, it does not switch to
+  `buildPureESQuery`/index-only resolution. That alternative was considered and rejected:
+  `buildPureESQuery` (`BrowserAPIImpl.java:605`) has no folder/parentPath filter today (only
+  host-level scoping), and moving structural filtering there would conflict with this spec's own
+  cited ADR-0018 requirement that structural/metadata filtering stay database-first always (see
+  Legacy Considerations). FR-003, FR-004, and FR-007 below describe *preserving* existing
+  database-sourced behavior, not building new index-side folder/permission/pagination logic.
+  **Correction to the mechanism, and why both round trips need one bound**:
+  `getContentByChunks` (the loop this fix changes) already has an early exit — it stops as soon
+  as `accumulatedContent.size() >= maxRows` (`BrowserAPIImpl.java:291`) or the DB chunk comes
+  back partial (`:298`). The previously-observed "~4 repeats" is the **sparse-match worst
+  case**, not today's universal behavior — a folder with dense matches can already exit after
+  chunk 1. What the early exit does *not* bound is the **ES side**: each loop iteration calls
+  `processESDirectly` once per chunk (`BrowserAPIImpl.java:343-344`), so a sparse-match,
+  20,000-item folder at the default `BROWSER_CONTENT_CHUNK_SIZE` (900,
+  `BrowserAPIImpl.java:547`) can still iterate up to `20,000 / 900 ≈ 23` times before either
+  exiting or hitting `BROWSER_DB_MAX_SCAN_ROWS` (default 50,000, `:734-735`) — 23 DB round trips
+  *and* 23 ES round trips, not the "~4" the issue measured on its specific reference case. A fix
+  that only forces the DB scan itself into one query but leaves the surrounding chunked-ES-call
+  loop in place would not close this gap. FR-002 is therefore one bound covering both: the
+  database candidate scan for this case MUST assemble the full candidate set in a single query
+  (no chunking), and Elasticsearch filtering over that candidate set MUST run as a single call,
+  not one call per artificial chunk.
 - **FR-003**: The single-pass resolution in FR-002 MUST still be scoped to the folder (and site)
   the user is browsing — it must never return content from outside the requested folder.
 - **FR-004**: System MUST still apply the mandatory read-permission filter, sourced from the
@@ -126,18 +148,28 @@ are unchanged from today's behavior in every combination.
   pagination behavior).
 - **FR-008**: Combining a content-type field filter with a Tag filter MUST continue to return the
   same correct results as today.
-- **FR-009 — RESOLVED (2026-08-24, correction 2026-08-31): no dedicated kill switch, and no
-  existing config already covers this.** No independently-toggleable operator flag for the
-  single-pass behavior in FR-002. Decision reasoning: the freshness trade-off it would guard
-  (see Assumptions) is narrow and scoped — it applies only when zero database-required criteria
-  are present — and mirrors a trade-off ADR-0018 already accepts by default for free-text
-  search, without a dedicated flag for that case either. Correction: `BROWSE_API_HEURISTIC_TYPE`
-  (`SearchHeuristicType`, `BrowserAPIImpl.java:465-470`) does **not** apply here — it toggles
-  between `HYBRID_SINGLE_CHUNKED_QUERY_ES` and `PURE_ES` for the free-text-filtering code path
-  (`doElasticSearchTextFiltering`) only, and has no effect on `getContentByChunks`'s repeat-scan
-  loop, which is what FR-002 changes. There is genuinely no existing config-level escape hatch
-  for this fix; if the single-pass path ever needs disabling, that would require a new flag
-  added at that time, not one that exists today.
+- **FR-009 — RESOLVED (2026-08-24): no dedicated kill switch. Reasoning corrected
+  (2026-09-01, per review) — `BROWSE_API_HEURISTIC_TYPE` DOES apply here, and it is not a safe
+  substitute.** No independently-toggleable operator flag for the single-pass behavior in
+  FR-002. Decision reasoning: the freshness trade-off it would guard (see Assumptions) is narrow
+  and scoped — it applies only when zero database-required criteria are present — and mirrors a
+  trade-off ADR-0018 already accepts by default for free-text search, without a dedicated flag
+  for that case either. **Correction**: `BROWSE_API_HEURISTIC_TYPE` (`SearchHeuristicType`,
+  `BrowserAPIImpl.java:465-470`) is **not** limited to free-text filtering — despite its name,
+  `doElasticSearchTextFiltering` is the dispatcher for every request `isUseElasticSearchForFiltering`
+  routes to ES, and that includes a pure field-filter request with **zero** free-text/file-name
+  term, as long as it has at least one index-routed field criterion
+  (`isUseElasticSearchForFiltering`, `BrowserAPIImpl.java:1577-1584`: `hasIndexFieldCriteria`
+  alone is sufficient). So this config *does* gate the FR-002 case. It is still not usable as a
+  kill switch, though: setting it to `PURE_ES` is not inert for this case — `doPureESQuery`'s
+  guard explicitly throws `DotRuntimeException` for any request with field criteria present
+  (`BrowserAPIImpl.java:496-504`: *"Content Drive field filters (userSearchable) are not
+  supported under the PURE_ES heuristic"*), i.e. it would break every field-filter request, not
+  disable just the single-pass optimization. There is genuinely no existing config-level escape
+  hatch for *this specific fix*; if the single-pass path ever needs disabling, that requires a
+  new flag added at that time. The spec previously stated the opposite conclusion for the wrong
+  reason (claiming the config didn't apply at all) — corrected here so an operator doesn't reach
+  for `BROWSE_API_HEURISTIC_TYPE=PURE_ES` expecting it to be a safe no-op.
 
 ### Key Entities
 
@@ -154,9 +186,12 @@ are unchanged from today's behavior in every combination.
 
 ### Measurable Outcomes
 
-- **SC-001**: For a field filter with no database-required criteria over a folder with roughly
-  20,000 items, the number of times the system re-scans the folder's candidate content drops from
-  four to at most one.
+- **SC-001 — corrected (2026-09-01, per review) to bound both round-trip types.** For a field
+  filter with no database-required criteria over a folder with roughly 20,000 items and sparse
+  matches (the worst case, not the previously-cited "four" reference point — dense-match cases
+  can already exit early today), the number of database scans drops to **at most one** AND the
+  number of Elasticsearch filtering calls drops to **at most one**, down from up to ~23 of each
+  at the default chunk size on this folder size (see FR-002).
 - **SC-002**: Response time for that same case falls to within 20% of the response time of the
   closest equivalent content-search operation (matching the threshold already used to evaluate
   Content Drive elsewhere in this investigation). **Dependency**: because FR-002 is a
@@ -195,8 +230,9 @@ are unchanged from today's behavior in every combination.
   A separate, parallel effort (issue #37148 item 1, spec'd in #37230) is reworking the same
   database candidate-scan query this fix's chunk loop currently calls repeatedly, to fix an
   unrelated planner-instability problem on very large folders. This fix reduces how often that
-  query is invoked for the field-filter-only case addressed here (from ~4 to 1), which is a real
-  win regardless of #37230's status — but SC-002's search-comparable latency target additionally
+  query is invoked for the field-filter-only case addressed here (from up to ~23 in the
+  sparse-match worst case to 1), which is a real win regardless of #37230's status — but SC-002's
+  search-comparable latency target additionally
   requires that single remaining scan itself to be fast, which is exactly what #37230 delivers.
   In other words: FR-002 (scan count) can ship and be verified independently of #37230; SC-002
   (latency target) cannot. Item 1's eventual change to that query must continue to behave
