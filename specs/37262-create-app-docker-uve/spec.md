@@ -353,8 +353,14 @@ so only a warm npx cache stays behind.
   legacy `com.dotmarketing.*`, not a CLI one) and is filed as **#37268**. This fix removes the
   *trigger* by stopping the crash.
 - **Pinning the dotCMS image tag alongside `CUSTOM_STARTER_URL`.** Real drift risk
-  (`latest` + hardcoded `starter-20260630`) and it intersects binding ADR-0019, so it deserves
-  its own decision rather than being folded into a bug fix. P2 follow-up.
+  (`latest` + hardcoded `starter-20260630`). **Deferred on scope, not on ADR grounds.** An earlier
+  revision said it "intersects binding ADR-0019, so it deserves its own decision"; reading
+  ADR-0019 in full, that is backwards. The ADR's *motivating problem* is precisely a client pinned
+  to `latest` against a mismatched instance producing "a cryptic runtime failure", and under
+  date-lockstep `@dotcms/create-app@X` corresponds to dotCMS release `X` by construction — so the
+  ADR supplies the version to pin rather than obstructing the choice. The honest reason to defer
+  is that `latest` is what ships today, so leaving it preserves the status quo instead of
+  introducing new drift inside a bug fix. P2 follow-up.
 - **Landing the E2E suite from #35096.** That issue owns it. This fix adds unit-level tests for
   the logic it changes; the fault-injection E2E case (kill dotCMS mid-run) belongs to #35096.
 - Rewriting the CLI's `Result` type, prompt flow, or framework-scaffolding logic beyond the
@@ -510,10 +516,15 @@ verification guide, and a failure there invalidates the compose design. See Assu
   the management surface is not exposed to the network.
 - **AC-012**: `npx @dotcms/create-app --starter <url>` still works against the bundled compose
   file — the `CUSTOM_STARTER_URL` rewrite regex in `updateDockerComposeStarterUrl` must still match.
-  Enforced by a **Jest spec that loads the real bundled asset**, asserts the regex matches it and
-  asserts the rewritten line, so a reformat of that line fails CI on the PR that causes it. No
-  Docker and no cold start are required, which is what makes this cheap enough to gate every PR;
-  it is available because the rescope put the regex and the file it rewrites in the same package.
+  Enforced by **two guards, neither of which subsumes the other**:
+  `core-web/libs/sdk/create-app/scripts/verify-cold-start.sh --static` asserts the **file** still
+  matches the shape installed CLIs depend on (check T008), and a Jest spec runs
+  `applyStarterUrl()` against the real bundled asset and asserts the **function's** output. The
+  `--static` mode needs no Docker daemon and completes in well under a second, so both run on
+  every PR. An earlier revision of this spec described that script as a phantom reference that
+  nothing created; **that was wrong** — it exists, it ships in this package, and it was already
+  written against the bundled asset. What was genuinely wrong was the path: it is under the
+  package's own `scripts/`, not the repository root.
 - **AC-013**: The bundled compose file is actually present in the published package. `package.json`
   `files` and `project.json`'s esbuild `assets` must both list it, or it ships missing and every
   local-Docker run fails at the first step.
