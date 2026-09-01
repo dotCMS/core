@@ -33,6 +33,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.ArrayList;
 import org.junit.After;
+import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
@@ -67,7 +68,13 @@ public class FileAssetContainerPermissionInheritanceTest {
     /** Stand-in for a missing permission_reference row, so failures read clearly. */
     private static final String NO_REFERENCE = "<no reference row>";
 
+    private static final String PERMISSION_REFERENCES_UPDATE_ASYNC =
+            "PERMISSION_REFERENCES_UPDATE_ASYNC";
+
     private static User systemUser;
+
+    /** Whatever the instance had before this class pinned it, put back by {@link #restoreAsyncPermissionReferences()}. */
+    private static boolean asyncPermissionReferencesOldValue;
 
     /** Everything created by the current test, torn down in {@link #cleanUp()}. */
     private final List<Host> createdSites = new ArrayList<>();
@@ -78,8 +85,22 @@ public class FileAssetContainerPermissionInheritanceTest {
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
         systemUser = APILocator.systemUser();
-        // Make the permission_reference upsert synchronous so the test is deterministic.
-        Config.setProperty("PERMISSION_REFERENCES_UPDATE_ASYNC", false);
+        // Make the permission_reference upsert synchronous so the test is deterministic. Every method
+        // here needs it, so it is pinned for the class rather than per method -- which makes putting
+        // it back mandatory: the property defaults to true, and this class runs inside a suite, so
+        // leaving it pinned would force synchronous upserts on every class that runs afterwards.
+        asyncPermissionReferencesOldValue =
+                Config.getBooleanProperty(PERMISSION_REFERENCES_UPDATE_ASYNC, true);
+        Config.setProperty(PERMISSION_REFERENCES_UPDATE_ASYNC, false);
+    }
+
+    /**
+     * Restores the permission-reference update mode this instance had before {@link #prepare()} pinned
+     * it, so the rest of the suite runs against the configuration it expects.
+     */
+    @AfterClass
+    public static void restoreAsyncPermissionReferences() {
+        Config.setProperty(PERMISSION_REFERENCES_UPDATE_ASYNC, asyncPermissionReferencesOldValue);
     }
 
     /**
