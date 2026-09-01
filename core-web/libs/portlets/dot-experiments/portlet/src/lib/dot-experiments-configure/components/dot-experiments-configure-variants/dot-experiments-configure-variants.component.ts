@@ -35,6 +35,7 @@ import {
     ADD_VARIANT_DIALOG_WIDTH,
     MAX_VARIANTS_ALLOWED,
     TOTAL_WEIGHT,
+    VARIANT_COLORS,
     WEIGHTS_TOTAL_ERROR_KIND
 } from '../../../shared/constants';
 import { VariantRowViewModel, VariantWeightFormRow } from '../../../shared/models';
@@ -52,18 +53,6 @@ import {
     DotExperimentsAddVariantDialogData,
     DotExperimentsAddVariantDialogResult
 } from '../dot-experiments-add-variant-dialog/dot-experiments-add-variant-dialog.component';
-
-/**
- * Row colours, in the order the rows are drawn. Defined here rather than in `shared/`: the palette
- * is this card's presentation, and the Results screen has its own.
- */
-export const VARIANT_COLORS: readonly string[] = [
-    '#0ea5e9',
-    '#a855f7',
-    '#fb923c',
-    '#22c55e',
-    '#f43f5e'
-];
 
 /** Query string every variant preview URL carries, before `&variantName=`. */
 const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';
