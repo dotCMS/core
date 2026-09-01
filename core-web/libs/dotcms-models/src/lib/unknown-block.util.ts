@@ -34,6 +34,18 @@ function isJsonContent(value: unknown): value is JSONContent {
 }
 
 /**
+ * Mark-side counterpart of {@link isJsonContent}. A mark JSON shares the same
+ * "object carrying a non-empty string `type`" shape, so this delegates — but it is a
+ * separate name on purpose. `isJsonContent` is free to tighten around node-specific rules
+ * (requiring `content`, or checking the name against the schema's nodes), and mark
+ * restoration must not start failing when it does. That failure would be silent: the symptom
+ * is a `dotUnsupportedMark` written to storage, not an exception.
+ */
+function isJsonMark(value: unknown): value is JSONMark {
+    return isJsonContent(value);
+}
+
+/**
  * Builds the placeholder attrs stored on `dotUnsupportedBlock`.
  *
  * @param node The original unsupported TipTap node JSON.
@@ -143,7 +155,7 @@ export function renderUnknownBlockOriginalNode(
 export function renderUnknownBlockOriginalMark(
     attributes: Partial<UnknownBlockMarkAttrs>
 ): Record<string, string> {
-    if (isJsonContent(attributes.originalMark)) {
+    if (isJsonMark(attributes.originalMark)) {
         return { 'data-original-mark': JSON.stringify(attributes.originalMark) };
     }
 
@@ -219,6 +231,16 @@ export function createUnsupportedBlockNode() {
  *
  * `inclusive: false` keeps the mark from swallowing text typed at its boundary, so an
  * author extending that sentence does not silently widen a mark this editor cannot render.
+ *
+ * KNOWN LIMITATION — "Clear formatting" discards the preserved payload. That action runs
+ * `unsetAllMarks().clearNodes()` (`toolbar.component.ts`; the legacy bubble menu runs
+ * `unsetAllMarks()`), which strips this placeholder along with every real mark — and
+ * `clearNodes()` does the same to `dotUnsupportedBlock`. Since neither placeholder renders
+ * any visible formatting, the author has no way to know something was discarded, and there
+ * is no way back. It is still strictly better than the pre-fix behaviour, where the document
+ * did not load at all, and unlike that, it is user-initiated. Excluding BOTH placeholders
+ * from the clear-formatting command is worth doing, but it belongs to that command in each
+ * editor rather than here — the node half is affected the same way and predates this mark.
  */
 export function createUnsupportedBlockMark() {
     return Mark.create({
@@ -362,7 +384,7 @@ export function preserveUnknownBlockMarks<T extends JSONLikeOrUndefined>(
  * when the payload is no longer valid so the recoverable raw string still round-trips.
  */
 function restoreUnknownMark(mark: JSONMark): JSONMark {
-    if (mark?.type === UNKNOWN_BLOCK_MARK_NAME && isJsonContent(mark.attrs?.['originalMark'])) {
+    if (mark?.type === UNKNOWN_BLOCK_MARK_NAME && isJsonMark(mark.attrs?.['originalMark'])) {
         return mark.attrs['originalMark'] as JSONMark;
     }
 

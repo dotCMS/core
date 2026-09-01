@@ -6,6 +6,7 @@ import { Node as PMNode } from '@tiptap/pm/model';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createEditorExtensions } from './editor-extensions';
+import { DotLink } from './link.extension';
 
 import {
     preserveUnknownNodesInDocument,
@@ -306,6 +307,23 @@ describe('createEditorExtensions', () => {
 
         it('keeps the URL paste rule on an unrestricted field', () => {
             expect(pasteRulesFor(undefined)).toHaveLength(1);
+        });
+
+        /**
+         * The rule being suppressed is the auto-link-on-paste rule, so it follows `autolink`
+         * too — not `linkOnPaste` alone. `createEditorExtensions()` sets both from the same
+         * `has('link')` and cannot produce this combination, which is exactly why it needs
+         * pinning: nothing else would catch the gate silently killing the linkifying.
+         */
+        it('keeps the URL paste rule when only autolink is enabled', () => {
+            const link = DotLink.configure({ autolink: true, linkOnPaste: false });
+
+            expect(
+                link.config.addPasteRules?.call({
+                    options: link.options,
+                    parent: () => [{ find: /url/, handler: () => undefined }]
+                })
+            ).toHaveLength(1);
         });
     });
 });

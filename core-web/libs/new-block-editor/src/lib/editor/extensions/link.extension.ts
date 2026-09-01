@@ -32,8 +32,17 @@ export const DotLink = Link.extend({
      * whole document); what `allowedBlocks` gates is authoring, and auto-linking pasted text
      * is an authoring path. Compare `@tiptap/extension-youtube`, which guards its own paste
      * handler with `addPasteHandler`.
+     *
+     * Gated on EITHER flag rather than on `linkOnPaste` alone: the rule being suppressed is
+     * the auto-link-on-paste rule, which sits closer to `autolink` than to `linkOnPaste`.
+     * `createEditorExtensions()` derives both from the same `has('link')`, so today they
+     * cannot disagree — but `linkOnPaste: false` + `autolink: true` is a coherent
+     * configuration ("don't wrap my selection, but do linkify what I paste") and must not
+     * silently lose the linkifying.
      */
     addPasteRules() {
-        return this.options.linkOnPaste ? (this.parent?.() ?? []) : [];
+        const authoringAllowsLinks = this.options.autolink || this.options.linkOnPaste;
+
+        return authoringAllowsLinks ? (this.parent?.() ?? []) : [];
     }
 });

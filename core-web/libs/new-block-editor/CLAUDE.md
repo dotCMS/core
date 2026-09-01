@@ -214,6 +214,15 @@ TipTap does not surface either failure loudly: it catches the `RangeError`, logs
 `[tiptap warn]: Invalid content`, and boots an EMPTY document. The field looks emptied while the
 stored JSON is intact — and the next save makes that loss real (#37145, #37175).
 
+**Known limitation — "Clear formatting" discards both payloads.** That action runs
+`unsetAllMarks().clearNodes()` (`toolbar.component.ts`; the legacy bubble menu runs
+`unsetAllMarks()`), which strips `dotUnsupportedMark` along with every real mark, and
+`clearNodes()` does the same to `dotUnsupportedBlock`. Neither placeholder renders visible
+formatting, so the author cannot tell anything was discarded and there is no way back. Still
+strictly better than not loading the document at all, and unlike that, user-initiated.
+Excluding both placeholders from the clear-formatting command is worth doing — it belongs to
+that command in each editor, not to the placeholders.
+
 ### Special / node-scoped commands
 
 | Command | Owner | What it does |
