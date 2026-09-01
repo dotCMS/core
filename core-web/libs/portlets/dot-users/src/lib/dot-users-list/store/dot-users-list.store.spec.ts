@@ -1,6 +1,8 @@
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { NEVER, of, throwError } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
+
 import {
     DotHttpErrorManagerService,
     DotMessageDisplayService,
@@ -65,6 +67,7 @@ describe('DotUsersListStore', () => {
     let spectator: SpectatorService<InstanceType<typeof DotUsersListStore>>;
     let store: InstanceType<typeof DotUsersListStore>;
     let usersService: jest.Mocked<DotUsersService>;
+    let rolesService: jest.Mocked<DotRolesService>;
 
     const createService = createServiceFactory({
         service: DotUsersListStore,
@@ -88,6 +91,7 @@ describe('DotUsersListStore', () => {
         spectator = createService();
         store = spectator.service;
         usersService = spectator.inject(DotUsersService) as jest.Mocked<DotUsersService>;
+        rolesService = spectator.inject(DotRolesService) as jest.Mocked<DotRolesService>;
         // Clear call history from other tests (mockProvider's jest.fn() is shared).
         // Implementations set via mockReturnValue are preserved.
         jest.clearAllMocks();
@@ -95,9 +99,10 @@ describe('DotUsersListStore', () => {
         usersService.deleteUser.mockReturnValue(of({}));
         usersService.createUser.mockReturnValue(of(MOCK_USERS[0]));
         usersService.updateUser.mockReturnValue(of(MOCK_USERS[0]));
+        rolesService.getForUser.mockReturnValue(of([]));
     });
 
-    it('loadUsers passes the current state as query params', () => {
+    it('loadUsers passes the current state as query params (opts into includeRoles)', () => {
         store.loadUsers();
 
         expect(usersService.getUsersPaginated).toHaveBeenCalledWith({
@@ -106,26 +111,126 @@ describe('DotUsersListStore', () => {
             page: 1,
             perPage: 20,
             orderBy: 'lastLoginDate',
-            direction: 'DESC'
+            direction: 'DESC',
+            // #37236: the list opts into inline roles on every load;
+            // the store's 403 handler downgrades to `false` when the
+            // viewer lacks the required portlet gate.
+            includeRoles: true
         });
         expect(store.users()).toEqual(MOCK_USERS);
         expect(store.totalRecords()).toBe(2);
         expect(store.status()).toBe('loaded');
     });
 
-    it('resolves each row roles through the shared roles service', () => {
-        const rolesService = spectator.inject(DotRolesService);
-        (rolesService.getForUser as jest.Mock).mockImplementation((userId: string) =>
-            of([{ id: `role-${userId}`, name: 'Publisher', roleKey: 'PUBLISHER' }])
-        );
+    describe('includeRoles fast path (#37236)', () => {
+        it('reads role names from the inline `roles` field and skips the per-user fetch', () => {
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                of({
+                    ...MOCK_RESPONSE,
+                    entity: [
+                        {
+                            ...MOCK_USERS[0],
+                            roles: [
+                                {
+                                    id: 'r-1',
+                                    name: 'CMS Administrator',
+                                    roleKey: 'CMS Administrator'
+                                },
+                                {
+                                    id: 'r-2',
+                                    name: 'Back-end User',
+                                    roleKey: 'DOTCMS_BACK_END_USER'
+                                }
+                            ]
+                        },
+                        {
+                            ...MOCK_USERS[1],
+                            roles: []
+                        }
+                    ]
+                })
+            );
 
-        store.loadUsers();
+            store.loadUsers();
 
-        // One lookup per row, and the result actually lands in state — before
-        // this the store fell through to the real root service and the roles
-        // column was never exercised.
-        expect(rolesService.getForUser).toHaveBeenCalledTimes(MOCK_USERS.length);
-        expect(store.userRoles()[MOCK_USERS[0].userId]).toEqual(['Publisher']);
+            expect(rolesService.getForUser).not.toHaveBeenCalled();
+            expect(store.userRoles()).toEqual({
+                'dotcms.org.1': ['CMS Administrator', 'Back-end User'],
+                'dotcms.org.2': []
+            });
+        });
+
+        it('falls back to per-row rolesService.getForUser when the response omits `roles`', () => {
+            // Envelope without the `roles` field — models an older
+            // backend that predates #37236.
+            const legacyRow = { ...MOCK_USERS[0] };
+            delete (legacyRow as Partial<(typeof MOCK_USERS)[0]>).roles;
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                of({ ...MOCK_RESPONSE, entity: [legacyRow] })
+            );
+            rolesService.getForUser.mockReturnValueOnce(
+                of([
+                    { id: 'r-1', name: 'Admin', roleKey: 'CMS Administrator', childCount: 0 },
+                    // Filtered: personal role's key === userId.
+                    { id: 'r-p', name: 'Personal', roleKey: 'dotcms.org.1', childCount: 0 }
+                ])
+            );
+
+            store.loadUsers();
+
+            expect(rolesService.getForUser).toHaveBeenCalledWith('dotcms.org.1');
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': ['Admin'] });
+        });
+
+        it('retries without includeRoles when the backend gates the flag with 403, then N+1s', () => {
+            usersService.getUsersPaginated
+                .mockReturnValueOnce(
+                    throwError(
+                        () =>
+                            new HttpErrorResponse({
+                                status: 403,
+                                statusText: 'Forbidden',
+                                url: '/api/v1/users/filter?includeRoles=true'
+                            })
+                    )
+                )
+                .mockReturnValueOnce(of({ ...MOCK_RESPONSE, entity: [MOCK_USERS[0]] }));
+            rolesService.getForUser.mockReturnValueOnce(
+                of([{ id: 'r-1', name: 'Admin', roleKey: 'CMS Administrator', childCount: 0 }])
+            );
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(2);
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                1,
+                expect.objectContaining({ includeRoles: true })
+            );
+            expect(usersService.getUsersPaginated).toHaveBeenNthCalledWith(
+                2,
+                expect.objectContaining({ includeRoles: false })
+            );
+            expect(rolesService.getForUser).toHaveBeenCalledWith('dotcms.org.1');
+            expect(store.userRoles()).toEqual({ 'dotcms.org.1': ['Admin'] });
+        });
+
+        it('does NOT retry on non-403 errors — they bubble up to the error state', () => {
+            usersService.getUsersPaginated.mockReturnValueOnce(
+                throwError(
+                    () =>
+                        new HttpErrorResponse({
+                            status: 500,
+                            statusText: 'Server Error',
+                            url: '/api/v1/users/filter?includeRoles=true'
+                        })
+                )
+            );
+
+            store.loadUsers();
+
+            expect(usersService.getUsersPaginated).toHaveBeenCalledTimes(1);
+            expect(store.status()).toBe('error');
+        });
     });
 
     it('setRoleFilter should reset page and trigger a reload with roleKey', () => {
