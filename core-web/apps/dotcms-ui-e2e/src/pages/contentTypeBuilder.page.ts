@@ -24,6 +24,23 @@ export class ContentTypeBuilderPage {
      */
     async goToBuilder(contentTypeId: string) {
         await this.page.goto(`/dotAdmin/#/content-types-angular/edit/${contentTypeId}`);
+        await this.waitForBuilder();
+    }
+
+    /**
+     * Reloads the builder, discarding everything held in memory — open dialogs
+     * included.
+     *
+     * `goToBuilder` cannot stand in for this: navigating to the URL already in the
+     * address bar is a same-document fragment navigation, so nothing is torn down and
+     * a dialog left open stays open, intercepting the next click.
+     */
+    async reloadBuilder() {
+        await this.page.reload();
+        await this.waitForBuilder();
+    }
+
+    private async waitForBuilder() {
         await this.page.getByTestId('fields-bag-0').first().waitFor({ state: 'visible' });
         await this.page.getByTestId(DotCMSClazzes.TEXT).first().waitFor({ state: 'visible' });
     }
