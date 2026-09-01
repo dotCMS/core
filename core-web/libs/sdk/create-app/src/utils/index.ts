@@ -476,23 +476,35 @@ function isPortAvailable(port: number): Promise<boolean> {
  * Checks if required dotCMS ports are available
  * @returns Result with true if all ports available, or error message with busy ports
  */
-export async function checkPortsAvailability(): Promise<Result<true, string>> {
-    const requiredPorts = [
-        { port: 8082, service: 'dotCMS HTTP' },
-        { port: 8443, service: 'dotCMS HTTPS' },
-        { port: 9200, service: 'Elasticsearch HTTP' },
-        { port: 9600, service: 'Elasticsearch Transport' }
-    ];
+const REQUIRED_PORTS = [
+    { port: 8082, service: 'dotCMS HTTP' },
+    { port: 8443, service: 'dotCMS HTTPS' },
+    { port: 9200, service: 'Elasticsearch HTTP' },
+    { port: 9600, service: 'Elasticsearch Transport' }
+];
 
+/**
+ * Which of the required ports are taken.
+ *
+ * Separate from `checkPortsAvailability` because a busy 8082 is not automatically a conflict:
+ * it may be a dotCMS from a previous successful run, which `resolvePortConflict` can reuse
+ * rather than refuse (AC-006).
+ */
+export async function findBusyPorts(): Promise<{ port: number; service: string }[]> {
     const busyPorts: { port: number; service: string }[] = [];
 
-    // Check all ports
-    for (const { port, service } of requiredPorts) {
+    for (const { port, service } of REQUIRED_PORTS) {
         const available = await isPortAvailable(port);
         if (!available) {
             busyPorts.push({ port, service });
         }
     }
+
+    return busyPorts;
+}
+
+export async function checkPortsAvailability(): Promise<Result<true, string>> {
+    const busyPorts = await findBusyPorts();
 
     if (busyPorts.length > 0) {
         const errorMsg =

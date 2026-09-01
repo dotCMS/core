@@ -206,12 +206,22 @@ export async function prepareDirectory(basePath: string, projectName: string) {
         return targetPath; // empty → OK
     }
 
+    // A docker-compose.yml here means a previous run left a stack behind — possibly one that is
+    // still running. Emptying the directory would delete the only file that can tear it down,
+    // stranding containers the user then has to hunt for by hand. That is the CLI destroying its
+    // own recovery path, which is the shape of the failure in #37262, so it is refused outright
+    // rather than folded into the blanket "all files will be deleted" confirmation.
+    const composePath = path.join(targetPath, 'docker-compose.yml');
+    const hasComposeFile = fs.existsSync(composePath);
+
     // Directory not empty → warn user
     const ans = await inquirer.prompt([
         {
             type: 'confirm',
             name: 'confirm',
-            message: `⚠️  Directory "${targetPath}" is not empty. All files inside will be deleted. Continue?`,
+            message: hasComposeFile
+                ? `⚠️  Directory "${targetPath}" contains a docker-compose.yml from a previous run. Everything EXCEPT that file will be deleted. Continue?`
+                : `⚠️  Directory "${targetPath}" is not empty. All files inside will be deleted. Continue?`,
             default: false
         }
     ]);
@@ -221,8 +231,35 @@ export async function prepareDirectory(basePath: string, projectName: string) {
         process.exit(1);
     }
 
-    // Empty directory
-    await fs.emptyDir(targetPath);
+    if (hasComposeFile) {
+        const preserved = await fs.readFile(composePath);
+        await fs.emptyDir(targetPath);
+        await fs.writeFile(composePath, preserved);
+    } else {
+        await fs.emptyDir(targetPath);
+    }
 
     return targetPath;
+}
+
+/**
+ * Asked when a healthy dotCMS is already listening on 8082.
+ *
+ * It offers a real choice rather than just confirming reuse: someone who did not expect an
+ * instance there should be able to stop and look instead of being carried into it (decision D3).
+ */
+export async function askReuseExistingInstance(): Promise<boolean> {
+    const { reuse } = await inquirer.prompt([
+        {
+            type: 'list',
+            name: 'reuse',
+            message: 'A dotCMS instance is already running on port 8082. What would you like to do?',
+            choices: [
+                { name: 'Reuse the running instance', value: true },
+                { name: 'Abort so I can check what it is', value: false }
+            ]
+        }
+    ]);
+
+    return reuse;
 }

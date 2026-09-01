@@ -16,7 +16,8 @@ import {
     askPasswordForDotcmsCloud,
     askProjectName,
     askUserNameForDotcmsCloud,
-    prepareDirectory
+    prepareDirectory,
+    askReuseExistingInstance
 } from './asks';
 import {
     CLOUD_HEALTH_CHECK_RETRIES,
@@ -26,16 +27,10 @@ import {
 } from './constants';
 import { FailedToCreateFrontendProjectError, FailedToDownloadDockerComposeError } from './errors';
 import { installExitStateHandler, recordRecoverableState } from './exit-state';
-import {
-    cloneFrontEndSample,
-    downloadDockerCompose,
-    moveDockerComposeBack,
-    moveDockerComposeOneLevelUp
-} from './git';
+import { cloneFrontEndSample, downloadDockerCompose } from './git';
 import { type Result, Ok, Err } from './result';
 import {
     checkDockerAvailability,
-    checkPortsAvailability,
     displayDependencies,
     fetchWithRetry,
     finalStepsForAngularAndAngularSSR,
@@ -45,8 +40,12 @@ import {
     getDockerDiagnostics,
     getDotcmsApisByBaseUrl,
     getPortByFramework,
-    installDependenciesForProject
+    installDependenciesForProject,
+    findBusyPorts
 } from './utils';
+import { withComposeFileMovedAside } from './utils/compose-move';
+import { reportInstallResult } from './utils/install';
+import { resolvePortConflict } from './utils/ports';
 import { applyStarterUrl } from './utils/starter-url';
 import {
     normalizeUrl,
@@ -267,15 +266,57 @@ program
             }
             spinner.succeed('Docker is available');
 
-            // STEP 2 — Check if required ports are available
+            // STEP 2 — Check if required ports are available.
+            //
+            // A busy 8082 is not automatically a conflict: after a successful run it is this
+            // CLI's own dotCMS. Refusing to start there is what made reproduction step 6
+            // unrecoverable, so probe before failing (AC-006, decision D3).
             spinner.start('Checking port availability...');
-            const portsAvailable = await checkPortsAvailability();
-            if (!portsAvailable.ok) {
+            const busyPorts = await findBusyPorts();
+            const portOutcome = await resolvePortConflict({
+                busyPorts,
+                isInteractive: Boolean(process.stdout.isTTY) && !process.env.CI,
+                host: LOCAL_DOTCMS_HOST,
+                probeInstance: async () => {
+                    // Reusable means usable for what happens next: it must answer readiness AND
+                    // be able to issue a token. A half-dead instance is still a hard failure.
+                    const running = await isDotcmsRunning(undefined, 1);
+                    if (!running.ok) {
+                        return false;
+                    }
+
+                    const probeToken = await DotCMSApi.getAuthToken({
+                        payload: {
+                            user: DOTCMS_USER.username,
+                            password: DOTCMS_USER.password,
+                            expirationDays: '1',
+                            label: 'create-app reuse probe'
+                        }
+                    });
+
+                    return probeToken.ok;
+                },
+                askReuse: () => {
+                    spinner.stop();
+
+                    return askReuseExistingInstance();
+                },
+                notify: (message) => spinner.info(message)
+            });
+
+            if (portOutcome.kind === 'abort') {
                 spinner.fail('Required ports are busy');
-                console.error(portsAvailable.val);
+                console.error(chalk.red(portOutcome.message));
                 process.exit(1);
             }
-            spinner.succeed('All required ports are available');
+
+            const reusingExistingInstance = portOutcome.kind === 'reuse';
+
+            spinner.succeed(
+                reusingExistingInstance
+                    ? 'Reusing the dotCMS already running on 8082'
+                    : 'All required ports are available'
+            );
 
             // STEP 3 — Download docker-compose
             spinner.start('Downloading Docker Compose configuration...');
@@ -391,10 +432,12 @@ program
                 spinner.warn('Skipped Universal Visual Editor configuration.');
                 console.log(chalk.yellow(uveOutcome.message));
             }
-            // required since git requires empty directory
-            moveDockerComposeOneLevelUp(finalDirectory);
-            await startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory });
-            moveDockerComposeBack(finalDirectory);
+            // git needs an empty directory, so the compose file steps aside — inside a
+            // try/finally, because a scaffolding failure used to strand it in the parent and
+            // leave the user unable to `docker compose down` the stack still running (AC-008).
+            await withComposeFileMovedAside(finalDirectory, () =>
+                startScaffoldingFrontEnd({ spinner, selectedFramework, finalDirectory })
+            );
             console.log(chalk.white(`✅ Project setup complete!`));
             const relativePath = getDisplayPath(finalDirectory, process.cwd());
             displayFinalSteps({
@@ -623,11 +666,14 @@ async function startScaffoldingFrontEnd({
         `📦 Installing dependencies...\n\n ${displayDependencies(selectedFramework as SupportedFrontEndFrameworks)}`
     );
     const result = await installDependenciesForProject(finalDirectory);
-    if (!result) {
+    // `result.ok`, never `!result`: Err() is `{ok:false, val}` — a truthy object — so the old
+    // `if (!result)` guard was unreachable and a failed install reported success (contract X7).
+    const installReport = reportInstallResult(result);
+
+    if (installReport.kind === 'failed') {
         spinner.fail(
-            `Failed to install dependencies. Please check if npm is installed in your system`
+            `Failed to install dependencies (${installReport.reason}). Check that npm is installed and on your PATH.`
         );
-        process.exit(1);
     } else {
         spinner.succeed(`Dependencies installed`);
     }
