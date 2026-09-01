@@ -7,6 +7,7 @@ import https from 'https';
 import net from 'net';
 import path from 'path';
 
+import { describeRequestFailure, isSuccessStatus, type RetryReporter } from './fetch-retry';
 import { escapeShellPath } from './validation';
 
 import {
@@ -42,7 +43,13 @@ export async function fetchWithRetry(
     url: string,
     retries = 5,
     delay = 5000,
-    requestTimeout = 10000 // Per-request timeout in milliseconds
+    requestTimeout = 10000, // Per-request timeout in milliseconds
+    /**
+     * Where retry progress goes. Omitted means silent: this function must not write to stdout
+     * itself, because the caller usually has an `ora` spinner repainting the last line and
+     * concurrent writes tear it (AC-009).
+     */
+    onRetry?: RetryReporter
 ) {
     const errors: string[] = [];
     let lastError: unknown;
@@ -51,27 +58,14 @@ export async function fetchWithRetry(
         try {
             return await axios.get(url, {
                 timeout: requestTimeout,
-                // Accept any 2xx status code as success (health endpoints may return 200, 201, 204, etc.)
-                validateStatus: (status) => status >= 200 && status < 300
+                // Any 2xx is success — the same rule isDotcmsRunning applies, so a 204 cannot be
+                // accepted here and rejected there.
+                validateStatus: isSuccessStatus
             });
         } catch (err) {
             lastError = err;
 
-            // Track error for debugging with more context
-            let errorMsg = '';
-            if (axios.isAxiosError(err)) {
-                if (err.code === 'ECONNREFUSED') {
-                    errorMsg = 'Connection refused - service not accepting connections';
-                } else if (err.code === 'ETIMEDOUT' || err.code === 'ECONNABORTED') {
-                    errorMsg = 'Connection timeout - service too slow or not responding';
-                } else if (err.response) {
-                    errorMsg = `HTTP ${err.response.status}: ${err.response.statusText}`;
-                } else {
-                    errorMsg = err.code || err.message;
-                }
-            } else {
-                errorMsg = String(err);
-            }
+            const errorMsg = describeRequestFailure(err);
 
             errors.push(`Attempt ${i + 1}: ${errorMsg}`);
 
@@ -108,11 +102,13 @@ export async function fetchWithRetry(
                 );
             }
 
-            console.log(
-                chalk.yellow(`⏳ dotCMS not ready (attempt ${i + 1}/${retries})`) +
-                    chalk.gray(` - ${errorMsg}`) +
-                    chalk.gray(` - Retrying in ${delay / 1000}s...`)
-            );
+            // Reported, never printed — see the onRetry doc above.
+            onRetry?.({
+                attempt: i + 1,
+                totalAttempts: retries,
+                reason: errorMsg,
+                nextDelayMs: delay
+            });
             await new Promise((r) => setTimeout(r, delay));
         }
     }

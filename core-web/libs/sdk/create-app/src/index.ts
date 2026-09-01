@@ -1,3 +1,4 @@
+import axios from 'axios';
 import cfonts from 'cfonts';
 import chalk from 'chalk';
 import { Command } from 'commander';
@@ -44,8 +45,10 @@ import {
     findBusyPorts
 } from './utils';
 import { withComposeFileMovedAside } from './utils/compose-move';
+import { formatRetryReport, isSuccessStatus, type RetryReporter } from './utils/fetch-retry';
 import { reportInstallResult } from './utils/install';
 import { resolvePortConflict } from './utils/ports';
+import { waitForReadiness } from './utils/readiness';
 import { applyStarterUrl } from './utils/starter-url';
 import {
     normalizeUrl,
@@ -61,10 +64,16 @@ import type { DotCmsCliOptions, SupportedFrontEndFrameworks } from './types';
 /** Budget for `docker compose up --wait`: a cold run pulls ~2GB and imports the demo starter. */
 const COMPOSE_WAIT_TIMEOUT_SECONDS = 600;
 
+/** How often the wait ticker repaints. Frequent enough to look alive, rare enough not to churn. */
+const PROGRESS_TICK_MS = 2000;
+
 // Supported values
 
 /** Host the bundled compose stack publishes dotCMS on. */
 const LOCAL_DOTCMS_HOST = 'http://localhost:8082';
+
+/** Management port, published on loopback only by the bundled compose file. */
+const LOCAL_MANAGEMENT_HOST = 'http://127.0.0.1:8090';
 
 // Registered before anything can fail: once a token exists, every terminal path — including
 // the 17 process.exit() sites that `finally` cannot reach — prints it and writes .env (X1).
@@ -136,7 +145,10 @@ program
 
                 const healthCheckResult = await isDotcmsRunning(
                     healthApiURL,
-                    CLOUD_HEALTH_CHECK_RETRIES
+                    CLOUD_HEALTH_CHECK_RETRIES,
+                    (report) => {
+                        spinner.text = formatRetryReport(report);
+                    }
                 );
 
                 if (!healthCheckResult.ok) {
@@ -333,7 +345,10 @@ program
             spinner.start('Starting dotCMS containers...');
             const ran = await runDockerCompose({
                 directory: finalDirectory,
-                starterUrl: options.starter
+                starterUrl: options.starter,
+                onProgress: (message) => {
+                    spinner.text = message;
+                }
             });
             if (!ran.ok) {
                 spinner.fail('Failed to start Docker containers');
@@ -357,10 +372,30 @@ program
 
             spinner.start('Verifying if dotCMS is running...');
 
-            const healthCheckResult = await isDotcmsRunning(
-                DOTCMS_HEALTH_API,
-                LOCAL_HEALTH_CHECK_RETRIES
-            );
+            // Prefer /dotmgt/readyz on the management port now that the bundled compose file
+            // publishes it. `--wait` returning healthy only proves the instance is LIVE — the
+            // container healthcheck probes livez — and readyz was measured lagging it by a few
+            // seconds. Probing the app endpoint alone would let the CLI start making API calls
+            // in that window. The app endpoint stays as the fallback for images that do not
+            // serve the management endpoints (AC-009, P1 readiness switch).
+            const readiness = await waitForReadiness({
+                readyzUrl: `${LOCAL_MANAGEMENT_HOST}/dotmgt/readyz`,
+                fallbackUrl: DOTCMS_HEALTH_API,
+                get: (url) => axios.get(url, { timeout: 10000, validateStatus: () => true }),
+                attempts: LOCAL_HEALTH_CHECK_RETRIES,
+                delayMs: 5000,
+                onAttempt: (attempt, attempts, detail) => {
+                    spinner.text = formatRetryReport({
+                        attempt,
+                        totalAttempts: attempts,
+                        reason: detail,
+                        nextDelayMs: 5000
+                    });
+                }
+            });
+
+            const healthCheckResult: Result<boolean, string> =
+                readiness.kind === 'ready' ? Ok(true) : Err(readiness.detail);
 
             if (!healthCheckResult.ok) {
                 spinner.fail('dotCMS failed to start properly');
@@ -514,10 +549,12 @@ async function downloadTheDockerCompose({
 
 async function runDockerCompose({
     directory,
-    starterUrl
+    starterUrl,
+    onProgress
 }: {
     directory: string;
     starterUrl?: string;
+    onProgress?: (message: string) => void;
 }): Promise<Result<void, Error>> {
     try {
         // console.log(chalk.cyan("🐳 Starting Docker containers... (This might take some time)"));
@@ -537,7 +574,7 @@ async function runDockerCompose({
         // The timeout is generous because a cold run pulls ~2GB and then imports the demo
         // starter. The bundled compose file sets `start_period: 180s` on dotcms; a boot
         // measured at ~46s leaves plenty of head-room inside this budget.
-        await execa(
+        const subprocess = execa(
             'docker',
             [
                 'compose',
@@ -550,9 +587,66 @@ async function runDockerCompose({
             { cwd: directory, env }
         );
 
+        // Feedback has to be continuous for the WHOLE wait, which can be ten minutes on a cold
+        // machine: a ~2GB pull followed by the demo-starter import. Ten minutes of motionless
+        // spinner is the symptom this issue was actually reported for, so two things run here.
+        //
+        // 1. Compose's own progress. It writes `Waiting`/`Healthy` transitions and pull progress
+        //    to STDERR, not stdout, and execa swallows both by default.
+        // 2. A ticker, because compose can itself go quiet for minutes at a time while a single
+        //    layer downloads or the starter imports. Elapsed time moving is what distinguishes
+        //    "still working" from "hung", and only the ticker can show that during the silence.
+        let lastLine = 'starting containers';
+        const startedAt = Date.now();
+
+        const absorb = (chunk: Buffer | string) => {
+            const line = String(chunk)
+                .split('\n')
+                .map((part) => part.trim())
+                .filter(Boolean)
+                .pop();
+
+            if (line) {
+                lastLine = line;
+            }
+        };
+
+        subprocess.stdout?.on('data', absorb);
+        subprocess.stderr?.on('data', absorb);
+
+        const ticker = setInterval(() => {
+            const elapsed = Math.round((Date.now() - startedAt) / 1000);
+            onProgress?.(`${lastLine} (${elapsed}s elapsed)`);
+        }, PROGRESS_TICK_MS);
+
+        try {
+            await subprocess;
+        } finally {
+            clearInterval(ticker);
+        }
+
         return Ok(undefined);
     } catch (err) {
-        return Err(err as Error);
+        // A --wait timeout is otherwise indistinguishable from a hang. Say what state the stack
+        // reached, so the failure names itself instead of leaving the user to go digging.
+        const detail = await describeComposeState(directory);
+
+        return Err(new Error(`${(err as Error).message}${detail}`));
+    }
+}
+
+/** Per-service state, appended to a compose failure so the error is self-describing. */
+async function describeComposeState(directory: string): Promise<string> {
+    try {
+        const { stdout } = await execa(
+            'docker',
+            ['compose', 'ps', '--format', '{{.Service}}: {{.State}} {{.Status}}'],
+            { cwd: directory }
+        );
+
+        return stdout.trim() ? `\n\nContainer state:\n${stdout.trim()}` : '';
+    } catch {
+        return '';
     }
 }
 
@@ -572,15 +666,20 @@ async function updateDockerComposeStarterUrl({
     await fs.writeFile(composePath, updatedContents);
 }
 
-async function isDotcmsRunning(url?: string, retries = 60): Promise<Result<boolean, string>> {
+async function isDotcmsRunning(
+    url?: string,
+    retries = 60,
+    onRetry?: RetryReporter
+): Promise<Result<boolean, string>> {
     try {
         // console.log(chalk.cyan("Waiting for DotCMS to be up ...."));
-        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000);
-        if (res && res.status === 200) {
-            // console.log(chalk.green("✔ DotCMS container started sucessfully!\n"));
+        const res = await fetchWithRetry(url ?? DOTCMS_HEALTH_API, retries, 5000, 10000, onRetry);
+        // `isSuccessStatus`, not `=== 200`: fetchWithRetry resolves on any 2xx, so demanding
+        // exactly 200 here rejected responses it had already accepted.
+        if (res && isSuccessStatus(res.status)) {
             return Ok(true);
         }
-        return Err('dotCMS health check returned non-200 status');
+        return Err('dotCMS health check returned a non-success status');
     } catch (error) {
         const errorMessage = error instanceof Error ? error.message : String(error);
         return Err(errorMessage);
