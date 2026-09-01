@@ -6,8 +6,13 @@ import { Node as PMNode } from '@tiptap/pm/model';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createEditorExtensions } from './editor-extensions';
+import { DotLink } from './link.extension';
 
-import { UNKNOWN_BLOCK_NODE_NAME } from '../utils/unknown-block.utils';
+import {
+    preserveUnknownNodesInDocument,
+    UNKNOWN_BLOCK_MARK_NAME,
+    UNKNOWN_BLOCK_NODE_NAME
+} from '../utils/unknown-block.utils';
 
 import type { SlashMenuService } from '../components/slash-menu/slash-menu.service';
 
@@ -186,6 +191,139 @@ describe('createEditorExtensions', () => {
             expect(byName(extensions, 'link')?.options.autolink).toBe(true);
             expect(byName(extensions, 'link')?.options.linkOnPaste).toBe(true);
             expect(byName(extensions, 'emoji')?.options.enableEmoticons).toBe(true);
+        });
+    });
+
+    /**
+     * #37175 AC5 — the failure mode the two registered marks only papered over. Any mark the
+     * schema does not declare aborts `Node.fromJSON` for the WHOLE document, so registering
+     * `link` and `highlight` fixed the two known offenders, not the class of bug. The realistic
+     * sources are content that did not come from this editor: an API write, a migration from
+     * another CMS (`textStyle`, `color`, `fontFamily` are the usual suspects), or a version
+     * downgrade.
+     */
+    describe('unknown marks no longer abort the document (#37175 AC5)', () => {
+        const RESTRICTED = ['bulletList', 'orderedList', 'codeBlock'];
+
+        const schema = () =>
+            getSchema(createEditorExtensions(menuService, RESTRICTED, injector, messageService));
+
+        /** Two paragraphs so a partial load is distinguishable from a total abort. */
+        const storedDoc = (mark: Record<string, unknown>) => ({
+            type: 'doc',
+            content: [
+                {
+                    type: 'paragraph',
+                    content: [{ type: 'text', marks: [mark], text: 'imported copy' }]
+                },
+                {
+                    type: 'paragraph',
+                    content: [{ type: 'text', text: 'plain sibling' }]
+                }
+            ]
+        });
+
+        const knownNames = (target: ReturnType<typeof schema>) => ({
+            nodes: new Set(Object.keys(target.nodes)),
+            marks: new Set(Object.keys(target.marks))
+        });
+
+        it('registers the unsupported-mark placeholder', () => {
+            expect(Object.keys(schema().marks)).toContain(UNKNOWN_BLOCK_MARK_NAME);
+        });
+
+        it('is the exact throw the fix has to prevent', () => {
+            expect(() => PMNode.fromJSON(schema(), storedDoc({ type: 'textStyle' }))).toThrow(
+                /no mark type textStyle/
+            );
+        });
+
+        it('loads the whole document once the unknown mark is preserved', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(
+                    storedDoc({ type: 'textStyle', attrs: { color: '#ff0000' } }),
+                    nodes,
+                    marks
+                )
+            );
+
+            // Before the fix this was an empty doc: 0 characters, both paragraphs gone.
+            expect(doc.childCount).toBe(2);
+            expect(doc.textContent).toBe('imported copyplain sibling');
+        });
+
+        it('keeps the decorated text editable, carrying the payload for the save path', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+            const original = { type: 'textStyle', attrs: { color: '#ff0000' } };
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(storedDoc(original), nodes, marks)
+            );
+            const [mark] = doc.firstChild?.firstChild?.marks ?? [];
+
+            expect(mark.type.name).toBe(UNKNOWN_BLOCK_MARK_NAME);
+            expect(mark.attrs['originalMark']).toEqual(original);
+        });
+
+        it('survives a mark with no attrs at all', () => {
+            const target = schema();
+            const { nodes, marks } = knownNames(target);
+
+            const doc = PMNode.fromJSON(
+                target,
+                preserveUnknownNodesInDocument(storedDoc({ type: 'someUnknownMark' }), nodes, marks)
+            );
+
+            expect(doc.textContent).toBe('imported copyplain sibling');
+        });
+    });
+
+    /**
+     * #37175 AC3 — `linkOnPaste: false` alone did not close the link-on-paste path: TipTap's
+     * Link returns its URL paste rule ungated, so pasting text containing a URL still created
+     * a link mark on a field where `link` is not allowed. `DotLink` overrides `addPasteRules`.
+     */
+    describe('link-on-paste follows the authoring gate (#37175 AC3)', () => {
+        const pasteRulesFor = (allowedBlocks: string[] | undefined) => {
+            const link = flattenExtensions(
+                createEditorExtensions(menuService, allowedBlocks, injector, messageService)
+            ).find((ext) => ext.name === 'link');
+
+            return link?.config.addPasteRules?.call({
+                options: link.options,
+                parent: () => [{ find: /url/, handler: () => undefined }]
+            });
+        };
+
+        it('drops the URL paste rule when link is not an allowed block', () => {
+            expect(pasteRulesFor(['bulletList', 'orderedList'])).toEqual([]);
+        });
+
+        it('keeps the URL paste rule on an unrestricted field', () => {
+            expect(pasteRulesFor(undefined)).toHaveLength(1);
+        });
+
+        /**
+         * The rule being suppressed is the auto-link-on-paste rule, so it follows `autolink`
+         * too — not `linkOnPaste` alone. `createEditorExtensions()` sets both from the same
+         * `has('link')` and cannot produce this combination, which is exactly why it needs
+         * pinning: nothing else would catch the gate silently killing the linkifying.
+         */
+        it('keeps the URL paste rule when only autolink is enabled', () => {
+            const link = DotLink.configure({ autolink: true, linkOnPaste: false });
+
+            expect(
+                link.config.addPasteRules?.call({
+                    options: link.options,
+                    parent: () => [{ find: /url/, handler: () => undefined }]
+                })
+            ).toHaveLength(1);
         });
     });
 });
