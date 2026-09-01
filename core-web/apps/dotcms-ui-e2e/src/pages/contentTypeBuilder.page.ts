@@ -130,19 +130,4 @@ export class ContentTypeBuilderPage {
     fieldVariablesPanel(): Locator {
         return this.fieldDialog().locator('dot-content-type-fields-variables');
     }
-
-    /**
-     * Closes the field dialog with its own close button.
-     *
-     * Not the Cancel button: `hideButtons` is true on every tab but Overview (and
-     * Settings, where the field has them), so the Field Variables tab has no footer.
-     * Not Escape either — that depends on where focus happens to be, and it left the
-     * dialog open in CI while passing locally. The close button is always there and
-     * always does the same thing.
-     */
-    async closeFieldDialog() {
-        const dialog = this.fieldDialog();
-        await dialog.locator('.p-dialog-close-button').click();
-        await expect(dialog).toBeHidden({ timeout: 10000 });
-    }
 }

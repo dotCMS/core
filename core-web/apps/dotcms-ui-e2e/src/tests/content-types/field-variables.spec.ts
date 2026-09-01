@@ -50,9 +50,12 @@ test.describe('content type builder — field variables', () => {
         await variables.deleteEntryByKey('hint');
         await variables.expectKeyAbsent('hint');
 
-        // Reopening proves each row was persisted against the field, not just
-        // held in the dialog's local state.
-        await builder.closeFieldDialog();
+        // Reloading the builder proves each row was persisted against the field, not
+        // just held in the dialog's local state. A full reload rather than closing the
+        // dialog: nothing survives it in memory, so it is the stronger check, and it
+        // does not depend on a modal mask being out of the way — clicking the dialog's
+        // close button was intercepted by one in CI.
+        await builder.goToBuilder(contentTypeId);
         await builder.openFieldVariables('Title');
 
         const reopened = new KeyValueField(page, builder.fieldVariablesPanel());
