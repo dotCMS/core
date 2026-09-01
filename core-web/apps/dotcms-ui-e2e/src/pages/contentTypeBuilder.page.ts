@@ -132,16 +132,17 @@ export class ContentTypeBuilderPage {
     }
 
     /**
-     * Closes the field dialog with Escape.
+     * Closes the field dialog with its own close button.
      *
      * Not the Cancel button: `hideButtons` is true on every tab but Overview (and
-     * Settings, where the field has them), so on the Field Variables tab there is no
-     * footer to click. Escape works on all of them — dialogs in this repo are
-     * required to set `closeOnEscape`.
+     * Settings, where the field has them), so the Field Variables tab has no footer.
+     * Not Escape either — that depends on where focus happens to be, and it left the
+     * dialog open in CI while passing locally. The close button is always there and
+     * always does the same thing.
      */
     async closeFieldDialog() {
         const dialog = this.fieldDialog();
-        await dialog.press('Escape');
+        await dialog.locator('.p-dialog-close-button').click();
         await expect(dialog).toBeHidden({ timeout: 10000 });
     }
 }

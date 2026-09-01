@@ -1,7 +1,9 @@
 import {
+    attachOrderedFields,
+    ORDERED_FIELDS,
+    orderedKeyValueText,
     parseOrderedKeyValue,
-    parsePreservingKeyOrder,
-    restoreKeyValueOrder
+    parsePreservingKeyOrder
 } from './key-value-order.util';
 
 /** Mirrors what the service does: two parses of the same raw text. */
@@ -9,10 +11,13 @@ const recover = <T extends Record<string, unknown>>(raw: string): T => {
     const parsed = JSON.parse(raw) as { entity: T };
     const ordered = parsePreservingKeyOrder(raw) as { entity: unknown };
 
-    return restoreKeyValueOrder(parsed.entity, ordered.entity);
+    return attachOrderedFields(parsed.entity, ordered.entity);
 };
 
-describe('restoreKeyValueOrder', () => {
+/** What the Key/Value resolver does for one field. */
+const field = (raw: string, variable = 'keyValue') => orderedKeyValueText(recover(raw), variable);
+
+describe('key/value order recovery', () => {
     it('should keep an integer-like key where the response put it', () => {
         const raw = '{"entity":{"keyValue":{"orden 1":"a","orden 2":"b","123":"c","zzz":"d"}}}';
 
@@ -24,10 +29,10 @@ describe('restoreKeyValueOrder', () => {
             'zzz'
         ]);
 
-        // The field carries JSON text, which is what the form control sends back
+        // The resolver hands the form JSON text, which is what the control sends back
         // untouched if the user never edits it.
-        expect(typeof recover(raw).keyValue).toBe('string');
-        expect(parseOrderedKeyValue(recover(raw).keyValue as string)).toEqual([
+        expect(typeof field(raw)).toBe('string');
+        expect(parseOrderedKeyValue(field(raw) as string)).toEqual([
             { key: 'orden 1', value: 'a' },
             { key: 'orden 2', value: 'b' },
             { key: '123', value: 'c' },
@@ -38,7 +43,7 @@ describe('restoreKeyValueOrder', () => {
     it('should keep several integer-like keys in their own positions', () => {
         const raw = '{"entity":{"keyValue":{"200":"segundo","zzz":"medio","10":"ultimo"}}}';
 
-        expect(parseOrderedKeyValue(recover(raw).keyValue as string)).toEqual([
+        expect(parseOrderedKeyValue(field(raw) as string)).toEqual([
             { key: '200', value: 'segundo' },
             { key: 'zzz', value: 'medio' },
             { key: '10', value: 'ultimo' }
@@ -48,15 +53,13 @@ describe('restoreKeyValueOrder', () => {
     it('should render a stored null as the literal "null" rather than dropping the pair', () => {
         const raw = '{"entity":{"keyValue":{"imported":null}}}';
 
-        expect(parseOrderedKeyValue(recover(raw).keyValue as string)).toEqual([
+        expect(parseOrderedKeyValue(field(raw) as string)).toEqual([
             { key: 'imported', value: 'null' }
         ]);
     });
 
     it('should handle an empty field', () => {
-        expect(
-            parseOrderedKeyValue(recover('{"entity":{"keyValue":{}}}').keyValue as string)
-        ).toEqual([]);
+        expect(parseOrderedKeyValue(field('{"entity":{"keyValue":{}}}') as string)).toEqual([]);
     });
 
     it('should hand the form a value the backend accepts unchanged', () => {
@@ -65,13 +68,48 @@ describe('restoreKeyValueOrder', () => {
         // takes a JSON string or a map for these fields, never a list, and answers
         // "Invalid JSON field provided".
         const raw = '{"entity":{"keyValue":{"a":"1","2":"b"}}}';
-        const { keyValue } = recover(raw);
+        const value = field(raw);
 
-        expect(typeof keyValue).toBe('string');
-        expect(() => JSON.parse(keyValue as string)).not.toThrow();
+        expect(typeof value).toBe('string');
+        expect(() => JSON.parse(value as string)).not.toThrow();
     });
 
     describe('what it must not touch', () => {
+        it("should leave a binary field's metadata a real object", () => {
+            /*
+             * The regression this guards, and the reason identification moved to the
+             * content type: an earlier version picked out Key/Value fields by shape —
+             * "a plain object whose values are all primitives" — and rewrote them into
+             * JSON text. A binary field's `metaData` is exactly that shape, so it became
+             * a string, `contentlet.metaData.name` became undefined, and the file
+             * preview came back empty after a reload.
+             */
+            const raw = `{"entity":{
+                "metaData":{"name":"file.txt","isImage":false,"fileSize":42,"sha256":"abc"},
+                "fileAssetMetaData":{"name":"file.txt","length":42,"title":"file"}
+            }}`;
+            const result = recover(raw);
+
+            expect(result.metaData).toEqual({
+                name: 'file.txt',
+                isImage: false,
+                fileSize: 42,
+                sha256: 'abc'
+            });
+            expect((result.metaData as Record<string, unknown>).name).toBe('file.txt');
+            expect(typeof result.fileAssetMetaData).toBe('object');
+        });
+
+        it('should add nothing to a contentlet beyond its own namespace', () => {
+            const raw = '{"entity":{"title":"a","keyValue":{"a":"1"}}}';
+            const result = recover(raw);
+
+            expect(Object.keys(result).filter((k) => k !== ORDERED_FIELDS)).toEqual([
+                'title',
+                'keyValue'
+            ]);
+        });
+
         it('should leave primitives, arrays and nested objects alone', () => {
             const raw = `{"entity":{
                 "title":"a title",
@@ -98,20 +136,19 @@ describe('restoreKeyValueOrder', () => {
             // match here — this pins that assumption.
             const raw = '{"entity":{"keyValue":{"nota":"mirá \\"123\\": esto"}}}';
 
-            expect(parseOrderedKeyValue(recover(raw).keyValue as string)).toEqual([
+            expect(parseOrderedKeyValue(field(raw) as string)).toEqual([
                 { key: 'nota', value: 'mirá "123": esto' }
             ]);
         });
 
-        it('should convert every Key/Value field on the contentlet', () => {
+        it('should recover each Key/Value field independently', () => {
             const raw = '{"entity":{"first":{"9":"a","b":"c"},"second":{"z":"1","2":"3"}}}';
-            const result = recover(raw);
 
-            expect(parseOrderedKeyValue(result.first as string)).toEqual([
+            expect(parseOrderedKeyValue(field(raw, 'first') as string)).toEqual([
                 { key: '9', value: 'a' },
                 { key: 'b', value: 'c' }
             ]);
-            expect(parseOrderedKeyValue(result.second as string)).toEqual([
+            expect(parseOrderedKeyValue(field(raw, 'second') as string)).toEqual([
                 { key: 'z', value: '1' },
                 { key: '2', value: '3' }
             ]);
@@ -122,19 +159,20 @@ describe('restoreKeyValueOrder', () => {
         it('should return the contentlet untouched when the ordered parse is unusable', () => {
             const contentlet = { keyValue: { a: '1' } };
 
-            expect(restoreKeyValueOrder(contentlet, null)).toBe(contentlet);
-            expect(restoreKeyValueOrder(contentlet, 'not an object')).toBe(contentlet);
+            expect(attachOrderedFields(contentlet, null)).toBe(contentlet);
+            expect(attachOrderedFields(contentlet, 'not an object')).toBe(contentlet);
+            expect(orderedKeyValueText(contentlet, 'keyValue')).toBeNull();
         });
 
-        it('should keep the object form when the recovered keys do not match', () => {
+        it('should decline the recovered order when the keys do not match', () => {
             // A mismatch means the recovery is not trustworthy for this field, so the
-            // plainly-parsed value is preferred over a possibly-wrong array.
-            const contentlet = { keyValue: { a: '1', b: '2' } };
+            // caller falls back to the plainly-parsed value.
+            const contentlet = attachOrderedFields(
+                { keyValue: { a: '1', b: '2' } },
+                { keyValue: { a: '1' } }
+            );
 
-            expect(restoreKeyValueOrder(contentlet, { keyValue: { a: '1' } }).keyValue).toEqual({
-                a: '1',
-                b: '2'
-            });
+            expect(orderedKeyValueText(contentlet, 'keyValue')).toBeNull();
         });
 
         it('should lose only the ordering, never a pair, if a key collides with the prefix', () => {

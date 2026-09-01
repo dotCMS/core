@@ -11,11 +11,22 @@ import { KeyValueField } from '../edit-content/fields/key-value-field/helpers/ke
  * tested; the editor's own logic is covered by unit tests.
  */
 /**
- * SSO — SAML: shipped with dotCMS, `allowExtraParams: true`, and the surface the
- * redesign was specified against. An app without extra params renders no Custom
- * Properties section at all.
+ * Which app this drives is not arbitrary — two constraints rule most of them out.
+ *
+ * Save is bound to the whole app form's validity, so an app with many required
+ * parameters can only be saved on an instance where they happen to be filled in
+ * already. SSO — SAML requires nine, including certificates: it passed locally, where
+ * it was configured, and timed out on CI's fresh instance clicking a disabled Save.
+ *
+ * `dotAI` has none required but is routed to its own screen
+ * (`DotAiConfigDetailComponent`), so it never renders the shared editor at all.
+ *
+ * `dotVelocitySecretApp` uses the generic configuration panel and requires exactly one
+ * string, which the spec fills itself. Nothing here depends on how the instance was
+ * seeded.
  */
-const APP_KEY = 'dotsaml-config';
+const APP_KEY = 'dotVelocitySecretApp';
+const REQUIRED_PARAM = 'title';
 
 /**
  * These tests drive a real, shared app configuration that already holds properties,
@@ -43,7 +54,30 @@ test.describe('apps — custom properties', () => {
         const panel = page.locator('dot-apps-configuration-detail');
         await panel.waitFor({ state: 'visible', timeout: 15000 });
 
+        // Save is disabled until the whole app form is valid, so the one required
+        // parameter is filled here rather than assumed to be already set.
+        //
+        // `input, textarea` because the control a parameter renders follows its declared
+        // type, not its name: this one is a STRING and comes out as a textarea.
+        const required = panel.getByTestId(REQUIRED_PARAM).locator('input, textarea').first();
+        if ((await required.count()) && !(await required.inputValue())) {
+            await required.fill('e2e');
+        }
+
         return panel;
+    }
+
+    /**
+     * Saves the configuration and waits for the write to land.
+     *
+     * Saving navigates back to the listing on success, so that navigation is the
+     * signal. Without waiting for it, the next `goto` races an in-flight one and the
+     * listing never renders.
+     */
+    async function saveConfiguration(page: import('@playwright/test').Page) {
+        await page.getByTestId('saveBtn').click();
+        await page.waitForURL(new RegExp(`#/apps/${APP_KEY}$`), { timeout: 20000 });
+        await page.locator('dot-apps-configuration-item').first().waitFor({ timeout: 20000 });
     }
 
     test('add and persist custom properties @smoke', async ({ page }) => {
@@ -58,7 +92,7 @@ test.describe('apps — custom properties', () => {
         await properties.expectEntry(idKey, 'UA-4419-22');
         await properties.expectEntry(themeKey, 'dark');
 
-        await page.getByTestId('saveBtn').click();
+        await saveConfiguration(page);
 
         const reopened = await openAppConfiguration(page);
         const reloaded = new KeyValueField(page, reopened);
@@ -68,7 +102,7 @@ test.describe('apps — custom properties', () => {
         // This is the only test here that writes: put the configuration back.
         await reloaded.deleteEntryByKey(idKey);
         await reloaded.deleteEntryByKey(themeKey);
-        await page.getByTestId('saveBtn').click();
+        await saveConfiguration(page);
     });
 
     test('the hidden indicator is visible without hovering the row @smoke', async ({ page }) => {

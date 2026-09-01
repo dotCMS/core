@@ -10,10 +10,19 @@
  * cannot be put back by reordering the object: assigning the keys again re-hoists
  * them.
  *
- * The only way to keep it is to never let those keys live in an object. This
- * module reads the order out of the raw response text and hands back **JSON text**,
- * which carries its pairs in written order and is what the form control then holds
- * end to end — see {@link restoreKeyValueOrder} for why text rather than an array.
+ * The only way to keep it is to never let those keys live in an object. This module
+ * reads the order out of the raw response text and exposes it as **JSON text**, which
+ * carries its pairs in written order and is what the form control then holds end to
+ * end — see {@link orderedKeyValueText} for why text rather than an array.
+ *
+ * ## What it deliberately does not do
+ *
+ * It never decides which properties of a contentlet are Key/Value fields. An earlier
+ * version guessed by shape — "a plain object whose values are all primitives" — and a
+ * binary field's `metaData` matches that exactly, so it was rewritten into text and the
+ * file preview broke on reload. Only the content type knows a field's type, so the
+ * recovered data is attached untouched under {@link ORDERED_FIELDS} and the Key/Value
+ * resolver, which is reached by declared field type, picks out its own variable.
  */
 
 /**
@@ -58,21 +67,12 @@ const stripPrefix = (key: string): string =>
     key.startsWith(NUMERIC_KEY_PREFIX) ? key.slice(NUMERIC_KEY_PREFIX.length) : key;
 
 /**
- * True when a value has the shape a Key/Value field produces: a plain object whose
- * values are all primitives.
+ * Where the order-preserving parse of the response is parked on the contentlet.
  *
- * The content type is not available at the point this runs, so the field is
- * identified by shape. Every other contentlet property is either a primitive, an
- * array (categories, relationships) or an object with nested structure (binaries),
- * so none of them match.
+ * A separate namespace, so every existing property is byte-for-byte what the normal
+ * parse produced and no consumer of `getContentById` sees a changed shape.
  */
-const looksLikeKeyValueField = (value: unknown): value is Record<string, unknown> => {
-    if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-        return false;
-    }
-
-    return Object.values(value).every((entry) => entry === null || typeof entry !== 'object');
-};
+export const ORDERED_FIELDS = '__dotOrderedFields' as const;
 
 /** Serialises pairs to JSON text without ever building an object from them. */
 const toJsonText = (entries: OrderedKeyValueEntry[]): string =>
@@ -106,24 +106,13 @@ export const parseOrderedKeyValue = (text: string): OrderedKeyValueEntry[] => {
 };
 
 /**
- * Replaces every Key/Value-shaped property of a contentlet with the **JSON text**
- * of its pairs, in the order the response carried them.
+ * Parks the order-preserving parse of a contentlet on the contentlet itself, under
+ * {@link ORDERED_FIELDS}. Every real property is left exactly as it was.
  *
- * Text rather than an array on purpose: this value goes straight into a form
- * control, and whatever sits there is what gets sent back on save. The backend
- * accepts a JSON string for these fields but not a list, so a contentlet opened
- * and saved untouched round-trips correctly — and the order survives, which an
- * object could not manage.
- *
- * Anything that cannot be recovered is left exactly as the normal parse produced
- * it, so a malformed response degrades instead of failing the load.
- *
- * @param contentlet the contentlet from a normal `JSON.parse`
- * @param orderedContentlet the same contentlet from {@link parsePreservingKeyOrder}.
- *   It must come from the raw response text: re-serializing the parsed contentlet
- *   would carry the hoisted order and recover nothing.
+ * Returns the contentlet unchanged when the recovery is unusable, so a malformed
+ * response costs the ordering and never the load.
  */
-export const restoreKeyValueOrder = <T extends Record<string, unknown>>(
+export const attachOrderedFields = <T extends Record<string, unknown>>(
     contentlet: T,
     orderedContentlet: unknown
 ): T => {
@@ -131,28 +120,51 @@ export const restoreKeyValueOrder = <T extends Record<string, unknown>>(
         return contentlet;
     }
 
-    const ordered = orderedContentlet as Record<string, unknown>;
-    const result: Record<string, unknown> = { ...contentlet };
+    return { ...contentlet, [ORDERED_FIELDS]: orderedContentlet } as T;
+};
 
-    for (const [field, value] of Object.entries(contentlet)) {
-        if (!looksLikeKeyValueField(value) || !looksLikeKeyValueField(ordered[field])) {
-            continue;
-        }
+/**
+ * The ordered **JSON text** of one Key/Value field, or `null` when it cannot be
+ * recovered.
+ *
+ * Text rather than an array on purpose: this value goes straight into a form control,
+ * and whatever sits there is what gets sent back on save. The backend accepts a JSON
+ * string for these fields but not a list, so a contentlet opened and saved untouched
+ * round-trips correctly — and the order survives, which an object could not manage.
+ *
+ * @param contentlet a contentlet that went through {@link attachOrderedFields}
+ * @param variable the field's variable name, known from the content type
+ */
+export const orderedKeyValueText = (
+    contentlet: Record<string, unknown> | null | undefined,
+    variable: string
+): string | null => {
+    const ordered = contentlet?.[ORDERED_FIELDS] as Record<string, unknown> | undefined;
+    const recovered = ordered?.[variable];
+    const plain = contentlet?.[variable];
 
-        const entries: OrderedKeyValueEntry[] = Object.entries(
-            ordered[field] as Record<string, unknown>
-        ).map(([key, entryValue]) => ({
-            key: stripPrefix(key),
-            value: entryValue === null ? 'null' : String(entryValue)
-        }));
-
-        // Only trust the recovered order when it accounts for exactly the same keys.
-        const sameKeys =
-            entries.length === Object.keys(value).length &&
-            entries.every(({ key }) => key in value);
-
-        result[field] = sameKeys ? toJsonText(entries) : value;
+    if (
+        typeof recovered !== 'object' ||
+        recovered === null ||
+        Array.isArray(recovered) ||
+        typeof plain !== 'object' ||
+        plain === null ||
+        Array.isArray(plain)
+    ) {
+        return null;
     }
 
-    return result as T;
+    const entries: OrderedKeyValueEntry[] = Object.entries(
+        recovered as Record<string, unknown>
+    ).map(([key, value]) => ({
+        key: stripPrefix(key),
+        value: value === null ? 'null' : String(value)
+    }));
+
+    // Only trust the recovered order when it accounts for exactly the same keys.
+    const source = plain as Record<string, unknown>;
+    const sameKeys =
+        entries.length === Object.keys(source).length && entries.every(({ key }) => key in source);
+
+    return sameKeys ? toJsonText(entries) : null;
 };
