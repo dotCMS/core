@@ -337,7 +337,12 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
             }
         }
 
-        throw new DotRuntimeException(detail.toString());
+        // errors() is expected to imply at least one item carrying an error, but if that ever
+        // stops holding we must not hand the caller a blank exception — a failure with no
+        // message is barely better than the silent return this replaced.
+        throw new DotRuntimeException(detail.length() > 0
+                ? detail.toString()
+                : "OS bulk reported errors but no item carried an error cause");
     }
 
     // =========================================================================

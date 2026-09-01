@@ -2426,15 +2426,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } catch (final Exception e) {
                 esException = new DotRuntimeException(e.getMessage(), e);
             }
+            RuntimeException osException = null;
             try {
                 operationsOS.putToIndex(dual.osReq);
             } catch (final Exception e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "OS shadow write failed in putToIndex — "
-                                + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+                if (isReadEnabled()) {
+                    // Phase 2: OS serves reads (PhaseRouter.readProvider), so a failure here is
+                    // not a shadow divergence — it leaves the index users actually query out of
+                    // sync with the database (#37276). Surface it once ES has been given its
+                    // chance, so the caller can retry rather than assume the write landed.
+                    osException = (e instanceof RuntimeException)
+                            ? (RuntimeException) e
+                            : new DotRuntimeException(e.getMessage(), e);
+                } else {
+                    Logger.warnAndDebug(this.getClass(),
+                            "OS shadow write failed in putToIndex — "
+                                    + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+                }
             }
+            // ES stays authoritative when both legs fail: its exception is the one callers have
+            // always seen, and demoting it would change behaviour beyond this fix.
             if (esException != null) {
                 throw esException;
+            }
+            if (osException != null) {
+                throw osException;
             }
         } else {
             // Single-provider phase (0 or 3): forward to the sole active provider.
@@ -2495,10 +2511,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final boolean isDualWrite = providers.size() > 1;
         final List<CompositeBulkProcessor.Entry> entries = new ArrayList<>();
         for (final ContentletIndexOperations ops : providers) {
-            // OS is the shadow index in Phases 1 and 2 (dual-write): it replicates ES writes
-            // but is not yet the source of truth. In Phase 3 isDualWrite=false, so shadow=false
-            // and OS becomes the primary — failures propagate normally from that point.
-            final boolean shadow = isDualWrite && ops == operationsOS;
+            // OS is the shadow index in Phase 1 only: it replicates ES writes and nothing reads
+            // from it, so a failure there is genuinely tolerable (ADR-0009).
+            //
+            // Phase 2 is different and used to be handled as if it were Phase 1. Reads are served
+            // by OS from Phase 2 onwards (PhaseRouter.readProvider), so an OS write failure is
+            // immediately user-visible: a removal lost on the OS leg leaves an orphaned document
+            // in the very index being queried — the #37276 symptom, in the phase the migration
+            // spends the longest in. Treating OS as a shadow there also meant the journal entry
+            // was acked on the ES result alone and never retried.
+            //
+            // In Phase 3 isDualWrite=false, so shadow=false and OS is simply the primary.
+            final boolean shadow = isDualWrite && ops == operationsOS && !isReadEnabled();
             // Each provider gets its own listener so counters and log output stay per-provider.
             // The shadow OS listener never touches the reindex queue or triggers a rebuild.
             final IndexBulkListener listenerForOps = shadow
