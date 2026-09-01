@@ -411,6 +411,22 @@ export class DotExperimentsListComponent {
         }
     }
 
+    /**
+     * Opens the screen the row's status makes relevant.
+     *
+     * An experiment that is collecting or has collected data is read, not edited, so RUNNING and
+     * ENDED land on Results; every other status has nothing to report yet and lands on Configure.
+     * The gate is `AllowedActionsByExperimentStatus.results`, shared with the rest of the screen,
+     * rather than a second status list that could drift from it.
+     */
+    onRowClick(experiment: DotExperiment): void {
+        this.#router.navigate(
+            isAllowed('results', experiment.status)
+                ? resultsCommandsOf(experiment.id)
+                : configureCommandsOf(experiment.id)
+        );
+    }
+
     /** Rebuilds the kebab menu for the given row before the popup opens. */
     onRowMenuToggle(experiment: DotExperiment): void {
         this.$rowMenuItems.set(this.#buildRowMenuItems(experiment));
@@ -515,19 +531,6 @@ export class DotExperimentsListComponent {
                     })
             },
             {
-                id: 'experiments-delete',
-                label: this.#dotMessageService.get('experiments.action.delete'),
-                visible: isAllowed('delete', status),
-                command: () =>
-                    this.#confirm({
-                        headerKey: 'experiments.action.delete',
-                        messageKey: 'experiments.action.delete.confirm-question',
-                        messageArg: experiment.name,
-                        acceptLabelKey: 'experiments.action.delete',
-                        accept: () => this.#dispatch.deleteExperiment(experiment)
-                    })
-            },
-            {
                 id: 'experiments-push-publish',
                 label: this.#dotMessageService.get('contenttypes.content.push_publish'),
                 visible: isAllowed('pushPublish', status),
@@ -542,6 +545,23 @@ export class DotExperimentsListComponent {
                 label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
                 visible: isAllowed('addToBundle', status),
                 command: () => this.$addToBundleAssetId.set(experiment.id)
+            },
+            // Delete closes the menu, kept apart by a rule so it is never hit while reaching for
+            // the entry above it. The rule is bound to the same gate as delete itself: without it
+            // an experiment that cannot be deleted would end its menu on a dangling line.
+            { separator: true, visible: isAllowed('delete', status) },
+            {
+                id: 'experiments-delete',
+                label: this.#dotMessageService.get('experiments.action.delete'),
+                visible: isAllowed('delete', status),
+                command: () =>
+                    this.#confirm({
+                        headerKey: 'experiments.action.delete',
+                        messageKey: 'experiments.action.delete.confirm-question',
+                        messageArg: experiment.name,
+                        acceptLabelKey: 'experiments.action.delete',
+                        accept: () => this.#dispatch.deleteExperiment(experiment)
+                    })
             }
         ];
     }
