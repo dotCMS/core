@@ -1,11 +1,16 @@
 <%@ page import="com.dotmarketing.business.APILocator" %>
-<%@ page import="com.dotmarketing.business.NoSuchUserException" %>
 <%@ page import="com.dotmarketing.business.Role" %>
 <%@ page import="com.dotmarketing.exception.DotDataException" %>
 <%@ page import="com.dotmarketing.exception.DotSecurityException" %>
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.UtilMethods" %>
 <%@ page import="com.liferay.portal.model.User" %>
+<%--
+    Do NOT `page import` `com.dotmarketing.business.NoSuchUserException` here:
+    `/html/common/init.jsp` transitively pulls in `com.liferay.portal.NoSuchUserException`,
+    and the JSP compiler rejects two imports with the same simple name. We reach
+    the dotCMS variant by its FQN in the catch clause below.
+--%>
 
 <%@ include file="/html/common/init.jsp" %>
 <%@ include file="/html/common/top_inc.jsp" %>
@@ -26,12 +31,16 @@
         try {
             final User userToEdit = APILocator.getUserAPI().loadUserById(userId, user, false);
             userRole = APILocator.getRoleAPI().getUserRole(userToEdit);
-        } catch (NoSuchUserException | DotSecurityException e) {
+        } catch (com.dotmarketing.business.NoSuchUserException | DotSecurityException e) {
             // The id did not resolve, or the viewer lacks READ on the target user.
             // Both are expected: leave userRole null so the page renders a blank
             // body and the Angular tab shows its `unavailable` message. Letting
             // these escape would put a container error page inside the iframe —
             // top_inc.jsp has already written to the response by this point.
+            //
+            // FQN on the catch is deliberate: `init.jsp` imports Liferay's
+            // `NoSuchUserException` as the simple name, so we cannot page-import
+            // the dotmarketing variant without a compile collision.
             Logger.warn(this.getClass(),
                     "Cannot render permissions for User ID '" + userId + "': " + e.getMessage());
         } catch (DotDataException e) {
