@@ -30,15 +30,26 @@ Unchanged:
 
 ## Behavior per migration phase
 
-The router already isolates the shadow provider, so the new failure surfaces exactly where
-ADR-0009 requires and nowhere else. **The escalation is implemented in the providers, not in
-the router** — putting it in the router would break the phase 1–2 guarantee below.
+**The escalation is implemented in the providers, not in the router.** The router decides
+whether a provider's failure is tolerable; the providers only decide whether a bulk response
+counts as a failure at all.
 
 | Phase | Providers | Partial failure in ES | Partial failure in OS |
 |-------|-----------|-----------------------|-----------------------|
 | 0 | ES only | propagates | n/a |
-| 1, 2 | ES primary, OS shadow | propagates | logged, swallowed by the router (`ContentletIndexAPIImpl:2429-2435`) — **ADR-0009** |
+| 1 | ES primary, OS shadow | propagates | logged, swallowed — **ADR-0009** |
+| 2 | ES primary, OS shadow **but OS serves reads** | propagates | **propagates** |
 | 3 | OS only | n/a | propagates |
+
+Phase 2 is the row that is easy to get wrong. `PhaseRouter#readProvider` serves reads from
+OpenSearch from Phase 2 onwards, so an OS write failure there is not a shadow divergence — it
+leaves the index that answers queries out of sync with the database, which is the defect
+#37276 is about. The shadow treatment is therefore scoped by **who serves reads**
+(`isReadEnabled()`), not by whether the phase is dual-write. ADR-0009's intent is preserved:
+a store nobody reads from still cannot break a user operation.
+
+When both legs fail, the ES exception is the one raised — that is what callers have always
+seen.
 
 ## Impact on callers
 

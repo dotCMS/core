@@ -24,6 +24,16 @@ of the write rather than as unexplained index drift weeks later. Treat a new `pu
 as a pre-existing condition now made visible — most often index write-queue saturation — and
 investigate the index cluster, not this release.
 
+**During the ES→OpenSearch migration, Phase 2 writes can now fail where they previously did
+not.** From Phase 2 onwards OpenSearch serves reads while writes still go to both clusters. A
+failed OpenSearch write used to be logged and ignored as a shadow divergence — which left
+orphaned documents in the very index being queried. It now reaches the caller and, on the
+reindex-journal path, marks the entry for retry.
+
+This affects every write in Phase 2, not only removals. An environment whose OpenSearch cluster
+is unhealthy will begin surfacing errors that were previously absorbed. Phase 1 is unchanged:
+while nothing reads from OpenSearch, a failed shadow write is still logged and ignored.
+
 **Log wording changed.** Bulk failures previously read `Error reindexing` regardless of the
 operation, including removals. They now read `Error applying (N) index operation(s)`. Any log
 alerting or saved search matching the old string needs updating.
