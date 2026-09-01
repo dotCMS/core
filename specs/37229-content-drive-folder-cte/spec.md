@@ -40,7 +40,9 @@ today, with the exact same items shown in the exact same order as before the fix
    spike's reference point: +25-30ms on an already-fast folder), not a multi-fold regression.
 3. **Given** any folder size (empty, small, medium, large, or the largest in the test matrix),
    **When** the listing is fetched before and after the fix, **Then** the exact same items are
-   returned in the exact same order — the fix changes speed, not results.
+   returned in the exact same order, with ties in `mod_date` broken deterministically — the fix
+   changes speed and adds ordering determinism, not the result set (outside of the host_inode
+   correctness fix in FR-004a).
 
 ---
 
@@ -94,10 +96,12 @@ permission-limited user) and confirm identical results.
   workflow filter, and a language restriction, all against the largest folder) must still return
   correct results, and its latency — while not the primary target of this fix — must not regress
   by more than the same small, bounded amount called out in User Story 1.
-- A folder whose content spans more than one site sharing the same relative path (the case where
-  today's query applies no host filter at all) must keep returning exactly the same
-  cross-site result it does today — the fix must not silently add a host restriction that wasn't
-  there before, nor drop one that was.
+- A folder whose content spans more than one site sharing the same relative path is the case
+  where today's query applies no host filter at all — this is itself a correctness defect
+  identified in #37148, not an intentional behavior. This fix's scope now includes adding the
+  missing `host_inode` filter (see FR-004a), so this case is **expected to change**: after the
+  fix, only items under the requested folder's own site are returned, not items sharing the same
+  relative path across sites.
 
 ## Requirements *(mandatory)*
 
@@ -106,7 +110,12 @@ permission-limited user) and confirm identical results.
 - **FR-001**: The system MUST return identical result sets (same items, same order, same
   pagination cursors) for every folder-scoped listing request before and after the fix, across
   empty, small, medium, large, and extreme-sized folders, and across at least one deep-pagination
-  case.
+  case — **except** for the cross-site correctness gap addressed by the host_inode fix in
+  FR-004a, where results are expected to change on purpose. Because `ORDER BY mod_date` alone has
+  no tiebreaker (per #37148, roughly 1.2% of rows in the reference dataset share a `mod_date` with
+  at least one other row in the same folder), the fix MUST add a deterministic tiebreaker column
+  (e.g. `inode` or `identifier`) to the sort so that "same order" is a guarantee, not a
+  probabilistic outcome of the current query shape.
 - **FR-002**: The system MUST resolve the folder-scoped candidate scan through a query shape that
   does not exhibit the current unstable-planner behavior — the same request against the same
   folder must not swing between a fast and a pathologically slow access path depending on
@@ -115,10 +124,18 @@ permission-limited user) and confirm identical results.
   column) to achieve this fix; it relies on the indexing already available today.
 - **FR-004**: The system MUST preserve every existing filtering behavior available on the
   folder-scoped listing today — language, base type / content type inclusion and exclusion,
-  site/host scoping (including its three current sub-cases: explicit site, forced system host,
-  and no host restriction at all), workflow scheme/step matching (including archive-target-step
-  branching), free-text and filename filtering, per-field Tag/Relationship criteria, show-on-menu,
-  archived/deleted exclusion, and MIME type filtering — with identical results for each.
+  site/host scoping (including its sub-cases: explicit site and forced system host), workflow
+  scheme/step matching (including archive-target-step branching), free-text and filename
+  filtering, per-field Tag/Relationship criteria, show-on-menu, archived/deleted exclusion, and
+  MIME type filtering — with identical results for each, with the single deliberate exception
+  called out in FR-004a.
+- **FR-004a**: The system MUST add the missing `host_inode` filter to the folder-scoped candidate
+  scan for the "no host restriction at all" sub-case, closing the cross-site correctness gap
+  identified in #37148 (today, a folder whose relative path exists under more than one site
+  incorrectly returns items from every matching site, not just the requested one). This is an
+  intentional, in-scope behavior change, not a preserved behavior — it MUST be called out as such
+  in the PR description and MUST NOT be silently absorbed into FR-001's "identical results"
+  guarantee.
 - **FR-005**: The system MUST preserve the existing READ-permission filtering behavior exactly,
   for both an administrator and a permission-limited user, for every folder size and filter
   combination in scope.
@@ -131,11 +148,12 @@ permission-limited user) and confirm identical results.
 - **FR-008**: The fix MUST NOT depend on, or require as a prerequisite, resolution of the
   separate, already out-of-scope latency-bimodality investigation (the suspected
   prepared-statement plan-cache mechanism) — that remains a distinct, optional follow-up.
-- **FR-009**: The fix MUST remain compatible with the existing single-scan-per-request behavior
-  of the folder-listing candidate query — i.e., it must not change how many times the underlying
-  scan query executes per request, only its internal shape — so that it composes without conflict
-  with the separate, already-tracked fix for the field-filter execution-count multiplier
-  (issue #37184).
+- **FR-009**: The fix MUST NOT itself increase how many times the underlying scan query executes
+  per request — it changes the query's internal shape, not its execution count. Note: today,
+  `getContentByChunks` already loops the scan roughly 4 times per request under the field-filter
+  execution-count multiplier defect tracked separately in #37184; this fix's compatibility target
+  is the *post-#37184* single-scan-per-request state, not the current multi-scan behavior, so the
+  two fixes are expected to compose without conflict once #37184 lands.
 - **FR-010**: Before this fix's design is finalized, the plan phase MUST verify — by running the
   real candidate-scan query, with workflow (scheme/step) and per-field Tag/Relationship
   sub-queries present, against a folder already confirmed to trigger today's slow plan — that the
@@ -196,11 +214,13 @@ permission-limited user) and confirm identical results.
   observed today — treated as a target informed by the spike, to be confirmed against the real
   query's full predicate set, not a guaranteed outcome stated as fact ahead of that confirmation.
 - **SC-002**: No folder anywhere in the test matrix — including folders that already load quickly
-  today — becomes noticeably slower after the fix; any added latency stays small and bounded,
-  consistent with the spike's reference point on an already-fast folder.
+  today — becomes noticeably slower after the fix; added latency on an already-fast folder stays
+  within roughly +25-30ms, the spike's measured reference point, not an open-ended "small and
+  bounded" claim.
 - **SC-003**: Every folder listing, across the full size matrix, both user-permission levels, and
   every supported filter combination, returns the exact same items in the exact same order after
-  the fix as it did before.
+  the fix as it did before, with `mod_date` ties now broken deterministically — except the
+  cross-site "no host restriction" case, which is expected to change per FR-004a.
 - **SC-004**: Users browsing a permission-restricted folder see exactly the same set of items
   they were permitted to see before the fix — no over-exposure, no under-exposure.
 - **SC-005**: The fix introduces no dependency on the search index for any criterion that is
@@ -240,13 +260,18 @@ permission-limited user) and confirm identical results.
 - "Folder-scoped" listing requests (those with a folder set and not explicitly skipping the
   folder predicate) are the only requests this fix needs to change; requests with no folder
   predicate at all are out of scope and keep their current query shape untouched.
-- The three existing site/host-scoping sub-cases (explicit site, forced system host, no host
-  restriction) are assumed to remain exactly as they are today; this fix reshapes how the folder
-  predicate is evaluated, not what site scoping applies alongside it.
+- The explicit-site and forced-system-host sub-cases are assumed to remain exactly as they are
+  today. The "no host restriction" sub-case is the one deliberate exception (FR-004a): it gains
+  the `host_inode` filter it was missing, correcting the cross-site over-return defect from
+  #37148 — this fix reshapes how the folder predicate is evaluated and closes that one known
+  correctness gap, not what site scoping applies in the other sub-cases.
 - The prepared-statement plan-cache latency-bimodality mechanism flagged in spike #37183 is a
   separate, not-yet-confirmed concern and is explicitly not a prerequisite or a blocker for this
   fix — its resolution, if pursued, is tracked independently.
 - Test-first development (Constitution Principle V) applies: acceptance and success criteria in
   this spec are written to be concrete enough that tests can be designed against them, written,
   developer-approved, and confirmed failing before any implementation change is made — the actual
-  test design is deferred to the planning phase.
+  test design is deferred to the planning phase. Expected home for these tests:
+  `BrowserAPITest` (integration, query-shape and result-set assertions) and `BrowserAPIImplTest`
+  or equivalent (unit-level, if the CTE construction is unit-testable in isolation) — to be
+  confirmed in the planning phase.
