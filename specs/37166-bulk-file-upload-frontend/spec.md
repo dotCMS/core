@@ -278,8 +278,13 @@ workflow action on rows selected in the listing.
 
 ### Edge Cases
 
-- An author selects more files than the configured maximum. The refusal is reported before anything
-  is uploaded, and explains the limit rather than failing opaquely.
+- An author selects more files than the configured maximum, or a set of files whose total size
+  exceeds the configured ceiling. Either refusal is reported before anything is uploaded, and says
+  which limit was hit rather than failing opaquely: "too many files" and "too much data" are
+  different problems with different fixes.
+- The connection drops while a batch is being submitted, so the author cannot tell whether it
+  landed. Retrying is safe and the interface says so, rather than leaving them to check the folder
+  and guess.
 - An author selects zero files, or cancels the file chooser after opening it. Nothing is submitted
   and nothing is reported.
 - A batch is submitted and the server refuses it for lack of permission on the target. The author is
@@ -316,6 +321,12 @@ workflow action on rows selected in the listing.
 - **FR-006**: The client MAY refuse a batch that exceeds the configured maximum before
   submitting it, as a convenience. The server remains the point of enforcement, and the client MUST
   NOT treat its own check as authoritative.
+- **FR-037**: When the connection is lost or the answer is uncertain while a batch is being
+  submitted, the client MUST be able to resubmit the same batch, and MUST NOT make the author work
+  out whether the first attempt landed. Resubmitting cannot produce a second copy of their files:
+  the server either recognises the resubmission as the same batch or refuses the duplicates
+  (backend FR-040, C-002a). The client therefore treats an uncertain submission as retryable, not
+  as a failure the author has to reason about, and never asks them to check the folder first.
 - **FR-034**: The existing permission gate MUST continue to hold, unchanged, for every route into an
   upload: the upload control, the create menu, and dropping files onto a folder. An author without
   the right to add children to the target MUST be shown that route disabled **with the reason
@@ -387,6 +398,15 @@ by this feature.)*
   selected MUST NOT be used as a stand-in for the number the operation actually affected.
 - **FR-023**: A partial outcome MUST name the items that did not succeed and give a reason for each,
   and MUST remain readable longer than a clean success does.
+- **FR-036**: Every failure reason the server can return MUST have its own product copy on the
+  client. The server sends a machine-readable reason plus a diagnostic message; the reason is what
+  the client maps to text for the author, and the message is never shown (FR-030, backend FR-016a).
+  The reasons the client MUST be able to speak to are: the file is larger than the limit; the file
+  type is not allowed; a file with that name already exists; the author may not create that file;
+  the staged content is no longer available; and an unclassified failure. A reason with no copy is
+  a hole the author sees, so the unclassified case MUST also read as a real sentence rather than a
+  fallback for a reason nobody wrote. **Adding a reason later is a change to both halves**, never
+  to the server alone.
 - **FR-024**: An outcome the client cannot account for — counts that do not close, a response
   carrying no outcome, or a terminal state the client does not recognise — MUST be reported as an
   error. No number may be invented to fill a gap, and an unrecognised outcome MUST NOT be reported
@@ -441,7 +461,15 @@ either document. Each item is a dependency of this feature, not a requirement of
 - **C-001** — Submit several files with one target and one upload type, answered immediately with a
   handle. *Consumed by* FR-002.
 - **C-002** — Distinguishable submission refusals: no files, bad upload type, missing target, too
-  many files, permission denied. *Consumed by* FR-006 and the edge cases.
+  many files, batch over the total size ceiling, permission denied. *Consumed by* FR-006, FR-034
+  and the edge cases.
+- **C-002a** — A defined answer to "the connection dropped while I was submitting, may I retry?"
+  The client may resubmit without risking a second copy of the author's files. *Consumed by*
+  FR-037. Which mechanism provides it, the same handle returned or the duplicates refused as
+  collisions, is fixed in the plan; the client only depends on retry being safe.
+- **C-002b** — A stable set of failure reasons, each mapped to product copy on the client side. The
+  server's message is diagnostic and is not displayed. *Consumed by* FR-036. Adding a reason later
+  changes both halves.
 - **C-003** — Readable progress for a run in flight. *Consumed by* FR-012.
 - **C-004** — A way to stop a run in flight. **Not consumed in this pass.** The whole stopping group
   (FR-018 … FR-020) is optional and expected to be delivered by the task manager epic #33331. Noted
@@ -487,6 +515,8 @@ recorded here as a planning obligation so it cannot be discovered during review.
   by any route, and in every case is told why rather than being left to discover it.
 - **SC-011**: An author using a screen reader learns that work started and how it ended, and is not
   interrupted repeatedly while it runs.
+- **SC-012**: Every failure reason the server can return renders as product copy the author can act
+  on. Measured as zero reasons that fall through to a blank, a code, or a raw server message.
 
 ---
 
