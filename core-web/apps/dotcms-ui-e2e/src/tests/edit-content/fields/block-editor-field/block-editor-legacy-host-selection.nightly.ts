@@ -1,20 +1,33 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { Contentlet, createContentlet, deleteContentlets } from '@requests/contentlets';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadBlockEditorField,
     createFakePayloadTextField
 } from '@utils/dot-content-types.mock';
-import { getLegacyFrame } from '@utils/iframe';
 import { uniqueSuffix } from '@utils/utils';
 
 /**
  * #36985 — an embedded contentlet must stay selectable in the LEGACY JSP contentlet editor.
  *
- * Tagged `@nightly` rather than run per-PR, per ADR-0013, whose Future Considerations position
- * e2e as nightly smoke coverage rather than a merge-queue gate. The unit tests in
- * `libs/new-block-editor` reproduce the defect headlessly and are the PR gate; this exists
- * because no Jest test exercises a real mouse event, a real `EditorView`, or the JSP iframe.
+ * ⚠️ NOT COLLECTED BY DEFAULT, ON PURPOSE. The `.nightly.ts` extension is the gate: Playwright's
+ * default `testMatch` is `**` + `*.@(spec|test).ts`, so this file is invisible to `nx e2e`. A
+ * `@nightly` tag in the title would NOT have achieved that — nothing in CI greps for it, which is
+ * why an earlier revision of this spec ran per-PR and broke the build.
+ *
+ * That matches the decision recorded for #36985: the Jest suite in `libs/new-block-editor`
+ * reproduces the defect headlessly and is the PR gate, while this covers the real browser click
+ * path off the critical path (ADR-0013 positions e2e as nightly smoke, not a merge-queue gate).
+ *
+ * To run it: `npx playwright test --config apps/dotcms-ui-e2e/playwright.config.ts \
+ *   apps/dotcms-ui-e2e/src/tests/edit-content/fields/block-editor-field/block-editor-legacy-host-selection.nightly.ts`
+ * against a running instance. A scheduled workflow to do that does not exist yet — see the
+ * follow-up on PR #37319.
+ *
+ * ⚠️ UNVERIFIED. This has never completed successfully. Its first CI run failed on a
+ * strict-mode violation in the frame locator (`#detailFrame` matched two iframes); that is
+ * addressed below, but the fix has not been observed passing, and the assertions past the frame
+ * lookup have never executed at all.
  *
  * Why the legacy host specifically: it is the only one that binds the web component's `value`
  * property. The new Angular Edit Content screen binds `[formControlName]` only, so its `value()`
@@ -27,6 +40,17 @@ import { uniqueSuffix } from '@utils/utils';
  */
 
 const BLOCK_FIELD = 'blockEditorField';
+
+/**
+ * The legacy portlet iframe, scoped to the Dojo shell's viewport.
+ *
+ * NOT `getLegacyFrame()` from `@utils/iframe`: that resolves `#detailFrame` page-wide, and on the
+ * content-edit route two iframes carry that id, so Playwright raises a strict-mode violation
+ * ("resolved to 2 elements"). Scoping to `content-viewport`
+ * (`main-legacy.component.html:18`) picks the one the portlet actually renders into.
+ */
+const legacyPortletFrame = (page: Page) =>
+    page.getByTestId('content-viewport').frameLocator('iframe[name="detailFrame"]');
 
 let contentType: ContentType | null = null;
 let embedded: Contentlet | null = null;
@@ -106,7 +130,7 @@ test.describe('Block Editor — embedded contentlet selection in the legacy host
     }) => {
         await page.goto(`/dotAdmin/#/c/content/${parent?.inode}`);
 
-        const frame = getLegacyFrame(page);
+        const frame = legacyPortletFrame(page);
         const card = frame.locator('[data-type="dot-content"]').first();
         await expect(card).toBeVisible({ timeout: 30_000 });
 
@@ -132,7 +156,7 @@ test.describe('Block Editor — embedded contentlet selection in the legacy host
         // other node type was never affected and must not regress into being affected.
         await page.goto(`/dotAdmin/#/c/content/${parent?.inode}`);
 
-        const frame = getLegacyFrame(page);
+        const frame = legacyPortletFrame(page);
         const heading = frame.locator('.ProseMirror h2').first();
         await expect(heading).toBeVisible({ timeout: 30_000 });
 
