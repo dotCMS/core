@@ -271,27 +271,40 @@ export async function askPortConflictAction({
             '\n'
     );
 
-    const choices: { name: string; value: 'reuse' | 'replace' | 'cancel' }[] = [
+    // One line per choice. A `\n` inside a choice name breaks inquirer's line accounting and
+    // the list renders blank — the hint belongs in `description`, which it prints under the
+    // highlighted option.
+    const choices: {
+        name: string;
+        value: 'reuse' | 'replace' | 'cancel';
+        description: string;
+    }[] = [
         {
-            name: `Use this instance for my project\n    ${chalk.gray('Fastest. Keeps its existing content.')}`,
-            value: 'reuse'
+            name: 'Use this instance for my project',
+            value: 'reuse',
+            description: 'Fastest. Keeps its existing content.'
         }
     ];
 
     if (canReplace) {
         choices.push({
-            name: `Replace it with a clean instance\n    ${chalk.gray('Stops it and DELETES its data, then starts fresh.')}`,
-            value: 'replace'
+            name: 'Replace it with a clean instance',
+            value: 'replace',
+            description: 'Stops it and DELETES its data, then starts fresh.'
         });
     }
 
     choices.push({
-        name: `Cancel\n    ${chalk.gray('Change nothing and exit.')}`,
-        value: 'cancel'
+        name: 'Cancel',
+        value: 'cancel',
+        description: 'Change nothing and exit.'
     });
 
     const { action } = await inquirer.prompt([
-        { type: 'list', name: 'action', message: 'How would you like to continue?', choices }
+        // `select`, NOT `list`. Inquirer 13 is built on @inquirer/prompts, where the type is
+        // `select`; `list` is the inquirer 8/9 name and is not registered, so the message renders
+        // and the choices silently do not. Every other prompt in this file already uses `select`.
+        { type: 'select', name: 'action', message: 'How would you like to continue?', choices }
     ]);
 
     return action;
