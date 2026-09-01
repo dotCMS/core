@@ -52,3 +52,4 @@ Release-25.07.10 LTS
 46. https://github.com/dotCMS/core/issues/36851 : Native, configurable HTML minification in the core rendering engine #36851
 47. https://github.com/dotCMS/core/issues/37085 : Upgrade BouncyCastle to 1.85 across all three bundled locations (CVE-2026-59638) #37085
 48. https://github.com/dotCMS/core/issues/34435 : [DEFECT] Portlet cache throws an error when using the Redis cache provider #34435
+49. https://github.com/dotCMS/core/issues/37252 : Backport private-issues/issues/668 into 25.07 #37252

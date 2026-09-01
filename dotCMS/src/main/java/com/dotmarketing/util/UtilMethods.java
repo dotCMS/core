@@ -1243,35 +1243,71 @@ public class UtilMethods {
         html.append("");
 
         try {
-        	System.setProperty("sun.net.client.defaultReadTimeout","20000");
-    		System.setProperty("sun.net.client.defaultConnectTimeout","10000");
-			 java.net.URL pointer = new java.net.URL(URI);
+			 final java.net.URL pointer = new java.net.URL(URI);
 
-			 java.net.URLConnection conn = pointer.openConnection();
-			 conn.setUseCaches(false);
-			 conn.setConnectTimeout(10000);
-			 if(conn instanceof java.net.HttpURLConnection){
-				 java.net.HttpURLConnection myConn = (java.net.HttpURLConnection)conn;
-				 myConn.setRequestMethod("POST");
-				 if(myConn.getResponseCode() != HttpServletResponse.SC_OK){
-					 return null;
+			 // Security: $UtilMethods.getURL is reachable from the Velocity template context by any
+			 // design-layer (template/container) user. Restrict to http(s) so it cannot read local
+			 // files (file:, jar:, …), and refuse non-routable targets so it cannot SSRF to
+			 // loopback / link-local (cloud metadata) / private hosts. See dotCMS/private-issues#668.
+			 final String scheme = pointer.getProtocol() == null ? "" : pointer.getProtocol().toLowerCase();
+			 if (!"http".equals(scheme) && !"https".equals(scheme)) {
+				 SecurityLogger.logInfo(UtilMethods.class,
+						 "Blocked getURL: disallowed scheme '" + scheme + "' for " + URI);
+				 return html;
+			 }
+			 // Reject if ANY resolved address is non-routable — checking every A/AAAA record (not
+			 // just the first) closes the multi-record bypass. isNonRoutable covers what
+			 // CircuitBreakerUrl's IPUtils default blacklist misses: all of 127/8 loopback, 0.0.0.0,
+			 // the whole 169.254/16 link-local range (incl. the ECS creds endpoint 169.254.170.2),
+			 // IPv6 (::1, fe80::/10, fd00::/7 ULA), and IPv4 CGNAT 100.64/10. See private-issues#668.
+			 try {
+				 for (final InetAddress target : InetAddress.getAllByName(pointer.getHost())) {
+					 if (isNonRoutable(target)) {
+						 SecurityLogger.logInfo(UtilMethods.class,
+								 "Blocked getURL: internal/non-routable host '" + pointer.getHost() + "' for " + URI);
+						 return html;
+					 }
 				 }
+			 } catch (java.net.UnknownHostException uhe) {
+				 return html;
 			 }
 
-			 BufferedReader in = new BufferedReader(new InputStreamReader(conn.getInputStream()));
-			 String inputLine;
-
-			 while ((inputLine = in.readLine()) != null) {
-				 html.append(inputLine + "\n");
+			 // Reuse the shared, hardened HTTP client ($import uses the same path): circuit breaker,
+			 // timeout, IPUtils private-subnet gate, and redirects disabled so a 3xx cannot bounce to
+			 // an internal host after the check above.
+			 final String body = com.dotcms.http.CircuitBreakerUrl.builder()
+					 .setUrl(URI)
+					 .setTimeout(Config.getIntProperty("URL_CONNECTION_TIMEOUT", 10000))
+					 .setAllowRedirects(false)
+					 .build()
+					 .doString();
+			 if (UtilMethods.isSet(body)) {
+				 html.append(body);
 			 }
-
-			 in.close();
 		 } catch (Exception e) {
 			 Logger.debug(UtilMethods.class, "Browser class failed to get page: " + URI + " - " + e, e);
 			 Logger.warn(UtilMethods.class, "Browser class failed to get page: " + URI + " - " + e);
 		 }
 
         return html;
+    }
+
+    /**
+     * SSRF guard for user-supplied URLs: an address is non-routable (must never be reachable
+     * via getURL) if it is loopback / any-local / link-local / site-local / multicast per the
+     * JDK predicates, or — cases those predicates miss — an IPv6 unique-local address
+     * (fd00::/7) or an IPv4 carrier-grade-NAT address (100.64.0.0/10, RFC 6598).
+     */
+    private static boolean isNonRoutable(final InetAddress addr) {
+        if (addr.isLoopbackAddress() || addr.isAnyLocalAddress() || addr.isLinkLocalAddress()
+                || addr.isSiteLocalAddress() || addr.isMulticastAddress()) {
+            return true;
+        }
+        final byte[] b = addr.getAddress();
+        if (b.length == 16 && (b[0] & 0xFE) == 0xFC) {
+            return true; // IPv6 unique-local fc00::/7 (fd00::/8)
+        }
+        return b.length == 4 && (b[0] & 0xFF) == 100 && (b[1] & 0xC0) == 0x40; // IPv4 CGNAT 100.64/10
     }
 
     public static String capitalize(String s) {
