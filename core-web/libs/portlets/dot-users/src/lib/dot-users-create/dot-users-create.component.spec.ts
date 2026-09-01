@@ -5,7 +5,11 @@ import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotHttpErrorManagerService,
+    DotMessageService,
+    DotRolesService
+} from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUsersCreateComponent } from './dot-users-create.component';
@@ -15,6 +19,9 @@ import { createFakeUser, createFakeUserDetail } from '../testing/dot-user.mock';
 
 const MOCK_USER = createFakeUser();
 const MOCK_USER_DETAIL = createFakeUserDetail();
+
+/** `p-tab` value of the Permissions tab. */
+const PERMISSIONS_TAB = 2;
 
 /** p-button doesn't forward clicks itself — reach the inner native button. */
 function saveButton(spectator: Spectator<DotUsersCreateComponent>): HTMLButtonElement {
@@ -50,12 +57,6 @@ describe('DotUsersCreateComponent', () => {
             { provide: DotMessageService, useValue: new MockDotMessageService(MESSAGES) },
             mockProvider(DotUsersService, {
                 getUser: jest.fn().mockReturnValue(of(MOCK_USER_DETAIL)),
-                getUserRoles: jest.fn().mockReturnValue(
-                    of([
-                        { id: 'role-back', roleKey: 'DOTCMS_BACK_END_USER' },
-                        { id: 'role-personal', roleKey: 'user-42' }
-                    ])
-                ),
                 getGettingStartedState: jest.fn().mockReturnValue(of(false)),
                 setGettingStarted: jest.fn().mockReturnValue(of({})),
                 getUsersPaginated: jest.fn().mockReturnValue(
@@ -67,7 +68,22 @@ describe('DotUsersCreateComponent', () => {
                         i18nMessagesMap: {},
                         pagination: { currentPage: 1, perPage: 10, totalEntries: 0 }
                     })
-                )
+                ),
+                getApiTokens: jest.fn().mockReturnValue(of([])),
+                getApiTokenJwt: jest.fn().mockReturnValue(of('mock-jwt')),
+                createApiToken: jest.fn(),
+                revokeApiToken: jest.fn(),
+                deleteApiToken: jest.fn()
+            }),
+            mockProvider(DotRolesService, {
+                getForUser: jest.fn().mockReturnValue(
+                    of([
+                        { id: 'role-back', name: 'Back End', roleKey: 'DOTCMS_BACK_END_USER' },
+                        { id: 'role-personal', name: 'Personal', roleKey: 'user-42' }
+                    ])
+                ),
+                getRoots: jest.fn().mockReturnValue(of([])),
+                getById: jest.fn()
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
         ]
@@ -154,6 +170,13 @@ describe('DotUsersCreateComponent', () => {
             const button = saveButton(spectator);
             expect(button.disabled).toBe(false);
         });
+
+        it('should keep Save enabled on the Permissions tab — that tab asks the user to save first', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(false);
+        });
     });
 
     describe('edit mode', () => {
@@ -165,6 +188,46 @@ describe('DotUsersCreateComponent', () => {
                     { provide: DynamicDialogConfig, useValue: { data: { user: MOCK_USER } } }
                 ]
             });
+        });
+
+        it('should disable Save on the Permissions tab — the embedded JSP owns its save', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(true);
+        });
+
+        it('should disable Save when the Permissions tab is opened by clicking its header', () => {
+            // Drives the real `[(value)]` binding instead of the signal, so
+            // the tab's `[value]` staying in sync with PERMISSIONS_TAB is
+            // itself under test — a reorder would break this, not slip by.
+            expect(saveButton(spectator).disabled).toBe(false);
+
+            spectator.click(byTestId('users-dialog-tab-permissions'));
+            spectator.detectChanges();
+
+            expect(spectator.component['$activeTab']()).toBe(PERMISSIONS_TAB);
+            expect(saveButton(spectator).disabled).toBe(true);
+        });
+
+        it('should re-enable Save when navigating back off the Permissions tab', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+            expect(saveButton(spectator).disabled).toBe(true);
+
+            spectator.component['$activeTab'].set(0);
+            spectator.detectChanges();
+
+            expect(saveButton(spectator).disabled).toBe(false);
+        });
+
+        it('should not close the dialog when save runs from the Permissions tab', () => {
+            spectator.component['$activeTab'].set(PERMISSIONS_TAB);
+            spectator.detectChanges();
+
+            spectator.component['save']();
+
+            expect(dialogRef.close).not.toHaveBeenCalled();
         });
 
         it('should hydrate the form from the user data', () => {
@@ -236,6 +299,28 @@ describe('DotUsersCreateComponent', () => {
                 payload: { roles: string[] };
             };
             expect(call.payload.roles).not.toContain('user-42');
+        });
+
+        it('should send an empty `roles: []` when the Roles tab clears every grant and access toggles are off', () => {
+            // Simulate the Roles tab clearing everything.
+            spectator.component['onGrantedRolesChange']([]);
+            spectator.component.form.controls.access.patchValue({
+                cmsAdmin: false,
+                backend: false,
+                frontend: false
+            });
+
+            spectator.detectChanges();
+            spectator.click(saveButton(spectator));
+
+            const call = (dialogRef.close as jest.Mock).mock.calls[0][0] as {
+                payload: { roles: string[] };
+            };
+            // Backend fix #37109 lets us send `roles: []` to actually
+            // clear the user's membership. The FE relies on that being
+            // included in the payload (not omitted) — otherwise the
+            // backend still reads it as "don't touch".
+            expect(call.payload.roles).toEqual([]);
         });
 
         it('should emit `gettingStartedChange: add` when the toggle flips ON', () => {

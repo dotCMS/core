@@ -100,7 +100,9 @@ describe('DotContentDriveStore', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
@@ -296,7 +298,13 @@ describe('DotContentDriveStore', () => {
                 expect(request.folderCursor).toBe(0);
                 expect(request.maxResults).toBe(DEFAULT_PAGINATION.limit);
                 expect(request.sortBy).toBe(`${DEFAULT_SORT.field}:${DEFAULT_SORT.order}`);
-                expect(request.archived).toBe(false);
+                // `archived` is deliberately NOT sent any more (FR-019). The endpoint already
+                // defaults it to false, and pinning it here would contradict an Archived status
+                // selection. Its absence is what keeps the status filter authoritative.
+                expect(request.archived).toBeUndefined();
+                // Likewise `status`: omitted entirely when nothing is selected, so an unfiltered
+                // request stays byte-identical to one that never knew about the filter (FR-002).
+                expect(request.status).toBeUndefined();
                 expect(request.showFolders).toBe(true);
             });
 
@@ -561,6 +569,55 @@ describe('DotContentDriveStore', () => {
 
                 const request = store.$request();
 
+                expect(request.showFolders).toBe(true);
+            });
+
+            it('should send the status filter and hide folders when a status is selected', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['UNPUBLISHED', 'LOCKED'] },
+                    isTreeExpanded: false
+                });
+
+                const request = store.$request();
+
+                expect(request.status).toEqual(['UNPUBLISHED', 'LOCKED']);
+                // Folders carry no status, so any selection drops them (FR-015).
+                expect(request.showFolders).toBe(false);
+                // Still absent — the status selection owns the archived decision now (FR-019).
+                expect(request.archived).toBeUndefined();
+            });
+
+            it('should keep the status selection when navigating to another folder', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.setPath('/some/other/folder');
+
+                // Parity with every other filter: browsing does not clear the filter bag, which is
+                // what makes the selection survive folder navigation (FR-016).
+                expect(store.$request().status).toEqual(['ARCHIVED']);
+            });
+
+            it('should drop the status filter when filters are cleared', () => {
+                store.initContentDrive({
+                    currentSite: SYSTEM_HOST,
+                    path: DEFAULT_PATH,
+                    filters: { status: ['ARCHIVED'] },
+                    isTreeExpanded: false
+                });
+
+                store.clearFilters();
+
+                const request = store.$request();
+
+                expect(request.status).toBeUndefined();
+                // Folders come back once nothing is narrowing the results (FR-017).
                 expect(request.showFolders).toBe(true);
             });
 
@@ -998,7 +1055,9 @@ describe('DotContentDriveStore - onInit', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
@@ -1068,7 +1127,9 @@ describe('DotContentDriveStore - Browser Back/Forward (popstate) re-hydration', 
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // withFlags fetches feature flags on init; stub so no real HTTP fires.
@@ -1211,7 +1272,7 @@ describe('DotContentDriveStore - default language resolution', () => {
             }),
             mockProvider(DotWorkflowActionsFireService),
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotPropertiesService, {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
@@ -1315,7 +1376,9 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
             mockProvider(DotWorkflowActionsFireService),
             // Also required by `withActionExecution`, which fires Add to Bundle from the store.
             mockProvider(AddToBundleService),
-            mockProvider(PushPublishService),
+            // Stubbed rather than bare: `withPushPublishEnvironments` looks the environments up on
+            // init, and an unstubbed `mockProvider` returns undefined for the observable.
+            mockProvider(PushPublishService, { getEnvironments: jest.fn(() => of([])) }),
             mockProvider(DotBulkRefreshService),
             mockProvider(DotHttpErrorManagerService),
             // The store subscribes to Location (popstate re-hydration); capture the handler here.
@@ -1614,7 +1677,12 @@ describe('DotContentDriveStore - withActionExecution', () => {
             }),
             // Add to Bundle leaves the workflow path entirely and posts to the legacy bundle servlet.
             mockProvider(AddToBundleService, { addToBundle: jest.fn() }),
-            mockProvider(PushPublishService, { pushPublishAssets: jest.fn() }),
+            // `getEnvironments` on top of main's stub: `withPushPublishEnvironments` looks the
+            // environments up on init, so an unstubbed one returns undefined for the observable.
+            mockProvider(PushPublishService, {
+                pushPublishAssets: jest.fn(),
+                getEnvironments: jest.fn(() => of([]))
+            }),
             // Refresh is the one quick action that is job-backed: the service submits and returns, so
             // the store only ever sees a single-emission observable.
             mockProvider(DotBulkRefreshService, { refresh: jest.fn() }),
@@ -2191,6 +2259,33 @@ describe('DotContentDriveStore - withActionExecution', () => {
             });
         });
 
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            addToBundleService.addToBundle.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Add to Bundle',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
         it('should never report a negative success count', () => {
             // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
             addToBundleService.addToBundle.mockReturnValue(
@@ -2287,6 +2382,32 @@ describe('DotContentDriveStore - withActionExecution', () => {
             expect(store.actionExecutionResult()).toEqual({
                 actionName: 'Push Publish',
                 successCount: 2,
+                skippedCount: 0,
+                failCount: 1
+            });
+        });
+
+        // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
+        // above. It earns its place by pinning the AC end of it: a folder the user lacks PUBLISH on
+        // comes back from `PublisherAPIImpl` as a counted per-asset error rather than an exception,
+        // and the requirement is that it is *reported as a failure*, not silently dropped. Written
+        // with a folder identifier so that requirement is traceable to a test instead of inferred
+        // from two on either side of the boundary.
+        it('should report a denied folder as a failure rather than dropping it', () => {
+            pushPublishService.pushPublishAssets.mockReturnValue(
+                of({
+                    total: 2,
+                    errors: 1,
+                    errorMessages: ['User does not have permission to publish folder'],
+                    bundleId: 'bundle-1'
+                })
+            );
+
+            store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
+
+            expect(store.actionExecutionResult()).toEqual({
+                actionName: 'Push Publish',
+                successCount: 1,
                 skippedCount: 0,
                 failCount: 1
             });

@@ -87,16 +87,26 @@ jobs:
     steps:
       # Checkout code based on whether a specific ref is provided
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         if: inputs.ref == ''
         with:
           fetch-depth: 0
+      # The ref path builds a tag/branch snapshot; buildnumber-maven-plugin
+      # (scmRevision) only reads HEAD, which works on a shallow clone, so we
+      # avoid the full fetch (~2k+ branches, ~1.1 GB pack, ~19-20 min).
+      # Depth is driven by run-pr-checks (NOT ref): the PR-only steps below
+      # (`.mvn/maven.config` guard, clean-tree check) need real history
+      # (git diff origin/main...HEAD), so when they run we fetch full history.
+      # No current caller sets both ref and run-pr-checks, but this keeps that
+      # future combination correct. String literals are used deliberately:
+      # `inputs.run-pr-checks && 0 || 1` is wrong because 0 is falsy in GH
+      # expressions, collapsing the true branch to 1.
       - name: Checkout code with ref ${{ inputs.ref }}
         if: inputs.ref != ''
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ inputs.ref }}
-          fetch-depth: 0
+          fetch-depth: ${{ inputs.run-pr-checks && '0' || '1' }}
 
       # Check if .mvn/maven.config is modified in PR (only for PR checks)
       - name: Check if .mvn/maven.config is in the PR commit

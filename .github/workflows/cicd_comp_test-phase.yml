@@ -94,9 +94,11 @@ jobs:
       has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
+          # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
+          fetch-depth: 1
         
       - name: Parse test configuration
         id: parse-config
@@ -106,7 +108,7 @@ jobs:
 
       - name: Generate test matrix
         id: generate-matrix
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           # Passed via env (not interpolated into the script) to avoid script injection.
           OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
@@ -247,9 +249,21 @@ jobs:
 
     steps:          
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          fetch-depth: 0
+          # Shallow checkout: test jobs run Maven suites against the checked-out
+          # snapshot only — no git history is read anywhere in this job or in the
+          # maven-job action (buildnumber-maven-plugin reads HEAD, which works on
+          # a shallow clone). fetch-depth: 0 pulled every branch ref (~2k+
+          # branches, ~1.1 GB pack) at ~19-20 min per matrix job.
+          fetch-depth: 1
+
+      # Frontend Unit Tests runs `nx affected` (lint-test, -Pvalidate) which diffs
+      # against origin/main (core-web/pom.xml git.origin.branch). The shallow
+      # checkout above has no origin/main ref, so fetch just that ref, shallow.
+      - name: Fetch origin/main for Nx affected
+        if: contains(matrix.maven_args, '-Pvalidate')
+        run: git fetch --depth=1 origin main:refs/remotes/origin/main
 
       # The libvips image engine (IMAGE_API_USE_LIBVIPS) is exercised by VipsParityTest.
       # Install native libvips on the JVM unit-test runner so those tests run instead of

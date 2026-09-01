@@ -1,4 +1,4 @@
-<p-toolbar class="h-full justify-start gap-1 border-none! px-3">
+<p-toolbar class="h-full justify-start gap-1 border-x-0! border-t-0! px-3">
     <div
         class="grid w-full grid-cols-[min-content_1fr] grid-rows-[auto_auto] items-center gap-x-1 gap-y-4 py-3 transition-all duration-300 ease-in-out">
         <!-- Stays put whether the tree is open or closed, the way UVE keeps its palette and
@@ -11,22 +11,41 @@
 
             <div class="col-start-3 flex items-center gap-2 justify-self-end">
                 @if ($displayButton()) {
-                    <dot-upload-button
-                        animate.enter="toolbar-enter"
-                        animate.leave="toolbar-leave"
-                        [defaultBaseType]="$uploadBaseType()"
-                        data-testid="upload-asset-button"
-                        (upload)="$upload.emit($event)" />
+                    <!-- Both create children in the browsed folder, and the server refuses without
+                         CAN_ADD_CHILDREN on it, so they are offered disabled with the reason rather
+                         than left to fail after the user has picked a file or filled in a dialog.
 
-                    <p-button
-                        animate.enter="toolbar-enter"
-                        animate.leave="toolbar-leave"
-                        [label]="'content-drive.add-new' | dm"
-                        icon="pi pi-chevron-down"
-                        iconPos="right"
-                        data-testid="add-new-button"
-                        (click)="menu.toggle($event)"
-                        #button />
+                         The tooltip sits on a wrapper, not on the buttons: a disabled button
+                         computes `pointer-events: none` (measured), so no hover reaches it and a
+                         tooltip bound there would never fire — which is the whole point here. -->
+                    <span
+                        [pTooltip]="$addChildrenTooltip() | dm"
+                        data-testid="upload-asset-tooltip"
+                        class="inline-flex">
+                        <dot-upload-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [defaultBaseType]="$uploadBaseType()"
+                            [disabled]="!$canAddChildren()"
+                            data-testid="upload-asset-button"
+                            (upload)="$upload.emit($event)" />
+                    </span>
+
+                    <span
+                        [pTooltip]="$addChildrenTooltip() | dm"
+                        data-testid="add-new-tooltip"
+                        class="inline-flex">
+                        <p-button
+                            animate.enter="toolbar-enter"
+                            animate.leave="toolbar-leave"
+                            [label]="'content-drive.add-new' | dm"
+                            icon="pi pi-chevron-down"
+                            iconPos="right"
+                            [disabled]="!$canAddChildren()"
+                            data-testid="add-new-button"
+                            (click)="menu.toggle($event)"
+                            #button />
+                    </span>
                 }
 
                 @if ($displayActions()) {
@@ -60,6 +79,10 @@
             <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
             <dot-content-drive-content-type-filter data-testid="content-type-filter" />
             <dot-content-drive-workflow-filter data-testid="workflow-filter" />
+            <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
+                 goes after rather than before, because the workflow filter derives its scheme list
+                 from the content-type selection and the two must stay adjacent. -->
+            <dot-content-drive-status-filter data-testid="status-filter" />
             <dot-content-drive-language-field data-testid="language-field" />
 
             @for (field of $activeFieldFilters(); track field.variable) {

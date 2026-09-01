@@ -38,13 +38,14 @@ export * from './lib/components/dot-field-validation-message/dot-field-validatio
 export * from './lib/components/dot-filter-list-item/dot-filter-list-item.component';
 export * from './lib/components/dot-form-dialog/dot-form-dialog.component';
 export * from './lib/components/dot-info-page/dot-info-page.component';
+export * from './lib/components/dot-jsp-iframe-dialog/dot-jsp-iframe-dialog.component';
 export * from './lib/components/dot-key-value-ng/dot-key-value-ng.component';
 export * from './lib/components/dot-language-filter/dot-language-filter.component';
 export * from './lib/components/dot-language-variable-selector/dot-language-variable-selector.component';
 export * from './lib/components/dot-link/dot-link.component';
 export * from './lib/components/dot-menu/dot-menu.component';
 export * from './lib/components/dot-not-license/dot-not-license.component';
-export * from './lib/components/dot-permissions-iframe-dialog/dot-permissions-iframe-dialog.component';
+export * from './lib/components/dot-radio-card/dot-radio-card.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-search-input/dot-search-input.component';
 export * from './lib/components/dot-search-input/constants';
@@ -73,6 +74,8 @@ export * from './lib/components/dot-workflow-actions/dot-workflow-actions.compon
 export * from './lib/components/dot-browser-selector/dot-browser-selector.component';
 export * from './lib/components/dot-folder-tree/dot-folder-tree.component';
 export * from './lib/components/dot-folder-tree/constants';
+export * from './lib/components/dot-folder-search-results/dot-folder-search-results.component';
+export * from './lib/components/dot-folder-search-results/folder-search-path.utils';
 export { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';
 export * from './lib/dot-icon/dot-icon.component';
 export * from './lib/dot-spinner/dot-spinner.component';

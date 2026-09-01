@@ -717,18 +717,93 @@ describe('DotFolderListViewComponent', () => {
 
             const [title, status, type] = headerCells();
 
-            expect(title.style.width).toBe('28%');
-            expect(status.style.width).toBe('10%');
-            expect(type.style.width).toBe('15%');
+            // Rescaled, not authored: see the subset test below for why.
+            expect(parseFloat(title.style.width)).toBeGreaterThan(28);
+            expect(parseFloat(status.style.width)).toBeGreaterThan(10);
+            expect(parseFloat(type.style.width)).toBeGreaterThan(15);
         });
 
-        it('should keep the sized columns at their authored widths whatever is hidden', () => {
-            // No rescaling: dropping a column hands its share to the title, not to everyone.
-            spectator.detectChanges();
+        describe('a subset of columns', () => {
+            /**
+             * Measured in Chrome before this rescale, rendering `title, live, contentType` in the
+             * Action Center preview (a 586px table): the authored 28/10/15 sum to 53%, and the 47%
+             * left over went entirely to the **leading 3rem checkbox column**, which rendered 275px
+             * instead of 48. That pushed Name far right of its heading and squeezed Status to 59px,
+             * so its "Published" badge overflowed into Type. Rescaling to the same 96% the full set
+             * totals put the checkbox column back to 42px and Status to 103px.
+             *
+             * The leftover does NOT land on the title column, which is what the previous comment
+             * here assumed.
+             */
+            const subsetWidths = () =>
+                headerCells()
+                    .map((cell) => cell.style.width)
+                    .filter((width) => width.endsWith('%'))
+                    .map(parseFloat);
 
-            expect(headerCells().map((cell) => cell.style.width)).toEqual(
-                HEADER_COLUMNS.map((column) => column.width ?? '')
-            );
+            it('should rescale the percentages to the total the full set carries', () => {
+                spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+                spectator.detectChanges();
+
+                const total = subsetWidths().reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeCloseTo(96, 0);
+            });
+
+            it('should keep the authored proportions between the columns it does show', () => {
+                spectator.setInput('visibleColumns', ['title', 'live', 'contentType']);
+                spectator.detectChanges();
+
+                const [title, status, type] = subsetWidths();
+
+                // 28 : 10 : 15 preserved.
+                expect(title / status).toBeCloseTo(2.8, 1);
+                expect(type / status).toBeCloseTo(1.5, 1);
+            });
+
+            it('should stay under 100% so the checkbox column still fits inside the table', () => {
+                for (const columns of [
+                    ['title'],
+                    ['title', 'live'],
+                    ['title', 'live', 'contentType'],
+                    ['title', 'modUser', 'modDate']
+                ]) {
+                    spectator.setInput('visibleColumns', columns);
+                    spectator.detectChanges();
+
+                    const total = subsetWidths().reduce((sum, width) => sum + width, 0);
+
+                    expect(total).toBeLessThan(100);
+                }
+            });
+
+            // Same class of bug as the subset case: with the actions column hidden the shown
+            // percentages total 91%, not the 96% budget, so the leftover would land on the leading
+            // checkbox column again. Rescaling has to key off what is actually rendered, not off
+            // whether the caller asked for a subset.
+            it('should rescale the full set when the actions column is hidden', () => {
+                spectator.setInput('visibleColumns', []);
+                spectator.setInput('showActions', false);
+                spectator.detectChanges();
+
+                const total = headerCells()
+                    .map((cell) => cell.style.width)
+                    .filter((width) => width.endsWith('%'))
+                    .map(parseFloat)
+                    .reduce((sum, width) => sum + width, 0);
+
+                expect(total).toBeCloseTo(96, 0);
+            });
+
+            it('should leave the full set at its authored widths', () => {
+                // Nothing to rescale: the authored percentages already total 96%.
+                spectator.setInput('visibleColumns', []);
+                spectator.detectChanges();
+
+                expect(headerCells().map((cell) => cell.style.width)).toEqual(
+                    HEADER_COLUMNS.map((column) => column.width ?? '')
+                );
+            });
         });
 
         it('should leave room for the checkbox column instead of overflowing the table', () => {
@@ -2765,6 +2840,32 @@ describe('DotFolderListViewComponent', () => {
             expect(parseInt(width ?? '0', 10)).toBeLessThanOrEqual(32);
         });
 
+        it('should not reserve sort-indicator room when the header cannot render one', () => {
+            // The header only draws a sort icon for `column.sortable && !readOnly()`, so a read-only
+            // table reserving room for one is width nothing renders into. Reachable the moment a
+            // caller combines read-only with extra columns; today none does, which is why this is a
+            // reservation bug rather than a visible one.
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool Radio', order: 0, type: 'boolean', sortable: true }
+            ]);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+
+            expect(headerByLabel('Bool Radio')?.style.width).toBe('13ch');
+        });
+
+        it('should reserve sort-indicator room again once the table is not read-only', () => {
+            spectator.setInput('extraColumns', [
+                { field: 'myBool', header: 'Bool Radio', order: 0, type: 'boolean', sortable: true }
+            ]);
+            spectator.setInput('readOnly', true);
+            spectator.detectChanges();
+            spectator.setInput('readOnly', false);
+            spectator.detectChanges();
+
+            expect(headerByLabel('Bool Radio')?.style.width).toBe('16ch');
+        });
+
         it('should keep the compact fixed width for a short boolean header', () => {
             spectator.setInput('extraColumns', [
                 { field: 'myBool', header: 'On', order: 0, type: 'boolean' }
@@ -2838,6 +2939,44 @@ describe('DotFolderListViewComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('item-extra-myText'))).toBeFalsy();
+        });
+    });
+
+    describe('non-lazy ordering', () => {
+        // The table sorts client-side when it is not lazy, and it carried a hardcoded
+        // `sortField="modDate"`. That silently re-sorted an array the caller had already ordered:
+        // in the Action Center preview it pulled folders (older modDates) to the bottom even though
+        // the grid behind the dialog listed them first.
+        it('should render a non-lazy list in the order it was given', () => {
+            const older = {
+                ...mockItems[0],
+                inode: 'older-1',
+                identifier: 'older-1',
+                title: 'a-older',
+                modDate: new Date('2019-01-01').getTime()
+            };
+            const newer = {
+                ...mockItems[0],
+                inode: 'newer-1',
+                identifier: 'newer-1',
+                title: 'z-newer',
+                modDate: new Date('2026-01-01').getTime()
+            };
+
+            // Created non-lazy from the start, the way the preview does it. Flipping `lazy` on an
+            // already-initialised table does not re-run PrimeNG's initial sort, so setting it
+            // afterwards never reproduces this.
+            spectator = createComponent({
+                props: { items: [older, newer], lazy: false, loading: false } as never
+            });
+            spectator.detectChanges();
+
+            const rendered = spectator
+                .queryAll(byTestId('item-row'))
+                .map((row) => row.textContent?.replace(/\s+/g, ' ').trim() ?? '');
+
+            expect(rendered[0]).toContain('a-older');
+            expect(rendered[1]).toContain('z-newer');
         });
     });
 });
