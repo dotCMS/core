@@ -123,7 +123,10 @@ public class FileAssetContainer extends Container {
      * @return The Container {@link Folder}, or the default {@link Container} parent Permissionable
      * (the Site) when this instance does not hold enough information to resolve such a folder.
      *
-     * @throws DotDataException An error occurred when interacting with the data source.
+     * @throws DotDataException The Container folder could not be looked up. This is deliberately
+     * not swallowed: answering with the Site after a failed lookup would persist the very
+     * {@code permission_reference} row this override exists to prevent, and it would do so
+     * silently. Failing here leaves the reference unwritten so the next request resolves it again.
      */
     @JsonIgnore
     @Override
@@ -136,11 +139,19 @@ public class FileAssetContainer extends Container {
      * Resolves the folder that makes up this File Asset Container. Both the Site and the path are set
      * when the Container is built from the file system, but a partially built instance -- such as the
      * one created when the {@code container.vtl} file is being deleted -- may have neither of them.
+     * <p>{@code null} means the folder is genuinely not there, which is the only case the caller may
+     * fall back to the Site for. A folder that cannot be <b>looked up</b> is a different thing
+     * entirely and throws: {@code FolderAPI.findFolderByPath()} returns {@code null} or an
+     * inode-less Folder when the path does not resolve, and only raises when the lookup itself
+     * fails.</p>
      *
-     * @return The Container {@link Folder}, or {@code null} if it cannot be resolved.
+     * @return The Container {@link Folder}, or {@code null} when this instance cannot name one or the
+     * named folder does not exist.
+     *
+     * @throws DotDataException The folder lookup failed.
      */
     @JsonIgnore
-    private Folder findContainerFolder() {
+    private Folder findContainerFolder() throws DotDataException {
         if (null == this.host || !UtilMethods.isSet(this.path)) {
             return null;
         }
@@ -148,9 +159,17 @@ public class FileAssetContainer extends Container {
         final String folderPath = fileAssetContainerUtil.isFullPath(this.path)
                 ? fileAssetContainerUtil.getRelativePath(this.path)
                 : this.path;
-        final Folder containerFolder = Try.of(() -> APILocator.getFolderAPI()
-                        .findFolderByPath(folderPath, this.host, APILocator.systemUser(), false))
-                .getOrNull();
+        final Folder containerFolder;
+        try {
+            containerFolder = APILocator.getFolderAPI()
+                    .findFolderByPath(folderPath, this.host, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // Unreachable for the System User, whose permission checks short-circuit. Rethrown rather
+            // than ignored so it can never turn into a silent downgrade to the Site.
+            throw new DotDataException(String.format(
+                    "Unable to resolve Container folder '%s' on Site '%s': %s",
+                    folderPath, this.host.getHostname(), e.getMessage()), e);
+        }
         return null != containerFolder && UtilMethods.isSet(containerFolder.getInode())
                 && !FolderAPI.SYSTEM_FOLDER.equals(containerFolder.getInode())
                 ? containerFolder : null;
