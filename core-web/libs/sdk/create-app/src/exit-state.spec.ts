@@ -131,12 +131,57 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
     });
 
     describe('printing recovered state', () => {
+        /**
+         * When `.env` is written, the token belongs in the FILE, not echoed into the terminal.
+         * The CLI used to print it twice — once in a "paste this into .env" block and again in
+         * the recovery block — while having already written the file, so it both duplicated a
+         * JWT into scrollback and told the user to do something already done.
+         */
+        it('confirms the file it wrote, and does NOT echo the token into scrollback', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+
+            fireExit(0);
+
+            expect(output()).toContain('.env');
+            expect(output()).toContain(HOST);
+            expect(output()).toContain(SITE_ID);
+            // The value is safe on disk; scrollback and CI logs do not need a copy.
+            expect(output()).not.toContain(TOKEN);
+            expect(fs.readFileSync(envPath, 'utf8')).toContain(TOKEN);
+        });
+
+        it('DOES print the token when it could not write it anywhere', () => {
+            fs.writeFileSync(envPath, 'PRE_EXISTING=1\n', 'utf8');
+
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+
+            fireExit(0);
+
+            // Nothing was written, so the terminal is the only place the run survives.
+            expect(output()).toContain(TOKEN);
+        });
+
         it('prints host, token and siteId once state has been recorded', () => {
             recordRecoverableState({
                 host: HOST,
                 token: TOKEN,
                 siteId: SITE_ID,
-                projectDirectory: tmpDir
+                projectDirectory: tmpDir,
+                framework: 'angular'
             });
             installExitStateHandler();
 
@@ -152,7 +197,8 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
                 host: HOST,
                 token: TOKEN,
                 siteId: SITE_ID,
-                projectDirectory: tmpDir
+                projectDirectory: tmpDir,
+                framework: 'angular'
             });
             installExitStateHandler();
 
@@ -166,7 +212,8 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
                 host: HOST,
                 token: TOKEN,
                 siteId: SITE_ID,
-                projectDirectory: tmpDir
+                projectDirectory: tmpDir,
+                framework: 'angular'
             });
             installExitStateHandler();
 
@@ -375,7 +422,7 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
             fireExit(0);
 
             expect(writeFileSync).toHaveBeenCalledTimes(1);
-            expect(output().split(TOKEN)).toHaveLength(2); // the token appears exactly once
+            expect(output().split(SITE_ID)).toHaveLength(2); // reported exactly once
         });
     });
 });

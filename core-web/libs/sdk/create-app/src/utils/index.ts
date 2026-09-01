@@ -153,14 +153,10 @@ export function getDotcmsApisByBaseUrl(baseUrl: string) {
 
 export function finalStepsForNextjs({
     projectPath,
-    urlDotCMSInstance,
-    siteId,
-    token
+    urlDotCMSInstance
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
-    siteId: string;
-    token: string;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
@@ -172,32 +168,19 @@ export function finalStepsForNextjs({
             chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
+    // No "create a .env and paste this" step: the CLI writes the file itself, and the exit
+    // handler confirms it. Telling the user to do it as well duplicated the token into
+    // scrollback and asked them to redo work that was already done.
     console.log(
-        // The CLI writes .env itself on exit (contract X1), so telling the user to create it
-        // contradicted an action it was about to take. Kept as a heading for the block below,
-        // which is still useful when a .env already exists and is therefore left untouched.
-        chalk.white('2. Your environment file:\n') +
-            chalk.gray('   $ .env is written automatically — these are the values in it\n')
-    );
-
-    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
-
-    console.log(chalk.white('──────────────────────────────────────────────\n'));
-    console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
-    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
-
-    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
-
-    console.log(
-        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
+        chalk.white('2. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
 
     console.log(
-        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+        chalk.white('3. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
     );
 
     console.log(
-        chalk.white('6. Edit your page content in dotCMS:\n') +
+        chalk.white('4. Edit your page content in dotCMS:\n') +
             chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
     );
 
@@ -210,14 +193,10 @@ export function finalStepsForNextjs({
 
 export function finalStepsForAstro({
     projectPath,
-    urlDotCMSInstance,
-    siteId,
-    token
+    urlDotCMSInstance
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
-    siteId: string;
-    token: string;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
@@ -229,32 +208,17 @@ export function finalStepsForAstro({
             chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
+    // The CLI writes the env file itself; see finalStepsForNextjs for why the paste step went.
     console.log(
-        // The CLI writes .env itself on exit (contract X1), so telling the user to create it
-        // contradicted an action it was about to take. Kept as a heading for the block below,
-        // which is still useful when a .env already exists and is therefore left untouched.
-        chalk.white('2. Your environment file:\n') +
-            chalk.gray('   $ .env is written automatically — these are the values in it\n')
-    );
-
-    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
-
-    console.log(chalk.white('──────────────────────────────────────────────\n'));
-    console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
-    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
-
-    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
-
-    console.log(
-        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
+        chalk.white('2. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
 
     console.log(
-        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+        chalk.white('3. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
     );
 
     console.log(
-        chalk.white('6. Edit your page content in dotCMS:\n') +
+        chalk.white('4. Edit your page content in dotCMS:\n') +
             chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
     );
 

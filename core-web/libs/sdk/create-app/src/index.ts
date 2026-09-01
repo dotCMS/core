@@ -724,8 +724,6 @@ function displayFinalSteps({
         case 'nextjs': {
             finalStepsForNextjs({
                 projectPath: relativePath,
-                token: token,
-                siteId: siteId,
                 urlDotCMSInstance: host
             });
             break;
@@ -751,8 +749,6 @@ function displayFinalSteps({
         case 'astro': {
             finalStepsForAstro({
                 projectPath: relativePath,
-                token: token,
-                siteId: siteId,
                 urlDotCMSInstance: host
             });
             break;

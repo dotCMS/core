@@ -64,14 +64,6 @@ function envFileFor(state: RecoverableState) {
 }
 
 function emit(state: RecoverableState): void {
-    const lines: string[] = [
-        '',
-        'dotCMS connection details for this run:',
-        `  host    : ${state.host}`,
-        `  site id : ${state.siteId}`,
-        `  token   : ${state.token}`
-    ];
-
     const directory = state.projectDirectory;
     const envFile = envFileFor(state);
     let wroteEnv = false;
@@ -99,19 +91,39 @@ function emit(state: RecoverableState): void {
     }
 
     if (wroteEnv) {
-        lines.push('', `Written to ${envFile.filename} in your project directory.`);
-    } else {
-        lines.push(
+        // The credentials are safely on disk, so say so and stop. Echoing the token here as well
+        // put a JWT in scrollback and CI logs for no benefit — and the CLI used to do it twice,
+        // alongside a "paste this into .env" block for a file it had already written.
+        console.log(
+            [
+                '',
+                `Wrote ${envFile.filename} with your dotCMS connection details.`,
+                `  host    : ${state.host}`,
+                `  site id : ${state.siteId}`,
+                `  token   : stored in ${envFile.filename}`
+            ].join('\n')
+        );
+
+        return;
+    }
+
+    // Nothing was written — either the framework has no dotenv file, the file already existed,
+    // or the write failed. The terminal is now the only place this run survives, so print
+    // everything (contract X1).
+    console.log(
+        [
             '',
-            // Name the file when there is one — Angular has none, so it gets the generic label.
+            'dotCMS connection details for this run:',
+            `  host    : ${state.host}`,
+            `  site id : ${state.siteId}`,
+            `  token   : ${state.token}`,
+            '',
             envFile.filename
                 ? `Add these to your ${envFile.filename}:`
                 : 'Configuration for your project:',
             ...envFile.contents.trimEnd().split('\n')
-        );
-    }
-
-    console.log(lines.join('\n'));
+        ].join('\n')
+    );
 }
 
 /**
