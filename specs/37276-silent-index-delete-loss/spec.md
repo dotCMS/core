@@ -144,6 +144,15 @@ all covered by integration tests. It has no production callers.
 - Failure messages distinguish removals from additions, so the condition is findable in logs.
 - Correction of documentation in the index-policy provider that states a default which does
   not match the code — it misleads exactly the reader trying to reason about this path.
+- **`deleteAllVersionsandBackup`**, the second site that deletes rows and then defers the index
+  removal. It builds its version list from `findAllVersions(identifier)`, so every version and
+  language of the identifier is going away and an identifier-wide journal entry is correct there.
+- **The OpenSearch write leg, once OpenSearch serves reads.** From Phase 2 onwards reads are
+  served by OpenSearch while writes still fan out ES-primary / OS-shadow, so a removal lost on
+  the OS leg leaves an orphaned document in the very index being queried — this defect, in the
+  phase the migration spends the longest in. The shadow treatment is scoped by who serves reads
+  rather than by dual-write: OpenSearch stays fire-and-forget while nothing reads it, and becomes
+  durable the moment it does.
 - The reindex journal's batch assembly distinguishes a pending removal from a pending reindex
   for the same identifier. Today the batch is keyed by identifier alone, so the two silently
   overwrite each other; nothing depends on that today because no production code enqueues
@@ -167,8 +176,17 @@ all covered by integration tests. It has no production callers.
   are legacy but working; this fix uses them as they are.
 - **Repairing existing orphaned documents.** A full reindex already does this. Automated
   detection and repair of pre-existing drift is desirable but is separate work.
-- **Push-publish delete/unpublish bundle handling.** Not traced; may or may not share the
-  path.
+- **`ContentletAPI#delete(List, User, boolean, boolean)`**, the third site with this shape. It
+  can delete a *subset* of an identifier's versions or languages, and a journal entry is
+  identifier-wide, so recording one there would remove index documents for languages that still
+  exist. Same reasoning as the unpublish path. Whether it needs a per-version durable mechanism
+  is separate work.
+- **Surfacing index/database drift in the Maintenance portlet** (F4 in the issue's proposed
+  fixes). AC-007 makes the residue enumerable with one query, which is the data that feature
+  would render; building the operator-facing view is separate work and does not gate this fix.
+- **Phase 1 shadow-write durability.** While nothing reads from OpenSearch, a failed shadow write
+  is genuinely tolerable and stays fire-and-forget per ADR-0009. Only the Phase 2 assumption —
+  that a shadow store is not read from — is corrected here.
 - **Retrying a removal past `REINDEX_MAX_FAILURE_ATTEMPTS`, and repairing entries that have
   exhausted it.** Once a removal has failed that many times the cause is not transient and a
   retry loop is not the answer. AC-007 makes the residue visible; acting on it — an operator
@@ -193,6 +211,11 @@ all covered by integration tests. It has no production callers.
   behavior change is that some failures now surface as errors where they were previously
   invisible; this may look like a regression in environments that have been silently losing
   index writes, when in fact it is the defect becoming visible.
+  Making the OpenSearch leg durable from Phase 2 changes failure behaviour for every write in
+  that phase, not only removals: an environment whose OpenSearch cluster is unhealthy will begin
+  surfacing errors that were previously absorbed. That is the same "the defect becoming visible"
+  effect as AC-003, and it is confined to phases where OpenSearch already serves reads.
+
 - **Data considerations**: No migration. Content already orphaned in an index is not repaired
   by this change — a full reindex remains the remedy for existing drift, and that should be
   stated in the release note. Both search providers must be exercised, since the migration
@@ -224,6 +247,14 @@ all covered by integration tests. It has no production callers.
 - **AC-008**: A pending removal and a pending reindex for the same identifier resolve
   deterministically to the newer of the two, and the older is not applied afterwards. Existing
   deduplication of identical repeated entries is preserved.
+- **AC-009**: Every in-tree caller of `putToIndex` is enumerated before the partial-failure
+  escalation ships, and each is confirmed to behave correctly when it now raises. Out-of-tree
+  callers cannot be enumerated from this repository; that residual risk is carried by the
+  release note. This is a prerequisite for AC-003, not a follow-up — without it the blast radius
+  of AC-003 is unmeasured.
+- **AC-010**: In a phase where OpenSearch serves reads, a failed OpenSearch write reaches the
+  caller and, on the journal path, marks the entry failed so it is retried. In a phase where
+  nothing reads from OpenSearch, a failed OpenSearch write is still logged and swallowed.
 - **Verification method**: Integration tests in `dotcms-integration`, named `*Test` and
   registered in the matching suite. At minimum: a test that forces an index write failure
   during a destroy and asserts the document is eventually gone; a test that asserts a partial
