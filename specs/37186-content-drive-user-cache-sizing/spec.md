@@ -157,6 +157,16 @@ the existing fallback label, instead of the whole request failing.
   under concurrent load, reproducing a milder version of today's problem at a new threshold.
   Accepted as a known limitation of the chosen approach; an operator with an unusually large user
   base can still raise `cache.userdotcmscache.size` manually, same as today.
+- **What happens when two different users browse the same cold folder at the same time?**
+  FR-001's warm-up only de-duplicates lookups *within* one request — it does nothing for two
+  concurrent requests racing on the same not-yet-cached user id. This is a narrower version of
+  the same thundering-herd mechanism, explicitly **not** closed by this item. **Required
+  follow-up, not optional**: a GitHub issue for a striped/keyed lock around `loadUserById`'s
+  DB-query branch (e.g. one lock per user id, so concurrent callers for the *same* id block on
+  each other instead of all querying the database, while callers for *different* ids remain
+  unblocked) MUST be filed before this item is considered closed. This was raised once already
+  during this item's own review and dropped between drafts. Filed as
+  [#37335](https://github.com/dotCMS/core/issues/37335).
 
 ## Requirements *(mandatory)*
 
@@ -219,12 +229,22 @@ the existing fallback label, instead of the whole request failing.
 
 ### Measurable Outcomes
 
-- **SC-001**: For a folder listing whose content spans N distinct, not-yet-cached authors, a
-  single request issues exactly N user-record database lookups (verified via an integration
-  test asserting the DB call count for `loadUserById`, e.g. a `DotConnect`/query-count
-  assertion in `BrowserAPITest` or the equivalent user-resolution test class — exact test type
-  and location to be confirmed in the plan phase per Constitution Principle V), down from the
-  previously observed 363-1025 per request on the reference dataset.
+- **SC-001 — mechanism named (2026-09-01, per review): no existing harness counts DB calls,
+  so one must be built.** For a folder listing whose content spans N distinct, not-yet-cached
+  authors, a single request issues exactly N user-record database lookups, down from the
+  previously observed 363-1025 per request on the reference dataset. Verified via a new,
+  always-on counter in `UserFactoryImpl.loadUserById`'s database-query branch (the `if
+  (list.isEmpty())... else { user = ...; userCache.add(...) }` path at
+  `UserFactoryImpl.java:104-122`): a `@VisibleForTesting` static `AtomicLong` incremented once
+  per DB round trip, with a package-visible reset/read accessor. This is genuinely new test
+  infrastructure — confirmed by searching `dotcms-integration` for any existing query-count
+  assertion pattern (P6Spy, a counting `DataSource`/JDBC proxy, or Guava/Caffeine cache-stats
+  based counting); none exists. Cache-stats-based counting was considered and rejected:
+  `GuavaCache` builds its caches without `.recordStats()` (`GuavaCache.java:269-275`), so
+  `CacheStats.REGION_LOAD` (Guava's `loadCount()`) always reports 0 today — enabling it would be
+  a separate, unscoped change to cache behavior. The counter MUST be written, developer-approved,
+  and its test confirmed red before any implementation change, per Constitution Principle V —
+  this is not a parenthetical detail to leave to the plan phase.
 - **SC-002**: Listing content (returned rows, display names, and fallback labels, including the
   orphan-user fallback from FR-004a) is verified unchanged before and after the fix on the same
   dataset and folder, except the orphan-user case itself, which changes from "request fails" to
