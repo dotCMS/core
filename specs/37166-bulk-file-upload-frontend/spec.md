@@ -190,16 +190,18 @@ without waiting for it to finish.
 
 **Why this priority**: Deliberately deferred, and it is the one story that may not ship with this
 feature. The *need* is real — it is the cost of making upload a long operation — but the *design* is
-not settled, and it now looks likely to be settled somewhere else. A general task manager is
-anticipated as future work, and a list of running tasks is the natural home for stopping one: it is
-where the author goes to act on background work, it can show every run rather than the one this
-portlet started, and it does not have to squeeze a destructive-adjacent control into a status
-indicator. Building a stop button on the toolbar now risks building the wrong thing in the wrong
+not settled, and it is already owned elsewhere.
+[#33331](https://github.com/dotCMS/core/issues/33331) — *"[EPIC] Task manager UI to manage large
+uploads and moves"* — covers exactly this, and says so in its own words: *"From this task manager
+UI, we can also enable the user to cancel individual file uploads, or cancel the whole upload or
+move."* A list of running tasks is the natural home for stopping one: it is where the author goes to
+act on background work, it can show every run rather than only the one this portlet started, and it
+does not have to squeeze a destructive-adjacent control into a status indicator. Building a stop button on the toolbar now risks building the wrong thing in the wrong
 place, and then having to remove it.
 
 Deferring is cheap and reversible. The server capability is fully specified and will exist whether
-or not this ships (backend FR-025 … FR-028, C-004), so adopting it later — here or in the task
-manager — needs no server work and no change to anything else in this feature. Nothing else here
+or not this ships (backend FR-025 … FR-028, C-004), so adopting it later — here or in #33331 —
+needs no server work and no change to anything else in this feature. Nothing else here
 depends on it. Build what is certain first.
 
 Depends on Story 3, since the indicator is the only surface still present once the dialog that
@@ -344,6 +346,13 @@ workflow action on rows selected in the listing.
   show activity without claiming a position when it does not.
 - **FR-013**: A run MUST survive the closing of the dialog, menu or control that started it, and
   MUST survive the author browsing to another folder within the portlet.
+- **FR-035**: The in-flight indicator MUST remain announced to assistive technology, and the
+  additions this feature makes to it MUST NOT make it noisy. Specifically: a run starting, reaching a
+  terminal state, or being stopped are worth announcing; continuous progress is not, and MUST NOT be
+  announced on every update. Where progress is shown, its current value MUST be available to
+  assistive technology on request, so a user can ask for it without having it pushed at them
+  repeatedly. This holds when several runs are in flight, which is when the risk of a chatty live
+  region is highest.
 - **FR-014**: The following MUST be converted to FR-007: bulk upload; moving existing Content Drive
   items from one folder to another by dragging them; and firing a workflow action from a row's
   context menu.
@@ -358,7 +367,8 @@ workflow action on rows selected in the listing.
   author tell how many things are running and what they are.
 
 **Stopping a run** *(this whole group is OPTIONAL — see User Story 5. Stopping is expected to be
-delivered by the anticipated task manager rather than by this feature.)*
+delivered by the task manager epic [#33331](https://github.com/dotCMS/core/issues/33331) rather than
+by this feature.)*
 
 - **FR-018** *(optional)*: A run the server reports as stoppable MAY offer the author a way to stop
   it, from the in-flight indicator. Deferred pending a settled design for that control.
@@ -434,7 +444,7 @@ either document. Each item is a dependency of this feature, not a requirement of
   many files, permission denied. *Consumed by* FR-006 and the edge cases.
 - **C-003** — Readable progress for a run in flight. *Consumed by* FR-012.
 - **C-004** — A way to stop a run in flight. **Not consumed in this pass.** The whole stopping group
-  (FR-018 … FR-020) is optional and expected to be delivered by the anticipated task manager. Noted
+  (FR-018 … FR-020) is optional and expected to be delivered by the task manager epic #33331. Noted
   here so the boundary stays complete and so it is clear that adopting it later requires no server
   change.
 - **C-005** — A readable terminal state and outcome: counts plus per-item results with a reason and
@@ -475,6 +485,8 @@ recorded here as a planning obligation so it cannot be discovered during review.
   referenced is left undefined.
 - **SC-010**: An author without the right to add children to a target cannot reach an upload into it
   by any route, and in every case is told why rather than being left to discover it.
+- **SC-011**: An author using a screen reader learns that work started and how it ended, and is not
+  interrupted repeatedly while it runs.
 
 ---
 
@@ -517,9 +529,9 @@ recorded here as a planning obligation so it cannot be discovered during review.
 - **Directory upload.** Dropping a whole folder from the author's computer and recreating its
   hierarchy inside Content Drive. Deferred by #37166.
 - **Resumable or chunked single-file upload.**
-- **A general-purpose background-jobs management screen** (FR-033). One is anticipated as future
-  work and is the expected home for stopping a run (User Story 5), but this feature must not depend
-  on it existing, and does not build it.
+- **A general-purpose background-jobs management screen** (FR-033). One is owned by
+  [#33331](https://github.com/dotCMS/core/issues/33331) and is the expected home for stopping a run
+  (User Story 5), but this feature must not depend on it existing, and does not build it.
 - **Mixing upload types within one batch** (FR-003).
 
 ---
@@ -534,10 +546,10 @@ recorded here as a planning obligation so it cannot be discovered during review.
 - The concurrent-run display (FR-017) defaults to naming each run while there are few, and
   collapsing to a count beyond that. The exact threshold is a design choice for planning, not a
   requirement.
-- Stopping a run is expected to arrive with a general task manager rather than in this feature. If
-  it were instead built here, it would live on the in-flight indicator, since once the dialog that
-  started a run has closed the indicator is the only surface still representing it. That placement
-  is the open question, and the task manager is the likelier answer to it.
+- Stopping a run is expected to arrive with the task manager epic #33331 rather than in this
+  feature. If it were instead built here, it would live on the in-flight indicator, since once the
+  dialog that started a run has closed the indicator is the only surface still representing it.
+  That placement is the open question, and #33331 is the likelier answer to it.
 - An outcome is reported once, by whichever part of the interface is responsible for presenting it,
   rather than by each surface that knows about the run.
 - Removing a message definition is safe only where it is unreferenced across the whole client, not
