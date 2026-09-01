@@ -21,6 +21,7 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.reindex.ReindexThread;
 import com.dotmarketing.exception.DotDataException;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Logger;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
@@ -293,21 +294,50 @@ public class ContentletIndexOperationsOS implements ContentletIndexOperations {
                         }
                         return b;
                     }));
-            if (response.errors()) {
-                for (final BulkResponseItem item : response.items()) {
-                    if (item.error() != null) {
-                        Logger.error(this,
-                                "OS bulk putToIndex error — id=" + item.id()
-                                        + " op=" + item.operationType()
-                                        + " type=" + item.error().type()
-                                        + " reason=" + item.error().reason());
-                    }
-                }
-            }
+            handleBulkResponse(response);
         } catch (final Exception e) {
             Logger.warnAndDebug(ContentletIndexOperationsOS.class, e);
             throw new DotRuntimeException(e.getMessage(), e);
         }
+    }
+
+    /**
+     * Decides what a bulk response means to the caller.
+     *
+     * <p>Extracted from {@link #putToIndex(IndexBulkRequest)} so the policy can be exercised
+     * without a cluster — the HTTP call is not what is interesting here, the verdict is.</p>
+     *
+     * @param response the response from the bulk call; {@code null} is tolerated
+     */
+    @VisibleForTesting
+    void handleBulkResponse(final BulkResponse response) {
+        if (response == null || !response.errors()) {
+            return;
+        }
+
+        // Same contract as the Elasticsearch provider (#37276, loss point L3): a bulk that
+        // returns normally while rejecting items must not read as success to the caller.
+        //
+        // This matters most in phase 3, where OpenSearch is the sole provider and there is no
+        // shadow leg to absorb the loss. In dual-write phases the router already isolates the
+        // shadow (ContentletIndexAPIImpl#putToIndex), so raising here keeps ADR-0009 intact:
+        // an OS failure is still swallowed while OS is the shadow, and propagates once primary.
+        final StringBuilder detail = new StringBuilder();
+        for (final BulkResponseItem item : response.items()) {
+            if (item.error() != null) {
+                final String itemMessage = "OS bulk index operation error — id=" + item.id()
+                        + " op=" + item.operationType()
+                        + " type=" + item.error().type()
+                        + " reason=" + item.error().reason();
+                Logger.error(this, itemMessage);
+                if (detail.length() > 0) {
+                    detail.append("; ");
+                }
+                detail.append(itemMessage);
+            }
+        }
+
+        throw new DotRuntimeException(detail.toString());
     }
 
     // =========================================================================

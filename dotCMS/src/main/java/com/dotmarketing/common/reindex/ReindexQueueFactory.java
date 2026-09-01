@@ -294,7 +294,15 @@ public class ReindexQueueFactory {
         }
 
         for (ReindexEntry entry; (entry = queue.poll()) != null; ) {
-            contentToIndex.put(entry.getIdentToIndex(), entry);
+            // One outcome per identifier per batch, resolved by row id rather than by the order
+            // the entries happened to be polled in. Two entries for the same identifier are
+            // successive statements about what the index should hold, and only the newest is
+            // true: a DELETE written after a REINDEX means the content is gone, so applying the
+            // REINDEX afterwards would re-add a document for content that no longer exists.
+            // The loser stays in dist_reindex_journal and is collected on a later pass.
+            contentToIndex.merge(entry.getIdentToIndex(), entry,
+                    (existing, candidate) -> candidate.getId() > existing.getId()
+                            ? candidate : existing);
             if (contentToIndex.size() >= recordsToReturn) {
                 while (entry.equals(queue.peek())) {
                     // drain duplicate items

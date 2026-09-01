@@ -3131,7 +3131,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         final DualIndexBulkRequest dualReq = bulkRequest instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) bulkRequest : null;
 
-        for (final ContentletIndexOperations ops : router.writeProviders()) {
+        // writeProviders() is ordered primary-first in every phase (0 → [ES], 1/2 → [ES, OS],
+        // 3 → [OS]), so element 0 is the provider whose outcome the caller is entitled to.
+        final List<ContentletIndexOperations> deleteProviders = router.writeProviders();
+        final ContentletIndexOperations primary = deleteProviders.get(0);
+        int primaryDeleteOps = 0;
+
+        for (final ContentletIndexOperations ops : deleteProviders) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
             if (indices == null) {
                 continue;
@@ -3142,20 +3148,46 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } else {
                 providerReq = bulkRequest;
             }
+            int opsAdded = 0;
             if (indices.live != null) {
                 ops.addDeleteOp(providerReq, indices.live, id);
+                opsAdded++;
             }
             if (indices.reindexLive != null) {
                 ops.addDeleteOp(providerReq, indices.reindexLive, id);
+                opsAdded++;
             }
             if (!onlyLive) {
                 if (indices.working != null) {
                     ops.addDeleteOp(providerReq, indices.working, id);
+                    opsAdded++;
                 }
                 if (indices.reindexWorking != null) {
                     ops.addDeleteOp(providerReq, indices.reindexWorking, id);
+                    opsAdded++;
                 }
             }
+            if (ops == primary) {
+                primaryDeleteOps = opsAdded;
+            }
+        }
+
+        // The primary contributing no delete operations means the removal did not happen, and
+        // putToIndex early-returns on an empty batch — so without this check it is
+        // indistinguishable from a completed removal (#37276, loss point L2).
+        //
+        // Counting the operations rather than testing for a null ProviderIndices covers both
+        // ways the primary can come up empty: its pointers failed to load (loadProviderIndices
+        // threw), or they loaded but hold no active index at all. The second reads as success
+        // just as silently as the first, and only the operation count sees both.
+        //
+        // A shadow provider keeps warn-and-continue, matching how putToIndex already isolates
+        // the OS leg under ADR-0009.
+        if (primaryDeleteOps == 0) {
+            throw new DotRuntimeException(
+                    "Cannot remove content from the index: the primary provider ("
+                            + primary.getClass().getSimpleName() + ") resolved no active index "
+                            + "for document " + id + ". The removal was NOT performed.");
         }
 
         if (!onlyLive && UtilMethods.isSet(relationships)) {
