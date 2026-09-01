@@ -86,6 +86,11 @@ supported" warning appears.
    multiple-file upload is unsupported.
 5. **Given** a single file chosen, **When** it is submitted, **Then** the author's experience is
    unchanged from today.
+6. **Given** an author viewing a folder they may **not** add children to, **When** they look for a
+   way to upload into it, **Then** every route in is offered disabled with the reason shown, rather
+   than hidden or left to fail after they have chosen files.
+7. **Given** that same folder, **When** the author drops files onto it anyway, **Then** nothing is
+   submitted and they are told why.
 
 ---
 
@@ -309,6 +314,19 @@ workflow action on rows selected in the listing.
 - **FR-006**: The client MAY refuse a batch that exceeds the configured maximum before
   submitting it, as a convenience. The server remains the point of enforcement, and the client MUST
   NOT treat its own check as authoritative.
+- **FR-034**: The existing permission gate MUST continue to hold, unchanged, for every route into an
+  upload: the upload control, the create menu, and dropping files onto a folder. An author without
+  the right to add children to the target MUST be shown that route disabled **with the reason
+  given**, rather than the route being hidden or being offered and then failing after they have
+  chosen their files. A drop onto a target they may not add children to MUST be refused before
+  anything is submitted, with the reason. This includes the site root, whose permission is resolved
+  separately from a folder's because the root has no folder to carry it. As with FR-006, this gate
+  is an affordance: the server remains the point of enforcement (backend FR-003, FR-004), and the
+  client MUST NOT treat its own check as authoritative.
+
+  *This requirement protects existing behaviour rather than adding any. It is stated because this
+  feature changes the upload control and the drop path directly, so the gate is squarely in the
+  blast radius.*
 
 **Reporting work in progress**
 
@@ -455,6 +473,8 @@ recorded here as a planning obligation so it cannot be discovered during review.
 - **SC-008**: The run-following capability is adopted by #37062 / #37063 without modification to it.
 - **SC-009**: No message definition used by Content Drive is left defined and unreferenced, and none
   referenced is left undefined.
+- **SC-010**: An author without the right to add children to a target cannot reach an upload into it
+  by any route, and in every case is told why rather than being left to discover it.
 
 ---
 
@@ -472,7 +492,8 @@ recorded here as a planning obligation so it cannot be discovered during review.
 - **Backward-compatibility expectations**: The single-file upload experience must be unchanged
   (FR-005). The AssetPicker must not regress through the shared components. Message definitions may
   be removed only where they are proven unreferenced (FR-031). No new permission concept is
-  introduced: the right to upload a batch is the existing right to add children to the target.
+  introduced: the right to upload a batch is the existing right to add children to the target, and
+  the existing gate on every route into an upload must survive this work unchanged (FR-034).
 - **Known related decisions**: The bulk reindex work established the precedent this feature follows
   — a long operation is submitted, answered immediately, and its completion is pushed to the author
   rather than polled for. The Action Center established the other one: execution state is held by
