@@ -31,6 +31,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 COMPOSE_FILE="${COMPOSE_FILE:-$SCRIPT_DIR/../assets/docker-compose.yml}"
 WAIT_TIMEOUT="${WAIT_TIMEOUT:-600}"
 RESTART_GRACE="${RESTART_GRACE:-30}"
+# dotCMS needs ~46s to boot, and T006 restarts it just before the exposure check.
+HEALTH_GRACE="${HEALTH_GRACE:-240}"
 
 PASS=0
 FAIL=0
@@ -256,39 +258,77 @@ runtime_restart() {
 # ---------------------------------------------------------------------------
 # T007 — the management port answers on loopback and NOT on the LAN.
 # ---------------------------------------------------------------------------
+# Waits for dotcms to be healthy again.
+#
+# T006 deliberately crashes the container immediately before this, and dotCMS takes ~46s to boot.
+# Without this wait, T007 probed a container that was 3 seconds into a restart and reported
+# "the management port is not published" — accusing a correct compose file of a defect it does
+# not have. Verified 2026-09-01: against a healthy stack the same probe returns 200 on loopback
+# and is refused on the LAN address, exactly as AC-011 requires.
+#
+# The wait lives here rather than at the end of T006 so this check does not depend on what ran
+# before it.
+wait_until_healthy() {
+    local svc="$1" waited=0
+    while [ $waited -lt "$HEALTH_GRACE" ]; do
+        [ "$(health_of "$svc")" = "healthy" ] && return 0
+        sleep 5; waited=$((waited + 5))
+    done
+
+    return 1
+}
+
 runtime_exposure() {
     section "Management port exposure"
+
+    if ! wait_until_healthy dotcms; then
+        bad "T007 dotcms did not return to healthy within ${HEALTH_GRACE}s — cannot test exposure"
+        return
+    fi
 
     # Probe livez, not readyz. This is an EXPOSURE test — it asks whether the port is
     # reachable on loopback, and livez is what the container healthcheck guarantees.
     # readyz lags it: measured 2026-08-31, readyz returned 503 for a few seconds after
     # `up --wait` already reported the container Healthy, which would flake this check.
+    local loopback_answers=1
     if curl -fsS --max-time 10 http://127.0.0.1:8090/dotmgt/livez >/dev/null 2>&1; then
         ok "T007 /dotmgt/livez answers on 127.0.0.1:8090"
+        loopback_answers=0
     else
         bad "T007 /dotmgt/livez unreachable on 127.0.0.1:8090 — the management port is not published"
     fi
 
-    local lan=""
-    if command -v ipconfig >/dev/null 2>&1; then
+    local lan="${LAN_ADDR:-}"
+    if [ -z "$lan" ] && command -v ipconfig >/dev/null 2>&1; then
         lan="$(ipconfig getifaddr en0 2>/dev/null || true)"
     fi
     [ -n "$lan" ] || lan="$(hostname -I 2>/dev/null | awk '{print $1}')"
 
+    # A security assertion that cannot run must FAIL, not pass quietly. This check is the only
+    # thing standing behind AC-011 — that unauthenticated /dotmgt/health and /dotmgt/metrics are
+    # not on the network — and an earlier version of this function skipped it with `info` while
+    # the suite still printed "0 failed". A green summary that omits this check is worse than a
+    # red one, because nobody goes looking.
     if [ -z "$lan" ]; then
-        info "T007 no LAN address detected — skipping the negative check"
+        bad "T007 no LAN address found — AC-011 is UNVERIFIED, not satisfied. Pass LAN_ADDR=<ip> to check it explicitly."
         return
     fi
 
     # Guard against a vacuous pass: if 8090 is not published at all, the LAN refusal
     # below is trivially true and proves nothing about the binding. Only treat the
     # refusal as meaningful once loopback actually answers.
-    if ! curl -fsS --max-time 10 http://127.0.0.1:8090/dotmgt/readyz >/dev/null 2>&1; then
+    #
+    # This reuses the probe above rather than re-issuing one, and it must use the SAME
+    # endpoint. It previously probed readyz while the check above used livez, and readyz
+    # lags livez by a few seconds after a restart — so straight after T006 the guard saw a
+    # 503, declared 8090 unpublished, and silently skipped the AC-011 assertion while the
+    # suite still reported "16 passed, 0 failed".
+    if [ "$loopback_answers" -ne 0 ]; then
         info "T007 8090 does not answer on loopback either — skipping the LAN check as vacuous"
         return
     fi
 
-    if curl -fsS --max-time 5 "http://$lan:8090/dotmgt/readyz" >/dev/null 2>&1; then
+    if curl -fsS --max-time 5 "http://$lan:8090/dotmgt/livez" >/dev/null 2>&1; then
         bad "T007 8090 ANSWERS on $lan — unauthenticated /dotmgt/health and /dotmgt/metrics are on the network"
     else
         ok "T007 8090 refused on $lan (loopback-only, as required)"
