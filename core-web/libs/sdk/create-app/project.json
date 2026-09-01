@@ -85,6 +85,14 @@
                     "coverage": true
                 }
             }
+        },
+        "verify-package": {
+            "executor": "nx:run-commands",
+            "dependsOn": ["build"],
+            "options": {
+                "command": "bash libs/sdk/create-app/scripts/verify-package.sh",
+                "cwd": "."
+            }
         }
     }
 }
