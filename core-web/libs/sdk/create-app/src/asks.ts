@@ -1,3 +1,4 @@
+import chalk from 'chalk';
 import fs from 'fs-extra';
 import inquirer from 'inquirer';
 
@@ -245,21 +246,53 @@ export async function prepareDirectory(basePath: string, projectName: string) {
 /**
  * Asked when a healthy dotCMS is already listening on 8082.
  *
- * It offers a real choice rather than just confirming reuse: someone who did not expect an
- * instance there should be able to stop and look instead of being carried into it (decision D3).
+ * The earlier version said "A dotCMS instance is already running on port 8082. What would you
+ * like to do?" and offered only reuse or quit. That states a fact and then abandons the user:
+ * it never says WHAT is running, and anyone who did not want that instance had to leave the CLI
+ * and run docker by hand. Replacing it is the documented recovery for a bricked instance
+ * (#37262), so the CLI can now do it.
+ *
+ * `canReplace` is false when nothing identifiable owns the ports — something started outside
+ * compose is not ours to destroy, so the option is withheld rather than offered and then failed.
  */
-export async function askReuseExistingInstance(): Promise<boolean> {
-    const { reuse } = await inquirer.prompt([
+export async function askPortConflictAction({
+    description,
+    canReplace
+}: {
+    description: string;
+    canReplace: boolean;
+}): Promise<'reuse' | 'replace' | 'cancel'> {
+    console.log(
+        '\n' +
+            chalk.yellow('⚠  Found a dotCMS already running at ') +
+            chalk.cyan('http://localhost:8082') +
+            '\n' +
+            chalk.gray(`   ${description}`) +
+            '\n'
+    );
+
+    const choices: { name: string; value: 'reuse' | 'replace' | 'cancel' }[] = [
         {
-            type: 'list',
-            name: 'reuse',
-            message: 'A dotCMS instance is already running on port 8082. What would you like to do?',
-            choices: [
-                { name: 'Reuse the running instance', value: true },
-                { name: 'Abort so I can check what it is', value: false }
-            ]
+            name: `Use this instance for my project\n    ${chalk.gray('Fastest. Keeps its existing content.')}`,
+            value: 'reuse'
         }
+    ];
+
+    if (canReplace) {
+        choices.push({
+            name: `Replace it with a clean instance\n    ${chalk.gray('Stops it and DELETES its data, then starts fresh.')}`,
+            value: 'replace'
+        });
+    }
+
+    choices.push({
+        name: `Cancel\n    ${chalk.gray('Change nothing and exit.')}`,
+        value: 'cancel'
+    });
+
+    const { action } = await inquirer.prompt([
+        { type: 'list', name: 'action', message: 'How would you like to continue?', choices }
     ]);
 
-    return reuse;
+    return action;
 }

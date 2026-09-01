@@ -18,7 +18,7 @@ import {
     askProjectName,
     askUserNameForDotcmsCloud,
     prepareDirectory,
-    askReuseExistingInstance
+    askPortConflictAction
 } from './asks';
 import {
     CLOUD_HEALTH_CHECK_RETRIES,
@@ -47,7 +47,7 @@ import {
 import { withComposeFileMovedAside } from './utils/compose-move';
 import { formatRetryReport, isSuccessStatus, type RetryReporter } from './utils/fetch-retry';
 import { reportInstallResult } from './utils/install';
-import { resolvePortConflict } from './utils/ports';
+import { describePortOwner, resolvePortConflict } from './utils/ports';
 import { waitForReadiness } from './utils/readiness';
 import { applyStarterUrl } from './utils/starter-url';
 import {
@@ -308,10 +308,11 @@ program
 
                     return probeToken.ok;
                 },
-                askReuse: () => {
+                owner: await describePortOwner(8082, (cmd, args) => execa(cmd, args)),
+                askAction: (context) => {
                     spinner.stop();
 
-                    return askReuseExistingInstance();
+                    return askPortConflictAction(context);
                 },
                 notify: (message) => spinner.info(message)
             });
@@ -320,6 +321,17 @@ program
                 spinner.fail('Required ports are busy');
                 console.error(chalk.red(portOutcome.message));
                 process.exit(1);
+            }
+
+            if (portOutcome.kind === 'replace') {
+                // The documented recovery for a bricked instance, done here so the user does not
+                // have to leave the CLI for it. `-v` is the point: keeping the volumes keeps the
+                // corruption, and the instance comes back just as broken (#37268).
+                spinner.start(`Removing the existing "${portOutcome.project}" stack...`);
+                await execa('docker', ['compose', '-p', portOutcome.project, 'down', '-v'], {
+                    reject: false
+                });
+                spinner.succeed(`Removed the existing "${portOutcome.project}" stack`);
             }
 
             const reusingExistingInstance = portOutcome.kind === 'reuse';
@@ -337,45 +349,46 @@ program
             // "port is already allocated" — turning a recoverable situation back into the dead
             // end AC-006 exists to remove.
             if (!reusingExistingInstance) {
-            // STEP 3 — Download docker-compose
-            spinner.start('Downloading Docker Compose configuration...');
-            const downloaded = await downloadTheDockerCompose({
-                directory: finalDirectory
-            });
-            if (!downloaded.ok) {
-                spinner.fail('Failed to download Docker Compose file.');
-                process.exit(1);
-            }
-            spinner.succeed('Docker Compose configuration downloaded');
-
-            // STEP 4 — Run docker-compose
-            spinner.start('Starting dotCMS containers...');
-            const ran = await runDockerCompose({
-                directory: finalDirectory,
-                starterUrl: options.starter,
-                onProgress: (message) => {
-                    spinner.text = message;
+                // STEP 3 — Download docker-compose
+                spinner.start('Downloading Docker Compose configuration...');
+                const downloaded = await downloadTheDockerCompose({
+                    directory: finalDirectory
+                });
+                if (!downloaded.ok) {
+                    spinner.fail('Failed to download Docker Compose file.');
+                    process.exit(1);
                 }
-            });
-            if (!ran.ok) {
-                spinner.fail('Failed to start Docker containers');
-                const errorMessage = ran.val instanceof Error ? ran.val.message : String(ran.val);
-                console.error(
-                    chalk.red('\n❌ Docker Compose failed to start\n\n') +
-                        chalk.white('Error details:\n') +
-                        chalk.gray(errorMessage) +
-                        '\n\n' +
-                        chalk.yellow('Common solutions:\n') +
-                        chalk.white('  • Ensure Docker Desktop is running\n') +
-                        chalk.white('  • Try: ') +
-                        chalk.cyan('docker compose down') +
-                        chalk.white(' then run this command again\n') +
-                        chalk.white('  • Check Docker logs for more details\n')
-                );
-                process.exit(1);
-            }
+                spinner.succeed('Docker Compose configuration downloaded');
 
-            spinner.succeed('dotCMS containers started successfully.');
+                // STEP 4 — Run docker-compose
+                spinner.start('Starting dotCMS containers...');
+                const ran = await runDockerCompose({
+                    directory: finalDirectory,
+                    starterUrl: options.starter,
+                    onProgress: (message) => {
+                        spinner.text = message;
+                    }
+                });
+                if (!ran.ok) {
+                    spinner.fail('Failed to start Docker containers');
+                    const errorMessage =
+                        ran.val instanceof Error ? ran.val.message : String(ran.val);
+                    console.error(
+                        chalk.red('\n❌ Docker Compose failed to start\n\n') +
+                            chalk.white('Error details:\n') +
+                            chalk.gray(errorMessage) +
+                            '\n\n' +
+                            chalk.yellow('Common solutions:\n') +
+                            chalk.white('  • Ensure Docker Desktop is running\n') +
+                            chalk.white('  • Try: ') +
+                            chalk.cyan('docker compose down') +
+                            chalk.white(' then run this command again\n') +
+                            chalk.white('  • Check Docker logs for more details\n')
+                    );
+                    process.exit(1);
+                }
+
+                spinner.succeed('dotCMS containers started successfully.');
             }
 
             spinner.start('Verifying if dotCMS is running...');

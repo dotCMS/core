@@ -68,7 +68,8 @@ function options(overrides: Partial<Parameters<typeof resolvePortConflict>[0]> =
         isInteractive: false,
         host: HOST,
         probeInstance: jest.fn().mockResolvedValue(true),
-        askReuse: jest.fn().mockResolvedValue(true),
+        askAction: jest.fn().mockResolvedValue('reuse'),
+        owner: { project: 'my-app', description: 'Docker project "my-app" · healthy' },
         notify: jest.fn(),
         ...overrides
     };
@@ -95,7 +96,7 @@ describe('resolvePortConflict', () => {
 
             expect(outcome.kind).toBe('free');
             expect(opts.probeInstance).not.toHaveBeenCalled();
-            expect(opts.askReuse).not.toHaveBeenCalled();
+            expect(opts.askAction).not.toHaveBeenCalled();
         });
     });
 
@@ -106,7 +107,7 @@ describe('resolvePortConflict', () => {
             const outcome = await resolvePortConflict(opts);
 
             expect(outcome).toEqual({ kind: 'reuse', host: HOST });
-            expect(opts.askReuse).not.toHaveBeenCalled();
+            expect(opts.askAction).not.toHaveBeenCalled();
         });
 
         it('still prints a notice when it auto-reuses (D3: silent means no prompt, not no output)', async () => {
@@ -126,12 +127,12 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
-                askReuse: jest.fn().mockResolvedValue(true)
+                askAction: jest.fn().mockResolvedValue('reuse')
             });
 
             const outcome = await resolvePortConflict(opts);
 
-            expect(opts.askReuse).toHaveBeenCalledTimes(1);
+            expect(opts.askAction).toHaveBeenCalledTimes(1);
             expect(outcome).toEqual({ kind: 'reuse', host: HOST });
         });
 
@@ -139,7 +140,7 @@ describe('resolvePortConflict', () => {
             const opts = options({
                 busyPorts: A_REAL_RUNNING_STACK,
                 isInteractive: true,
-                askReuse: jest.fn().mockResolvedValue(false)
+                askAction: jest.fn().mockResolvedValue('cancel')
             });
 
             const outcome = await resolvePortConflict(opts);
@@ -176,7 +177,7 @@ describe('resolvePortConflict', () => {
 
             expect(outcome.kind).toBe('abort');
             // It must not even offer the choice: there is nothing safe to reuse.
-            expect(opts.askReuse).not.toHaveBeenCalled();
+            expect(opts.askAction).not.toHaveBeenCalled();
         });
 
         it('aborts when a required port other than 8082 is taken', async () => {
@@ -214,6 +215,75 @@ describe('resolvePortConflict', () => {
             const opts = options({ busyPorts: [DOTCMS_HTTPS], isInteractive: false });
 
             expect((await resolvePortConflict(opts)).kind).toBe('abort');
+        });
+    });
+
+    /**
+     * "A dotCMS is already running. What would you like to do?" told the user a fact and then
+     * abandoned them: the only choices were reuse or quit, so anyone who did NOT want that
+     * instance had to leave the CLI and run docker by hand. Replacing it in place is the
+     * documented recovery for a bricked instance (#37262), so the CLI should be able to do it.
+     */
+    describe('replacing the running instance', () => {
+        it('offers replace when the port owner is a compose project we can stop', async () => {
+            const opts = options({
+                busyPorts: A_REAL_RUNNING_STACK,
+                isInteractive: true,
+                askAction: jest.fn().mockResolvedValue('replace')
+            });
+
+            const outcome = await resolvePortConflict(opts);
+
+            expect(outcome).toEqual({ kind: 'replace', project: 'my-app' });
+        });
+
+        it('tells the prompt whether replacing is even possible', async () => {
+            const askAction = jest.fn().mockResolvedValue('reuse');
+
+            await resolvePortConflict(
+                options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: true, askAction })
+            );
+            expect(askAction).toHaveBeenCalledWith(expect.objectContaining({ canReplace: true }));
+
+            askAction.mockClear();
+
+            // No compose project — something started outside compose. Stopping it is not ours to do.
+            await resolvePortConflict(
+                options({
+                    busyPorts: A_REAL_RUNNING_STACK,
+                    isInteractive: true,
+                    askAction,
+                    owner: { description: 'an unknown process' }
+                })
+            );
+            expect(askAction).toHaveBeenCalledWith(expect.objectContaining({ canReplace: false }));
+        });
+
+        it('never replaces without being asked — non-interactive stays reuse-only', async () => {
+            const askAction = jest.fn();
+            const opts = options({
+                busyPorts: A_REAL_RUNNING_STACK,
+                isInteractive: false,
+                askAction
+            });
+
+            const outcome = await resolvePortConflict(opts);
+
+            // Destroying an instance is not something to infer from the absence of a TTY.
+            expect(outcome.kind).toBe('reuse');
+            expect(askAction).not.toHaveBeenCalled();
+        });
+
+        it('passes the owner description through so the prompt can say what it found', async () => {
+            const askAction = jest.fn().mockResolvedValue('cancel');
+
+            await resolvePortConflict(
+                options({ busyPorts: A_REAL_RUNNING_STACK, isInteractive: true, askAction })
+            );
+
+            expect(askAction).toHaveBeenCalledWith(
+                expect.objectContaining({ description: expect.stringContaining('my-app') })
+            );
         });
     });
 

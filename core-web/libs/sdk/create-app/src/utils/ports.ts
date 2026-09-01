@@ -19,7 +19,19 @@ export interface BusyPort {
 export type PortConflictOutcome =
     | { kind: 'free' }
     | { kind: 'reuse'; host: string }
+    /** Stop the compose project holding the ports, wipe its volumes, then provision fresh. */
+    | { kind: 'replace'; project: string }
     | { kind: 'abort'; message: string };
+
+/** What the user is choosing between, and enough context to choose. */
+export interface PortOwner {
+    /** Compose project holding the ports, when there is one we could safely stop. */
+    project?: string;
+    /** Human-readable, e.g. `Docker project "my-app" · healthy · up 4 minutes`. */
+    description: string;
+}
+
+export type PortConflictAction = 'reuse' | 'replace' | 'cancel';
 
 export interface ResolvePortConflictOptions {
     busyPorts: BusyPort[];
@@ -28,8 +40,13 @@ export interface ResolvePortConflictOptions {
     host: string;
     /** Must confirm BOTH readiness and token issuance; a half-dead instance is not reusable. */
     probeInstance: () => Promise<boolean>;
-    askReuse: () => Promise<boolean>;
+    /**
+     * Asks the user what to do. `canReplace` is false when nothing owns the ports that we could
+     * safely stop — something started outside compose is not ours to destroy.
+     */
+    askAction: (context: { description: string; canReplace: boolean }) => Promise<PortConflictAction>;
     notify: (message: string) => void;
+    owner?: PortOwner;
 }
 
 const DOTCMS_HTTP_PORT = 8082;
@@ -70,7 +87,7 @@ function abortMessage(busyPorts: BusyPort[], detail: string): PortConflictOutcom
 export async function resolvePortConflict(
     options: ResolvePortConflictOptions
 ): Promise<PortConflictOutcome> {
-    const { busyPorts, isInteractive, host, probeInstance, askReuse, notify } = options;
+    const { busyPorts, isInteractive, host, probeInstance, askAction, notify, owner } = options;
 
     if (busyPorts.length === 0) {
         return { kind: 'free' };
@@ -116,11 +133,20 @@ export async function resolvePortConflict(
         return { kind: 'reuse', host };
     }
 
-    const reuse = await askReuse();
+    // A real choice, with a way out that does not mean leaving the CLI. Replacing is only
+    // offered when we can identify a compose project to stop — something started outside compose
+    // is not ours to destroy, whatever the user picks.
+    const canReplace = Boolean(owner?.project);
+    const action = await askAction({
+        description: owner?.description ?? `something on port ${DOTCMS_HTTP_PORT}`,
+        canReplace
+    });
 
-    if (!reuse) {
-        // A real choice: someone who did not expect a dotCMS on 8082 should be able to stop and
-        // look rather than be carried forward into it.
+    if (action === 'replace' && owner?.project) {
+        return { kind: 'replace', project: owner.project };
+    }
+
+    if (action === 'cancel') {
         return {
             kind: 'abort',
             message: `Left the dotCMS already running on ${DOTCMS_HTTP_PORT} untouched, as requested.`
@@ -128,4 +154,42 @@ export async function resolvePortConflict(
     }
 
     return { kind: 'reuse', host };
+}
+
+/**
+ * Who is holding the port, and can we safely stop them?
+ *
+ * Reads the compose labels off whatever publishes 8082. A container started outside compose has
+ * no project label, and then `project` is undefined — the caller must not offer to stop it.
+ */
+export async function describePortOwner(
+    port: number,
+    run: (cmd: string, args: string[]) => Promise<{ stdout: string }>
+): Promise<PortOwner | undefined> {
+    try {
+        const { stdout } = await run('docker', [
+            'ps',
+            '--filter',
+            `publish=${port}`,
+            '--format',
+            '{{.Label "com.docker.compose.project"}}\t{{.Status}}\t{{.Names}}'
+        ]);
+
+        const line = stdout.trim().split('\n').filter(Boolean)[0];
+
+        if (!line) {
+            return undefined;
+        }
+
+        const [project, status, name] = line.split('\t');
+
+        return {
+            project: project || undefined,
+            description: project
+                ? `Docker project "${project}" · ${status}`
+                : `container ${name} · ${status} · not managed by Docker Compose`
+        };
+    } catch {
+        return undefined;
+    }
 }
