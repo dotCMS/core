@@ -191,6 +191,70 @@ describe('exit-state (contract X1 — no successful state is ever discarded)', (
         });
     });
 
+    /**
+     * Found by running the CLI end to end (T054), not by any unit test that existed.
+     *
+     * The recovery block and the written file MUST use the same variable names the scaffolded
+     * app actually reads, and those differ per framework: Next.js takes `NEXT_PUBLIC_*`, Astro
+     * takes `PUBLIC_*`, and Angular does not use a dotenv file at all — it reads a TypeScript
+     * `environment` object. A .env that looks plausible but names the token wrong is worse than
+     * no .env: `npm run dev` fails to authenticate and nothing says why.
+     */
+    describe('the written file matches what the scaffolded app reads', () => {
+        it('uses NEXT_PUBLIC_ names for a Next.js project', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'nextjs'
+            });
+            fireExit(0);
+
+            const written = fs.readFileSync(envPath, 'utf8');
+
+            expect(written).toContain(`NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=${TOKEN}`);
+            expect(written).toContain(`NEXT_PUBLIC_DOTCMS_HOST=${HOST}`);
+            expect(written).toContain(`NEXT_PUBLIC_DOTCMS_SITE_ID=${SITE_ID}`);
+            // The bare name is what the bug wrote; it must not appear on its own.
+            expect(written).not.toMatch(/^\s*DOTCMS_AUTH_TOKEN=/m);
+        });
+
+        it('uses PUBLIC_ names for an Astro project', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'astro'
+            });
+            fireExit(0);
+
+            const written = fs.readFileSync(envPath, 'utf8');
+
+            expect(written).toContain(`PUBLIC_DOTCMS_AUTH_TOKEN=${TOKEN}`);
+            expect(written).not.toContain('NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=');
+        });
+
+        it('writes no .env for Angular, which reads a TypeScript environment object', () => {
+            installExitStateHandler();
+            recordRecoverableState({
+                host: HOST,
+                token: TOKEN,
+                siteId: SITE_ID,
+                projectDirectory: tmpDir,
+                framework: 'angular'
+            });
+            fireExit(0);
+
+            expect(fs.existsSync(envPath)).toBe(false);
+            // The values still have to reach the user.
+            expect(output()).toContain(TOKEN);
+        });
+    });
+
     describe('.env (D6 — always `.env`, write-if-absent)', () => {
         it('writes .env with the recorded values when the file is absent', () => {
             recordRecoverableState({

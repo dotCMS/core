@@ -172,7 +172,11 @@ export function finalStepsForNextjs({
     );
 
     console.log(
-        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
+        // The CLI writes .env itself on exit (contract X1), so telling the user to create it
+        // contradicted an action it was about to take. Kept as a heading for the block below,
+        // which is still useful when a .env already exists and is therefore left untouched.
+        chalk.white('2. Your environment file:\n') +
+            chalk.gray('   $ .env is written automatically — these are the values in it\n')
     );
 
     console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
@@ -225,7 +229,11 @@ export function finalStepsForAstro({
     );
 
     console.log(
-        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
+        // The CLI writes .env itself on exit (contract X1), so telling the user to create it
+        // contradicted an action it was about to take. Kept as a heading for the block below,
+        // which is still useful when a .env already exists and is therefore left untouched.
+        chalk.white('2. Your environment file:\n') +
+            chalk.gray('   $ .env is written automatically — these are the values in it\n')
     );
 
     console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
@@ -313,6 +321,54 @@ export function finalStepsForAngularAndAngularSSR({
 
     console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
+/**
+ * The environment a scaffolded project needs, in the shape that project actually reads.
+ *
+ * One owner for this, because there are two consumers — the block printed in the final steps
+ * and the `.env` written by the exit-state handler — and they MUST agree. They did not: the
+ * handler wrote a hand-rolled `DOTCMS_AUTH_TOKEN` while Next.js reads
+ * `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`, so the file looked right and the app could not authenticate.
+ * Found by running the CLI end to end (#37262, T054).
+ *
+ * `filename` is null for frameworks that do not use a dotenv file at all — Angular reads a
+ * TypeScript `environment` object, so writing `.env` there would be cargo-culting.
+ */
+export interface EnvFileSpec {
+    filename: string | null;
+    contents: string;
+}
+
+export function getEnvFileSpec(
+    framework: string | undefined,
+    host: string,
+    siteId: string,
+    token: string
+): EnvFileSpec {
+    if (framework === 'astro') {
+        return { filename: '.env', contents: dedentEnv(getEnvVariablesForAstro(host, siteId, token)) };
+    }
+
+    if (framework === 'angular' || framework === 'angular-ssr') {
+        return {
+            filename: null,
+            contents: dedentEnv(getEnvVariablesForAngular(host, siteId, token))
+        };
+    }
+
+    return { filename: '.env', contents: dedentEnv(getEnvVariablesForNextJS(host, siteId, token)) };
+}
+
+/** The builders below indent for terminal display; a written file must not carry that. */
+function dedentEnv(block: string): string {
+    return (
+        block
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .join('\n') + '\n'
+    );
+}
+
 function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
     return `
         NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=${token}

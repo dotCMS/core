@@ -1,6 +1,8 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
+import { getEnvFileSpec } from './utils';
+
 /**
  * Guarantees that a run never throws away state it already obtained.
  *
@@ -50,14 +52,15 @@ function hasRecoverableState(
     return Boolean(state.host && state.token && state.siteId);
 }
 
-function envContents({ host, token, siteId }: RecoverableState): string {
-    return [
-        '# Written by @dotcms/create-app so this run is never lost.',
-        `NEXT_PUBLIC_DOTCMS_HOST=${host}`,
-        `NEXT_PUBLIC_DOTCMS_SITE_ID=${siteId}`,
-        `DOTCMS_AUTH_TOKEN=${token}`,
-        ''
-    ].join('\n');
+/**
+ * Delegates to the single owner of the env shape (`getEnvFileSpec`) rather than hand-rolling it.
+ *
+ * An earlier version of this file wrote its own variable names, and got them wrong: it emitted
+ * `DOTCMS_AUTH_TOKEN` where Next.js reads `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`, so the `.env` looked
+ * correct and the app silently could not authenticate.
+ */
+function envFileFor(state: RecoverableState) {
+    return getEnvFileSpec(state.framework, state.host, state.siteId, state.token);
 }
 
 function emit(state: RecoverableState): void {
@@ -70,28 +73,42 @@ function emit(state: RecoverableState): void {
     ];
 
     const directory = state.projectDirectory;
+    const envFile = envFileFor(state);
     let wroteEnv = false;
 
-    if (directory) {
-        const envPath = path.join(directory, '.env');
+    // `filename === null` means this framework does not use a dotenv file (Angular reads a
+    // TypeScript environment object), so there is nothing to write — only to print.
+    if (directory && envFile.filename) {
+        const envPath = path.join(directory, envFile.filename);
 
-        // Write-if-absent (D6). An existing .env is the user's — or the scaffolded example's —
+        // Write-if-absent (D6). An existing file is the user's — or the scaffolded example's —
         // and silently overwriting it would trade one kind of data loss for another.
         if (!fs.existsSync(envPath)) {
             try {
-                fs.writeFileSync(envPath, envContents(state), 'utf8');
+                fs.writeFileSync(
+                    envPath,
+                    `# Written by @dotcms/create-app so this run is never lost.\n${envFile.contents}`,
+                    'utf8'
+                );
                 wroteEnv = true;
             } catch {
                 // Never let recovery reporting be the thing that fails the run. Falling through
-                // prints the paste block, which still gets the values to the user.
+                // prints the block, which still gets the values to the user.
             }
         }
     }
 
     if (wroteEnv) {
-        lines.push('', 'Written to .env in your project directory.');
+        lines.push('', `Written to ${envFile.filename} in your project directory.`);
     } else {
-        lines.push('', 'Add these to your .env:', ...envContents(state).trimEnd().split('\n'));
+        lines.push(
+            '',
+            // Name the file when there is one — Angular has none, so it gets the generic label.
+            envFile.filename
+                ? `Add these to your ${envFile.filename}:`
+                : 'Configuration for your project:',
+            ...envFile.contents.trimEnd().split('\n')
+        );
     }
 
     console.log(lines.join('\n'));
