@@ -3131,9 +3131,25 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         final DualIndexBulkRequest dualReq = bulkRequest instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) bulkRequest : null;
 
-        for (final ContentletIndexOperations ops : router.writeProviders()) {
+        final List<ContentletIndexOperations> deleteProviders = router.writeProviders();
+        for (final ContentletIndexOperations ops : deleteProviders) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
             if (indices == null) {
+                // A provider whose index pointers will not load contributes no delete ops, and
+                // putToIndex early-returns on an empty batch — so skipping the PRIMARY here is
+                // indistinguishable from a completed removal (#37276, loss point L2).
+                //
+                // writeProviders() is ordered primary-first in every phase (0 → [ES],
+                // 1/2 → [ES, OS], 3 → [OS]), so element 0 is the provider whose outcome the
+                // caller is entitled to. A shadow keeps warn-and-continue, matching how
+                // putToIndex already isolates the OS leg under ADR-0009.
+                if (ops == deleteProviders.get(0)) {
+                    throw new DotRuntimeException(
+                            "Cannot remove content from the index: unable to load index pointers "
+                                    + "for the primary provider ("
+                                    + ops.getClass().getSimpleName() + "). The removal was NOT "
+                                    + "performed.");
+                }
                 continue;
             }
             final IndexBulkRequest providerReq;
