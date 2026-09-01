@@ -62,6 +62,8 @@ const WARNING_MANY_KEY = 'experiments.configure.page.change.warning.many';
  * Drawn as the platform's other confirmations are: no icon, a question for a header, one paragraph
  * of consequence, and the two choices spelled out — "Keep Current Page" against the destructive
  * one, so neither button is the generic "Cancel"/"OK" pair that says nothing about what it does.
+ * The confirm button is the primary one, not a red `danger`: the labels carry the weight here, and
+ * every other confirmation on the platform reads that way.
  * It is not a `p-confirmDialog`, though, which is the usual vehicle: that one closes on accept and
  * has nowhere to put a wait or a failure, and this operation has both.
  *
