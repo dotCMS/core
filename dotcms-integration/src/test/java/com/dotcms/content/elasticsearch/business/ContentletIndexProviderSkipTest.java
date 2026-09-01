@@ -10,6 +10,7 @@ import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
@@ -78,11 +79,13 @@ public class ContentletIndexProviderSkipTest {
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .setPolicy(IndexPolicy.FORCE).nextPersisted();
 
-        // Force loadProviderIndices to fail for the primary by removing the pointer record.
-        final DotConnect dotConnect = new DotConnect();
-        final Object backup = dotConnect.setSQL("select index_name from indicies").loadObjectResults();
+        // Force the primary to resolve no active index. Deleting the rows is not enough on its
+        // own — IndiciesAPI reads through IndiciesCache, so the cache must be flushed too or the
+        // pointers stay visible and the removal proceeds normally.
+        final IndiciesInfo backup = APILocator.getIndiciesAPI().loadIndicies();
         try {
-            dotConnect.setSQL("delete from indicies").loadResult();
+            new DotConnect().setSQL("delete from indicies").loadResult();
+            CacheLocator.getIndiciesCache().clearCache();
 
             contentlet.setIndexPolicy(IndexPolicy.FORCE);
             final RuntimeException thrown = assertThrows(RuntimeException.class,
@@ -92,9 +95,9 @@ public class ContentletIndexProviderSkipTest {
                             + "provider was skipped — a warning is what made L2 invisible",
                     thrown.getMessage() != null && thrown.getMessage().contains("NOT"));
         } finally {
-            // Restore whatever the environment had; other tests depend on it.
-            APILocator.getIndiciesAPI().loadIndicies();
-            assertEquals("sanity: pointer restore did not throw", backup, backup);
+            // Restore the environment: other tests in the suite depend on these pointers.
+            APILocator.getIndiciesAPI().point(backup);
+            CacheLocator.getIndiciesCache().clearCache();
         }
     }
 
