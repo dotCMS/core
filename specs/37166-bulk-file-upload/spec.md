@@ -61,9 +61,9 @@ when the run reports itself finished.
    use to follow and cancel the run — it does not hold the caller until the files are created.
 2. **Given** an accepted batch of 10 files, **When** the run finishes, **Then** all 10 files
    exist in the target folder.
-3. **Given** any file in a batch, **When** it is created, **Then** it is created through the same
-   path the existing single-file upload uses, so content type resolution, permission enforcement
-   and workflow behavior are identical to a single-file upload of that same file.
+3. **Given** any file in a batch, **When** it is created, **Then** the resulting content is
+   indistinguishable from uploading that same file through the existing single-file upload — same
+   resolved content type, same permissions applied, same workflow behavior.
 4. **Given** a batch submitted at a site root rather than inside a folder, **When** the run
    finishes, **Then** the files land on that site, matching existing single-file behavior.
 5. **Given** the existing single-file upload, **When** this feature ships, **Then** its endpoint
@@ -210,8 +210,12 @@ point reached.
 **Creating the files**
 
 - **FR-005**: The system MUST create every file in the batch in the target folder.
-- **FR-006**: Each file MUST be created through the same path the existing single-file upload
-  uses, so content type resolution, permission enforcement and workflow behavior are identical.
+- **FR-006**: Each file MUST be created **observably equivalently** to uploading that same file
+  through the existing single-file upload: identical content type resolution, identical permission
+  enforcement, identical workflow behavior. The requirement is the equivalence, not the sharing of
+  a particular call site — the single-file path is entered over REST and a background run cannot
+  re-enter it, so the reuse point is chosen in the plan. What may not vary is the observable
+  behavior.
 - **FR-007**: A file failing MUST NOT abort the run; every remaining file MUST still be attempted.
 - **FR-008**: The system MUST NOT wait for each file to become searchable before starting the
   next. Search-index visibility MUST be resolved for the batch, not serialized per file.
@@ -229,6 +233,32 @@ point reached.
   the batch.
 - **FR-013**: Both limits MUST be operator-configurable through the product's standard
   configuration mechanism and MUST NOT be hardcoded.
+- **FR-013a**: The per-file size limit of FR-011 MUST be enforced by the system itself. It MUST NOT
+  rely on a limit supplied by the caller, because a caller that omits it would fall back to an
+  unlimited default. Where the staging mechanism has its own size ceiling, the effective limit is
+  the stricter of the two, and the plan MUST state which is expected to bind.
+
+**Staged file content**
+
+<!--
+  The submission is answered before the files are created, so the uploaded bytes must live
+  somewhere in between. That gap was unspecified and is where this feature can lose a user's
+  files. These requirements bound it.
+-->
+
+- **FR-031**: The uploaded content of an accepted batch MUST remain available to the run until the
+  run reaches a terminal state, however long the batch waits in queue and however long it takes.
+- **FR-032**: A batch MUST NOT lose files because their staged content expired or was reclaimed
+  while the batch waited or ran. If content cannot be retrieved, it MUST be recorded as that
+  file's own failure with its own distinguishable reason — never a silent loss, and never
+  presented as though the author supplied a bad file.
+- **FR-033**: Staged content MUST be reclaimed once the run reaches any terminal state —
+  completed, failed, or cancelled — including for files the run never reached.
+- **FR-034**: Staged content MUST remain readable to the run when it is picked up by a different
+  node than the one that accepted the submission.
+- **FR-035**: The system MUST state a position on the total bytes one author may hold staged
+  across concurrent batches. "No total limit, deliberately" is an acceptable position; leaving it
+  unstated is not, because FR-010 caps files per batch and nothing caps batches.
 
 **Outcome**
 
@@ -242,9 +272,18 @@ point reached.
   check in FR-003 — see Edge Cases), and an unclassified error.
 - **FR-017**: The recorded counts MUST be the authoritative report of the run. The number of files
   submitted MUST NOT be used as a stand-in for the number created.
-- **FR-018**: This feature MUST define the batch-outcome shape (counts + per-file results +
-  reason/message) as a **shared** contract, expressed so that a batch of folder paths reads the
-  same as a batch of files, so #37062 / #37063 can adopt it unchanged.
+- **FR-018**: This feature MUST **generalize the batch-outcome shape already established by bulk
+  refresh** (#36845 / #37131) into a shared contract, rather than defining a second one. Three
+  deltas are required and are real work:
+  - **A machine-readable reason code.** The shipped per-item record carries a human-readable
+    message only; FR-016 needs both. This is an additive change to a shipped contract.
+  - **A generic item key.** The shipped record is keyed by contentlet identifier and inodes. A file
+    being uploaded has neither — it does not exist until the run creates it — and neither does a
+    folder path. The generic key is the substance of this requirement.
+  - **One spelling of the counters.** The shipped counter is `failedCount`; #37166 and the
+    surrounding discussion say `failCount`. The plan MUST pick one and both halves MUST use it.
+- **FR-018a**: The generalized shape MUST carry a batch of folder paths as naturally as a batch of
+  files, so #37062 / #37063 adopt it unchanged.
 
 **Notifying the submitter**
 
@@ -294,8 +333,10 @@ The browser-side work is delivered by another developer against this contract. I
 so the boundary is explicit and reviewable; each item is a restatement of a requirement above,
 from the consumer's point of view.
 
-- **C-001**: A way to submit several files with one target and one upload type, answered
-  immediately with a handle (FR-001, FR-002).
+- **C-001**: A way to submit several files with one target and one upload type, in **a single
+  call** carrying the file content, answered immediately with a handle (FR-001, FR-002, Q5). The
+  client does not stage the content itself and never handles a staging identifier — where the
+  bytes wait for the run is the server's business and can change without touching the client.
 - **C-002**: A distinguishable submission refusal for: no files, bad upload type, missing target,
   too many files, permission denied (FR-003, FR-004).
 - **C-003**: Readable progress for an in-flight run (FR-024).
@@ -319,14 +360,18 @@ while the user is present; the durable record is the server's responsibility.
   in the target; zero files are silently discarded.
 - **SC-002**: In a batch where some files are invalid, 100% of the valid files are created and
   100% of the invalid ones appear in the outcome with a reason that distinguishes why.
-- **SC-003**: A batch of 50 files is not measurably slower per file than 50 sequential single-file
-  uploads, and does not serialize behind a per-file search-index wait.
+- **SC-003**: A batch of 50 files sustains a stated per-file throughput floor, set in the plan as
+  an absolute target rather than as a comparison against today's behavior — today's single-file
+  upload waits for each file to become searchable, which is the very pathology FR-008 removes, so
+  measuring against it would make this criterion true by construction. The batch also does not
+  serialize behind a per-file search-index wait.
 - **SC-004**: An author who was not present when their batch finished can determine the outcome
   afterwards, in 100% of runs — including cancelled and failed ones.
 - **SC-005**: Cancelling a run leaves every already-created file intact and reports the point
   reached, in 100% of runs.
-- **SC-006**: The batch-outcome shape is adopted by #37062 / #37063 without modification —
-  verified by expressing a folder-path batch in it during review.
+- **SC-006**: The generalized outcome shape is the shipped bulk refresh shape extended, not a
+  second one — verified by the shipped consumer still reading its own results through it, and by
+  expressing a folder-path batch in it during review so #37062 / #37063 can adopt it unmodified.
 - **SC-007**: Existing single-file upload behavior is unchanged, verified by the existing
   single-file scenarios passing without modification.
 - **SC-008**: A submission that must be refused is refused before any work is done — no batch is
@@ -339,8 +384,13 @@ while the user is present; the durable record is the server's responsibility.
 - **Existing behavior touched**: Content Drive's file upload (a modern surface) and the
   asset-creation and permission machinery beneath it, which is long-standing product surface and
   is also used by the AssetPicker ([#36702](https://github.com/dotCMS/core/issues/36702)). This
-  feature deliberately reuses that creation path (FR-006) rather than introducing a second way to
-  create an asset.
+  feature introduces a new submission surface but deliberately does **not** introduce a second way
+  to create an asset: FR-006 binds it to behavior observably equivalent to the single-file upload,
+  with the reuse point chosen in the plan.
+- **Security posture inherited by reuse**: whichever staging mechanism the plan chooses, the
+  product's existing one already contains the caller-supplied filename against path traversal.
+  Reusing it inherits that protection; not reusing it means re-establishing it. Worth stating
+  because it is a real argument in FR-006's favour that would otherwise go unrecorded.
 - **Backward-compatibility expectations**: The existing single-file upload stays exactly as it is
   (FR-009); the AssetPicker and any external caller keep working unchanged. This feature adds a
   bulk path beside it and replaces nothing. No existing content, API, or admin workflow changes.
@@ -375,9 +425,18 @@ while the user is present; the durable record is the server's responsibility.
 
 Recorded from the developer's answers on 2026-08-31; the requirements above already reflect them.
 
-- **Q1 — Ownership of the batch-outcome contract**: **This feature defines it** (FR-018). #37062
-  and #37063 consume it. Chosen so this work is not blocked by an unbuilt ticket; the cost is that
-  the shape must be expressed generically enough to carry folder paths, which SC-006 verifies.
+- **Q1 — Ownership of the batch-outcome contract**: **This feature owns it** (FR-018, FR-018a).
+  #37062 and #37063 consume it. Chosen so this work is not blocked by an unbuilt ticket; the cost
+  is that the shape must carry folder paths as naturally as files, which SC-006 verifies.
+
+  Corrected after review: the first draft said this feature *defines* the shape. It does not — the
+  bulk refresh work already ships one, and this feature **generalizes** it. As originally written,
+  a plan author was licensed to invent a second shape, which is the exact outcome FR-018 exists to
+  prevent.
+
+  This reverses the dependency direction #37166 states ("depends on #37062 … which the folder
+  endpoints define first"). Both #37062 and #37063 are open and unbuilt, so the reversal holds —
+  but **#37166 must be amended to match**, or #37062's author defines a third shape in good faith.
 - **Q2 — Limits**: A configurable **maximum file count per batch**, enforced as a submission-time
   refusal (FR-010). A configurable **maximum size per file** — not per batch — enforced as a
   per-file failure that leaves the batch running (FR-011). There is no batch-total size limit.
@@ -385,6 +444,41 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
   both by push and by a durable record (FR-019 … FR-023), following the bulk refresh precedent.
   This removes the need for the frontend to build a jobs screen to satisfy #37166's "its outcome
   is still discoverable".
+- **Q4 — Submission entry point**: A **domain endpoint owning its own multipart handling**, rather
+  than the framework's generic job-upload entry point that #37166 proposes reusing. Two reasons.
+  The generic entry point accepts exactly one file today, so a batch cannot travel through it
+  without changing a shared type used by other consumers. And FR-003/FR-004 require refusing a
+  submission — for a missing target, a bad upload type, or a permission failure — *before* any
+  batch is created; the generic entry point has no notion of a target folder and would enqueue
+  first and fail inside the run instead. Recorded here rather than left to the plan so the
+  single-file constraint is not rediscovered on day one.
+- **Q5 — Client-visible submission shape**: **One call.** The client sends the files and the batch
+  parameters together; staging them for the run is the server's business and stays invisible to
+  the client, as it already is for content import. The alternative — the client stages the content
+  itself and then submits references — was considered and rejected: it makes the staging mechanism
+  part of the contract between the two halves of #37166, so changing it later would require
+  changing the frontend.
+
+---
+
+## Planning Obligations
+
+Decided in principle above, but carrying enough hidden work that the plan must confront them
+explicitly rather than meet them during implementation.
+
+- **The generalization of the shipped outcome shape** (FR-018) touches a contract other code
+  already depends on. The plan must say whether it extends that type in place or extracts a
+  shared one, and what that means for the shipped consumer.
+- **Staged content lifetime** (FR-031 … FR-034). The available mechanism's lifetime ceiling is a
+  single global value with no per-call override, so satisfying FR-031 by raising it would change
+  behavior for every other consumer. The plan must choose among tolerating the ceiling and
+  reporting expiry as a per-file failure, raising it globally and accepting the blast radius, or
+  taking the content out of that mechanism's reach for the duration of the run.
+- **Test coverage** (Constitution V). The plan must name which layers this feature exercises and
+  which it does not, with the reason for each omission. #37166 already enumerates what it expects:
+  integration coverage for many files succeeding, mixed partial failure, a rejected extension, an
+  oversized file, permission denied, cancellation mid-batch, and a batch large enough to exercise
+  progress reporting. Silence is not an acceptable answer to Principle V.
 
 ---
 
@@ -393,9 +487,14 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
 - The interface resolves one upload type per batch before submitting, and prompts the author when
   the target folder expresses no preference. The server receives one type and never infers one.
 - The per-file size limit (FR-011) is **new**. The Content Drive upload path applies no explicit
-  size limit today — `TEMP_RESOURCE_MAX_FILE_SIZE` governs a different path and defaults to
-  unlimited — so this is a new control, not the reuse of an existing rule. The extension rules
-  (FR-012), by contrast, already exist and are reused.
+  size limit today, so this is a new control rather than the reuse of an existing rule. The
+  extension rules (FR-012), by contrast, already exist and are reused.
+- The product's existing staging mechanism carries its own size ceiling, unlimited by default and
+  narrowable per call but only downward — and narrowable by the *caller*, which is why FR-013a
+  requires the system to enforce FR-011 itself rather than delegate to it. Its content-lifetime
+  ceiling, by contrast, is a single global value with no per-call override, so it cannot be tuned
+  for this feature alone without changing it for every other consumer. That constraint is the
+  reason FR-031 and FR-032 are stated as outcomes rather than as a configuration change.
 - Enforcement of both limits is authoritative on the server. The client may check the file count
   to fail fast, but that check is a convenience and not the enforcement point.
 - "Durable record" (FR-020) means the submitting author can learn their own run's outcome after
