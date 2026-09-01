@@ -4,6 +4,34 @@ import { ContentType, createFakeContentType, deleteContentType } from '@requests
 
 import { KeyValueField } from '../edit-content/fields/key-value-field/helpers/key-value-field';
 
+/** The per-row endpoint this consumer persists through. */
+const VARIABLES_API = /\/api\/v1\/contenttype\/.*\/variables/;
+
+/**
+ * Runs a mutation and waits for the server to answer it.
+ *
+ * Every assertion available on screen is optimistic here: the shared editor drops
+ * the row from its own list as soon as it is clicked, while the consumer only
+ * commits once the request returns. So `expectKeyAbsent` says nothing about whether
+ * the write landed, and reloading straight after it races the request — passing on a
+ * fast machine and failing in CI, which is exactly what happened.
+ */
+async function persisted(
+    page: import('@playwright/test').Page,
+    method: 'POST' | 'PUT' | 'DELETE',
+    action: () => Promise<void>
+) {
+    const [response] = await Promise.all([
+        page.waitForResponse(
+            (r) => VARIABLES_API.test(r.url()) && r.request().method() === method,
+            { timeout: 20000 }
+        ),
+        action()
+    ]);
+
+    expect(response.ok()).toBe(true);
+}
+
 /**
  * Field Variables — the second consumer of the shared Key/Value editor (#37191).
  *
@@ -40,14 +68,14 @@ test.describe('content type builder — field variables', () => {
         const variables = new KeyValueField(page, builder.fieldVariablesPanel());
         await variables.expectVisible();
 
-        await variables.addEntry('hint', 'Use lowercase keys');
-        await variables.addEntry('maxRows', '20');
+        await persisted(page, 'POST', () => variables.addEntry('hint', 'Use lowercase keys'));
+        await persisted(page, 'POST', () => variables.addEntry('maxRows', '20'));
         await variables.expectEntryCount(2);
 
-        await variables.editEntryValue('maxRows', '40');
+        await persisted(page, 'POST', () => variables.editEntryValue('maxRows', '40'));
         await variables.expectEntry('maxRows', '40');
 
-        await variables.deleteEntryByKey('hint');
+        await persisted(page, 'DELETE', () => variables.deleteEntryByKey('hint'));
         await variables.expectKeyAbsent('hint');
 
         // Reloading proves each row was persisted against the field, not just held in
