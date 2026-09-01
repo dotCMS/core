@@ -56,9 +56,7 @@ function matchesDocument(editor: Editor, incoming: JSONContent | JSONContent[]):
         );
 
         // Some hosts (the UVE side panel) pass a bare array of nodes rather than a document.
-        const asDocument = Array.isArray(prepared)
-            ? { type: 'doc', content: prepared }
-            : prepared;
+        const asDocument = Array.isArray(prepared) ? { type: 'doc', content: prepared } : prepared;
 
         // `Fragment.eq`, deliberately NOT `Node.eq`. `Node.eq` also compares the document node's
         // own attrs, which would reintroduce sensitivity to the root doc stats this fix exists to

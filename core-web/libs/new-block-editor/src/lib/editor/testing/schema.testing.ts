@@ -27,12 +27,7 @@ export function buildEditorSchema(
 
     return runInInjectionContext(injector, () =>
         getSchema(
-            createEditorExtensions(
-                menuService,
-                options.allowedBlocks,
-                injector,
-                dotMessageService
-            )
+            createEditorExtensions(menuService, options.allowedBlocks, injector, dotMessageService)
         )
     );
 }

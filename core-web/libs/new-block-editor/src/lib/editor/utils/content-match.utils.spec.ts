@@ -17,8 +17,6 @@ import {
 } from '../testing/block-editor.fixtures';
 import { buildEditorSchema } from '../testing/schema.testing';
 
-
-
 /**
  * #36985 — the comparator must answer on document STRUCTURE, not on bytes.
  *
