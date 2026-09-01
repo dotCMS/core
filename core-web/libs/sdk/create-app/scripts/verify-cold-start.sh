@@ -15,7 +15,7 @@
 #
 # Covers:
 #   T005  cold start: db + opensearch healthy before dotcms; dotcms healthy unaided
-#   T006  recovery:   docker kill dotcms -> restarted, not left exited
+#   T006  recovery:   dotcms exits on its own -> restarted by the policy, not left exited
 #   T007  exposure:   8090 reachable on loopback, REFUSED on the LAN address
 #   T008  regression: the CUSTOM_STARTER_URL line shape installed CLIs depend on
 #
@@ -205,30 +205,49 @@ runtime_cold_start() {
 
 # ---------------------------------------------------------------------------
 # T006 — recovery. Compose restart policies react to container EXIT, not to health
-# status, so this kill is what actually exercises `restart: unless-stopped`.
+# status. But they also do NOT react to an EXTERNALLY initiated stop: Docker treats
+# `docker kill` as a user-requested stop and deliberately declines to restart, so
+# asserting a restart after `docker kill` can never pass.
+#
+#   measured 2026-08-31 (docker 29.4):
+#     self-exit    -> RestartCount=4, status=running   <- policy applied
+#     docker kill  -> RestartCount=0, status=exited    <- policy skipped
+#
+# So we make the container exit ON ITS OWN, which is also what actually happened in
+# #37262 (dotcms died because Postgres was not accepting connections yet).
+# PID 1 is tini and the JVM is a descendant of it, so the JVM can be signalled from
+# inside the container; tini then reaps it and exits. Signalling PID 1 directly would
+# not work — the kernel refuses SIGKILL to PID 1 from within its own PID namespace.
 # ---------------------------------------------------------------------------
 runtime_restart() {
     section "Recovery after an unexpected exit"
-    local cid
+    local cid before
     cid="$(compose ps -q dotcms 2>/dev/null)"
     if [ -z "$cid" ]; then
-        bad "T006 no dotcms container to kill"
+        bad "T006 no dotcms container to crash"
         return
     fi
+    before="$(docker inspect -f '{{.RestartCount}}' "$cid" 2>/dev/null || echo 0)"
 
-    info "docker kill $cid"
-    docker kill "$cid" >/dev/null 2>&1
+    info "killing the JVM inside $cid (self-exit, not docker kill)"
+    if ! docker exec "$cid" bash -c 'pkill -9 -f "^/.*java" || pkill -9 java' >/dev/null 2>&1; then
+        info "pkill returned non-zero (process may already be gone); continuing"
+    fi
 
     local waited=0 s
     while [ $waited -lt $RESTART_GRACE ]; do
         sleep 3; waited=$((waited + 3))
         s="$(state_of dotcms)"
-        [ "$s" = "running" ] && break
+        [ "$s" = "running" ] && [ "$(docker inspect -f '{{.RestartCount}}' "$cid" 2>/dev/null || echo 0)" -gt "$before" ] && break
     done
 
     s="$(state_of dotcms)"
-    if [ "$s" = "running" ]; then
-        ok "T006 dotcms restarted after being killed (${waited}s)"
+    local after
+    after="$(docker inspect -f '{{.RestartCount}}' "$cid" 2>/dev/null || echo 0)"
+    if [ "$s" = "running" ] && [ "$after" -gt "$before" ]; then
+        ok "T006 dotcms exited and was restarted by the policy (${waited}s, RestartCount ${before}->${after})"
+    elif [ "$s" = "running" ]; then
+        bad "T006 dotcms is running but RestartCount did not move (${before}->${after}) — the JVM kill did not take, so the restart policy was never exercised"
     else
         bad "T006 dotcms state=$s after ${RESTART_GRACE}s — it stayed dead, exactly as reported"
     fi
@@ -240,10 +259,14 @@ runtime_restart() {
 runtime_exposure() {
     section "Management port exposure"
 
-    if curl -fsS --max-time 10 http://127.0.0.1:8090/dotmgt/readyz >/dev/null 2>&1; then
-        ok "T007 /dotmgt/readyz answers on 127.0.0.1:8090"
+    # Probe livez, not readyz. This is an EXPOSURE test — it asks whether the port is
+    # reachable on loopback, and livez is what the container healthcheck guarantees.
+    # readyz lags it: measured 2026-08-31, readyz returned 503 for a few seconds after
+    # `up --wait` already reported the container Healthy, which would flake this check.
+    if curl -fsS --max-time 10 http://127.0.0.1:8090/dotmgt/livez >/dev/null 2>&1; then
+        ok "T007 /dotmgt/livez answers on 127.0.0.1:8090"
     else
-        bad "T007 /dotmgt/readyz unreachable on 127.0.0.1:8090 — the CLI has no readiness signal"
+        bad "T007 /dotmgt/livez unreachable on 127.0.0.1:8090 — the management port is not published"
     fi
 
     local lan=""
