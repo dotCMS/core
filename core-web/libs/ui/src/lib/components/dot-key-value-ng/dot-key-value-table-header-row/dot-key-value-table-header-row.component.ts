@@ -24,6 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
+import { parseKeyValueBlock } from '../dot-key-value-paste.util';
 
 /**
  * The always-available row for adding a new pair, under the column headers.
@@ -59,6 +60,9 @@ export class DotKeyValueTableHeaderRowComponent {
     $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
 
     save = output<DotKeyValue>();
+
+    /** A `.env`-style block pasted into the key input, already parsed. */
+    saveMany = output<DotKeyValue[]>();
 
     form = this.#fb.nonNullable.group({
         key: ['', [Validators.required, this.#keyValidator()]],
@@ -112,6 +116,28 @@ export class DotKeyValueTableHeaderRowComponent {
 
     onCancel(event: Event): void {
         event.stopPropagation();
+        this.resetForm();
+    }
+
+    /**
+     * Turns a pasted `KEY=VALUE` block into pairs, the way Vercel's env editor does.
+     *
+     * Only intercepts when the text actually parses to pairs, so pasting a plain key
+     * still behaves like a paste. Keys already in the list are reported rather than
+     * overwritten — see {@link parseKeyValueBlock}.
+     */
+    handleKeyInputPaste(event: ClipboardEvent): void {
+        const text = event.clipboardData?.getData('text') ?? '';
+        const pairs = parseKeyValueBlock(text, this.$forbiddenkeys());
+
+        // Nothing parsed means this is not a block: let the browser paste it into the
+        // input as it normally would, where the user can see it and fix it.
+        if (!pairs.length) {
+            return;
+        }
+
+        event.preventDefault();
+        this.saveMany.emit(pairs);
         this.resetForm();
     }
 

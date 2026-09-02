@@ -26,6 +26,7 @@
         <tr
             dotKeyValueTableHeaderRow
             (save)="saveVariable($event)"
+            (saveMany)="saveVariables($event)"
             [showHiddenField]="showHiddenField"
             [forbiddenkeys]="$forbiddenkeys()"></tr>
     </ng-template>

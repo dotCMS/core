@@ -11,6 +11,7 @@
     <input
         (keydown.escape)="onCancel($event)"
         (keydown.enter)="handleKeyInputEnter($event)"
+        (paste)="handleKeyInputPaste($event)"
         [placeholder]="'keyValue.key_input.placeholder' | dm"
         class="w-full"
         [formControl]="keyControl"

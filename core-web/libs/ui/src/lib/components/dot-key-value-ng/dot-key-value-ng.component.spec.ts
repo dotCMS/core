@@ -243,6 +243,66 @@ describe('DotKeyValueComponent', () => {
         });
     });
 
+    describe('adding a pasted block', () => {
+        it('should keep the block in the order it was pasted', () => {
+            // Adding them one at a time would reverse the block, since each new pair
+            // goes on top.
+            create({ variables: [] });
+
+            spectator.component.saveVariables([
+                { key: 'SOME', value: 'TEST' },
+                { key: 'JEJE', value: 'JEJE' },
+                { key: 'FOO', value: 'BAR' }
+            ]);
+            spectator.detectChanges();
+
+            expect(
+                spectator.queryAll(byTestId('dot-key-value-key')).map((el) => el.textContent.trim())
+            ).toEqual(['SOME', 'JEJE', 'FOO']);
+        });
+
+        it('should put the block above what was already there', () => {
+            create({ variables: [{ key: 'existing', value: 'v' }] });
+
+            spectator.component.saveVariables([{ key: 'pasted', value: 'p' }]);
+
+            expect(spectator.component.$variableList().map(({ key }) => key)).toEqual([
+                'pasted',
+                'existing'
+            ]);
+        });
+
+        it('should report each pair through save and the list once', () => {
+            // Field Variables persists row by row through `save`, so every pair has to
+            // reach it; the other two consumers take the whole array from `updatedList`.
+            create({ variables: [] });
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+
+            spectator.component.saveVariables([
+                { key: 'A', value: '1' },
+                { key: 'B', value: '2' }
+            ]);
+
+            expect(saveSpy).toHaveBeenCalledTimes(2);
+            expect(listSpy).toHaveBeenCalledTimes(1);
+            expect(listSpy).toHaveBeenCalledWith([
+                { key: 'A', value: '1' },
+                { key: 'B', value: '2' }
+            ]);
+        });
+
+        it('should do nothing for an empty block', () => {
+            create({ variables: [{ key: 'a', value: '1' }] });
+            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+
+            spectator.component.saveVariables([]);
+
+            expect(listSpy).not.toHaveBeenCalled();
+            expect(spectator.component.$variableList()).toHaveLength(1);
+        });
+    });
+
     describe('paging long lists', () => {
         const manyPairs = (count: number): DotKeyValue[] =>
             Array.from({ length: count }, (_, i) => ({

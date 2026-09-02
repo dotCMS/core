@@ -209,4 +209,55 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
             expect(spectator.query(byTestId('drag-column'))).toBeTruthy();
         });
     });
+
+    describe('pasting a .env block', () => {
+        /** Fires a real paste carrying `text` on the key input. */
+        const paste = (text: string) => {
+            const event = Object.assign(new Event('paste', { bubbles: true, cancelable: true }), {
+                clipboardData: { getData: () => text }
+            });
+            spectator.element.querySelector('[data-testId="key-input"]').dispatchEvent(event);
+            spectator.detectChanges();
+
+            return event;
+        };
+
+        it('should turn a pasted block into pairs, in the order pasted', () => {
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+
+            paste('SOME=TEST\nJEJE=JEJE\nFOO=BAR');
+
+            expect(spy).toHaveBeenCalledWith([
+                { key: 'SOME', value: 'TEST' },
+                { key: 'JEJE', value: 'JEJE' },
+                { key: 'FOO', value: 'BAR' }
+            ]);
+        });
+
+        it('should stop the browser from also pasting the text into the input', () => {
+            const event = paste('A=1\nB=2');
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should leave an ordinary paste alone', () => {
+            // Text with no assignment in it is someone pasting a key name, not a block.
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+            const event = paste('JustAKeyName');
+
+            expect(spy).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should not offer a key the list already holds', () => {
+            spectator.setHostInput({ forbiddenkeys: { TAKEN: true } });
+            const spy = jest.spyOn(spectator.component.saveMany, 'emit');
+
+            paste('TAKEN=new\nFRESH=ok');
+
+            expect(spy).toHaveBeenCalledWith([{ key: 'FRESH', value: 'ok' }]);
+        });
+
+    });
+    });
 });

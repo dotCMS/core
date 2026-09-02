@@ -115,6 +115,27 @@ export class DotKeyValueComponent {
         this.updatedList.emit(this.$variableList());
     }
 
+    /**
+     * Adds a whole pasted block at once.
+     *
+     * The block keeps its own order and goes on top as one group, so pasting
+     * `A,B,C` reads `A,B,C` and not reversed — which is what adding them one by one
+     * through {@link saveVariable} would produce.
+     *
+     * `save` is emitted per pair on purpose: Field Variables persists row by row
+     * through that output, so a block paste has to reach it as individual writes.
+     * `updatedList` fires once, since its consumers take the whole array.
+     */
+    saveVariables(variables: DotKeyValue[]): void {
+        if (!variables.length) {
+            return;
+        }
+
+        this.$variableList.update((current) => [...variables, ...current]);
+        variables.forEach((variable) => this.save.emit(variable));
+        this.updatedList.emit(this.$variableList());
+    }
+
     updateKeyValue(variable: DotKeyValue, index: number): void {
         const oldVariable = this.$variableList()[index];
         this.$variableList.update((variables) =>
