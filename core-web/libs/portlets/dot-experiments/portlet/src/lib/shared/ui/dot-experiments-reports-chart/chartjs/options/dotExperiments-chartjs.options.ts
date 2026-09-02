@@ -74,8 +74,20 @@ export const generateDotExperimentLineChartJsOptions = ({
                 },
                 ticks: {
                     color: ChartColors.ticks.color,
+                    /**
+                     * Thin the ticks, not the data.
+                     *
+                     * `autoSkip` only drops a label when it would collide with its neighbour, and
+                     * Chart.js avoids collisions by rotating instead — so a long run printed one
+                     * tick per day, tilted, and became a wall of text. Pinning the rotation to
+                     * zero leaves skipping as the only way to fit them, which is the readable
+                     * one: a three-month run shows a handful of dates, a five-day run still
+                     * shows every day.
+                     */
                     autoSkip: true,
-
+                    autoSkipPadding: 16,
+                    maxRotation: 0,
+                    minRotation: 0,
                     padding: 10,
                     align: 'center'
                 },
