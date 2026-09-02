@@ -131,7 +131,7 @@ happened.
 2. **Given** a batch that finished while the author was on another screen or had closed the tab,
    **When** the author next looks, **Then** the outcome is still available to them.
 3. **Given** a finished batch, **When** the author is notified, **Then** the wording reflects what
-   happened — full success, partial failure, total failure, or cancellation — and is not a fixed
+   happened — full success, partial failure, total failure, or cancellation - and is not a fixed
    "completed" message.
 4. **Given** a batch, **When** it is notified, **Then** only its submitting author is notified —
    not every administrator, and not other users.
