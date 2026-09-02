@@ -42,21 +42,14 @@
 } @else {
     <dot-experiments-results-header />
 
-    @if (store.lastRefreshFailed()) {
+    @if (store.reportUnavailable()) {
         <div
             class="flex flex-none items-center gap-2 border-b border-yellow-200 bg-yellow-50 px-8 py-3 text-sm text-yellow-800"
-            data-testid="experiments-results-refresh-error">
+            data-testid="experiments-results-report-unavailable">
             <span class="material-symbols-rounded text-xl! leading-none" aria-hidden="true">
                 warning
             </span>
-            <span>
-                {{
-                    (store.results()
-                        ? 'experiments.results.refresh.failed'
-                        : 'experiments.results.unavailable'
-                    ) | dm
-                }}
-            </span>
+            <span>{{ 'experiments.results.unavailable' | dm }}</span>
         </div>
     }
 

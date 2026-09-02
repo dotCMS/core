@@ -43,14 +43,6 @@ export const dotExperimentsResultsApiEvents = eventGroup({
          */
         resultsUnavailable: type<DotExperiment>(),
 
-        // Manual refresh. Results only — the experiment cannot change under the screen.
-        refreshSucceeded: type<DotExperimentResults>(),
-        /**
-         * The results already on screen are the last good ones and stay exactly as they are: a
-         * refresh that fails is reported without blanking a screen that has already loaded (AC25).
-         */
-        refreshFailed: type<unknown>(),
-
         stopSucceeded: type<DotExperiment>(),
         stopFailed: type<unknown>(),
 

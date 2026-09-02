@@ -121,7 +121,7 @@ export const CustomLaraPreset = definePreset(Lara, {
         },
         chip: {
             // dotCMS chips are compact by default: 1.75rem (24.5px at the 14px root)
-            // tall, vertically centered, with a small label. Applied to the base
+            // tall, vertically centered, with a small label, matching `p-tag`. Applied to the base
             // `.p-chip` so every chip (locale, relationship, etc.) gets the size
             // without per-template classes. PrimeNG has no chip size token, so this
             // is expressed as CSS — same mechanism as card/confirmpopup. Content
@@ -135,9 +135,10 @@ export const CustomLaraPreset = definePreset(Lara, {
             // changes.
             css: `
                 .p-chip {
-                    height: calc(var(--spacing) * 7); /* 1.75rem */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a tag */
                     padding: 0 calc(var(--spacing) * 2); /* 0.5rem */
                     font-size: var(--text-xs); /* 0.75rem */
+                    line-height: 1;
                 }
                 .p-chip .p-chip-remove-icon {
                     order: -1;
@@ -155,7 +156,7 @@ export const CustomLaraPreset = definePreset(Lara, {
             // there is no --radius-full token.
             css: `
                 .p-tag {
-                    height: calc(var(--spacing) * 6); /* 1.5rem */
+                    height: calc(var(--spacing) * 6); /* 1.5rem — the same height as a chip */
                     border-radius: calc(infinity * 1px);
                     padding: 0 calc(var(--spacing) * 2.5); /* 0 0.625rem — vertical centering via inline-flex */
                     /* A tag annotates the text beside it, so it has to read as smaller than that
