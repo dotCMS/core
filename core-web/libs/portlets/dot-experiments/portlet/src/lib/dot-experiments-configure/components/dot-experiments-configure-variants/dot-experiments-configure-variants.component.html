@@ -16,6 +16,7 @@
         <p-table
             [value]="$rows()"
             dataKey="id"
+            [rowTrackBy]="trackVariantById"
             [tableStyle]="{ 'table-layout': 'fixed' }"
             data-testid="variants-table">
             <ng-template pTemplate="header">
@@ -36,7 +37,10 @@
             </ng-template>
 
             <ng-template pTemplate="body" let-row>
-                <tr data-testid="variant-row">
+                <tr
+                    animate.enter="variant-row-enter"
+                    animate.leave="variant-row-leave"
+                    data-testid="variant-row">
                     <td class="max-w-0">
                         <div class="flex min-w-0 items-center gap-3">
                             <span
