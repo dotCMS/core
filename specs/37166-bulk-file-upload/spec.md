@@ -74,7 +74,7 @@ when the run reports itself finished.
 
 ### User Story 2 - A failing file does not take the batch down with it (Priority: P1)
 
-A batch routinely contains a file that is too large, has a blocked extension, or collides with an
+A batch routinely contains a file that is too large, has a disallowed file type, or collides with an
 existing name. The run continues past it and records, per file, what happened and why.
 
 **Why this priority**: Partial failure is the normal case at these batch sizes, not an edge case.
@@ -82,7 +82,7 @@ A run that aborts at the first bad file, or records only "upload failed", leaves
 to tell what landed — barely better than today.
 
 **Independent Test**: Submit 5 files of which 2 are invalid (one over the size limit, one with a
-blocked extension); confirm the 3 valid files are created and the recorded outcome reports 3
+disallowed file type); confirm the 3 valid files are created and the recorded outcome reports 3
 succeeded / 2 failed, naming both failures with a distinguishable reason.
 
 **Acceptance Scenarios**:
@@ -323,6 +323,15 @@ run reports a collision failure for it.
 - **FR-012**: A file rejected for its **type** MUST likewise be recorded as that file's own
   failure and MUST NOT fail the batch. As with size, the allowed-types rule is declared per content
   type on the binary field and is applied as-is.
+- **FR-012a**: This is a **file-type rule, not a file-extension rule**, and MUST be described that
+  way everywhere it is surfaced. The product resolves the file's media type — by detection and
+  content sniffing, not by trusting the name — and matches it against the content type's allow
+  list, which is written in media-type terms and supports wildcards. Renaming a file to change its
+  extension therefore does not get it past the rule.
+- **FR-012b**: Where the media type **cannot be resolved**, the product skips the allow-list check
+  and accepts the file. This feature inherits that behavior rather than tightening it, since
+  tightening would break FR-006. It MUST NOT be described to the author as though every file were
+  checked, and the plan MUST decide whether an unresolvable type is worth surfacing at all.
 - **FR-013**: The system MUST NOT rely on a size limit supplied by the caller. A caller that omits
   one would fall back to an unlimited default, so any caller-supplied ceiling can tighten what the
   system enforces but MUST NOT be the enforcement point.
@@ -388,6 +397,13 @@ run reports a collision failure for it.
   original handle, or let the per-file collision rule (FR-041) reject the already-created files —
   and whichever it does MUST be stated, because a client cannot know whether its submission
   landed when the connection drops.
+- **FR-040a**: If the collision branch is chosen, a duplicate resubmission MUST be **distinguishable
+  from a genuinely all-collided batch** — by a reason, a flag on the outcome, or both. The two
+  branches protect the author's data equally but do not report equally: under the collision branch
+  a resubmission re-uploads every byte, produces a second handle, and reports *"50 of 50 failed —
+  file already exists"* for a batch that in fact succeeded. Without a way to tell that apart, the
+  client cannot honour its own requirement to treat an uncertain submission as retryable rather
+  than as a failure the author must reason about, which is the whole point of FR-040.
 
 **Concurrency**
 
@@ -401,10 +417,11 @@ run reports a collision failure for it.
   clean message, not the guarantee. The requirement is therefore to **catch the constraint
   violation and report it as the same collision failure as the pre-check** — not to build a lock
   for a race the storage layer already loses on the caller's behalf.
-- **FR-042a**: The spec MUST state whether "the same file name" is case-sensitive, because the
-  guarantee differs: the uniqueness constraint compares the stored columns as-is, while related
-  path handling elsewhere compares case-insensitively. Until stated, a plan author cannot know
-  whether `Report.pdf` and `report.pdf` are one contended name or two.
+- **FR-042a**: "The same file name" is **case-insensitive**. `Report.pdf` and `report.pdf` are one
+  contended name, not two. This is existing product behavior rather than a new decision: the
+  operative uniqueness guarantee is a unique index over the lower-cased full path per host, and the
+  pre-check resolves the target through the same lower-cased path, so the two agree. This feature
+  MUST NOT introduce a case-sensitive notion of collision alongside them.
 - **FR-043**: A run MUST NOT be blocked or slowed by unrelated runs on other targets. FR-042's
   mechanism satisfies this for free — a uniqueness constraint contends only on the contended key —
   and any additional mechanism MUST preserve it rather than serialize uploads generally.
@@ -416,10 +433,10 @@ run reports a collision failure for it.
 - **FR-015**: A finished run MUST record a per-file result naming the file and its status —
   succeeded, failed, or skipped (never attempted).
 - **FR-016**: Every failed per-file result MUST carry a machine-readable reason and a
-  human-readable message. The reason MUST distinguish at least: over size limit, disallowed
-  extension, name collision, permission denied (a per-file check narrower than the target-folder
-  check in FR-003 — see Edge Cases), staged content unavailable (FR-032), and an unclassified
-  error.
+  human-readable message. The reason MUST distinguish at least: over size limit,
+  disallowed file type (FR-012a — a media-type rule, not an extension one), name collision,
+  permission denied (a per-file check narrower than the target-folder check in FR-003 — see Edge
+  Cases), staged content unavailable (FR-032), and an unclassified error.
 - **FR-016a**: The **reason** is what the client presents, by mapping it to resolved product copy.
   The **message** is diagnostic and log-only: it MUST NOT be the text shown to the author, which
   the frontend spec's FR-030 already requires. Every reason a failure can carry MUST therefore
@@ -685,6 +702,14 @@ explicitly rather than meet them during implementation.
 - **The generalization of the shipped outcome shape** (FR-018) touches a contract other code
   already depends on. The plan must say whether it extends that type in place or extracts a
   shared one, and what that means for the shipped consumer.
+- **Deriving stable failure reasons** (FR-016, FR-016a, C-002b, and the client copy that depends on
+  them). The validation layer these outcomes come from distinguishes its cases largely by localized
+  message text: the size rejection and the type rejection are the *same exception class* differing
+  only in a translated string, and all of them arrive through one validation call. Producing a
+  stable, machine-readable reason from that is real work — pre-checking before the create, or
+  extending the validation layer to carry a code — and it is the mechanical foundation of the
+  per-file reporting this whole feature promises. Plan it alongside the FR-018 generalization,
+  which it will travel with.
 - **Staged content lifetime** (FR-031 … FR-034). The available mechanism's lifetime ceiling is a
   single global value with no per-call override, so satisfying FR-031 by raising it would change
   behavior for every other consumer. The plan must choose among tolerating the ceiling and
@@ -692,7 +717,7 @@ explicitly rather than meet them during implementation.
   taking the content out of that mechanism's reach for the duration of the run.
 - **Test coverage** (Constitution V). The plan must name which layers this feature exercises and
   which it does not, with the reason for each omission. #37166 already enumerates what it expects:
-  integration coverage for many files succeeding, mixed partial failure, a rejected extension, an
+  integration coverage for many files succeeding, mixed partial failure, a rejected file type, an
   oversized file, permission denied, cancellation mid-batch, and a batch large enough to exercise
   progress reporting. Silence is not an acceptable answer to Principle V.
 
