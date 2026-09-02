@@ -24,7 +24,6 @@ package com.liferay.portal.model;
 
 import com.dotcms.adminsite.AdminSiteAPI;
 import com.dotmarketing.business.APILocator;
-import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.liferay.portal.util.PropsUtil;
 import com.liferay.util.GetterUtil;
@@ -186,9 +185,22 @@ public class CompanyModel extends BaseModel {
         return APILocator.getAdminSiteAPI().getAdminSiteUrl();
 	}
 
-	public void setPortalURL(final String portalURL) {
-        Logger.warn(this.getClass(),
-                "Set the portal URL using the  ADMIN_SITE_URL configuration variable, e.g. e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
+	public void setPortalURL(String portalURL) {
+        // still assign the underlying field: this setter is also used when a Company is built
+        // from its db row, and getOldPortalURL() is the fallback when ADMIN_SITE_URL is unset.
+        // to change the admin url, set the ADMIN_SITE_URL configuration variable instead,
+        // e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443
+        if (((portalURL == null) && (_portalURL != null)) ||
+                ((portalURL != null) && (_portalURL == null)) ||
+                ((portalURL != null) && (_portalURL != null) &&
+                !portalURL.equals(_portalURL))) {
+            if (!XSS_ALLOW_PORTALURL) {
+                portalURL = Xss.strip(portalURL);
+            }
+
+            _portalURL = portalURL;
+            setModified(true);
+        }
 	}
 
 	public String getHomeURL() {

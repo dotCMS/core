@@ -121,9 +121,11 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             decoded = next;
         }
 
-        // Normalize path traversal (e.g., /foo/../bar -> /bar, /foo/./bar -> /foo/bar)
+        // Normalize path traversal (e.g., /foo/../bar -> /bar, /foo/./bar -> /foo/bar).
+        // The multi-arg URI constructor quotes characters that are illegal in a URI (e.g. '[' or ']')
+        // instead of throwing, so a malformed-but-common input cannot skip the normalization.
         final String normalizedInput = decoded;
-        String normalized = Try.of(() -> new URI(normalizedInput).normalize().getPath())
+        String normalized = Try.of(() -> new URI(null, null, normalizedInput, null).normalize().getPath())
                 .getOrElse(normalizedInput);
 
         // Ensure we have a valid result
@@ -153,11 +155,15 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             return true;
         }
 
-        String host = request.getHeader("host") != null
-                ? request.getHeader("host").toLowerCase()
-                : "local.dotcms.site";
+        final String hostHeader = request.getHeader("host");
+        if (!UtilMethods.isSet(hostHeader)) {
+            // No Host header (HTTP/1.0 client or malformed request) - fail closed instead of
+            // guessing that the request came from an admin domain.
+            request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, false);
+            return false;
+        }
 
-        // strip port
+        final String host = hostHeader.toLowerCase();
 
         if (isAdminSite(host)) {
             request.setAttribute(_ADMIN_SITE_HOST_REQUESTED, true);

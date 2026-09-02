@@ -61,6 +61,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -329,14 +330,8 @@ public class LoginServiceAPIFactory implements Serializable {
                 throw new AuthException(e.getMessage());
             }
 
-            new Thread(() -> {
-                try {
-                    Thread.sleep(3000);
-                } catch (InterruptedException e) {
-                    throw new RuntimeException(e);
-                }
-                messageTokensToExpire(loggedInUser);
-            }).start();
+            DotConcurrentFactory.getInstance().getSubmitter()
+                    .delay(() -> messageTokensToExpire(loggedInUser), 3, TimeUnit.SECONDS);
 
             SecurityLogger.logInfo(this.getClass(),
                     "User " + userString + " has successfully login from IP: " + request.getRemoteAddr());

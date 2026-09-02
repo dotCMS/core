@@ -104,7 +104,7 @@ public class HostWebAPIImpl extends HostAPIImpl implements HostWebAPI {
 
         if (session != null && user.isBackendUser()) {
             Host sessionHost = (Host) session.getAttribute(WebKeys.CURRENT_HOST);
-            if (sessionHost != null && !host.equals(sessionHost)) {
+            if (sessionHost == null || !host.equals(sessionHost)) {
                 session.setAttribute(WebKeys.CURRENT_HOST, host);
             }
 
