@@ -13,15 +13,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
+import { VARIANT_COLORS } from '../../../shared/constants';
 import { DotExperimentResultVariantDetail, LiftTone } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
-
-/**
- * Row dot colours, by row position. The control is always drawn first, so it always reads in the
- * first colour — the same one the charts give it. Beyond the fifth variant the palette repeats.
- */
-const VARIANT_COLORS: readonly string[] = ['#0ea5e9', '#a855f7', '#fb923c', '#22c55e', '#f43f5e'];
 
 /** How a Lift vs Original reads: nothing to compare against, a gain, or a loss (AC16). */
 const LIFT_TONE_CLASSES: Record<LiftTone, string> = {
@@ -103,6 +98,8 @@ export class DotExperimentsResultsSummaryTableComponent {
             )
             .map((row, index) => ({
                 ...row,
+                // The control is drawn first, so it always takes the first colour — the same one
+                // the charts give it. Past the palette's length the colours repeat.
                 color: VARIANT_COLORS[index % VARIANT_COLORS.length],
                 isControl: row.id === DEFAULT_VARIANT_ID,
                 liftClass: LIFT_TONE_CLASSES[row.liftTone]
