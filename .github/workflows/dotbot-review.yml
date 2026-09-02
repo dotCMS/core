@@ -58,6 +58,10 @@ jobs:
         env:
           REVIEW_MODELS: ${{ vars.DOTBOT_REVIEW_MODELS }}
         run: |
+          # Newlines to commas: `read` stops at the first newline, so models
+          # on later lines of a multi-line VARIABLE would otherwise be
+          # silently dropped without warning.
+          REVIEW_MODELS="${REVIEW_MODELS//$'\n'/,}"
           MODELS=()
           IFS=',' read -ra PARTS <<< "$REVIEW_MODELS"
           for p in "${PARTS[@]}"; do
