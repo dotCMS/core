@@ -198,6 +198,9 @@ outcome reports 20 succeeded, once.
    **When** the resubmission is handled, **Then** the author does not end up with two copies of
    the files — either the resubmission is recognised as the same batch, or the duplicates are
    rejected as collisions.
+6. **Given** a resubmission resolved by the collision branch, **When** its outcome is read, **Then**
+   it is distinguishable from a batch whose files genuinely all collided (FR-040a) — so a
+   successful retry is never reported to the author as a total failure.
 
 ---
 
@@ -261,9 +264,11 @@ run reports a collision failure for it.
   already-created files rejected as collisions. What it must never get is a silent second copy.
 - **Two batches racing for the same name in the same folder.** Exactly one wins; the other records
   a collision for that file only (FR-041, FR-042).
-- **The batch exceeds the configured total size.** Refused at submission, before anything is
-  staged — distinct from a single file exceeding the per-file ceiling, which is a per-file failure
-  inside an accepted batch.
+- **The batch exceeds the configured total size.** Refused at submission, in whichever of FR-013c's
+  two stages catches it: immediately where the caller declared a total, otherwise part-way through
+  reading the content, with what was staged reclaimed (FR-013d). Either way no batch is created —
+  distinct from a single file exceeding the per-file ceiling, which is a per-file failure inside an
+  accepted batch.
 - **A file's content type declares no size ceiling.** The configurable fallback applies (FR-011.2),
   which is deliberately stricter than the single-file upload for that file — see FR-011a.
 
@@ -373,6 +378,13 @@ run reports a collision failure for it.
 - **FR-034**: Staged content MUST remain readable to the run when it is picked up by a different
   node than the one that accepted the submission.
 
+<!--
+  FR-035 was withdrawn: it required the system to "state a position" on cross-batch staged bytes,
+  which is a decision for the authors rather than behaviour a test can fail. It now lives in
+  §Planning Obligations. The number is left unused rather than reassigned, so references to it in
+  the review threads keep resolving.
+-->
+
 **Surviving interruption, and not duplicating**
 
 <!--
@@ -411,8 +423,8 @@ run reports a collision failure for it.
   succeed**. The other MUST be recorded as that file's own collision failure. Two files with the
   same name in one folder, and a silent overwrite, are both unacceptable outcomes.
 - **FR-042**: FR-041 MUST hold when the two runs overlap in time. **The storage layer already
-  guarantees it**: identifiers are uniquely constrained on parent path, asset name and host, so the
-  second writer of a contended name fails on every existing install. The product's own pre-check is
+  guarantees it**: a unique index over the lower-cased full path per host (the same one FR-042a
+  names) rejects the second writer of a contended name on every existing install. The product's own pre-check is
   a check followed by a create and can pass for both runs, so it is a courtesy that produces a
   clean message, not the guarantee. The requirement is therefore to **catch the constraint
   violation and report it as the same collision failure as the pre-check** — not to build a lock
@@ -518,7 +530,10 @@ from the consumer's point of view.
 - **C-002a**: A defined answer to "I lost the connection while submitting — may I retry?" The
   client MUST be able to resubmit without risking a second copy of the author's files (FR-040).
   Which mechanism provides that — the same batch handle returned, or the duplicates rejected as
-  collisions — is fixed in the plan, but the client is entitled to one.
+  collisions — is fixed in the plan, but the client is entitled to one. **If the plan takes the
+  collision branch, a duplicate resubmission MUST be distinguishable from a genuinely all-collided
+  batch** (FR-040a); without that the client is handed "every file failed" for a batch that
+  succeeded, and cannot keep its own promise that retrying is safe.
 - **C-002b**: A stable set of failure reasons, each mapped to product copy on the client side. The
   server's message is diagnostic and is not displayed (FR-016a). Adding a reason later changes both
   halves.
@@ -561,8 +576,11 @@ while the user is present; the durable record is the server's responsibility.
   expressing a folder-path batch in it during review so #37062 / #37063 can adopt it unmodified.
 - **SC-007**: Existing single-file upload behavior is unchanged, verified by the existing
   single-file scenarios passing without modification.
-- **SC-008**: A submission that must be refused is refused before any work is done — no batch is
-  created and no file is uploaded, in 100% of refusals.
+- **SC-008**: A submission that must be refused leaves **no batch and no created file**, in 100% of
+  refusals. Note this is not "nothing was uploaded": the total-size ceiling can only be enforced
+  authoritatively while the content is read (FR-013c.2), so that one refusal happens after bytes
+  have been staged — and FR-013d requires them reclaimed. Every other refusal in FR-003 is decided
+  before the body is read.
 - **SC-009**: A batch interrupted at any point and resumed produces exactly one copy of each
   submitted file — zero duplicates, in 100% of interruptions — and notifies the submitter once.
 - **SC-010**: Two runs contending for the same file name in the same target produce exactly one
@@ -738,9 +756,14 @@ explicitly rather than meet them during implementation.
   apply to the single-file upload: they are declared per content type on the binary field and
   enforced during contentlet validation, which the creation path runs. Both surface as a validation
   failure the run can catch per file, which is what makes per-file reporting natural rather than
-  bespoke. Both default to unconstrained where an operator has set nothing, so out of the box this
-  feature inherits no size or type ceiling — that is a deliberate consequence of FR-006's
-  equivalence requirement, not an oversight. Only the batch file-count cap (FR-010) is new.
+  bespoke. Both default to unconstrained where an operator has set nothing. For **type** that is
+  where it ends: out of the box this feature inherits no type ceiling, a deliberate consequence of
+  FR-006's equivalence requirement. For **size** it does not: FR-011.2 adds a configurable fallback
+  precisely so an unconfigured content type does not leave the batch unbounded, which FR-011a
+  records as a knowing exception to that same equivalence rule.
+
+  Three controls here are new, not one: the batch file-count cap (FR-010), the per-file fallback
+  ceiling (FR-011.2), and the batch total-size ceiling (FR-013b).
 - The product's existing staging mechanism carries its own size ceiling, unlimited by default and
   narrowable per call but only downward — and narrowable by the *caller*, which is why FR-013a
   requires the system to enforce FR-011 itself rather than delegate to it. Its content-lifetime
