@@ -9,6 +9,19 @@
             <span class="text-sm text-surface-500">
                 {{ 'experiments.configure.variants.description' | dm }}
             </span>
+
+            @if ($lockedByAnotherUserKey(); as lockedKey) {
+                <span
+                    class="flex items-center gap-1 text-sm text-surface-700"
+                    data-testid="variants-page-locked-note">
+                    <span
+                        class="material-symbols-rounded text-base! leading-none!"
+                        aria-hidden="true">
+                        lock
+                    </span>
+                    {{ lockedKey | dm }}
+                </span>
+            }
         </div>
     </ng-template>
 

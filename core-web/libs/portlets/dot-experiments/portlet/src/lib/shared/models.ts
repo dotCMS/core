@@ -8,6 +8,7 @@ import {
     GOAL_TYPES,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
 export type ExperimentListAction = keyof typeof AllowedActionsByExperimentStatus;
@@ -323,4 +324,13 @@ export interface VariantRowViewModel {
     disabled: boolean;
     /** i18n key explaining `disabled`; `null` when the row is editable. */
     disabledTooltipKey: string | null;
+    /**
+     * Mode the Universal Visual Editor opens this variant in (#37005, FR-008 – FR-010).
+     *
+     * `PREVIEW` when **any** of: this is the control, the experiment is not a draft, or the page is
+     * locked by another user. Derived here rather than branched in the template, and deliberately
+     * not read off `disabledTooltipKey`: that key reports only the strongest *reason* and is `null`
+     * for the control on an editable draft, which would open the Original for editing.
+     */
+    editorMode: UVE_MODE;
 }

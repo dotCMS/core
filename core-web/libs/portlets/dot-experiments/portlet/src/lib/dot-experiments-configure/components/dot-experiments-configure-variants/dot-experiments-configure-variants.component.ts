@@ -24,6 +24,7 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     MAX_INPUT_TITLE_LENGTH,
     Variant,
     TrafficProportionTypes
@@ -77,7 +78,9 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
     copyUrl: null,
     disabled: true,
     // Nothing to explain: the row is frozen because it does not exist yet, not because of a lock.
-    disabledTooltipKey: null
+    disabledTooltipKey: null,
+    // Academic while the action is disabled before creation, but the control is read-only anyway.
+    editorMode: UVE_MODE.PREVIEW
 };
 
 /**
@@ -162,16 +165,28 @@ export class DotExperimentsConfigureVariantsComponent {
         const disabledTooltipKey = this.store.$disabledTooltipKey();
         const previewUrl = this.#previewUrl();
 
-        return this.store.$variants().map((variant, index) => ({
-            id: variant.id,
-            name: variant.name,
-            weight: variant.weight ?? 0,
-            isControl: isControlVariant(variant),
-            color: VARIANT_COLORS[index % VARIANT_COLORS.length],
-            copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
-            disabled: !!disabledTooltipKey,
-            disabledTooltipKey
-        }));
+        // An OR over three independent conditions, evaluated per row because only the first of
+        // them varies by row. NOT `!!disabledTooltipKey`: that is null for the control on an
+        // editable draft, which would open the Original for editing (FR-008).
+        const experimentIsReadOnly =
+            this.store.$isLocked() || this.store.$lockedByAnotherUser();
+
+        return this.store.$variants().map((variant, index) => {
+            const isControl = isControlVariant(variant);
+
+            return {
+                id: variant.id,
+                name: variant.name,
+                weight: variant.weight ?? 0,
+                isControl,
+                color: VARIANT_COLORS[index % VARIANT_COLORS.length],
+                copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
+                disabled: !!disabledTooltipKey,
+                disabledTooltipKey,
+                editorMode:
+                    isControl || experimentIsReadOnly ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
+            };
+        });
     });
 
     /**
@@ -193,6 +208,18 @@ export class DotExperimentsConfigureVariantsComponent {
                 .map(({ id, weight }) => [id, Math.round(((weight ?? 0) * allocation) / 100)])
         );
     });
+
+    /**
+     * The lock reason, stated rather than only hinted (#37005, FR-010).
+     *
+     * `$disabledTooltipKey` already carries it, but only into a `pTooltip` on the weight cell —
+     * which says nothing to a user who never hovers. FR-010 requires the reason "stated to the
+     * user", so it also renders as an inline note. The tooltip stays: it explains the frozen
+     * *field* where the note explains the frozen *card*.
+     */
+    readonly $lockedByAnotherUserKey = computed<string | null>(() =>
+        this.store.$lockedByAnotherUser() ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED : null
+    );
 
     /** True while nothing on the card may be changed: not a draft, or the page is locked. */
     readonly $isDisabled = computed<boolean>(() => !!this.store.$disabledTooltipKey());
@@ -383,7 +410,7 @@ export class DotExperimentsConfigureVariantsComponent {
             page: this.store.selectedPage(),
             variantId: row.id,
             experimentId: this.store.experiment()?.id ?? '',
-            mode: UVE_MODE.EDIT
+            mode: row.editorMode
         });
 
         if (!link) {
