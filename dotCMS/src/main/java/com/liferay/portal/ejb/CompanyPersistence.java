@@ -26,7 +26,6 @@ import com.dotcms.business.WrapInTransaction;
 import com.dotcms.repackage.net.sf.hibernate.HibernateException;
 import com.dotcms.repackage.net.sf.hibernate.ObjectNotFoundException;
 import com.dotcms.repackage.net.sf.hibernate.Session;
-import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.liferay.portal.NoSuchCompanyException;
 import com.liferay.portal.SystemException;
@@ -157,11 +156,6 @@ public class CompanyPersistence extends BasePersistence {
 				company.protect();
 				CompanyPool.remove(company.getPrimaryKey());
 				CompanyPool.put(company.getPrimaryKey(), company);
-
-				// the admin site url can be derived from the company's stored portal url -
-				// clear it (once this transaction commits) so the next read picks it up
-				com.dotmarketing.db.HibernateUtil.addCommitListenerNoThrow(() ->
-						APILocator.getAdminSiteAPI().invalidateCache());
 			}
 
 			return company;
