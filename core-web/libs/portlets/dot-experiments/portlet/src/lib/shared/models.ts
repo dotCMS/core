@@ -341,11 +341,10 @@ export interface DotExperimentsResultsViewState {
      */
     results: DotExperimentResults | null;
     status: ComponentStatus;
-    /** True while a manual refresh is in flight, so the control cannot fire a second one (AC9). */
-    refreshing: boolean;
     /**
-     * True when the last manual refresh was rejected. Kept apart from `status`: the results
-     * already on screen stay exactly as they are, and the screen says so without blanking (AC25).
+     * True when the experiment loaded but its report did not. Kept apart from `status`: everything
+     * the experiment alone can draw stays on screen, and the shell says the report is missing
+     * over it rather than blanking the page.
      */
-    lastRefreshFailed: boolean;
+    reportUnavailable: boolean;
 }

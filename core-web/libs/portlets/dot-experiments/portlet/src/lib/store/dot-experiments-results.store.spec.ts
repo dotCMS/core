@@ -92,9 +92,6 @@ const buildResults = (sessionsTotal = 40): DotExperimentResults => ({
 });
 
 const RESULTS = buildResults();
-/** A second, distinguishable report, so a refresh that lands can be told from one that did not. */
-const REFRESHED_RESULTS = buildResults(120);
-
 /**
  * What a mutation endpoint answers with: the experiment as the server now holds it, without the
  * fields it does not echo — so a state that *replaced* the experiment would lose them and one that
@@ -194,7 +191,6 @@ describe('DotExperimentsResultsStore', () => {
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.$isLoading()).toBe(false);
             expect(store.$hasLoadError()).toBe(false);
-            expect(store.$canRefresh()).toBe(true);
         });
 
         it.each([
@@ -212,7 +208,6 @@ describe('DotExperimentsResultsStore', () => {
             expect(store.results()).toBeNull();
             expect(store.status()).toBe(ComponentStatus.LOADED);
             expect(store.$isWaitingForData()).toBe(true);
-            expect(store.$canRefresh()).toBe(false);
         });
 
         it('should stay loading while the results call is in flight', () => {
@@ -251,7 +246,7 @@ describe('DotExperimentsResultsStore', () => {
             expect(store.$hasLoadError()).toBe(false);
             expect(store.experiment()).toEqual(RUNNING_EXPERIMENT);
             expect(store.results()).toBeNull();
-            expect(store.lastRefreshFailed()).toBe(true);
+            expect(store.reportUnavailable()).toBe(true);
             expect(httpErrorManager.handle).toHaveBeenCalledTimes(1);
         });
 
@@ -277,78 +272,6 @@ describe('DotExperimentsResultsStore', () => {
             expect(httpErrorManager.handle).toHaveBeenCalledWith(
                 expect.objectContaining({ error: { header: 'Server error' } })
             );
-        });
-    });
-
-    describe('refresh', () => {
-        it('should replace the results and leave the experiment alone', () => {
-            initLoaded();
-            getResults.mockReturnValue(of(REFRESHED_RESULTS));
-
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            expect(getResults).toHaveBeenCalledTimes(2);
-            expect(store.results()).toBe(REFRESHED_RESULTS);
-            expect(store.experiment()).toBe(RUNNING_EXPERIMENT);
-            expect(getById).toHaveBeenCalledTimes(1);
-            expect(store.refreshing()).toBe(false);
-            expect(store.lastRefreshFailed()).toBe(false);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
-        });
-
-        it('should keep the results on screen while the new ones are in flight', () => {
-            initLoaded();
-            getResults.mockReturnValue(NEVER);
-
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            expect(store.refreshing()).toBe(true);
-            // Never swapped for a skeleton: the report on screen stays put until its replacement
-            // arrives (AC9).
-            expect(store.results()).toBe(RESULTS);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
-            expect(store.$isLoading()).toBe(false);
-        });
-
-        it('should keep the last good results when the refresh fails', () => {
-            initLoaded();
-            getResults.mockReturnValue(throwError(() => httpError(500)));
-
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            // A failed refresh is reported without blanking a screen that has already loaded
-            // (AC25): the results, and the status behind them, are untouched.
-            expect(store.results()).toBe(RESULTS);
-            expect(store.experiment()).toBe(RUNNING_EXPERIMENT);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
-            expect(store.$hasLoadError()).toBe(false);
-            expect(store.lastRefreshFailed()).toBe(true);
-            expect(store.refreshing()).toBe(false);
-            expect(httpErrorManager.handle).toHaveBeenCalledTimes(1);
-        });
-
-        it('should clear the previous failure when a later refresh lands', () => {
-            initLoaded();
-            getResults.mockReturnValue(throwError(() => httpError(500)));
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            getResults.mockReturnValue(of(REFRESHED_RESULTS));
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            expect(store.lastRefreshFailed()).toBe(false);
-            expect(store.results()).toBe(REFRESHED_RESULTS);
-        });
-
-        it('should ignore a refresh for an experiment that has nothing to report', () => {
-            initLoaded(DRAFT_EXPERIMENT);
-
-            dispatcher.dispatch(pageEvents.refreshRequested());
-
-            // The control does not exist on a screen with nothing to refresh (AC9/AC10), and the
-            // handler drops the event even if something else raises it.
-            expect(store.$canRefresh()).toBe(false);
-            expect(getResults).not.toHaveBeenCalled();
-            expect(store.results()).toBeNull();
         });
     });
 

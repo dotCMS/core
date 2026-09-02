@@ -20,7 +20,6 @@ import {
     BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
-    DotExperiment,
     DotExperimentStatus,
     DotResultVariant,
     MINIMUM_SESSIONS_TO_SHOW_CHART,
@@ -68,8 +67,7 @@ const initialState: DotExperimentsResultsViewState = {
     experiment: null,
     results: null,
     status: ComponentStatus.INIT,
-    refreshing: false,
-    lastRefreshFailed: false
+    reportUnavailable: false
 };
 
 /**
@@ -79,9 +77,9 @@ const initialState: DotExperimentsResultsViewState = {
  * there is to load: DRAFT and SCHEDULED render their waiting state from the experiment alone and
  * never ask for results, while everything else loads the report beside it.
  *
- * Results that have loaded once are never taken off the screen. A failed *first* load is the full
- * error state (AC24); a failed *refresh* leaves the last good results exactly where they are and
- * only raises `lastRefreshFailed`, which the shell reports without blanking anything (AC25).
+ * An experiment that loads without its report is not an error: the screen settles with the header,
+ * goal and schedule on it and raises `reportUnavailable`, which the shell says in a banner rather
+ * than blanking the page. Only a failed load of the experiment itself is the full error state.
  *
  * The leading variant is always the backend's `bayesianResult.suggestedWinner`, never the highest
  * conversion rate: only the backend applies a significance threshold, and a rate-based pick would
@@ -146,8 +144,6 @@ export const DotExperimentsResultsStore = signalStore(
             $hasLoadError: computed<boolean>(() => store.status() === ComponentStatus.ERROR),
             /** A mutation is on the wire, so its buttons stay closed until it settles. */
             $isSaving: computed<boolean>(() => store.status() === ComponentStatus.SAVING),
-            /** The refresh control only exists once there is something to refresh (AC9/AC10). */
-            $canRefresh: computed<boolean>(() => !$isWaitingForData() && !!store.results()),
             /**
              * Which winner copy the stat strip renders, negative states included — icon and i18n
              * key both, so `null` never has to be translated into an absence downstream (AC8).
@@ -242,35 +238,15 @@ export const DotExperimentsResultsStore = signalStore(
         on(apiEvents.loadFailed, () => ({ status: ComponentStatus.ERROR })),
         /**
          * The experiment answered but its report did not. The screen settles as LOADED with a null
-         * report so the header, goal and schedule still render, and reuses the same flag a failed
-         * refresh raises to say the report is missing (AC25's mechanism, applied to the first load).
+         * report so the header, goal and schedule still render, and the flag lets the shell say the
+         * report is missing without taking the rest of the screen away.
          */
         on(apiEvents.resultsUnavailable, ({ payload }) => ({
             experiment: payload,
             results: null,
             status: ComponentStatus.LOADED,
-            lastRefreshFailed: true
+            reportUnavailable: true
         })),
-
-        // Refresh reports itself, and only itself: `status` stays `LOADED` throughout, so the
-        // results on screen are never swapped for a skeleton (AC9).
-        // `refresh$` drops this event for the statuses that never reach `getResults`, so the flag
-        // must not be raised for them either — it would spin forever with no request in flight.
-        on(pageEvents.refreshRequested, (_event, state) =>
-            STATUSES_WITHOUT_RESULTS.includes(state.experiment?.status ?? DotExperimentStatus.DRAFT)
-                ? {}
-                : { refreshing: true, lastRefreshFailed: false }
-        ),
-        on(apiEvents.refreshSucceeded, ({ payload }) => ({
-            results: payload,
-            refreshing: false,
-            lastRefreshFailed: false
-        })),
-        /**
-         * Deliberately does not touch `results` or `status`: the last good report stays exactly as
-         * it is and the flag is all the screen needs to say the refresh failed (AC25).
-         */
-        on(apiEvents.refreshFailed, () => ({ refreshing: false, lastRefreshFailed: true })),
 
         on(pageEvents.stopRequested, pageEvents.promoteRequested, () => ({
             status: ComponentStatus.SAVING
@@ -367,27 +343,6 @@ export const DotExperimentsResultsStore = signalStore(
                                         )
                                     })
                                 );
-                            })
-                        )
-                    )
-                ),
-
-                /**
-                 * Results only: the experiment cannot change while the screen sits on it, and the
-                 * report is the expensive half. `switchMap` so an impatient second press replaces
-                 * the first request instead of queueing behind it (AC9).
-                 */
-                refresh$: events.on(pageEvents.refreshRequested).pipe(
-                    map(() => store.experiment()),
-                    filter(
-                        (experiment): experiment is DotExperiment =>
-                            !!experiment && !store.$isWaitingForData()
-                    ),
-                    switchMap((experiment) =>
-                        experimentsService.getResults(experiment.id).pipe(
-                            mapResponse({
-                                next: (results) => apiEvents.refreshSucceeded(results),
-                                error: toResultsFailure(apiEvents.refreshFailed)
                             })
                         )
                     )

@@ -52,8 +52,8 @@ const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
  * takes out this screen and only this screen (AC22); a *first* load that failed, which is the one
  * failure with nothing to show behind it and therefore the only one that blanks the screen
  * (AC24); the first load itself, drawn as a skeleton of the report to come (AC23); and the report.
- * A *refresh* that failed is none of them — the last good results stay exactly where they are and
- * the screen says so in a banner over them (AC25).
+ * An experiment whose report did not load is none of them — everything the experiment alone can
+ * draw stays where it is and the screen says the report is missing in a banner over it.
  *
  * Which experiment to show is not read here: the store follows the route itself, so the shell only
  * provides it. `DotExperimentsService` is not provided either — the route provides it for the
@@ -166,12 +166,7 @@ export class DotExperimentsResultsComponent {
         this.#router.navigate([EXPERIMENTS_URL]);
     }
 
-    /**
-     * Runs the whole load again, experiment included.
-     *
-     * Not a refresh: a first load that failed left no experiment behind, and the refresh handler
-     * has nothing to re-fetch results for.
-     */
+    /** Runs the whole load again, experiment included: a failed load left nothing behind. */
     onRetry(): void {
         const experimentId = this.#route.snapshot.paramMap.get(EXPERIMENT_ID_ROUTE_PARAM);
 
