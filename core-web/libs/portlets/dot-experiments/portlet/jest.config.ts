@@ -4,7 +4,11 @@ export default {
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
+    // `default` alongside `jest-junit`: naming only `jest-junit` REPLACES the console reporter, so
+    // a failing run printed a coverage table and a non-zero exit and no test results at all — the
+    // failures reached only the XML. CI reads the XML either way; a human needs the console.
     reporters: [
+        'default',
         [
             'jest-junit',
             {
