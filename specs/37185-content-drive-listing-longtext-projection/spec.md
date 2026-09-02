@@ -87,9 +87,13 @@ transform option sets (see Root-Cause Hypothesis), which is why the issue descri
   (`com.dotmarketing.portlets.contentlet.transform.*`). Per Constitution Principle I, the
   transform package must be improved incrementally, not restructured.
 - **Related known decisions**: None identified as binding for this item. `/speckit-plan` will
-  formally consult `dotCMS/platform-adrs`. Note that ADR-0018 (read-your-writes / DB vs index
-  routing) is cited in issue #37148 for **item 2**, not for this item — this item does not change
-  where data is read from, only which keys survive into the response.
+  formally consult `dotCMS/platform-adrs`. ADR-0018 (read-your-writes / DB vs index routing) is
+  not binding here — **not** because it was "cited for item 2, not this item" (it does govern
+  the Drive path generally, e.g. `ContentDriveFieldFilterTest.java:66` asserts its routing
+  contract there), but because this fix's truncation happens **post-hydration**, after the
+  candidate set is already resolved and the contentlet already loaded in full — it cannot change
+  where data is read from, only which keys survive into the response. ADR-0018 governs the read
+  path; this item is entirely downstream of it.
 
 ## Root-Cause Hypothesis
 
@@ -377,12 +381,17 @@ present by default and must be actively removed to be excluded.
 - **Postman** — `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false
   -Dpostman.collections=ContentDriveResource` after the AC-006 edit.
 - **Jest** — `dot-content-drive.store.spec.ts` and `with-asset-browse.feature.spec.ts` still pass;
-  no new frontend code is expected (nothing reads the removed keys — verified: no
-  `item.body`/`asset.body`/`content.body` read exists anywhere in `core-web` on a drive or browser
-  result).
-- **Manual / measurement** — re-run the #37148 measurement for the unfiltered large-folder case
-  and record before/after payload size and p50/p95, per the issue's overall criterion that each
-  item is re-measured after it lands. Requires the benchmark dataset; not reproducible in CI.
+  no new frontend code is expected (nothing reads the truncated-away portion of these keys —
+  verified: no `item.body`/`asset.body`/`content.body` read exists anywhere in `core-web` on a
+  drive or browser result).
+- **Latency — explicitly not gated (2026-09-02, per review).** p50/p95 is recorded as a
+  measurement, not enforced as an acceptance criterion. This fix only touches serialization/wire
+  payload (see the Problem Statement framing caveat) — the DB/cache load and map-build cost the
+  issue's ≈65ms figure partly includes are untouched, so a latency improvement is not guaranteed
+  and is not a merge gate. Re-run the #37148 measurement for the unfiltered large-folder case and
+  record before/after payload size and p50/p95, per the issue's overall criterion that each item
+  is re-measured after it lands, but treat the latency numbers as informational. Requires the
+  benchmark dataset; not reproducible in CI.
 
 ## Recommended direction *(non-binding — the plan decides)*
 
@@ -445,9 +454,15 @@ field values it wants. This is the only approach that is correct by construction
 List" columns, since the frontend already knows exactly which extra columns it is about to render.
 It is a larger, additive API change. Recorded as **OQ-3**.
 
-## Open questions *(must be answered before `/speckit-plan` finalizes)*
+## Open questions
 
-Each of these is a decision a human owner must make. None is guessed here.
+Each of these is a decision a human owner must make. None is guessed here. **Heading updated
+(2026-09-02, per review)**: OQ-1, OQ-2, OQ-4, and OQ-6 are resolved (see below) and did not block
+`/speckit-plan`, which the team ran under an explicit exception rather than waiting for every
+open question to close. **OQ-3, OQ-5, and OQ-7 remain genuinely open** — they are deferred,
+non-blocking product decisions for a future generalization/hardening pass, not items this
+spec's own plan phase needed answered to proceed. They should be resolved before `/speckit-tasks`
+locks in any task that depends on their answer (none currently do).
 
 - **OQ-1 — RESOLVED (2026-08-24; rationale corrected 2026-08-31, then corrected again
   2026-09-01 per review).** Decision: option **(iii)**, truncate — specifically, truncate an
