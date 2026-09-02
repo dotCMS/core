@@ -8,10 +8,12 @@
     [scrollHeight]="$scrollHeight() ?? undefined"
     [metaKeySelection]="$metaKeySelection()"
     [pt]="$pt() ?? undefined"
+    [contextMenu]="$contextMenu() ?? undefined"
     [attr.data-testid]="$treeTestId()"
     (onNodeSelect)="onNodeSelect.emit($event)"
     (onNodeExpand)="onNodeExpand.emit($event)"
-    (onNodeCollapse)="onNodeCollapse.emit($event)">
+    (onNodeCollapse)="onNodeCollapse.emit($event)"
+    (onNodeContextMenuSelect)="onNodeContextMenuSelect.emit($event)">
     <ng-template let-node pTemplate="default">
         @if (nodeLabelTemplate(); as labelTpl) {
             <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
