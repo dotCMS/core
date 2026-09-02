@@ -140,6 +140,10 @@ otherwise the marker outlives the experiment context it describes.
 pasted link, and it has to be *absent* rather than stale when someone deep-links straight into a
 variant. Storage would fail both.
 
+**Read from `ActivatedRoute.snapshot.queryParams`**, not from `store.pageParams()`:
+`DotPageAssetParams` does not declare the marker — it survives `#getPageParams()` only through that
+method's `as` cast — and the marker is a routing concern rather than page-asset state.
+
 **FR-010a**: the return destination does not read `mode`, so it is the same whether the variant was
 opened read-only or editable.
 
