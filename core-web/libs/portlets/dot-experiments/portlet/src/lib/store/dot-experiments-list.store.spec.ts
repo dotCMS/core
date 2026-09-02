@@ -483,6 +483,123 @@ describe('DotExperimentsListStore', () => {
         });
     });
 
+    /**
+     * The page filter (#37005, US3, FR-021a-c, SC-009).
+     *
+     * With the entry-point switch on, the UVE Experiments item lands here already narrowed to the
+     * page the editor came from. The narrowing is by `pageId` **equality**, sits between the site
+     * scoping and the status/goal counts, and is clearable back to the full site-wide list.
+     */
+    describe('page filter', () => {
+        beforeEach(() => initStore());
+
+        const filterToPage = (pageId: string | null) =>
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageAssetFilterChanged(pageId));
+
+        it('should show every experiment when no page filter is set', () => {
+            expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+        });
+
+        // FR-021b, many: `page-1` carries a draft and an archived experiment. Both belong to the
+        // page, so both survive this stage — the status selection is a later, separate narrowing.
+        it('should keep every experiment on the filtered page', () => {
+            filterToPage('page-1');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([
+                EXPERIMENT_DRAFT,
+                EXPERIMENT_ARCHIVED
+            ]);
+        });
+
+        // FR-021b, one.
+        it('should keep a single experiment when the page has one', () => {
+            filterToPage('page-2');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+        });
+
+        // FR-021b, zero. Distinct from "no filter": an empty result is a real answer here.
+        it('should keep nothing when the page has no experiments', () => {
+            filterToPage('page-with-none');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([]);
+        });
+
+        /**
+         * The case that separates this filter from the free-text one.
+         *
+         * `/about` is a prefix of `/about-us`, and the text filter matches the Page column as a
+         * substring — so pre-filling it with the path would have shown both. Equality on `pageId`
+         * shows one. Without this test the cheaper implementation looks correct.
+         *
+         * Its dataset is local rather than added to the shared fixtures: two extra experiments in
+         * `EXPERIMENTS` shift the counts and expected arrays of every test that reads them, and
+         * this case needs nothing from the rest of them.
+         */
+        it('should not match a page whose path merely starts with the same text', () => {
+            const onAbout = buildExperiment({ id: 'exp-about', pageId: 'page-about' });
+            const onAboutUs = buildExperiment({ id: 'exp-about-us', pageId: 'page-about-us' });
+
+            getAllUnfiltered.mockReturnValue(of([onAbout, onAboutUs]));
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            buildPageContentlet('page-about', '/about', CURRENT_SITE_ID),
+                            buildPageContentlet('page-about-us', '/about-us', CURRENT_SITE_ID)
+                        ]
+                    }
+                })
+            );
+            initStore();
+
+            filterToPage('page-about');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([onAbout]);
+        });
+
+        it('should be cleared by a null page, revealing the full site-wide list', () => {
+            filterToPage('page-2');
+            expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
+
+            filterToPage(null);
+
+            expect(store.pageAssetFilteredExperiments()).toEqual(store.searchedExperiments());
+        });
+
+        // Site scoping comes first, so a page on another site cannot be filtered *into* the list.
+        it('should not resurrect a page from another site', () => {
+            filterToPage('page-3');
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([]);
+        });
+
+        // Same rule as every other filter here: a narrowing that could leave the current page
+        // empty has to send the user back to page 1.
+        it('should reset paging when the page filter changes', () => {
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.pageChanged({
+                    page: 3,
+                    perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE
+                })
+            );
+            expect(store.page()).toBe(3);
+
+            filterToPage('page-1');
+
+            expect(store.page()).toBe(DEFAULT_EXPERIMENTS_LIST_PAGE);
+        });
+
+        // The chip counts describe the narrowed set, which only holds if the page filter is
+        // applied before they are computed.
+        it('should narrow the status counts to the filtered page', () => {
+            filterToPage('page-2');
+
+            expect(store.statusCounts()[DotExperimentStatus.RUNNING]).toBe(1);
+            expect(store.statusCounts()[DotExperimentStatus.DRAFT]).toBe(0);
+        });
+    });
+
     describe('search', () => {
         beforeEach(() => initStore());
 

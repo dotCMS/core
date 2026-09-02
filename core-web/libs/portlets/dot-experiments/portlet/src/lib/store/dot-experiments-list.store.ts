@@ -76,6 +76,7 @@ const initialState: DotExperimentsListState = {
     perPage: DEFAULT_EXPERIMENTS_LIST_PER_PAGE,
     orderBy: DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
     direction: DEFAULT_EXPERIMENTS_LIST_DIRECTION,
+    selectedPageId: null,
     error: null
 };
 
@@ -151,8 +152,11 @@ export const DotExperimentsListStore = signalStore(
             });
         });
 
+        /** STUB — T077 implements the narrowing. Present so T075 can show assertion-level Red. */
+        const pageAssetFilteredExperiments = computed<DotExperiment[]>(() => searchedExperiments());
+
         /**
-         * Counts per status over the site + search filtered set, deliberately independent of
+         * Counts per status over the site + search + page filtered set, deliberately independent of
          * `selectedStatuses` so selecting a status never changes the numbers shown in the chips.
          */
         const statusCounts = computed<Record<DotExperimentStatus, number>>(() => {
@@ -245,6 +249,7 @@ export const DotExperimentsListStore = signalStore(
         return {
             siteScopedExperiments,
             searchedExperiments,
+            pageAssetFilteredExperiments,
             statusCounts,
             goalCounts,
             statusFilteredExperiments,
@@ -573,6 +578,7 @@ export const DotExperimentsListStore = signalStore(
                         selectedGoals: store.selectedGoals(),
                         page: store.page(),
                         perPage: store.perPage(),
+                        selectedPageId: store.selectedPageId(),
                         orderBy: store.orderBy(),
                         direction: store.direction()
                     });

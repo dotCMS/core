@@ -39,6 +39,9 @@ const PAGE_ID = 'page-1';
 
 const PAGE_INFO = { [PAGE_ID]: { url: '/blog/index', host: 'host-1' } };
 
+/** Shown on the chip when the filtered page can no longer be resolved. */
+const PAGE_UNAVAILABLE_COPY = 'This page is no longer available';
+
 const EMPTY_GOAL_COUNTS: Record<GOAL_TYPES, number> = {
     [GOAL_TYPES.REACH_PAGE]: 0,
     [GOAL_TYPES.BOUNCE_RATE]: 0,
@@ -96,6 +99,7 @@ const ERROR_COPY = {
 };
 
 const messageServiceMock = new MockDotMessageService({
+    'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
     'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
     'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
     'experiments.analytics-app-misconfiguration.title': MISCONFIGURATION_COPY.title,
@@ -128,6 +132,7 @@ const createStoreMock = () => ({
     goalCounts: jest.fn().mockReturnValue(EMPTY_GOAL_COUNTS),
     selectedGoals: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_GOALS),
     filter: jest.fn().mockReturnValue(''),
+    selectedPageId: jest.fn().mockReturnValue(null),
     status: jest.fn().mockReturnValue(ComponentStatus.LOADED),
     page: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PAGE),
     perPage: jest.fn().mockReturnValue(DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
@@ -557,6 +562,116 @@ describe('DotExperimentsListComponent', () => {
                     message: `Experiment ${experiment.name} ${expectedVerb}`
                 })
             );
+        });
+    });
+
+    /**
+     * The page filter's UI (#37005, US3, FR-021b, FR-021c, FR-024).
+     *
+     * With the entry-point switch on, an editor arrives here from a page and the list is already
+     * narrowed to it. The narrowing has to be *visible* — an invisibly filtered list looks like a
+     * site with almost no experiments — and clearable, and it has to offer a way back to the page
+     * and a way to create an experiment for it when there are none.
+     */
+    describe('page filter', () => {
+        const PAGE_ID = 'page-1';
+
+        const withPageFilter = (pageId: string | null = PAGE_ID) => {
+            storeMock.selectedPageId.mockReturnValue(pageId);
+            spectator.detectChanges();
+        };
+
+        // FR-021c, first half.
+        it('should render a chip naming the filtered page', () => {
+            withPageFilter();
+
+            const chip = spectator.query(byTestId('experiments-page-filter-chip'));
+
+            expect(chip).not.toBeNull();
+            // The path the Page column already resolves, not the raw id: the editor recognises
+            // their page by its path, and `pageInfoByPageId` is already loaded for the column.
+            expect(chip?.textContent).toContain(PAGE_INFO[PAGE_ID].url);
+        });
+
+        it('should render no chip when the list is not narrowed to a page', () => {
+            withPageFilter(null);
+
+            expect(spectator.query(byTestId('experiments-page-filter-chip'))).toBeNull();
+        });
+
+        // FR-021c, second half — "the filter is a starting point, not a cage".
+        it('should clear the filter when the chip is dismissed', () => {
+            withPageFilter();
+
+            const clear = spectator
+                .query(byTestId('experiments-page-filter-clear'))
+                ?.querySelector('button') as HTMLElement;
+            spectator.click(clear);
+
+            expect(dispatchedEvents()).toContainEqual(
+                dotExperimentsListPageEvents.pageAssetFilterChanged(null)
+            );
+        });
+
+        // FR-024. Reuses the deep-link builder, so the address is the one the round-trip uses
+        // minus the experiment context — not a second URL assembler.
+        it('should offer a link back to the page in the editor', () => {
+            withPageFilter();
+
+            const back = spectator.query(byTestId('experiments-page-filter-back'));
+
+            expect(back).not.toBeNull();
+            expect(back?.getAttribute('href')).toContain('/edit-page/content');
+            expect(back?.getAttribute('href')).toContain(`url=${PAGE_INFO[PAGE_ID].url}`);
+        });
+
+        // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the
+        // editor did not apply this filter, they arrived with it, and the useful offer is to
+        // create an experiment for the page rather than to clear a filter they did not set.
+        describe('when the filtered page has no experiments', () => {
+            beforeEach(() => {
+                storeMock.pagedExperiments.mockReturnValue([]);
+                storeMock.totalRecords.mockReturnValue(0);
+                withPageFilter();
+            });
+
+            it('should scope the empty state to the page', () => {
+                const empty = spectator.query(byTestId('experiments-empty-state'));
+
+                expect(empty).not.toBeNull();
+                expect(empty?.textContent).toContain(PAGE_INFO[PAGE_ID].url);
+            });
+
+            it('should offer to create an experiment for that page', () => {
+                const create = spectator.query(byTestId('experiments-empty-create-for-page'));
+
+                expect(create).not.toBeNull();
+            });
+
+            it('should carry the page into the creation screen so it arrives prefilled', () => {
+                const create = spectator
+                    .query(byTestId('experiments-empty-create-for-page'))
+                    ?.querySelector('button') as HTMLElement;
+                spectator.click(create);
+
+                expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
+                    queryParams: { pageId: PAGE_ID }
+                });
+            });
+        });
+
+        // The spec's last edge case: an editor arrives from a page that has since been deleted.
+        // `pageInfoByPageId` cannot resolve it, so the chip has no path to show — it must say the
+        // page is gone rather than render an unlabelled chip over a silently empty list.
+        it('should report a filtered page that no longer resolves', () => {
+            storeMock.selectedPageId.mockReturnValue('page-deleted');
+            storeMock.pagedExperiments.mockReturnValue([]);
+            spectator.detectChanges();
+
+            const chip = spectator.query(byTestId('experiments-page-filter-chip'));
+
+            expect(chip).not.toBeNull();
+            expect(chip?.textContent).toContain(PAGE_UNAVAILABLE_COPY);
         });
     });
 

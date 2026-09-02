@@ -58,7 +58,8 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
-        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC',
+        selectedPageId: null
     };
 }
 

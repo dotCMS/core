@@ -34,6 +34,16 @@ export interface DotExperimentsListViewState {
     perPage: number;
     orderBy: string;
     direction: DotExperimentsListSortDirection;
+    /**
+     * Page the list is narrowed to, by identifier; `null` for the full site-wide list (#37005).
+     *
+     * Matched by **equality**, never as a substring of a path. The free-text `filter` above already
+     * searches the Page column, and reusing it would make `/about` match `/about-us` — which is
+     * exactly the case FR-021b rules out ("all of that page's experiments and no other page's").
+     *
+     * Serialised as `pageAsset`, not `page`: `page` is the pagination cursor two fields up.
+     */
+    selectedPageId: string | null;
 }
 
 /** Paging change emitted by the table paginator. */
