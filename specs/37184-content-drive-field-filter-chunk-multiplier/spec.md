@@ -151,10 +151,15 @@ are unchanged from today's behavior in every combination.
 - **FR-009 — RESOLVED (2026-08-24): no dedicated kill switch. Reasoning corrected
   (2026-09-01, per review) — `BROWSE_API_HEURISTIC_TYPE` DOES apply here, and it is not a safe
   substitute.** No independently-toggleable operator flag for the single-pass behavior in
-  FR-002. Decision reasoning: the freshness trade-off it would guard (see Assumptions) is narrow
-  and scoped — it applies only when zero database-required criteria are present — and mirrors a
-  trade-off ADR-0018 already accepts by default for free-text search, without a dedicated flag
-  for that case either. **Correction**: `BROWSE_API_HEURISTIC_TYPE` (`SearchHeuristicType`,
+  FR-002. Decision reasoning, simplified (2026-09-01, per review): there is nothing new for a
+  kill switch to guard. The index-lag behavior once described in Assumptions as "a deliberate,
+  scoped trade-off for this one case" already exists today in the current hybrid-chunked path —
+  `getChunkFiltered` (`BrowserAPIImpl.java:342-346`) runs `processESDirectly` before the
+  permission filter on every chunk today, so a just-written, not-yet-indexed item is already
+  excluded from field-filter results before this fix ships. FR-002 changes how many times that
+  loop runs, not whether this behavior exists — so a flag to disable "the freshness trade-off
+  this fix introduces" would have nothing to disable; the trade-off isn't this fix's to concede.
+  **Correction**: `BROWSE_API_HEURISTIC_TYPE` (`SearchHeuristicType`,
   `BrowserAPIImpl.java:465-470`) is **not** limited to free-text filtering — despite its name,
   `doElasticSearchTextFiltering` is the dispatcher for every request `isUseElasticSearchForFiltering`
   routes to ES, and that includes a pure field-filter request with **zero** free-text/file-name
@@ -253,15 +258,18 @@ are unchanged from today's behavior in every combination.
   Relationship field (the two field types the codebase already resolves against the database to
   preserve immediate visibility of recent writes); this mirrors the existing, documented routing
   rule and is not a new judgment call introduced by this fix.
-- **RESOLVED (2026-08-24), no product sign-off required.** Accepting a brief, index-lag-bounded
-  delay before a just-written item appears in a field-filter-only search (no Tag, no
-  Relationship, no workflow, no free-text term) is a deliberate, scoped trade-off for this one
-  case, mirroring the trade-off ADR-0018 already accepts by default for free-text search — it is
-  not a general relaxation of Content Drive's read-your-writes guarantee, which continues to hold
-  for every other filter combination. Treated as a technical decision, not a product one, because
-  it extends an already-accepted architectural trade-off to one additional, narrowly-scoped case
-  rather than introducing a new one. Ships as default behavior (see FR-009 — no dedicated kill
-  switch either).
+- **RESOLVED (2026-08-24); rescoped (2026-09-01, per review) — this is pre-existing behavior,
+  not a trade-off this fix introduces.** A brief, index-lag-bounded delay before a just-written
+  item appears in a field-filter-only search (no Tag, no Relationship, no workflow, no free-text
+  term) already exists **today**, before this fix: `getChunkFiltered`
+  (`BrowserAPIImpl.java:342-346`) runs `processESDirectly` before the permission filter on every
+  chunk of the current hybrid-chunked path, so a not-yet-indexed item is already excluded from
+  results now. This fix (FR-002) changes how many times that loop runs, not whether ES-index-lag
+  gates field-filter results — so there is no new trade-off here for product sign-off to weigh
+  in on; the behavior predates this item and continues unchanged for every filter combination
+  that already goes through ES filtering. No product sign-off needed, because there is nothing
+  new being decided. No dedicated kill switch either (see FR-009) — not because the trade-off is
+  "narrow and scoped," but because there is nothing this fix introduces for a switch to disable.
 - The existing per-field index query logic (already used by the current hybrid strategy) is
   assumed to be reusable as-is for the single-pass case; no new field-to-index translation logic is
   expected to be needed.
