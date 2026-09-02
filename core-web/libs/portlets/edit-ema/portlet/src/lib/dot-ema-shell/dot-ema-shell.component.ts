@@ -13,7 +13,7 @@ import {
     signal,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -59,6 +59,7 @@ import {
     sanitizeURL,
     shouldNavigate
 } from '../utils';
+import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
 
 /** Structural shape of `EditEmaEditorComponent.openContentForEdit` (the 'content' child route). */
 interface RouteWithOpenContentForEdit {
@@ -136,6 +137,27 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
     );
 
+    /**
+     * The UVE Experiments entry-point switch (#37005), read once per shell construction.
+     *
+     * Read into a signal rather than at the click, unlike the toolbar's return leg: the item's
+     * `href` is *rendered*, and `$activeHref` highlights against it, so the value has to be known
+     * synchronously when the menu is built. An action can afford an async read; a rendered
+     * destination cannot.
+     *
+     * Once per shell is what the spec sanctions — "the switch is read once per full application
+     * load … a stale value until the next reload is acceptable" — and `getFreshFeatureFlag` is
+     * uncached, so each construction really re-fetches rather than reusing a value cached for the
+     * SPA session. An operator flips it and reloads the editor: SC-002's under a minute, no
+     * restart.
+     *
+     * A failed read resolves to `false` inside {@link readExperimentsPortletSwitch}, so the item
+     * falls back to the legacy destination rather than going inert (FR-015).
+     */
+    protected readonly $experimentsPortletEnabled = toSignal(readExperimentsPortletSwitch(), {
+        initialValue: false
+    });
+
     // Component builds its own menu items locally
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
         const page = this.uveStore.pageAsset()?.page;
@@ -144,6 +166,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const templateDrawed = template?.drawed;
         const isLayoutDisabled = !this.uveStore.editorCanEditLayout();
         const canSeeRulesExists = page && 'canSeeRules' in page;
+        const experimentsPortletEnabled = this.$experimentsPortletEnabled();
 
         return [
             {
@@ -172,7 +195,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
-                href: `experiments/${page?.identifier}`,
+                // The switch selects the destination and nothing else: `isDisabled` is the same
+                // rule on both sides, so an editor who cannot see experiments for this page does
+                // not gain access through the new one (FR-023).
+                ...(experimentsPortletEnabled
+                    ? {
+                          href: '/experiments',
+                          queryParams: { pageAsset: page?.identifier }
+                      }
+                    : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },

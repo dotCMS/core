@@ -28,11 +28,13 @@ describe('DotEmaRunningExperimentComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                runningExperiment: runningExperiment
-            }
-        });
+        // `setInput` with the public alias, not `props`: the input is declared as
+        // `$runningExperiment` with `alias: 'runningExperiment'`, and Spectator's typed `props`
+        // keys off the field name without mapping the alias back — it type-checks and then leaves
+        // a required input unset (NG0950).
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('runningExperiment', runningExperiment);
+        spectator.detectChanges();
     });
     it('should render a tag', () => {
         expect(spectator.component).toBeTruthy();

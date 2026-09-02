@@ -1497,8 +1497,21 @@ describe('DotEmaShellComponent', () => {
             const experimentsItem = () =>
                 spectator.component['$menuItems']().find((item) => item.id === 'experiments');
 
+            /**
+             * Sets the switch and rebuilds the shell.
+             *
+             * The rebuild is not incidental. The shell reads the switch once per construction
+             * into a signal, because the item's `href` is rendered and `$activeHref` highlights
+             * against it — a rendered destination cannot wait on an async read the way the
+             * toolbar's return action can. The spec sanctions exactly that: "the switch is read
+             * once per full application load … a stale value until the next reload is
+             * acceptable." So the unit of reversibility is a load, and a test that flipped the
+             * mock without rebuilding would be asserting live reactivity nothing promises.
+             */
             const withSwitch = (enabled: boolean) => {
                 dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(enabled));
+                spectator = createComponent();
+                spectator.detectChanges();
             };
 
             afterEach(() => {
@@ -1508,7 +1521,6 @@ describe('DotEmaShellComponent', () => {
             // T052 / FR-016. The exact href a build without this change produces.
             it('should keep the legacy per-page href with the switch off', () => {
                 withSwitch(false);
-                spectator.detectChanges();
 
                 expect(experimentsItem()?.href).toBe(
                     `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
@@ -1520,7 +1532,6 @@ describe('DotEmaShellComponent', () => {
             // UVE's params.
             it('should lead to the filtered site-wide list with the switch on', () => {
                 withSwitch(true);
-                spectator.detectChanges();
 
                 expect(experimentsItem()?.href).toBe('/experiments');
                 expect(experimentsItem()?.queryParams).toEqual({
@@ -1533,7 +1544,6 @@ describe('DotEmaShellComponent', () => {
                 'should keep the same permission rule with the switch %s',
                 (enabled) => {
                     withSwitch(enabled);
-                    spectator.detectChanges();
 
                     expect(experimentsItem()?.isDisabled).toBe(
                         !MOCK_RESPONSE_HEADLESS.page.canEdit
@@ -1547,6 +1557,7 @@ describe('DotEmaShellComponent', () => {
                 dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(
                     throwError(() => new Error('config read failed'))
                 );
+                spectator = createComponent();
                 spectator.detectChanges();
 
                 expect(experimentsItem()?.href).toBe(
@@ -1559,15 +1570,12 @@ describe('DotEmaShellComponent', () => {
             // asserted as a sequence, because a one-way test would pass on a latched value.
             it('should restore the original destination when the switch is turned back off', () => {
                 withSwitch(false);
-                spectator.detectChanges();
                 const before = experimentsItem()?.href;
 
                 withSwitch(true);
-                spectator.detectChanges();
                 expect(experimentsItem()?.href).toBe('/experiments');
 
                 withSwitch(false);
-                spectator.detectChanges();
                 expect(experimentsItem()?.href).toBe(before);
             });
         });
