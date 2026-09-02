@@ -107,20 +107,25 @@ permission-limited user) and confirm identical results.
 
 ### Functional Requirements
 
-- **FR-001 — contradiction fixed (2026-09-01, per review).** The system MUST return identical
-  result sets (same items, same pagination cursors) for every folder-scoped listing request
-  before and after the fix, across empty, small, medium, large, and extreme-sized folders, and
-  across at least one deep-pagination case. **Order is identical with two named exceptions**:
-  (1) the cross-site correctness gap addressed by the host_inode fix in FR-004a, where the
-  *result set itself* is expected to change on purpose (see FR-004a); and (2) the relative order
-  **among rows that share the same `mod_date`** (per #37148, roughly 1.2% of rows in the
-  reference dataset), where today's order is an unspecified, planner-dependent artifact — not a
+- **FR-001 — contradiction fixed (2026-09-01, per review); pagination-cursor claim corrected
+  (2026-09-02, per review) — cursors are order-derived, so they inherit the same exception.**
+  The system MUST return identical result sets (same items) for every folder-scoped listing
+  request before and after the fix, across empty, small, medium, large, and extreme-sized
+  folders, and across at least one deep-pagination case. **Order — and, because
+  `contentCursor` is a DB row offset derived from that order (`getContentByChunks` /
+  `generateNextContentCursor`), pagination cursors too — are identical with two named
+  exceptions**: (1) the cross-site correctness gap addressed by the host_inode fix in FR-004a,
+  where the *result set itself* is expected to change on purpose (see FR-004a); and (2) the
+  relative order, and therefore the specific cursor value, **among rows that share the same
+  `mod_date`** (per #37148, roughly 1.2% of rows in the reference dataset), where today's order
+  (and the cursor offset it produces) is an unspecified, planner-dependent artifact — not a
   guarantee this fix preserves. Because `ORDER BY mod_date` alone has no tiebreaker, the fix MUST
   add a deterministic tiebreaker column (e.g. `inode` or `identifier`) to the sort, so that after
-  the fix, order among tied rows becomes a **guarantee** (stable, reproducible run to run) — it is
-  not required to match whatever arbitrary order those specific tied rows happened to come back
-  in before the fix. Outside of these two named exceptions (cross-site result-set change,
-  tied-row ordering), every other row's position in the result set MUST be unchanged.
+  the fix, order — and the cursor offset — among tied rows becomes a **guarantee** (stable,
+  reproducible run to run) — it is not required to match whatever arbitrary order or cursor
+  value those specific tied rows happened to produce before the fix. Outside of these two named
+  exceptions (cross-site result-set change, tied-row ordering and its cursor), every other row's
+  position and cursor value in the result set MUST be unchanged.
 - **FR-002**: The system MUST resolve the folder-scoped candidate scan through a query shape that
   does not exhibit the current unstable-planner behavior — the same request against the same
   folder must not swing between a fast and a pathologically slow access path depending on
