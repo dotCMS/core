@@ -238,9 +238,16 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
         // NOTE: We intentionally do NOT fall back to the request's Host header here.
         // Deriving the admin url from the client-controlled Host header would allow
         // Host-header poisoning of getAdminSiteUrl/getAdminDomains.
-        // We also do not fall back to the legacy company portal url: the admin url always
-        // resolves to ADMIN_SITE_URL when set, and to the dotCMS default otherwise.
-        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, _ADMIN_SITE_URL_DEFAULT);
+        // The legacy company portal url is the fallback so existing installs that configured
+        // it keep their domain - except the installer's "localhost" placeholder, which is
+        // treated as never-configured so the dotCMS default applies.
+        String oldHost = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL()).getOrNull();
+
+        if (!UtilMethods.isSet(oldHost) || "localhost".equalsIgnoreCase(oldHost)) {
+            oldHost = _ADMIN_SITE_URL_DEFAULT;
+        }
+
+        String adminSiteUrl = Config.getStringProperty(ADMIN_SITE_URL, oldHost);
 
         while (adminSiteUrl.endsWith("/")) {
             adminSiteUrl = adminSiteUrl.substring(0, adminSiteUrl.length() - 1);
