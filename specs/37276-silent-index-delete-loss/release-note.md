@@ -12,6 +12,12 @@ Deletions are now journalled in `dist_reindex_journal` inside the same transacti
 the rows, and retried by `ReindexThread` until the index acknowledges them — the same guarantee
 content additions already had.
 
+Acknowledging a processed entry no longer clears every journal row for that identifier. It clears
+only rows up to the one applied, so a removal queued while an earlier entry for the same content
+was still in flight stays owed instead of being discarded with it. Existing deduplication of
+redundant entries is unaffected: superseded rows are still cleared with the entry that supersedes
+them.
+
 ## What operators will notice
 
 **New errors on index writes that used to be silent.** A bulk write that comes back with per-item
@@ -65,6 +71,9 @@ WHERE dist_action = 2 AND priority > 400;
 Rows returned by that query are removals the index still owes. A non-empty result means something
 is persistently rejecting index writes and warrants investigation; the `index_val` column carries
 the last failure cause.
+
+The same residue is listed by the Maintenance portlet and by `GET /api/es/index/failed`, which now
+distinguish a parked removal from a parked reindex rather than reporting both as reindexes.
 
 ## Compatibility
 

@@ -227,7 +227,9 @@ all covered by integration tests. It has no production callers.
   is removed once the triggering condition clears. The pending removal survives the condition
   as a durable record rather than being lost to it, and is retried without operator action.
   The guarantee is at-least-once **up to** `REINDEX_MAX_FAILURE_ATTEMPTS`; behavior beyond
-  exhaustion is AC-007.
+  exhaustion is AC-007. The record must also survive the *acknowledgement* of other work: a
+  removal queued for an identifier while an earlier entry for that same identifier is in flight
+  is still owed once that entry completes, and must not be discarded with it.
 - **AC-002**: After a destroy under a forced index-write failure, a subsequent search returns
   a total that matches the number of contentlets that actually resolve — no inflated count.
 - **AC-003**: An index write that comes back with per-item failures is surfaced to its caller
@@ -243,7 +245,9 @@ all covered by integration tests. It has no production callers.
   journal entry remains in `dist_reindex_journal` above `ERROR` priority, carrying the
   identifier and the last failure cause, so the set of removals still owed to the index can be
   read with a single query. Exhaustion must not delete the record, and must not be reported to
-  the caller as a completed removal.
+  the caller as a completed removal. Discoverability includes saying what is owed: wherever the
+  parked entry is surfaced, it is reported as a **removal**, not as a reindex — an operator sent
+  looking for content that no longer exists cannot act on the row.
 - **AC-008**: A pending removal and a pending reindex for the same identifier resolve
   deterministically to the newer of the two, and the older is not applied afterwards. Existing
   deduplication of identical repeated entries is preserved.

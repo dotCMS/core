@@ -170,14 +170,16 @@ public class ReindexQueueFactoryBatchKeyTest {
      * When : findContentToReindex assembles the batch.
      * Then : the losing entry is absent from the batch and unrelated identifiers are untouched.
      *
-     * <p>The losing entry is only dropped from this batch — never from
-     * {@code dist_reindex_journal}. Rows are removed exclusively by
-     * {@code deleteReindexEntry} on a successful bulk acknowledgement, and
-     * {@code findContentToReindex} performs no database write at all. It will be re-picked on a
-     * later pass and lose to the same newer entry until that one is applied and removed.</p>
+     * <p>{@code findContentToReindex} performs no database write at all — dropping the loser here
+     * is an in-memory decision only. The row itself is removed later, by {@code deleteReindexEntry}
+     * acknowledging the winner: that sweep covers rows for the same identifier up to the winner's
+     * id, and the loser is one of them. That is correct, not incidental — the loser has been
+     * superseded, so re-applying it could only undo the outcome just applied. The same id bound is
+     * what stops the sweep from reaching a row queued after this batch was loaded, which is a
+     * different case entirely and is covered in ReindexDeleteJournalTest.</p>
      */
     @Test
-    public void test_losingEntry_isDroppedFromBatch_notFromJournal() throws DotDataException {
+    public void test_losingEntry_isDroppedFromBatch() throws DotDataException {
         factory.getLocalQueue().add(entry(20L, IDENTIFIER, Priority.NORMAL.dbValue(), true));
         factory.getLocalQueue().add(entry(10L, IDENTIFIER, Priority.REINDEX.dbValue(), false));
         factory.getLocalQueue().add(entry(30L, OTHER_IDENTIFIER, Priority.NORMAL.dbValue(), false));

@@ -196,7 +196,7 @@ public class ReindexQueueFactory {
     protected List<ReindexEntry> getFailedReindexRecords() throws DotDataException {
         final DotConnect dc = new DotConnect();
         dc.setSQL(
-                "SELECT id, ident_to_index, priority, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
+                "SELECT id, ident_to_index, priority, dist_action, index_val, time_entered FROM dist_reindex_journal WHERE priority > ?");
         dc.addParam(ReindexQueueFactory.Priority.REINDEX.dbValue());
         final List<Map<String, Object>> failedRecords = dc.loadObjectResults();
         final List<ReindexEntry> failed = new ArrayList<>();
@@ -221,6 +221,10 @@ public class ReindexQueueFactory {
                     .id(identifier)
                     .identToIndex((String) map.get("ident_to_index"))
                     .priority(priority)
+                    // A removal that exhausted its retries is still a removal. Reporting it as a
+                    // reindex sends whoever reads this list looking for content that no longer
+                    // exists, instead of for an index document that should have been removed.
+                    .isDelete(isDeleteAction(map))
                     .timeEntered((Date) map.get("time_entered"))
                     .lastResult(indexVal)
                     .build();
@@ -229,10 +233,20 @@ public class ReindexQueueFactory {
         return failed;
     }
 
+    /**
+     * Acknowledges a single processed entry.
+     *
+     * <p>Rows for the same identifier up to and including this one are removed together: they are
+     * earlier statements about the same content, already superseded by the entry just applied.
+     * The {@code id <= ?} bound is what keeps the sweep honest — a row written <em>after</em> this
+     * batch was loaded (a delete queued while the reindex was in flight) describes work nobody has
+     * done yet, and acknowledging it here would drop it silently (#37276).</p>
+     */
     protected void deleteReindexEntry(ReindexEntry iJournal) throws DotDataException {
         DotConnect dc = new DotConnect();
-        dc.setSQL("DELETE FROM dist_reindex_journal where ident_to_index = ? or id= ?");
+        dc.setSQL("DELETE FROM dist_reindex_journal where (ident_to_index = ? and id <= ?) or id = ?");
         dc.addParam(iJournal.getIdentToIndex());
+        dc.addParam(iJournal.getId());
         dc.addParam(iJournal.getId());
         dc.loadResult();
     }
@@ -244,6 +258,13 @@ public class ReindexQueueFactory {
         dc.loadResult();
     }
 
+    /**
+     * Acknowledges a batch of processed entries.
+     *
+     * <p>Bounded by row id for the reason given on {@link #deleteReindexEntry(ReindexEntry)}: the
+     * batch may have been in flight for as long as the bulk write took, and anything queued for
+     * the same identifier in that window has not been applied yet.</p>
+     */
     protected void deleteReindexEntry(final List<ReindexEntry> recordsToDelete)
             throws DotDataException {
         final DotConnect dotConnect = new DotConnect();
@@ -252,14 +273,12 @@ public class ReindexQueueFactory {
         int from = 0;
         while (from <= recordsToDelete.size()) {
             dotConnect.executeBatch(
-                    "DELETE FROM dist_reindex_journal where " + (DbConnectionFactory.isMySql()
-                            ? "id = ?" : "ident_to_index = ?"),
+                    "DELETE FROM dist_reindex_journal where ident_to_index = ? and id <= ?",
                     recordsToDelete
                             .subList(from, Math.min(recordsToDelete.size(), batchSize + from))
-                            .stream().map(entry -> new Params(
-                                    DbConnectionFactory.isMySql() ? entry.getId()
-                                            : entry.getIdentToIndex())).collect(
-                                    Collectors.toList()));
+                            .stream()
+                            .map(entry -> new Params(entry.getIdentToIndex(), entry.getId()))
+                            .collect(Collectors.toList()));
 
             from += batchSize;
         }
@@ -299,7 +318,12 @@ public class ReindexQueueFactory {
             // successive statements about what the index should hold, and only the newest is
             // true: a DELETE written after a REINDEX means the content is gone, so applying the
             // REINDEX afterwards would re-add a document for content that no longer exists.
-            // The loser stays in dist_reindex_journal and is collected on a later pass.
+            //
+            // The losing row is discarded rather than retried, and that is deliberate — it has
+            // been superseded, so re-applying it could only undo the outcome just applied. The
+            // ack drops it along with the winner (deleteReindexEntry bounds its sweep by
+            // id <= winner), which is also what stops the ack from reaching a row queued after
+            // this batch was loaded.
             contentToIndex.merge(entry.getIdentToIndex(), entry,
                     (existing, candidate) -> candidate.getId() > existing.getId()
                             ? candidate : existing);
@@ -366,8 +390,25 @@ public class ReindexQueueFactory {
                 .id(((Number) map.get("id")).longValue())
                 .identToIndex((String) map.get("ident_to_index"))
                 .priority(((Number) map.get("priority")).intValue())
-                .isDelete(((Number) map.get("dist_action")).intValue() == ReindexAction.DELETE.ordinal())
+                .isDelete(isDeleteAction(map))
                 .build();
+    }
+
+    /**
+     * Decodes the {@code dist_action} column of a journal row into the delete flag.
+     *
+     * <p>Every read path must go through here: a row whose action is not decoded defaults to
+     * {@link ReindexAction#REINDEX}, which turns a pending removal into a no-op reindex — the
+     * failure mode #37276 is about. A missing value is treated as a reindex on purpose, matching
+     * how rows written before the column carried meaning are interpreted.</p>
+     *
+     * @param map one row of {@code dist_reindex_journal}
+     * @return {@code true} when the row asks for the document to be removed from the index
+     */
+    private static boolean isDeleteAction(final Map<String, Object> map) {
+        final Object action = map.get("dist_action");
+        return action instanceof Number
+                && ((Number) action).intValue() == ReindexAction.DELETE.ordinal();
     }
 
 
