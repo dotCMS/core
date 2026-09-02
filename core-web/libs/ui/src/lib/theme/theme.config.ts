@@ -155,9 +155,16 @@ export const CustomLaraPreset = definePreset(Lara, {
             // there is no --radius-full token.
             css: `
                 .p-tag {
-                    height: calc(var(--spacing) * 7); /* 1.75rem — same fixed height as chip */
+                    height: calc(var(--spacing) * 6); /* 1.5rem */
                     border-radius: calc(infinity * 1px);
-                    padding: 0 calc(var(--spacing) * 3); /* 0 0.75rem — vertical centering via inline-flex */
+                    padding: 0 calc(var(--spacing) * 2.5); /* 0 0.625rem — vertical centering via inline-flex */
+                    /* A tag annotates the text beside it, so it has to read as smaller than that
+                       text rather than competing with it. Lara inherits the body size, which left
+                       the pill as tall as the line it labels. The line-height is pinned too: an
+                       inherited one keeps the label box at body height and the fixed height above
+                       cannot shrink it. */
+                    font-size: var(--text-xs);
+                    line-height: 1;
                     font-weight: var(--font-weight-medium); /* 500 */
                 }
             `,
