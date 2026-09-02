@@ -3,7 +3,9 @@
  */
 package com.dotmarketing.business;
 
+import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 import com.dotmarketing.exception.DotDataException;
@@ -70,6 +72,8 @@ public abstract class RoleFactory {
 	protected abstract List<String> findUserIdsForRole(Role role,boolean includeInherited) throws DotDataException;
 	
 	protected abstract List<String> findUserIdsForRole(Role role) throws DotDataException;
+
+	protected abstract Map<String, Integer> countUsersByRoleIds(Collection<String> roleIds) throws DotDataException;
 	
 	protected abstract List<String> loadLayoutIdsForRole(Role role) throws DotDataException;
 	

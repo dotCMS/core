@@ -19,20 +19,14 @@
     // Handle browse button click
     browseButton.addEventListener("click", () => {
       DotCustomFieldApi.openBrowserModal({
-        header: "$text.get('Select-a-file')",
-        params: {
-          showFiles: true,
-          showPages: true,
-          showFolders: true,
-          showDotAssets: false,
-          showWorking: false,
-          showArchived: false,
-          sortByDesc: true,
-        },
-        onClose: (result) => {
-          if (result && result.url) {
-            vlUriInput.value = result.url;
-            field.setValue(result.url);
+        title: "$text.get('Select-a-file')",
+        kinds: ["file", "page", "folder"],
+        status: "live",
+        sort: { field: "modDate", direction: "desc" },
+        onClose: (selection) => {
+          if (selection) {
+            vlUriInput.value = selection.url;
+            field.setValue(selection.url);
           }
         },
       });

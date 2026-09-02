@@ -28,12 +28,18 @@ import { take } from 'rxjs/operators';
 import { DotLanguagesService } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotContentDriveBrowseItem,
     DotContentDriveItem,
     DotContentDrivePaginateEvent,
     DotLanguage
 } from '@dotcms/dotcms-models';
 
-import { DOT_DRAG_ITEM, DotFolderListViewFixedColumn, HEADER_COLUMNS } from './constants';
+import {
+    DOT_DRAG_ITEM,
+    DotFolderListViewFixedColumn,
+    HEADER_COLUMNS,
+    rescaleToWidthBudget
+} from './constants';
 import {
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
@@ -86,7 +92,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      *
      * @alias items
      */
-    $items = input<DotContentDriveItem[]>([], { alias: 'items' });
+    /**
+     * Rows to render.
+     *
+     * Wider than {@link DotContentDriveItem} because the asset picker's browse mode can list menu
+     * links. Everything the list *acts on* — the context menu, drag, drop — stays narrow: a link
+     * has no workflow actions, so it is displayed and selectable but never actionable.
+     */
+    $items = input<DotContentDriveBrowseItem[]>([], { alias: 'items' });
 
     /**
      * A signal that takes the total number of items.
@@ -159,7 +172,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      *
      * @alias selectionChange
      */
-    selectionChange = output<DotContentDriveItem[]>();
+    selectionChange = output<DotContentDriveBrowseItem[]>();
 
     /**
      * An output that emits the pagination event.
@@ -187,7 +200,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      *
      * @alias doubleClick
      */
-    doubleClick = output<DotContentDriveItem>();
+    doubleClick = output<DotContentDriveBrowseItem>();
 
     /**
      * An output that emits the drag start event.
@@ -286,12 +299,15 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @type {InputSignal<DotContentDriveItem | DotContentDriveItem[] | null | undefined>}
      * @alias selection
      */
-    $selection = input<DotContentDriveItem | DotContentDriveItem[] | null | undefined>(undefined, {
-        alias: 'selection'
-    });
+    $selection = input<DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null | undefined>(
+        undefined,
+        {
+            alias: 'selection'
+        }
+    );
 
     /** Checked set while uncontrolled. Ignored as long as `selection` is provided. */
-    readonly #internalSelection = signal<DotContentDriveItem[]>([]);
+    readonly #internalSelection = signal<DotContentDriveBrowseItem[]>([]);
 
     /**
      * Bumped on every selection change the table reports. Exists so the sync effect below re-runs
@@ -309,7 +325,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      *
      * @alias selectedItems
      */
-    get selectedItems(): DotContentDriveItem | DotContentDriveItem[] | null {
+    get selectedItems(): DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null {
         const items =
             this.$selection() !== undefined
                 ? this.#asSelectedArray(this.$selection())
@@ -318,7 +334,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         return this.$selectionMode() === 'multiple' ? items : (items[0] ?? null);
     }
 
-    set selectedItems(selection: DotContentDriveItem | DotContentDriveItem[] | null) {
+    set selectedItems(selection: DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null) {
         this.#internalSelection.set(this.#asSelectedArray(selection));
     }
 
@@ -351,11 +367,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
 
     private readonly EXTRA_COL_PAD_CH = 3;
     /**
-     * Room a sortable header needs for its sort indicator, on top of its label. Measured in the
-     * rendered portlet: the icon plus the space before it is ~23px against a `1ch` of 8.67px in the
-     * header font, so 3 covers it. Without it, the estimate for a header like "Bool Radio" landed at
-     * 112.7px against a 113px need, short by a hair, which is all it takes to spill into the next
-     * header since nothing clips it.
+     * Room a header needs for its sort indicator, on top of its label.
+     *
+     * Measured in the rendered portlet: the icon plus the space before it is ~23px against a `1ch` of
+     * 8.67px in the header font, so 3 covers it. Without it, the estimate for a header like "Bool
+     * Radio" landed at 112.7px against a 113px need, short by a hair, which is all it takes to spill
+     * into the next header since nothing clips it.
+     *
+     * Reserved only when the icon is actually drawn. The template gates it on
+     * `sortable && !readOnly`, so keying this off `sortable` alone reserved width nothing rendered
+     * into whenever a read-only table carried extra columns.
      */
     private readonly EXTRA_COL_SORT_ICON_CH = 3;
     /** Column types exposed to the template's `@switch`, so cases aren't magic strings. */
@@ -374,7 +395,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param item The row to test.
      * @return {*} {boolean} `true` when the row lives on SYSTEM_HOST.
      */
-    protected isSharedAsset(item: DotContentDriveItem): boolean {
+    protected isSharedAsset(item: DotContentDriveBrowseItem): boolean {
         return 'host' in item && item.host === SYSTEM_HOST_ID;
     }
 
@@ -409,10 +430,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      */
     protected readonly $sizedExtraColumns = computed<DotFolderListViewColumn[]>(() => {
         const items = this.$items();
+        // Read unconditionally so this stays a dependency even when no extra column is sortable, and
+        // resolved here rather than inside the resolver so the width is derived from what the header
+        // actually renders: the template draws a sort icon only for `sortable && !readOnly`.
+        const readOnly = this.$readOnly();
 
         return this.$safeExtraColumns().map((column) => ({
             ...column,
-            width: this.#resolveExtraColumnWidth(column, items)
+            width: this.#resolveExtraColumnWidth(column, items, !!column.sortable && !readOnly)
         }));
     });
 
@@ -425,16 +450,23 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * The fixed columns being rendered. Filtered off `HEADER_COLUMNS` rather than off the caller's
      * list, so display order stays the table's.
      *
-     * No width bookkeeping is needed when a column drops out: `title` is unsized (see
-     * `HEADER_COLUMNS`) and soaks up whatever the remaining sized columns leave over.
+     * Whatever is rendered has its percentages rescaled to the budget the full set carries; see
+     * {@link rescaleToWidthBudget} for why the leftover cannot just be left unclaimed. The full set
+     * with actions passes through untouched, since its percentages already add up to that total.
      */
     protected readonly $fixedColumns = computed<DotFolderListViewFixedColumn[]>(() => {
         const requested = this.$visibleColumns();
-        const fixed = requested.length
-            ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
-            : HEADER_COLUMNS;
+        const shown = (
+            requested.length
+                ? HEADER_COLUMNS.filter((column) => requested.includes(column.field))
+                : HEADER_COLUMNS
+        ).filter((column) => this.$showActions() || column.field !== 'actions');
 
-        return this.$showActions() ? fixed : fixed.filter((column) => column.field !== 'actions');
+        // Keyed off what is actually rendered rather than off whether a subset was requested: the
+        // full set with the actions column hidden totals 91%, not the budget, and would hand the
+        // leftover to the checkbox column just like a subset does. `rescaleToWidthBudget` is a
+        // no-op when the total already matches, so the full set with actions passes through.
+        return rescaleToWidthBudget(shown);
     });
 
     protected readonly $columns = computed<DotFolderListViewColumn[]>(() => {
@@ -580,8 +612,8 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Normalizes PrimeNG selection (array in multiple mode, object/null in single) to an array.
      */
     #asSelectedArray(
-        selection: DotContentDriveItem | DotContentDriveItem[] | null | undefined
-    ): DotContentDriveItem[] {
+        selection: DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null | undefined
+    ): DotContentDriveBrowseItem[] {
         if (!selection) {
             return [];
         }
@@ -596,10 +628,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * per-type width as a floor, widening to the header when the header needs more. Average (not max)
      * keeps one long outlier from blowing the column out; overflow truncates in the cells and the
      * table scrolls horizontally.
+     *
+     * `showsSortIcon` says whether this header will draw a sort indicator, so the room for one is
+     * reserved only when it will be used.
      */
     #resolveExtraColumnWidth(
         column: DotFolderListViewColumn,
-        items: DotContentDriveItem[]
+        items: DotContentDriveBrowseItem[],
+        showsSortIcon: boolean
     ): string {
         if (column.width) {
             return column.width;
@@ -636,7 +672,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             Math.max(
                 Math.max(column.header?.length ?? 0, contentLength) +
                     this.EXTRA_COL_PAD_CH +
-                    (column.sortable ? this.EXTRA_COL_SORT_ICON_CH : 0),
+                    (showsSortIcon ? this.EXTRA_COL_SORT_ICON_CH : 0),
                 hasTypeFloor ? typeFloor : this.EXTRA_COL_MIN_CH
             ),
             this.EXTRA_COL_MAX_CH
@@ -707,8 +743,14 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The mouse event
      * @param contentlet The content item that was right clicked
      */
-    onContextMenu(event: Event, contentlet: DotContentDriveItem) {
+    onContextMenu(event: Event, contentlet: DotContentDriveBrowseItem) {
         if (!this.$showActions() || this.$readOnly()) {
+            return;
+        }
+
+        // A menu link carries no workflow state, so every action the menu offers is meaningless for
+        // one. Content Drive never lists links, so this only ever fires in the asset picker.
+        if (!isActionable(contentlet)) {
             return;
         }
 
@@ -749,7 +791,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      *
      * @param selection The table's new selection
      */
-    onSelectionChange(selection: DotContentDriveItem | DotContentDriveItem[] | null) {
+    onSelectionChange(selection: DotContentDriveBrowseItem | DotContentDriveBrowseItem[] | null) {
         this.selectedItems = selection;
         this.selectionChange.emit(this.#asSelectedArray(selection));
         // Runs after PrimeNG has finished mutating its own state — it drops the row's selection key
@@ -769,7 +811,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * Handles double click on a content item
      * @param contentlet The content item that was double clicked
      */
-    onDoubleClick(contentlet: DotContentDriveItem) {
+    onDoubleClick(contentlet: DotContentDriveBrowseItem) {
         // Guarded here rather than per template binding: the row's dblclick, the title and the
         // thumbnail all land on this, and opening an item from a dialog would navigate away from it.
         if (this.$readOnly()) {
@@ -789,7 +831,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The click event
      * @param contentlet The content item whose title was clicked
      */
-    onTitleClick(event: Event, contentlet: DotContentDriveItem) {
+    onTitleClick(event: Event, contentlet: DotContentDriveBrowseItem) {
         if (!this.$titleOpensItem()) {
             return;
         }
@@ -803,7 +845,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The drag start event
      * @param contentlet The content item that was dragged
      */
-    onDragStart(event: DragEvent, contentlet: DotContentDriveItem) {
+    onDragStart(event: DragEvent, contentlet: DotContentDriveBrowseItem) {
         // The `draggable` attribute already keeps the row still, but it only covers user-initiated
         // drags: a programmatic `dragstart` would still reach this and emit a move nothing can drop.
         if (this.$readOnly()) {
@@ -823,8 +865,15 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             (item) => item.identifier === contentlet.identifier
         );
 
-        // Determine which items are being dragged
-        const itemsToDrag = isDraggingSelectedItem && selected.length > 0 ? selected : [contentlet];
+        // Determine which items are being dragged. Menu links are filtered out: they have no
+        // permissions and nowhere to be moved to, so they are never part of a drag payload.
+        const itemsToDrag = (
+            isDraggingSelectedItem && selected.length > 0 ? selected : [contentlet]
+        ).filter(isActionable);
+
+        if (!itemsToDrag.length) {
+            return;
+        }
 
         event.dataTransfer.effectAllowed = 'move';
         event.dataTransfer.setData(DOT_DRAG_ITEM, '');
@@ -844,7 +893,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The drag over event
      * @param targetItem The content item being dragged over
      */
-    onDragOver(event: DragEvent, targetItem: DotContentDriveItem) {
+    onDragOver(event: DragEvent, targetItem: DotContentDriveBrowseItem) {
         // Only handle internal drags (item to item)
         const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
         if (isInternalDrag) {
@@ -859,7 +908,7 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The drop event
      * @param targetItem The content item that was dropped
      */
-    onDrop(event: DragEvent, targetItem: DotContentDriveItem) {
+    onDrop(event: DragEvent, targetItem: DotContentDriveBrowseItem) {
         // If this is an external file drop, let it bubble up to the dropzone
         const hasFiles = event.dataTransfer?.files && event.dataTransfer.files.length > 0;
         const isInternalDrag = event.dataTransfer?.types.includes(DOT_DRAG_ITEM);
@@ -872,6 +921,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
         event.preventDefault();
         event.stopPropagation();
         patchState(this.state, { dragOverRowId: null });
+
+        if (!isActionable(targetItem)) {
+            return;
+        }
+
         this.drop.emit(targetItem);
     }
 
@@ -890,7 +944,10 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param totalCount The total number of items
      * @returns The drag image element
      */
-    private createDragImage(items: DotContentDriveItem[], totalCount: number): HTMLElement | null {
+    private createDragImage(
+        items: DotContentDriveBrowseItem[],
+        totalCount: number
+    ): HTMLElement | null {
         const container = this.renderer.createElement('div');
         this.renderer.addClass(container, 'drag-image-container');
 
@@ -977,4 +1034,16 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
             dataTable.first = this.$offset();
         }
     }
+}
+
+/**
+ * Whether a row is something the shared folder actions can act on.
+ *
+ * Everything except a menu link: links have no workflow state, no permissions of their own and no
+ * editor to open, so they are displayed and selectable but never actionable.
+ */
+function isActionable(item: DotContentDriveBrowseItem): item is DotContentDriveItem {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'link' && row.extension !== 'link';
 }

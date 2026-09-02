@@ -7,6 +7,7 @@ import { DotFolderService } from '@dotcms/data-access';
 import {
     createLoadMoreTreeNode,
     DotCMSContentTypeField,
+    PERMISSIONS_TYPE,
     DotContentDriveDateRange,
     DotContentDriveActionableFolder,
     DotContentDriveActionableItem,
@@ -17,11 +18,12 @@ import {
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/dotcms-models';
 import { getSingleSelectableFieldOptions } from '@dotcms/edit-content';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeData, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
 
 import { createTreeNode, generateAllParentPaths } from './tree-folder.utils';
 
 import {
+    CONTENT_STATUS,
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TYPES,
     FIELD_FILTER_KEY_VALUE_TYPE,
@@ -46,7 +48,10 @@ import {
  * @param {string} value
  * @return {*}  {string[]}
  */
-const multiSelector: DotContentDriveDecodeFunction = (value = ''): string[] =>
+// Deliberately NOT annotated as DotContentDriveDecodeFunction: that type returns
+// `string | string[]`, which would hide the array from callers that compose on top of this one
+// (the `status` decoder filters the result). Still assignable where a decode function is expected.
+const multiSelector = (value = ''): string[] =>
     value
         .split(',')
         .map((v) => v.trim())
@@ -107,6 +112,13 @@ export function parseWorkflowFilter(tokens: string[] = []): WorkflowFilterEntry[
 }
 
 /**
+ * Whether a raw string names a real {@link CONTENT_STATUS}. Used to sanitize the URL on the way in.
+ */
+function isContentStatus(value: string): boolean {
+    return (Object.values(CONTENT_STATUS) as string[]).includes(value);
+}
+
+/**
  * Decodes the value by the key. This is a dictionary of functions that will be used to decode the value by the key.
  *
  * @example
@@ -130,6 +142,18 @@ export const decodeByFilterKey: Record<
     languageId: multiSelector,
     // Each entry is `schemeId` or `schemeId:stepId`; comma-separated in the URL
     workflow: multiSelector,
+    // MUST be listed explicitly. Unknown keys fall through to the comma sniff in
+    // `decodeFilterValue`, so a single selected status (`status:ARCHIVED`) would decode to the
+    // STRING 'ARCHIVED' while two would decode to an array. Every consumer checks
+    // `filters()?.status?.length`, which is 8 for that string — the filter would appear to work
+    // right up until someone selected exactly one status.
+    //
+    // Unrecognized values are dropped here rather than sent on. The endpoint rejects an unknown
+    // status with a 400 (it will not silently widen the result set), and that 400 would surface as
+    // a stopped spinner over a stale grid. A stale or hand-edited URL should degrade to "no status
+    // filter", which is how the other filters already behave — an unknown contentType id is
+    // dropped server-side rather than failing the request.
+    status: (value) => multiSelector(value).filter(isContentStatus),
     sharedAssets: singleSelector
 };
 
@@ -170,7 +194,15 @@ export function decodeFilters(filters: string): DotContentDriveFilters {
 
         // key stays `string` for assignment so the open index signature applies;
         // narrowing happens only inside decodeFilterValue for the known-key lookup.
-        acc[key] = decodeFilterValue(key, value);
+        const decoded = decodeFilterValue(key, value);
+
+        // A multi-value key that decoded to nothing is not a filter. Dropping it keeps a sanitized
+        // `status:BOGUS` from round-tripping back into the URL as a bare `status:`.
+        if (Array.isArray(decoded) && decoded.length === 0) {
+            return acc;
+        }
+
+        acc[key] = decoded;
 
         return acc;
     }, {} as DotContentDriveFilters);
@@ -1088,4 +1120,43 @@ export function buildUserSearchablePayload(
     }
 
     return Object.keys(payload).length ? payload : undefined;
+}
+
+/**
+ * Whether the user may add children to a drop target.
+ *
+ * The one rule behind every creation affordance in the drive — the New menu, Upload, the grid drop
+ * zone, and a drag onto a tree folder — so the four cannot disagree about the same folder.
+ *
+ * A node with no permissions is the site root: its parent is the host rather than a folder, and no
+ * folder endpoint reports on it, so `siteCanAddChildren` answers that case. Both unknowns resolve to
+ * **allowed** — a lookup still in flight, and an instance too old to report the field — because
+ * denying on an unknown takes the action away from users who hold the permission, and the server
+ * still refuses what it enforces.
+ *
+ * Note what the server actually enforces, since the gate is not uniformly a preview of it: creating
+ * a folder checks this (`FolderAPIImpl:673`) and so does moving a contentlet
+ * (`ESContentletAPIImpl:607`), but the contentlet checkin path does **not**, so an upload is not
+ * refused server-side. The gate is still applied there, so that one route into a folder does not
+ * quietly allow what the other two forbid.
+ *
+ * @param {DotFolderTreeNodeData} [target] - The folder being dropped on or browsed
+ * @param {boolean} [siteCanAddChildren] - The site-level answer, for the root
+ * @returns {boolean} Whether creation should be offered
+ */
+export function canAddChildrenTo(
+    target: DotFolderTreeNodeData | undefined | null,
+    siteCanAddChildren: boolean | undefined
+): boolean {
+    if (!target) {
+        return true;
+    }
+
+    const permissions = (target as { permissions?: string[] }).permissions;
+
+    if (!permissions?.length) {
+        return siteCanAddChildren !== false;
+    }
+
+    return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
 }
