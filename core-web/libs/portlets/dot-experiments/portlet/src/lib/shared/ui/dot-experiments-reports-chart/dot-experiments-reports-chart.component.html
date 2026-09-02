@@ -5,13 +5,37 @@
                  caller owns its markup; with nothing projected the legend keeps the right edge to
                  itself, which is what the screens that predate the slot expect. -->
             <ng-content select="[chartHeading]" />
-            <div class="legend-wrapper" data-testId="chart-legends"></div>
+            <ul
+                class="m-0 flex list-none flex-row items-center gap-2 p-0"
+                data-testId="chart-legends">
+                @for (item of $legendItems(); track item.index) {
+                    <li
+                        class="cursor-pointer"
+                        [class.opacity-40]="item.hidden"
+                        [attr.aria-pressed]="!item.hidden"
+                        (click)="toggleSeries(item.index)"
+                        (keydown.enter)="toggleSeries(item.index)"
+                        (keydown.space)="toggleSeries(item.index); $event.preventDefault()"
+                        data-testId="chart-legend-item"
+                        role="button"
+                        tabindex="0">
+                        <p-tag severity="secondary">
+                            <span class="flex items-center gap-1.5">
+                                <span
+                                    class="size-2 flex-none rounded-full"
+                                    [style.background-color]="item.color"
+                                    aria-hidden="true"></span>
+                                {{ item.label }}
+                            </span>
+                        </p-tag>
+                    </li>
+                }
+            </ul>
         </div>
         @if (!$isEmpty()) {
             <p-chart
-                [data]="$data()"
+                [data]="$chartData()"
                 [options]="options"
-                [plugins]="plugins"
                 [id]="chartId"
                 height="500px"
                 width="100%" />
