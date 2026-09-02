@@ -1,8 +1,17 @@
-<div class="flex items-stretch rounded-lg border border-gray-300 bg-white" data-testid="stat-strip">
-    <div class="grid flex-1 grid-cols-[repeat(auto-fit,minmax(190px,1fr))]">
-        @if (!$isWaitingForData()) {
-            <div class="flex flex-col gap-1 border-l border-gray-200 px-4 py-3 first:border-l-0">
-                <span class="text-xs font-semibold tracking-wide text-gray-600 uppercase">
+<div
+    class="grid grid-cols-[repeat(auto-fit,minmax(190px,1fr))] items-stretch overflow-hidden rounded-lg border border-surface-200 bg-white"
+    data-testid="stat-strip">
+    @if (!$isWaitingForData()) {
+        <div
+            class="flex min-w-0 flex-col gap-1.5 border-l border-surface-200 px-[22px] py-4 first:border-l-0">
+            <div class="flex items-center gap-[7px]">
+                <span
+                    class="material-symbols-outlined text-[17px] leading-none text-surface-400"
+                    aria-hidden="true">
+                    emoji_events
+                </span>
+                <span
+                    class="text-[11px]/[14px] font-semibold tracking-[0.06em] text-surface-500 uppercase">
                     {{
                         ($isEnded()
                             ? 'experiments.results.stat-strip.winner'
@@ -10,81 +19,91 @@
                         ) | dm
                     }}
                 </span>
-                <div class="flex flex-wrap items-center gap-2 text-[15px]">
-                    @if ($hasWinnerIcon()) {
-                        <img
-                            alt=""
-                            class="size-5"
-                            data-testid="stat-strip-winner-icon"
-                            src="assets/icon/trophy.svg" />
-                    } @else {
-                        <i
-                            class="material-symbols-outlined text-[20px] text-red-500"
-                            data-testid="stat-strip-no-winner-icon">
-                            block
-                        </i>
-                    }
-                    <span
-                        [innerHTML]="$winnerLegend()?.legend ?? '' | dm: $winnerLegendArgs()"
-                        [pTooltip]="$thresholdHintKey() | dm"
-                        data-testid="stat-strip-winner-legend"
-                        tooltipPosition="bottom"></span>
-                    @if ($canPromote()) {
-                        <p-button
-                            (onClick)="promoteRequested.emit($suggestedWinner()!.variantName)"
-                            [disabled]="$isSaving()"
-                            [label]="'experiments.reports.promote' | dm"
-                            data-testid="stat-strip-promote-button"
-                            size="small"
-                            styleClass="p-button-text" />
-                    }
-                </div>
             </div>
-        }
-        <div class="flex flex-col gap-1 border-l border-gray-200 px-4 py-3 first:border-l-0">
-            <span class="text-xs font-semibold tracking-wide text-gray-600 uppercase">
-                {{ 'experiments.summary.winner.testing' | dm }}
-            </span>
-            <span class="text-[15px]" data-testid="stat-strip-goal">{{ $goalName() ?? '—' }}</span>
-        </div>
-        <div class="flex flex-col gap-1 border-l border-gray-200 px-4 py-3 first:border-l-0">
-            <span class="text-xs font-semibold tracking-wide text-gray-600 uppercase">
-                {{ 'experiments.results.stat-strip.period' | dm }}
-            </span>
-            <span class="text-[15px]" data-testid="stat-strip-period">
-                @if ($scheduling()?.startDate; as startDate) {
-                    {{ startDate | date: 'longDate' }}
-                    @if ($scheduling()?.endDate; as endDate) {
-                        <span class="mx-1">–</span>
-                        {{ endDate | date: 'longDate' }}
-                    }
-                } @else {
-                    —
+            <div class="flex min-w-0 flex-wrap items-baseline gap-2">
+                <span
+                    class="text-[15px]/[1.35] font-semibold text-surface-900"
+                    [pTooltip]="$thresholdHintKey() | dm"
+                    data-testid="stat-strip-winner-legend"
+                    tooltipPosition="bottom">
+                    {{ $leadingVariantName() }}
+                </span>
+                @if ($canPromote()) {
+                    <p-button
+                        (onClick)="promoteRequested.emit($suggestedWinner()!.variantName)"
+                        [disabled]="$isSaving()"
+                        [label]="'experiments.reports.promote' | dm"
+                        [outlined]="true"
+                        class="shrink-0"
+                        data-testid="stat-strip-promote-button"
+                        size="small" />
                 }
-            </span>
-        </div>
-        <div class="flex flex-col gap-1 border-l border-gray-200 px-4 py-3 first:border-l-0">
-            <span class="text-xs font-semibold tracking-wide text-gray-600 uppercase">
-                {{ 'experiments.summary.winner.session-to-date' | dm }}
-            </span>
-            <span class="text-[15px]" data-testid="stat-strip-sessions">
-                {{ $sessionsReached() | number }}
-            </span>
-        </div>
-    </div>
-    @if ($canRefresh()) {
-        <div class="flex items-center border-l border-gray-200 px-2">
-            <p-button
-                (onClick)="refreshRequested.emit()"
-                [attr.aria-label]="'Refresh' | dm"
-                [disabled]="$refreshing()"
-                [loading]="$refreshing()"
-                [pTooltip]="'Refresh' | dm"
-                [rounded]="true"
-                [text]="true"
-                data-testid="stat-strip-refresh-button"
-                icon="pi pi-refresh"
-                tooltipPosition="bottom" />
+            </div>
         </div>
     }
+    <div
+        class="flex min-w-0 flex-col gap-1.5 border-l border-surface-200 px-[22px] py-4 first:border-l-0">
+        <div class="flex items-center gap-[7px]">
+            <span
+                class="material-symbols-outlined text-[17px] leading-none text-surface-400"
+                aria-hidden="true">
+                flag
+            </span>
+            <span
+                class="text-[11px]/[14px] font-semibold tracking-[0.06em] text-surface-500 uppercase">
+                {{ 'experiments.summary.winner.testing' | dm }}
+            </span>
+        </div>
+        <span
+            class="text-[15px]/[1.35] font-semibold text-surface-900"
+            data-testid="stat-strip-goal">
+            {{ $goalName() ?? '—' }}
+        </span>
+    </div>
+    <div
+        class="flex min-w-0 flex-col gap-1.5 border-l border-surface-200 px-[22px] py-4 first:border-l-0">
+        <div class="flex items-center gap-[7px]">
+            <span
+                class="material-symbols-outlined text-[17px] leading-none text-surface-400"
+                aria-hidden="true">
+                date_range
+            </span>
+            <span
+                class="text-[11px]/[14px] font-semibold tracking-[0.06em] text-surface-500 uppercase">
+                {{ 'experiments.results.stat-strip.period' | dm }}
+            </span>
+        </div>
+        <span
+            class="text-[15px]/[1.35] font-semibold text-surface-900"
+            data-testid="stat-strip-period">
+            @if ($scheduling()?.startDate; as startDate) {
+                {{ startDate | date: 'mediumDate' }}
+                @if ($scheduling()?.endDate; as endDate) {
+                    <span class="mx-1">–</span>
+                    {{ endDate | date: 'mediumDate' }}
+                }
+            } @else {
+                —
+            }
+        </span>
+    </div>
+    <div
+        class="flex min-w-0 flex-col gap-1.5 border-l border-surface-200 px-[22px] py-4 first:border-l-0">
+        <div class="flex items-center gap-[7px]">
+            <span
+                class="material-symbols-outlined text-[17px] leading-none text-surface-400"
+                aria-hidden="true">
+                group
+            </span>
+            <span
+                class="text-[11px]/[14px] font-semibold tracking-[0.06em] text-surface-500 uppercase">
+                {{ 'experiments.summary.winner.session-to-date' | dm }}
+            </span>
+        </div>
+        <span
+            class="text-[15px]/[1.35] font-semibold text-surface-900"
+            data-testid="stat-strip-sessions">
+            {{ $sessionsReached() | number }}
+        </span>
+    </div>
 </div>
