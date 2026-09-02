@@ -168,8 +168,7 @@ export class DotExperimentsConfigureVariantsComponent {
         // An OR over three independent conditions, evaluated per row because only the first of
         // them varies by row. NOT `!!disabledTooltipKey`: that is null for the control on an
         // editable draft, which would open the Original for editing (FR-008).
-        const experimentIsReadOnly =
-            this.store.$isLocked() || this.store.$lockedByAnotherUser();
+        const experimentIsReadOnly = this.store.$isLocked() || this.store.$lockedByAnotherUser();
 
         return this.store.$variants().map((variant, index) => {
             const isControl = isControlVariant(variant);
@@ -183,8 +182,7 @@ export class DotExperimentsConfigureVariantsComponent {
                 copyUrl: previewUrl ? `${previewUrl}&variantName=${variant.id}` : null,
                 disabled: !!disabledTooltipKey,
                 disabledTooltipKey,
-                editorMode:
-                    isControl || experimentIsReadOnly ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
+                editorMode: isControl || experimentIsReadOnly ? UVE_MODE.PREVIEW : UVE_MODE.EDIT
             };
         });
     });
