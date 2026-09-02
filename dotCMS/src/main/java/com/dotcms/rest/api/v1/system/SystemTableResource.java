@@ -14,6 +14,7 @@ import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import org.glassfish.jersey.server.JSONP;
 
@@ -163,6 +164,10 @@ public class SystemTableResource implements Serializable {
 	@JSONP
 	@NoCache
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(summary = "Saves or updates a system table entry",
+			description = "Saves or updates the value of a key in the system table. The change is applied " +
+					"cluster wide: every node is notified and re-resolves the key, so the request does not " +
+					"need to be repeated against each node.")
 	public ResponseEntityStringView save(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,
@@ -190,6 +195,10 @@ public class SystemTableResource implements Serializable {
 	@NoCache
 	@Consumes(MediaType.APPLICATION_JSON)
 	@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+	@Operation(summary = "Updates an existing system table entry",
+			description = "Updates the value of an existing key in the system table, or returns a 404 if the " +
+					"key does not exist. The change is applied cluster wide: every node is notified and " +
+					"re-resolves the key, so the request does not need to be repeated against each node.")
 	public ResponseEntityStringView update(
 			@Context final HttpServletRequest request,
 			@Context final HttpServletResponse response,

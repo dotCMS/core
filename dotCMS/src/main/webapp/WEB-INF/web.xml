@@ -28,6 +28,11 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>WebDavAuthenticationFilter</filter-name>
+		<filter-class>com.dotcms.filters.WebDavAuthenticationFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
 		<filter-name>WebDavXmlValidationFilter</filter-name>
 		<filter-class>com.dotcms.filters.WebDavXmlValidationFilter</filter-class>
 		<async-supported>true</async-supported>
@@ -158,8 +163,15 @@
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
 
-	<!-- Runs early and only on /webdav/*: validates XML request bodies before the WebDAV servlet
-	     parses them. Covers all four /webdav/ servlet mappings. -->
+	<!-- Runs early and only on /webdav/*: requires credentials before the WebDAV servlet handles
+	     anything. Covers all four /webdav/ servlet mappings. -->
+	<filter-mapping>
+		<filter-name>WebDavAuthenticationFilter</filter-name>
+		<url-pattern>/webdav/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Runs after authentication and only on /webdav/*: validates XML request bodies before the
+	     WebDAV servlet parses them. Covers all four /webdav/ servlet mappings. -->
 	<filter-mapping>
 		<filter-name>WebDavXmlValidationFilter</filter-name>
 		<url-pattern>/webdav/*</url-pattern>
@@ -412,7 +424,7 @@
     </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
-		<servlet-class>com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<servlet-class>com.dotmarketing.webdav.DotWebdavServlet</servlet-class>
 		<init-param>
 				<param-name>resource.factory.class</param-name>
 				<param-value>com.dotmarketing.webdav.ResourceFactoryImpl</param-value>

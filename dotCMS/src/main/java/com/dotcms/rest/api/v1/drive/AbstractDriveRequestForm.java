@@ -327,6 +327,13 @@ public interface AbstractDriveRequestForm {
      *   <li><strong>Working:</strong> Draft/unpublished content in progress</li>
      * </ul>
      *
+     * <p>
+     * <b>Interaction with {@link #status()}:</b> selecting {@code ARCHIVED} or {@code UNPUBLISHED}
+     * forces the query onto the working version, because neither state has a live one. That choice
+     * applies to the whole query, so combining {@code live: true} with either of those statuses
+     * returns working-version fields despite the request for live content. Not reachable from the
+     * Content Drive UI, which leaves this at its default.
+     *
      * @return true to include only live content, false to include working content (default)
      */
     @JsonProperty("live")
@@ -355,6 +362,35 @@ public interface AbstractDriveRequestForm {
     @Value.Default
     default boolean archived() { return false; }
 
+
+    /**
+     * Content states to filter by. Accepted values: {@code ARCHIVED}, {@code UNPUBLISHED},
+     * {@code LOCKED}.
+     * <p>
+     * Entries combine with <b>OR</b> — the result is content in <i>any</i> of the selected states,
+     * so adding a status never shrinks the result set. This matches {@link #contentTypes()} and
+     * {@link #language()}; it is not an intersection.
+     * <p>
+     * Excluding archived content is the browse query's standing default rather than a fourth value
+     * here: {@code ARCHIVED} is the only status that admits archived content, so
+     * {@code ["UNPUBLISHED"]} means "unpublished and not archived".
+     * <p>
+     * Defaults to empty, which is skipped entirely and preserves today's behavior exactly. An
+     * unrecognized value is rejected with a 400 by {@link ContentDriveHelper}, consistent with how
+     * {@link #userSearchable()} rejects unknown keys. Declared as strings rather than the enum so
+     * that rejection stays an explicit {@code BadRequestException} rather than a Jackson
+     * deserialization error.
+     * <p>
+     * Has <b>no side effects on other fields</b>. In particular it does not touch
+     * {@link #showFolders()}: folders carry no status, so the Content Drive UI stops asking for
+     * them once a status is selected, but that is the caller's decision and this endpoint honours
+     * whatever it is sent.
+     *
+     * @return content states to filter by, defaults to an empty list (no status filtering)
+     */
+    @JsonProperty("status")
+    @Value.Default
+    default List<String> status() { return List.of(); }
 
     @JsonProperty("showFolders")
     @Value.Default

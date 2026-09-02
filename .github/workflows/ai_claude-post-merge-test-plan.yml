@@ -65,7 +65,9 @@ jobs:
           # "Area : Backend" with spaces around the colon. Verified via
           # `gh api repos/dotCMS/core/labels`. A gate written without the
           # spaces matches nothing.
-          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json merged -q .merged)
+          # `--json merged` is not a valid field for `gh pr view` (gh lists mergedAt/mergedBy/state
+          # but no bare `merged`), and under `set -e` that aborts this step on every run. Use state.
+          MERGED=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json state -q '.state == "MERGED"')
           LABELS=$(gh pr view "$PR_NUMBER" --repo "$REPO" --json labels -q '.labels[].name')
 
           echo "PR #$PR_NUMBER merged=$MERGED"
@@ -103,7 +105,7 @@ jobs:
       # (that comes from the API) and never history. Sparse + shallow keeps this job seconds long
       # on a repository this size.
       - name: Checkout scripts and prompt
-        uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 1
           sparse-checkout: |
@@ -146,7 +148,7 @@ jobs:
 
       - name: Discover related issues
         id: discover
-        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea # v7.0.1
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           PR_NUMBER: ${{ needs.preflight.outputs.pr_number }}
           PR_BRANCH: ${{ steps.meta.outputs.branch }}
@@ -284,11 +286,17 @@ jobs:
     name: Generate and post the plan
     needs: [preflight, prep]
     if: needs.prep.outputs.has_work == 'true'
+    # Must match what the nested executor requests, not what this job appears to need.
+    # claude-orchestrator delegates to claude-executor, which requests contents: write and
+    # pull-requests: write; GitHub only allows permissions to NARROW down a reusable-workflow
+    # chain, so granting less here makes the nested call illegal and the whole workflow file
+    # invalid — it fails at startup before any job runs, with no logs. Same set as the sibling
+    # ai_claude-rollback-safety.yml, which calls the same orchestrator.
     permissions:
-      contents: read
+      contents: write
       id-token: write
       issues: write
-      pull-requests: read
+      pull-requests: write
     uses: dotCMS/ai-workflows/.github/workflows/claude-orchestrator.yml@v3
     with:
       model_id: ${{ vars.BEDROCK_MODEL_ID }}
