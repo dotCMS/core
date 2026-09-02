@@ -26,9 +26,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESSiteSearchAPITest.class,
         com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
-        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class,
         com.dotcms.contenttype.test.ContentTypeAPIImplTest.class,
         com.dotcms.contenttype.test.ContentTypeBuilderTest.class,
         com.dotcms.contenttype.test.ContentTypeFactoryImplTest.class,
@@ -101,7 +98,10 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.content.elasticsearch.business.ESContentFactoryImplTest.class,
         com.dotcms.graphql.datafetcher.page.ContentMapDataFetcherTest.class,
         com.dotcms.graphql.datafetcher.RelationshipFieldDataFetcherTest.class,
-        com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class
+        com.dotcms.rest.StoryBlockMarkdownPopulatorTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletDestroyIndexRemovalTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexPartialFailurePhaseTest.class,
+        com.dotcms.content.elasticsearch.business.ContentletIndexProviderSkipTest.class
 })
 
 public class MainSuite1b {

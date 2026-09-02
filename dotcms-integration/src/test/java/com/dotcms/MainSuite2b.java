@@ -272,7 +272,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.common.reindex.ReindexThreadTest.class,
         com.dotcms.content.elasticsearch.business.ContentletIndexAPIImplMappingTimeoutIT.class,
         com.dotmarketing.common.reindex.ReindexAPITest.class,
-        com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
         CleanUpFieldReferencesJobTest.class,
         EMAWebInterceptorTest.class,
 
@@ -572,6 +571,7 @@ import org.junit.runners.Suite.SuiteClasses;
         FileAssetBaseTypeToContentTypeStrategyImplTest.class,
         RoleResourceCountsIntegrationTest.class,
         RoleResourceUsersIntegrationTest.class,
+        com.dotmarketing.common.reindex.ReindexDeleteJournalTest.class,
 })
 
 public class MainSuite2b {
