@@ -97,7 +97,18 @@ export const getSuggestedWinner = (
 };
 
 /**
- * Generate the data to use in the Bayesian chart
+ * The posterior curve each variant is drawn from, sampled here rather than fetched.
+ *
+ * The backend can supply it — `BayesianResult.distributionPdfs` — but only behind
+ * `INCLUDE_BETA_DISTRIBUTION_SAMPLES`, which is off by default, and it answers
+ * `BETA_DISTRIBUTION_SAMPLE_SIZE` points *per variant*, a thousand of them out of the box. The
+ * results endpoint is `@NoCache`, so turning it on would put those points on the wire on every
+ * read of the screen. Sampling a Beta locally is cheap by comparison, so the trade is deliberate:
+ * compute on the client, keep the payload small.
+ *
+ * The issue's scope note asks for the opposite ("no client-side Beta-PDF math"). It was written
+ * before the cost of the flag was weighed; this is the decision that replaced it.
+ *
  * @param results
  */
 export const getBayesianDatasets = (
