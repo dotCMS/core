@@ -24,10 +24,14 @@ import { FeaturedFlags } from '@dotcms/dotcms-models';
  * the current pre-change behavior. The guard belongs at this call site rather than inside
  * {@link DotPropertiesService}, whose error behavior every other flag consumer already depends on.
  *
- * Must be called in an injection context.
+ * Call it with no argument inside an injection context, or pass an already-injected
+ * {@link DotPropertiesService} to read it from a method — which is what the toolbar does, so the
+ * value is fetched at the gesture rather than fixed for the component's lifetime.
  */
-export function readExperimentsPortletSwitch(): Observable<boolean> {
-    return inject(DotPropertiesService)
+export function readExperimentsPortletSwitch(
+    propertiesService: DotPropertiesService = inject(DotPropertiesService)
+): Observable<boolean> {
+    return propertiesService
         .getFreshFeatureFlag(FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET)
         .pipe(catchError(() => of(false)));
 }

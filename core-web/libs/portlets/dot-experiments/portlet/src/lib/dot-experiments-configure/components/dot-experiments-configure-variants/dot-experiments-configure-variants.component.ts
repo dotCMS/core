@@ -2,9 +2,10 @@ import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { FieldTree, FormField } from '@angular/forms/signals';
 
-import { ConfirmationService, MenuItem } from 'primeng/api';
+import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { BlockUIModule } from 'primeng/blockui';
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -27,6 +28,7 @@ import {
     Variant,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsVariantNameInplaceComponent } from './dot-experiments-variant-name-inplace.component';
@@ -48,6 +50,7 @@ import {
     splitWeightsEvenly,
     totalWeight
 } from '../../../util/dot-experiments-configure.util';
+import { buildVariantEditorLink } from '../../../util/dot-experiments-uve-link.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogData,
@@ -90,10 +93,14 @@ const CONTROL_ROW_BEFORE_CREATION: VariantRowViewModel = {
  * `CONTROL_ROW_BEFORE_CREATION` — the Original row the POST is about to create — and freezes every
  * action that would need a server entity behind it.
  *
- * Two things are deliberately *not* live here. The `[data-error]` markers only appear once
- * Start/Schedule has been pressed (AC28), which is what `validationErrors` records; and the
- * Edit Content / Preview button renders disabled, because the UVE round-trip is out of scope
- * (AC-Var-Edit).
+ * The `[data-error]` markers only appear once Start/Schedule has been pressed (AC28), which is
+ * what `validationErrors` records.
+ *
+ * Edit Content opens the variant in the Universal Visual Editor (#37005). The destination is built
+ * from the store's page data rather than the address bar, and the action is refused with a reason
+ * when that data cannot produce a complete one — see {@link onEditContent}. The card deliberately
+ * says nothing about whether a variant's content *has* been edited, and must not start: there is no
+ * such signal on either side of the wire and FR-007a forbids inventing one.
  */
 @Component({
     selector: 'dot-experiments-configure-variants',
@@ -270,6 +277,8 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly #dialogService = inject(DialogService);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #router = inject(Router);
+    readonly #messageService = inject(MessageService);
 
     constructor() {
         this.#resplitWeightsAfterAdd();
@@ -353,6 +362,45 @@ export class DotExperimentsConfigureVariantsComponent {
             });
     }
 
+    /**
+     * Opens a variant in the Universal Visual Editor — the outbound leg of the round-trip (#37005).
+     *
+     * The destination comes from the store's own page data, never from the address bar (FR-003):
+     * this screen lives at `/experiments/:id/configuration`, where the `url` and `language_id` the
+     * legacy card relied on `queryParamsHandling: 'merge'` to supply simply are not present.
+     *
+     * When the page data cannot produce a complete destination the builder returns `null` and the
+     * action is refused with a reason (FR-004). That refusal matters more than it looks:
+     * `editEmaGuard` *substitutes* defaults for missing params rather than rejecting, so a
+     * partially-formed link would not fail — it would open the site root, or the wrong language,
+     * with nothing reported.
+     *
+     * No `queryParamsHandling`: the portlet's own URL carries `filter`/`orderby`/`pageAsset`, none
+     * of which UVE wants.
+     */
+    onEditContent(row: VariantRowViewModel): void {
+        const link = buildVariantEditorLink({
+            page: this.store.selectedPage(),
+            variantId: row.id,
+            experimentId: this.store.experiment()?.id ?? '',
+            mode: UVE_MODE.EDIT
+        });
+
+        if (!link) {
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('error'),
+                detail: this.#dotMessageService.get(
+                    'experiments.configure.variants.edit-content.unavailable'
+                )
+            });
+
+            return;
+        }
+
+        this.#router.navigate(link.commands, { queryParams: link.queryParams });
+    }
+
     /** Deleting is irreversible, so it goes through the shell's confirm dialog first. */
     /**
      * Rebuilds the kebab for the row about to open it.
@@ -366,7 +414,8 @@ export class DotExperimentsConfigureVariantsComponent {
                 id: 'variant-preview',
                 label: this.#dotMessageService.get('experiments.configure.variants.action.preview'),
                 icon: 'visibility',
-                // Previewing a variant is a UVE round-trip, the same one Edit Content waits on.
+                // TODO(#37005 US4): wire to onEditContent with PREVIEW once the read-only
+                // rules land. Edit Content on the row already opens the editor.
                 disabled: true
             },
             {

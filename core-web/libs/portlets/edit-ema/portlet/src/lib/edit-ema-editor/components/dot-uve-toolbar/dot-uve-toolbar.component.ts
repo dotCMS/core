@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,10 +21,21 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
-import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotDeviceListItem, DotExperimentStatus, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotDevicesService,
+    DotMessageService,
+    DotPersonalizeService,
+    DotPropertiesService
+} from '@dotcms/data-access';
+import {
+    DotDeviceListItem,
+    DotExperimentStatus,
+    DotLanguage,
+    EXPERIMENT_RETURN_PARAM,
+    EXPERIMENT_RETURN_PORTLET
+} from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -46,6 +57,7 @@ import {
     convertUTCToLocalTime,
     createFavoritePagesURL
 } from '../../../utils';
+import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -88,6 +100,9 @@ export class DotUveToolbarComponent {
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
     readonly #router = inject(Router);
+    readonly #activatedRoute = inject(ActivatedRoute);
+
+    readonly #propertiesService = inject(DotPropertiesService);
 
     // Expose enum for template usage
     readonly UVE_MODE = UVE_MODE;
@@ -262,24 +277,73 @@ export class DotUveToolbarComponent {
         // Handle variant action - navigate to experiment configuration
         const currentExperiment = this.#store.pageExperiment();
 
-        if (currentExperiment) {
-            this.#router.navigate(
-                [
-                    '/edit-page/experiments/',
-                    currentExperiment.pageId,
-                    currentExperiment.id,
-                    'configuration'
-                ],
-                {
-                    queryParams: {
-                        mode: null,
-                        variantName: null,
-                        experimentId: null
-                    },
-                    queryParamsHandling: 'merge'
-                }
-            );
+        if (!currentExperiment) {
+            return;
         }
+
+        // Which configuration screen opened this variant (#37005). Read from the route rather than
+        // from `pageParams()`: `DotPageAssetParams` is a page-asset shape that does not declare the
+        // marker, which survives `#getPageParams()` only through its `as` cast.
+        const cameFromPortlet =
+            this.#activatedRoute.snapshot.queryParams[EXPERIMENT_RETURN_PARAM] ===
+            EXPERIMENT_RETURN_PORTLET;
+
+        // Cleared either way, so no variant, experiment or mode survives the return (FR-006).
+        const clearedParams = {
+            mode: null,
+            variantName: null,
+            experimentId: null
+        };
+
+        /**
+         * The destination answers "where did this round-trip start?", falling back to the
+         * entry-point switch only when the URL carries no answer — a pasted or bookmarked variant
+         * link.
+         *
+         * Branching on the switch alone would make FR-018 and FR-005/FR-027 mutually exclusive on
+         * a supported path: with the switch off an editor can still reach the portlet from the main
+         * navigation (FR-026) and still open a variant (FR-027), and a switch-only branch would
+         * then return them to a legacy screen they never came from.
+         */
+        if (cameFromPortlet) {
+            this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
+                // No `queryParamsHandling`: `url`, `language_id` and the persona key are UVE's, and
+                // the list's `parseViewState` does not recognise them — they would sit in its
+                // address indefinitely.
+                queryParams: { ...clearedParams, [EXPERIMENT_RETURN_PARAM]: null }
+            });
+
+            return;
+        }
+
+        // No origin to honour — a pasted or bookmarked variant link. The switch decides, read now
+        // rather than at construction so an operator's flip lands on this gesture (SC-002).
+        readExperimentsPortletSwitch(this.#propertiesService)
+            .pipe(take(1))
+            .subscribe((portletEntryPointEnabled) => {
+                if (portletEntryPointEnabled) {
+                    this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
+                        queryParams: { ...clearedParams, [EXPERIMENT_RETURN_PARAM]: null }
+                    });
+
+                    return;
+                }
+
+                // The legacy destination, untouched — which is what makes FR-018's "as before"
+                // true by construction rather than by re-derivation.
+                this.#router.navigate(
+                    [
+                        '/edit-page/experiments/',
+                        currentExperiment.pageId,
+                        currentExperiment.id,
+                        'configuration'
+                    ],
+                    {
+                        queryParams: clearedParams,
+                        queryParamsHandling: 'merge'
+                    }
+                );
+            });
     }
 
     /**

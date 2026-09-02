@@ -123,32 +123,25 @@
 
                     <td>
                         <div class="flex items-center justify-end gap-1">
-                            <!-- Editing content is a UVE round-trip, which this screen does not do yet. -->
-                            <div
-                                [pTooltip]="
-                                    'experiments.configure.variants.edit-content.unavailable' | dm
+                            <p-button
+                                [outlined]="true"
+                                size="small"
+                                severity="secondary"
+                                (onClick)="onEditContent(row)"
+                                [disabled]="$isBeforeCreation()"
+                                [label]="
+                                    (row.isControl
+                                        ? 'experiments.configure.variants.action.preview'
+                                        : 'experiments.configure.variants.action.edit'
+                                    ) | dm
                                 "
-                                tooltipPosition="bottom"
-                                data-testid="variant-edit-content-tooltip">
-                                <p-button
-                                    [outlined]="true"
-                                    size="small"
-                                    severity="secondary"
-                                    [disabled]="true"
-                                    [label]="
-                                        (row.isControl
-                                            ? 'experiments.configure.variants.action.preview'
-                                            : 'experiments.configure.variants.action.edit'
-                                        ) | dm
-                                    "
-                                    data-testid="variant-edit-content-btn">
-                                    <span
-                                        class="material-symbols-rounded text-lg! leading-none!"
-                                        aria-hidden="true">
-                                        {{ row.isControl ? 'visibility' : 'edit' }}
-                                    </span>
-                                </p-button>
-                            </div>
+                                data-testid="variant-edit-content-btn">
+                                <span
+                                    class="material-symbols-rounded text-lg! leading-none!"
+                                    aria-hidden="true">
+                                    {{ row.isControl ? 'visibility' : 'edit' }}
+                                </span>
+                            </p-button>
 
                             <!-- A fixed slot, occupied or not: the control has no second action —
                                  it is never deleted, and Preview is already its primary one — but
