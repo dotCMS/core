@@ -195,7 +195,20 @@ export class DotExperimentsConfigureVariantsComponent {
 
     /** Adding needs an experiment id to add the variant to, so it waits for the creation POST. */
     readonly $isAddDisabled = computed<boolean>(
-        () => this.$isAtVariantCap() || this.$isBeforeCreation()
+        () => this.$isDisabled() || this.$isAtVariantCap() || this.$isBeforeCreation()
+    );
+
+    /**
+     * Why Add is closed, or `null` when it is open.
+     *
+     * The button is disabled rather than removed: a control that vanishes leaves the reader with
+     * an absence and nowhere to read the reason, and the reason lives on the button itself. The
+     * lock comes first — it freezes the whole card, so the cap is beside the point while it holds.
+     */
+    readonly $addDisabledTooltipKey = computed<string>(
+        () =>
+            this.store.$disabledTooltipKey() ??
+            (this.$isAtVariantCap() ? 'experiments.configure.variants.cap-reached' : '')
     );
 
     /** Rebuilt by `onRowMenuToggle` for whichever row is opening the kebab. */

@@ -232,9 +232,6 @@
             </div>
 
             <div class="flex flex-none items-center gap-2">
-                <!-- Stays on screen while the card is read-only, disabled, the way it did when it
-                     lived in the total row: it explains what the numbers are, not just how to
-                     change them. Add is the one that goes, since there is nothing to add to. -->
                 <p-button
                     [text]="true"
                     size="small"
@@ -243,18 +240,23 @@
                     [label]="'experiments.configure.variants.split-evenly' | dm"
                     data-testid="variants-split-evenly-btn" />
 
-                @if (!$isDisabled()) {
+                <!-- The tooltip hangs off the wrapper, not the button: a disabled button emits no
+                     pointer events, so a tooltip bound to it would never open — and closed is
+                     exactly when the reason needs reading. -->
+                <div
+                    class="inline-block"
+                    [pTooltip]="$addDisabledTooltipKey() | dm"
+                    [tooltipDisabled]="!$addDisabledTooltipKey()"
+                    data-testid="variants-add-tooltip"
+                    tooltipPosition="top">
                     <p-button
                         [outlined]="true"
                         size="small"
                         [disabled]="$isAddDisabled()"
                         (onClick)="onAddVariant()"
-                        [pTooltip]="'experiments.configure.variants.cap-reached' | dm"
-                        [tooltipDisabled]="!$isAtVariantCap()"
-                        tooltipPosition="top"
                         [label]="'experiments.configure.variants.add' | dm"
                         data-testid="variants-add-btn" />
-                }
+                </div>
             </div>
         </div>
 

@@ -960,11 +960,21 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             expect(proportionType()).toBe(TrafficProportionTypes.SPLIT_EVENLY);
         });
 
-        it('should not offer the Add control while the card is disabled', () => {
+        it('should keep Add on screen while the card is disabled, and say why', () => {
+            // Removing it would leave an absence with nowhere to read the reason, which is what
+            // the legacy screen avoided by disabling rather than hiding.
             storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
             render();
 
-            expect(spectator.query(byTestId('variants-add-btn'))).toBeNull();
+            expect(spectator.query(byTestId('variants-add-btn'))).not.toBeNull();
+            expect(isButtonDisabled('variants-add-btn')).toBe(true);
+
+            // The tooltip hangs off the wrapper: a disabled button emits no pointer events, so one
+            // bound to the button itself could never open.
+            const tooltip = tooltipOf('variants-add-tooltip');
+
+            expect(tooltip.content).toBe(CANT_EDIT_COPY);
+            expect(tooltip.disabled).toBe(false);
         });
 
         it('should disable Add and say why once the cap is reached', () => {
@@ -973,7 +983,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
             expect(isButtonDisabled('variants-add-btn')).toBe(true);
 
-            const tooltip = tooltipOf('variants-add-btn');
+            const tooltip = tooltipOf('variants-add-tooltip');
 
             expect(tooltip.content).toBe(CAP_REACHED_COPY);
             expect(tooltip.disabled).toBe(false);

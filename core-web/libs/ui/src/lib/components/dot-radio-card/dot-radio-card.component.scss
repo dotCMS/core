@@ -6,9 +6,26 @@
  * unlayered and scoped, so `p-card[_ngcontent-x]` outranks PrimeNG's own `.p-card`, while a utility
  * sits in `@layer utilities` and loses to it no matter the specificity.
  */
+/**
+ * The card fills its grid cell rather than sizing to its own copy, so a row of cards is even
+ * whatever length each description happens to be. The caller decides how tall a row is — with
+ * `auto-rows-fr` on the grid, that is the tallest card in the set — and this chain passes that
+ * height down through the label to the card PrimeNG renders.
+ */
+:host {
+    display: block;
+    height: 100%;
+}
+
 .radio-card {
     display: block;
+    height: 100%;
     cursor: pointer;
+}
+
+p-card,
+p-card .p-card-body {
+    height: 100%;
 }
 
 p-card {
