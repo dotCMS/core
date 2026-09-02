@@ -1,4 +1,10 @@
-import { resolvePRNumbers, findPreviousTag, extractLinkedIssues, parseRepo } from './github';
+import {
+  resolvePRNumbers,
+  findPreviousTag,
+  extractLinkedIssues,
+  parseRepo,
+  onThrottle,
+} from './github';
 import { CommitInfo } from './types';
 import type { Octokit } from '@octokit/rest';
 
@@ -56,6 +62,49 @@ describe('resolvePRNumbers', () => {
     expect(prNumbers).toEqual([2]);
   });
 
+  // The per-commit catch is the "one bad sha can't abort the whole range" guarantee.
+  // It degrades silently, so this is the only thing that fails if it stops working.
+  it('does not abort the batch when one commit fails to resolve', async () => {
+    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+
+    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
+      good: [{ number: 42, merged_at: '2026-08-25T00:00:00Z' }],
+    };
+    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
+      data: bySha[commit_sha] ?? [],
+    }));
+    listPRs.mockImplementationOnce(() => Promise.reject(new Error('boom')));
+    const octokit = {
+      repos: { listPullRequestsAssociatedWithCommit: listPRs },
+    } as unknown as Octokit;
+
+    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [
+      { sha: 'bad' },
+      { sha: 'good' },
+    ]);
+
+    expect(prNumbers).toEqual([42]);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad'));
+
+    stderrSpy.mockRestore();
+  });
+});
+
+// Bounds the throttling plugin's retries so an exhausted quota can't park a
+// release job indefinitely.
+describe('onThrottle', () => {
+  it('retries up to the cap, then gives up', () => {
+    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    const handler = onThrottle('Secondary');
+    const opts = { method: 'GET', url: '/repos/dotCMS/core/commits/abc/pulls' };
+
+    expect(handler(1, opts, null, 0)).toBe(true);
+    expect(handler(1, opts, null, 2)).toBe(true);
+    expect(handler(1, opts, null, 3)).toBe(false);
+    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Secondary rate limit'));
+
+    stderrSpy.mockRestore();
+  });
 });
 
 describe('findPreviousTag', () => {

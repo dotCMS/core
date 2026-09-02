@@ -3,11 +3,36 @@
  */
 
 import { Octokit } from '@octokit/rest';
+import { throttling } from '@octokit/plugin-throttling';
 import { CommitInfo, PRDetails } from './types';
 
 const STANDARD_RELEASE_PATTERN = /^v\d{2}\.\d{2}\.\d{2}-\d{1,2}$/;
 
-/** Create an authenticated Octokit instance. */
+/**
+ * resolvePRNumbers is one request per commit — hundreds per release under merge
+ * commits. Inside the 5000/hr primary budget, but enough to trip the per-minute
+ * secondary limit, where a 403 would degrade into a silently dropped PR.
+ */
+const ThrottledOctokit = Octokit.plugin(throttling);
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+
+export function onThrottle(kind: string) {
+  return (
+    retryAfter: number,
+    options: { method?: string; url?: string },
+    _octokit: unknown,
+    retryCount: number
+  ): boolean => {
+    process.stderr.write(
+      `${kind} rate limit on ${options.method} ${options.url}; ` +
+        `retry ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES} in ${retryAfter}s\n`
+    );
+    return retryCount < MAX_RATE_LIMIT_RETRIES;
+  };
+}
+
+/** Create an authenticated, rate-limit-aware Octokit instance. */
 export function createOctokit(): Octokit {
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
   if (!token) {
@@ -15,7 +40,13 @@ export function createOctokit(): Octokit {
       'GitHub token required. Set GITHUB_TOKEN or GH_TOKEN environment variable.'
     );
   }
-  return new Octokit({ auth: token });
+  return new ThrottledOctokit({
+    auth: token,
+    throttle: {
+      onRateLimit: onThrottle('Primary'),
+      onSecondaryRateLimit: onThrottle('Secondary'),
+    },
+  });
 }
 
 /** Parse "owner/repo" into { owner, repo }. */
