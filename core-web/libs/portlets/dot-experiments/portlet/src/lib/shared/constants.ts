@@ -93,11 +93,41 @@ export const SKELETON_COLUMNS = Array.from({ length: 8 }, (_, index) => index);
 /** Placeholder rendered in the Goal column when no goal is configured. */
 export const NO_GOAL_PLACEHOLDER = '—';
 
+/**
+ * Style of the list table.
+ *
+ * `table-layout: fixed` is what makes the per-column widths in the header authoritative, so every
+ * cell truncates instead of stretching its column. On its own that leaves the one elastic column —
+ * Name, the only `w-full` — absorbing every pixel the others do not need, and shrinking towards
+ * zero once the viewport is narrow enough. The `min-width` is the floor that stops it: below that
+ * the table stops shrinking and the scroll container takes over horizontally.
+ *
+ * The value is the sum of the fixed columns (14 + 11 + 7 + 15 + 8 + 8 + 4 = 67rem) plus the floor
+ * granted to Name (14rem). Keep it in step with the header widths — a column added or resized
+ * there without updating this number silently eats into Name's floor again.
+ */
+export const LIST_TABLE_STYLE: Record<string, string> = {
+    'table-layout': 'fixed',
+    'min-width': '81rem'
+};
+
 /** Height of the status filter's option list before it scrolls. */
 export const LISTBOX_SCROLL_HEIGHT = '320px';
 
 /** Idle time before a search term is applied, in ms. */
 export const SEARCH_DEBOUNCE_MS = 300;
+
+/** Mount point of the portlet. Absolute, since the list is always at the root of it. */
+export const EXPERIMENTS_URL = '/experiments';
+
+/** Segment the Configure screen is reached at while the experiment does not exist yet. */
+export const NEW_EXPERIMENT_SEGMENT = 'new';
+
+/** Trailing segment of the Configure URL of an experiment that already exists. */
+export const CONFIGURATION_SEGMENT = 'configuration';
+
+/** Hides a `p-panel`'s footer band while its footer slot has nothing to show (see the theme). */
+export const DOT_PANEL_NO_FOOTER = 'dot-panel-no-footer';
 
 /**
  * Multiplier applied to the page-lookup limit.
@@ -112,3 +142,140 @@ export const SEARCH_DEBOUNCE_MS = 300;
  * count rather than tuned; the shortfall check in the store is what catches it being wrong.
  */
 export const PAGE_LOOKUP_LANGUAGE_HEADROOM = 25;
+
+/**
+ * Idle time before the accumulated field changes are flushed as a PATCH, in ms.
+ *
+ * One timer for the whole screen: every edit inside the window is merged into one multi-key body,
+ * whichever card it came from, and reaches the server as a single call.
+ */
+export const AUTOSAVE_DEBOUNCE_MS = 500;
+
+/**
+ * Shortest time the saving bar stays on screen once it has appeared, in ms.
+ *
+ * A PATCH against a local backend can answer in a handful of milliseconds, and a bar that appears
+ * and vanishes inside a frame or two reads as a glitch rather than as feedback — the eye catches
+ * that something blue flickered without ever resolving it into "saved". Holding it for a beat makes
+ * the affordance legible; a save still running past the window keeps it up for as long as it takes.
+ */
+export const MIN_PROGRESS_BAR_VISIBLE_MS = 400;
+
+/** Read-only banner copy while an experiment is running, which is not the generic one (AC35). */
+export const LOCKED_BANNER_KEY_RUNNING = 'experiments.configure.locked.running';
+
+/** Read-only banner copy for every other non-DRAFT status. */
+export const LOCKED_BANNER_KEY_READ_ONLY = 'experiments.configure.locked.read-only';
+
+/** Page card's inline error when `?pageId=`/`?url=` named a page that is not there. */
+export const PAGE_PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
+
+/**
+ * Page card's inline error when the lookup itself failed. A rejected request says nothing about
+ * whether the page exists, so it must not read as "not found" — the error behind it is reported
+ * by `DotHttpErrorManagerService` like every other failed call on this screen.
+ */
+export const PAGE_PREFILL_LOOKUP_ERROR_KEY = 'experiments.configure.page.prefill.lookup-failed';
+
+/** Fallback header the old screen supplies when the backend rejects a start with no header of its own. */
+export const START_ERROR_HEADER_KEY =
+    'dot.common.http.error.400.experiment.run-scheduling-error.header';
+
+/**
+ * Share of the page's traffic the experiment takes when nothing has been chosen yet.
+ *
+ * Also what an experiment with no allocation of its own is diffed against, so a form that was never
+ * touched reports no change.
+ */
+export const DEFAULT_TRAFFIC_ALLOCATION = 100;
+
+/** A page cannot be excluded from its own experiment entirely, so the slider starts at 1%. */
+export const MIN_TRAFFIC_ALLOCATION = 1;
+
+export const MAX_TRAFFIC_ALLOCATION = 100;
+
+/** Total the variant weights must add up to, and the cap on any single one. */
+export const TOTAL_WEIGHT = 100;
+
+/** Weights are stored as percentages with two decimals, so compare at that resolution. */
+export const WEIGHT_PRECISION = 100;
+
+/**
+ * The variant cap and the condition option lists come from `@dotcms/dotcms-models` unchanged, and
+ * are re-exported here so the Configure screen has one place to look. Redeclaring them would let
+ * the new screen offer operators the backend does not validate — the lists are exactly what the old
+ * screen offers: CONTAINS/EQUALS for REACH_PAGE, plus EXISTS for URL_PARAMETER.
+ */
+export {
+    GoalsConditionsOperatorsListByType,
+    GoalsConditionsParametersListByType,
+    MAX_VARIANTS_ALLOWED
+} from '@dotcms/dotcms-models';
+
+/**
+ * Goal types the selector offers, in the order the old screen renders them. `CLICK_ON_ELEMENT`
+ * exists in `GOAL_TYPES` but has never been offered.
+ */
+export const CONFIGURE_GOAL_TYPES: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.BOUNCE_RATE,
+    GOAL_TYPES.EXIT_RATE,
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/**
+ * Goal types with a working condition sub-panel. The rest are offered but have no server-side
+ * conditions, so they render a "coming soon" placeholder instead — same as the old screen.
+ */
+export const GOAL_TYPES_WITH_CONDITIONS: readonly GOAL_TYPES[] = [
+    GOAL_TYPES.REACH_PAGE,
+    GOAL_TYPES.URL_PARAMETER
+];
+
+/**
+ * How the AssetPicker browses when it is opened to choose the page an experiment runs on.
+ *
+ * Only what the picker's browse options can say: what the list may *contain* is settled by
+ * `allowedBaseTypes`, which narrows it to pages. Folders and menu links are turned off because an
+ * experiment runs on a page, and neither of those can be returned as one.
+ *
+ * `showWorking` keeps unpublished pages in: an experiment can be configured against a draft, and the
+ * old screen listed them too.
+ */
+export const SELECT_PAGE_BROWSER_PARAMS = {
+    showFolders: false,
+    showLinks: false,
+    showWorking: true,
+    showArchived: false,
+    sortByDesc: true
+} as const;
+
+/** Narrower than the 700px form default: the dialog holds a single optional name field. */
+export const ADD_VARIANT_DIALOG_WIDTH = '440px';
+
+/** The standard confirmation width (see `libs/portlets/CLAUDE.md`), not the 700px form one. */
+export const CHANGE_PAGE_DIALOG_WIDTH = '500px';
+
+/**
+ * Row colours of the Variants card, in the order the rows are drawn.
+ *
+ * Shared with the Change Page dialog, which lists the variants a page change would delete: the two
+ * are looking at the same list, so a variant keeps the same colour in both. The Results screen has
+ * its own palette.
+ */
+export const VARIANT_COLORS: readonly string[] = [
+    '#0ea5e9',
+    '#a855f7',
+    '#fb923c',
+    '#22c55e',
+    '#f43f5e'
+];
+
+/**
+ * Kind of the cross-field error the weights raise when they do not add up to 100.
+ *
+ * Deliberately the same string as the `weightsTotal` validation rule the store publishes on a Start
+ * press: the two say the same thing at two different moments — the form's is live (AC25), the
+ * store's is what turns it into a scroll target (AC28) — and the card reads both.
+ */
+export const WEIGHTS_TOTAL_ERROR_KIND = 'weightsTotal';

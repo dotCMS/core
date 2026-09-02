@@ -80,6 +80,32 @@ export const CustomLaraPreset = definePreset(Lara, {
                 padding: '0.5rem'
             }
         },
+        blockui: {
+            // A blocked panel is greyed out, not dimmed: the mask is white, so what is behind it
+            // fades toward the page rather than darkening.
+            //
+            // Through `--px-mask-background` rather than `background`: the base rule reads
+            // `var(--px-mask-background, dt('mask.background'))`, so this is the hook meant for
+            // exactly this — no specificity or layer-order fight with `.p-overlay-mask`, and the
+            // shared token stays where it is, which every dialog backdrop also reads.
+            css: `
+                .p-blockui-mask {
+                    --px-mask-background: rgb(255 255 255 / 0.65);
+                }
+            `
+        },
+        panel: {
+            // A panel whose footer slot is empty still draws the band, because PrimeNG renders it
+            // on the template existing rather than on it producing anything. `dot-panel-no-footer`
+            // is for a card that offers a footer only some of the time: the template stays put —
+            // Panel resolves it once, through a plain `@ContentChild`, and is OnPush — and this
+            // takes the empty band out of the layout.
+            css: `
+                .dot-panel-no-footer .p-panel-footer {
+                    display: none;
+                }
+            `
+        },
         card: {
             root: {
                 shadow: 'none'

@@ -1,5 +1,6 @@
 import { lastValueFrom } from 'rxjs';
 
+import { HttpErrorResponse } from '@angular/common/http';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -16,7 +17,10 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { take } from 'rxjs/operators';
 
 import {
+    DotAlertConfirmService,
     DotContentletService,
+    DotFolderService,
+    DotHttpErrorManagerService,
     DotMessageService,
     DotRenderMode,
     DotWizardService,
@@ -24,26 +28,54 @@ import {
     DotWorkflowEventHandlerService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
 import {
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
     DotCMSWorkflowAction,
+    DotContentDriveActionableFolder,
     DotContentletCanLock,
     DotProcessedWorkflowPayload,
     DotWorkflowPayload,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
-import { DotPermissionsIframeDialogComponent, DotPermissionsIframeDialogData } from '@dotcms/ui';
+import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui';
 
 import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
-    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+    SUCCESS_MESSAGE_LIFE,
+    MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+    ROOT_PATH
 } from '../../shared/constants';
 import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { isFolder } from '../../utils/functions';
+
+/**
+ * Caption treatment for a context-menu group label.
+ *
+ * `p-menu-submenu-label` is PrimeNG's own class for exactly this, so the caption picks up the
+ * theme's `menu.submenu.label.*` tokens rather than a hand-tuned approximation of them. It lives on
+ * `p-menu` rather than `p-contextMenu`, which has no group-label class at all — the toolbar's
+ * `p-menu` is what loads the rule on this page.
+ *
+ * The three utilities that follow it each cancel one thing the surrounding context-menu styles would
+ * otherwise impose:
+ * - `p-0!` drops the label's own padding, so the caption lines up on `.p-contextmenu-item-link`'s
+ *   padding and sits flush with the items it names instead of being inset twice.
+ * - `pointer-events-none` stops it taking a click, which would close the menu, or a hover highlight,
+ *   which would make it look clickable. `disabled` alone does not do this: the theme overrides
+ *   `.p-disabled` to `opacity: 1` and never sets `pointer-events`.
+ * - `text-inherit` on the content wrapper lets the label's colour through; `.p-contextmenu-item-content`
+ *   sets `color` on a descendant and would otherwise win.
+ */
+/** Names the group of built-in entries, on both a folder and a contentlet. */
+const ACTIONS_LABEL_KEY = 'content-drive.context-menu.actions';
+
+const GROUP_LABEL_STYLE_CLASS =
+    'p-menu-submenu-label p-0! pointer-events-none [&_.p-contextmenu-item-content]:text-inherit';
 
 @Component({
     selector: 'dot-folder-list-context-menu',
@@ -66,6 +98,10 @@ export class DotFolderListViewContextMenuComponent {
     #dotWizardService = inject(DotWizardService);
     #dotContentletService = inject(DotContentletService);
     #dialogService = inject(DialogService);
+    #dotPushPublishDialogService = inject(DotPushPublishDialogService);
+    #dotAlertConfirmService = inject(DotAlertConfirmService);
+    #dotFolderService = inject(DotFolderService);
+    #httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /** The menu items for the context menu. */
     $items = signal<MenuItem[]>([]);
@@ -102,6 +138,22 @@ export class DotFolderListViewContextMenuComponent {
         if (status === DotContentDriveStatus.LOADING) {
             this.$memoizedMenuItems.set({});
         }
+    });
+
+    /**
+     * Drops the memo when the push publish environments lookup settles.
+     *
+     * The Push Publish item's label and `disabled` are computed when the menu is *built*, and menus
+     * are memoized per folder. The lookup is one-shot at portlet init, so if it lands after a menu
+     * was cached that folder would keep saying "(no environment)" while the Action Center, which
+     * reads the signal reactively, already shows it enabled.
+     *
+     * The signal is read before anything else so it stays a dependency of this effect.
+     */
+    readonly pushPublishEnvironmentsEffect = effect(() => {
+        this.#store.hasPushPublishEnvironments();
+
+        this.$memoizedMenuItems.set({});
     });
 
     readonly closeOnContextMenuReset = effect(() => {
@@ -161,16 +213,71 @@ export class DotFolderListViewContextMenuComponent {
                 });
             }
 
-            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT_PERMISSIONS)) {
+            const canEditPermissions = contentlet.permissions?.includes(
+                PERMISSIONS_TYPE.EDIT_PERMISSIONS
+            );
+
+            if (canEditPermissions) {
                 folderMenuItems.push({
                     label: this.#dotMessageService.get('Edit-Permissions'),
                     command: () => this.#openPermissionsDialog(contentlet.identifier)
                 });
             }
 
+            // Both push actions resolve the folder server-side and enforce PUBLISH there
+            // (`PublisherAPIImpl`), reporting a denial as a per-asset error rather than throwing.
+            // Gating here keeps the menu honest rather than offering an action that will be refused.
+            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.PUBLISH)) {
+                folderMenuItems.push(this.#buildPushPublishItem(contentlet.identifier));
+
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
+                    command: () => this.#store.setShowAddToBundle(true)
+                });
+            }
+
+            // Gated on EDIT_PERMISSIONS like the Permissions item, matching the legacy folder editor
+            // where both tabs sat behind the same check, but ordered after the push group rather than
+            // beside Permissions: it is read-only audit data, so it reads last.
+            if (canEditPermissions) {
+                folderMenuItems.push({
+                    label: this.#dotMessageService.get('content-drive.context-menu.push-history'),
+                    command: () => this.#openPushHistoryDialog(contentlet.identifier)
+                });
+            }
+
+            // Last, and gated on **both** permissions, because `FolderAPIImpl.delete` enforces both:
+            // EDIT at `:438` and EDIT_PERMISSIONS at `:456`. Gating on EDIT alone offered Delete to
+            // a contributor who would confirm the destructive dialog and only then be refused.
+            // Ordered after everything else because it is the one entry here that destroys something.
+            if (contentlet.permissions?.includes(PERMISSIONS_TYPE.EDIT) && canEditPermissions) {
+                // Separated rather than merely last, matching how the destructive workflow actions
+                // are split off on a contentlet: the separator is what stops Delete being clicked by
+                // momentum after the item above it. Never a leading separator — Delete's gate is
+                // strictly narrower than Edit Folder's, so Edit Folder is always already in the list.
+                folderMenuItems.push(
+                    { separator: true },
+                    {
+                        label: this.#dotMessageService.get(
+                            'content-drive.context-menu.delete-folder'
+                        ),
+                        command: () => this.#confirmDeleteFolder(contentlet)
+                    }
+                );
+            }
+
             if (!folderMenuItems.length) {
+                // `$items` was cleared above, so a menu still open from a previous right-click would
+                // otherwise sit there empty rather than closing.
+                this.contextMenu()?.hide();
+
                 return;
             }
+
+            // Named after the fact rather than pushed first: every entry above is conditional, so
+            // this is the only point where the group is known to have something in it. A caption
+            // over an empty group would be worse than no caption.
+            folderMenuItems.unshift(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
 
             this.$items.set(folderMenuItems);
             this.$memoizedMenuItems.set({
@@ -194,6 +301,10 @@ export class DotFolderListViewContextMenuComponent {
         const label =
             contentlet.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE ? 'page' : 'content';
 
+        // The built-in entries are a group like any other, so they get named too. Unconditional,
+        // unlike the folder branch: Edit Content is pushed immediately below with no gate.
+        actionsMenu.push(this.#buildGroupLabel(ACTIONS_LABEL_KEY));
+
         actionsMenu.push({
             label: this.#dotMessageService.get(`content-drive.context-menu.edit-${label}`),
             command: () => {
@@ -212,19 +323,10 @@ export class DotFolderListViewContextMenuComponent {
             });
         }
 
-        workflowActions
-            .filter(
-                (action) =>
-                    action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
-            )
-            .map((action) => {
-                const menuItem = {
-                    label: `${this.#dotMessageService.get(action.name)}`,
-                    command: () => this.#executeWorkflowActions(action, contentlet)
-                };
-
-                actionsMenu.push(menuItem);
-            });
+        // The push group, ordered the same way as on a folder: Push Publish then Add to Bundle.
+        // Push Publish is what the old content search offered outside its workflow dropdown, so it
+        // belongs here rather than among the workflow actions, which are scheme-driven.
+        actionsMenu.push(this.#buildPushPublishItem(contentlet.identifier));
 
         actionsMenu.push({
             label: this.#dotMessageService.get('contenttypes.content.add_to_bundle'),
@@ -233,7 +335,53 @@ export class DotFolderListViewContextMenuComponent {
             }
         });
 
+        // Workflow actions get a labelled section rather than a flyout. "Workflows" is a real
+        // dotCMS concept, so it reads as a name rather than an invented category — which matters
+        // because the actions themselves carry no groupable intent: the API exposes no actionlet
+        // class names, no category and no tag, `order` is a within-scheme sort index and `icon` is
+        // admin-authored free text. Any finer grouping would be guesswork that breaks on custom
+        // schemes.
+        //
+        // The destructive ones are split off below.
+        const selectableActions = workflowActions.filter(
+            (action) => action.name !== 'Move' || action.id !== MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
+        );
+
+        // Split on the action's actual sub-actionlets, not on its name, so a scheme's "Retire this
+        // blog" or "Purge" still lands in the destructive group. Name- and locale-independent,
+        // which a label match or a hardcoded id would not be.
+        const isDestructive = (action: DotCMSWorkflowAction) =>
+            action.hasArchiveActionlet || action.hasDeleteActionlet || action.hasDestroyActionlet;
+
+        const destructiveActions = selectableActions.filter(isDestructive);
+        const otherActions = selectableActions.filter((action) => !isDestructive(action));
+
+        const toMenuItem = (action: DotCMSWorkflowAction): MenuItem => ({
+            label: this.#dotMessageService.get(action.name),
+            command: () => this.#executeWorkflowActions(action, contentlet)
+        });
+
+        // The separator earns its place here as a boundary rather than a guard: the caption alone
+        // read as if it belonged to the item above it. `actionsMenu` is never empty at this point
+        // (Edit Content is pushed unconditionally), so this cannot open the menu.
+        if (otherActions.length) {
+            actionsMenu.push(
+                { separator: true },
+                this.#buildGroupLabel('content-drive.context-menu.workflows'),
+                ...otherActions.map(toMenuItem)
+            );
+        }
+
+        // Separated rather than merely last: these are the entries that destroy something, and the
+        // separator is what stops one being clicked by momentum after the action above it.
+        if (destructiveActions.length) {
+            actionsMenu.push({ separator: true }, ...destructiveActions.map(toMenuItem));
+        }
+
         if (!actionsMenu.length) {
+            // Same as the folder branch: close rather than leave an emptied menu on screen.
+            this.contextMenu()?.hide();
+
             return;
         }
 
@@ -385,13 +533,16 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #openPermissionsDialog(identifier: string): void {
-        this.#dialogService.open(DotPermissionsIframeDialogComponent, {
+        this.#dialogService.open(DotJspIframeDialogComponent, {
             header: this.#dotMessageService.get('Edit-Permissions'),
             width: 'min(92vw, 75rem)',
             contentStyle: { overflow: 'hidden' },
             data: {
-                url: this.#buildPermissionsUrl(identifier)
-            } satisfies DotPermissionsIframeDialogData,
+                url: this.#buildPermissionsUrl(identifier),
+                titleKey: 'Permissions',
+                emptyKey: 'dot.permissions.iframe.dialog.no-asset',
+                testIdPrefix: 'permissions'
+            } satisfies DotJspIframeDialogData,
             modal: true,
             appendTo: 'body',
             closable: true,
@@ -408,5 +559,200 @@ export class DotFolderListViewContextMenuComponent {
             popup: 'true'
         });
         return `/html/portlet/ext/folders/permissions.jsp?${params.toString()}`;
+    }
+
+    #openPushHistoryDialog(identifier: string): void {
+        this.#dialogService.open(DotJspIframeDialogComponent, {
+            header: this.#dotMessageService.get('content-drive.context-menu.push-history'),
+            width: 'min(92vw, 75rem)',
+            contentStyle: { overflow: 'hidden' },
+            data: {
+                url: this.#buildPushHistoryUrl(identifier),
+                titleKey: 'publisher_push_history',
+                emptyKey: 'dot.push-history.iframe.dialog.no-asset',
+                testIdPrefix: 'push-history'
+            } satisfies DotJspIframeDialogData,
+            modal: true,
+            appendTo: 'body',
+            closable: true,
+            closeOnEscape: true,
+            draggable: false,
+            resizable: false,
+            position: 'center'
+        });
+    }
+
+    /**
+     * The Push Publish item, shared by the folder and contentlet branches.
+     *
+     * Offered but **disabled** when no environment is reachable, rather than hidden: nothing is
+     * missing from dotCMS, something is missing from the configuration, and the fix is an
+     * administrator's. An unresolved lookup reads as disabled too, so the item never enables and
+     * then retracts.
+     *
+     * The reason sits in the **label**, not a tooltip. A disabled context menu item computes
+     * `pointer-events: none` (measured in the browser), so no hover ever reaches it and no tooltip
+     * can fire, whichever of PrimeNG's tooltip inputs it carries — and ContextMenu binds `pTooltip`
+     * from `tooltipOptions` alone, so a plain `tooltip` is ignored on top of that. A suffixed label
+     * needs neither hover nor click.
+     */
+    /**
+     * Builds a non-interactive caption that names the group of items following it.
+     *
+     * `p-contextMenu` has no submenu-header template — only `p-menu` does — so the caption is a
+     * regular item made inert two ways: `disabled` keeps it out of keyboard navigation
+     * (PrimeNG's `isValidItem` skips disabled items), and `pointer-events-none` stops it taking a
+     * click, which would otherwise close the menu, or a hover highlight, which would make it look
+     * clickable.
+     */
+    #buildGroupLabel(messageKey: string): MenuItem {
+        return {
+            label: this.#dotMessageService.get(messageKey),
+            disabled: true,
+            styleClass: GROUP_LABEL_STYLE_CLASS
+        };
+    }
+
+    #buildPushPublishItem(identifier: string): MenuItem {
+        const hasEnvironments = this.#store.hasPushPublishEnvironments();
+        const label = this.#dotMessageService.get('contenttypes.content.push_publish');
+
+        return {
+            label: hasEnvironments
+                ? label
+                : this.#dotMessageService.get(
+                      'content-drive.context-menu.push-publish.no-environment',
+                      label
+                  ),
+            disabled: !hasEnvironments,
+            command: () => this.#openPushPublishDialog(identifier)
+        };
+    }
+
+    /**
+     * Spawns the app-wide push publish dialog for a single asset.
+     *
+     * The guard is not redundant with `disabled`: PrimeNG suppresses the click, but the command is
+     * still reachable programmatically, and a push with nowhere to go fails at the servlet with a
+     * message the user cannot act on.
+     */
+    #openPushPublishDialog(identifier: string): void {
+        if (!this.#store.hasPushPublishEnvironments()) {
+            return;
+        }
+
+        this.#dotPushPublishDialogService.open({
+            assetIdentifier: identifier,
+            title: this.#dotMessageService.get('contenttypes.content.push_publish')
+        });
+    }
+
+    /**
+     * Asks before deleting, because the server delete is recursive and irreversible.
+     *
+     * The message names the folder and says its contents go with it: `FolderAPI.delete` removes the
+     * whole subtree, and a confirmation that only says "delete this folder" would understate that.
+     */
+    #confirmDeleteFolder(folder: DotContentDriveActionableFolder): void {
+        this.#dotAlertConfirmService.confirm({
+            header: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+            message: this.#dotMessageService.get(
+                'content-drive.dialog.delete-folder.message',
+                folder.name
+            ),
+            // The service defaults this to "Accept", which says nothing about what is about to
+            // happen. The reject side already reads "Cancel", so only this one needs naming.
+            footerLabel: { accept: this.#dotMessageService.get('Delete') },
+            accept: () => this.#deleteFolder(folder)
+        });
+    }
+
+    /**
+     * Deletes the folder by path, which is what the endpoint takes.
+     *
+     * Built from the browsed site's hostname rather than the folder's `hostId`: the drive search is
+     * scoped to `//<hostname><path>`, so every folder listed is on the site being browsed. Without a
+     * resolved site there is no path to send, so the call is skipped rather than posting `//undefined`.
+     */
+    #deleteFolder(folder: DotContentDriveActionableFolder): void {
+        const hostname = this.#store.currentSite()?.hostname;
+
+        if (!hostname) {
+            // The user already confirmed a destructive action, so this cannot just return: without
+            // a resolved site there is no path to delete by, and silence would read as "it worked".
+            this.#messageService.add({
+                severity: 'error',
+                summary: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+                detail: this.#dotMessageService.get('content-drive.dialog.delete-folder.no-site'),
+                life: ERROR_MESSAGE_LIFE
+            });
+
+            return;
+        }
+
+        this.#dotFolderService
+            .deleteFolder(`//${hostname}${folder.path}`)
+            .pipe(take(1))
+            .subscribe({
+                next: () => {
+                    this.#messageService.add({
+                        severity: 'success',
+                        summary: this.#dotMessageService.get(
+                            'content-drive.context-menu.delete-folder'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.dialog.delete-folder.success',
+                            folder.name
+                        ),
+                        life: SUCCESS_MESSAGE_LIFE
+                    });
+                    // The tree serves this menu too, so the deleted folder can be an ancestor of
+                    // the one being browsed — or the browsed folder itself. Reloading the current
+                    // path would then fetch a path that no longer exists, leaving an empty grid
+                    // and a breadcrumb pointing inside a deleted folder. Moving to the root is the
+                    // one destination guaranteed to still be there.
+                    if (this.#browsingInside(folder.path)) {
+                        this.#store.setPath(ROOT_PATH);
+                    } else {
+                        this.#store.reloadContentDrive();
+                    }
+
+                    // Always: the tree reloads separately from the grid, so without this it keeps
+                    // showing a folder that no longer exists until the next navigation.
+                    this.#store.loadFolders();
+                },
+                error: (error: HttpErrorResponse) => {
+                    this.#httpErrorManagerService.handle(error);
+                }
+            });
+    }
+
+    /**
+     * Whether the browsed path sits at or under `folderPath`.
+     *
+     * Compared with a trailing slash on both sides so `/blog-archive/` is not read as living inside
+     * `/blog/`; folder paths from the drive already carry one, and the root's own `undefined` path
+     * can never be inside anything.
+     */
+    #browsingInside(folderPath: string): boolean {
+        const currentPath = this.#store.path();
+
+        if (!currentPath) {
+            return false;
+        }
+
+        const target = folderPath.endsWith('/') ? folderPath : `${folderPath}/`;
+        const current = currentPath.endsWith('/') ? currentPath : `${currentPath}/`;
+
+        return current.startsWith(target);
+    }
+
+    #buildPushHistoryUrl(identifier: string): string {
+        // `popup=true` is what un-hides the body of a legacy JSP loaded outside the portal frame.
+        const params = new URLSearchParams({
+            folderIdentifier: identifier,
+            popup: 'true'
+        });
+        return `/html/portlet/ext/folders/push_history.jsp?${params.toString()}`;
     }
 }

@@ -126,9 +126,17 @@ export const buildTreeFolderNodes = ({
     };
 
     /**
-     * Checks if a folder node is a leaf
+     * Whether an on-path node has a level of children below it in this fetch.
+     *
+     * Level `i + 1` holds the children of the node matched at level `i`, so a node is a leaf only
+     * when that level does not exist or came back empty. Previously this read
+     * `folderHierarchyLevels.length >= levelIndex + 1`, which is true for *every* on-path node —
+     * so a folder was marked a leaf in the same breath as its children were attached to it. PrimeNG
+     * hides the toggler for a leaf, so the children were in the model but unreachable, and creating
+     * a folder looked like the tree had not reloaded.
      */
-    const isLeaf = (levelIndex: number) => folderHierarchyLevels.length >= levelIndex + 1;
+    const isLeaf = (levelIndex: number) =>
+        (folderHierarchyLevels[levelIndex + 1]?.length ?? 0) === 0;
 
     folderHierarchyLevels.forEach((folders, levelIndex) => {
         const parentNode = activeParents[levelIndex];

@@ -11,10 +11,16 @@ import { DialogService } from 'primeng/dynamicdialog';
 import {
     DotAiService,
     DotMessageService,
+    DotSiteService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotGeneratedAIImage, DotSite, PromptType } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
+import {
+    ASSET_PICKER_LAUNCHER,
+    AngularAssetPickerLauncher,
+    DotAssetPickerComponent
+} from '@dotcms/ui';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
 import { DotFileFieldComponent } from './dot-file-field.component';
@@ -59,6 +65,11 @@ describe('DotFileFieldComponent', () => {
             FileFieldStore,
             mockProvider(DotFileFieldUploadService),
             mockProvider(DialogService),
+            mockProvider(DotSiteService, { getCurrentSite: jest.fn(() => of(SITE_MOCK)) }),
+            // Angular Edit Content host: the launcher is what makes the new AssetPicker the
+            // picker here. The legacy-host branch lives in
+            // `dot-file-field.component.legacy-picker.spec.ts`.
+            { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher },
             LegacyDialogImageEditorLauncher,
             LegacyDojoImageEditorLauncher,
             mockProvider(DotWorkflowActionsFireService),
@@ -390,6 +401,40 @@ describe('DotFileFieldComponent', () => {
             } as never);
             spectator.detectChanges();
             expect(spectator.component.$canEditImage()).toBe(false);
+        });
+    });
+
+    describe('select existing file (Angular host)', () => {
+        /** Stubs `DialogService.open` so the picker can be opened and inspected. */
+        const stubDialog = () => {
+            const dialogService = spectator.inject(DialogService);
+            (dialogService.open as jest.Mock).mockReturnValue({
+                onClose: of(null),
+                close: jest.fn()
+            });
+
+            return dialogService;
+        };
+
+        it('should open the new AssetPicker', () => {
+            const dialogService = stubDialog();
+
+            spectator.component.showSelectExistingFileDialog();
+
+            expect((dialogService.open as jest.Mock).mock.calls[0][0]).toBe(
+                DotAssetPickerComponent
+            );
+        });
+
+        it('should scope the picker to the field it was opened from', () => {
+            const dialogService = stubDialog();
+
+            spectator.component.showSelectExistingFileDialog();
+
+            // IMAGE_FIELD_MOCK is the mounted field, so the picker narrows to images silently.
+            expect((dialogService.open as jest.Mock).mock.calls[0][1].data).toEqual(
+                expect.objectContaining({ site: SITE_MOCK, mimeTypes: ['image/*'] })
+            );
         });
     });
 
