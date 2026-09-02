@@ -1041,6 +1041,12 @@ export const PAGE_WITH_ADVANCE_RENDER_TEMPLATE_MOCK = {
 
 export const dotPropertiesServiceMock = {
     getFeatureFlag: () => of(false),
+    /**
+     * Uncached single-flag read. A `jest.fn` rather than a plain arrow so a spec can drive the
+     * #37005 entry-point switch per test — `mockReturnValue(of(true))` — without replacing the
+     * whole provider. Defaults to `false`, matching that switch's shipped default.
+     */
+    getFreshFeatureFlag: jest.fn(() => of(false)),
     getFeatureFlags: () =>
         of({
             [FeaturedFlags.FEATURE_FLAG_UVE_PREVIEW_MODE]: false,

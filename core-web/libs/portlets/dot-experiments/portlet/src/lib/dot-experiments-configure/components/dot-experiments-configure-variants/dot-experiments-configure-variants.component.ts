@@ -2,8 +2,8 @@ import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { Component, computed, DestroyRef, inject, input, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
 import { FieldTree, FormField } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 
 import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
 import { BlockUIModule } from 'primeng/blockui';

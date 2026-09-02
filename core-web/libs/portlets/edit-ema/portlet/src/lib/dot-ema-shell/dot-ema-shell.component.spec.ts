@@ -8,7 +8,7 @@ import {
     mockProvider
 } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -1482,6 +1482,96 @@ describe('DotEmaShellComponent', () => {
     });
 
     describe('Local View Models', () => {
+        /**
+         * The Experiments entry point and its switch (#37005, US2/US3).
+         *
+         * `FEATURE_FLAG_EXPERIMENTS_PORTLET` selects where the `science` item leads. Off — the
+         * shipped default — it must reach the same address as on a build without this change
+         * (FR-016); on, it reaches the new portlet's site-wide list filtered to the page
+         * (FR-021, FR-021a, FR-022).
+         *
+         * These live together because FR-016 is only assertable against a switch that exists and
+         * is being read: "off behaves as before" says nothing if there is no branch.
+         */
+        describe('Experiments entry point', () => {
+            const experimentsItem = () =>
+                spectator.component['$menuItems']().find((item) => item.id === 'experiments');
+
+            const withSwitch = (enabled: boolean) => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(enabled));
+            };
+
+            afterEach(() => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(false));
+            });
+
+            // T052 / FR-016. The exact href a build without this change produces.
+            it('should keep the legacy per-page href with the switch off', () => {
+                withSwitch(false);
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+            });
+
+            // T052 / FR-021, FR-021a, FR-022. Absolute, so `navigate()` does not prefix
+            // `edit-page`; and carrying only the page filter, since the list has no use for
+            // UVE's params.
+            it('should lead to the filtered site-wide list with the switch on', () => {
+                withSwitch(true);
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe('/experiments');
+                expect(experimentsItem()?.queryParams).toEqual({
+                    pageAsset: MOCK_RESPONSE_HEADLESS.page.identifier
+                });
+            });
+
+            // T057 / FR-023. The switch changes the destination, never who may reach it.
+            it.each([false, true])(
+                'should keep the same permission rule with the switch %s',
+                (enabled) => {
+                    withSwitch(enabled);
+                    spectator.detectChanges();
+
+                    expect(experimentsItem()?.isDisabled).toBe(
+                        !MOCK_RESPONSE_HEADLESS.page.canEdit
+                    );
+                }
+            );
+
+            // T058 / FR-015 and the spec's unreadable-switch edge case. The item must not go
+            // inert and the editor must not be left on a blank screen — it falls to legacy.
+            it('should fall back to the legacy href when the switch cannot be read', () => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(
+                    throwError(() => new Error('config read failed'))
+                );
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+                expect(experimentsItem()?.isDisabled).toBe(!MOCK_RESPONSE_HEADLESS.page.canEdit);
+            });
+
+            // T059 / US2 scenario 4, SC-002. Reversible in both directions, without a redeploy —
+            // asserted as a sequence, because a one-way test would pass on a latched value.
+            it('should restore the original destination when the switch is turned back off', () => {
+                withSwitch(false);
+                spectator.detectChanges();
+                const before = experimentsItem()?.href;
+
+                withSwitch(true);
+                spectator.detectChanges();
+                expect(experimentsItem()?.href).toBe('/experiments');
+
+                withSwitch(false);
+                spectator.detectChanges();
+                expect(experimentsItem()?.href).toBe(before);
+            });
+        });
+
         describe('$menuItems computed property', () => {
             it('should build menu items with correct structure', () => {
                 const menuItems = spectator.component['$menuItems']();
