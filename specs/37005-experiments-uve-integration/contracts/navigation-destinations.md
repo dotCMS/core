@@ -53,7 +53,7 @@ else keeps the `edit-page` prefix. All four existing items (`content`, `layout`,
   &com.dotmarketing.persona.id={persona}
   &variantName={variant.id}
   &experimentId={experiment.id}
-  &mode={EDIT | PREVIEW}
+  &mode={EDIT_MODE | PREVIEW_MODE}
   &experimentReturn=portlet
 ```
 
@@ -68,7 +68,7 @@ param — never storage — for the reasons in §3.
 
 ### `mode` selection
 
-`PREVIEW` when **any** of the following holds; `EDIT` otherwise:
+`UVE_MODE.PREVIEW` when **any** of the following holds; `UVE_MODE.EDIT` otherwise:
 
 | Condition | Source | Requirement |
 |---|---|---|
@@ -81,9 +81,13 @@ reason and does not cover the control at all. When the page-lock branch is what 
 the reason is stated to the user (FR-010) from the existing
 `EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED` key.
 
-`mode` sends `DotPageMode` values (`EDIT` / `PREVIEW`) — the values the legacy card sends and UVE
-reads — **not** `UVE_MODE` (`'EDIT_MODE'` / `'PREVIEW_MODE'`). The two are distinct enums and the
-wrong one fails silently into the wrong presentation, so the exact string is asserted.
+`mode` sends **`UVE_MODE`** — the type UVE declares for the parameter
+(`DotPageApiParams.mode?: UVE_MODE`) and compares against (`mode === UVE_MODE.EDIT`). On the wire
+that is the literal `'EDIT_MODE'` / `'PREVIEW_MODE'`, and the test pins those strings.
+
+Note for readers of the legacy card: it sends `DotPageMode` instead, and works only because
+`DotPageMode.EDIT`/`PREVIEW` carry the same two strings. The enums diverge at LIVE (`'ADMIN_MODE'`
+vs `'LIVE'`), so the equivalence is a coincidence rather than a contract.
 
 ### Refusal (FR-004, SC-006)
 

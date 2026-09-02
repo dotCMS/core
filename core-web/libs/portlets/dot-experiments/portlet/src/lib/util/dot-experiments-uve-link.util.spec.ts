@@ -1,4 +1,4 @@
-import { DotPageMode } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 
 import {
     buildVariantEditorLink,
@@ -35,7 +35,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.EDIT
+            mode: UVE_MODE.EDIT
         });
 
         expect(link?.commands).toEqual(['/edit-page/content']);
@@ -46,7 +46,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.EDIT
+            mode: UVE_MODE.EDIT
         });
 
         expect(link?.queryParams).toEqual({
@@ -55,7 +55,7 @@ describe('buildVariantEditorLink', () => {
             'com.dotmarketing.persona.id': expect.any(String),
             variantName: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.EDIT,
+            mode: UVE_MODE.EDIT,
             [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
         });
     });
@@ -67,7 +67,7 @@ describe('buildVariantEditorLink', () => {
             page: { ...PAGE, languageId: 7 },
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.EDIT
+            mode: UVE_MODE.EDIT
         });
 
         expect(link?.queryParams.language_id).toBe(7);
@@ -81,45 +81,44 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.PREVIEW
+            mode: UVE_MODE.PREVIEW
         });
 
         expect(link?.queryParams[EXPERIMENT_RETURN_PARAM]).toBe(EXPERIMENT_RETURN_PORTLET);
     });
 
-    it.each([DotPageMode.EDIT, DotPageMode.PREVIEW])(
-        'should pass DotPageMode.%s through verbatim',
-        (mode) => {
-            const link = buildVariantEditorLink({
-                page: PAGE,
-                variantId: VARIANT_ID,
-                experimentId: EXPERIMENT_ID,
-                mode
-            });
+    it.each([UVE_MODE.EDIT, UVE_MODE.PREVIEW])('should pass mode %s through verbatim', (mode) => {
+        const link = buildVariantEditorLink({
+            page: PAGE,
+            variantId: VARIANT_ID,
+            experimentId: EXPERIMENT_ID,
+            mode
+        });
 
-            expect(link?.queryParams.mode).toBe(mode);
-        }
-    );
+        expect(link?.queryParams.mode).toBe(mode);
+    });
 
-    // DotPageMode.EDIT === 'EDIT_MODE' would be UVE_MODE, a different enum with different wire
-    // values. Sending the wrong one fails silently into the wrong presentation, so the literal
-    // strings are pinned rather than the enum members alone.
-    it('should send DotPageMode wire values, not UVE_MODE values', () => {
+    // UVE declares `?mode=` as UVE_MODE (`DotPageApiParams.mode`) and compares it as
+    // `mode === UVE_MODE.EDIT`, so UVE_MODE is the canonical type here. The legacy card sends
+    // DotPageMode and works only because DotPageMode.EDIT/PREVIEW happen to carry the same two
+    // strings; the enums diverge at LIVE ('ADMIN_MODE' vs 'LIVE'). Pinning the literals keeps that
+    // coincidence from quietly becoming the contract for whoever adds a third mode.
+    it('should send the literal wire values UVE compares against', () => {
         const edit = buildVariantEditorLink({
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.EDIT
+            mode: UVE_MODE.EDIT
         });
         const preview = buildVariantEditorLink({
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
-            mode: DotPageMode.PREVIEW
+            mode: UVE_MODE.PREVIEW
         });
 
-        expect(edit?.queryParams.mode).toBe('EDIT');
-        expect(preview?.queryParams.mode).toBe('PREVIEW');
+        expect(edit?.queryParams.mode).toBe('EDIT_MODE');
+        expect(preview?.queryParams.mode).toBe('PREVIEW_MODE');
     });
 
     describe('refusal (FR-004) — returns null rather than a partial destination', () => {
@@ -129,7 +128,7 @@ describe('buildVariantEditorLink', () => {
                     page: null,
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
-                    mode: DotPageMode.EDIT
+                    mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
         });
@@ -140,7 +139,7 @@ describe('buildVariantEditorLink', () => {
                     page: { ...PAGE, path: path as string },
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
-                    mode: DotPageMode.EDIT
+                    mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
         });
@@ -153,7 +152,7 @@ describe('buildVariantEditorLink', () => {
                     page: { ...PAGE, languageId: languageId as number },
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
-                    mode: DotPageMode.EDIT
+                    mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
         });
@@ -164,7 +163,7 @@ describe('buildVariantEditorLink', () => {
                     page: PAGE,
                     variantId: '',
                     experimentId: EXPERIMENT_ID,
-                    mode: DotPageMode.EDIT
+                    mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
         });
@@ -175,7 +174,7 @@ describe('buildVariantEditorLink', () => {
                     page: PAGE,
                     variantId: VARIANT_ID,
                     experimentId: '',
-                    mode: DotPageMode.EDIT
+                    mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
         });
@@ -193,7 +192,7 @@ describe('buildVariantEditorLink', () => {
                 page: PAGE,
                 variantId: VARIANT_ID,
                 experimentId: EXPERIMENT_ID,
-                mode: DotPageMode.EDIT
+                mode: UVE_MODE.EDIT
             });
 
             expect(link?.queryParams.url).toBe('/pricing/index');

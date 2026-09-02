@@ -28,6 +28,7 @@ import { DotExperimentConfigurePage } from '../../../shared/models';
 import { dotExperimentsConfigureApiEvents } from '../../../store/dot-experiments-configure-api.events';
 import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiments-configure-page.events';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
+import { toConfigurePage } from '../../../util/dot-experiments-configure.util';
 import {
     DotExperimentsChangePageDialogComponent,
     DotExperimentsChangePageDialogInputs,
@@ -361,11 +362,10 @@ export class DotExperimentsConfigurePageComponent {
                     return;
                 }
 
-                this.#dispatch.pageSelected({
-                    pageId: page.identifier,
-                    title: page.title,
-                    path: page.url
-                });
+                // Via `toConfigurePage` rather than an inline literal so the picker's page and a
+                // prefilled/loaded one are narrowed the same way — including `languageId`, which
+                // the variant deep link needs and which is easy to forget in a second mapping.
+                this.#dispatch.pageSelected(toConfigurePage(page));
             });
     }
 }

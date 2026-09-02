@@ -40,7 +40,8 @@ const EXPERIMENT: DotExperiment = getExperimentMock(0);
 const SELECTED_PAGE: DotExperimentConfigurePage = {
     pageId: EXPERIMENT.pageId,
     title: 'Blog',
-    path: '/blog/index'
+    path: '/blog/index',
+    languageId: 1
 };
 
 const NEW_EXPERIMENT_TITLE = 'New Experiment';

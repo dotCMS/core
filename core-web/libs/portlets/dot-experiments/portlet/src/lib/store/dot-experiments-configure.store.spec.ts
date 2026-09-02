@@ -71,7 +71,8 @@ const EXPERIMENT_ID = 'exp-1';
 const PAGE: DotExperimentConfigurePage = {
     pageId: '2e2e5f6a-1e17-4b21-9c1a-7d3f5b90ac41',
     title: 'Home',
-    path: '/home'
+    path: '/home',
+    languageId: 1
 };
 
 const buildVariant = (id: string, weight: number): Variant => ({ id, name: id, weight });
@@ -127,6 +128,9 @@ const buildPageContentlet = (contentlet: Partial<DotCMSContentlet> = {}): DotCMS
         identifier: PAGE.pageId,
         title: PAGE.title,
         url: PAGE.path,
+        // Real contentlets always carry a language, and `toConfigurePage` copies it through so the
+        // variant deep link can send it as `language_id` (#37005).
+        languageId: PAGE.languageId,
         ...contentlet
     }) as DotCMSContentlet;
 
@@ -623,7 +627,12 @@ describe('DotExperimentsConfigureStore', () => {
             initExisting();
 
             dispatcher.dispatch(
-                pageEvents.pageSelected({ pageId: 'page-2', title: 'Pricing', path: '/pricing' })
+                pageEvents.pageSelected({
+                    pageId: 'page-2',
+                    title: 'Pricing',
+                    path: '/pricing',
+                    languageId: 1
+                })
             );
 
             expect(store.selectedPage()).toEqual(PAGE);
@@ -635,7 +644,7 @@ describe('DotExperimentsConfigureStore', () => {
      * refuse never leaves. See `specs/37176-draft-experiment-page-change`.
      */
     describe('changing the page of a draft', () => {
-        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing' };
+        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing', languageId: 1 };
 
         /** A draft in the only shape that may change page: the control and nothing else. */
         const controlOnlyDraft = () =>

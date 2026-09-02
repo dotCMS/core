@@ -57,7 +57,8 @@ const THREE_VARIANT_EXPERIMENT: DotExperiment = {
 const SELECTED_PAGE: DotExperimentConfigurePage = {
     pageId: EXPERIMENT.pageId,
     title: 'Blog',
-    path: '/blog/index'
+    path: '/blog/index',
+    languageId: 1
 };
 
 const ADD_DIALOG_HEADER = 'Add Variant';

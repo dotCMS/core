@@ -99,6 +99,16 @@ export interface DotExperimentConfigurePage {
     title: string;
     /** Site-relative path, e.g. `/about-us/index`. */
     path: string;
+    /**
+     * Language the page was resolved in — the `language_id` the variant deep link carries (#37005).
+     *
+     * Not optional, and deliberately not defaulted anywhere: `editEmaGuard` *substitutes*
+     * `language_id=1` for a missing param rather than rejecting, so a page object without a
+     * language does not produce a broken link, it produces one that silently opens the wrong
+     * language's content. The deep-link builder refuses when this is absent (FR-004), which only
+     * works if the absence is allowed to reach it.
+     */
+    languageId: number;
 }
 
 /** Everything the Configure screen renders from. */

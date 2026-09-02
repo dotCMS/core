@@ -219,23 +219,32 @@ export function isSameFormValue(
     return JSON.stringify(a) === JSON.stringify(b);
 }
 
-/** The page a content-search contentlet stands for, as the Page card shows it. */
+/**
+ * The page a content-search contentlet stands for, as the Page card shows it.
+ *
+ * `languageId` is copied through rather than defaulted: the variant deep link sends it as
+ * `language_id`, and a page whose language is unknown must reach the builder as unknown so the
+ * action can be refused (FR-004). Defaulting to 1 here would open the wrong language's content
+ * with nothing reporting an error.
+ */
 export function toConfigurePage(contentlet: DotCMSContentlet): DotExperimentConfigurePage {
     const path = contentlet.url ?? '';
 
     return {
         pageId: contentlet.identifier,
         title: contentlet.title || path,
-        path
+        path,
+        languageId: contentlet.languageId
     };
 }
 
-/** The same shape from a page-browser result, which already carries a title and a path. */
+/** The same shape from a page-browser result, which already carries a title, path and language. */
 export function fromBrowserPage(page: DotPageBrowserPage): DotExperimentConfigurePage {
     return {
         pageId: page.identifier,
         title: page.title,
-        path: page.path || page.url
+        path: page.path || page.url,
+        languageId: page.languageId
     };
 }
 

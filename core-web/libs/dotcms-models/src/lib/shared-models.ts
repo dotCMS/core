@@ -44,7 +44,14 @@ export const enum FeaturedFlags {
     FEATURE_FLAG_NEW_BLOCK_EDITOR = 'FEATURE_FLAG_NEW_BLOCK_EDITOR',
     FEATURE_FLAG_REPORT_ISSUE_ENABLED = 'FEATURE_FLAG_REPORT_ISSUE_ENABLED',
     FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = 'FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL',
-    FEATURE_FLAG_DOTAI_CONFIG_UI = 'FEATURE_FLAG_DOTAI_CONFIG_UI'
+    FEATURE_FLAG_DOTAI_CONFIG_UI = 'FEATURE_FLAG_DOTAI_CONFIG_UI',
+    /**
+     * Selects which experiments experience the UVE Experiments navigation item leads to: the new
+     * site-wide portlet when on, the legacy per-page screens when off. Off by default. Distinct
+     * from `LOAD_FRONTEND_EXPERIMENTS` above, which names the backend kill-switch for the whole
+     * Experiments feature and has no consumers here. Retired by #37008.
+     */
+    FEATURE_FLAG_EXPERIMENTS_PORTLET = 'FEATURE_FLAG_EXPERIMENTS_PORTLET'
 }
 
 export const enum DotConfigurationVariables {

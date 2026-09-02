@@ -62,7 +62,8 @@ const messageServiceMock = new MockDotMessageService({
 const SELECTED_PAGE: DotExperimentConfigurePage = {
     pageId: 'page-1',
     title: 'Pricing',
-    path: '/pricing/index'
+    path: '/pricing/index',
+    languageId: 1
 };
 
 /** The AssetPicker browses a site, and GlobalStore is what supplies it. */
@@ -77,7 +78,10 @@ const SITE_MOCK: DotSite = {
 const PICKED_PAGE = {
     identifier: 'page-2',
     title: 'About us',
-    url: '/about-us/index'
+    url: '/about-us/index',
+    // Real contentlets always carry a language, and the variant deep link sends it as
+    // `language_id` — so the picker's page has to reach the store with one (#37005).
+    languageId: 1
 } as DotCMSContentlet;
 
 const EXPERIMENT: DotExperiment = { ...getExperimentMock(1), trafficAllocation: 100 };
@@ -297,7 +301,8 @@ describe('DotExperimentsConfigurePageComponent', () => {
                 dotExperimentsConfigurePageEvents.pageSelected({
                     pageId: PICKED_PAGE.identifier,
                     title: PICKED_PAGE.title,
-                    path: PICKED_PAGE.url
+                    path: PICKED_PAGE.url,
+                    languageId: 1
                 })
             );
         });
