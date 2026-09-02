@@ -86,7 +86,7 @@ public class CompanyPersistence extends BasePersistence {
 
 				if (company.isNew()) {
 					final CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
-							company.getKey(), company.getPortalURL(),
+							company.getKey(), company.getOldPortalURL(),
 							company.getHomeURL(), company.getMx(),
 							company.getName(), company.getShortName(),
 							company.getType(), company.getSize(),
@@ -106,7 +106,7 @@ public class CompanyPersistence extends BasePersistence {
 					try {
 						final CompanyHBM companyHBM = (CompanyHBM)session.load(CompanyHBM.class, company.getPrimaryKey());
 						companyHBM.setKey(company.getKey());
-						companyHBM.setPortalURL(company.getPortalURL());
+						companyHBM.setPortalURL(company.getOldPortalURL());
 						companyHBM.setHomeURL(company.getHomeURL());
 						companyHBM.setMx(company.getMx());
 						companyHBM.setName(company.getName());
@@ -132,7 +132,7 @@ public class CompanyPersistence extends BasePersistence {
 					}
 					catch (ObjectNotFoundException onfe) {
 						CompanyHBM companyHBM = new CompanyHBM(company.getCompanyId(),
-								company.getKey(), company.getPortalURL(),
+								company.getKey(), company.getOldPortalURL(),
 								company.getHomeURL(), company.getMx(),
 								company.getName(), company.getShortName(),
 								company.getType(), company.getSize(),

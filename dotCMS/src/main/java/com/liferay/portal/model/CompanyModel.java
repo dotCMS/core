@@ -483,7 +483,7 @@ public class CompanyModel extends BaseModel {
 	}
 
 	public Object clone() {
-		return new Company(getCompanyId(), getKey(), getPortalURL(),
+		return new Company(getCompanyId(), getKey(), getOldPortalURL(),
 			getHomeURL(), getMx(), getName(), getShortName(), getType(),
 			getSize(), getStreet(), getCity(), getState(), getZip(),
 			getPhone(), getFax(), getEmailAddress(), getAuthType(),

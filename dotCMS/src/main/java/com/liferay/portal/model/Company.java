@@ -177,7 +177,7 @@ public class Company extends CompanyModel {
 
 	public Object clone() {
 		return new Company(getCompanyId(), getKey(), getKeyObj(),
-				getPortalURL(), getHomeURL(), getMx(), getName(),
+				getOldPortalURL(), getHomeURL(), getMx(), getName(),
 				getShortName(), getType(), getSize(), getStreet(), getCity(),
 				getState(), getZip(), getPhone(), getFax(), getEmailAddress(),
 				getAuthType(), getAutoLogin(), getStrangers());
