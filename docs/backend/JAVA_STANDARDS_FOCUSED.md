@@ -1,9 +1,9 @@
 # Java Development Standards
 
 ## Runtime vs Syntax Compatibility
-- **Runtime Environment**: Java 21 (production)
-- **Syntax Requirement**: Java 11 compatible (core modules)
-- **CLI Tools Exception**: Java 21 features allowed in `tools/dotcms-cli` only
+- **Runtime Environment**: see `.sdkmanrc` for the current Java version
+- **Syntax Requirement**: core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` — check there before assuming a syntax level is safe
+- **CLI Tools Exception**: `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in `tools/dotcms-cli/pom.xml` — historically the most conservative target in the repo, kept for portability, not an exception for newer syntax
 
 ## Core Development Patterns
 
@@ -42,8 +42,8 @@ experiments.auto-js-injection.enabled=true
 experiments.auto-js-injection.url=https://example.com/script.js
 experiments.auto-js-injection.max-retries=3
 
-health.checks.database.timeout-seconds=30
-health.monitoring.include-system-details=true
+health.check.database.timeout.seconds=2
+health.include.system-details=true
 ```
 
 ### Logging Standards
