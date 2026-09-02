@@ -101,6 +101,11 @@ succeeded / 2 failed, naming both failures with a distinguishable reason.
 6. **Given** a file whose name collides with an existing asset in the target folder, **When** the
    run reaches it, **Then** it is recorded as that file's failure — never a silent success and
    never a silent overwrite.
+7. **Given** a content type that declares no size ceiling, and a file larger than the configurable
+   fallback, **When** the run reaches it, **Then** that file is recorded as failed for size and the
+   batch continues — **and the same file uploaded alone succeeds**. This is the one place the
+   feature knowingly diverges from single-file behavior (FR-011a); it has a scenario precisely
+   because it is the case most likely to be reported as a defect by whoever meets it first.
 
 ---
 
@@ -324,10 +329,21 @@ run reports a collision failure for it.
 - **FR-013a**: Where a chosen staging mechanism imposes its own size ceiling, the effective limit
   is the stricter of it and FR-011's, and the plan MUST state which is expected to bind — so that
   a file rejected by staging is not reported to the author as a content-type rule it did not break.
-- **FR-013b**: The system MUST enforce a configurable **maximum total size per batch**, refused at
-  submission (FR-003) before any content is staged. Without it the batch is bounded only by
-  FR-010's file count multiplied by a per-file ceiling that may be unset, which is to say not
-  bounded at all — an authenticated author could stage unbounded bytes on shared storage.
+- **FR-013b**: The system MUST enforce a configurable **maximum total size per batch**. Without it
+  the batch is bounded only by FR-010's file count multiplied by a per-file ceiling that may be
+  unset, which is to say not bounded at all — an authenticated author could stage unbounded bytes
+  on shared storage.
+- **FR-013c**: That ceiling is enforced in two stages, because the content arrives in the same call
+  that carries the batch (Q5) and its true size is only known by reading it:
+  1. **A fast refusal on the declared total**, before reading the body, where the caller declares
+     one. This is a convenience that saves an author uploading gigabytes only to be refused — it is
+     **not** the enforcement point, since a caller can under-declare or omit it (FR-013).
+  2. **The authoritative enforcement while the content is read**, aborting once the ceiling is
+     crossed. The product's staging already works this way, writing through a bounded stream that
+     aborts when the bound is passed.
+- **FR-013d**: Content already staged when a submission is refused — by FR-013c.2 or any other
+  submission-time refusal — MUST be reclaimed. FR-033 covers reclaim for runs that reach a terminal
+  state; a refused submission never becomes a run and would otherwise leak.
 
 **Staged file content**
 
@@ -347,10 +363,6 @@ run reports a collision failure for it.
   completed, failed, or cancelled — including for files the run never reached.
 - **FR-034**: Staged content MUST remain readable to the run when it is picked up by a different
   node than the one that accepted the submission.
-- **FR-035**: FR-013b caps a single batch. The system MUST additionally state a position on the
-  total bytes one author may hold staged across **concurrent** batches, since FR-010 and FR-013b
-  bound one batch and nothing bounds how many an author may have in flight. "No limit across
-  batches, deliberately" is an acceptable position; leaving it unstated is not.
 
 **Surviving interruption, and not duplicating**
 
@@ -382,11 +394,20 @@ run reports a collision failure for it.
 - **FR-041**: Where two runs would create the same file name in the same target, **exactly one MUST
   succeed**. The other MUST be recorded as that file's own collision failure. Two files with the
   same name in one folder, and a silent overwrite, are both unacceptable outcomes.
-- **FR-042**: FR-041 MUST hold when the two runs overlap in time. The product's existing collision
-  rule is a check followed by a create, so two concurrent runs can both pass the check before
-  either commits; the plan MUST close that window rather than rely on the check alone.
-- **FR-043**: A run MUST NOT be blocked or slowed by unrelated runs on other targets. Whatever
-  closes FR-042's window MUST be scoped to the contended name or target, not to uploads generally.
+- **FR-042**: FR-041 MUST hold when the two runs overlap in time. **The storage layer already
+  guarantees it**: identifiers are uniquely constrained on parent path, asset name and host, so the
+  second writer of a contended name fails on every existing install. The product's own pre-check is
+  a check followed by a create and can pass for both runs, so it is a courtesy that produces a
+  clean message, not the guarantee. The requirement is therefore to **catch the constraint
+  violation and report it as the same collision failure as the pre-check** — not to build a lock
+  for a race the storage layer already loses on the caller's behalf.
+- **FR-042a**: The spec MUST state whether "the same file name" is case-sensitive, because the
+  guarantee differs: the uniqueness constraint compares the stored columns as-is, while related
+  path handling elsewhere compares case-insensitively. Until stated, a plan author cannot know
+  whether `Report.pdf` and `report.pdf` are one contended name or two.
+- **FR-043**: A run MUST NOT be blocked or slowed by unrelated runs on other targets. FR-042's
+  mechanism satisfies this for free — a uniqueness constraint contends only on the contended key —
+  and any additional mechanism MUST preserve it rather than serialize uploads generally.
 
 **Outcome**
 
@@ -414,8 +435,9 @@ run reports a collision failure for it.
   - **A generic item key.** The shipped record is keyed by contentlet identifier and inodes. A file
     being uploaded has neither — it does not exist until the run creates it — and neither does a
     folder path. The generic key is the substance of this requirement.
-  - **One spelling of the counters.** The shipped counter is `failedCount`; #37166 and the
-    surrounding discussion say `failCount`. The plan MUST pick one and both halves MUST use it.
+  - **One spelling of the counters: `failedCount`.** The shipped counter is `failedCount`; #37166
+    originally said `failCount`. `failedCount` wins, matching what already ships. Both halves MUST
+    use it; this is settled here and in #37166's amendment, not left to the plan.
 - **FR-018a**: The generalized shape MUST carry a batch of folder paths as naturally as a batch of
   files, so #37062 / #37063 adopt it unchanged.
 
@@ -618,6 +640,16 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
   marking the processor no-retry so an interrupted batch simply fails — was rejected: at batch
   sizes up to 50 it would make a restart cost the author the whole batch, and resubmitting would
   then collide against the files the first attempt already created.
+
+  Strengthened after review: no-retry would not even have avoided the duplicates. The abandoned-job
+  sweep re-queues unconditionally and never consults the retry policy, so an interrupted run is
+  retried **whether or not** the processor is marked no-retry. Resumability is therefore the only
+  answer available, not the preferred one of two.
+
+  A caution that follows: the content import processor is marked no-retry and creates content from
+  staged uploads — the same shape as this feature — so it is already exposed to this duplicate
+  risk. That is a defect in import, not a precedent to follow. Import remains a sound precedent for
+  the one-call staging shape (Q5) and for nothing about retry.
 - **Q7 — Size ceilings**: **Both.** A configurable **total per batch**, refused at submission
   (FR-013b), and **per file** the content type's own ceiling where one is declared, falling back to
   a configurable value where none is (FR-011). The fallback is a knowing exception to FR-006's
@@ -630,6 +662,26 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
 Decided in principle above, but carrying enough hidden work that the plan must confront them
 explicitly rather than meet them during implementation.
 
+- **Durable mid-run state for resumability** (FR-036 … FR-038). This is the largest piece of
+  hidden work in this specification and the plan must size it before committing to User Story 5.
+  The job framework persists three things about a run: its parameters, written once at creation and
+  immutable thereafter; its progress, a single number; and its result, harvested once at the
+  terminal state. None of them is a mid-run record of which items are done. The resume path carries
+  nothing forward either — a re-queued run is reset to pending with no result, no progress and no
+  marker that it is a second attempt, and the processor is request-scoped, so it resumes with every
+  counter at zero. FR-037 is therefore **either a new job-framework capability or a durable store
+  owned by this feature**, and FR-038's "counts across all attempts" needs the same thing. If it
+  turns out to require a framework change, that is a separate issue and is far cheaper to find here
+  than in implementation.
+  - **Consequence for FR-018**: a shape designed only to be emitted once at the terminal state will
+    not serve a run that must read its own prior progress back. The generalization and this
+    obligation should be planned together.
+- **A cross-batch cap, or a recorded decision not to have one.** FR-010 and FR-013b bound a single
+  batch; nothing bounds how many batches one author may have in flight, so the staged-bytes total
+  is still unbounded per author. Previously carried as a functional requirement that the system
+  "state a position", which is a decision for the authors rather than behaviour a test can fail.
+  The plan must either set a cross-batch cap or record that there deliberately is none — for
+  instance, that the job queue's own concurrency governs it.
 - **The generalization of the shipped outcome shape** (FR-018) touches a contract other code
   already depends on. The plan must say whether it extends that type in place or extracts a
   shared one, and what that means for the shipped consumer.
