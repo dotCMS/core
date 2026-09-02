@@ -45,12 +45,45 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           fetch-depth: 0
+      # DOTBOT_REVIEW_MODELS (repo VARIABLE), when set, OVERRIDES the review
+      # roster: we render .openrouter-review.yml from it and the action reads
+      # that as its primary + extras. This is a REPLACEMENT, not an addition —
+      # the action's `review_models` INPUT is additive (it would run the
+      # variable's models alongside the action's default primary). First
+      # entry = primary reviewer; the rest are the "fight" secondaries. When
+      # the variable is unset, nothing is rendered and the action's own
+      # defaults stand.
+      - name: Override review roster from DOTBOT_REVIEW_MODELS (when set)
+        if: ${{ vars.DOTBOT_REVIEW_MODELS != '' }}
+        env:
+          REVIEW_MODELS: ${{ vars.DOTBOT_REVIEW_MODELS }}
+        run: |
+          MODELS=()
+          IFS=',' read -ra PARTS <<< "$REVIEW_MODELS"
+          for p in "${PARTS[@]}"; do
+            p="${p//[[:space:]]/}"
+            [[ -n "${p}" ]] && MODELS+=("${p}")
+          done
+          if (( ${#MODELS[@]} == 0 )); then
+            echo "::warning::DOTBOT_REVIEW_MODELS set but parsed empty — using action defaults"
+            exit 0
+          fi
+          {
+            echo "review:"
+            echo "  model: ${MODELS[0]}"
+            if (( ${#MODELS[@]} > 1 )); then
+              echo "  models:"
+              for m in "${MODELS[@]:1}"; do echo "    - ${m}"; done
+            fi
+          } > .openrouter-review.yml
+          echo "Rendered .openrouter-review.yml from DOTBOT_REVIEW_MODELS:"
+          cat .openrouter-review.yml
       - name: dotbot autonomous review
-        uses: wezell/openrouter-code-review-action@34ee169dd9f35bf20a6b358b902c6c76e5df3a14
+        uses: dotcms/openrouter-code-review-action@a716ed1aaa24814e11ed684901b1f1525e8ee353
         with:
           mode: review
           openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          review_models: ${{ vars.DOTBOT_REVIEW_MODELS }}
+          github_approval_token: ${{ secrets.DOTBOT_GITHUB_USER_PAT }}
           reasoning_effort: medium
           web_search_mode: cached
           debug_level: 1
