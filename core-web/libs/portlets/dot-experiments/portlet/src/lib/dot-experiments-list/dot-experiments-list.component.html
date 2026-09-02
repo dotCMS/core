@@ -66,6 +66,40 @@
                 (selectionChange)="onGoalsChange($event)"
                 data-testid="experiments-goal-filter" />
 
+            @if ($pageFilter(); as pageFilter) {
+                <div
+                    class="flex items-center gap-1 rounded-full bg-surface-100 py-1 pr-1 pl-3"
+                    data-testid="experiments-page-filter-chip">
+                    <span class="text-sm text-surface-700">
+                        {{ 'experiments.list.page-filter.label' | dm: [pageFilter.path] }}
+                    </span>
+
+                    @if ($pageFilterBackLink(); as backLink) {
+                        <a
+                            [href]="backLink"
+                            class="text-sm text-(--color-palette-primary) no-underline hover:underline"
+                            data-testid="experiments-page-filter-back">
+                            {{ 'experiments.list.page-filter.back' | dm }}
+                        </a>
+                    }
+
+                    <p-button
+                        [text]="true"
+                        [rounded]="true"
+                        size="small"
+                        severity="secondary"
+                        (onClick)="onClearPageFilter()"
+                        [attr.aria-label]="'experiments.list.page-filter.clear' | dm"
+                        data-testid="experiments-page-filter-clear">
+                        <span
+                            class="material-symbols-rounded text-base! leading-none!"
+                            aria-hidden="true">
+                            close
+                        </span>
+                    </p-button>
+                </div>
+            }
+
             <p-button
                 class="ml-auto"
                 [label]="'experiments.list.action.new' | dm"
@@ -79,15 +113,25 @@
         data-testid="experiments-table-wrapper">
         @if ($isEmpty()) {
             <div class="flex min-h-0 flex-1 items-center justify-center p-6">
-                <dot-empty-container
-                    [configuration]="$emptyConfiguration()"
-                    [buttonLabel]="
-                        $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
-                    "
-                    [secondaryButton]="true"
-                    (buttonAction)="onClearFilters()"
-                    [hideContactUsLink]="true"
-                    data-testid="experiments-empty-state" />
+                @if ($pageFilter()) {
+                    <dot-empty-container
+                        [configuration]="$emptyConfiguration()"
+                        [buttonLabel]="'experiments.list.empty.page.action' | dm"
+                        [secondaryButton]="true"
+                        (buttonAction)="onNewExperimentForPage()"
+                        [hideContactUsLink]="true"
+                        data-testid="experiments-empty-state" />
+                } @else {
+                    <dot-empty-container
+                        [configuration]="$emptyConfiguration()"
+                        [buttonLabel]="
+                            $hasActiveFilters() ? ('experiments.list.no-results.clear' | dm) : ''
+                        "
+                        [secondaryButton]="true"
+                        (buttonAction)="onClearFilters()"
+                        [hideContactUsLink]="true"
+                        data-testid="experiments-empty-state" />
+                }
             </div>
         } @else {
             <p-table

@@ -525,39 +525,6 @@ describe('DotExperimentsListStore', () => {
             expect(store.pageAssetFilteredExperiments()).toEqual([]);
         });
 
-        /**
-         * The case that separates this filter from the free-text one.
-         *
-         * `/about` is a prefix of `/about-us`, and the text filter matches the Page column as a
-         * substring — so pre-filling it with the path would have shown both. Equality on `pageId`
-         * shows one. Without this test the cheaper implementation looks correct.
-         *
-         * Its dataset is local rather than added to the shared fixtures: two extra experiments in
-         * `EXPERIMENTS` shift the counts and expected arrays of every test that reads them, and
-         * this case needs nothing from the rest of them.
-         */
-        it('should not match a page whose path merely starts with the same text', () => {
-            const onAbout = buildExperiment({ id: 'exp-about', pageId: 'page-about' });
-            const onAboutUs = buildExperiment({ id: 'exp-about-us', pageId: 'page-about-us' });
-
-            getAllUnfiltered.mockReturnValue(of([onAbout, onAboutUs]));
-            contentSearchGet.mockReturnValue(
-                of({
-                    jsonObjectView: {
-                        contentlets: [
-                            buildPageContentlet('page-about', '/about', CURRENT_SITE_ID),
-                            buildPageContentlet('page-about-us', '/about-us', CURRENT_SITE_ID)
-                        ]
-                    }
-                })
-            );
-            initStore();
-
-            filterToPage('page-about');
-
-            expect(store.pageAssetFilteredExperiments()).toEqual([onAbout]);
-        });
-
         it('should be cleared by a null page, revealing the full site-wide list', () => {
             filterToPage('page-2');
             expect(store.pageAssetFilteredExperiments()).toEqual([EXPERIMENT_RUNNING]);
@@ -597,6 +564,54 @@ describe('DotExperimentsListStore', () => {
 
             expect(store.statusCounts()[DotExperimentStatus.RUNNING]).toBe(1);
             expect(store.statusCounts()[DotExperimentStatus.DRAFT]).toBe(0);
+        });
+    });
+
+    /**
+     * The case that separates this filter from the free-text one.
+     *
+     * `/about` is a prefix of `/about-us`, and the text filter matches the Page column as a
+     * substring — so pre-filling it with the path would have shown both. Equality on `pageId`
+     * shows one. Without this test the cheaper implementation looks correct, and it only fails
+     * on sites where one path prefixes another.
+     *
+     * Its own `describe` with its own `beforeEach`, for two reasons. The dataset is local
+     * rather than added to the shared fixtures, which are read by tests that would have their
+     * counts shifted by it. And `createService()` returns the same DI instance when called
+     * twice inside one test, so re-mocking mid-test and calling `initStore()` again is a
+     * no-op — the arrangement has to be in place before the store is built.
+     */
+    describe("a page whose path is a prefix of another page's", () => {
+        const onAbout = buildExperiment({ id: 'exp-about', pageId: 'page-about' });
+        const onAboutUs = buildExperiment({ id: 'exp-about-us', pageId: 'page-about-us' });
+
+        beforeEach(() => {
+            getAllUnfiltered.mockReturnValue(of([onAbout, onAboutUs]));
+            contentSearchGet.mockReturnValue(
+                of({
+                    jsonObjectView: {
+                        contentlets: [
+                            buildPageContentlet('page-about', '/about', CURRENT_SITE_ID),
+                            buildPageContentlet('page-about-us', '/about-us', CURRENT_SITE_ID)
+                        ]
+                    }
+                })
+            );
+            initStore();
+        });
+
+        it('should not match the page whose path merely starts with the same text', () => {
+            dispatcher.dispatch(dotExperimentsListPageEvents.pageAssetFilterChanged('page-about'));
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([onAbout]);
+        });
+
+        it('should still match the longer path when that is the one filtered to', () => {
+            dispatcher.dispatch(
+                dotExperimentsListPageEvents.pageAssetFilterChanged('page-about-us')
+            );
+
+            expect(store.pageAssetFilteredExperiments()).toEqual([onAboutUs]);
         });
     });
 

@@ -42,6 +42,9 @@ const PAGE_INFO = { [PAGE_ID]: { url: '/blog/index', host: 'host-1' } };
 /** Shown on the chip when the filtered page can no longer be resolved. */
 const PAGE_UNAVAILABLE_COPY = 'This page is no longer available';
 
+/** The page-scoped empty state's one affordance. */
+const CREATE_FOR_PAGE_COPY = 'Create an Experiment for this Page';
+
 const EMPTY_GOAL_COUNTS: Record<GOAL_TYPES, number> = {
     [GOAL_TYPES.REACH_PAGE]: 0,
     [GOAL_TYPES.BOUNCE_RATE]: 0,
@@ -100,6 +103,12 @@ const ERROR_COPY = {
 
 const messageServiceMock = new MockDotMessageService({
     'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
+    'experiments.list.page-filter.label': 'Page: {0}',
+    'experiments.list.page-filter.back': 'Back to page',
+    'experiments.list.page-filter.clear': 'Clear page filter',
+    'experiments.list.empty.page.title': 'No Experiments on this Page',
+    'experiments.list.empty.page.description': 'Nothing is running on {0} yet.',
+    'experiments.list.empty.page.action': CREATE_FOR_PAGE_COPY,
     'experiments.analytics-app-no-configured.title': NOT_CONFIGURED_COPY.title,
     'experiments.analytics-app-no-configured.subtitle': NOT_CONFIGURED_COPY.subtitle,
     'experiments.analytics-app-misconfiguration.title': MISCONFIGURATION_COPY.title,
@@ -621,8 +630,14 @@ describe('DotExperimentsListComponent', () => {
             const back = spectator.query(byTestId('experiments-page-filter-back'));
 
             expect(back).not.toBeNull();
-            expect(back?.getAttribute('href')).toContain('/edit-page/content');
-            expect(back?.getAttribute('href')).toContain(`url=${PAGE_INFO[PAGE_ID].url}`);
+
+            // The router serialises the path, so the param arrives percent-encoded. Asserting the
+            // encoded form rather than the raw one, since that is what a browser receives.
+            const href = back?.getAttribute('href') ?? '';
+
+            expect(href).toContain('/edit-page/content');
+            expect(href).toContain(`url=${encodeURIComponent(PAGE_INFO[PAGE_ID].url)}`);
+            expect(href).toContain('language_id=');
         });
 
         // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the
@@ -643,16 +658,16 @@ describe('DotExperimentsListComponent', () => {
             });
 
             it('should offer to create an experiment for that page', () => {
-                const create = spectator.query(byTestId('experiments-empty-create-for-page'));
+                // The empty container's own action button, so the offer is the one affordance on
+                // the state rather than a second control beside it.
+                const create = spectator.query(byTestId('message-button'));
 
                 expect(create).not.toBeNull();
+                expect(create?.textContent).toContain(CREATE_FOR_PAGE_COPY);
             });
 
             it('should carry the page into the creation screen so it arrives prefilled', () => {
-                const create = spectator
-                    .query(byTestId('experiments-empty-create-for-page'))
-                    ?.querySelector('button') as HTMLElement;
-                spectator.click(create);
+                spectator.click(spectator.query(byTestId('message-button')) as HTMLElement);
 
                 expect(navigate).toHaveBeenCalledWith(['/experiments', 'new'], {
                     queryParams: { pageId: PAGE_ID }

@@ -85,9 +85,21 @@ import {
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
+import { buildPageEditorLink } from '../util/dot-experiments-uve-link.util';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
+
+/**
+ * Language for the chip's back-link.
+ *
+ * `pageInfoByPageId` carries only `url` and `host` — the two fields the list needs — so the page's
+ * real language is not available here. The editor's own guard substitutes 1 for a missing
+ * `language_id`, so sending 1 explicitly is the same destination it would reach anyway, and the
+ * link is a convenience rather than the variant round-trip's exact contract. Widening
+ * `DotExperimentPageInfo` for one link would mean another field on every row's lookup.
+ */
+const DEFAULT_PAGE_FILTER_LANGUAGE_ID = 1;
 
 /** Configure URL of an experiment that already exists. */
 const configureCommandsOf = (experimentId: string): string[] => [
@@ -265,6 +277,60 @@ export class DotExperimentsListComponent {
      * Empty-state copy. Resolved once for the same reason as `#scheduleLabels`, and declared
      * after the injections because field initialisers run in declaration order.
      */
+    /**
+     * The page the list is narrowed to, as the chip shows it (#37005, FR-021c).
+     *
+     * `null` when there is no page filter. When there is one but `pageInfoByPageId` cannot resolve
+     * it — the page was deleted after the editor left it — the chip still renders, saying so: an
+     * unlabelled chip over a silently empty list is the one outcome the spec's last edge case
+     * rules out.
+     */
+    readonly $pageFilter = computed<{ path: string; resolved: boolean } | null>(() => {
+        const pageId = this.store.selectedPageId();
+
+        if (!pageId) {
+            return null;
+        }
+
+        const url = this.store.pageInfoByPageId()[pageId]?.url;
+
+        return url
+            ? { path: url, resolved: true }
+            : {
+                  path: this.#dotMessageService.get('experiments.list.page-filter.unavailable'),
+                  resolved: false
+              };
+    });
+
+    /**
+     * Link back to the page in the editor (FR-024).
+     *
+     * The round-trip's own builder with the variant, experiment and mode omitted — one function,
+     * two call sites, rather than a second URL assembler that can drift from the first. `null`
+     * when the page cannot be resolved, since there is then nothing to open.
+     */
+    readonly $pageFilterBackLink = computed<string | null>(() => {
+        const pageId = this.store.selectedPageId();
+        const info = pageId ? this.store.pageInfoByPageId()[pageId] : null;
+
+        if (!pageId || !info?.url) {
+            return null;
+        }
+
+        const link = buildPageEditorLink({
+            pageId,
+            title: info.url,
+            path: info.url,
+            languageId: DEFAULT_PAGE_FILTER_LANGUAGE_ID
+        });
+
+        return link
+            ? this.#router
+                  .createUrlTree(link.commands, { queryParams: link.queryParams })
+                  .toString()
+            : null;
+    });
+
     /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
     readonly $hasActiveFilters = computed<boolean>(
         () =>
@@ -283,8 +349,25 @@ export class DotExperimentsListComponent {
      * first is a site with no experiments, the second is the user's own filters hiding them, and
      * only the second is worth offering a way out of.
      */
-    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() =>
-        this.$hasActiveFilters()
+    readonly $emptyConfiguration = computed<PrincipalConfiguration>(() => {
+        const pageFilter = this.$pageFilter();
+
+        // Arriving from a page that has no experiments is a third situation, not a case of the
+        // user's own filters hiding things: they did not set this filter, so offering to clear it
+        // is the wrong help. Offering to create an experiment for the page is the right help.
+        if (pageFilter) {
+            return {
+                title: this.#dotMessageService.get('experiments.list.empty.page.title'),
+                subtitle: this.#dotMessageService.get(
+                    'experiments.list.empty.page.description',
+                    pageFilter.path
+                ),
+                icon: 'science',
+                iconStyle: 'material-symbols-rounded'
+            };
+        }
+
+        return this.$hasActiveFilters()
             ? {
                   title: this.#dotMessageService.get('experiments.list.no-results.title'),
                   subtitle: this.#dotMessageService.get('experiments.list.no-results.description'),
@@ -296,8 +379,8 @@ export class DotExperimentsListComponent {
                   subtitle: this.#dotMessageService.get('experiments.list.empty.description'),
                   icon: 'science',
                   iconStyle: 'material-symbols-rounded'
-              }
-    );
+              };
+    });
 
     /**
      * Shown when the load fails. The error itself is already surfaced by
@@ -369,6 +452,18 @@ export class DotExperimentsListComponent {
     }
 
     /** Clears every narrowing at once, from the no-results state. */
+    /** FR-021c: the filter is a starting point, not a cage. */
+    onClearPageFilter(): void {
+        this.#dispatch.pageAssetFilterChanged(null);
+    }
+
+    /** Creates for the filtered page, carrying `?pageId=` so Configure arrives prefilled. */
+    onNewExperimentForPage(): void {
+        const pageId = this.store.selectedPageId();
+
+        this.#router.navigate(NEW_EXPERIMENT_COMMANDS, { queryParams: { pageId } });
+    }
+
     onClearFilters(): void {
         this.$searchTerm.set('');
         this.#dispatch.statusesChanged([]);

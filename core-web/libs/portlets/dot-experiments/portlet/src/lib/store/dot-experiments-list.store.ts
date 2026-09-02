@@ -152,8 +152,26 @@ export const DotExperimentsListStore = signalStore(
             });
         });
 
-        /** STUB — T077 implements the narrowing. Present so T075 can show assertion-level Red. */
-        const pageAssetFilteredExperiments = computed<DotExperiment[]>(() => searchedExperiments());
+        /**
+         * Narrowed to one page, or the whole searched set when no page filter is set (#37005).
+         *
+         * By `pageId` **equality**, deliberately not by matching the path: `searchedExperiments`
+         * above already matches the Page column as a substring, so narrowing by path would make
+         * `/about` include `/about-us`. FR-021b asks for "all of that page's experiments and no
+         * other page's", which only equality gives.
+         *
+         * Sits after the site scoping and the search, and *before* the status and goal counts, so
+         * the chips describe the set the user is actually looking at.
+         */
+        const pageAssetFilteredExperiments = computed<DotExperiment[]>(() => {
+            const pageId = store.selectedPageId();
+
+            if (!pageId) {
+                return searchedExperiments();
+            }
+
+            return searchedExperiments().filter((experiment) => experiment.pageId === pageId);
+        });
 
         /**
          * Counts per status over the site + search + page filtered set, deliberately independent of
@@ -162,7 +180,7 @@ export const DotExperimentsListStore = signalStore(
         const statusCounts = computed<Record<DotExperimentStatus, number>>(() => {
             const counts = emptyStatusCounts();
 
-            for (const experiment of searchedExperiments()) {
+            for (const experiment of pageAssetFilteredExperiments()) {
                 counts[experiment.status] = (counts[experiment.status] ?? 0) + 1;
             }
 
@@ -177,7 +195,7 @@ export const DotExperimentsListStore = signalStore(
         const goalCounts = computed<Record<GOAL_TYPES, number>>(() => {
             const counts = emptyGoalCounts();
 
-            for (const experiment of searchedExperiments()) {
+            for (const experiment of pageAssetFilteredExperiments()) {
                 const goal = goalTypeOfExperiment(experiment);
 
                 if (goal) {
@@ -196,12 +214,12 @@ export const DotExperimentsListStore = signalStore(
             // leaving an empty table whose only escape is re-picking every status.
             // Archived stays out of that default view; it is opt-in.
             if (!selectedStatuses.length) {
-                return searchedExperiments().filter(
+                return pageAssetFilteredExperiments().filter(
                     (experiment) => !OPT_IN_STATUSES.includes(experiment.status)
                 );
             }
 
-            return searchedExperiments().filter((experiment) =>
+            return pageAssetFilteredExperiments().filter((experiment) =>
                 selectedStatuses.includes(experiment.status)
             );
         });
@@ -311,6 +329,12 @@ export const DotExperimentsListStore = signalStore(
         })),
         on(dotExperimentsListPageEvents.filterChanged, ({ payload }) => ({
             filter: payload,
+            page: DEFAULT_EXPERIMENTS_LIST_PAGE
+        })),
+        // Same shape as every other narrowing here: set it, and send the user back to page 1,
+        // since the page they were on may not exist in the narrowed set.
+        on(dotExperimentsListPageEvents.pageAssetFilterChanged, ({ payload }) => ({
+            selectedPageId: payload,
             page: DEFAULT_EXPERIMENTS_LIST_PAGE
         })),
         on(dotExperimentsListPageEvents.statusesChanged, ({ payload }) => ({
