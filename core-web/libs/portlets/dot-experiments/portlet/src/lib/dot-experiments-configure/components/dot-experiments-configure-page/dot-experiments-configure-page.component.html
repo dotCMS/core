@@ -1,5 +1,5 @@
 <div class="flex flex-col gap-2">
-    <label class="text-sm font-semibold text-surface-900" for="experiments-configure-page">
+    <label for="experiments-configure-page">
         {{ 'experiments.configure.page.field.label' | dm }}
         <span class="text-red-600" aria-hidden="true">*</span>
     </label>
@@ -59,7 +59,7 @@
                  rides the same row rather than occupying a block of its own while empty. -->
         @if ($selectedPage()) {
             <div class="flex flex-none items-center gap-3">
-                <label class="text-sm text-surface-600" for="experiments-traffic-allocation">
+                <label for="experiments-traffic-allocation">
                     {{ 'experiments.configure.traffic.allocation' | dm }}
                 </label>
                 <!-- PrimeNG sets `width: 100%` on the group itself after Tailwind, so the
