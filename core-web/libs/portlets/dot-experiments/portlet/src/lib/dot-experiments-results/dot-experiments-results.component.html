@@ -67,8 +67,14 @@
                 [isWaitingForData]="store.$isWaitingForData()"
                 [isSaving]="store.$isSaving()"
                 (promoteRequested)="onPromote($event)" />
-            <dot-experiments-results-charts />
-            <dot-experiments-results-summary-table />
+            @if ($hasNothingToReport()) {
+                <dot-experiments-results-empty
+                    [title]="$emptyReportTitle"
+                    [subtitle]="$emptyReportSubtitle()" />
+            } @else {
+                <dot-experiments-results-charts />
+                <dot-experiments-results-summary-table />
+            }
         </div>
     </div>
 
