@@ -359,6 +359,70 @@ run reports a collision failure for it.
   submission-time refusal — MUST be reclaimed. FR-033 covers reclaim for runs that reach a terminal
   state; a refused submission never becomes a run and would otherwise leak.
 
+**Outcome**
+
+- **FR-014**: A finished run MUST record a total, a success count, a failure count, and a skipped
+  count.
+- **FR-015**: A finished run MUST record a per-file result naming the file and its status —
+  succeeded, failed, or skipped (never attempted).
+- **FR-016**: Every failed per-file result MUST carry a machine-readable reason and a
+  human-readable message. The reason MUST distinguish at least: over size limit,
+  disallowed file type (FR-012a — a media-type rule, not an extension one), name collision,
+  permission denied (a per-file check narrower than the target-folder check in FR-003 — see Edge
+  Cases), staged content unavailable (FR-032), and an unclassified error.
+- **FR-016a**: The **reason** is what the client presents, by mapping it to resolved product copy.
+  The **message** is diagnostic and log-only: it MUST NOT be the text shown to the author, which
+  the frontend spec's FR-030 already requires. Every reason a failure can carry MUST therefore
+  have client copy, or the client will have nothing to show for it — so adding a new reason later
+  is a change to both halves, not just this one.
+- **FR-017**: The recorded counts MUST be the authoritative report of the run. The number of files
+  submitted MUST NOT be used as a stand-in for the number created.
+- **FR-018**: This feature MUST **generalize the batch-outcome shape already established by bulk
+  refresh** (#36845 / #37131) into a shared contract, rather than defining a second one. Three
+  deltas are required and are real work:
+  - **A machine-readable reason code.** The shipped per-item record carries a human-readable
+    message only; FR-016 needs both. This is an additive change to a shipped contract.
+  - **A generic item key.** The shipped record is keyed by contentlet identifier and inodes. A file
+    being uploaded has neither — it does not exist until the run creates it — and neither does a
+    folder path. The generic key is the substance of this requirement.
+  - **One spelling of the counters: `failedCount`.** The shipped counter is `failedCount`; #37166
+    originally said `failCount`. `failedCount` wins, matching what already ships. Both halves MUST
+    use it; this is settled here and in #37166's amendment, not left to the plan.
+- **FR-018a**: The generalized shape MUST carry a batch of folder paths as naturally as a batch of
+  files, so #37062 / #37063 adopt it unchanged.
+
+**Notifying the submitter**
+
+- **FR-019**: When a run reaches any terminal state — finished, cancelled, or permanently failed —
+  the system MUST notify the submitting author of the outcome and its counts.
+- **FR-020**: The notification MUST be durable: an author who was not looking when the run
+  finished MUST still be able to learn the outcome afterwards. "The outcome" is the recorded
+  outcome of FR-014 … FR-016, counts **and** the per-file results with their reasons, not a
+  counts-only summary. An author who stepped away would otherwise learn that three files failed
+  without learning which three, leaving them nothing to act on.
+- **FR-021**: The notification MUST be addressed to the submitting author only.
+- **FR-022**: The notification wording MUST reflect the actual outcome — full success, partial
+  failure, total failure, or cancellation — rather than a single fixed message.
+- **FR-023**: Notification MUST be best-effort: a failure to notify MUST be logged and MUST NOT
+  affect the run's recorded outcome or the batch machinery.
+
+**Progress and cancellation**
+
+- **FR-024**: The system MUST report the run's progress as files complete, readable while the run
+  is in flight.
+- **FR-025**: A running batch MUST be cancellable.
+- **FR-026**: Cancelling MUST leave files already created in place — nothing is rolled back.
+- **FR-027**: Cancellation MUST take effect between files, never mid-file.
+- **FR-028**: A cancelled run's outcome MUST distinguish files never attempted from files that
+  failed.
+
+**Documentation**
+
+- **FR-029**: The published API description MUST state that the operation is asynchronous, and
+  point at how to follow, cancel and read the outcome of the run.
+- **FR-030**: The generated API document MUST be regenerated from the annotations and committed
+  alongside the change.
+
 **Staged file content**
 
 <!--
@@ -437,70 +501,6 @@ run reports a collision failure for it.
 - **FR-043**: A run MUST NOT be blocked or slowed by unrelated runs on other targets. FR-042's
   mechanism satisfies this for free — a uniqueness constraint contends only on the contended key —
   and any additional mechanism MUST preserve it rather than serialize uploads generally.
-
-**Outcome**
-
-- **FR-014**: A finished run MUST record a total, a success count, a failure count, and a skipped
-  count.
-- **FR-015**: A finished run MUST record a per-file result naming the file and its status —
-  succeeded, failed, or skipped (never attempted).
-- **FR-016**: Every failed per-file result MUST carry a machine-readable reason and a
-  human-readable message. The reason MUST distinguish at least: over size limit,
-  disallowed file type (FR-012a — a media-type rule, not an extension one), name collision,
-  permission denied (a per-file check narrower than the target-folder check in FR-003 — see Edge
-  Cases), staged content unavailable (FR-032), and an unclassified error.
-- **FR-016a**: The **reason** is what the client presents, by mapping it to resolved product copy.
-  The **message** is diagnostic and log-only: it MUST NOT be the text shown to the author, which
-  the frontend spec's FR-030 already requires. Every reason a failure can carry MUST therefore
-  have client copy, or the client will have nothing to show for it — so adding a new reason later
-  is a change to both halves, not just this one.
-- **FR-017**: The recorded counts MUST be the authoritative report of the run. The number of files
-  submitted MUST NOT be used as a stand-in for the number created.
-- **FR-018**: This feature MUST **generalize the batch-outcome shape already established by bulk
-  refresh** (#36845 / #37131) into a shared contract, rather than defining a second one. Three
-  deltas are required and are real work:
-  - **A machine-readable reason code.** The shipped per-item record carries a human-readable
-    message only; FR-016 needs both. This is an additive change to a shipped contract.
-  - **A generic item key.** The shipped record is keyed by contentlet identifier and inodes. A file
-    being uploaded has neither — it does not exist until the run creates it — and neither does a
-    folder path. The generic key is the substance of this requirement.
-  - **One spelling of the counters: `failedCount`.** The shipped counter is `failedCount`; #37166
-    originally said `failCount`. `failedCount` wins, matching what already ships. Both halves MUST
-    use it; this is settled here and in #37166's amendment, not left to the plan.
-- **FR-018a**: The generalized shape MUST carry a batch of folder paths as naturally as a batch of
-  files, so #37062 / #37063 adopt it unchanged.
-
-**Notifying the submitter**
-
-- **FR-019**: When a run reaches any terminal state — finished, cancelled, or permanently failed —
-  the system MUST notify the submitting author of the outcome and its counts.
-- **FR-020**: The notification MUST be durable: an author who was not looking when the run
-  finished MUST still be able to learn the outcome afterwards. "The outcome" is the recorded
-  outcome of FR-014 … FR-016, counts **and** the per-file results with their reasons, not a
-  counts-only summary. An author who stepped away would otherwise learn that three files failed
-  without learning which three, leaving them nothing to act on.
-- **FR-021**: The notification MUST be addressed to the submitting author only.
-- **FR-022**: The notification wording MUST reflect the actual outcome — full success, partial
-  failure, total failure, or cancellation — rather than a single fixed message.
-- **FR-023**: Notification MUST be best-effort: a failure to notify MUST be logged and MUST NOT
-  affect the run's recorded outcome or the batch machinery.
-
-**Progress and cancellation**
-
-- **FR-024**: The system MUST report the run's progress as files complete, readable while the run
-  is in flight.
-- **FR-025**: A running batch MUST be cancellable.
-- **FR-026**: Cancelling MUST leave files already created in place — nothing is rolled back.
-- **FR-027**: Cancellation MUST take effect between files, never mid-file.
-- **FR-028**: A cancelled run's outcome MUST distinguish files never attempted from files that
-  failed.
-
-**Documentation**
-
-- **FR-029**: The published API description MUST state that the operation is asynchronous, and
-  point at how to follow, cancel and read the outcome of the run.
-- **FR-030**: The generated API document MUST be regenerated from the annotations and committed
-  alongside the change.
 
 ### Key Entities
 
