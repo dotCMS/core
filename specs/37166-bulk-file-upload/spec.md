@@ -463,7 +463,10 @@ run reports a collision failure for it.
 - **FR-019**: When a run reaches any terminal state — finished, cancelled, or permanently failed —
   the system MUST notify the submitting author of the outcome and its counts.
 - **FR-020**: The notification MUST be durable: an author who was not looking when the run
-  finished MUST still be able to learn the outcome afterwards.
+  finished MUST still be able to learn the outcome afterwards. "The outcome" is the recorded
+  outcome of FR-014 … FR-016, counts **and** the per-file results with their reasons, not a
+  counts-only summary. An author who stepped away would otherwise learn that three files failed
+  without learning which three, leaving them nothing to act on.
 - **FR-021**: The notification MUST be addressed to the submitting author only.
 - **FR-022**: The notification wording MUST reflect the actual outcome — full success, partial
   failure, total failure, or cancellation — rather than a single fixed message.
@@ -523,8 +526,12 @@ from the consumer's point of view.
 - **C-004**: A way to cancel an in-flight run (FR-025).
 - **C-005**: A readable terminal state and outcome — counts plus per-file results with reason and
   message (FR-014 … FR-017).
-- **C-006**: A pushed completion signal carrying the run's counts, reaching the browser without
-  the client having to poll, plus a durable record of the same outcome (FR-019, FR-020).
+- **C-006**: A pushed completion signal carrying the run's outcome, reaching the browser without
+  the client having to poll, plus a durable record of that same outcome (FR-019, FR-020).
+  **Outcome here means counts *and* the per-file results**, each failure carrying its reason: that
+  is what FR-014 … FR-016 record, and summarising it as "counts" says less than this spec already
+  requires. The client's FR-023 depends on the failing file names being present in both, since
+  those names are what tell an author which files to choose again.
 
 **Not blocking on the client**: FR-019/FR-020 mean the frontend does **not** need to build a jobs
 management screen for the outcome to survive navigation. It needs only to render the pushed signal

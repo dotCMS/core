@@ -100,12 +100,12 @@ When a batch finishes, the author is told how many files were created and how ma
 some failed, the message names them and says why, and stays on screen long enough to be read.
 
 **Why this priority**: A partial failure is the normal case for a batch of thirty files, not the
-exception: one will be too large, one will have a blocked extension, one will collide with an
-existing name. Uploading all thirty (Story 1) while reporting "upload complete" over three
+exception: one will be too large, one will have a file type that is not allowed, one will collide
+with an existing name. Uploading all thirty (Story 1) while reporting "upload complete" over three
 silent failures reproduces the original defect in a new place.
 
-**Independent Test**: Submit a batch containing valid files, one oversized file and one with a
-disallowed extension. Confirm the resulting message reports the true counts and names both failing
+**Independent Test**: Submit a batch containing valid files, one oversized file and one whose file
+type is not allowed. Confirm the resulting message reports the true counts and names both failing
 files with a distinguishable reason each.
 
 **Acceptance Scenarios**:
@@ -279,9 +279,12 @@ workflow action on rows selected in the listing.
 ### Edge Cases
 
 - An author selects more files than the configured maximum, or a set of files whose total size
-  exceeds the configured ceiling. Either refusal is reported before anything is uploaded, and says
-  which limit was hit rather than failing opaquely: "too many files" and "too much data" are
-  different problems with different fixes.
+  exceeds the configured ceiling. Either refusal says which limit was hit rather than failing
+  opaquely: "too many files" and "too much data" are different problems with different fixes. The
+  count refusal lands before anything is uploaded. The size refusal only does so when the client
+  declares the batch total (FR-038); the server's authoritative check runs while it reads the
+  content (backend FR-013c.2), so an undeclared over-ceiling batch is refused only after the author
+  has watched it upload. That is the case the copy has to survive.
 - The connection drops while a batch is being submitted, so the author cannot tell whether it
   landed. Retrying is safe and the interface says so, rather than leaving them to check the folder
   and guess.
@@ -318,15 +321,24 @@ workflow action on rows selected in the listing.
 - **FR-004**: The interface MUST NOT tell the author that multi-file upload is unsupported, and the
   copy saying so MUST be removed.
 - **FR-005**: The single-file upload experience MUST remain unchanged.
-- **FR-006**: The client MAY refuse a batch that exceeds the configured maximum before
-  submitting it, as a convenience. The server remains the point of enforcement, and the client MUST
-  NOT treat its own check as authoritative.
+- **FR-006**: The client MAY refuse a batch that exceeds the configured maximum file count, or the
+  configured total size ceiling, before submitting it, as a convenience. The server remains the
+  point of enforcement, and the client MUST NOT treat its own check as authoritative.
+- **FR-038**: The client MUST declare the batch's total size when it submits. The server's fast
+  refusal of an over-ceiling batch exists only where the caller declares a total (backend
+  FR-013c.1); without one the only enforcement left is the authoritative check taken while the
+  content is read (backend FR-013c.2), which refuses the batch after the author has already uploaded
+  it. The declared total is a courtesy to the author, not a limit the client enforces: FR-006 still
+  applies, and the client MUST NOT treat its own arithmetic as authoritative.
 - **FR-037**: When the connection is lost or the answer is uncertain while a batch is being
   submitted, the client MUST be able to resubmit the same batch, and MUST NOT make the author work
   out whether the first attempt landed. Resubmitting cannot produce a second copy of their files:
   the server either recognises the resubmission as the same batch or refuses the duplicates
   (backend FR-040, C-002a). The client therefore treats an uncertain submission as retryable, not
   as a failure the author has to reason about, and never asks them to check the folder first.
+  Where the server takes the collision branch, the client depends on a duplicate resubmission being
+  distinguishable from a genuinely all-collided batch (backend FR-040a, C-002a), and MUST report
+  such a retry as the success it is rather than as "every file failed, file already exists".
 - **FR-034**: The existing permission gate MUST continue to hold, unchanged, for every route into an
   upload: the upload control, the create menu, and dropping files onto a folder. An author without
   the right to add children to the target MUST be shown that route disabled **with the reason
@@ -397,7 +409,15 @@ by this feature.)*
 - **FR-022**: Every count reported MUST be the server's count. The number of items the author
   selected MUST NOT be used as a stand-in for the number the operation actually affected.
 - **FR-023**: A partial outcome MUST name the items that did not succeed and give a reason for each,
-  and MUST remain readable longer than a clean success does.
+  and MUST remain readable longer than a clean success does. This holds for **both** surfaces the
+  outcome reaches: the transient notification shown while the author is present, and the durable
+  record they can read afterwards (C-006). Neither may degrade to counts alone, because the file
+  names are what tell an author which files to choose again.
+- **FR-023a**: Reasons MUST be **grouped**, not repeated once per file: "3 files were larger than
+  the limit, 1 already existed" rather than four rows carrying four reasons. A batch of 50 that
+  wholly fails MUST read as one statement about the batch, not as 50 identical rows. Failing file
+  names MUST still be recoverable from the outcome; grouping governs how it reads, not what it
+  carries.
 - **FR-036**: Every failure reason the server can return MUST have its own product copy on the
   client. The server sends a machine-readable reason plus a diagnostic message; the reason is what
   the client maps to text for the author, and the message is never shown (FR-030, backend FR-016a).
@@ -406,7 +426,14 @@ by this feature.)*
   the staged content is no longer available; and an unclassified failure. A reason with no copy is
   a hole the author sees, so the unclassified case MUST also read as a real sentence rather than a
   fallback for a reason nobody wrote. **Adding a reason later is a change to both halves**, never
-  to the server alone.
+  to the server alone. A name collision is **case-insensitive** (backend FR-042a): `Report.pdf` and
+  `report.pdf` are one contended name, so the client MUST NOT present collision as case-sensitive,
+  and any alternative name it suggests MUST differ by more than case.
+- **FR-039**: Copy about what may be uploaded MUST describe a **file type** rule, never a file
+  extension one: the server resolves the media type by detection and content sniffing rather than by
+  trusting the name, so renaming a file does not get it past the rule (backend FR-012a). Where the
+  media type cannot be resolved the server skips the check and accepts the file (backend FR-012b),
+  so no copy may tell the author that every file is checked.
 - **FR-024**: An outcome the client cannot account for — counts that do not close, a response
   carrying no outcome, or a terminal state the client does not recognise — MUST be reported as an
   error. No number may be invented to fill a gap, and an unrecognised outcome MUST NOT be reported
@@ -466,7 +493,10 @@ either document. Each item is a dependency of this feature, not a requirement of
 - **C-002a** — A defined answer to "the connection dropped while I was submitting, may I retry?"
   The client may resubmit without risking a second copy of the author's files. *Consumed by*
   FR-037. Which mechanism provides it, the same handle returned or the duplicates refused as
-  collisions, is fixed in the plan; the client only depends on retry being safe.
+  collisions, is fixed in the plan; the client only depends on retry being safe. If the plan takes
+  the collision branch, the client additionally depends on a duplicate resubmission being
+  distinguishable from a genuinely all-collided batch (backend FR-040a). Without that, a successful
+  retry reports as "every file failed" and FR-037 cannot hold.
 - **C-002b** — A stable set of failure reasons, each mapped to product copy on the client side. The
   server's message is diagnostic and is not displayed. *Consumed by* FR-036. Adding a reason later
   changes both halves.
@@ -477,12 +507,21 @@ either document. Each item is a dependency of this feature, not a requirement of
   change.
 - **C-005** — A readable terminal state and outcome: counts plus per-item results with a reason and
   a message. *Consumed by* FR-021 … FR-024.
-- **C-006** — A pushed completion signal carrying the run's counts, reaching the browser without the
-  client polling, plus a durable record of the same outcome. *Consumed by* FR-026, FR-033.
+- **C-006** — A pushed completion signal carrying the run's outcome, reaching the browser without
+  the client polling, plus a durable record of that same outcome. **Outcome means counts *and* the
+  per-file results**, each failure carrying its reason: that is what backend FR-014 … FR-016
+  record, and what backend FR-020 entitles the author to read after the fact. *Consumed by*
+  FR-023, FR-026, FR-033.
 
 **What C-006 buys this feature**: the outcome survives the author walking away without the client
 building anything to make that true. The client renders the pushed signal while the author is
 present; the durable record is the server's responsibility. This is why FR-033 can hold.
+
+**Why the wording matters**: both specs previously summarised this as "the run's counts", which says
+less than backend FR-014 … FR-016 actually record. A counts-only durable record would leave an
+author who stepped away with "27 of 30 created" and no way to learn which three, which FR-023
+forbids. The per-file results are already in the contract; this states it so no plan reads the
+summary and builds the thinner thing.
 
 **Not settled at this altitude**: the concrete submission format — field names, the endpoint, and
 the shape of the handle. Both halves are being built by different developers, so this MUST be
@@ -564,6 +603,29 @@ recorded here as a planning obligation so it cannot be discovered during review.
   [#33331](https://github.com/dotCMS/core/issues/33331) and is the expected home for stopping a run
   (User Story 5), but this feature must not depend on it existing, and does not build it.
 - **Mixing upload types within one batch** (FR-003).
+
+---
+
+## Planning Obligations
+
+- **Test coverage** (Constitution V). The plan MUST name which layers this feature exercises and
+  which it does not, with the reason for each omission. Silence is not an acceptable answer to
+  Principle V. At minimum it MUST say what is covered by component and store unit tests
+  (Jest/Spectator), what is covered end to end (Playwright, extending the existing
+  `apps/dotcms-ui-e2e/src/tests/content-drive` suite), and how the pushed completion signal (C-006)
+  and the in-flight reporting (User Story 3) are exercised, since neither is reachable from a unit
+  test of a single component. The per-story **Independent Test** steps above are acceptance criteria
+  for a reviewer, not a substitute for this.
+- **The submission format**, already recorded in §Contract Consumed: field names, the endpoint and
+  the shape of the handle are not settled at this altitude, and the two halves are being built by
+  different developers, so both plans MUST reference one written definition. This now also covers
+  how the client declares the batch total that FR-038 requires.
+- **Progress readback is the riskiest dependency.** User Story 3 is P1 and rests on C-003, which the
+  backend spec now carries as its *first* Planning Obligation and its largest piece of hidden work:
+  the job framework's outcome shape is emitted once at the terminal state and cannot serve a run
+  that must read its own progress back, so a store for it is either a framework capability or
+  feature-owned. The frontend plan MUST NOT assume progress readback is free, and MUST say what
+  User Story 3 degrades to if it arrives later than the rest of the feature.
 
 ---
 
