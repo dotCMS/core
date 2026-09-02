@@ -15,7 +15,10 @@ import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentStatus,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
+    EXPERIMENT_RETURN_PARAM,
     MAX_VARIANTS_ALLOWED,
     TrafficProportionTypes,
     Variant
@@ -68,6 +71,7 @@ const ADD_DIALOG_HEADER = 'Add Variant';
 const CAP_REACHED_COPY = 'Maximum number of variants reached';
 const EDIT_CONTENT_UNAVAILABLE_COPY = 'Available soon';
 const CANT_EDIT_COPY = 'Only a draft experiment can be edited';
+const PAGE_BLOCKED_COPY = 'Another user is editing this page';
 const HINT_COPY = 'Up to {0} variants';
 
 const messageServiceMock = new MockDotMessageService({
@@ -82,7 +86,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.hint': HINT_COPY,
     'experiments.configure.variants.hint.locked': 'Locked',
     'experiments.configure.variants.share-of-all': '{0}%',
-    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY
+    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY,
+    [EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED]: PAGE_BLOCKED_COPY
 });
 
 /**
@@ -94,6 +99,10 @@ const createStoreMock = () => ({
     experiment: jest.fn().mockReturnValue(EXPERIMENT),
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
+    // The two halves of read-only, kept separate on purpose: the mode is an OR across them and
+    // the control, not a read of `$disabledTooltipKey`, which reports only the strongest reason.
+    $isLocked: jest.fn().mockReturnValue(false),
+    $lockedByAnotherUser: jest.fn().mockReturnValue(false),
     $validationErrors: jest.fn().mockReturnValue([]),
     selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
     // What the "of all traffic" column multiplies each split against.
@@ -1168,6 +1177,127 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
 
                 expect(cardText).not.toMatch(/no content changes|unmodified|edited in/i);
             });
+        });
+    });
+
+    /**
+     * Read-only vs editable (#37005, US4, FR-008 – FR-010a).
+     *
+     * `mode` is an **OR** across three independent conditions: the variant is the control, the
+     * experiment is not a draft, or the page is locked by another user. Any one of them means
+     * preview.
+     *
+     * Deliberately *not* derived from `$disabledTooltipKey()`. That computed exists to pick the
+     * single strongest *reason* to show a user — it reports the non-draft reason before the lock
+     * reason — and it does not cover the control at all, since the control is read-only on a
+     * perfectly editable draft. Reusing it would make the control editable, which is FR-008
+     * inverted and the kind of thing that only shows up when someone edits the original by
+     * accident.
+     */
+    describe('read-only vs editable', () => {
+        const modeSentTo = (rowIndex: number): string => {
+            clickButton('variant-edit-content-btn', rows()[rowIndex]);
+            const [, options] = navigate.mock.calls[0];
+
+            return options.queryParams.mode;
+        };
+
+        const CONTROL_ROW = 0;
+        const VARIANT_ROW = 1;
+
+        // FR-008. The one case no lock condition covers.
+        it('should open the control read-only even on an editable draft', () => {
+            render();
+
+            expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
+        });
+
+        // The single editable case, so the OR cannot simply be over-applied to everything.
+        it('should open a non-control variant of an unlocked draft editable', () => {
+            render();
+
+            expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
+        });
+
+        // FR-009. Every status but DRAFT, not just RUNNING: an ended or archived experiment's
+        // results are just as corruptible by an accidental edit.
+        describe.each([
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.SCHEDULED,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.ARCHIVED
+        ])('an experiment in %s', (status) => {
+            beforeEach(() => {
+                storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+                storeMock.$isLocked.mockReturnValue(true);
+                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+            });
+
+            it('should open every variant read-only', () => {
+                render();
+
+                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
+            });
+        });
+
+        // FR-010.
+        describe('a page locked by another user', () => {
+            beforeEach(() => {
+                storeMock.$lockedByAnotherUser.mockReturnValue(true);
+                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
+            });
+
+            it('should open every variant read-only', () => {
+                render();
+
+                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
+            });
+
+            it('should state the reason to the user', () => {
+                render();
+
+                expect(spectator.query(byTestId('variants-card'))?.textContent).toContain(
+                    PAGE_BLOCKED_COPY
+                );
+            });
+        });
+
+        // The page being locked by *me* is not a reason to freeze anything: I hold the lock.
+        it('should stay editable when the page is locked by the current user', () => {
+            storeMock.$lockedByAnotherUser.mockReturnValue(false);
+            render();
+
+            expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
+        });
+
+        // The trap this whole describe exists to catch. On a draft, unlocked page
+        // `$disabledTooltipKey()` is null — so a mode derived from it would call the control
+        // editable.
+        it('should not derive the mode from the disabled-tooltip key', () => {
+            storeMock.$disabledTooltipKey.mockReturnValue(null);
+            storeMock.$isLocked.mockReturnValue(false);
+            storeMock.$lockedByAnotherUser.mockReturnValue(false);
+            render();
+
+            expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
+        });
+
+        // FR-010a. Read-only changes what UVE offers, not where the round-trip ends — so the
+        // outbound link still carries the same origin marker and experiment id.
+        it('should carry the same return context whether read-only or editable', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[CONTROL_ROW]);
+            const [, readOnly] = navigate.mock.calls[0];
+
+            navigate.mockClear();
+            render();
+            clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+            const [, editable] = navigate.mock.calls[0];
+
+            expect(readOnly.queryParams.experimentId).toBe(editable.queryParams.experimentId);
+            expect(readOnly.queryParams[EXPERIMENT_RETURN_PARAM]).toBe(
+                editable.queryParams[EXPERIMENT_RETURN_PARAM]
+            );
         });
     });
 
