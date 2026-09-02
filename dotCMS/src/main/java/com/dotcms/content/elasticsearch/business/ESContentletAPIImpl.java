@@ -3054,6 +3054,35 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Identifiers whose index removal will be deferred, and therefore needs a durable record.
+     *
+     * <p>Mirrors the add path, which journals only under {@link IndexPolicy#DEFER}
+     * ({@code ContentletIndexAPIImpl#addContentToIndex}). The journal row exists to protect the
+     * deferred route, where the removal is handed to an in-memory commit listener that can be
+     * lost. Under {@code FORCE} / {@code WAIT_FOR} the removal is applied inline and
+     * synchronously: a failure already reaches the caller and rolls the transaction back, so
+     * there is nothing left owing and a journal row would only add work — one redundant insert
+     * per identifier on the highest-volume delete path.</p>
+     *
+     * <p>An identifier is included when <em>any</em> of its versions is deferred: a single
+     * journal entry covers the whole identifier, so one deferred version is enough to need it.</p>
+     *
+     * <p>Must be called before {@code contentFactory.delete}.</p>
+     *
+     * @param contentletsVersion every version of the contentlets being destroyed
+     * @return the identifiers that need a durable removal record; never {@code null}
+     */
+    private static Set<String> deferredRemovalIdentifiers(
+            final List<Contentlet> contentletsVersion) {
+
+        return contentletsVersion.stream()
+                .filter(contentlet -> IndexPolicy.DEFER == contentlet.getIndexPolicy())
+                .map(Contentlet::getIdentifier)
+                .filter(UtilMethods::isSet)
+                .collect(Collectors.toSet());
+    }
+
+    /**
      * Records a durable index-removal intent in {@code dist_reindex_journal} for every identifier
      * being destroyed, so that a failed or lost index write is retried instead of silently
      * orphaning the document.
@@ -3071,6 +3100,9 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * the rows are deleted, so this method cannot depend on the state of {@link Contentlet}
      * objects that {@code contentFactory.delete} has already processed. The signature is what
      * enforces that ordering — a comment would not.</p>
+     *
+     * <p>Only <b>deferred</b> removals are journalled — see
+     * {@link #deferredRemovalIdentifiers(List)}.</p>
      *
      * @param identifiers identifiers of the contentlets being destroyed, collected before deletion
      */
@@ -3158,10 +3190,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         // Collected before the delete so the journal never depends on post-deletion object
         // state — see journalContentDeletes.
-        final Set<String> destroyedIdentifiers = contentletsVersion.stream()
-                .map(Contentlet::getIdentifier)
-                .filter(UtilMethods::isSet)
-                .collect(Collectors.toSet());
+        final Set<String> destroyedIdentifiers = deferredRemovalIdentifiers(contentletsVersion);
 
         // Delete all the versions of the contentlets to delete
         this.contentFactory.delete(contentletsVersion);
@@ -3603,10 +3632,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         }
 
         // Collected before the delete — see journalContentDeletes.
-        final Set<String> destroyedIdentifiers = contentletsVersion.stream()
-                .map(Contentlet::getIdentifier)
-                .filter(UtilMethods::isSet)
-                .collect(Collectors.toSet());
+        final Set<String> destroyedIdentifiers = deferredRemovalIdentifiers(contentletsVersion);
 
         contentFactory.delete(contentletsVersion);
 
