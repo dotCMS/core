@@ -61,15 +61,6 @@ public class OIDCProvider implements OAuthProvider {
     private static final ConcurrentHashMap<String, JWKSource<SecurityContext>> JWKS_CACHE = new ConcurrentHashMap<>();
 
     /**
-     * Cap on outbound IdP response bodies (discovery, token, userinfo, groups, revocation).
-     * Bounds heap use against a malicious/compromised IdP that streams an oversized body
-     * during authentication. Mirrors the {@code setMaxResponseBytes} guard the admin
-     * discovery/metadata proxies in {@code DotAuthResource} already apply.
-     */
-    private static final int MAX_IDP_RESPONSE_BYTES =
-            Config.getIntProperty("OAUTH_IDP_MAX_RESPONSE_BYTES", 1024 * 1024);
-
-    /**
      * Safe {@code id_token} signing algorithms. Asymmetric only (RSA or EC) — symmetric
      * {@code HS*} algs rely on a shared secret, and {@code none} is an explicit attacker
      * vector. The effective allow-list for a given IdP is this set intersected with the
@@ -256,7 +247,7 @@ public class OIDCProvider implements OAuthProvider {
                     .setUrl(discoveryUrl)
                     .setMethod(CircuitBreakerUrl.Method.GET)
                     .setTimeout(5000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -320,7 +311,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Accept", "application/json",
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(10000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -388,7 +379,7 @@ public class OIDCProvider implements OAuthProvider {
                     // call honors MAX_IDP_RESPONSE_BYTES like every other IdP call site.
                     final com.nimbusds.jose.util.DefaultResourceRetriever guardedRetriever =
                             new com.nimbusds.jose.util.DefaultResourceRetriever(
-                                    jwksTimeoutMs, jwksTimeoutMs, MAX_IDP_RESPONSE_BYTES) {
+                                    jwksTimeoutMs, jwksTimeoutMs, OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES) {
                                 @Override
                                 public com.nimbusds.jose.util.Resource retrieveResource(final URL url)
                                         throws java.io.IOException {
@@ -529,7 +520,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Authorization", "Bearer " + accessToken,
                             "Accept", "application/json"))
                     .setTimeout(5000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
             if (resp.getStatusCode() < 200 || resp.getStatusCode() >= 300) {
@@ -551,7 +542,7 @@ public class OIDCProvider implements OAuthProvider {
     public Collection<String> getGroups(final String accessToken, final Map<String, Object> userInfo) {
         // Prefer the claim from userinfo if configured
         if (UtilMethods.isSet(groupsClaim) && userInfo != null && userInfo.containsKey(groupsClaim)) {
-            return toStringList(userInfo.get(groupsClaim));
+            return OAuthGroupsFetcher.toStringList(userInfo.get(groupsClaim));
         }
         // Fall back to a separate groups endpoint if configured (Google Workspace, GitHub —
         // IdPs that cannot emit groups in claims). Failures propagate — the caller must be
@@ -578,7 +569,7 @@ public class OIDCProvider implements OAuthProvider {
                             "Authorization", OAuthCrypto.basicAuthHeader(clientId, clientSecret),
                             "Content-Type", "application/x-www-form-urlencoded"))
                     .setTimeout(5000)
-                    .setMaxResponseBytes(MAX_IDP_RESPONSE_BYTES)
+                    .setMaxResponseBytes(OAuthGroupsFetcher.MAX_IDP_RESPONSE_BYTES)
                     .build()
                     .doResponse();
         } catch (final Exception e) {
@@ -672,15 +663,6 @@ public class OIDCProvider implements OAuthProvider {
         if (name.endsWith("384")) return "SHA-384";
         if (name.endsWith("512")) return "SHA-512";
         return "SHA-256";
-    }
-
-    @SuppressWarnings("unchecked")
-    private static Collection<String> toStringList(final Object value) {
-        if (value instanceof Collection) {
-            final Collection<Object> c = (Collection<Object>) value;
-            return c.stream().filter(java.util.Objects::nonNull).map(Object::toString).collect(java.util.stream.Collectors.toList());
-        }
-        return Collections.emptyList();
     }
 
     private static String urlEncode(final String s) {

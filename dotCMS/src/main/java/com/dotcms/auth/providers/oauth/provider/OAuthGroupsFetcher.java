@@ -51,14 +51,16 @@ import java.util.function.Function;
  * Groups then arrive as their email addresses (e.g. {@code team@example.com}) for the
  * {@code groupMappings} step. Use {@code memberships:searchTransitiveGroups} instead of
  * {@code searchDirectGroups} to include nested membership. GitHub teams:
- * {@code groupsUrl = https://api.github.com/user/teams}, {@code groupsResponsePath = [].slug}.
+ * {@code groupsUrl = https://api.github.com/user/teams?per_page=100},
+ * {@code groupsResponsePath = [].slug} — ceiling of 100 teams: GitHub paginates via the
+ * {@code Link} header, which this fetcher does not follow, and 100 is the max page size.
  */
 final class OAuthGroupsFetcher {
 
     private static final ObjectMapper MAPPER = DotObjectMapperProvider.getInstance().getDefaultObjectMapper();
 
-    /** Same heap-bound guard as the providers — caps IdP response bodies. */
-    private static final int MAX_IDP_RESPONSE_BYTES =
+    /** Heap-bound guard capping IdP response bodies — shared by both providers. */
+    static final int MAX_IDP_RESPONSE_BYTES =
             Config.getIntProperty("OAUTH_IDP_MAX_RESPONSE_BYTES", 1024 * 1024);
 
     private OAuthGroupsFetcher() {
@@ -106,9 +108,12 @@ final class OAuthGroupsFetcher {
                 return groups;
             }
         }
-        Logger.warn(OAuthGroupsFetcher.class, label + " groups fetch stopped at the "
-                + cap + "-page cap (OAUTH_GROUPS_MAX_PAGES) with more pages pending — group list may be incomplete");
-        return groups;
+        // A partial list would be applied by the role rebuild and silently strip the roles
+        // for the missing pages — the exact failure this class exists to prevent. Fail the
+        // login instead; the cap is configurable for tenants with pathological group counts.
+        throw new DotRuntimeException(label + " groups fetch exceeded the " + cap
+                + "-page cap (OAUTH_GROUPS_MAX_PAGES) with more pages pending — aborting login"
+                + " rather than applying a partial group list");
     }
 
     /**
@@ -150,7 +155,7 @@ final class OAuthGroupsFetcher {
                     + "' is invalid — expected exactly one '[]' array marker, e.g. memberships[].groupKey.id");
         }
         final String arrayPath = responsePath.substring(0, marker);
-        final String elementPath = stripLeadingDot(responsePath.substring(marker + 2));
+        final String elementPath = responsePath.substring(marker + 2).replaceFirst("^\\.", "");
 
         final Object arrayNode = navigate(parsed, arrayPath);
         if (arrayNode == null) {
@@ -235,10 +240,6 @@ final class OAuthGroupsFetcher {
                     .collect(java.util.stream.Collectors.toList());
         }
         return List.of();
-    }
-
-    private static String stripLeadingDot(final String s) {
-        return s.startsWith(".") ? s.substring(1) : s;
     }
 
     private static String urlEncode(final String s) {

@@ -150,17 +150,18 @@ class OAuthGroupsFetcherTest {
     }
 
     @Test
-    void fetch_stopsAtPageCapWhenTokenNeverEnds() {
+    void fetch_throwsAtPageCapWhenTokenNeverEnds() {
         final AtomicInteger calls = new AtomicInteger();
         final Function<String, String> http = url -> {
             calls.incrementAndGet();
             return "{\"memberships\":[{\"groupKey\":{\"id\":\"g" + calls.get() + "@x.com\"}}],\"nextPageToken\":\"t\"}";
         };
-        final Collection<String> groups = OAuthGroupsFetcher.fetch(
+        // A partial list would let the role rebuild silently strip the missing pages' roles,
+        // so exceeding the cap must abort the login rather than return what it has.
+        assertThrows(DotRuntimeException.class, () -> OAuthGroupsFetcher.fetch(
                 "https://idp.example.com/groups", "memberships[].groupKey.id",
-                claims("u@x.com", null), "OIDC", http);
-        assertEquals(OAuthGroupsFetcher.maxPages(), calls.get(), "must stop at the page cap");
-        assertEquals(OAuthGroupsFetcher.maxPages(), groups.size());
+                claims("u@x.com", null), "OIDC", http));
+        assertEquals(OAuthGroupsFetcher.maxPages(), calls.get(), "must stop requesting at the page cap");
     }
 
     @Test
