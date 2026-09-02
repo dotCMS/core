@@ -349,24 +349,6 @@ public final class OAuthAppConfig implements Serializable {
      * RFC1918 ranges. Returns null on rejection; callers treat a null URL as
      * "not configured" and fall through cleanly.
      */
-    /**
-     * Validate a URL that may carry {@code {email}} / {@code {sub}} placeholders (only
-     * {@code groupsUrl} supports them). {@code new URI()} rejects literal braces, so the
-     * placeholders are swapped for representative encoded values before the standard
-     * validation runs; the original template is returned when the probe passes. This keeps
-     * every SSRF/TLS check while letting templates like Google's Cloud Identity query
-     * ({@code ?query=member_key_id=='{email}'}) survive config load.
-     */
-    private static String validateUrlTemplate(final String url, final String fieldName) {
-        if (!UtilMethods.isSet(url)) {
-            return null;
-        }
-        final String probe = url
-                .replace("{email}", "user%40example.com")
-                .replace("{sub}", "1234567890");
-        return validateUrl(probe, fieldName) == null ? null : url;
-    }
-
     private static String validateUrl(final String url, final String fieldName) {
         if (!UtilMethods.isSet(url)) {
             return null;
@@ -399,6 +381,24 @@ public final class OAuthAppConfig implements Serializable {
             return null;
         }
         return url;
+    }
+
+    /**
+     * Validate a URL that may carry {@code {email}} / {@code {sub}} placeholders (only
+     * {@code groupsUrl} supports them). {@code new URI()} rejects literal braces, so the
+     * placeholders are swapped for representative encoded values before the standard
+     * validation runs; the original template is returned when the probe passes. This keeps
+     * every SSRF/TLS check while letting templates like Google's Cloud Identity query
+     * ({@code ?query=member_key_id=='{email}'}) survive config load.
+     */
+    private static String validateUrlTemplate(final String url, final String fieldName) {
+        if (!UtilMethods.isSet(url)) {
+            return null;
+        }
+        final String probe = url
+                .replace("{email}", "user%40example.com")
+                .replace("{sub}", "1234567890");
+        return validateUrl(probe, fieldName) == null ? null : url;
     }
 
     private static void rejectUrl(final String fieldName, final String reason) {

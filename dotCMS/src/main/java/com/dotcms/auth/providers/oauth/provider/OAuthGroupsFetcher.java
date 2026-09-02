@@ -5,7 +5,6 @@ import com.dotcms.http.CircuitBreakerUrl;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.util.Config;
-import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.ImmutableMap;
@@ -15,6 +14,7 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Function;
 
 /**
@@ -27,16 +27,20 @@ import java.util.function.Function;
  * <p>
  * Supported {@code groupsUrl} features on top of a plain GET-with-bearer-token:
  * <ul>
- *   <li>{@code {email}} / {@code {sub}} placeholders, substituted URL-encoded from the
- *       authenticated user's verified claims. A placeholder whose claim is absent aborts the
- *       fetch — never call the IdP with a literal placeholder.</li>
+ *   <li>{@code {email}} / {@code {sub}} placeholders, substituted URL-encoded. {@code {sub}}
+ *       is the verified subject claim; {@code {email}} is the address dotCMS resolved for the
+ *       user (honoring the configured {@code emailClaim} and its fallbacks — the caller
+ *       supplies it under the {@code email} key), not necessarily a literal {@code email}
+ *       claim. A placeholder with no value aborts the fetch — never call the IdP with a
+ *       literal placeholder.</li>
  *   <li>An optional response path such as {@code memberships[].groupKey.id} (Google Cloud
  *       Identity), {@code groups[].email} (Google Directory) or {@code [].slug} (GitHub):
  *       the segment before {@code []} locates the array ({@code []} alone means the response
  *       root), the segment after is read from each element. Without a path, the legacy shapes
  *       — a JSON array of strings, or an object with a {@code groups} string array — apply.</li>
  *   <li>{@code nextPageToken} pagination (Google convention), bounded by
- *       {@code OAUTH_GROUPS_MAX_PAGES} (default 20) with a warning when the cap is hit.</li>
+ *       {@code OAUTH_GROUPS_MAX_PAGES} (default 20); exceeding the cap aborts the fetch
+ *       rather than returning a partial list.</li>
  * </ul>
  * All failures propagate as {@link DotRuntimeException}: the caller must be able to tell
  * "endpoint down" from "user has no groups", otherwise an IdP outage would silently strip
@@ -93,12 +97,11 @@ final class OAuthGroupsFetcher {
             final String pageUrl = pageToken == null
                     ? resolvedUrl
                     : resolvedUrl + (resolvedUrl.contains("?") ? "&" : "?")
-                            + "pageToken=" + urlEncode(pageToken);
+                            + "pageToken=" + URLEncoder.encode(pageToken, StandardCharsets.UTF_8);
+            final String body = httpGet.apply(pageUrl);
             final Object parsed;
             try {
-                parsed = MAPPER.readValue(httpGet.apply(pageUrl), Object.class);
-            } catch (final DotRuntimeException e) {
-                throw e;
+                parsed = MAPPER.readValue(body, Object.class);
             } catch (final Exception e) {
                 throw new DotRuntimeException(label + " groups response is not valid JSON: " + e.getMessage(), e);
             }
@@ -133,7 +136,7 @@ final class OAuthGroupsFetcher {
                 throw new DotRuntimeException("groupsUrl contains " + placeholder
                         + " but the authenticated user's claims do not include '" + claim + "'");
             }
-            url = url.replace(placeholder, urlEncode(String.valueOf(value)));
+            url = url.replace(placeholder, URLEncoder.encode(String.valueOf(value), StandardCharsets.UTF_8));
         }
         return url;
     }
@@ -231,18 +234,10 @@ final class OAuthGroupsFetcher {
         return resp.getResponse();
     }
 
-    @SuppressWarnings("unchecked")
     static Collection<String> toStringList(final Object value) {
-        if (value instanceof Collection) {
-            return ((Collection<Object>) value).stream()
-                    .filter(java.util.Objects::nonNull)
-                    .map(Object::toString)
-                    .collect(java.util.stream.Collectors.toList());
+        if (value instanceof Collection<?> values) {
+            return values.stream().filter(Objects::nonNull).map(Object::toString).toList();
         }
         return List.of();
-    }
-
-    private static String urlEncode(final String s) {
-        return URLEncoder.encode(s, StandardCharsets.UTF_8);
     }
 }
