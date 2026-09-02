@@ -15,7 +15,7 @@
         </div>
     </ng-template>
 
-    <section class="form">
+    <section class="flex flex-col gap-5">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
             <div class="field">
                 <label for="experiments-start-date">
@@ -64,7 +64,9 @@
                     data-testid="experiments-configure-scheduling-end" />
 
                 @for (error of $endDateErrors(); track error.kind) {
-                    <small class="p-field-error" data-testid="experiments-configure-scheduling-end-error">
+                    <small
+                        class="p-field-error"
+                        data-testid="experiments-configure-scheduling-end-error">
                         {{ error.message }}
                     </small>
                 }
