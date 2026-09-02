@@ -186,12 +186,20 @@ are unchanged from today's behavior in every combination.
 
 ### Measurable Outcomes
 
-- **SC-001 — corrected (2026-09-01, per review) to bound both round-trip types.** For a field
-  filter with no database-required criteria over a folder with roughly 20,000 items and sparse
-  matches (the worst case, not the previously-cited "four" reference point — dense-match cases
-  can already exit early today), the number of database scans drops to **at most one** AND the
-  number of Elasticsearch filtering calls drops to **at most one**, down from up to ~23 of each
-  at the default chunk size on this folder size (see FR-002).
+- **SC-001 — corrected (2026-09-01, per review) to bound both round-trip types; unit of
+  measure resolved (2026-09-01, during planning).** For a field filter with no database-required
+  criteria over a folder with roughly 20,000 items and sparse matches (the worst case, not the
+  previously-cited "four" reference point — dense-match cases can already exit early today), the
+  number of database scans drops to **at most one** AND the number of **logical** Elasticsearch
+  filtering calls (invocations of `processESDirectly`) drops to **at most one**, down from up to
+  ~23 of each at the default chunk size on this folder size (see FR-002). **Resolved
+  clarification**: "Elasticsearch filtering calls" counts logical invocations of the filtering
+  step, not physical ES HTTP round trips. `processESDirectly` already internally re-splits any
+  candidate set above ~900 inodes into multiple physical ES queries (Lucene's 1024-boolean-clause
+  limit) — this fix does not change that internal splitting, and a 20,000-candidate worst case
+  can still produce ~20-23 physical ES round trips after this fix ships. Bounding the physical
+  round-trip count too would require switching the query mechanism itself (inode enumeration →
+  a `terms` filter), which is a separate, larger change and explicitly out of scope here.
 - **SC-002**: Response time for that same case falls to within 20% of the response time of the
   closest equivalent content-search operation (matching the threshold already used to evaluate
   Content Drive elsewhere in this investigation). **Dependency**: because FR-002 is a
