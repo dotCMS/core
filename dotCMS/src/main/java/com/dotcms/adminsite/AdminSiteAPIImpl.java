@@ -79,8 +79,8 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public boolean isAdminSiteUri(final HttpServletRequest request) {
-        String uri = normalizeUri(request.getRequestURI());
-        return isAdminSiteUri(uri);
+        // isAdminSiteUri(String) normalizes the uri, so no need to pre-normalize here
+        return isAdminSiteUri(request.getRequestURI());
     }
 
     @Override
