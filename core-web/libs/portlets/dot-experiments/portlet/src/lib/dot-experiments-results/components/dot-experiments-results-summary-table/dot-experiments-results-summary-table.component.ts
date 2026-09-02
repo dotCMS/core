@@ -5,14 +5,15 @@ import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/c
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
+import { SkeletonModule } from 'primeng/skeleton';
+import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentResultVariantDetail, LiftTone } from '../../../shared/models';
-import { DotExperimentsDetailsTableComponent } from '../../../shared/ui/dot-experiments-details-table/dot-experiments-details-table.component';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
 
@@ -55,9 +56,9 @@ export interface DotExperimentsSummaryTableRow extends DotExperimentResultVarian
  * Summary table of the Results screen: one row per variant of the primary goal.
  *
  * It renders under both chart tabs and reads everything from `DotExperimentsResultsStore`, so the
- * shell places it without wiring anything through. The table itself is the shared
- * `dot-experiments-details-table` shell unchanged — Lift vs Original and the Promoted chip are
- * columns and cells added on top of it, not a table of its own (AC29).
+ * shell places it without wiring anything through. A plain `p-table`: real table semantics, and
+ * the column widths come from the content rather than from a twelve-column grid the eight columns
+ * never divided evenly.
  *
  * The gate on the data is experiment-wide: below the session threshold the whole table is replaced
  * by one empty state, and above it every row shows its full data however few sessions it saw. No
@@ -72,9 +73,11 @@ export interface DotExperimentsSummaryTableRow extends DotExperimentResultVarian
     imports: [
         ButtonModule,
         ConfirmDialogModule,
+        SkeletonModule,
+        TableModule,
         TagModule,
-        DotMessagePipe,
-        DotExperimentsDetailsTableComponent
+        DotEmptyContainerComponent,
+        DotMessagePipe
     ],
     templateUrl: './dot-experiments-results-summary-table.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -106,12 +109,37 @@ export class DotExperimentsResultsSummaryTableComponent {
             }))
     );
 
+    /** Column widths follow the content; `auto` lets the browser weigh the headers against it. */
+    readonly TABLE_STYLE = { 'min-width': '100%', 'table-layout': 'auto' };
+
+    /**
+     * What the table renders.
+     *
+     * The session gate empties it rather than hiding it, so the "not enough sessions" copy arrives
+     * through `p-table`'s own empty template instead of a second branch that has to be kept in
+     * step with the table beside it.
+     */
+    readonly $tableRows = computed<DotExperimentsSummaryTableRow[]>(() =>
+        this.store.$hasEnoughSessionsForTable() ? this.$rows() : []
+    );
+
     /** One promotion is all there is: once any variant has been promoted, no row offers it (AC17). */
     readonly $canPromote = computed<boolean>(() => !this.store.$promotedVariant());
 
     readonly #dispatch = injectDispatch(dotExperimentsResultsPageEvents);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
+
+    /**
+     * Copy for the below-threshold state, in the shared empty container the rest of the screen
+     * already uses for its error and misconfiguration states.
+     */
+    readonly EMPTY_CONFIGURATION: PrincipalConfiguration = {
+        title: this.#dotMessageService.get('experiments.reports.summary.empty.title'),
+        subtitle: this.#dotMessageService.get('experiments.reports.summary.empty.description'),
+        icon: 'table_chart',
+        iconStyle: 'material-symbols-rounded'
+    };
 
     /**
      * Asks before promoting, and says what promoting will cost: while the experiment is RUNNING the

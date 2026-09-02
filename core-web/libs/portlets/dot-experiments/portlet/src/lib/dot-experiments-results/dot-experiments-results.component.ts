@@ -181,14 +181,6 @@ export class DotExperimentsResultsComponent {
     }
 
     /**
-     * Re-fetches the report only. The stat strip raises this; the shell relays it because the
-     * strip is presentational and holds no dispatcher of its own.
-     */
-    onRefresh(): void {
-        this.#dispatch.refreshRequested();
-    }
-
-    /**
      * Promotes the variant the stat strip offers inline when the leader is not the control (AC7).
      *
      * Asks first, exactly as the per-row Promote in the summary table does: the strip's button is a

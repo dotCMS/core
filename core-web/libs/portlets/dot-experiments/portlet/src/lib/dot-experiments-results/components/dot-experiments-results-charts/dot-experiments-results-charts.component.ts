@@ -1,6 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 
+import { CardModule } from 'primeng/card';
+import { TabsModule } from 'primeng/tabs';
+
 import { DotMessageService } from '@dotcms/data-access';
+import { GOALS_METADATA_MAP } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotExperimentsReportsChartComponent } from '../../../shared/ui/dot-experiments-reports-chart/dot-experiments-reports-chart.component';
@@ -23,15 +27,17 @@ interface ChartAxisLabels {
  * with both charts mounted at once, one could claim the other's wrapper and a legend would silently
  * go missing. `@if` keeps exactly one canvas in the tree, so each chart can only ever find its own.
  *
- * For the same reason the chart component is composed as a plain child: nothing here wraps or
- * re-projects its internals.
+ * That is also why the tabs are `p-tabs` for the tab strip alone, with the chart kept behind an
+ * `@if` rather than in a `p-tabpanel`: a panel stays in the DOM when inactive (`hidden`), and its
+ * `lazy` only defers the first render — `hasBeenRendered` latches, so after visiting both tabs
+ * both charts would be mounted and one could claim the other's legend.
  *
  * Both charts are read-only views of the store — the Bayesian curves arrive already computed from
  * the backend, and nothing is derived from them here.
  */
 @Component({
     selector: 'dot-experiments-results-charts',
-    imports: [DotExperimentsReportsChartComponent, DotMessagePipe],
+    imports: [CardModule, TabsModule, DotExperimentsReportsChartComponent, DotMessagePipe],
     templateUrl: './dot-experiments-results-charts.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
@@ -73,7 +79,25 @@ export class DotExperimentsResultsChartsComponent {
         () => !this.store.$hasEnoughDataForBayesianChart() || !this.store.$bayesianChartData()
     );
 
-    protected selectTab(tab: ResultsChartTab): void {
-        this.$activeTab.set(tab);
+    /**
+     * What the Daily chart is measuring, under its title: the goal's own name, then the metric
+     * behind it — `Checkout reached · Reach Page`. The two repeat when the goal still carries the
+     * name we default to, which is the same name the metric would produce; that is the default
+     * doing its job, not a duplicated field.
+     */
+    protected readonly $dailyChartSubtitle = computed<string>(() => {
+        const goal = this.store.experiment()?.goals?.primary;
+
+        if (!goal?.type) {
+            return '';
+        }
+
+        const metric = this.#dotMessageService.get(GOALS_METADATA_MAP[goal.type].label);
+
+        return goal.name ? `${goal.name} · ${metric}` : metric;
+    });
+
+    protected selectTab(tab: string | number): void {
+        this.$activeTab.set(tab as ResultsChartTab);
     }
 }

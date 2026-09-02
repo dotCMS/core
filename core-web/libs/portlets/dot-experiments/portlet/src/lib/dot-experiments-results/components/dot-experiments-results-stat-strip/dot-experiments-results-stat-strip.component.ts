@@ -9,13 +9,9 @@ import {
     DotExperimentStatus,
     DotResultVariant,
     RangeOfDateAndTime,
-    SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-
-/** Icon the legend carries when the backend did suggest a winner. */
-const WINNER_LEGEND_ICON = 'dot-trophy';
 
 /** Explains why the leader may be promoted: the backend already cleared the 95% threshold. */
 const THRESHOLD_MET_KEY = 'experiments.results.stat-strip.threshold-met';
@@ -30,9 +26,9 @@ const THRESHOLD_NOT_MET_KEY = 'experiments.results.stat-strip.threshold-not-met'
  * Purely presentational — the Results shell owns the store and wires every input, so the strip can
  * be rendered from any state, including the ones with nothing to show.
  *
- * The leader is whatever the backend suggested (`winnerLegend` / `suggestedWinner`), never the
- * highest conversion rate: only the backend applies the significance threshold, and a rate-based
- * pick would always name someone, leaving the "no winner yet" state unreachable (AC8).
+ * The leader is whatever the backend suggested (`suggestedWinner`), never the highest conversion
+ * rate: only the backend applies the significance threshold, and a rate-based pick would always
+ * name someone, leaving the "no winner yet" state unreachable (AC8).
  */
 @Component({
     selector: 'dot-experiments-results-stat-strip',
@@ -43,9 +39,6 @@ const THRESHOLD_NOT_MET_KEY = 'experiments.results.stat-strip.threshold-not-met'
 export class DotExperimentsResultsStatStripComponent {
     /** Status of the experiment being reported on; decides Winner vs Leading Variant. */
     $status = input.required<DotExperimentStatus>({ alias: 'status' });
-
-    /** Icon and i18n key for the winner copy, negative states included — never `null` downstream. */
-    $winnerLegend = input<SummaryLegend | null>(null, { alias: 'winnerLegend' });
 
     /** The variant the backend suggested, or `null` when it suggested none. */
     $suggestedWinner = input<DotResultVariant | null>(null, { alias: 'suggestedWinner' });
@@ -62,20 +55,11 @@ export class DotExperimentsResultsStatStripComponent {
     /** Sessions counted so far across every variant. */
     $sessionsReached = input<number>(0, { alias: 'sessionsReached' });
 
-    /** Nothing has been measured yet: no winner tile and no refresh control (AC10). */
+    /** Nothing has been measured yet, so there is no leader to name (AC10). */
     $isWaitingForData = input<boolean>(false, { alias: 'isWaitingForData' });
-
-    /** There are results on screen worth re-fetching (AC9). */
-    $canRefresh = input<boolean>(false, { alias: 'canRefresh' });
-
-    /** A refresh is on the wire; the control stays closed until it settles. */
-    $refreshing = input<boolean>(false, { alias: 'refreshing' });
 
     /** A mutation is on the wire; Promote stays closed until it settles. */
     $isSaving = input<boolean>(false, { alias: 'isSaving' });
-
-    /** The refresh control was pressed. */
-    refreshRequested = output<void>();
 
     /** Promote was pressed, carrying the id of the variant to publish. */
     promoteRequested = output<string>();
@@ -88,14 +72,16 @@ export class DotExperimentsResultsStatStripComponent {
     /** A winner was suggested — the only state that may claim a leader (AC8). */
     protected readonly $hasSuggestedWinner = computed<boolean>(() => !!this.$suggestedWinner());
 
-    /** The legend names the winner, so the variant's description fills its placeholder. */
-    protected readonly $winnerLegendArgs = computed<string[]>(() => [
-        this.$suggestedWinner()?.variantDescription ?? ''
-    ]);
-
-    /** The trophy belongs to a suggested winner; every other state gets the negative icon. */
-    protected readonly $hasWinnerIcon = computed<boolean>(
-        () => this.$winnerLegend()?.icon === WINNER_LEGEND_ICON
+    /**
+     * The leader, named.
+     *
+     * The design puts the variant's own name in the cell rather than a sentence about it, so the
+     * only state left to express is having no leader at all — an em dash, the same fallback the
+     * Goal and Period cells use. Why it leads, and whether the lead has cleared the significance
+     * threshold, is what the tooltip carries.
+     */
+    protected readonly $leadingVariantName = computed<string>(
+        () => this.$suggestedWinner()?.variantDescription ?? '—'
     );
 
     protected readonly $thresholdHintKey = computed<string>(() =>

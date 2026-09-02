@@ -1,37 +1,52 @@
-<div class="flex w-full max-w-[1040px] flex-col gap-4">
-    <div class="flex flex-row gap-6 border-0 border-b border-solid border-gray-200" role="tablist">
-        @for (tab of tabs; track tab.id) {
-            <button
-                class="-mb-px cursor-pointer border-0 border-b-2 border-solid bg-transparent px-1 pb-3 text-base"
-                [class]="
-                    $activeTab() === tab.id
-                        ? 'border-[#18186D] font-semibold text-[#18186D]'
-                        : 'border-transparent font-medium text-[#64748b]'
-                "
-                [attr.aria-selected]="$activeTab() === tab.id"
-                [attr.data-testid]="'results-chart-tab-' + tab.id"
-                (click)="selectTab(tab.id)"
-                type="button"
-                role="tab">
-                {{ tab.labelKey | dm }}
-            </button>
-        }
-    </div>
+<div class="flex w-full flex-col gap-4">
+    <p-tabs [value]="$activeTab()" (valueChange)="selectTab($event)">
+        <p-tablist>
+            @for (tab of tabs; track tab.id) {
+                <p-tab [value]="tab.id" [attr.data-testid]="'results-chart-tab-' + tab.id">
+                    {{ tab.labelKey | dm }}
+                </p-tab>
+            }
+        </p-tablist>
+    </p-tabs>
 
-    @if ($activeTab() === 'daily') {
-        <dot-experiments-reports-chart
-            [isLoading]="store.$isLoading()"
-            [isEmpty]="$isDailyEmpty()"
-            [config]="dailyAxisLabels"
-            [data]="store.$dailyChartData()"
-            data-testid="results-daily-chart" />
-    } @else {
-        <dot-experiments-reports-chart
-            [isLoading]="store.$isLoading()"
-            [isEmpty]="$isBayesianEmpty()"
-            [config]="bayesianAxisLabels"
-            [data]="store.$bayesianChartData()"
-            [isLinearAxis]="true"
-            data-testid="results-bayesian-chart" />
-    }
+    <p-card>
+        @if ($activeTab() === 'daily') {
+            <dot-experiments-reports-chart
+                [isLoading]="store.$isLoading()"
+                [isEmpty]="$isDailyEmpty()"
+                [config]="dailyAxisLabels"
+                [data]="store.$dailyChartData()"
+                data-testid="results-daily-chart">
+                <div chartHeading class="mr-auto flex min-w-0 flex-col gap-0.5">
+                    <span
+                        class="text-[15px] font-semibold text-surface-900"
+                        data-testid="results-chart-heading">
+                        {{ 'experiments.results.chart.daily.title' | dm }}
+                    </span>
+                    <span class="text-[13px] text-surface-500" data-testid="results-chart-subtitle">
+                        {{ $dailyChartSubtitle() }}
+                    </span>
+                </div>
+            </dot-experiments-reports-chart>
+        } @else {
+            <dot-experiments-reports-chart
+                [isLoading]="store.$isLoading()"
+                [isEmpty]="$isBayesianEmpty()"
+                [config]="bayesianAxisLabels"
+                [data]="store.$bayesianChartData()"
+                [isLinearAxis]="true"
+                data-testid="results-bayesian-chart">
+                <div chartHeading class="mr-auto flex min-w-0 flex-col gap-0.5">
+                    <span
+                        class="text-[15px] font-semibold text-surface-900"
+                        data-testid="results-chart-heading">
+                        {{ 'experiments.results.chart.bayesian.title' | dm }}
+                    </span>
+                    <span class="text-[13px] text-surface-500" data-testid="results-chart-subtitle">
+                        {{ 'experiments.results.chart.bayesian.subtitle' | dm }}
+                    </span>
+                </div>
+            </dot-experiments-reports-chart>
+        }
+    </p-card>
 </div>

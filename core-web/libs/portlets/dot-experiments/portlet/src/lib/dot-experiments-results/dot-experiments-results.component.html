@@ -32,7 +32,7 @@
         </div>
 
         <div class="flex min-h-0 flex-1 flex-col items-center overflow-hidden px-8 pt-5">
-            <div class="flex w-full max-w-[1040px] flex-col gap-6">
+            <div class="container flex w-full flex-col gap-6">
                 <p-skeleton height="5.5rem" width="100%" borderRadius="0.5rem" />
                 <p-skeleton height="20rem" width="100%" borderRadius="0.5rem" />
                 <p-skeleton height="14rem" width="100%" borderRadius="0.5rem" />
@@ -63,20 +63,16 @@
     <div
         class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-5 pb-14"
         data-testid="experiments-results-body">
-        <div class="flex w-full max-w-[1040px] flex-col gap-6">
+        <div class="container flex w-full flex-col gap-6">
             <dot-experiments-results-stat-strip
                 [status]="store.$status()"
-                [winnerLegend]="store.$winnerLegend()"
                 [suggestedWinner]="store.$suggestedWinner()"
                 [promotedVariant]="store.$promotedVariant()"
                 [goalName]="store.experiment()?.goals?.primary?.name ?? null"
                 [scheduling]="store.experiment()?.scheduling ?? null"
                 [sessionsReached]="store.results()?.sessions?.total ?? 0"
                 [isWaitingForData]="store.$isWaitingForData()"
-                [canRefresh]="store.$canRefresh()"
-                [refreshing]="store.refreshing()"
                 [isSaving]="store.$isSaving()"
-                (refreshRequested)="onRefresh()"
                 (promoteRequested)="onPromote($event)" />
             <dot-experiments-results-charts />
             <dot-experiments-results-summary-table />
