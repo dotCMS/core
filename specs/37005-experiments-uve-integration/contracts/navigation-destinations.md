@@ -54,11 +54,17 @@ else keeps the `edit-page` prefix. All four existing items (`content`, `layout`,
   &variantName={variant.id}
   &experimentId={experiment.id}
   &mode={EDIT | PREVIEW}
+  &experimentReturn=portlet
 ```
 
 Navigated with `Router.navigate(['/edit-page/content'], { queryParams })` and **no**
 `queryParamsHandling` — the portlet's URL carries `filter`/`orderby`/`pageAsset`, none of which
 UVE wants.
+
+`experimentReturn=portlet` is the origin marker §3 reads to decide where the return lands. The
+legacy card does **not** set it, which is what keeps FR-018's "as before" true without touching the
+legacy path. Its exact name is an implementation detail of this contract, but it must be a query
+param — never storage — for the reasons in §3.
 
 ### `mode` selection
 
@@ -100,19 +106,35 @@ because of that, and the refusal is what satisfies it.
 **Gesture**: the variant chip in UVE's info-display.
 **Routed at**: `DotUveToolbarComponent.handleInfoDisplayAction('variant')`.
 
-| Switch | Destination | Query params | Requirement |
-|---|---|---|---|
-| **off** | `/edit-page/experiments/{pageId}/{experimentId}/configuration` | `mode`, `variantName`, `experimentId` → `null`; rest **merged** | FR-018 |
-| **on** | `/experiments/{experimentId}/configuration` | `mode`, `variantName`, `experimentId` → `null`; **not merged** | FR-005, FR-006 |
+**Resolved by the origin, not by the switch.** The destination answers "which configuration screen
+opened this variant?", and the switch is consulted only when there is no answer. A switch-only
+branch would make FR-018 and FR-005/FR-027 mutually exclusive on a supported path — switch off,
+portlet reached from the main navigation (FR-026), variant opened (FR-027), return — which would
+land the editor on the legacy screen they never came from. See
+[research.md R6](../research.md) for the full derivation.
 
-**Resolved by the experiment, both ways.** The existing code already sources
+| Origin | Destination | Query params | Requirement |
+|---|---|---|---|
+| the **portlet's** Configure screen (marker set on the outbound leg) | `/experiments/{experimentId}/configuration` | `mode`, `variantName`, `experimentId`, marker → `null`; **not merged** | FR-005, FR-006, FR-027 |
+| the **legacy** per-page card (sets no marker) | `/edit-page/experiments/{pageId}/{experimentId}/configuration` | `mode`, `variantName`, `experimentId` → `null`; rest **merged** | FR-018 |
+| **absent** — a pasted or bookmarked variant URL | whichever of the two the switch currently selects | as per the branch taken | the spec's deep-link edge case |
+
+The legacy row is the **existing code path, untouched** — which is what makes FR-018's "as before"
+true by construction rather than by re-derivation: the legacy outbound leg sets no marker, and its
+`queryParamsHandling: 'merge'` still supplies the rest of the address.
+
+**Resolved by the experiment on every branch.** The existing code already sources
 `currentExperiment.id` from `store.pageExperiment()`, so US1 scenario 4 (a page hosting two
 experiments) and the spec's "two experiments on one page" edge case are already handled — and the
-on branch keeps that, because the new portlet's route
-(`experimentsConfigureMatcher`) is keyed on `experimentId` alone and takes no `pageId` segment.
+portlet branch keeps that, because the new portlet's route (`experimentsConfigureMatcher`) is keyed
+on `experimentId` alone and takes no `pageId` segment.
 
-**The three nulls are the whole of FR-006** and are identical on both branches, so no variant,
-experiment or mode parameter survives the return.
+**FR-006** covers the three nulls on every branch, plus the origin marker on the portlet branch —
+otherwise the marker outlives the experiment context it describes.
+
+**The marker is a query param**, not session or local storage: it has to survive a reload and a
+pasted link, and it has to be *absent* rather than stale when someone deep-links straight into a
+variant. Storage would fail both.
 
 **FR-010a**: the return destination does not read `mode`, so it is the same whether the variant was
 opened read-only or editable.
