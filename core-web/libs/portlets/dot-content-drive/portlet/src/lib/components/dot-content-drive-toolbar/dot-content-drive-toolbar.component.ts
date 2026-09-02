@@ -31,13 +31,13 @@ import { DotContentDriveFieldFilterMenuComponent } from './components/dot-conten
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
 import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
+import { DotContentDriveStatusFilterComponent } from './components/dot-content-drive-status-filter/dot-content-drive-status-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
-import { excludeFolders } from '../../utils/action-center';
 import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
@@ -141,6 +141,7 @@ interface ToolbarAnimationState {
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
         DotContentDriveSharedAssetsFilterComponent,
+        DotContentDriveStatusFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',
@@ -212,6 +213,17 @@ export class DotContentDriveToolbarComponent {
      * Base type the current folder pins uploads to, if any. `dot-upload-button` turns it into the
      * folder-aware label ("Upload Asset" / "Upload File" / "Upload").
      */
+    /**
+     * Whether the browsed folder accepts new children — the store's answer, shared with the drop
+     * zone so the three creation affordances can never disagree about the same folder.
+     */
+    protected readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /** Empty when creation is allowed, so the buttons carry no tooltip in the normal case. */
+    protected readonly $addChildrenTooltip = computed(() =>
+        this.$canAddChildren() ? '' : 'content-drive.add-new.no-add-children'
+    );
+
     protected readonly $uploadBaseType = computed(() => {
         const data = this.#store.selectedNode()?.data;
 
@@ -344,11 +356,12 @@ export class DotContentDriveToolbarComponent {
      * actions; the dialog adds what they cannot express — per-action eligibility counts and the
      * workflow actions grouped by scheme — and that is just as useful for one item as for many.
      *
-     * Folders are excluded from the count: every bulk endpoint takes contentlet inodes and ignores
-     * folders, so a folder-only selection offers no Action Center.
+     * Folders count: Add to Bundle and Push Publish both take a folder identifier, so a folder-only
+     * selection still has something to act on. The actions that do not apply drop themselves out of
+     * the list rather than the dialog refusing to open.
      */
     readonly $displayActionCenter = computed(
-        () => this.$displayActions() && excludeFolders(this.#store.selectedItems()).length > 0
+        () => this.$displayActions() && this.#store.selectedItems().length > 0
     );
 
     /**

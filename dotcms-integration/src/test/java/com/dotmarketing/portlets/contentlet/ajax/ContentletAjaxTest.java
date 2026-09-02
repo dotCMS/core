@@ -17,6 +17,8 @@ import com.dotcms.contenttype.model.type.SimpleContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.FieldDataGen;
+import com.dotcms.datagen.FileAssetDataGen;
+import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.languagevariable.business.LanguageVariableAPI;
 import com.dotcms.repackage.org.directwebremoting.WebContext;
@@ -33,6 +35,7 @@ import com.dotmarketing.portlets.contentlet.business.ContentletAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.contentlet.model.IndexPolicy;
 import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.structure.model.Structure;
@@ -42,6 +45,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.portal.util.WebKeys;
+import com.liferay.util.FileUtil;
 import com.liferay.util.StringPool;
 import com.liferay.util.servlet.SessionMessages;
 import com.tngtech.java.junit.dataprovider.DataProvider;
@@ -56,6 +60,8 @@ import org.mockito.Mockito;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -533,6 +539,75 @@ public class ContentletAjaxTest {
 		final long contentletTwo_Language = Long.parseLong(((Map<String,String>)results.get(4)).get("languageId"));
 		assertTrue(contentletTwo_Language!=contentletOne_Language);
 
+	}
+
+	/**
+	 * <b>Method to Test:</b> {@link ContentletAjax#searchContentletsByUser(List, String, List, List,
+	 * boolean, boolean, boolean, boolean, int, String, int, User, HttpSession, String, String)}<p>
+	 * <b>When:</b> the legacy Relationships search dialog performs a global ({@code catchall})
+	 * search for a term that lands mid-token, or that spans a tokenizer boundary such as the exact
+	 * full file name<p>
+	 * <b>Should:</b> Find the content anyway, while a term present in no field still returns
+	 * nothing — i.e. the broad, unscoped {@code catchall:*value*} is not reintroduced. See issue
+	 * #37052.
+	 */
+	@Test
+	public void test_searchContentletsByUser_globalSearch_matchesMidTokenAndExactFullName()
+			throws Exception {
+
+		final String uniqueToken = "qa" + System.currentTimeMillis();
+		// Tokenizes to "img_<uniqueToken>_0004" + "jpeg", so <uniqueToken> sits mid-token and the
+		// full name spans the "." boundary
+		final String fileName = "IMG_" + uniqueToken + "_0004.jpeg";
+
+		final Host host = APILocator.getHostAPI().findDefaultHost(systemUser, false);
+		final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+		final File tempDir = Files.createTempDirectory(uniqueToken).toFile();
+		final File file = new File(tempDir, fileName);
+		FileUtil.write(file, "helloworld");
+
+		final Contentlet fileAsset = new FileAssetDataGen(folder, file).nextPersisted();
+		final String fileAssetTypeInode = contentTypeAPI.find("FileAsset").inode();
+
+		try {
+			// A genuine token prefix — worked before the fix and must keep working
+			assertGlobalSearchFindsOnly(fileAssetTypeInode, "IMG_" + uniqueToken, fileAsset);
+
+			// Mid-token term — the catchall prefix gate alone never matched this
+			assertGlobalSearchFindsOnly(fileAssetTypeInode, uniqueToken, fileAsset);
+
+			// Exact full name — spans the "." tokenizer boundary
+			assertGlobalSearchFindsOnly(fileAssetTypeInode, fileName, fileAsset);
+
+			// Negative control: a term in no field must still return nothing, otherwise the broad
+			// whole-document wildcard is back
+			final List results = new ContentletAjax().searchContentletsByUser(
+					ImmutableList.of(BaseContentType.ANY), fileAssetTypeInode,
+					CollectionsUtils.list("catchall", "zz" + uniqueToken),
+					Collections.emptyList(), false, false, false,
+					false, 0, "moddate", 0, systemUser, null, null, null);
+
+			assertEquals(0, Integer.parseInt(((Map) results.get(0)).get("total").toString()));
+		} finally {
+			contentletAPI.destroy(fileAsset, systemUser, false);
+			FileUtil.deltree(tempDir);
+		}
+	}
+
+	private void assertGlobalSearchFindsOnly(final String contentTypeInode, final String searchTerm,
+			final Contentlet expected) throws DotDataException, DotSecurityException {
+
+		final List results = new ContentletAjax().searchContentletsByUser(
+				ImmutableList.of(BaseContentType.ANY), contentTypeInode,
+				CollectionsUtils.list("catchall", searchTerm), Collections.emptyList(),
+				false, false, false, false, 0, "moddate", 0, systemUser, null, null, null);
+
+		assertNotNull(results);
+		assertEquals("Searching for '" + searchTerm + "' must return exactly one match",
+				1, Integer.parseInt(((Map) results.get(0)).get("total").toString()));
+		assertEquals("Searching for '" + searchTerm + "' returned the wrong content",
+				expected.getIdentifier(), ((Map) results.get(3)).get("identifier"));
 	}
 
 }

@@ -52,6 +52,13 @@ export class DotSideBarComponent {
     $loading = input.required<boolean>({ alias: 'loading' });
 
     /**
+     * Folder the tree starts on. Defaults to System Host, which is where the browser itself starts,
+     * so a caller that opens it somewhere else — a site, a folder — is highlighted there instead of
+     * on a node whose contents are not the ones on screen.
+     */
+    $selectedId = input<string>(SYSTEM_HOST_ID, { alias: 'selectedId' });
+
+    /**
      * Signal that generates an array of strings representing percentages.
      * Each percentage is a random value between 75% and 100%.
      * The array contains 50 elements.
@@ -84,13 +91,15 @@ export class DotSideBarComponent {
     readonly #userSelected = signal<TreeNode | null>(null);
 
     /**
-     * Selected node for the shared tree. Defaults to SYSTEM_HOST when present and
-     * the user has not selected another node yet.
+     * Selected node for the shared tree: what the user picked, or else the folder the browser was
+     * opened on.
      */
     readonly $selectedNode = computed(() => {
+        const selectedId = this.$selectedId();
+
         return (
             this.#userSelected() ??
-            this.$folders().find((folder) => folder.data?.id === SYSTEM_HOST_ID) ??
+            this.$folders().find((folder) => folder.data?.id === selectedId) ??
             null
         );
     });

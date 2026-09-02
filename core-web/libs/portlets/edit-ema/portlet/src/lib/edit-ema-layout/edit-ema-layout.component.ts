@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { EMPTY, Subject } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -7,13 +7,15 @@ import {
     OnDestroy,
     OnInit,
     effect,
-    inject
+    inject,
+    signal
 } from '@angular/core';
 import { Router } from '@angular/router';
 
 import { MessageService } from 'primeng/api';
 
 import {
+    catchError,
     debounceTime,
     distinctUntilChanged,
     finalize,
@@ -54,6 +56,36 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
 
     protected readonly $layoutProperties = this.uveStore.$layoutProps;
 
+    // Component-local save-in-flight flag. Deliberately separate from uveStore.uveStatus()
+    // so that unrelated global LOADING events (lock toggle, page-api re-fetch) cannot
+    // unlock the canvas mid-POST or throw a spurious spinner over the layout builder.
+    //
+    // Lifecycle: set true when the POST fires → stays true through pageReload() re-hydration
+    // → cleared by #handleReloadComplete when uveStatus returns to LOADED.
+    // On HTTP error it is cleared immediately (no reload happens on failure).
+    readonly #layoutSaveInFlight = signal(false);
+    protected readonly $isSaving = this.#layoutSaveInFlight.asReadonly();
+
+    // Keep the canvas locked through the full save + reload cycle.
+    // pageReload() transitions uveStatus LOADING → LOADED on success, or → ERROR on a
+    // re-fetch failure (withPageApi.ts:369). Both signal the reload is finished — unlock
+    // on either so a failed reload never leaves the canvas permanently locked.
+    //
+    // Known residual: any cross-feature store writer that lands LOADED (e.g. withWorkflow
+    // completing a lock/unlock) during the in-flight window would also clear the flag
+    // early. This is a narrow race (< 2 s window, requires a concurrent banner-button
+    // click) and a proper fix requires pageReload() to expose a completion observable.
+    // The risk is accepted and documented here to prevent silent "fixes" that would
+    // inadvertently widen the original data-loss window.
+    readonly $handleReloadComplete = effect(() => {
+        const status = this.uveStore.uveStatus();
+        const done = status === UVE_STATUS.LOADED || status === UVE_STATUS.ERROR;
+
+        if (this.#layoutSaveInFlight() && done) {
+            this.#layoutSaveInFlight.set(false);
+        }
+    });
+
     readonly $handleCanEditLayout = effect(() => {
         // The only way to enter here directly is by the URL, so we need to redirect the user to the correct page
         if (this.uveStore.editorCanEditLayout()) {
@@ -87,6 +119,18 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     nextTemplateUpdate(template: DotTemplateDesigner) {
+        // Drop edits that complete mid-flight: in-progress drags or open dropdowns
+        // can still emit templateChange after the canvas is frozen. Discarding them
+        // prevents corrupting the payload of the in-flight save.
+        //
+        // Intentional: lastTemplate is NOT updated here. Dropped edits are changes the
+        // server never saw, so the page-leave force-save (initForceSaveOnLeave) correctly
+        // persists the last *accepted* template — not a partial in-flight state that
+        // updateOldRows would have overwritten anyway.
+        if (this.#layoutSaveInFlight()) {
+            return;
+        }
+
         this.dotRouterService.forbidRouteDeactivation();
         this.updateTemplate$.next(template);
         this.lastTemplate = template;
@@ -132,12 +176,18 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
         // - https://blog.bitsrc.io/3-ways-to-debounce-http-requests-in-angular-c407eb165ada
         this.updateTemplate$
             .pipe(
+                tap(() => {
+                    // Gate the Page Properties nav item immediately on any edit so users
+                    // cannot navigate to page settings while layout changes are pending.
+                    this.uveStore.setUveStatus(UVE_STATUS.LOADING);
+                }),
                 // debounceTime should be before takeUntil to avoid calling the observable after unsubscribe.
                 // More information: https://stackoverflow.com/questions/58974320/how-is-it-possible-to-stop-a-debounced-rxjs-observable
-                tap(() => this.uveStore.setUveStatus(UVE_STATUS.LOADING)), // Prevent the user to access page properties
                 debounceTime(DEBOUNCE_TIME),
                 takeUntil(this.destroy$),
                 switchMap((layout: DotTemplateDesigner) => {
+                    // Lock the canvas when the POST is actually sent, not on every edit.
+                    this.#layoutSaveInFlight.set(true);
                     this.messageService.add({
                         severity: 'info',
                         summary: 'Info',
@@ -150,13 +200,17 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
                             ...layout,
                             title: null
                         })
-                        .pipe(finalize(() => this.dotRouterService.allowRouteDeactivation()));
+                        .pipe(
+                            catchError((err: HttpErrorResponse) => {
+                                this.handleErrorSaveTemplate(err);
+
+                                return EMPTY;
+                            }),
+                            finalize(() => this.dotRouterService.allowRouteDeactivation())
+                        );
                 })
             )
-            .subscribe(
-                () => this.handleSuccessSaveTemplate(),
-                (err: HttpErrorResponse) => this.handleErrorSaveTemplate(err)
-            );
+            .subscribe(() => this.handleSuccessSaveTemplate());
     }
 
     /**
@@ -167,6 +221,9 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     private handleSuccessSaveTemplate(): void {
+        // Do NOT clear #layoutSaveInFlight here — the canvas must stay locked
+        // through the pageReload() re-hydration window. The #handleReloadComplete
+        // effect clears it once uveStatus signals LOADED.
         this.messageService.add({
             severity: 'success',
             summary: 'Success',
@@ -184,6 +241,7 @@ export class EditEmaLayoutComponent implements OnInit, OnDestroy {
      * @memberof EditEmaLayoutComponent
      */
     private handleErrorSaveTemplate(_: HttpErrorResponse) {
+        this.#layoutSaveInFlight.set(false);
         this.messageService.add({
             severity: 'error',
             summary: 'Error',

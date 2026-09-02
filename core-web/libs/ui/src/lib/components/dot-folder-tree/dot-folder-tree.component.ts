@@ -13,9 +13,11 @@ import {
 } from '@angular/core';
 
 import type { TreeNode } from 'primeng/api';
+import { ContextMenu } from 'primeng/contextmenu';
 import { Tree, TreeModule } from 'primeng/tree';
 import type {
     TreeNodeCollapseEvent,
+    TreeNodeContextMenuSelectEvent,
     TreeNodeExpandEvent,
     TreeNodeSelectEvent
 } from 'primeng/types/tree';
@@ -106,9 +108,18 @@ export class DotFolderTreeComponent {
      */
     $styleClass = input('w-full h-full', { alias: 'styleClass' });
 
+    /**
+     * Optional right-click context menu bound to the underlying `<p-tree>`.
+     * When provided, PrimeNG opens it on node right-click and emits the
+     * clicked node through `onNodeContextMenuSelect`. Consumers own the
+     * menu template and its `MenuItem[]` model.
+     */
+    $contextMenu = input<ContextMenu | null>(null, { alias: 'contextMenu' });
+
     onNodeSelect = output<TreeNodeSelectEvent>();
     onNodeExpand = output<TreeNodeExpandEvent>();
     onNodeCollapse = output<TreeNodeCollapseEvent>();
+    onNodeContextMenuSelect = output<TreeNodeContextMenuSelectEvent>();
     loadMore = output<TreeNode>();
 
     /**

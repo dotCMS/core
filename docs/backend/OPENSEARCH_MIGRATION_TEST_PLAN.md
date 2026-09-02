@@ -1098,13 +1098,13 @@ When the migration starts **successfully** (no shutdown) you instead see an `INF
 
 ## Setup — limited-user stack and the provisioning script
 
-**Stack:** `docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml` (OS 3.x with
-the security plugin ON, provisioned with the non-admin `dotcms-es-user`). The
-`docker/docker-compose-examples/single-node-os-migration/` variant runs OS 1.x + OS 3.x, both
-provisioned the same way.
+**Stack:** the same `docker/docker-compose-examples/single-node-os-migration/docker-compose.yml`
+used above — there's no separate limited-user file. It already provisions both an admin user and
+the non-admin `dotcms-es-user` (with the restricted `dotcms-role`) on both OS 1.x and OS 3.x by
+default, so no extra setup is needed to test the limited-user path.
 
 ```bash
-docker compose -f docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml up -d
+docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml up -d
 ```
 
 **Users on OS 3.x (port 9201, HTTPS):**
@@ -1114,13 +1114,13 @@ docker compose -f docker/docker-compose-examples/os-migration/docker-compose.lim
 | `admin` | `Dev!Search3-Kx9mP-2026` | cluster admin |
 | `dotcms-es-user` | `Dev!dotcms-EsUser-2026` | `dotcms-role` (limited) |
 
-**Provisioning script `opensearch.py`** — runs once via the `opensearch-provision` service; creates
+**Provisioning script `opensearch.py`** — runs once via the `opensearch3-provision` service; creates
 per customer an internal user `<customer>-es-user`, action groups, a role `<customer>-role`, and the
 role mapping. Run it manually:
 
 ```bash
 # Re-run the bundled provisioner against the running stack (idempotent):
-docker compose -f docker/docker-compose-examples/os-migration/docker-compose.limited-user.yml run --rm opensearch-provision
+docker compose -f docker/docker-compose-examples/single-node-os-migration/docker-compose.yml run --rm opensearch3-provision
 
 # Or standalone against any reachable cluster:
 ./opensearch.py --admin-user admin --admin-pass 'Dev!Search3-Kx9mP-2026' \
@@ -1158,7 +1158,7 @@ DOT_DOTCMS_CLUSTER_ID=dotcms-os-migration   # MUST start with the customer name
 - **Objective:** the script creates the non-admin user, role, and mapping with the expected permissions.
 - **Risk:** Medium
 - **Steps:**
-  1. Launch the limited-user stack; let `opensearch-provision` finish.
+  1. Launch the limited-user stack; let `opensearch3-provision` finish.
   2. List internal users:
      `curl -sk https://localhost:9201/_plugins/_security/api/internalusers?pretty -u admin:'Dev!Search3-Kx9mP-2026'` → `dotcms-es-user` present.
   3. Inspect the role:

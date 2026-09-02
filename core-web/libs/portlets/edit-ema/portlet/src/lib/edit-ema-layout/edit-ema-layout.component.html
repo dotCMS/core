@@ -1,4 +1,5 @@
 <dotcms-template-builder-lib
+    [disabled]="$isSaving()"
     (templateChange)="nextTemplateUpdate($event)"
     [layout]="$layoutProperties().layout"
     [template]="$layoutProperties().template"
