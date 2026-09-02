@@ -194,8 +194,18 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             });
     }
 
-    /** Rebuilds the dialog's Save button for the current state. */
+    /**
+     * Rebuilds the dialog's Save button for the current state.
+     *
+     * Only while this tab is the one on screen. The dialog has a single Save, so
+     * handing it over from a hidden tab replaces the Overview one — its button then
+     * saved variables instead of the field, and the field was never written.
+     */
     #emitDialogActions(): void {
+        if (!this.$showTable()) {
+            return;
+        }
+
         this.$changeControls.emit({
             accept: {
                 label: this.#dotMessageService.get('contenttypes.dropzone.action.save'),

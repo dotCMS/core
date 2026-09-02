@@ -7,7 +7,12 @@ import { By } from '@angular/platform-browser';
 
 import { DotHttpErrorManagerService, DotMessageDisplayService } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotCMSClazzes, DotCMSContentTypeField, DotFieldVariable } from '@dotcms/dotcms-models';
+import {
+    DotCMSClazzes,
+    DotCMSContentTypeField,
+    DotDialogActions,
+    DotFieldVariable
+} from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
 import { EMPTY_FIELD } from '@dotcms/utils';
 import {
@@ -18,18 +23,23 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
-import { DotDialogActions, DotFieldVariablesService } from './services/dot-field-variables.service';
+import { DotFieldVariablesService } from './services/dot-field-variables.service';
 
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
 @Component({
     selector: 'dot-test-host-component',
     template: `
-        <dot-content-type-fields-variables [field]="value"></dot-content-type-fields-variables>
+        <dot-content-type-fields-variables
+            [field]="value"
+            [showTable]="showTable"></dot-content-type-fields-variables>
     `,
     standalone: false
 })
 class TestHostComponent {
+    /** The dialog binds this to "is the Variables tab the visible one". */
+    showTable = true;
+
     value: DotCMSContentTypeField = {
         ...dotcmsContentTypeFieldBasicMock,
         contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
@@ -167,6 +177,28 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
             changeTo([{ key: 'fresh', value: 'v' } as DotFieldVariable]);
             expect(controls.at(-1).accept.disabled).toBe(false);
+        });
+    });
+
+    describe('a tab that is not on screen', () => {
+        it('should hand the dialog no buttons at all', () => {
+            /*
+             * The regression this guards: the dialog has a single Save, so handing it
+             * over from a hidden tab replaced the Overview one. That button then saved
+             * variables instead of the field, and renaming a field wrote nothing
+             * (`content-type-fields.spec.ts`, CI).
+             */
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            const controls: DotDialogActions[] = [];
+
+            fixtureHost.componentInstance.showTable = false;
+            comp.$changeControls.subscribe((c) => controls.push(c));
+            fixtureHost.detectChanges();
+
+            comp.onVariablesChanged([{ key: 'fresh', value: 'v' }]);
+
+            expect(comp.$showTable()).toBe(false);
+            expect(controls).toEqual([]);
         });
     });
 
