@@ -28,6 +28,7 @@ import java.util.Date;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ExecutionException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -401,7 +402,7 @@ public class OAuthHelper {
         final Collection<String> providerGroups;
         if (strategy == BuildRolesStrategy.ALL || strategy == BuildRolesStrategy.IDP) {
             try {
-                providerGroups = provider.getGroups(accessToken, userInfo);
+                providerGroups = provider.getGroups(accessToken, withResolvedEmail(userInfo, user));
             } catch (final Exception e) {
                 throw new DotRuntimeException("Failed fetching groups from the OAuth provider for user "
                         + user.getEmailAddress() + " — aborting login so existing roles are preserved: "
@@ -602,6 +603,24 @@ public class OAuthHelper {
             }
             addRoleByKey(user, roleKey);
         }
+    }
+
+    /**
+     * The groups endpoint's {@code {email}} placeholder must resolve to the address dotCMS
+     * actually assigned the user — via {@code emailClaim} and the {@code EMAIL_CLAIMS}
+     * fallbacks — not the literal {@code email} claim. Tenants mapping email from
+     * {@code upn}/{@code preferred_username} often have no {@code email} claim at all, and a
+     * missing placeholder value fails the login by design.
+     */
+    private static Map<String, Object> withResolvedEmail(final Map<String, Object> userInfo, final User user) {
+        final Map<String, Object> context = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
+        if (userInfo != null) {
+            context.putAll(userInfo);
+        }
+        if (UtilMethods.isSet(user.getEmailAddress())) {
+            context.put("email", user.getEmailAddress());
+        }
+        return context;
     }
 
     @SuppressWarnings("unchecked")
