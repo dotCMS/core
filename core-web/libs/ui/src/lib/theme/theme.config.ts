@@ -220,21 +220,34 @@ export const CustomLaraPreset = definePreset(Lara, {
             `
         },
         popover: {
-            // Popovers are panels app-wide: the content area carries no padding of its own, so
-            // whatever is rendered inside owns its spacing. Applied to bare `.p-popover` rather
-            // than an opt-in class — same reasoning as `tag` and `chip` above, and it means a
-            // new popover cannot look different by forgetting a marker.
+            // Popovers are panels app-wide, and the content area supplies the panel's inset so
+            // that plain content — a list, a form, a help blurb — is spaced without every
+            // consumer restating it. Applied to bare `.p-popover` rather than an opt-in class,
+            // same reasoning as `tag` and `chip` above: a new popover cannot come out wrong by
+            // forgetting a marker.
             //
-            // Verified against all 24 popover consumers (see the audit in the PR): filter
-            // panels, the UVE persona and favorite selectors, the theme picker, the help
-            // tooltips and the rest. A popover whose content needs breathing room provides it
-            // itself rather than relying on the component default.
+            // The exception is content that already carries its own inset. A listbox or dataview
+            // dropped straight into a popover is the panel — its options must reach the edges so
+            // the hover and selected bands cover the full row — so the inset is dropped when one
+            // is the content's direct child. Checked against all 27 popover consumers: the filter
+            // panels, the UVE persona and favorite selectors and the rest of that family match
+            // structurally and need no marker, and several pin `p-0` through `pt`, which wins over
+            // both rules anyway.
+            //
+            // `dot-popover-flush` is the opt-out for a panel that wants its rows to run full
+            // bleed while wrapping them in a layout element, which puts them out of reach of the
+            // selector below. Only the template-builder layout properties panel needs it today.
             css: `
                 .p-popover {
                     border-radius: var(--radius-lg);
                     overflow: hidden;
                 }
                 .p-popover .p-popover-content {
+                    padding: calc(var(--spacing) * 4); /* 1rem */
+                }
+                .p-popover .p-popover-content:has(> p-listbox),
+                .p-popover .p-popover-content:has(> p-dataview),
+                .dot-popover-flush .p-popover-content {
                     padding: 0;
                 }
             `
