@@ -220,34 +220,36 @@ export const CustomLaraPreset = definePreset(Lara, {
             `
         },
         popover: {
-            // Popovers are panels app-wide, and the content area supplies the panel's inset so
-            // that plain content — a list, a form, a help blurb — is spaced without every
-            // consumer restating it. Applied to bare `.p-popover` rather than an opt-in class,
-            // same reasoning as `tag` and `chip` above: a new popover cannot come out wrong by
-            // forgetting a marker.
+            // Popovers are panels app-wide, and what the content area does depends on what is put
+            // in it. Plain block markup — a list, a form, a help blurb — gets the panel's inset
+            // from here, so no consumer has to restate it. A component dropped straight into a
+            // popover is instead the panel itself: a listbox's options have to reach the edges for
+            // the hover and selected bands to cover the full row, and a component that lays out a
+            // search box above such a list already spaces its own parts. So the inset applies when
+            // the content's direct children include a block element, and not when the content is
+            // the component.
             //
-            // The exception is content that already carries its own inset. A listbox or dataview
-            // dropped straight into a popover is the panel — its options must reach the edges so
-            // the hover and selected bands cover the full row — so the inset is dropped when one
-            // is the content's direct child. Checked against all 27 popover consumers: the filter
-            // panels, the UVE persona and favorite selectors and the rest of that family match
-            // structurally and need no marker, and several pin `p-0` through `pt`, which wins over
-            // both rules anyway.
+            // Keying on `> div` rather than naming the components keeps this out of the business of
+            // knowing which ones own their spacing: a wrapper component reads the same as the
+            // listbox it wraps, which a `> p-listbox` selector would have missed. Checked against
+            // all 27 popover consumers; several also pin `p-0` through `pt`, which wins over both
+            // rules anyway.
             //
-            // `dot-popover-flush` is the opt-out for a panel that wants its rows to run full
-            // bleed while wrapping them in a layout element, which puts them out of reach of the
-            // selector below. Only the template-builder layout properties panel needs it today.
+            // `dot-popover-flush` is the opt-out for a panel built from plain markup that still
+            // wants its rows to run full bleed — the Content Drive filter panels that carry their
+            // own header rows, and the template-builder layout properties panel.
             css: `
                 .p-popover {
                     border-radius: var(--radius-lg);
                     overflow: hidden;
                 }
                 .p-popover .p-popover-content {
+                    padding: 0;
+                }
+                .p-popover .p-popover-content:has(> div) {
                     padding: calc(var(--spacing) * 4); /* 1rem */
                 }
-                .p-popover .p-popover-content:has(> p-listbox),
-                .p-popover .p-popover-content:has(> p-dataview),
-                .dot-popover-flush .p-popover-content {
+                .p-popover.dot-popover-flush .p-popover-content {
                     padding: 0;
                 }
             `
