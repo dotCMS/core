@@ -14,14 +14,14 @@
             [attr.aria-label]="'experiments.configure.variants.add-dialog.name.label' | dm"
             data-testid="add-variant-name-input" />
         @if (formTree.name().invalid()) {
-            <small class="p-error" data-testid="add-variant-name-error">
+            <small class="p-field-error" data-testid="add-variant-name-error">
                 {{
                     'experiments.configure.variants.add-dialog.name.max-length'
                         | dm: [maxNameLength.toString()]
                 }}
             </small>
         } @else {
-            <small class="text-gray-500" data-testid="add-variant-name-hint">
+            <small class="p-field-hint" data-testid="add-variant-name-hint">
                 {{ 'experiments.configure.variants.add-dialog.name.hint' | dm }}
             </small>
         }

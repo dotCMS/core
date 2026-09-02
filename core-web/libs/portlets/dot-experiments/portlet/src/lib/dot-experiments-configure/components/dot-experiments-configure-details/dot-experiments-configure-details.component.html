@@ -12,11 +12,10 @@
         </div>
     </ng-template>
 
-    <div class="flex flex-col gap-4">
-        <div class="flex flex-col gap-2">
-            <label for="experiment-name">
+    <div class="form">
+        <div class="field">
+            <label dotFieldRequired for="experiment-name">
                 {{ 'experiments.configure.details.name.label' | dm }}
-                <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
                 pInputText
@@ -27,19 +26,22 @@
                 [placeholder]="'experiments.create.form.name.placeholder' | dm"
                 data-testid="details-name-input" />
             @if ($showNameRequiredError()) {
-                <small class="p-error" data-error="1" data-testid="details-name-required-error">
+                <small
+                    class="p-field-error"
+                    data-error="1"
+                    data-testid="details-name-required-error">
                     {{ 'experiments.configure.details.name.required' | dm }}
                 </small>
             } @else {
                 @for (error of $nameField()().errors(); track error.kind) {
-                    <small class="p-error" data-testid="details-name-error">
+                    <small class="p-field-error" data-testid="details-name-error">
                         {{ error.message }}
                     </small>
                 }
             }
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="field">
             <label for="experiment-description">
                 {{ 'experiments.create.form.description.label' | dm }}
             </label>
@@ -52,7 +54,7 @@
                 [placeholder]="'experiments.create.form.description.placeholder' | dm"
                 data-testid="details-description-textarea"></textarea>
             @for (error of $descriptionField()().errors(); track error.kind) {
-                <small class="p-error" data-testid="details-description-error">
+                <small class="p-field-error" data-testid="details-description-error">
                     {{ error.message }}
                 </small>
             }

@@ -16,7 +16,7 @@ import { take } from 'rxjs/operators';
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSBaseTypesContentTypes, DotCMSContentlet } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
+import { AngularAssetPickerLauncher, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 
 import {
     CHANGE_PAGE_DIALOG_WIDTH,
@@ -83,6 +83,7 @@ const CHANGE_PAGE_DIALOG_HEADER_KEY = 'experiments.configure.page.change.header'
         InputGroupAddonModule,
         InputTextModule,
         TooltipModule,
+        DotFieldRequiredDirective,
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-configure-page.component.html',

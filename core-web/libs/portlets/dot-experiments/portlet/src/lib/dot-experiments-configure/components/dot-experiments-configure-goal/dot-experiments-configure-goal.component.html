@@ -12,11 +12,10 @@
         </div>
     </ng-template>
 
-    <section class="flex flex-col gap-5">
-        <div class="flex flex-col gap-2">
-            <label for="goal-name">
+    <section class="form">
+        <div class="field">
+            <label dotFieldRequired for="goal-name">
                 {{ 'experiments.configure.goal.name.label' | dm }}
-                <span class="text-red-500" aria-hidden="true">*</span>
             </label>
             <input
                 pInputText
@@ -27,7 +26,7 @@
                 [placeholder]="'experiments.goal.reach_page.form.name.placeholder' | dm"
                 data-testid="goal-name-input" />
             @if ($showGoalNameError()) {
-                <small class="p-error" data-error="1" data-testid="goal-name-error">
+                <small class="p-field-error" data-error="1" data-testid="goal-name-error">
                     {{ 'experiments.configure.goal.name.required' | dm }}
                 </small>
             }
@@ -49,7 +48,7 @@
         </div>
 
         @if ($showGoalTypeError()) {
-            <small class="p-error" data-error="1" data-testid="goal-type-error">
+            <small class="p-field-error" data-error="1" data-testid="goal-type-error">
                 {{ 'experiments.configure.goal.type.required' | dm }}
             </small>
         }
@@ -64,13 +63,12 @@
 
                 <div class="flex flex-wrap items-start gap-3">
                     @if ($goalType() === goalTypes.URL_PARAMETER) {
-                        <div class="flex min-w-0 flex-1 flex-col gap-2">
-                            <label for="goal-parameter-name">
+                        <div class="field min-w-0 flex-1">
+                            <label dotFieldRequired for="goal-parameter-name">
                                 {{
                                     'experiments.goal.url_parameter.form.conditions.parameter.label'
                                         | dm
                                 }}
-                                <span class="text-red-500" aria-hidden="true">*</span>
                             </label>
                             <input
                                 pInputText
@@ -85,13 +83,12 @@
                                 data-testid="goal-parameter-name-input" />
                         </div>
                     } @else {
-                        <div class="flex w-52 flex-none flex-col gap-2">
-                            <label for="goal-parameter">
+                        <div class="field w-52 flex-none">
+                            <label dotFieldRequired for="goal-parameter">
                                 {{
                                     'experiments.goal.reach_page.form.conditions.parameter.label'
                                         | dm
                                 }}
-                                <span class="text-red-500" aria-hidden="true">*</span>
                             </label>
                             <p-select
                                 inputId="goal-parameter"
@@ -109,10 +106,9 @@
                         </div>
                     }
 
-                    <div class="flex w-52 flex-none flex-col gap-2">
-                        <label for="goal-operator">
+                    <div class="field w-52 flex-none">
+                        <label dotFieldRequired for="goal-operator">
                             {{ 'experiments.goal.reach_page.form.conditions.operator.label' | dm }}
-                            <span class="text-red-500" aria-hidden="true">*</span>
                         </label>
                         <p-select
                             inputId="goal-operator"
@@ -130,10 +126,9 @@
                     </div>
 
                     @if ($showConditionValue()) {
-                        <div class="flex min-w-0 flex-1 flex-col gap-2">
-                            <label for="goal-condition-value">
+                        <div class="field min-w-0 flex-1">
+                            <label dotFieldRequired for="goal-condition-value">
                                 {{ 'experiments.goal.reach_page.form.conditions.value.label' | dm }}
-                                <span class="text-red-500" aria-hidden="true">*</span>
                             </label>
                             <input
                                 pInputText
@@ -151,12 +146,18 @@
                 </div>
 
                 @if ($showParameterNameError()) {
-                    <small class="p-error" data-error="1" data-testid="goal-parameter-name-error">
+                    <small
+                        class="p-field-error"
+                        data-error="1"
+                        data-testid="goal-parameter-name-error">
                         {{ 'experiments.configure.goal.parameter-name.required' | dm }}
                     </small>
                 }
                 @if ($showConditionValueError()) {
-                    <small class="p-error" data-error="1" data-testid="goal-condition-value-error">
+                    <small
+                        class="p-field-error"
+                        data-error="1"
+                        data-testid="goal-condition-value-error">
                         {{ 'experiments.configure.goal.condition-value.required' | dm }}
                     </small>
                 }

@@ -15,9 +15,9 @@
         </div>
     </ng-template>
 
-    <section class="flex flex-col gap-5">
+    <section class="form">
         <div class="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <div class="flex flex-col gap-2">
+            <div class="field">
                 <label for="experiments-start-date">
                     {{ 'experiments.configure.scheduling.start.time' | dm }}
                 </label>
@@ -37,14 +37,14 @@
 
                 @for (error of $startDateErrors(); track error.kind) {
                     <small
-                        class="p-error"
+                        class="p-field-error"
                         data-testid="experiments-configure-scheduling-start-error">
                         {{ error.message }}
                     </small>
                 }
             </div>
 
-            <div class="flex flex-col gap-2">
+            <div class="field">
                 <label for="experiments-end-date">
                     {{ 'experiments.configure.scheduling.end.time' | dm }}
                 </label>
@@ -64,7 +64,7 @@
                     data-testid="experiments-configure-scheduling-end" />
 
                 @for (error of $endDateErrors(); track error.kind) {
-                    <small class="p-error" data-testid="experiments-configure-scheduling-end-error">
+                    <small class="p-field-error" data-testid="experiments-configure-scheduling-end-error">
                         {{ error.message }}
                     </small>
                 }
