@@ -19,6 +19,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -229,26 +230,25 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
     // Tracks the last logged URL to avoid duplicate log messages
     private final Object logLock = new Object();
     private String lastLoggedAdminSiteUrl = null;
-    private boolean notConfiguredWarningLogged = false;
 
+
+    private final AtomicBoolean notConfiguredWarningLogged = new AtomicBoolean(false);
     /**
      * calculates the admin site url based on config properties.
      *
      * @return
      */
     String _baseAdminSiteDomain() {
-        synchronized (logLock) {
-            if (!isAdminSiteConfigured()) {
-                if (!notConfiguredWarningLogged) {
-                    Logger.warn(AdminSiteAPI.class,
-                            "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
-                    notConfiguredWarningLogged = true;
-                }
-            } else {
-                // Reset the warning flag if it becomes configured
-                notConfiguredWarningLogged = false;
+        if (!isAdminSiteConfigured()) {
+            if (notConfiguredWarningLogged.compareAndSet(false, true)) {
+                Logger.warn(AdminSiteAPI.class,
+                        "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
             }
+        } else {
+            // reset so we warn again if the config is ever removed
+            notConfiguredWarningLogged.set(false);
         }
+
         // NOTE: We intentionally do NOT fall back to the request's Host header here.
         // Deriving a cacheable admin url from the client-controlled Host header would allow
         // Host-header cache poisoning of getAdminSiteUrl/getAdminDomains.
