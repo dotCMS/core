@@ -22,18 +22,14 @@ interface ChartAxisLabels {
 /**
  * The charts half of the Results screen: Daily results and Bayesian results behind two tabs.
  *
- * Only the selected tab is rendered. The chart's legend is drawn by a Chart.js plugin that walks
- * *up* from the canvas until it finds a `.legend-wrapper`, and that walk also inspects siblings —
- * with both charts mounted at once, one could claim the other's wrapper and a legend would silently
- * go missing. `@if` keeps exactly one canvas in the tree, so each chart can only ever find its own.
+ * Only the selected tab is rendered, and the tabs are `p-tabs` for the tab strip alone: the chart
+ * stays behind an `@if` rather than in a `p-tabpanel`, because an inactive panel stays in the DOM
+ * (`hidden`) and `lazy` only defers the first render — `hasBeenRendered` latches, so after visiting
+ * both tabs both charts would be mounted. Each chart mints its own `chartId`, so two live at once
+ * is not a correctness problem, but it is two canvases and two Chart.js instances kept in step for
+ * one that is ever on screen.
  *
- * That is also why the tabs are `p-tabs` for the tab strip alone, with the chart kept behind an
- * `@if` rather than in a `p-tabpanel`: a panel stays in the DOM when inactive (`hidden`), and its
- * `lazy` only defers the first render — `hasBeenRendered` latches, so after visiting both tabs
- * both charts would be mounted and one could claim the other's legend.
- *
- * Both charts are read-only views of the store — the Bayesian curves arrive already computed from
- * the backend, and nothing is derived from them here.
+ * Both charts are read-only views of the store; whatever shaping the series need happens there.
  */
 @Component({
     selector: 'dot-experiments-results-charts',

@@ -182,7 +182,10 @@ export const DotExperimentsResultsStore = signalStore(
                 const results = store.results();
                 const datasets = $bayesianChartData()?.datasets;
 
-                if (!results || !datasets) {
+                // `datasets.length` is the case the truthiness check misses: `getBayesianDatasets`
+                // answers `[]` when the payload carries no `bayesianResult`, and an empty array is
+                // both truthy and vacuously `every()`-true — so the gate opened on nothing.
+                if (!results || !datasets?.length) {
                     return false;
                 }
 
