@@ -41,8 +41,7 @@ today, with the exact same items shown in the exact same order as before the fix
 3. **Given** any folder size (empty, small, medium, large, or the largest in the test matrix),
    **When** the listing is fetched before and after the fix, **Then** the exact same items are
    returned in the exact same order, with ties in `mod_date` broken deterministically — the fix
-   changes speed and adds ordering determinism, not the result set (outside of the host_inode
-   correctness fix in FR-004a).
+   changes speed and adds ordering determinism, not the result set.
 
 ---
 
@@ -96,63 +95,62 @@ permission-limited user) and confirm identical results.
   workflow filter, and a language restriction, all against the largest folder) must still return
   correct results, and its latency — while not the primary target of this fix — must not regress
   by more than the same small, bounded amount called out in User Story 1.
-- A folder whose content spans more than one site sharing the same relative path is the case
-  where today's query applies no host filter at all — this is itself a correctness defect
-  identified in #37148, not an intentional behavior. This fix's scope now includes adding the
-  missing `host_inode` filter (see FR-004a), so this case is **expected to change**: after the
-  fix, only items under the requested folder's own site are returned, not items sharing the same
-  relative path across sites.
+- **Out of scope, split out to issue #37347 (2026-09-02, per review).** A folder whose content
+  spans more than one site sharing the same relative path is the case where today's query
+  applies no host filter at all (`ignoreSiteForFolders=true`, which Content Drive sets
+  deliberately for every specific-folder request — `ContentDriveHelper.java:161-166`). Issue
+  #37148 flagged the resulting cross-site over-return as a correctness defect, but whether it is
+  actually a bug or an intentional design choice is a product question this performance spec
+  cannot answer on its own — see #37347. This fix explicitly preserves that behavior exactly as
+  it is today (no host filter added, no host filter removed) — the CTE must not silently change
+  it in either direction. Resolving #37347 is not a prerequisite for this fix.
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
 - **FR-001 — contradiction fixed (2026-09-01, per review); pagination-cursor claim corrected
-  (2026-09-02, per review) — cursors are order-derived, so they inherit the same exception.**
-  The system MUST return identical result sets (same items) for every folder-scoped listing
-  request before and after the fix, across empty, small, medium, large, and extreme-sized
-  folders, and across at least one deep-pagination case. **Order — and, because
-  `contentCursor` is a DB row offset derived from that order (`getContentByChunks` /
-  `generateNextContentCursor`), pagination cursors too — are identical with two named
-  exceptions**: (1) the cross-site correctness gap addressed by the host_inode fix in FR-004a,
-  where the *result set itself* is expected to change on purpose (see FR-004a); and (2) the
-  relative order, and therefore the specific cursor value, **among rows that share the same
-  `mod_date`** (per #37148, roughly 1.2% of rows in the reference dataset), where today's order
-  (and the cursor offset it produces) is an unspecified, planner-dependent artifact — not a
-  guarantee this fix preserves. Because `ORDER BY mod_date` alone has no tiebreaker, the fix MUST
-  add a deterministic tiebreaker column (e.g. `inode` or `identifier`) to the sort, so that after
-  the fix, order — and the cursor offset — among tied rows becomes a **guarantee** (stable,
-  reproducible run to run) — it is not required to match whatever arbitrary order or cursor
-  value those specific tied rows happened to produce before the fix. Outside of these two named
-  exceptions (cross-site result-set change, tied-row ordering and its cursor), every other row's
-  position and cursor value in the result set MUST be unchanged.
+  (2026-09-02, per review) — cursors are order-derived, so they inherit the same exception;
+  cross-site exception removed (2026-09-02) now that FR-004a is split out to #37347.** The
+  system MUST return identical result sets (same items) for every folder-scoped listing request
+  before and after the fix, across empty, small, medium, large, and extreme-sized folders, and
+  across at least one deep-pagination case — with no exception for the cross-site
+  "no host restriction" case, since this fix does not touch that behavior at all (see Edge
+  Cases). **Order — and, because `contentCursor` is a DB row offset derived from that order
+  (`getContentByChunks` / `generateNextContentCursor`), pagination cursors too — are identical
+  with one named exception**: the relative order, and therefore the specific cursor value,
+  **among rows that share the same `mod_date`** (per #37148, roughly 1.2% of rows in the
+  reference dataset), where today's order (and the cursor offset it produces) is an unspecified,
+  planner-dependent artifact — not a guarantee this fix preserves. Because `ORDER BY mod_date`
+  alone has no tiebreaker, the fix MUST add a deterministic tiebreaker column (e.g. `inode` or
+  `identifier`) to the sort, so that after the fix, order — and the cursor offset — among tied
+  rows becomes a **guarantee** (stable, reproducible run to run) — it is not required to match
+  whatever arbitrary order or cursor value those specific tied rows happened to produce before
+  the fix. Outside of this one exception, every other row's position and cursor value in the
+  result set MUST be unchanged.
 - **FR-002**: The system MUST resolve the folder-scoped candidate scan through a query shape that
   does not exhibit the current unstable-planner behavior — the same request against the same
   folder must not swing between a fast and a pathologically slow access path depending on
   incidental factors like page size or how the folder's content happens to be distributed.
 - **FR-003**: The system MUST NOT introduce any database schema change (no new index, no new
   column) to achieve this fix; it relies on the indexing already available today.
-- **FR-004 — sub-case count corrected (2026-09-01, per review): three SQL variants, not
-  two.** The system MUST preserve every existing filtering behavior available on the
-  folder-scoped listing today — language, base type / content type inclusion and exclusion,
-  site/host scoping, workflow scheme/step matching (including archive-target-step branching),
-  free-text and filename filtering, per-field Tag/Relationship criteria, show-on-menu,
-  archived/deleted exclusion, and MIME type filtering — with identical results for each, with
-  the single deliberate exception called out in FR-004a. Site/host scoping specifically produces
-  **three distinct SQL shapes** today (`appendSiteQuery`/`appendSystemHostQuery`,
-  `BrowserAPIImpl.java:2113-2125`), not two: (a) explicit site, no forced system host —
-  `id.host_inode = ?`; (b) explicit site, forced system host — `id.host_inode = ? OR
-  id.host_inode = 'SYSTEM_HOST'`; (c) no explicit site, forced system host —
-  `id.host_inode = 'SYSTEM_HOST'` only. All three MUST keep producing identical results after
-  the fix. (A fourth state — no site and no forced system host, or `ignoreSiteForFolders=true` —
-  appends no host filter at all; that is FR-004a's case, not one of these three.)
-- **FR-004a**: The system MUST add the missing `host_inode` filter to the folder-scoped candidate
-  scan for the "no host restriction at all" sub-case, closing the cross-site correctness gap
-  identified in #37148 (today, a folder whose relative path exists under more than one site
-  incorrectly returns items from every matching site, not just the requested one). This is an
-  intentional, in-scope behavior change, not a preserved behavior — it MUST be called out as such
-  in the PR description and MUST NOT be silently absorbed into FR-001's "identical results"
-  guarantee.
+- **FR-004 — sub-case count corrected (2026-09-01, per review): three SQL variants, not two.
+  FR-004a split out (2026-09-02, per review): no exception remains here.** The system MUST
+  preserve every existing filtering behavior available on the folder-scoped listing today —
+  language, base type / content type inclusion and exclusion, site/host scoping, workflow
+  scheme/step matching (including archive-target-step branching), free-text and filename
+  filtering, per-field Tag/Relationship criteria, show-on-menu, archived/deleted exclusion, and
+  MIME type filtering — with identical results for each, with **no exception**. Site/host
+  scoping specifically produces **four distinct states** today
+  (`appendSiteQuery`/`appendSystemHostQuery`, `BrowserAPIImpl.java:2113-2125`, and
+  `ignoreSiteForFolders`): (a) explicit site, no forced system host — `id.host_inode = ?`; (b)
+  explicit site, forced system host — `id.host_inode = ? OR id.host_inode = 'SYSTEM_HOST'`; (c)
+  no explicit site, forced system host — `id.host_inode = 'SYSTEM_HOST'` only; (d)
+  `ignoreSiteForFolders=true` (Content Drive's deliberate behavior for every specific-folder
+  request, `ContentDriveHelper.java:161-166`) — no host filter at all. **All four MUST keep
+  producing identical results after this fix**, including (d) — whether (d)'s current cross-site
+  behavior should change is a separate product question tracked in #37347, and this fix takes no
+  position on it either way.
 - **FR-005**: The system MUST preserve the existing READ-permission filtering behavior exactly,
   for both an administrator and a permission-limited user, for every folder size and filter
   combination in scope.
@@ -172,20 +170,19 @@ permission-limited user) and confirm identical results.
   is the *post-#37184* single-scan-per-request state, not the current multi-scan behavior, so the
   two fixes are expected to compose without conflict once #37184 lands.
 - **FR-010 — validation query scope corrected (2026-09-01, per review): include the tiebreaker
-  and host_inode fix in the EXPLAIN ANALYZE, not just the spike's original predicate set.**
+  in the EXPLAIN ANALYZE, not just the spike's original predicate set. (The host_inode fix that
+  was also part of this correction on 2026-09-01 no longer applies — FR-004a moved to #37347.)**
   Before this fix's design is finalized, the plan phase MUST verify — by running `EXPLAIN
   ANALYZE` on the real candidate-scan query, with workflow (scheme/step) and per-field
   Tag/Relationship sub-queries present, **and with the FR-001 deterministic tiebreaker column
-  added to the `ORDER BY`, and the FR-004a `host_inode` filter added to the CTE**, against a
-  folder already confirmed to trigger today's slow plan — that the materialized-CTE shape's
-  measured improvement (FR-002/SC-001) still holds with all of that in play, not just the
-  narrower predicate set the original spike measured. This is a measurement, not a design
-  choice: if it holds, proceed as specified; if it does not, the plan must address the gap
-  before implementation. Both the tiebreaker and the host_inode filter are new query surface
-  added by this spec's own resolutions (FR-001, FR-004a) — neither was part of the spike's
-  original measurement, so neither is validated by that measurement on its own. This is the
-  single highest-risk unknown in this spec and must not be deferred to post-implementation
-  discovery.
+  added to the `ORDER BY`**, against a folder already confirmed to trigger today's slow plan —
+  that the materialized-CTE shape's measured improvement (FR-002/SC-001) still holds with all of
+  that in play, not just the narrower predicate set the original spike measured. This is a
+  measurement, not a design choice: if it holds, proceed as specified; if it does not, the plan
+  must address the gap before implementation. The tiebreaker is new query surface added by this
+  spec's own resolution of FR-001 — it was not part of the spike's original measurement, so it is
+  not validated by that measurement on its own. This is the single highest-risk unknown in this
+  spec and must not be deferred to post-implementation discovery.
 
 *Resolved scoping decisions:*
 
@@ -250,10 +247,9 @@ permission-limited user) and confirm identical results.
     the fix is deterministic and reproducible run-to-run (guaranteed by the new tiebreaker) —
     it is explicitly **not** required to match whichever order those same tied rows happened to
     return in before the fix (see FR-001).
-  - **SC-003c (cross-site case)**: For the "no host restriction at all" sub-case (FR-004a), the
-    result *set* is expected to change after the fix (items outside the requested folder's own
-    site are no longer included) — this is the one case where SC-003a's "same items" premise
-    does not apply, by design.
+  - **SC-003c — removed (2026-09-02): FR-004a split out to #37347.** The "no host restriction at
+    all" sub-case is no longer an exception to SC-003a — this fix preserves it exactly as today
+    (see Edge Cases), so its result set is covered by SC-003a like every other sub-case.
 - **SC-004**: Users browsing a permission-restricted folder see exactly the same set of items
   they were permitted to see before the fix — no over-exposure, no under-exposure.
 - **SC-005**: The fix introduces no dependency on the search index for any criterion that is
@@ -293,11 +289,13 @@ permission-limited user) and confirm identical results.
 - "Folder-scoped" listing requests (those with a folder set and not explicitly skipping the
   folder predicate) are the only requests this fix needs to change; requests with no folder
   predicate at all are out of scope and keep their current query shape untouched.
-- The explicit-site and forced-system-host sub-cases are assumed to remain exactly as they are
-  today. The "no host restriction" sub-case is the one deliberate exception (FR-004a): it gains
-  the `host_inode` filter it was missing, correcting the cross-site over-return defect from
-  #37148 — this fix reshapes how the folder predicate is evaluated and closes that one known
-  correctness gap, not what site scoping applies in the other sub-cases.
+- **Updated (2026-09-02): all four site-scoping states are preserved, with no exception.** The
+  explicit-site, forced-system-host, and "no host restriction at all" (`ignoreSiteForFolders`)
+  states are all assumed to remain exactly as they are today — this fix reshapes how the folder
+  predicate is *evaluated for performance*, not what site scoping applies. The cross-site
+  over-return in the "no host restriction" case, identified in #37148, is a real, open question
+  about whether that behavior is correct — but it is a product decision (tracked in #37347), not
+  something this performance fix resolves or should resolve as a side effect.
 - The prepared-statement plan-cache latency-bimodality mechanism flagged in spike #37183 is a
   separate, not-yet-confirmed concern and is explicitly not a prerequisite or a blocker for this
   fix — its resolution, if pursued, is tracked independently.
