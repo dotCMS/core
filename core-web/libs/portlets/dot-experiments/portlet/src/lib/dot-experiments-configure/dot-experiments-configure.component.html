@@ -56,7 +56,15 @@
         #configureBody
         class="flex min-h-0 flex-1 flex-col items-center overflow-y-auto px-8 pt-6 pb-8"
         data-testid="experiments-configure-body">
-        <div class="flex w-full max-w-content flex-col gap-5">
+        <!-- The screen's one form element. It writes through autosave rather than a submit, so
+             `formRoot` is here for what it guarantees rather than what it dispatches: `novalidate`,
+             so an untouched Name is never painted by the browser (AC28), and a `preventDefault` on
+             submit, so Enter in a single-input card cannot reload the portlet. -->
+        <form
+            [formRoot]="formTree"
+            class="flex w-full max-w-content flex-col gap-5"
+            [attr.aria-label]="'experiments.configure.form.label' | dm"
+            data-testid="experiments-configure-form">
             <dot-experiments-configure-details
                 [nameField]="formTree.name"
                 [descriptionField]="formTree.description"
@@ -72,7 +80,7 @@
                 [field]="formTree.scheduling"
                 [bounds]="$schedulingBounds()"
                 [gated]="$isGated()" />
-        </div>
+        </form>
     </div>
 
     <!-- The footer is the screen's bar of actions on an experiment that exists. While the gate

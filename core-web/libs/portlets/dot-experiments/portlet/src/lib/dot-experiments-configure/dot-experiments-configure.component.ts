@@ -20,6 +20,7 @@ import {
     applyEach,
     disabled,
     form,
+    FormRoot,
     max,
     maxDate,
     maxLength,
@@ -117,6 +118,7 @@ const CONFIG_ROUTE_DATA_KEY = 'config';
 @Component({
     selector: 'dot-experiments-configure',
     imports: [
+        FormRoot,
         ConfirmDialogModule,
         ProgressBarModule,
         SkeletonModule,
