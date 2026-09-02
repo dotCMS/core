@@ -108,6 +108,20 @@ class OAuthGroupsFetcherTest {
     }
 
     @Test
+    void extract_namedArrayPathAgainstRootArrayThrows() {
+        // teams[].slug configured, but GitHub returns a root array: a misconfigured path must
+        // fail loudly — an empty result here would be applied as "user has no groups".
+        assertThrows(DotRuntimeException.class,
+                () -> fetchSinglePage("[{\"slug\":\"platform\"}]", "teams[].slug"));
+    }
+
+    @Test
+    void extract_fieldPathAgainstStringElementsThrows() {
+        assertThrows(DotRuntimeException.class,
+                () -> fetchSinglePage("{\"groups\":[\"admins\",\"editors\"]}", "groups[].name"));
+    }
+
+    @Test
     void extract_invalidPathWithoutArrayMarkerThrows() {
         assertThrows(DotRuntimeException.class,
                 () -> fetchSinglePage("{\"groups\":[\"a\"]}", "groups.email"));

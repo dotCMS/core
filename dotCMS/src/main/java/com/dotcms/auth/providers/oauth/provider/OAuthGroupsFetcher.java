@@ -179,15 +179,27 @@ final class OAuthGroupsFetcher {
         return out;
     }
 
-    /** Walk a dot-separated path through nested maps; empty path returns the node itself. */
+    /**
+     * Walk a dot-separated path through nested maps; empty path returns the node itself.
+     * A missing key yields null (Google legitimately omits {@code memberships} for a user
+     * with no groups). A node that is not an object while segments remain is a misconfigured
+     * path — e.g. {@code teams[].slug} against GitHub's root array, or {@code [].slug} against
+     * string elements — and must throw: returning null there would produce an empty group
+     * list that the role rebuild applies, stripping every role on a "successful" login.
+     */
     private static Object navigate(final Object node, final String dotPath) {
         if (!UtilMethods.isSet(dotPath)) {
             return node;
         }
         Object current = node;
         for (final String segment : dotPath.split("\\.")) {
-            if (!(current instanceof Map)) {
+            if (current == null) {
                 return null;
+            }
+            if (!(current instanceof Map)) {
+                throw new DotRuntimeException("groupsResponsePath segment '" + segment
+                        + "' expects an object but the response has a "
+                        + current.getClass().getSimpleName() + " — check groupsResponsePath");
             }
             current = ((Map<?, ?>) current).get(segment);
         }
