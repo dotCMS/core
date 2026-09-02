@@ -19,7 +19,6 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
-import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Function;
 import javax.annotation.PostConstruct;
 import javax.enterprise.context.ApplicationScoped;
@@ -218,40 +217,27 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
 
     @Override
     public String getAdminSiteUrl() {
-        if (!isAdminSiteConfigured()) {
-            // When ADMIN_SITE_URL is not set we derive a fallback from server-side values.
-            // This must NOT be cached: a value that varies per node must never be pinned into
-            // the cache (avoids Host-header based cache poisoning of the admin url).
-            return _baseAdminSiteDomain();
-        }
+        // cached whether or not ADMIN_SITE_URL is set: the value always comes from config
+        // and/or the company's stored portal url - never from the request - so it is safe to
+        // pin in the cache. When the config changes, the AdminSiteKeyListener invalidates it.
         return (String) getConfigValue(ADMIN_SITE_URL, k -> _baseAdminSiteDomain());
     }
 
-    // Tracks the last logged URL to avoid duplicate log messages
-    private final Object logLock = new Object();
-    private String lastLoggedAdminSiteUrl = null;
-
-
-    private final AtomicBoolean notConfiguredWarningLogged = new AtomicBoolean(false);
     /**
-     * calculates the admin site url based on config properties.
+     * calculates the admin site url based on config properties. Only runs on cache misses,
+     * so each log below is naturally "once per config change".
      *
      * @return
      */
     String _baseAdminSiteDomain() {
         if (!isAdminSiteConfigured()) {
-            if (notConfiguredWarningLogged.compareAndSet(false, true)) {
-                Logger.warn(AdminSiteAPI.class,
-                        "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
-            }
-        } else {
-            // reset so we warn again if the config is ever removed
-            notConfiguredWarningLogged.set(false);
+            Logger.warn(AdminSiteAPI.class,
+                    "ADMIN_SITE_URL is not configured.  This is the url that is used to access dotCMS. Please add it to your system's environmental variables, e.g. DOT_ADMIN_SITE_URL=https://www.siteadmin.com or DOT_ADMIN_SITE_URL=https://www.siteadmin.com:8443");
         }
 
         // NOTE: We intentionally do NOT fall back to the request's Host header here.
-        // Deriving a cacheable admin url from the client-controlled Host header would allow
-        // Host-header cache poisoning of getAdminSiteUrl/getAdminDomains.
+        // Deriving the admin url from the client-controlled Host header would allow
+        // Host-header poisoning of getAdminSiteUrl/getAdminDomains.
         String oldHost = Try.of(() -> APILocator.getCompanyAPI().getDefaultCompany().getOldPortalURL()).getOrNull();
 
         if (!UtilMethods.isSet(oldHost)) {
@@ -281,17 +267,12 @@ public class AdminSiteAPIImpl implements AdminSiteAPI {
             }
         }
 
-        // Only log when the URL actually changes
-        synchronized (logLock) {
-            if (!adminSiteUrl.equals(lastLoggedAdminSiteUrl)) {
-                Logger.info(AdminSiteAPI.class, "*********************");
-                Logger.info(AdminSiteAPI.class, "* Setting ADMIN_SITE_URL to " + adminSiteUrl);
-                Logger.info(AdminSiteAPI.class,
-                        "* - this url will be used to build internal links back to your dotCMS administrative instance.");
-                Logger.info(AdminSiteAPI.class, "*********************");
-                lastLoggedAdminSiteUrl = adminSiteUrl;
-            }
-        }
+        Logger.info(AdminSiteAPI.class, "*********************");
+        Logger.info(AdminSiteAPI.class, "* Setting ADMIN_SITE_URL to " + adminSiteUrl);
+        Logger.info(AdminSiteAPI.class,
+                "* - this url will be used to build internal links back to your dotCMS administrative instance.");
+        Logger.info(AdminSiteAPI.class, "*********************");
+
         return adminSiteUrl;
 
     }
