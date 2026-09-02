@@ -189,6 +189,9 @@ export async function resolvePRNumbers(
           owner,
           repo,
           commit_sha: commit.sha,
+          // A default-branch commit resolves to the one merged PR that introduced
+          // it, so page 1 always suffices; this just clears the default 30.
+          per_page: 100,
         });
         // Only merged PRs: for commits not reachable from the default branch the
         // endpoint also returns open PRs.
