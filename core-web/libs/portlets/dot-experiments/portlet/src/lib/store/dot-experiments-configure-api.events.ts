@@ -1,7 +1,6 @@
 import { type } from '@ngrx/signals';
 import { eventGroup } from '@ngrx/signals/events';
 
-import { DotPageLockInfo } from '@dotcms/data-access';
 import { DotExperiment } from '@dotcms/dotcms-models';
 
 import { ConfigureFormModel, DotExperimentConfigurePage } from '../shared/models';
@@ -113,14 +112,13 @@ export const dotExperimentsConfigureApiEvents = eventGroup({
         abortSucceeded: type<DotExperiment>(),
         abortFailed: type<unknown>(),
 
-        // Page prefill and lock state
+        // Page prefill
         pagePrefillResolved: type<DotExperimentConfigurePage>(),
         // The link named a page that is not there: an answer, not a failure of the call.
         pagePrefillFailed: type<unknown>(),
         // The lookup itself was rejected, so whether the page exists is unknown. Kept apart from
         // `pagePrefillFailed` because the two need different copy, and only this one is an error
         // to report.
-        pagePrefillLookupFailed: type<unknown>(),
-        pageLockResolved: type<DotPageLockInfo>()
+        pagePrefillLookupFailed: type<unknown>()
     }
 });

@@ -1,4 +1,3 @@
-import { DotPageLockInfo } from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
@@ -125,8 +124,6 @@ export interface DotExperimentsConfigureViewState {
     selectedPage: DotExperimentConfigurePage | null;
     /** i18n key of the Page card's inline error when `?pageId=`/`?url=` did not resolve. */
     pagePrefillError: string | null;
-    /** `null` until the page's lock state has been resolved, or while no page is selected. */
-    pageLockInfo: DotPageLockInfo | null;
     /**
      * True while the variants that stand in the way of a page change are being deleted.
      *
