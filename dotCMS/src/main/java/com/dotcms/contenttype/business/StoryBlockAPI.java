@@ -8,6 +8,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Supplier;
 
 /**
  * This API allows you to interact with information related to Story Block fields in a given Contentlet. For example, it
@@ -58,24 +59,26 @@ public interface StoryBlockAPI {
 
     /**
      * Traverses every {@link com.dotcms.contenttype.model.field.StoryBlockField} in the specified Contentlet, and
-     * returns the list with the Identifiers that are being referenced in such a field.
+     * returns the list with the dependency information (identifier and languageId) for contentlets being referenced
+     * in such fields.
      *
      * @param contentlet The {@link Contentlet} whose Story Block references must be retrieved.
      *
-     * @return The {@link List} with the Identifiers of the Contentlets that are being referenced in every Story
-     * Block fields.
+     * @return The {@link List} of {@link StoryBlockDependency} objects containing the identifier and languageId
+     * of the Contentlets that are being referenced in every Story Block field.
      */
-    List<String> getDependencies (final Contentlet contentlet);
+    List<StoryBlockDependency> getDependencies (final Contentlet contentlet);
 
     /**
-     * Returns the list with the Identifiers that are being referenced in the specified Story Block value.
+     * Returns the list with the dependency information (identifier and languageId) for contentlets being referenced
+     * in the specified Story Block value.
      *
      * @param storyBlockValue The value of the Story Block -- usually in the form of a JSON String.
      *
-     * @return The {@link List} with the Identifiers of the Contentlets that are being referenced in the Story Block
-     * field.
+     * @return The {@link List} of {@link StoryBlockDependency} objects containing the identifier and languageId
+     * of the Contentlets that are being referenced in the Story Block field.
      */
-    List<String> getDependencies (final Object storyBlockValue);
+    List<StoryBlockDependency> getDependencies (final Object storyBlockValue);
 
     /**
      * Adds a Contentlet to the specified Story Block field.
@@ -88,15 +91,36 @@ public interface StoryBlockAPI {
     Object addContentlet(final Object storyBlockValue, final Contentlet contentlet);
 
     /**
-     * Takes the actual value of the Story Block field in the form of JSON and transforms it into a Linked Map.
+     * Takes the actual value of the Story Block field and transforms it into a Linked Map. The value may arrive
+     * in two shapes depending on the read path: a raw JSON String, or a Map when the field has already been
+     * hydrated by the contentlet transformers (e.g. during page rendering). Consumers of a Block Editor value
+     * should convert through this method rather than assuming one shape. Note that a Map input yields a
+     * <b>shallow</b> copy: nested structures are shared with the input and must not be mutated.
      *
-     * @param blockEditorValue The value of the Story Block field as JSON.
+     * @param blockEditorValue The value of the Story Block field, either a JSON String or an already-hydrated Map.
      *
      * @return The Story Block field as a {@link LinkedHashMap}.
      *
      * @throws JsonProcessingException An error occurred when processing the JSON data.
      */
     LinkedHashMap<String, Object> toMap(final Object blockEditorValue) throws JsonProcessingException;
+
+    /**
+     * Tolerant variant of {@link #toMap(Object)} for read paths that must never fail or reshape
+     * stored data. A Map or JSON-object String converts exactly like {@link #toMap(Object)}; any
+     * other value — e.g. HTML from a WYSIWYG field later converted to Block Editor — is returned
+     * unchanged, with a rate-limited WARN identifying the unparseable value. Use this from
+     * consumers that render stored values (GraphQL, REST); use the strict {@link #toMap(Object)}
+     * from transforms that require a valid Story Block document and must fail otherwise.
+     *
+     * @param blockEditorValue The value of the Story Block field, in any of the shapes described above.
+     * @param valueContext     Describes where the value came from (contentlet identifier, field
+     *                         variable, etc.); only evaluated when the WARN is logged.
+     *
+     * @return The Story Block field as a {@link LinkedHashMap}, or {@code blockEditorValue}
+     * unchanged when it does not hold a Story Block JSON document.
+     */
+    Object toMapOrPassthrough(final Object blockEditorValue, final Supplier<String> valueContext);
 
     /**
      * Takes the Map containing the properties of a specific Story Block field and transforms it into JSON data as a

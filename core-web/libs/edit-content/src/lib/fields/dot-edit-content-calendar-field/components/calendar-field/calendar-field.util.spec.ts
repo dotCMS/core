@@ -570,11 +570,18 @@ describe('DotEditContentCalendarFieldUtil - TDD Approach', () => {
             const todayInServerTz = getCurrentServerTime(SERVER_TIMEZONE_MOCKS.GULF);
             expect(result?.displayValue.getDate()).toBe(todayInServerTz.getDate());
 
-            // formValue (UTC) might be different day due to timezone conversion, allow ±2 days
-            const expectedFormDate = todayInServerTz.getDate();
-            const actualFormDate = result?.formValue.getDate();
-            expect(actualFormDate).toBeDefined();
-            expect(Math.abs(actualFormDate - expectedFormDate)).toBeLessThanOrEqual(2);
+            // formValue (UTC) might fall on a different calendar day due to timezone
+            // conversion; allow ±2 days. Compare the whole-day distance, not getDate()
+            // day-of-month subtraction — the latter wraps at month boundaries (e.g.
+            // Jun 30 vs Jul 1 would read as |30 - 1| = 29 instead of a 1-day difference).
+            const formValue = result?.formValue;
+            expect(formValue).toBeDefined();
+            const dayMs = 24 * 60 * 60 * 1000;
+            const dayAtMidnight = (date: Date) =>
+                new Date(date.getFullYear(), date.getMonth(), date.getDate()).getTime();
+            const dayDistance =
+                Math.abs(dayAtMidnight(formValue!) - dayAtMidnight(todayInServerTz)) / dayMs;
+            expect(dayDistance).toBeLessThanOrEqual(2);
         });
 
         it('should handle "now" defaultValue correctly for DATE fields', () => {

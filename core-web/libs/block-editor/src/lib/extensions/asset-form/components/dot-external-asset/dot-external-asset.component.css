@@ -1,0 +1,22 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply flex justify-center items-end flex-col w-full p-8 gap-4;
+}
+
+.form-control {
+    @apply flex flex-col w-full gap-3;
+}
+
+.footer {
+    @apply flex w-full justify-between;
+}
+
+.error-message {
+    @apply text-red-600 text-xs text-left max-w-xs;
+}
+
+.hide {
+    visibility: hidden;
+}

@@ -1,6 +1,5 @@
 package com.dotmarketing.portlets.templates.design.bean;
 
-import com.dotcms.rest.api.v1.workflow.SchemesAndSchemesContentTypeView;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -109,7 +108,9 @@ public class LayoutChanges {
         }
 
         public String getOldInstanceId() {
-            return oldInstanceId;
+            return ContainerUUID.UUID_LEGACY_VALUE.equals(oldInstanceId)
+                    ? ContainerUUID.UUID_START_VALUE
+                    : oldInstanceId;
         }
 
         public boolean isRemove() {

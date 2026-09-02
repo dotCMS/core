@@ -3,7 +3,7 @@ package com.dotcms.rest.api.v1.system.websocket;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.business.LazyUserAPIWrapper;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import org.glassfish.jersey.server.ContainerRequest;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;

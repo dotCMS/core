@@ -1,13 +1,14 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
-import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotPropertiesService } from '@dotcms/data-access';
+import { DotCMSContentlet, DotCMSContentTypeField, FeaturedFlags } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
 
 import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
-import { DotCardFieldFooterComponent } from '../dot-card-field/components/dot-card-field-footer.component';
 import { DotCardFieldLabelComponent } from '../dot-card-field/components/dot-card-field-label/dot-card-field-label.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 import { BaseWrapperField } from '../shared/base-wrapper-field';
@@ -18,9 +19,9 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         ReactiveFormsModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,
-        DotCardFieldFooterComponent,
         DotCardFieldLabelComponent,
-        DotMessagePipe,
+
+        DotCMSEditorComponent,
         BlockEditorModule
     ],
     templateUrl: './dot-edit-content-block-editor.component.html',
@@ -38,6 +39,18 @@ export class DotEditContentBlockEditorComponent extends BaseWrapperField {
      * It is used to get the current language ID.
      */
     private readonly $store = inject(DotEditContentStore);
+
+    private readonly dotPropertiesService = inject(DotPropertiesService);
+
+    /**
+     * Resolves the `FEATURE_FLAG_NEW_BLOCK_EDITOR` flag — `undefined` while the HTTP request
+     * is in flight, then `true` / `false` once it returns. Per the project-wide rule, a missing
+     * flag resolves to `true` (`getFeatureFlag`), so the new editor renders unless the flag is
+     * explicitly `false`. The template's truthy check still keeps the legacy editor in-flight.
+     */
+    readonly isNewBlockEditorEnabled = toSignal(
+        this.dotPropertiesService.getFeatureFlag(FeaturedFlags.FEATURE_FLAG_NEW_BLOCK_EDITOR)
+    );
 
     /**
      * A signal that holds the field.

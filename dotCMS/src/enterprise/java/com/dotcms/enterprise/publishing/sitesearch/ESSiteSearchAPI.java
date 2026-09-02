@@ -13,6 +13,10 @@ import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATI
 
 import com.dotcms.content.elasticsearch.business.*;
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.domain.Aggregation;
+import com.dotcms.content.index.domain.DotSearchException;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.priv.util.SearchSourceBuilderUtil;
@@ -29,9 +33,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -42,6 +44,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.vavr.control.Try;
@@ -56,14 +59,15 @@ import org.elasticsearch.action.search.SearchResponse;
 import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
 import org.elasticsearch.client.RequestOptions;
 import org.elasticsearch.client.RestHighLevelClient;
-import org.elasticsearch.client.indices.CreateIndexResponse;
+import org.elasticsearch.client.core.CountRequest;
+import org.elasticsearch.client.core.CountResponse;
+import com.dotcms.content.index.domain.CreateIndexStatus;
 import org.elasticsearch.common.text.Text;
 import org.elasticsearch.common.unit.TimeValue;
 import org.elasticsearch.common.xcontent.XContentType;
 import org.elasticsearch.index.query.QueryBuilders;
 import org.elasticsearch.search.SearchHit;
 import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.aggregations.Aggregation;
 import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightBuilder;
 import org.elasticsearch.search.fetch.subphase.highlight.HighlightField;
@@ -71,14 +75,14 @@ import org.quartz.SchedulerException;
 
 public class ESSiteSearchAPI implements SiteSearchAPI{
 
-    private final ESIndexAPI indexApi;
+    private final IndexAPI indexApi;
     private final ESMappingAPIImpl mappingAPI;
     private final IndiciesAPI indiciesAPI;
     private ArrayList<Object> list;
     private int indexPosition;
 
     @VisibleForTesting
-    public ESSiteSearchAPI(final ESIndexAPI indexApi,
+    public ESSiteSearchAPI(final IndexAPI indexApi,
             final ESMappingAPIImpl mappingAPI,
             final IndiciesAPI indiciesAPI) {
         this.indexApi = indexApi;
@@ -87,7 +91,11 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     public ESSiteSearchAPI() {
-       this(APILocator.getESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
+       // Use the vendor-specific ESIndexAPI directly (NOT APILocator.getESIndexAPI(), which returns
+       // the phase-aware IndexAPIImpl router). The SiteSearchAPIImpl router is the single fan-out
+       // point for the ES → OS migration; routing index ops through the neutral router here as well
+       // would dual-write a second time and create duplicate OpenSearch indices.
+       this(new ESIndexAPI(), new ESMappingAPIImpl(), APILocator.getIndiciesAPI());
     }
 
     /**
@@ -99,18 +107,64 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         if(LicenseUtil.getLevel() < LicenseLevel.STANDARD.level)
             return Collections.EMPTY_LIST;
 
-        final List<String> indices = new ArrayList<>();
-
-        indices.addAll(
-            indexApi.listIndices().stream()
-                    .filter(IndexType.SITE_SEARCH::is)
-                    .collect(Collectors.toList())
-        );
+        final List<String> indices = new ArrayList<>(indexApi.listIndices().stream()
+                .filter(IndexType.SITE_SEARCH::is)
+                .toList());
 
         Collections.sort(indices);
         Collections.reverse(indices);
         setDefaultToSpecificPosition(indices, 0);
         return indices;
+    }
+
+    /**
+     * Single-engine leaf: whether this Elasticsearch cluster holds the index. ES physical names carry
+     * no {@code .os} tag, so the logical name is used verbatim. The router aggregates this across all
+     * write engines (issue #36360).
+     */
+    @Override
+    public boolean existsOnAllWriteEngines(final String indexName) {
+        return indexApi.indexExists(indexName);
+    }
+
+    /** Single-engine leaf: nothing to compare against, so the mirror is trivially in sync (#36360). */
+    @Override
+    public boolean writeMirrorsInSync(final String indexName) {
+        return true;
+    }
+
+    /**
+     * Single-engine leaf: exact document count of this Elasticsearch index (plain name, no {@code .os}).
+     * Uses a dedicated {@code _count} request so the total is not capped at 10,000 like a default search,
+     * which would hide content drift above 10k docs in the mirror parity gate (issue #36360). Returns
+     * {@code 0} when the index is absent and {@code -1} when the count query fails.
+     */
+    @Override
+    public long documentCount(final String indexName) {
+        if (!indexApi.indexExists(indexName)) {
+            return 0L;
+        }
+        try {
+            final CountRequest countRequest =
+                    new CountRequest(indexApi.getNameWithClusterIDPrefix(indexName));
+            final CountResponse response = RestHighLevelClientProvider.getInstance().getClient()
+                    .count(countRequest, RequestOptions.DEFAULT);
+            return response.getCount();
+        } catch (final Exception e) {
+            Logger.warn(this, String.format(
+                    "Site Search document count failed for ES index '%s': %s", indexName, e.getMessage()));
+            return -1L;
+        }
+    }
+
+    /**
+     * Elasticsearch adapter for the vendor-neutral alias handle. ES physical names never carry the
+     * {@code .os} tag, so the logical index list resolves directly — no re-tag/strip round-trip is
+     * needed (contrast {@code OSSiteSearchAPI#getAliasToIndexMap}, which must apply {@code .os}).
+     */
+    @Override
+    public Map<String, String> getAliasToIndexMap() {
+        return indexApi.getAliasToIndexMap(listIndices());
     }
 
     /**
@@ -316,8 +370,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      * @throws DotDataException
      */
     @Override
+    public Optional<String> defaultIndexName() throws DotDataException {
+        return Optional.ofNullable(indiciesAPI.loadIndicies().getSiteSearch());
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-       return  indexName.equals(indiciesAPI.loadIndicies().getSiteSearch());
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override
@@ -350,7 +411,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
     }
 
     @Override
-    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws ElasticsearchException, IOException {
+    public synchronized boolean createSiteSearchIndex(String indexName, String alias, int shards) throws DotSearchException, IOException {
         if(indexName==null){
             return false;
         }
@@ -358,18 +419,14 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             return false;
 
         indexName=indexName.toLowerCase();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL url = classLoader.getResource("es-sitesearch-settings.json");
-        // read settings and mappings
-        String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-        url = classLoader.getResource("es-sitesearch-mapping.json");
-        String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+        String settings = SiteSearchIndexResources.settings("es-sitesearch-settings.json");
+        String mapping = SiteSearchIndexResources.mapping("es-sitesearch-mapping.json");
 
 
         //create index
-        CreateIndexResponse cir = indexApi.createIndex(indexName, settings, shards);
+        CreateIndexStatus cir = indexApi.createIndex(indexName, settings, shards);
         int i = 0;
-        while(!cir.isAcknowledged()){
+        while(!cir.acknowledged()){
 
             try {
                 Thread.sleep(100);
@@ -378,7 +435,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             }
 
             if(i++ > 300){
-                throw new ElasticsearchException("index timed out creating");
+                throw new DotSearchException("index timed out creating");
             }
         }
 
@@ -386,8 +443,12 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             indexApi.createAlias(indexName, alias);
         }
 
-        //put mappings
-        mappingAPI.putMapping(indexName, mapping);
+        // Put mappings on the ES index only. ESMappingAPIImpl.putMapping(String, String) is
+        // phase-dispatched and would fan out to OpenSearch, but SiteSearchAPIImpl is already the
+        // single fan-out point for site search (it invokes OSSiteSearchAPI separately, which owns
+        // its own untagged OS index + mapping). Fanning out here too would re-issue the mapping to
+        // a `.os`-tagged physical name that site-search OS indices never use → HTTP 404. Pin to ES.
+        mappingAPI.putMapping(List.of(indexName), mapping, IndexTag.ES);
 
         return true;
     }
@@ -633,7 +694,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -647,10 +708,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting aggregations for query.\n" + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
+            throw new DotSearchException( "Error getting aggregations for query.\n" + e.getMessage(), e );
         }
     }
 
@@ -668,7 +729,7 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
         }
 
         if ( indexName == null || !IndexType.SITE_SEARCH.is(indexName ) ) {
-            throw new ElasticsearchException( indexName + " is not a sitesearch index or alias" );
+            throw new DotSearchException( indexName + " is not a sitesearch index or alias" );
         }
 
         //https://github.com/elasticsearch/elasticsearch/issues/2980
@@ -682,10 +743,10 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
                     .timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS)));
 
             final SearchResponse response = client.search(request, RequestOptions.DEFAULT);
-            return response.getAggregations().asMap();
+            return Aggregation.from(response.getAggregations());
         } catch ( ElasticsearchException | IOException e ) {
             Logger.error( this.getClass(), "Error getting Facets for query.\n"  + e.getMessage(), e );
-            throw new ElasticsearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
+            throw new DotSearchException( "Error getting Facets for query.\n"  + e.getMessage(), e );
         }
     }
 
@@ -698,6 +759,29 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      * 4. Removes indices which were created in the last day from the list of indices to be removed.
      * 5. If there are any indices left to be removed, it logs their names and deletes them.
      */
+    @Override
+    public void deleteIndex(final String indexName) throws DotDataException, IOException {
+        if (LicenseUtil.getLevel() < LicenseLevel.STANDARD.level) {
+            return;
+        }
+        if (!IndexType.SITE_SEARCH.is(indexName)) {
+            throw new DotDataException("Index '" + indexName + "' is not a site-search index");
+        }
+        // Deletes only from THIS engine (indexApi is the direct ESIndexAPI, not the router) —
+        // the SiteSearchAPIImpl router is the single fan-out point. Site-search names are plain
+        // (no .os tag). Active-index protection is enforced by the router before dispatch.
+        // Idempotent per engine: during migration a site-search index can exist on only one engine
+        // (e.g. a Phase-0 ES-only index has no OpenSearch twin), so skip when it is absent here
+        // rather than letting deleteMultiple throw index_not_found and crash the fan-out — which
+        // would otherwise abort the Site Search build mid-switch (issue #36360, I-7).
+        if (!indexApi.indexExists(indexName)) {
+            Logger.info(this.getClass(),
+                    "Site-search index '" + indexName + "' is absent on this engine; nothing to delete.");
+            return;
+        }
+        indexApi.deleteMultiple(new String[]{indexName});
+    }
+
     public void deleteOldSiteSearchIndices(){
         //Get All SiteSearch Indices
         final List<String> indicesToRemove = new ArrayList<>();

@@ -1,7 +1,7 @@
 package com.dotmarketing.filters;
 
 import static com.dotcms.datagen.TestDataUtils.getNewsLikeContentType;
-import static com.dotcms.vanityurl.business.VanityUrlAPIImpl.LEGACY_CMS_HOME_PAGE;
+import static com.dotcms.vanityurl.business.VanityUrlAPI.LEGACY_CMS_HOME_PAGE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.startsWith;
@@ -727,6 +727,57 @@ public class FiltersTest {
 
 
 
+    }
+
+    /**
+     * Tests that a page requested with a trailing slash (e.g. /about-us/index/) still resolves
+     * as a page and the CMS_FILTER_URI_OVERRIDE is set to the path without the trailing slash.
+     */
+    @Test
+    public void shouldResolvePageWithTrailingSlash() throws Exception {
+
+        final Template template = new TemplateDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site)
+                .name("trailing-slash-test")
+                .title("trailing-slash-test")
+                .nextPersisted();
+
+        final HTMLPageAsset page = new HTMLPageDataGen(folder, template)
+                .friendlyName("my-test-page")
+                .pageURL("my-test-page")
+                .title("my-test-page")
+                .nextPersisted();
+        HTMLPageDataGen.publish(page);
+
+        // Assign anonymous read permission
+        APILocator.getPermissionAPI().save(
+                new Permission(page.getPermissionId(),
+                        APILocator.getRoleAPI().loadCMSAnonymousRole().getId(),
+                        PermissionAPI.PERMISSION_READ),
+                page, APILocator.systemUser(), false);
+
+        final FilterChain chain = Mockito.mock(FilterChain.class);
+
+        // Request page WITHOUT trailing slash — should resolve normally
+        HttpServletRequest request = getMockRequest(site.getHostname(),
+                "/trailing-slash-test/my-test-page");
+        MockResponseWrapper response = getMockResponse();
+
+        new CMSFilter().doFilter(request, response, chain);
+        assertEquals(200, response.getStatus());
+        assertEquals("/trailing-slash-test/my-test-page",
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
+
+        // Request page WITH trailing slash — should also resolve as a page
+        // with the trailing slash stripped from CMS_FILTER_URI_OVERRIDE
+        request = getMockRequest(site.getHostname(),
+                "/trailing-slash-test/my-test-page/");
+        response = getMockResponse();
+
+        new CMSFilter().doFilter(request, response, chain);
+        assertEquals(200, response.getStatus());
+        assertEquals("/trailing-slash-test/my-test-page",
+                request.getAttribute(Constants.CMS_FILTER_URI_OVERRIDE));
     }
 
     class MockRequestWrapper extends HttpServletRequestWrapper {

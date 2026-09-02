@@ -38,8 +38,21 @@ export const DotCMSClazzes = {
     TEXT: 'com.dotcms.contenttype.model.field.ImmutableTextField',
     TEXTAREA: 'com.dotcms.contenttype.model.field.ImmutableTextAreaField',
     TIME: 'com.dotcms.contenttype.model.field.ImmutableTimeField',
-    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField'
+    WYSIWYG: 'com.dotcms.contenttype.model.field.ImmutableWysiwygField',
+    FIELD_VARIABLE: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable'
 } as const;
+
+/**
+ * Constants defining the render modes available in DotCMS content type fields
+ */
+export const DotRenderModes = {
+    IFRAME: 'iframe',
+    COMPONENT: 'component'
+} as const;
+
+export const NEW_RENDER_MODE_VARIABLE_KEY = 'newRenderMode';
+export const HIDE_LABEL_VARIABLE_KEY = 'hideLabel';
+export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
 
 /**
  * Union type representing all possible DotCMS class names
@@ -304,6 +317,7 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     clazz: typeof DotCMSClazzes.CUSTOM_FIELD;
     values: string;
     regexCheck?: string;
+    rendered?: string;
 }
 
 /**
@@ -553,6 +567,7 @@ export interface DotCMSContentTypeField {
     fieldContentTypeProperties?: string[];
     skipRelationshipCreation?: boolean;
     metadata?: { [key: string]: string | number | boolean };
+    rendered?: string;
 }
 
 export interface DotCMSContentTypeLayoutTab {
@@ -585,6 +600,12 @@ export interface DotCMSContentTypeFieldVariable {
     id: string;
     key: string;
     value: string;
+}
+
+export interface DotCMSContentTypeFieldVariableRenderMode extends DotCMSContentTypeFieldVariable {
+    clazz: typeof DotCMSClazzes.FIELD_VARIABLE;
+    key: 'newRenderMode';
+    value: (typeof DotRenderModes)[keyof typeof DotRenderModes];
 }
 
 export interface DotCMSAssetDialogFields {
@@ -630,7 +651,20 @@ interface Relationships {
  */
 export interface DotContentTypePaginationOptions {
     filter?: string;
-    page?: number;
+    page?: number; // Page number (1-indexed)
+    per_page?: number; // Number of results per page
     type?: string;
     ensure?: string;
+}
+
+/**
+ * Describes an available field type as returned by the `/api/v1/fieldTypes` endpoint.
+ * Used to render the list of fields that can be added to a content type.
+ */
+export interface FieldType {
+    id: string;
+    label: string;
+    clazz: string;
+    helpText: string;
+    properties: string[];
 }

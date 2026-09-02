@@ -1,5 +1,6 @@
 import {
   ApplicationConfig,
+  isDevMode,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
 } from '@angular/core';
@@ -14,13 +15,15 @@ import {
 import { provideDotCMSClient, provideDotCMSImageLoader } from '@dotcms/angular';
 import { provideHttpClient, withFetch } from '@angular/common/http';
 import { environment } from '../environments/environment';
+
 export const appConfig: ApplicationConfig = {
   providers: [
-    provideDotCMSImageLoader('http://localhost:8080'),
+    provideDotCMSImageLoader(environment.dotcmsUrl),
     provideDotCMSClient({
       dotcmsUrl: environment.dotcmsUrl,
       authToken: environment.authToken,
       siteId: environment.siteId,
+      logLevel: isDevMode() ? 'verbose' : 'default',
     }),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),

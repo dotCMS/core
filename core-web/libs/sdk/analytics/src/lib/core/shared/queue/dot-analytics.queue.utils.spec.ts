@@ -2,12 +2,12 @@
 import { beforeEach, describe, expect, it, jest } from '@jest/globals';
 
 import { DEFAULT_QUEUE_CONFIG } from '../constants';
-import { sendAnalyticsEvent } from '../dot-content-analytics.http';
+import { sendAnalyticsEvent } from '../http/dot-analytics.http';
 import { DotCMSAnalyticsConfig, DotCMSAnalyticsEventContext, DotCMSEvent } from '../models';
 
 // Mock the HTTP utility
-jest.mock('../dot-content-analytics.http', () => ({
-    sendAnalyticsEvent: jest.fn()
+jest.mock('../http/dot-analytics.http', () => ({
+    sendAnalyticsEvent: jest.fn(() => Promise.resolve(true))
 }));
 
 // Mock @analytics/queue-utils
@@ -37,6 +37,9 @@ const mockConsoleLog = jest.spyOn(console, 'log').mockImplementation(() => {
 const mockConsoleWarn = jest.spyOn(console, 'warn').mockImplementation(() => {
     // do nothing
 });
+const mockConsoleInfo = jest.spyOn(console, 'info').mockImplementation(() => {
+    // do nothing
+});
 
 describe('createAnalyticsQueue', () => {
     let mockConfig: DotCMSAnalyticsConfig;
@@ -56,6 +59,7 @@ describe('createAnalyticsQueue', () => {
         mockQueueResume.mockClear();
         mockConsoleLog.mockClear();
         mockConsoleWarn.mockClear();
+        mockConsoleInfo.mockClear();
 
         // Reset mock implementations
         mockQueueSize.mockReturnValue(0);
@@ -74,6 +78,18 @@ describe('createAnalyticsQueue', () => {
         addEventListenerSpy = jest.spyOn(window, 'addEventListener');
         removeEventListenerSpy = jest.spyOn(window, 'removeEventListener');
 
+        // Clear sessionStorage to prevent test leakage
+        sessionStorage.clear();
+
+        // Mock crypto.randomUUID globally for all tests
+        Object.defineProperty(globalThis, 'crypto', {
+            value: {
+                randomUUID: jest.fn(() => 'test-tab-id-12345')
+            },
+            writable: true,
+            configurable: true
+        });
+
         // Setup test data
         mockConfig = {
             server: 'https://example.com',
@@ -85,7 +101,13 @@ describe('createAnalyticsQueue', () => {
         mockContext = {
             site_auth: 'test-site-key',
             session_id: 'test-session-id',
-            user_id: 'test-user-id'
+            user_id: 'test-user-id',
+            device: {
+                screen_resolution: '1920x1080',
+                language: 'en-US',
+                viewport_width: '1024',
+                viewport_height: '768'
+            }
         };
 
         mockEvent = {
@@ -233,7 +255,8 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
-                expect.stringContaining('DotCMS Analytics Queue: Event added'),
+                '[DotCMS Analytics | Queue] [DEBUG]',
+                expect.stringContaining('Event added'),
                 expect.objectContaining({
                     eventType: 'pageview',
                     event: mockEvent
@@ -261,6 +284,7 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.stringContaining(`Queue size: 5/${DEFAULT_QUEUE_CONFIG.eventBatchSize}`),
                 expect.any(Object)
             );
@@ -308,7 +332,7 @@ describe('createAnalyticsQueue', () => {
 
             // Call the callback with events (simulating smartQueue calling it)
             const events = [mockEvent, mockEvent];
-            sendBatchCallback(events);
+            sendBatchCallback(events, []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledTimes(1);
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
@@ -329,7 +353,7 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             // Don't enqueue anything (no context set)
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).not.toHaveBeenCalled();
         });
@@ -343,9 +367,10 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
-            sendBatchCallback([mockEvent, mockEvent]);
+            sendBatchCallback([mockEvent, mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.stringContaining('Sending batch of 2 event(s)'),
                 expect.objectContaining({
                     keepalive: false,
@@ -404,7 +429,7 @@ describe('createAnalyticsQueue', () => {
             pagehideListener(new Event('pagehide'));
 
             // Now simulate smartQueue calling sendBatch
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -455,7 +480,8 @@ describe('createAnalyticsQueue', () => {
             )?.[1] as EventListener;
             pagehideListener(new Event('pagehide'));
 
-            expect(mockConsoleWarn).toHaveBeenCalledWith(
+            expect(mockConsoleInfo).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [INFO]',
                 expect.stringContaining('Flushing 5 events')
             );
         });
@@ -532,7 +558,7 @@ describe('createAnalyticsQueue', () => {
             queue.enqueue(mockEvent, mockContext);
 
             // Should use keepalive=false again after cleanup
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(sendAnalyticsEvent).toHaveBeenCalledWith(
                 expect.any(Object),
@@ -552,9 +578,10 @@ describe('createAnalyticsQueue', () => {
             const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
 
             queue.enqueue(mockEvent, mockContext);
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             expect(mockConsoleLog).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Queue] [DEBUG]',
                 expect.any(String),
                 expect.objectContaining({
                     keepalive: false
@@ -580,15 +607,15 @@ describe('createAnalyticsQueue', () => {
             pagehideListener(new Event('pagehide'));
 
             // Simulate smartQueue calling sendBatch
-            sendBatchCallback([mockEvent]);
+            sendBatchCallback([mockEvent], []);
 
             // Find the sendBatch call (second console.log call)
             const sendBatchCall = mockConsoleLog.mock.calls.find((call) =>
-                call[0].includes('Sending batch')
+                call[1]?.includes('Sending batch')
             );
 
             expect(sendBatchCall).toBeDefined();
-            expect(sendBatchCall?.[1]).toEqual(
+            expect(sendBatchCall?.[2]).toEqual(
                 expect.objectContaining({
                     keepalive: true
                 })
@@ -629,6 +656,322 @@ describe('createAnalyticsQueue', () => {
                     interval: 15000
                 })
             );
+        });
+    });
+
+    describe('Queue Persistence', () => {
+        let mockSessionStorage: { [key: string]: string };
+        let sessionStorageGetItem: jest.SpiedFunction<typeof sessionStorage.getItem>;
+        let sessionStorageSetItem: jest.SpiedFunction<typeof sessionStorage.setItem>;
+        let sessionStorageRemoveItem: jest.SpiedFunction<typeof sessionStorage.removeItem>;
+
+        beforeEach(() => {
+            // Mock sessionStorage
+            mockSessionStorage = {};
+            sessionStorageGetItem = jest
+                .spyOn(Storage.prototype, 'getItem')
+                .mockImplementation((key: string) => mockSessionStorage[key] || null);
+            sessionStorageSetItem = jest
+                .spyOn(Storage.prototype, 'setItem')
+                .mockImplementation((key: string, value: string) => {
+                    mockSessionStorage[key] = value;
+                });
+            sessionStorageRemoveItem = jest
+                .spyOn(Storage.prototype, 'removeItem')
+                .mockImplementation((key: string) => {
+                    delete mockSessionStorage[key];
+                });
+        });
+
+        afterEach(() => {
+            sessionStorageGetItem.mockRestore();
+            sessionStorageSetItem.mockRestore();
+            sessionStorageRemoveItem.mockRestore();
+        });
+
+        it('should generate unique tabId on initialize', () => {
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            expect(global.crypto.randomUUID).toHaveBeenCalled();
+
+            // Verify tab ID was stored in sessionStorage
+            expect(mockSessionStorage['dot_analytics_tab_id']).toBe('test-tab-id-12345');
+        });
+
+        it('should reuse existing tabId from sessionStorage on subsequent page loads', () => {
+            // Simulate existing tab ID from previous page
+            mockSessionStorage['dot_analytics_tab_id'] = 'existing-tab-id-xyz';
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Should NOT generate new UUID, should reuse existing
+            expect(mockSessionStorage['dot_analytics_tab_id']).toBe('existing-tab-id-xyz');
+
+            // Verify it uses the existing tab ID for queue storage key
+            queue.enqueue(mockEvent, mockContext);
+
+            const queueKey = Object.keys(mockSessionStorage).find((key) =>
+                key.startsWith('dot_analytics_queue_')
+            );
+            expect(queueKey).toContain('existing-tab-id-xyz');
+        });
+
+        it('should persist events to sessionStorage on enqueue', () => {
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            queue.enqueue(mockEvent, mockContext);
+
+            expect(sessionStorageSetItem).toHaveBeenCalled();
+
+            // Find the queue storage key (not the tab ID key)
+            const storageKey = Object.keys(mockSessionStorage).find((key) =>
+                key.startsWith('dot_analytics_queue_')
+            );
+            expect(storageKey).toBeDefined();
+            expect(storageKey).toContain('dot_analytics_queue_');
+
+            const stored = JSON.parse(mockSessionStorage[storageKey!]);
+            expect(stored).toMatchObject({
+                tabId: 'test-tab-id-12345',
+                events: [mockEvent]
+            });
+        });
+
+        it('should load persisted events on initialize', async () => {
+            const persistedQueue = {
+                tabId: 'old-tab-id',
+                timestamp: Date.now(),
+                events: [mockEvent, mockEvent]
+            };
+
+            mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] =
+                JSON.stringify(persistedQueue);
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Wait for microtasks (promises in initialize)
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            // Should have called sendAnalyticsEvent immediately for persisted events
+            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    events: persistedQueue.events
+                }),
+                mockConfig,
+                false // keepalive for immediate send (matches WITHOUT keepalive comment in code)
+            );
+
+            // Should clear storage after loading
+            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+        });
+
+        it('should discard events older than 24 hours', () => {
+            const oldTimestamp = Date.now() - 25 * 60 * 60 * 1000; // 25 hours ago
+            const persistedQueue = {
+                tabId: 'old-tab-id',
+                timestamp: oldTimestamp,
+                events: [mockEvent]
+            };
+
+            mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] =
+                JSON.stringify(persistedQueue);
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Should NOT send old events
+            expect(sendAnalyticsEvent).not.toHaveBeenCalled();
+
+            // Should clear storage
+            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+        });
+
+        it('should clear storage after normal flush', () => {
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
+
+            queue.enqueue(mockEvent, mockContext);
+
+            // Clear previous calls from initialize/enqueue
+            sessionStorageRemoveItem.mockClear();
+
+            // Simulate normal flush (keepalive=false)
+            sendBatchCallback([mockEvent], []);
+
+            // Should clear storage after dispatching send
+            expect(sessionStorageRemoveItem).toHaveBeenCalledTimes(1);
+        });
+
+        it('should clear storage on keepalive flush to prevent duplicate sends', () => {
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            const mockedSmartQueue = smartQueue as jest.MockedFunction<typeof smartQueue>;
+            const sendBatchCallback = mockedSmartQueue.mock.calls[0][0];
+
+            queue.enqueue(mockEvent, mockContext);
+            mockQueueSize.mockReturnValue(1);
+
+            // Clear previous calls
+            sessionStorageRemoveItem.mockClear();
+
+            // Trigger pagehide (sets keepalive=true)
+            const pagehideListener = addEventListenerSpy.mock.calls.find(
+                (call) => call[0] === 'pagehide'
+            )?.[1] as EventListener;
+            pagehideListener(new Event('pagehide'));
+
+            // Simulate flush with keepalive
+            sendBatchCallback([mockEvent], []);
+
+            // Storage should be cleared even for keepalive flushes.
+            // sessionStorage writes are synchronous and complete before unload,
+            // so leaving stale events causes the next page to re-send them.
+            expect(sessionStorageRemoveItem).toHaveBeenCalledTimes(1);
+        });
+
+        it('should handle corrupted storage gracefully', () => {
+            mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] = 'invalid-json{';
+
+            const consoleErrorSpy = jest.spyOn(console, 'error').mockImplementation(() => {
+                // Prevent logger.error (which uses console.error) from affecting the test
+            });
+
+            const queue = createAnalyticsQueue(mockConfig);
+
+            expect(() => queue.initialize()).not.toThrow();
+
+            // Should clear corrupted storage
+            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+
+            consoleErrorSpy.mockRestore();
+        });
+
+        it('should handle missing required fields in persisted queue', () => {
+            const invalidQueue = {
+                // Missing tabId
+                timestamp: Date.now(),
+                events: [mockEvent]
+            };
+
+            mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] =
+                JSON.stringify(invalidQueue);
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Should not send invalid queue
+            expect(sendAnalyticsEvent).not.toHaveBeenCalled();
+
+            // Should clear invalid storage
+            expect(sessionStorageRemoveItem).toHaveBeenCalled();
+        });
+
+        it('should validate event structure in persisted queue', async () => {
+            const invalidEvent = { foo: 'bar' }; // Missing required fields
+            const persistedQueue = {
+                tabId: 'old-tab-id',
+                timestamp: Date.now(),
+                events: [mockEvent, invalidEvent, mockEvent]
+            };
+
+            mockSessionStorage['dot_analytics_queue_test-tab-id-12345'] =
+                JSON.stringify(persistedQueue);
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Wait for microtasks
+            await new Promise((resolve) => setTimeout(resolve, 0));
+
+            // Should send only valid events (2 out of 3)
+            expect(sendAnalyticsEvent).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    events: expect.arrayContaining([mockEvent])
+                }),
+                mockConfig,
+                false
+            );
+        });
+
+        it('should handle QuotaExceededError gracefully', () => {
+            sessionStorageSetItem.mockImplementation(() => {
+                const error = new Error('QuotaExceededError');
+                error.name = 'QuotaExceededError';
+                throw error;
+            });
+
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            // Should not throw
+            expect(() => queue.enqueue(mockEvent, mockContext)).not.toThrow();
+
+            // Event should still be added to queue
+            expect(mockQueuePush).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should persist to storage on SPA navigation', () => {
+            const documentSpy = jest.spyOn(document, 'addEventListener');
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            queue.enqueue(mockEvent, mockContext);
+
+            // Mock queue has events
+            mockQueueSize.mockReturnValue(1);
+
+            // Clear previous storage calls
+            sessionStorageSetItem.mockClear();
+            mockQueueFlush.mockClear();
+
+            // Mock document.visibilityState to hidden
+            Object.defineProperty(document, 'visibilityState', {
+                writable: true,
+                configurable: true,
+                value: 'hidden'
+            });
+
+            // Get the visibilitychange listener
+            const visibilityListener = documentSpy.mock.calls.find(
+                (call) => call[0] === 'visibilitychange'
+            )?.[1] as EventListener;
+
+            // Trigger visibility change
+            // Note: Without SPA navigation flag set, this will trigger flush
+            // In a real SPA navigation, onRouteChange would set isSPANavigation=true
+            // which would skip flush and only persist
+            visibilityListener(new Event('visibilitychange'));
+
+            // Should flush when NOT a SPA navigation
+            expect(mockQueueFlush).toHaveBeenCalled();
+
+            documentSpy.mockRestore();
+        });
+
+        it('should NOT clear storage in cleanup', () => {
+            const queue = createAnalyticsQueue(mockConfig);
+            queue.initialize();
+
+            queue.enqueue(mockEvent, mockContext);
+
+            // Clear previous calls
+            sessionStorageRemoveItem.mockClear();
+
+            queue.cleanup();
+
+            // Should NOT clear storage (storage cleared only on successful send or initialize)
+            // The only removeItem calls should be from flushRemaining, not from cleanup itself
+            // Actually, cleanup calls flushRemaining which may set keepalive=true, so storage is preserved
+            const storageKey = Object.keys(mockSessionStorage)[0];
+            expect(mockSessionStorage[storageKey]).toBeDefined();
         });
     });
 });

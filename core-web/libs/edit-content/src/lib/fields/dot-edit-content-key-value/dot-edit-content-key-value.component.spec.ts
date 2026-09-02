@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator';
+import { createHostFactory, SpectatorHost } from '@openng/spectator';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
@@ -191,6 +191,18 @@ describe('DotEditContentKeyValueComponent', () => {
             expect(keyValueField.$initialValue()).toEqual([]);
         });
 
+        it('should display null values as the string "null" after import', () => {
+            const testData = { key1: null, key2: 'value2' };
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue(testData);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([
+                { key: 'key1', value: 'null' },
+                { key: 'key2', value: 'value2' }
+            ]);
+        });
+
         it('should parse valid key-value object correctly', () => {
             const testData = { key1: 'value1', key2: 'value2', key3: 'value3' };
             const keyValueField = spectator.query(DotKeyValueFieldComponent);
@@ -202,6 +214,22 @@ describe('DotEditContentKeyValueComponent', () => {
                 { key: 'key2', value: 'value2' },
                 { key: 'key3', value: 'value3' }
             ]);
+        });
+
+        it('should not split string values into individual characters', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue('[object Object]' as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
+        });
+
+        it('should not split array values into individual entries', () => {
+            const keyValueField = spectator.query(DotKeyValueFieldComponent);
+            keyValueField.writeValue(['key1', 'key2'] as unknown as Record<string, string | null>);
+            spectator.detectChanges();
+
+            expect(keyValueField.$initialValue()).toEqual([]);
         });
     });
 

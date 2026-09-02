@@ -15,5 +15,10 @@
         "strictInjectionParameters": true,
         "strictInputAccessModifiers": true,
         "strictTemplates": true
+    },
+    "compilerOptions": {
+        "module": "preserve",
+        "moduleResolution": "bundler",
+        "lib": ["dom", "dom.iterable", "es2022"]
     }
 }

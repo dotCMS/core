@@ -25,7 +25,7 @@
         <testdata.dir>${project.build.directory}/testdata</testdata.dir>
         <cleanup.before.tests>true</cleanup.before.tests>
         <postman.test.skip>true</postman.test.skip>
-        <yarn.install.cmd>install --frozen-lockfile</yarn.install.cmd>
+        <pnpm.install.args>install --frozen-lockfile</pnpm.install.args>
         <skip.npm.install>false</skip.npm.install>
         <postman.server.url>http://localhost:${tomcat.port}</postman.server.url>
         <postman.collection.dir>src/main/resources/postman</postman.collection.dir>
@@ -38,33 +38,40 @@
 
     <build>
         <plugins>
+            <!-- dotcms-postman runs the Newman/Postman suite via pnpm (exec-maven-plugin
+                 calling installs/node/pnpm), matching core-web's package manager. -->
             <plugin>
-                <groupId>com.github.eirslett</groupId>
-                <artifactId>frontend-maven-plugin</artifactId>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <configuration>
+                    <executable>${node.install.dir}/pnpm</executable>
+                    <workingDirectory>${project.basedir}</workingDirectory>
+                    <environmentVariables>
+                        <PATH>${node.install.dir}:${env.PATH}</PATH>
+                    </environmentVariables>
+                </configuration>
                 <executions>
-                    <execution> 
-                        <id>install</id>
+                    <execution>
+                        <id>pnpm-install</id>
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
-                        <!-- optional: the default phase is "generate-resources" -->
                         <phase>generate-resources</phase>
                         <configuration>
                             <skip>${skip.npm.install}</skip>
-                            <arguments>${yarn.install.cmd}</arguments>
+                            <commandlineArgs>${pnpm.install.args}</commandlineArgs>
                         </configuration>
                     </execution>
                     <execution>
                         <id>run node script</id>
-                        <!-- Adjust the phase as per your requirement -->
                         <goals>
-                            <goal>yarn</goal>
+                            <goal>exec</goal>
                         </goals>
                         <phase>integration-test</phase>
                         <configuration>
                             <skip>${postman.test.skip}</skip>
-                            <arguments>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</arguments>
                             <!-- 'start' is the script name defined in package.json -->
+                            <commandlineArgs>run start --serverUrl=${postman.server.url} --postmanTestsDir=${postman.collection.dir} ${postman.collections}</commandlineArgs>
                         </configuration>
                     </execution>
                 </executions>
@@ -121,6 +128,7 @@
                                 <env>
                                     <CATALINA_OPTS>-XX:+PrintFlagsFinal</CATALINA_OPTS>
                                     <DB_MAX_TOTAL>15</DB_MAX_TOTAL>
+                                    <DB_MAX_WAIT>120000</DB_MAX_WAIT>
                                     <DOT_INDEX_POLICY_SINGLE_CONTENT>FORCE</DOT_INDEX_POLICY_SINGLE_CONTENT>
                                     <DOT_ASYNC_REINDEX_COMMIT_LISTENERS>false</DOT_ASYNC_REINDEX_COMMIT_LISTENERS>
                                     <DOT_ASYNC_COMMIT_LISTENERS>false</DOT_ASYNC_COMMIT_LISTENERS>

@@ -1,11 +1,7 @@
-import { DebugElement } from '@angular/core';
-import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 
-import { ButtonModule } from 'primeng/button';
-
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotConvertToBlockInfoComponent } from './dot-convert-to-block-info.component';
@@ -17,28 +13,24 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 describe('DotConvertToBlockInfoComponent', () => {
-    let de: DebugElement;
-    let fixture: ComponentFixture<DotConvertToBlockInfoComponent>;
-    let component: DotConvertToBlockInfoComponent;
-
     beforeEach(async () => {
-        await TestBed.configureTestingModule({
-            declarations: [DotConvertToBlockInfoComponent],
-            imports: [DotMessagePipe, ButtonModule],
+        TestBed.configureTestingModule({
+            imports: [DotConvertToBlockInfoComponent],
             providers: [
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 }
             ]
-        }).compileComponents();
+        });
 
-        fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
-        de = fixture.debugElement;
-        component = fixture.componentInstance;
+        await TestBed.compileComponents();
     });
 
     it('should render info and learn more button', () => {
+        const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
+        const de = fixture.debugElement;
+
         fixture.detectChanges();
 
         const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
@@ -47,17 +39,23 @@ describe('DotConvertToBlockInfoComponent', () => {
         expect(infoContent.textContent?.trim()).toBe('Info Content');
         expect(learnMore.textContent?.trim()).toBe('Learn More');
     });
+
     it('should render info and info button', () => {
-        component.currentField = {
+        const fixture = TestBed.createComponent(DotConvertToBlockInfoComponent);
+        const de = fixture.debugElement;
+
+        fixture.componentRef.setInput('$currentField', {
             id: '123'
-        };
+        });
 
         fixture.detectChanges();
 
-        const infoContent = de.query(By.css('[data-testId="infoContent"]')).nativeElement;
-        const button = de.query(By.css('[data-testId="button"]')).nativeElement;
+        const infoContent = de.query(By.css('[data-testId="infoContent"]'));
+        const button = de.query(By.css('[data-testId="button"]'));
 
-        expect(infoContent.textContent?.trim()).toBe('Info Content');
-        expect(button.textContent?.trim()).toBe('Info Button');
+        expect(infoContent).toBeTruthy();
+        expect(infoContent.nativeElement.textContent?.trim()).toBe('Info Content');
+        expect(button).toBeTruthy();
+        expect(button.nativeElement.textContent?.trim()).toBe('Info Button');
     });
 });

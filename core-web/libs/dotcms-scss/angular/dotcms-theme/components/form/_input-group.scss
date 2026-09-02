@@ -1,13 +1,16 @@
 @use "variables" as *;
-@import "common";
+@use "common";
+@use "../../../../shared/colors";
+@use "../../../../shared/common" as common2;
+@use "../../../../shared/spacing";
 
 .p-inputgroup-addon {
-    height: $field-height-md;
-    background: $white;
-    color: $black;
-    padding: $spacing-2 $spacing-2;
+    height: common2.$field-height-md;
+    background: colors.$white;
+    color: colors.$black;
+    padding: spacing.$spacing-2 spacing.$spacing-2;
     border: none;
-    border-right: $field-border-size solid $color-palette-gray-400;
+    border-right: common2.$field-border-size solid colors.$color-palette-gray-400;
     min-width: 2.357rem;
     z-index: 1;
 
@@ -17,23 +20,23 @@
 }
 
 p-inputgroup > .p-inputgroup {
-    border: $field-border-size solid $color-palette-gray-400;
-    border-radius: $border-radius-md;
+    border: common2.$field-border-size solid colors.$color-palette-gray-400;
+    border-radius: common2.$border-radius-md;
     overflow: hidden;
 
     .p-inputtext.p-element {
         border: none;
 
         &:has(+ .p-inputgroup-addon) {
-            border-right: $field-border-size solid $color-palette-gray-400;
+            border-right: common2.$field-border-size solid colors.$color-palette-gray-400;
             border-radius: 0;
 
             &:hover {
-                border-color: $color-palette-gray-400;
+                border-color: colors.$color-palette-gray-400;
             }
 
             &:focus {
-                border-color: $color-palette-gray-400;
+                border-color: colors.$color-palette-gray-400;
             }
         }
     }
@@ -42,22 +45,22 @@ p-inputgroup > .p-inputgroup {
 
     .p-inputgroup-addon:first-child,
     .p-component:first-child {
-        border-top-left-radius: $border-radius-md;
-        border-bottom-left-radius: $border-radius-md;
+        border-top-left-radius: common2.$border-radius-md;
+        border-bottom-left-radius: common2.$border-radius-md;
         border-top-right-radius: 0;
         border-bottom-right-radius: 0;
     }
 
     .p-inputgroup-addon:last-child,
     .p-component:last-child {
-        border-top-right-radius: $border-radius-md;
-        border-bottom-right-radius: $border-radius-md;
+        border-top-right-radius: common2.$border-radius-md;
+        border-bottom-right-radius: common2.$border-radius-md;
         border-top-left-radius: 0;
         border-bottom-left-radius: 0;
     }
 
     .p-chip.p-component:last-child {
-        border-top-left-radius: $border-radius-sm;
-        border-bottom-left-radius: $border-radius-sm;
+        border-top-left-radius: common2.$border-radius-sm;
+        border-bottom-left-radius: common2.$border-radius-sm;
     }
 }

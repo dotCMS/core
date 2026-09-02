@@ -1,4 +1,4 @@
-import { Spectator, byTestId, createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 
 import { signal } from '@angular/core';
 
@@ -8,20 +8,19 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotUveLockOverlayComponent } from './dot-uve-lock-overlay.component';
 
-import { ToggleLockOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
+import { WorkflowLockOptions } from '../../../store/features/workflow/withWorkflow';
 
 describe('DotUveLockOverlayComponent', () => {
     let spectator: Spectator<DotUveLockOverlayComponent>;
 
-    const mockToggleLockOptions = signal<ToggleLockOptions>({
+    const mockWorkflowLockOptions = signal<WorkflowLockOptions>({
         inode: 'test-inode',
         isLocked: false,
         lockedBy: '',
         canLock: true,
         isLockedByCurrentUser: false,
-        showBanner: false,
-        showOverlay: true
+        shouldShowButton: false
     });
 
     const createComponent = createComponentFactory({
@@ -40,7 +39,7 @@ describe('DotUveLockOverlayComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    $toggleLockOptions: mockToggleLockOptions
+                    $lockOptions: mockWorkflowLockOptions
                 }
             }
         ],
@@ -53,14 +52,13 @@ describe('DotUveLockOverlayComponent', () => {
 
     describe('when page is unlocked', () => {
         beforeEach(() => {
-            mockToggleLockOptions.set({
+            mockWorkflowLockOptions.set({
                 inode: 'test-inode',
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
+                shouldShowButton: false
             });
             spectator.detectChanges();
         });
@@ -75,18 +73,19 @@ describe('DotUveLockOverlayComponent', () => {
         });
 
         it('should display the lock-open icon', () => {
-            const icon = spectator.query('.lock-overlay__icon i.pi-lock-open');
-            expect(icon).toBeTruthy();
+            const iconWrapper = spectator.query(byTestId('lock-overlay-icon'));
+            expect(iconWrapper).toBeTruthy();
+            expect(iconWrapper?.querySelector('i.pi-lock-open')).toBeTruthy();
         });
 
         it('should display the unlocked page title', () => {
-            const title = spectator.query('.lock-overlay__title');
+            const title = spectator.query(byTestId('lock-overlay-title'));
             expect(title).toBeTruthy();
             expect(title?.textContent?.trim()).toBe('Unlock Title');
         });
 
         it('should display the unlocked page message', () => {
-            const message = spectator.query('.lock-overlay__message');
+            const message = spectator.query(byTestId('lock-overlay-message'));
             expect(message).toBeTruthy();
             expect(message?.textContent?.trim()).toBe('Unlock Description');
         });
@@ -99,31 +98,31 @@ describe('DotUveLockOverlayComponent', () => {
 
     describe('when page is locked by another user', () => {
         beforeEach(() => {
-            mockToggleLockOptions.set({
+            mockWorkflowLockOptions.set({
                 inode: 'test-inode',
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
                 isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
+                shouldShowButton: false
             });
             spectator.detectChanges();
         });
 
         it('should display the lock icon', () => {
-            const icon = spectator.query('.lock-overlay__icon i.pi-lock');
-            expect(icon).toBeTruthy();
+            const iconWrapper = spectator.query(byTestId('lock-overlay-icon'));
+            expect(iconWrapper).toBeTruthy();
+            expect(iconWrapper?.querySelector('i.pi-lock')).toBeTruthy();
         });
 
         it('should display the locked page title', () => {
-            const title = spectator.query('.lock-overlay__title');
+            const title = spectator.query(byTestId('lock-overlay-title'));
             expect(title).toBeTruthy();
             expect(title?.textContent?.trim()).toBe('Lock Title');
         });
 
         it('should display the locked page message', () => {
-            const message = spectator.query('.lock-overlay__message');
+            const message = spectator.query(byTestId('lock-overlay-message'));
             expect(message).toBeTruthy();
             expect(message?.textContent?.trim()).toBe('Lock Description');
         });
@@ -131,59 +130,60 @@ describe('DotUveLockOverlayComponent', () => {
 
     describe('computed $overlayMessages', () => {
         it('should return unlock messages when page is not locked', () => {
-            mockToggleLockOptions.set({
+            mockWorkflowLockOptions.set({
                 inode: 'test-inode',
                 isLocked: false,
                 lockedBy: '',
                 canLock: true,
                 isLockedByCurrentUser: false,
-                showBanner: false,
-                showOverlay: true
+                shouldShowButton: false
             });
             spectator.detectChanges();
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock-open',
+                icon: 'pi pi-lock-open text-[1.75rem]!',
                 title: 'uve.editor.overlay.lock.unlocked.page.title',
                 message: 'uve.editor.overlay.lock.unlocked.page.description'
             });
         });
 
         it('should return lock messages when page is locked by another user', () => {
-            mockToggleLockOptions.set({
+            mockWorkflowLockOptions.set({
                 inode: 'test-inode',
                 isLocked: true,
                 lockedBy: 'another-user',
                 canLock: false,
                 isLockedByCurrentUser: false,
-                showBanner: true,
-                showOverlay: true
+                shouldShowButton: false
             });
             spectator.detectChanges();
 
             const messages = spectator.component.$overlayMessages();
             expect(messages).toEqual({
-                icon: 'pi pi-lock',
+                icon: 'pi pi-lock text-[1.75rem]!',
                 title: 'uve.editor.overlay.lock.locked.page.title',
                 message: 'uve.editor.overlay.lock.locked.page.description'
             });
         });
 
-        it('should return null when page is locked by current user', () => {
-            mockToggleLockOptions.set({
+        it('should return lock messages when page is locked by current user', () => {
+            mockWorkflowLockOptions.set({
                 inode: 'test-inode',
                 isLocked: true,
                 lockedBy: 'current-user',
                 canLock: true,
                 isLockedByCurrentUser: true,
-                showBanner: false,
-                showOverlay: false
+                shouldShowButton: false
             });
             spectator.detectChanges();
 
             const messages = spectator.component.$overlayMessages();
-            expect(messages).toBeNull();
+            expect(messages).toEqual({
+                icon: 'pi pi-lock text-[1.75rem]!',
+                title: 'uve.editor.overlay.lock.locked.page.title',
+                message: 'uve.editor.overlay.lock.locked.page.description'
+            });
         });
     });
 });

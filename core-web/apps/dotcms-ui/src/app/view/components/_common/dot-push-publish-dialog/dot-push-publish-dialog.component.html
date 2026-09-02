@@ -1,16 +1,38 @@
-<dot-dialog
-    (hide)="close()"
-    [(visible)]="dialogShow"
-    [actions]="dialogActions"
+<p-dialog
+    [visible]="dialogShow"
     [header]="eventData?.title"
-    [hideButtons]="!!eventData?.customCode">
+    [modal]="true"
+    [draggable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [style]="{ width: '35rem' }"
+    appendTo="body"
+    (visibleChange)="onVisibleChange($event)">
     @if (eventData) {
         <dot-push-publish-form
             (value)="formData = $event"
             (valid)="updateFormValid($event)"
-            [data]="eventData"></dot-push-publish-form>
+            [data]="eventData" />
     }
     @if (errorMessage) {
         <span class="dot-push-publish-dialog__error">{{ errorMessage }}</span>
     }
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel && !eventData?.customCode) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action()"
+                data-testId="dotDialogCancelAction" />
+        }
+        @if (dialogActions?.accept && !eventData?.customCode) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled"
+                [loading]="isSaving"
+                (click)="dialogActions.accept.action()"
+                data-testId="dotDialogAcceptAction" />
+        }
+    </ng-template>
+</p-dialog>

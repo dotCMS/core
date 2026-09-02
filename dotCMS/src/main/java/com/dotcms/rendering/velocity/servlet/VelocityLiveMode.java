@@ -1,9 +1,12 @@
 package com.dotcms.rendering.velocity.servlet;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import static com.dotmarketing.filters.Constants.VANITY_URL_OBJECT;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
+import com.dotcms.rendering.util.HtmlMinifier;
 import com.dotcms.rendering.velocity.services.VelocityResourceKey;
 import com.dotcms.rendering.velocity.util.VelocityUtil;
 import com.dotcms.security.ContentSecurityPolicyUtil;
@@ -19,6 +22,7 @@ import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.factories.ClickstreamFactory;
 import com.dotmarketing.filters.CMSUrlUtil;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
@@ -50,10 +54,17 @@ import javax.servlet.RequestDispatcher;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.constraints.NotNull;
+import org.apache.commons.io.output.StringBuilderWriter;
 import org.apache.commons.io.output.TeeOutputStream;
 import org.apache.velocity.context.Context;
 
 public class VelocityLiveMode extends VelocityModeHandler {
+
+    /**
+     * Initial size of the in-memory buffer used when minification is on. Big enough that a typical
+     * page never triggers a grow-and-copy, and small enough to be irrelevant if a page is tiny.
+     */
+    private static final int MERGE_BUFFER_INITIAL_CAPACITY = 32 * 1024;
 
     final static ThreadLocal<ByteArrayOutputStream> byteArrayLocal = ThreadLocal.withInitial(
             ByteArrayOutputStream::new);
@@ -142,6 +153,10 @@ public class VelocityLiveMode extends VelocityModeHandler {
         // Fire the page rules until we know we have permission.
         RulesEngine.fireRules(request, response, htmlPage, Rule.FireOn.EVERY_PAGE);
 
+        // Record this request in the session clickstream BEFORE any page-cache short-circuit so
+        // visit-history rule conditions ("Has Visited URL" / "Pages Viewed") still see the visit
+        // even when a cached copy of the page is served. Regression fix for issue #36604.
+        recordClickstream();
 
         addHeaders(htmlPage);
         processUrlMapTags(request);
@@ -207,7 +222,6 @@ public class VelocityLiveMode extends VelocityModeHandler {
 
     }
 
-
     /**
      * Builds PageCacheParameters with all necessary cache keys for page caching.
      *
@@ -215,22 +229,30 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param htmlPage the HTML page being served
      * @return PageCacheParameters instance with all cache keys
      */
-    private PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
+    PageCacheParameters buildCacheParameters(final long langId, final IHTMLPage htmlPage) {
         String userId = (getUser() != null) ? getUser().getUserId() : "anonymous";
         String language = String.valueOf(langId);
         String urlMap = (String) request.getAttribute(WebKeys.WIKI_CONTENTLET_INODE);
         String vanityUrl = request.getAttribute(VANITY_URL_OBJECT) != null
                 ? ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).vanityUrlId
                 : "";
+
+        // When served via a vanity URL 200-forward, include the original request URI in the cache
+        // key so different incoming URLs forwarded to the same page don't share a cache entry.
+        // CMSFilter dispatches to VelocityServlet via RequestDispatcher.forward(), so Tomcat sets
+        // FORWARD_REQUEST_URI to the original browser URL before the forward happened.
+        String originalRequestUri = (request.getAttribute(VANITY_URL_OBJECT) != null
+                && ((CachedVanityUrl) request.getAttribute(VANITY_URL_OBJECT)).isForward())
+                ? (String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI)
+                : null;
+
         String queryString = PageCacheParameters.filterQueryString(request.getQueryString());
         String persona = Try.of(() -> visitorAPI.getVisitor(request, false).get().getPersona().getKeyTag())
                 .getOrElse("");
 
-        final String pageUrl = Try.of(() -> htmlPage.getURI())
-                .getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
-
-
+        String pageUrl = Try.of(htmlPage::getURI).getOrElse((String) request.getAttribute(RequestDispatcher.FORWARD_REQUEST_URI));
         Date modDate = htmlPage.getModDate() != null ? htmlPage.getModDate() : new Date(0);
+        String variant = WebAPILocator.getVariantWebAPI().currentVariantId();
 
         return new PageCacheParameters(
                 "pageUrl:" + pageUrl,
@@ -243,7 +265,8 @@ public class VelocityLiveMode extends VelocityModeHandler {
                 "pageInode:" + htmlPage.getInode(),
                 "modDate:" + modDate.getTime(),
                 "vanity:" + vanityUrl,
-                "variant:" + WebAPILocator.getVariantWebAPI().currentVariantId()
+                originalRequestUri != null ? "originalUri:" + originalRequestUri : null,
+                "variant:" + variant
         );
     }
 
@@ -252,14 +275,57 @@ public class VelocityLiveMode extends VelocityModeHandler {
      * @param out
      * @param htmlPage
      */
+    // The page's own template merge. The three call sites above are mutually exclusive
+    // branches, so this charges exactly once per render - and notably NOT at all when the
+    // page is served from the page cache, which never reaches here. Nested #dotParse /
+    // #parseContainer directives charge separately in DotDirective.render.
+    @RequestCost(Price.VELOCITY_MERGE)
     private void writePage(final Writer out, final IHTMLPage htmlPage) {
         final Context context = VelocityUtil.getInstance().getContext(request, response);
-        this.getTemplate(htmlPage, mode).merge(context, out);
+
+        if (!HtmlMinifier.isEnabled()) {
+            this.getTemplate(htmlPage, mode).merge(context, out);
+            return;
+        }
+
+        // Merge into memory first so the markup can be minified as a whole. What is written here is
+        // also what gets stored in the page cache, so minification happens once per cache fill
+        // rather than on every cache hit.
+        //
+        // StringBuilderWriter rather than StringWriter: the latter is backed by a synchronized
+        // StringBuffer, and Velocity emits a page as many hundreds of small writes, so the lock is
+        // taken on every one of them. Sizing the buffer up front avoids the repeated grow-and-copy.
+        // minifyBestEffort, not minifyIfEnabled, because the flag was already read above and reading
+        // it twice per render buys nothing.
+        final StringBuilderWriter merged = new StringBuilderWriter(MERGE_BUFFER_INITIAL_CAPACITY);
+        this.getTemplate(htmlPage, mode).merge(context, merged);
+        Try.run(() -> out.write(HtmlMinifier.minifyBestEffort(merged.toString())))
+                .getOrElseThrow(DotRuntimeException::new);
     }
 
 
     User getUser() {
         return PortalUtil.getUser(request);
+    }
+
+    /**
+     * Records the current request in the visitor's session clickstream so Rules Engine conditions
+     * that inspect visit history -- "Has Visited URL" ({@code VisitedUrlConditionlet}) and
+     * "Pages Viewed" ({@code PagesViewedConditionlet}) -- can evaluate against it.
+     * <p>
+     * Gated by the legacy {@code ENABLE_CLICKSTREAM_TRACKING} flag (default {@code false}),
+     * preserving pre-regression behaviour. Recording is a session-scoped, in-memory operation, so a
+     * failure here is logged and swallowed rather than allowed to break page delivery.
+     */
+    private void recordClickstream() {
+        if (!Config.getBooleanProperty("ENABLE_CLICKSTREAM_TRACKING", false)) {
+            return;
+        }
+        Logger.debug(this.getClass(), "Recording the ClickStream");
+        Try.run(() -> ClickstreamFactory.addRequest(request, response, host))
+                .onFailure(e -> Logger.warnAndDebug(VelocityLiveMode.class,
+                        "Unable to record clickstream for URI: " + request.getRequestURI()
+                                + " : " + e.getMessage(), e));
     }
 
     /**

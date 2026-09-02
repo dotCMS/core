@@ -40,7 +40,7 @@ class RouterMock {
         return this._events.asObservable();
     }
 
-    currentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
+    getCurrentNavigation(): { finalUrl: { queryParams: { [key: string]: string } } } | null {
         return {
             finalUrl: {
                 queryParams: {}
@@ -100,7 +100,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from Router', () => {
-        jest.spyOn(router, 'currentNavigation').mockReturnValue({
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue({
             finalUrl: {
                 queryParams: {
                     hola: 'mundo'
@@ -114,7 +114,7 @@ describe('DotRouterService', () => {
     });
 
     it('should get queryParams from ActivatedRoute', () => {
-        jest.spyOn(router, 'currentNavigation').mockReturnValue(null);
+        jest.spyOn(router, 'getCurrentNavigation').mockReturnValue(null);
         expect(service.queryParams).toEqual({
             hello: 'world'
         });
@@ -224,6 +224,7 @@ describe('DotRouterService', () => {
 
     it('should return true if edit page url', () => {
         router.routerState.snapshot.url = 'edit-page';
+        expect(service.currentPortlet.id).toBe('site-browser');
         expect(service.isEditPage()).toBe(true);
     });
 
@@ -293,6 +294,57 @@ describe('DotRouterService', () => {
                 'c/content%3Ffilter%3DProducts/19d3aecc-5b68-4d98-ba1b-297d5859403c'
             )
         ).toBe('content');
+    });
+
+    it('should return correct Portlet Id using custom resolver for analytics', () => {
+        expect(service.getPortletId('/c/analytics/dashboard')).toBe('analytics-dashboard');
+        expect(service.getPortletId('/c/analytics/reports?test=value')).toBe('analytics-reports');
+        expect(service.getPortletId('#/c/analytics/overview')).toBe('analytics-overview');
+    });
+
+    it('should handle analytics without second segment gracefully', () => {
+        // Edge case: /analytics accessed without a second segment should return 'analytics'
+        // instead of 'analytics-undefined'
+        expect(service.getPortletId('/#/analytics')).toBe('analytics');
+        expect(service.getPortletId('/#/analytics?test=value')).toBe('analytics');
+    });
+
+    it('should fallback to default behavior when no custom resolver exists', () => {
+        expect(service.getPortletId('/c/sites')).toBe('sites');
+        expect(service.getPortletId('/c/content-types/edit')).toBe('content-types');
+    });
+
+    it('should handle empty URL segments gracefully', () => {
+        // Edge case: URLs that result in empty segments after filtering
+        expect(service.getPortletId('/')).toBe('');
+        expect(service.getPortletId('/c/')).toBe('');
+        expect(service.getPortletId('/#/')).toBe('');
+    });
+
+    it('should resolve legacy portlet IDs using custom resolver', () => {
+        // Test legacy ID 'edit-page' maps to 'site-browser'
+        expect(service.getPortletId('/c/edit-page')).toBe('site-browser');
+        expect(service.getPortletId('/c/edit-page/content')).toBe('site-browser');
+        expect(service.getPortletId('#/c/edit-page?url=test')).toBe('site-browser');
+    });
+
+    it('should resolve velocity-playground URL slug to its backend portlet ID', () => {
+        expect(service.getPortletId('/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('/c/velocity-playground')).toBe('velocity_playground');
+        expect(service.getPortletId('#/velocity-playground?test=value')).toBe(
+            'velocity_playground'
+        );
+    });
+
+    it('should resolve the Angular Users (Beta) URL to the users-beta portlet ID', () => {
+        expect(service.getPortletId('/users-beta')).toBe('users-beta');
+        expect(service.getPortletId('#/users-beta?test=value')).toBe('users-beta');
+    });
+
+    it('should resolve the legacy /c/users URL to the users portlet ID', () => {
+        expect(service.getPortletId('/c/users')).toBe('users');
+        expect(service.getPortletId('#/c/users?test=value')).toBe('users');
+        expect(service.getPortletId('/c/users/123')).toBe('users');
     });
 
     it('should navigate replacing URL params', () => {

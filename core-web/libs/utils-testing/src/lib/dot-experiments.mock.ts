@@ -804,14 +804,17 @@ export const PARENT_RESOLVERS_ACTIVE_ROUTE_DATA = {
         }
     },
     parent: {
+        snapshot: {
+            data: {
+                content: new DotPageRenderState(
+                    mockUser(),
+                    new DotPageRender(mockDotRenderedPage())
+                )
+            }
+        },
         parent: {
             snapshot: {
-                data: {
-                    content: new DotPageRenderState(
-                        mockUser(),
-                        new DotPageRender(mockDotRenderedPage())
-                    )
-                }
+                data: {}
             }
         }
     }

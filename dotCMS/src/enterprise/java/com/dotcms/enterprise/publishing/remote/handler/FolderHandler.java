@@ -202,7 +202,6 @@ public class FolderHandler implements IHandler {
         			} catch(DotDataException e) {
         				Logger.debug(getClass(), e.getMessage());
         			}
-
                     //Default structure of the folder
                     boolean defaultStructureExist = true;
                     String currentDefaultType = folder.getDefaultFileType();

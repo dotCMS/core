@@ -1,18 +1,20 @@
 import { Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     ElementRef,
     inject,
     OnDestroy,
-    QueryList,
-    ViewChild,
-    ViewChildren
+    viewChild,
+    viewChildren,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { CheckboxModule } from 'primeng/checkbox';
+import { ContextMenu, ContextMenuModule } from 'primeng/contextmenu';
 import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { Menu, MenuModule } from 'primeng/menu';
@@ -25,20 +27,20 @@ import {
     DotMessageService,
     DotSiteBrowserService
 } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 import {
+    CONTAINER_SOURCE,
     DotActionBulkResult,
+    DotActionMenuItem,
     DotBulkFailItem,
     DotContainer,
     DotContentState,
-    CONTAINER_SOURCE,
     DotMessageSeverity,
-    DotMessageType,
-    DotActionMenuItem
+    DotMessageType
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
-    DotActionMenuButtonComponent,
     DotAddToBundleComponent,
+    DotContentletStatusBadgeComponent,
     DotMessagePipe,
     DotRelativeDatePipe
 } from '@dotcms/ui';
@@ -55,22 +57,23 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-list',
     templateUrl: './container-list.component.html',
-    styleUrls: ['./container-list.component.scss'],
     imports: [
-        CommonModule,
         DotPortletBaseComponent,
         TableModule,
         DotContentTypeSelectorComponent,
         DotMessagePipe,
         ButtonModule,
         CheckboxModule,
+        ContextMenuModule,
         MenuModule,
         DotAddToBundleComponent,
-        DotActionMenuButtonComponent,
         DotRelativeDatePipe,
         ActionHeaderComponent,
-        InputTextModule
+        InputTextModule,
+        DotContentletStatusBadgeComponent,
+        AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         DotContainerListStore,
         DotContainerListResolver,
@@ -83,12 +86,11 @@ export class ContainerListComponent implements OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dialogService = inject(DialogService);
-    private siteService = inject(SiteService);
+    readonly #globalStore = inject(GlobalStore);
 
-    @ViewChild('actionsMenu')
-    actionsMenu: Menu;
-    @ViewChildren('tableRow')
-    tableRows: QueryList<ElementRef<HTMLTableRowElement>>;
+    actionsMenu = viewChild<Menu>('actionsMenu');
+    rowContextMenu = viewChild<ContextMenu>('rowContextMenu');
+    tableRows = viewChildren<ElementRef<HTMLTableRowElement>>('tableRow');
 
     readonly #store = inject(DotContainerListStore);
 
@@ -96,6 +98,7 @@ export class ContainerListComponent implements OnDestroy {
     notify$ = this.#store.notify$;
 
     selectedContainers: DotContainer[] = [];
+    contextMenuItems: MenuItem[] = [];
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -105,9 +108,10 @@ export class ContainerListComponent implements OnDestroy {
             this.selectedContainers = [];
         });
 
-        this.siteService.switchSite$.subscribe(({ identifier }) =>
-            this.#store.getContainersByHost(identifier)
-        );
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(({ identifier }) => this.#store.getContainersByHost(identifier));
     }
 
     ngOnDestroy(): void {
@@ -186,6 +190,23 @@ export class ContainerListComponent implements OnDestroy {
         return this.#store.getContainerActions(container);
     }
 
+    // Invoked by both right-click and the 3-dot action button.
+    setContextMenu(event: Event, container: DotContainer): void {
+        if (container.disableInteraction) {
+            event.preventDefault();
+            event.stopPropagation();
+            return;
+        }
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        this.contextMenuItems = this.setContainerActions(container).map(
+            ({ menuItem }: DotActionMenuItem) => menuItem
+        );
+        this.rowContextMenu()?.show(event);
+    }
+
     /**
      * Handle action menu click
      *
@@ -194,7 +215,11 @@ export class ContainerListComponent implements OnDestroy {
      */
     handleActionMenuOpen(event: MouseEvent): void {
         this.updateSelectedContainers();
-        this.actionsMenu.toggle(event);
+        this.actionsMenu()?.toggle(event);
+    }
+
+    handleSelectionChange(): void {
+        this.updateSelectedContainers();
     }
 
     /**
@@ -203,7 +228,7 @@ export class ContainerListComponent implements OnDestroy {
      * @memberof ContainerListComponent
      */
     focusFirstRow(): void {
-        const { nativeElement: firstActiveRow } = this.tableRows.find(
+        const { nativeElement: firstActiveRow } = this.tableRows().find(
             (row) => row.nativeElement.getAttribute('data-disabled') === 'false'
         ) || { nativeElement: null }; // To not break on destructuring
 
@@ -254,6 +279,7 @@ export class ContainerListComponent implements OnDestroy {
 
     private showErrorDialog(result: DotActionBulkResult): void {
         this.dialogService.open(DotBulkInformationComponent, {
+            closable: true,
             header: this.dotMessageService.get('Results'),
             width: '40rem',
             contentStyle: { 'max-height': '500px', overflow: 'auto' },

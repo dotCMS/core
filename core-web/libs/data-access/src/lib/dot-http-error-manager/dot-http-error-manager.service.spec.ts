@@ -6,7 +6,6 @@ import { getTestBed, TestBed } from '@angular/core/testing';
 
 import { ConfirmationService } from 'primeng/api';
 
-import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotMessageDisplayServiceMock,
     MockDotMessageService,
@@ -25,7 +24,6 @@ describe('DotHttpErrorManagerService', () => {
     let service: DotHttpErrorManagerService;
     let dotRouterService: DotRouterService;
     let dotDialogService: DotAlertConfirmService;
-    let loginService: LoginService;
     let result: any;
     let injector: TestBed;
 
@@ -39,26 +37,14 @@ describe('DotHttpErrorManagerService', () => {
         'dot.common.http.error.400.header': '400 Header',
         'dot.common.http.error.400.message': '400 Message',
         'dot.common.http.error.204.header': '204 Header',
-        'dot.common.http.error.204.message': '204 Message'
+        'dot.common.http.error.204.message': '204 Message',
+        'dot.common.http.error.409.header': '409 Header',
+        'dot.common.http.error.409.message': '409 Message'
     });
 
     beforeEach(() => {
         TestBed.configureTestingModule({
             providers: [
-                {
-                    provide: LoginService,
-                    useValue: {
-                        auth: {
-                            user: {
-                                emailAddress: 'admin@dotcms.com',
-                                firstName: 'Admin',
-                                lastName: 'Admin',
-                                loggedInDate: 123456789,
-                                userId: '123'
-                            }
-                        }
-                    }
-                },
                 {
                     provide: DotMessageService,
                     useValue: messageServiceMock
@@ -77,30 +63,26 @@ describe('DotHttpErrorManagerService', () => {
         service = injector.inject(DotHttpErrorManagerService);
         dotRouterService = injector.inject(DotRouterService);
         dotDialogService = injector.inject(DotAlertConfirmService);
-        loginService = injector.inject(LoginService);
     });
 
-    it('should handle 401 error when user is login we use 403', () => {
+    it('should handle 401 error when user is logged in by redirecting to login', () => {
         jest.spyOn(dotDialogService, 'alert');
+        jest.spyOn(dotRouterService, 'goToLogin');
 
         service.handle(mockResponseView(401)).subscribe((res) => {
             result = res;
         });
 
         expect(result).toEqual({
-            redirected: false,
+            redirected: true,
             status: 401
         });
 
-        expect(dotDialogService.alert).toHaveBeenCalledWith({
-            footerLabel: { accept: 'dot.common.dialog.accept' },
-            message: '403 Message',
-            header: '403 Header'
-        });
+        expect(dotDialogService.alert).not.toHaveBeenCalled();
+        expect(dotRouterService.goToLogin).toHaveBeenCalledTimes(1);
     });
 
-    it('should handle 401 error when user is logout and redirect to login', () => {
-        loginService.auth.user = undefined as any;
+    it('should handle 401 error when user is not logged in and redirect to login', () => {
         jest.spyOn(dotDialogService, 'alert');
         jest.spyOn(dotRouterService, 'goToLogin');
 
@@ -328,6 +310,49 @@ describe('DotHttpErrorManagerService', () => {
             footerLabel: { accept: 'dot.common.dialog.accept' },
             message: '204 Message',
             header: '204 Header'
+        });
+    });
+
+    it('should handle 409 error and surface the BE message', () => {
+        jest.spyOn(dotDialogService, 'alert');
+
+        const conflict = new HttpErrorResponse({
+            status: 409,
+            error: {
+                message: "Role 'test' has 2 child role(s) and cannot be deleted"
+            }
+        });
+
+        service.handle(conflict).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: "Role 'test' has 2 child role(s) and cannot be deleted",
+            header: '409 Header'
+        });
+    });
+
+    it('should handle 409 error and fall back to the generic message when the body has none', () => {
+        jest.spyOn(dotDialogService, 'alert');
+
+        service.handle(new HttpErrorResponse({ status: 409, error: null })).subscribe((res) => {
+            result = res;
+        });
+
+        expect(result).toEqual({
+            redirected: false,
+            status: 409
+        });
+        expect(dotDialogService.alert).toHaveBeenCalledWith({
+            footerLabel: { accept: 'dot.common.dialog.accept' },
+            message: '409 Message',
+            header: '409 Header'
         });
     });
 });

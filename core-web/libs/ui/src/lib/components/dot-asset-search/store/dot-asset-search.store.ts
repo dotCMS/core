@@ -1,9 +1,9 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { tapResponse } from '@ngrx/operators';
+import { Observable } from 'rxjs';
 
 import { Injectable, inject } from '@angular/core';
 
-import { Observable } from 'rxjs/internal/Observable';
 import { map, switchMap, tap } from 'rxjs/operators';
 
 import {
@@ -82,12 +82,12 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
             tap(() => this.updateLoading(true)),
             switchMap((params) => {
                 return this.searchContentletsRequest(params).pipe(
-                    tapResponse(
-                        (contentlets) => this.updateContentlets(contentlets),
-                        (_error) => {
+                    tapResponse({
+                        next: (contentlets) => this.updateContentlets(contentlets),
+                        error: (_error) => {
                             /* */
                         }
-                    )
+                    })
                 );
             })
         );
@@ -102,12 +102,12 @@ export class DotAssetSearchStore extends ComponentStore<DotAssetSearch> {
         return params$.pipe(
             switchMap((params) =>
                 this.searchContentletsRequest(params).pipe(
-                    tapResponse(
-                        (contentlets) => this.mergeContentlets(contentlets),
-                        (_error) => {
+                    tapResponse({
+                        next: (contentlets) => this.mergeContentlets(contentlets),
+                        error: (_error) => {
                             /* */
                         }
-                    )
+                    })
                 )
             )
         );

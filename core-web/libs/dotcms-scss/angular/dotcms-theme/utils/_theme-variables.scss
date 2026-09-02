@@ -1,64 +1,70 @@
+@use "../../../shared/colors";
+@use "../../../shared/common";
+@use "../../../shared/fonts";
+@use "../../../shared/shadows";
+@use "../../../shared/spacing";
+
 @use "variables" as *;
 
 // COMMON
 $field-animation-speed: $basic-speed;
 $field-bgcolor: transparent;
-$field-border-color: $color-palette-gray-700;
-$field-border-size: 1.5px;
-$field-padding: $spacing-1;
+$field-border-color: colors.$color-palette-gray-700;
+common.$field-border-size: 1.5px;
+$field-padding: spacing.$spacing-1;
 $field-placeholder-color: $label-color;
-$ui-trigger-width: $spacing-4;
+$ui-trigger-width: spacing.$spacing-4;
 
 // FIELDS
 $field-normal-bgcolor: $field-bgcolor;
-$field-normal-color: $font-color-base;
-$field-normal-border-size: $field-border-size;
-$field-normal-border-color: $color-palette-gray-500;
+$field-normal-color: fonts.$font-color-base;
+$field-normal-border-size: common.$field-border-size;
+$field-normal-border-color: colors.$color-palette-gray-500;
 
 $field-hover-bgcolor: $field-bgcolor;
-$field-hover-color: $font-color-base;
-$field-hover-border-size: $field-border-size;
+$field-hover-color: fonts.$font-color-base;
+$field-hover-border-size: common.$field-border-size;
 $field-hover-border-color: $field-border-color;
 
 $field-active-bgcolor: $field-bgcolor;
-$field-active-color: $font-color-base;
+$field-active-color: fonts.$font-color-base;
 $field-active-border-size: 2px;
-$field-active-border-color: $color-palette-primary;
+$field-active-border-color: colors.$color-palette-primary;
 
 $field-disabled-bgcolor: #dedee1;
-$field-disabled-color: $color-palette-gray-500;
-$field-disabled-border-size: $field-border-size;
-$field-disabled-border-color: $color-palette-gray-200;
+$field-disabled-color: colors.$color-palette-gray-500;
+$field-disabled-border-size: common.$field-border-size;
+$field-disabled-border-color: colors.$color-palette-gray-200;
 
 // BUTTONS
 $button-border: solid 1px transparent;
 $button-padding: $field-padding * 3;
 $button-tiny-height: $field-tiny-height;
-$button-disabled-color: $font-color-base;
-$button-radius: $field-border-radius;
-$button-inverted-color: $white;
+$button-disabled-color: fonts.$font-color-base;
+$button-radius: common.$field-border-radius;
+$button-inverted-color: colors.$white;
 $button-text-size: 13px;
 $button-tiny-text-size: 11px;
 
 $button-main: (
     normal: (
-        background: $color-palette-primary,
-        color: $white,
+        background: colors.$color-palette-primary,
+        color: colors.$white,
         border: $button-border
     ),
     hover: (
-        background: $color-palette-primary-400,
-        color: $white,
+        background: colors.$color-palette-primary-400,
+        color: colors.$white,
         border: $button-border
     ),
     focus: (
-        background: $color-palette-primary-400,
-        color: $white,
+        background: colors.$color-palette-primary-400,
+        color: colors.$white,
         border: $button-border
     ),
     active: (
-        background: $color-palette-primary-400,
-        color: $white,
+        background: colors.$color-palette-primary-400,
+        color: colors.$white,
         border: $button-border
     ),
     disabled: (
@@ -70,45 +76,45 @@ $button-main: (
 
 $button-sec: (
     normal: (
-        background: $white,
-        color: $color-palette-secondary,
-        border: solid 1px $color-palette-secondary-500
+        background: colors.$white,
+        color: colors.$color-palette-secondary,
+        border: solid 1px colors.$color-palette-secondary-500
     ),
     hover: (
-        background: $white,
-        color: $color-palette-primary,
-        border: solid 1px $color-palette-primary
+        background: colors.$white,
+        color: colors.$color-palette-primary,
+        border: solid 1px colors.$color-palette-primary
     ),
     focus: (
-        background: $color-palette-primary-op-10,
-        color: $color-palette-primary,
+        background: colors.$color-palette-primary-op-10,
+        color: colors.$color-palette-primary,
         border: $button-border
     ),
     active: (
-        background: $color-palette-primary-op-30,
-        color: $color-palette-primary,
+        background: colors.$color-palette-primary-op-30,
+        color: colors.$color-palette-primary,
         border: $button-border
     ),
     disabled: (
-        background: $white,
+        background: colors.$white,
         color: $field-disabled-bgcolor,
         border: solid 1px $field-disabled-bgcolor
     )
 );
 
 // SELECT BUTTON
-$select-button-color: $color-palette-gray-700;
-$selectbutton-normal-bgcolor: $white;
+$select-button-color: colors.$color-palette-gray-700;
+$selectbutton-normal-bgcolor: colors.$white;
 $selectbutton-normal-border: $button-border;
 $selectbutton-normal-shadow: 0;
 
-$selectbutton-hover-bgcolor: $white;
+$selectbutton-hover-bgcolor: colors.$white;
 $selectbutton-hover-border: $button-border;
-$selectbutton-hover-shadow: $shadow-s;
+$selectbutton-hover-shadow: shadows.$shadow-s;
 
-$selectbutton-button-hover-bgcolor: $color-palette-primary-op-10;
+$selectbutton-button-hover-bgcolor: colors.$color-palette-primary-op-10;
 $selectbutton-button-active-bgcolor: transparent;
-$selectbutton-button-active-color: $color-palette-gray-800;
+$selectbutton-button-active-color: colors.$color-palette-gray-800;
 
 // DROPDOWN
 $dropdown-active-color: $field-active-color;
@@ -120,102 +126,102 @@ $multiselect-active-color: $dropdown-active-color;
 $multiselect-disabled-color: $dropdown-disabled-color;
 
 // AUTOCOMPLETE
-$autocomplete-height: $field-height-md;
+$autocomplete-height: common.$field-height-md;
 
 // CHECKBOX AND RADIO BUTTON
 $check-border-width: 1px;
 $check-radius: 2px;
 $check-size: 14px;
 
-$check-checked-bgcolor: $color-palette-primary;
-$check-checked-border: solid $check-border-width $color-palette-primary;
-$check-checked-color: $white;
+$check-checked-bgcolor: colors.$color-palette-primary;
+$check-checked-border: solid $check-border-width colors.$color-palette-primary;
+$check-checked-color: colors.$white;
 
-$check-disabled-border: solid $check-border-width $color-palette-gray-500;
-$check-disabled-bgcolor: $color-palette-gray-200;
+$check-disabled-border: solid $check-border-width colors.$color-palette-gray-500;
+$check-disabled-bgcolor: colors.$color-palette-gray-200;
 $check-disabled-color: $field-disabled-color;
 $check-disabled-label-color: $field-disabled-color;
 
-$check-normal-bgcolor: $white;
-$check-normal-border: solid $field-border-size $black;
+$check-normal-bgcolor: colors.$white;
+$check-normal-border: solid common.$field-border-size colors.$black;
 
 $radio-size: $check-size;
 
-$radio-checked-bgcolor: $white;
-$radio-checked-border: solid $check-border-width $color-palette-primary;
-$radio-checked-color: $color-palette-primary;
+$radio-checked-bgcolor: colors.$white;
+$radio-checked-border: solid $check-border-width colors.$color-palette-primary;
+$radio-checked-color: colors.$color-palette-primary;
 
-$radio-disabled-border: solid $check-border-width $color-palette-gray-500;
+$radio-disabled-border: solid $check-border-width colors.$color-palette-gray-500;
 $radio-disabled-bgcolor: $field-disabled-bgcolor;
 $radio-disabled-color: $field-disabled-color;
 $radio-disabled-label-color: $field-disabled-color;
 
-$radio-normal-bgcolor: $white;
-$radio-normal-border: solid $field-border-size $black;
+$radio-normal-bgcolor: colors.$white;
+$radio-normal-border: solid common.$field-border-size colors.$black;
 
 // DATATABLE
-$datatable-cell-padding: 18px $spacing-3; // We need to have 40px min height in the cell
-$datatable-header-cell-padding: 10px $spacing-3;
-$datatable-cell-border: 1px solid $color-palette-gray-200;
-$datatable-highlight-row-bgcolor: $color-palette-gray-200;
-$datatable-row-color: $black;
-$datatable-row-bgcolor: $white;
-$datatable-head-bgcolor: $color-palette-gray-200;
-$datatable-head-color: $color-palette-gray-700;
+$datatable-cell-padding: 18px spacing.$spacing-3; // We need to have 40px min height in the cell
+$datatable-header-cell-padding: 10px spacing.$spacing-3;
+$datatable-cell-border: 1px solid colors.$color-palette-gray-200;
+$datatable-highlight-row-bgcolor: colors.$color-palette-gray-200;
+$datatable-row-color: colors.$black;
+$datatable-row-bgcolor: colors.$white;
+$datatable-head-bgcolor: colors.$color-palette-gray-200;
+$datatable-head-color: colors.$color-palette-gray-700;
 
 // TABLE
-$table-cell-padding: 18px $spacing-3; // We need to have 40px min height in the cell
-$table-header-cell-padding: 10px $spacing-3;
-$table-cell-border: 1px solid $color-palette-gray-200;
-$table-highlight-row-bgcolor: $color-palette-gray-200;
-$table-row-color: $black;
-$table-row-bgcolor: $white;
-$table-head-bgcolor: $color-palette-gray-200;
-$table-head-color: $color-palette-gray-700;
+$table-cell-padding: 18px spacing.$spacing-3; // We need to have 40px min height in the cell
+$table-header-cell-padding: 10px spacing.$spacing-3;
+$table-cell-border: 1px solid colors.$color-palette-gray-200;
+$table-highlight-row-bgcolor: colors.$color-palette-gray-200;
+$table-row-color: colors.$black;
+$table-row-bgcolor: colors.$white;
+$table-head-bgcolor: colors.$color-palette-gray-200;
+$table-head-color: colors.$color-palette-gray-700;
 
 // PAGINATOR
-$paginator-page-selected-bgcolor: $color-palette-primary;
-$paginator-page-selected-border-color: $color-palette-primary;
-$paginator-page-hover-bgcolor: $color-palette-gray-700;
+$paginator-page-selected-bgcolor: colors.$color-palette-primary;
+$paginator-page-selected-border-color: colors.$color-palette-primary;
+$paginator-page-hover-bgcolor: colors.$color-palette-gray-700;
 $paginator-page-border-radius: 10px;
 $paginator-page-size: 21px;
 
 // TABVIEW
 $tabview-item-hover-bgcolor: $selectbutton-button-hover-bgcolor;
-$tabview-item-color: $color-palette-gray-700;
-$tabview-item-selected-color: $color-palette-secondary;
-$tabview-item-padding: $spacing-3 $spacing-4 10px; // To match the 48px height
-$tabview-item-border: 3px solid $white;
+$tabview-item-color: colors.$color-palette-gray-700;
+$tabview-item-selected-color: colors.$color-palette-secondary;
+$tabview-item-padding: spacing.$spacing-3 spacing.$spacing-4 10px; // To match the 48px height
+$tabview-item-border: 3px solid colors.$white;
 $tabview-item-border-height: 2px;
-$tabview-item-selected-border: 5px solid $color-palette-secondary-500;
-$tabview-item-disabled-color: $color-palette-black-op-20;
+$tabview-item-selected-border: 5px solid colors.$color-palette-secondary-500;
+$tabview-item-disabled-color: colors.$color-palette-black-op-20;
 $tabview-nav-height: 3rem;
 
 // MENU
-$menu-link-color: $black;
+$menu-link-color: colors.$black;
 
 // DIALOG
-$dialog-title-font-size: $font-size-xl;
+$dialog-title-font-size: fonts.$font-size-xl;
 $dialog-message-line-height: $line-height;
-$dialog-message-warning-color: $red;
-$dialog-close-button-normal-color: $color-palette-black-op-70;
-$dialog-close-button-hover-color: $black;
+$dialog-message-warning-color: colors.$red;
+$dialog-close-button-normal-color: colors.$color-palette-black-op-70;
+$dialog-close-button-hover-color: colors.$black;
 
 // INPUTSWITCH
-$inputswitch-normal-track-color: $color-palette-black-op-10;
-$inputswitch-checked-track-color: $color-palette-primary-op-40;
+$inputswitch-normal-track-color: colors.$color-palette-black-op-10;
+$inputswitch-checked-track-color: colors.$color-palette-primary-op-40;
 
-$inputswitch-normal-thumb-color: $white;
-$inputswitch-checked-thumb-color: $color-palette-primary;
+$inputswitch-normal-thumb-color: colors.$white;
+$inputswitch-checked-thumb-color: colors.$color-palette-primary;
 
-$inputswitch-warn-normal-track-color: rgba($orange, 0.38);
-$inputswitch-warn-checked-track-color: rgba($orange, 0.38);
-$inputswitch-warn-hecked-thumb-color: $orange;
+$inputswitch-warn-normal-track-color: rgba(colors.$orange, 0.38);
+$inputswitch-warn-checked-track-color: rgba(colors.$orange, 0.38);
+$inputswitch-warn-hecked-thumb-color: colors.$orange;
 
-$inputswitch-disabled-track-color: $color-palette-gray-500;
-$inputswitch-disabled-thumb-color: $color-palette-gray-700;
+$inputswitch-disabled-track-color: colors.$color-palette-gray-500;
+$inputswitch-disabled-thumb-color: colors.$color-palette-gray-700;
 
 // TOAST
-$toast-padding: $spacing-3;
-$toast-bgcolor: $white;
-$toast-border-radius: $border-radius-xs;
+$toast-padding: spacing.$spacing-3;
+$toast-bgcolor: colors.$white;
+$toast-border-radius: common.$border-radius-xs;

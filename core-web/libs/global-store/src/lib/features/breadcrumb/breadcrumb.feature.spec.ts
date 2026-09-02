@@ -21,7 +21,6 @@ describe('withBreadcrumbs Feature', () => {
     let sessionStorageSetItemSpy: jest.SpyInstance;
 
     const mockBreadcrumbs: MenuItem[] = [
-        { label: 'Home', url: '/home' },
         { label: 'Products', url: '/products' },
         { label: 'Details', url: '/products/123' }
     ];
@@ -75,9 +74,10 @@ describe('withBreadcrumbs Feature', () => {
             // Wait for effect to run
             TestBed.flushEffects();
 
+            const expectedBreadcrumbs = [{ label: 'Home', disabled: true }, ...mockBreadcrumbs];
             expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
                 'breadcrumbs',
-                JSON.stringify(mockBreadcrumbs)
+                JSON.stringify(expectedBreadcrumbs)
             );
         });
 
@@ -92,24 +92,11 @@ describe('withBreadcrumbs Feature', () => {
             // Wait for effect to run
             TestBed.flushEffects();
 
-            const expectedBreadcrumbs = [mockBreadcrumbs[0], newCrumb];
-            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
-                'breadcrumbs',
-                JSON.stringify(expectedBreadcrumbs)
-            );
-        });
-
-        it('should save to sessionStorage when truncateBreadcrumbs is called', () => {
-            store.setBreadcrumbs(mockBreadcrumbs);
-            TestBed.flushEffects();
-            sessionStorageSetItemSpy.mockClear();
-
-            store.truncateBreadcrumbs(1);
-
-            // Wait for effect to run
-            TestBed.flushEffects();
-
-            const expectedBreadcrumbs = mockBreadcrumbs.slice(0, 2);
+            const expectedBreadcrumbs = [
+                { label: 'Home', disabled: true },
+                mockBreadcrumbs[0],
+                newCrumb
+            ];
             expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
                 'breadcrumbs',
                 JSON.stringify(expectedBreadcrumbs)
@@ -127,7 +114,11 @@ describe('withBreadcrumbs Feature', () => {
             // Wait for effect to run
             TestBed.flushEffects();
 
-            const expectedBreadcrumbs = [...mockBreadcrumbs.slice(0, -1), updatedLastCrumb];
+            const expectedBreadcrumbs = [
+                { label: 'Home', disabled: true },
+                ...mockBreadcrumbs.slice(0, -1),
+                updatedLastCrumb
+            ];
             expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
                 'breadcrumbs',
                 JSON.stringify(expectedBreadcrumbs)
@@ -160,7 +151,7 @@ describe('withBreadcrumbs Feature', () => {
             TestBed.flushEffects();
             sessionStorageSetItemSpy.mockClear();
 
-            store.setBreadcrumbs([]);
+            store.clearBreadcrumbs();
 
             // Wait for effect to run
             TestBed.flushEffects();
@@ -180,12 +171,6 @@ describe('withBreadcrumbs Feature', () => {
 
             // Append
             store.appendCrumb(mockBreadcrumbs[1]);
-            TestBed.flushEffects();
-            expect(sessionStorageSetItemSpy).toHaveBeenCalled();
-            sessionStorageSetItemSpy.mockClear();
-
-            // Truncate
-            store.truncateBreadcrumbs(0);
             TestBed.flushEffects();
             expect(sessionStorageSetItemSpy).toHaveBeenCalled();
             sessionStorageSetItemSpy.mockClear();
@@ -216,34 +201,52 @@ describe('withBreadcrumbs Feature', () => {
             store.setBreadcrumbs(testBreadcrumbs);
             TestBed.flushEffects();
 
+            const expectedBreadcrumbs = [{ label: 'Home', disabled: true }, ...testBreadcrumbs];
+
             expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
                 'breadcrumbs',
-                JSON.stringify(testBreadcrumbs)
+                JSON.stringify(expectedBreadcrumbs)
             );
 
             // Verify the data can be parsed back
             const savedData = sessionStorageSetItemSpy.mock.calls[0][1];
             const parsedData = JSON.parse(savedData);
-            expect(parsedData).toEqual(testBreadcrumbs);
+            expect(parsedData).toEqual(expectedBreadcrumbs);
+        });
+
+        it('should not break when sessionStorage.setItem throws (e.g. private browsing, quota)', () => {
+            sessionStorageSetItemSpy.mockImplementation(() => {
+                throw new DOMException('QuotaExceededError');
+            });
+
+            store.setBreadcrumbs(mockBreadcrumbs);
+            expect(() => TestBed.flushEffects()).not.toThrow();
+            expect(store.breadcrumbs().length).toBe(3);
         });
     });
 
     describe('Set Breadcrumbs', () => {
-        it('should set breadcrumbs array', () => {
+        it('should set breadcrumbs array with Home automatically added', () => {
             store.setBreadcrumbs(mockBreadcrumbs);
-            expect(store.breadcrumbs()).toEqual(mockBreadcrumbs);
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs.length).toBe(3); // Home + 2 items
+            expect(breadcrumbs[0]).toEqual({ label: 'Home', disabled: true });
+            expect(breadcrumbs.slice(1)).toEqual(mockBreadcrumbs);
         });
 
         it('should replace existing breadcrumbs', () => {
             store.setBreadcrumbs(mockBreadcrumbs);
             const newBreadcrumbs: MenuItem[] = [{ label: 'New', url: '/new' }];
             store.setBreadcrumbs(newBreadcrumbs);
-            expect(store.breadcrumbs()).toEqual(newBreadcrumbs);
+            const breadcrumbs = store.breadcrumbs();
+            expect(breadcrumbs.length).toBe(2); // Home + 1 item
+            expect(breadcrumbs[0]).toEqual({ label: 'Home', disabled: true });
+            expect(breadcrumbs[1]).toEqual(newBreadcrumbs[0]);
         });
 
         it('should update breadcrumbCount', () => {
             store.setBreadcrumbs(mockBreadcrumbs);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(3); // Home + 2 items
         });
 
         it('should update hasBreadcrumbs to true', () => {
@@ -265,10 +268,12 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should append a breadcrumb to existing array', () => {
-            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
+            store.setBreadcrumbs([{ label: 'Page', url: '/page' }]);
             store.appendCrumb({ label: 'Products', url: '/products' });
-            expect(store.breadcrumbs().length).toBe(2);
-            expect(store.breadcrumbs()[1].label).toBe('Products');
+            expect(store.breadcrumbs().length).toBe(3); // Home + Page + Products
+            expect(store.breadcrumbs()[0].label).toBe('Home');
+            expect(store.breadcrumbs()[1].label).toBe('Page');
+            expect(store.breadcrumbs()[2].label).toBe('Products');
         });
 
         it('should update breadcrumbCount after appending', () => {
@@ -283,6 +288,276 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.selectLastBreadcrumbLabel()).toBe('First');
             store.appendCrumb({ label: 'Second', url: '/second' });
             expect(store.selectLastBreadcrumbLabel()).toBe('Second');
+        });
+    });
+
+    describe('addNewBreadcrumb', () => {
+        it('should do nothing when new item has same normalized URL as last breadcrumb', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', url: '/dotAdmin/#/c/content' },
+                { label: 'Edit', id: 'edit-1', url: '/dotAdmin/#/content/123' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Same',
+                id: 'edit-2',
+                url: '/dotAdmin/#/content/123',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+
+        it('should do nothing when new item has same id as last breadcrumb', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', url: '/dotAdmin/#/c/content' },
+                { label: 'Edit', id: 'content-abc', url: '/dotAdmin/#/content/456' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Same Id',
+                id: 'content-abc',
+                url: '/dotAdmin/#/content/789',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+
+        it('should replace last breadcrumb when both new and last URL match content-edit pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit Page', id: 'old-id', url: '/dotAdmin/#/content/old-id' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit New Content',
+                id: 'new-id',
+                url: '/dotAdmin/#/content/new-id',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit New Content');
+            expect(store.lastBreadcrumb()?.id).toBe('new-id');
+            expect(store.lastBreadcrumb()?.url).toBe('/dotAdmin/#/content/new-id');
+        });
+
+        it('should replace last breadcrumb when both URLs match edit-page/content pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                {
+                    label: 'Edit',
+                    id: 'page-1',
+                    url: '/dotAdmin/#/edit-page/content?url=page1',
+                    target: '_self'
+                }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Edit Other',
+                id: 'page-2',
+                url: '/dotAdmin/#/edit-page/content?url=page2',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit Other');
+        });
+
+        it('should append when new URL matches content-edit but last does not', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
+
+            store.addNewBreadcrumb({
+                label: 'Edit Content',
+                id: 'content-1',
+                url: '/dotAdmin/#/content/abc',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit Content');
+        });
+
+        it('should append when last URL matches content-edit but new does not', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', id: 'x', url: '/dotAdmin/#/content/123', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({
+                label: 'Settings',
+                url: '/dotAdmin/#/settings',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Settings');
+        });
+
+        it('should append when neither URL matches content-edit pattern', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'List', url: '/dotAdmin/#/c/content', target: '_self' }
+            ]);
+            const before = store.breadcrumbs().length;
+            expect(before).toBe(3); // Home + Content + List
+
+            store.addNewBreadcrumb({
+                label: 'New Page',
+                url: '/dotAdmin/#/some/page',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('New Page');
+        });
+
+        it('should append when breadcrumbs are empty (no last breadcrumb)', () => {
+            expect(store.breadcrumbs().length).toBe(0);
+
+            store.addNewBreadcrumb({
+                label: 'First',
+                url: '/dotAdmin/#/first',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('First');
+        });
+
+        it('should normalize URL by stripping /dotAdmin/# prefix for comparison', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', url: '/dotAdmin/#/content/xyz', target: '_self' }
+            ]);
+
+            // Same path after normalization — should not add
+            store.addNewBreadcrumb({
+                label: 'Same Path',
+                url: 'http://localhost/dotAdmin/#/content/xyz',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(3); // Home + Content + Edit
+            expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
+        });
+
+        it('should not treat non-content URLs as the same breadcrumb path', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Edit', url: '/dotAdmin/#/content/xyz', target: '_self' }
+            ]);
+
+            // Different paths that should NOT be considered equal to /content/xyz
+            store.addNewBreadcrumb({
+                label: 'Different Path 1',
+                url: '/dotAdmin/#/contentABC',
+                target: '_self'
+            });
+
+            store.addNewBreadcrumb({
+                label: 'Different Path 2',
+                url: '/dotAdmin/#/content-type',
+                target: '_self'
+            });
+
+            store.addNewBreadcrumb({
+                label: 'Different Path 3',
+                url: '/dotAdmin/#/mycontent/123',
+                target: '_self'
+            });
+
+            // Home + Content + Edit + 3 different paths
+            expect(store.breadcrumbs().length).toBe(6);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Different Path 3');
+        });
+
+        it('should handle URLs with special or encoded characters', () => {
+            store.setBreadcrumbs([
+                { label: 'Content', disabled: true },
+                { label: 'Special', url: '/dotAdmin/#/content/äöü', target: '_self' }
+            ]);
+
+            // Encoded version of the same content path – both match content-edit pattern so last is replaced
+            store.addNewBreadcrumb({
+                label: 'Special Encoded',
+                url: 'http://localhost/dotAdmin/#/content/%C3%A4%C3%B6%C3%BC',
+                target: '_self'
+            });
+
+            expect(store.breadcrumbs().length).toBe(3); // Home + Content + Special Encoded (replaced)
+            expect(store.selectLastBreadcrumbLabel()).toBe('Special Encoded');
+        });
+
+        it('should replace last breadcrumb when both items are analytics tabs', () => {
+            store.setBreadcrumbs([
+                { label: 'Marketing', disabled: true },
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
+            ]);
+            store.appendCrumb({ label: 'Engagement', id: 'analytics-engagement' });
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({ label: 'Conversions', id: 'analytics-conversions' });
+
+            expect(store.breadcrumbs().length).toBe(before);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Conversions');
+            expect(store.lastBreadcrumb()?.id).toBe('analytics-conversions');
+        });
+
+        it('should append analytics tab crumb when last breadcrumb is not an analytics tab', () => {
+            store.setBreadcrumbs([
+                { label: 'Marketing', disabled: true },
+                {
+                    label: 'Analytics Dashboard',
+                    url: '/dotAdmin/#/analytics/dashboard',
+                    target: '_self'
+                }
+            ]);
+            const before = store.breadcrumbs().length;
+
+            store.addNewBreadcrumb({ label: 'Engagement', id: 'analytics-engagement' });
+
+            expect(store.breadcrumbs().length).toBe(before + 1);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Engagement');
+        });
+
+        it('should safely handle empty and null URLs when adding new breadcrumbs', () => {
+            store.setBreadcrumbs([{ label: 'Content', disabled: true }]);
+
+            // Empty URL
+            store.addNewBreadcrumb({
+                label: 'Empty URL',
+                url: '',
+                target: '_self'
+            });
+
+            // Null URL casted to string type to exercise runtime null-safety
+            store.addNewBreadcrumb({
+                label: 'Null URL',
+                url: null as unknown as string,
+                target: '_self'
+            });
+
+            // Home + Content + Empty URL + Null URL
+            expect(store.breadcrumbs().length).toBe(4);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Null URL');
         });
     });
 
@@ -317,10 +592,10 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.breadcrumbCount()).toBe(0);
 
             store.setBreadcrumbs([{ label: 'One', url: '/one' }]);
-            expect(store.breadcrumbCount()).toBe(1);
+            expect(store.breadcrumbCount()).toBe(2); // Home + 1 item
 
             store.setBreadcrumbs(mockBreadcrumbs);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(3); // Home + 2 items
         });
     });
 
@@ -341,8 +616,8 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should return label of single breadcrumb', () => {
-            store.setBreadcrumbs([{ label: 'Home', url: '/home' }]);
-            expect(store.selectLastBreadcrumbLabel()).toBe('Home');
+            store.setBreadcrumbs([{ label: 'Page', url: '/page' }]);
+            expect(store.selectLastBreadcrumbLabel()).toBe('Page');
         });
 
         it('should return label of last breadcrumb in array', () => {
@@ -351,7 +626,7 @@ describe('withBreadcrumbs Feature', () => {
         });
 
         it('should return null if last breadcrumb has no label', () => {
-            store.setBreadcrumbs([{ label: 'Home', url: '/home' }, { url: '/no-label' }]);
+            store.setBreadcrumbs([{ label: 'Page', url: '/page' }, { url: '/no-label' }]);
             expect(store.selectLastBreadcrumbLabel()).toBeNull();
         });
 
@@ -370,53 +645,50 @@ describe('withBreadcrumbs Feature', () => {
     describe('Edge Cases and Error Handling', () => {
         it('should handle breadcrumbs with undefined properties', () => {
             const crumbsWithUndefined: MenuItem[] = [
-                { label: 'Home', url: '/home' },
+                { label: 'Page', url: '/page' },
                 { label: undefined, url: '/undefined-label' },
                 { url: '/no-label' }, // No label property
                 { label: 'Last', url: undefined }
             ];
 
             store.setBreadcrumbs(crumbsWithUndefined);
-            expect(store.breadcrumbCount()).toBe(4);
+            expect(store.breadcrumbCount()).toBe(5); // Home + 4 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Last');
         });
 
         it('should handle breadcrumbs with null properties', () => {
             const crumbsWithNull: MenuItem[] = [
-                { label: 'Home', url: '/home' },
+                { label: 'Page', url: '/page' },
                 { label: null, url: '/null-label' },
                 { label: 'Last', url: null }
             ];
 
             store.setBreadcrumbs(crumbsWithNull);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + 3 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Last');
         });
 
         it('should handle empty objects in breadcrumbs array', () => {
             const crumbsWithEmpty: MenuItem[] = [
-                { label: 'Home', url: '/home' },
+                { label: 'Page', url: '/page' },
                 {}, // Empty object
                 { label: 'Last', url: '/last' }
             ];
 
             store.setBreadcrumbs(crumbsWithEmpty);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + 3 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Last');
         });
 
         it('should handle null/undefined input to setBreadcrumbs gracefully', () => {
-            // Test with null - should not throw but the state becomes null
-            expect(() => store.setBreadcrumbs(null as unknown as MenuItem[])).not.toThrow();
-            // The implementation sets breadcrumbs to null, so we check it's not an array
-            expect(store.breadcrumbs()).not.toBeInstanceOf(Array);
+            // Test with null - should throw because we try to spread null
+            expect(() => store.setBreadcrumbs(null as unknown as MenuItem[])).toThrow();
 
             // Reset state for next test
-            store.setBreadcrumbs([]);
+            store.clearBreadcrumbs();
 
-            // Test with undefined
-            expect(() => store.setBreadcrumbs(undefined as unknown as MenuItem[])).not.toThrow();
-            expect(store.breadcrumbs()).not.toBeInstanceOf(Array);
+            // Test with undefined - should throw because we try to spread undefined
+            expect(() => store.setBreadcrumbs(undefined as unknown as MenuItem[])).toThrow();
         });
 
         it('should handle null/undefined input to appendCrumb gracefully', () => {
@@ -478,32 +750,32 @@ describe('withBreadcrumbs Feature', () => {
             }));
 
             store.setBreadcrumbs(largeBreadcrumbs);
-            expect(store.breadcrumbCount()).toBe(100);
+            expect(store.breadcrumbCount()).toBe(101); // Home + 100 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Breadcrumb 100');
         });
 
         it('should handle breadcrumbs with very long labels', () => {
             const longLabel = 'A'.repeat(1000);
             const crumbsWithLongLabel: MenuItem[] = [
-                { label: 'Home', url: '/home' },
+                { label: 'Page', url: '/page' },
                 { label: 'Middle', url: '/middle' },
                 { label: longLabel, url: '/long-label' }
             ];
 
             store.setBreadcrumbs(crumbsWithLongLabel);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + 3 items
             expect(store.selectLastBreadcrumbLabel()).toBe(longLabel);
         });
 
         it('should handle breadcrumbs with special characters', () => {
             const specialCrumbs: MenuItem[] = [
-                { label: 'Home & About', url: '/home' },
+                { label: 'Page & About', url: '/page' },
                 { label: 'Products < > & " \' ', url: '/products' },
                 { label: 'Details: 100%', url: '/details' }
             ];
 
             store.setBreadcrumbs(specialCrumbs);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + 3 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Details: 100%');
         });
     });
@@ -519,9 +791,9 @@ describe('withBreadcrumbs Feature', () => {
             expect(store.breadcrumbCount()).toBe(2);
             expect(store.selectLastBreadcrumbLabel()).toBe('Products');
 
-            // Replace with new set
+            // Replace with new set (Home is automatically added)
             store.setBreadcrumbs(mockBreadcrumbs);
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(3); // Home + 2 items
             expect(store.selectLastBreadcrumbLabel()).toBe('Details');
 
             // Clear all
@@ -533,7 +805,7 @@ describe('withBreadcrumbs Feature', () => {
             store.setBreadcrumbs([{ label: 'First', url: '/first' }]);
             store.appendCrumb({ label: 'Second', url: '/second' });
             store.appendCrumb({ label: 'Third', url: '/third' });
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + First + Second + Third
 
             store.clearBreadcrumbs();
             expect(store.breadcrumbCount()).toBe(0);
@@ -552,7 +824,7 @@ describe('withBreadcrumbs Feature', () => {
 
             // Navigate deeper
             store.appendCrumb({ label: 'Edit', url: '/content/edit' });
-            expect(store.breadcrumbCount()).toBe(3);
+            expect(store.breadcrumbCount()).toBe(4); // Home + Dashboard + Content + Edit
             expect(store.selectLastBreadcrumbLabel()).toBe('Edit');
 
             // Navigate to different section (replace breadcrumbs)
@@ -560,13 +832,13 @@ describe('withBreadcrumbs Feature', () => {
                 { label: 'Dashboard', url: '/dashboard' },
                 { label: 'Settings', url: '/settings' }
             ]);
-            expect(store.breadcrumbCount()).toBe(2);
+            expect(store.breadcrumbCount()).toBe(3); // Home + Dashboard + Settings
             expect(store.selectLastBreadcrumbLabel()).toBe('Settings');
 
             // Add more levels
             store.appendCrumb({ label: 'Users', url: '/settings/users' });
             store.appendCrumb({ label: 'Create', url: '/settings/users/create' });
-            expect(store.breadcrumbCount()).toBe(4);
+            expect(store.breadcrumbCount()).toBe(5); // Home + Dashboard + Settings + Users + Create
             expect(store.selectLastBreadcrumbLabel()).toBe('Create');
         });
     });
@@ -714,6 +986,33 @@ describe('withBreadcrumbs Feature', () => {
             const truncatedBreadcrumbs = storeWithRouter.breadcrumbs();
             expect(truncatedBreadcrumbs.length).toBe(3);
             expect(truncatedBreadcrumbs[0].label).toBe('Home');
+        });
+
+        it('should truncate via navigation (public path) and persist to sessionStorage', () => {
+            // When user navigates to a URL already in the trail, internal truncation runs and state persists.
+            sessionStorageSetItemSpy.mockClear();
+
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+            expect(storeWithRouter.breadcrumbs().length).toBe(3);
+
+            routerMock.triggerNavigationEnd('/pages');
+            TestBed.flushEffects();
+            expect(storeWithRouter.breadcrumbs().length).toBe(3);
+
+            // Navigate back to /c/content → triggers internal truncate; breadcrumbs become [Home, Content, Content]
+            routerMock.triggerNavigationEnd('/c/content');
+            TestBed.flushEffects();
+
+            const truncated = storeWithRouter.breadcrumbs();
+            expect(truncated.length).toBe(3);
+            expect(truncated[2].url).toBe('/dotAdmin/#/c/content');
+
+            // Truncated state must be persisted to sessionStorage (effect runs on breadcrumb changes)
+            expect(sessionStorageSetItemSpy).toHaveBeenCalledWith(
+                'breadcrumbs',
+                JSON.stringify(truncated)
+            );
         });
 
         it('should not add breadcrumb if URL is not in menu items', () => {
@@ -865,8 +1164,8 @@ describe('withBreadcrumbs Feature', () => {
 
         it('should truncate correctly when navigating to a middle breadcrumb', () => {
             // Set up initial state with multiple breadcrumbs manually
+            // Note: setBreadcrumbs adds Home automatically, so we don't include it
             storeWithRouter.setBreadcrumbs([
-                { label: 'Home', disabled: true },
                 { label: 'Content', disabled: true },
                 { label: 'Current', url: '/dotAdmin/#/c/content' },
                 { label: 'Level 4', url: '/dotAdmin/#/level4' },
@@ -874,7 +1173,7 @@ describe('withBreadcrumbs Feature', () => {
             ]);
             TestBed.flushEffects();
 
-            expect(storeWithRouter.breadcrumbCount()).toBe(5);
+            expect(storeWithRouter.breadcrumbCount()).toBe(5); // Home + 4 items
 
             // Navigate back to the third item
             routerMock.triggerNavigationEnd('/c/content');
@@ -884,6 +1183,65 @@ describe('withBreadcrumbs Feature', () => {
             // Should have truncated and reset to the menu structure
             expect(breadcrumbs.length).toBe(3);
             expect(breadcrumbs[0].label).toBe('Home');
+        });
+
+        describe('Menu Item Matching with mId Query Parameter', () => {
+            it('should NOT match when URL has query params but no mId (old bookmark)', () => {
+                routerMock.triggerNavigationEnd('/c/content?someParam=value');
+                TestBed.flushEffects();
+
+                // Should not create breadcrumbs for old bookmarks with query params but no mId
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
+
+            it('should match when URL has mId that matches parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', so mId=content should match
+                routerMock.triggerNavigationEnd('/c/content?mId=content');
+                TestBed.flushEffects();
+
+                const breadcrumbs = storeWithRouter.breadcrumbs();
+                expect(breadcrumbs.length).toBe(3);
+                expect(breadcrumbs[2].label).toBe('Content');
+            });
+
+            it('should NOT match when mId does not match parentMenuId prefix', () => {
+                // parentMenuId is 'content-parent', mId=xyz should NOT match
+                routerMock.triggerNavigationEnd('/c/content?mId=xyz');
+                TestBed.flushEffects();
+
+                expect(storeWithRouter.breadcrumbs().length).toBe(0);
+            });
+        });
+
+        it('should preserve analytics tab crumb appended before menuItems loaded (reload fix)', () => {
+            // Simulate child component appending analytics tab crumb before menu loads
+            storeWithRouter.appendCrumb({ label: 'Conversions', id: 'analytics-conversions' });
+            TestBed.flushEffects();
+
+            expect(storeWithRouter.breadcrumbs().length).toBe(1);
+
+            // Trigger menuItems effect: add the analytics route to the menu
+            menuItemsSignal.set([
+                ...menuItemsSignal(),
+                {
+                    id: 'analytics',
+                    label: 'Analytics Dashboard',
+                    labelParent: 'Marketing',
+                    menuLink: '/analytics/dashboard',
+                    url: '/analytics/dashboard',
+                    angular: true,
+                    active: false,
+                    ajax: false,
+                    parentMenuId: 'marketing-8959',
+                    parentMenuLabel: 'Marketing',
+                    parentMenuIcon: 'pi pi-chart-bar'
+                } as MenuItemEntity
+            ]);
+            TestBed.flushEffects();
+
+            const breadcrumbs = storeWithRouter.breadcrumbs();
+            // The analytics tab crumb should survive the base breadcrumb reset
+            expect(breadcrumbs.some((c) => c.id === 'analytics-conversions')).toBe(true);
         });
     });
 });

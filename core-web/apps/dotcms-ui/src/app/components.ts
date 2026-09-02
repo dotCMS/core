@@ -1,5 +1,5 @@
 import { DotContentCompareComponent } from '@dotcms/portlets/dot-ema/ui';
-import { DotDialogComponent, DotIconComponent } from '@dotcms/ui';
+import { DotIconComponent } from '@dotcms/ui';
 
 import { AppComponent } from './app.component';
 import { DotActionButtonComponent } from './view/components/_common/dot-action-button/dot-action-button.component';
@@ -18,7 +18,6 @@ import { DotCrumbtrailComponent } from './view/components/dot-crumbtrail/dot-cru
 import { DotLargeMessageDisplayComponent } from './view/components/dot-large-message-display/dot-large-message-display.component';
 import { DotListingDataTableComponent } from './view/components/dot-listing-data-table/dot-listing-data-table.component';
 import { DotMessageDisplayComponent } from './view/components/dot-message-display/dot-message-display.component';
-import { DotThemeSelectorDropdownComponent } from './view/components/dot-theme-selector-dropdown/dot-theme-selector-dropdown.component';
 import { DotToolbarComponent } from './view/components/dot-toolbar/dot-toolbar.component';
 import { DotWorkflowTaskDetailComponent } from './view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
 import { GlobalSearchComponent } from './view/components/global-search/global-search';
@@ -28,22 +27,18 @@ import { MainCoreLegacyComponent } from './view/components/main-core-legacy/main
 import { MainComponentLegacyComponent } from './view/components/main-legacy/main-legacy.component';
 
 // Non-standalone components (traditional NgModule components)
-export const COMPONENTS = [
-    MainCoreLegacyComponent,
-    DotLogOutContainerComponent,
-    GlobalSearchComponent
-];
+export const COMPONENTS = [DotLogOutContainerComponent, GlobalSearchComponent];
 
 // Standalone components (migrated to standalone)
 export const STANDALONE_COMPONENTS = [
     AppComponent,
     MainComponentLegacyComponent,
+    MainCoreLegacyComponent,
     DotAlertConfirmComponent,
     DotLoginPageComponent,
     DotToolbarComponent,
     DotActionButtonComponent,
     DotEditContentletComponent,
-    DotDialogComponent,
     DotIconComponent,
     DotTextareaContentComponent,
     DotWorkflowTaskDetailComponent,
@@ -59,6 +54,5 @@ export const STANDALONE_COMPONENTS = [
     DotDownloadBundleDialogComponent,
     DotWizardComponent,
     DotGenerateSecurePasswordComponent,
-    DotThemeSelectorDropdownComponent,
     DotCrumbtrailComponent
 ];

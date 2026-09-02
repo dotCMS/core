@@ -4,11 +4,12 @@ import {
     mockProvider,
     SpyObject,
     byTestId
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 
+import { ConfirmationService } from 'primeng/api';
 import { Dialog } from 'primeng/dialog';
 
 import { DotResourceLinksService } from '@dotcms/data-access';
@@ -27,6 +28,7 @@ describe('DotFileFieldPreviewComponent', () => {
         detectChanges: false,
         providers: [provideHttpClient()],
         componentProviders: [
+            ConfirmationService,
             mockProvider(DotResourceLinksService, {
                 getFileResourceLinksByInode: jest.fn().mockReturnValue(
                     of({
@@ -58,6 +60,68 @@ describe('DotFileFieldPreviewComponent', () => {
             spectator.detectChanges();
             expect(spectator.component).toBeTruthy();
         });
+
+        it('should show download button for temp preview file', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('download-btn'))).toBeTruthy();
+        });
+
+        it('should render the unified thumbnail with the temp file pdf src', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(TEMP_FILE_MOCK.thumbnailUrl);
+        });
+
+        it('should call downloadAsset when click on the download btn', () => {
+            const downloadSpy = jest
+                .spyOn(spectator.component, 'downloadAsset')
+                .mockImplementation(jest.fn());
+
+            const expectedUrl = `${TEMP_FILE_MOCK.referenceUrl}?force_download=true`;
+
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('download-btn')));
+            expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
+        });
+
+        it('should render with fallback metadata when the temp file has none (image editor save)', () => {
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, metadata: undefined }
+            } as unknown);
+            spectator.detectChanges();
+
+            expect(spectator.component).toBeTruthy();
+            expect(spectator.query(byTestId('metadata-title'))).toHaveText(TEMP_FILE_MOCK.fileName);
+        });
+
+        it('should not show download button when referenceUrl is missing', () => {
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, referenceUrl: '' }
+            } as unknown);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('download-btn'))).toBeFalsy();
+        });
+
+        it('renders without crashing when the temp file has no metadata', () => {
+            // Regression: the image-editor Save servlet can return a temp file with
+            // `metadata: null`. The file-info dialog header bound `metadata.title`
+            // unguarded and threw "Cannot read properties of null (reading 'title')".
+            spectator.setInput('previewFile', {
+                source: 'temp',
+                file: { ...TEMP_FILE_MOCK, image: false, mimeType: 'unknown', metadata: null }
+            } as unknown);
+
+            expect(() => spectator.detectChanges()).not.toThrow();
+            expect(spectator.component).toBeTruthy();
+        });
     });
 
     describe('contentlet without content preview file', () => {
@@ -78,9 +142,15 @@ describe('DotFileFieldPreviewComponent', () => {
             expect(spectator.component).toBeTruthy();
         });
 
-        it('should be have a dot-contentlet-thumbnail', () => {
+        it('should render the unified thumbnail with the contentlet image src', () => {
             spectator.detectChanges();
-            expect(spectator.query('dot-contentlet-thumbnail')).toBeTruthy();
+
+            const { inode, modDate } = NEW_FILE_MOCK.entity;
+
+            expect(spectator.query(byTestId('contentlet-thumbnail'))).toBeTruthy();
+            expect(
+                spectator.query(byTestId('dot-content-thumbnail-image')).getAttribute('src')
+            ).toBe(`/dA/${inode}/asset/500w/50q?r=${modDate}`);
         });
 
         it('should show proper metadata', () => {
@@ -120,8 +190,9 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should call downloadAsset when click on the proper btn', async () => {
-            const spyWindowOpen = jest.spyOn(window, 'open');
-            spyWindowOpen.mockImplementation(jest.fn());
+            const downloadSpy = jest
+                .spyOn(spectator.component, 'downloadAsset')
+                .mockImplementation(jest.fn());
 
             const { inode } = NEW_FILE_MOCK.entity;
 
@@ -132,12 +203,12 @@ describe('DotFileFieldPreviewComponent', () => {
             const downloadBtnElement = spectator.query(byTestId('download-btn'));
 
             spectator.click(downloadBtnElement);
-            expect(spyWindowOpen).toHaveBeenCalledWith(expectedUrl, '_self');
+            expect(downloadSpy).toHaveBeenCalledWith(expectedUrl);
         });
 
         it('should handle a error in fetchResourceLinks', async () => {
             dotResourceLinksService.getFileResourceLinksByInode.mockReturnValue(
-                throwError('error')
+                throwError(() => 'error')
             );
             spectator.detectChanges();
         });
@@ -148,6 +219,7 @@ describe('DotFileFieldPreviewComponent', () => {
             const infoBtnElement = spectator.query(byTestId('info-btn'));
 
             spectator.click(infoBtnElement);
+            spectator.detectChanges();
 
             const links = spectator.queryAll('.file-info__item');
             const copyBtns = spectator.queryAll(DotCopyButtonComponent);
@@ -216,38 +288,32 @@ describe('DotFileFieldPreviewComponent', () => {
         });
 
         it('should prevent download action when disabled', () => {
-            // Clean up any existing spies and create a fresh one
-            jest.restoreAllMocks();
-            const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const downloadSpy = jest
+                .spyOn(spectator.component, 'downloadAsset')
+                .mockImplementation(jest.fn());
 
-            // Try to trigger download through the component method indirectly
             const downloadBtnComponent = spectator.query(byTestId('download-btn'));
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
             // Since button is disabled, clicking should not trigger download
             spectator.click(actualDownloadBtn);
 
-            expect(spyWindowOpen).not.toHaveBeenCalled();
-            spyWindowOpen.mockRestore();
+            expect(downloadSpy).not.toHaveBeenCalled();
         });
 
         it('should not trigger download when clicking disabled button', () => {
-            const spyWindowOpen = jest.spyOn(window, 'open').mockImplementation(() => null);
+            const downloadSpy = jest
+                .spyOn(spectator.component, 'downloadAsset')
+                .mockImplementation(jest.fn());
 
-            // Get the actual button element inside the PrimeNG component
             const downloadBtnComponent = spectator.query(byTestId('download-btn'));
             const actualDownloadBtn = downloadBtnComponent.querySelector('button');
 
-            // Verify button is actually disabled
             expect(actualDownloadBtn.disabled).toBe(true);
 
-            // Try to click the disabled button - clicks on disabled buttons should not trigger handlers
             spectator.click(actualDownloadBtn);
 
-            // Since button is disabled, download should not be triggered
-            expect(spyWindowOpen).not.toHaveBeenCalled();
-
-            spyWindowOpen.mockRestore();
+            expect(downloadSpy).not.toHaveBeenCalled();
         });
 
         it('should not open dialog when clicking disabled info button', () => {

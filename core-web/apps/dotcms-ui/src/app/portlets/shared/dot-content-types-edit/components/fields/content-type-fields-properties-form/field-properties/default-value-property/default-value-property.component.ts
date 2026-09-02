@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { UntypedFormGroup } from '@angular/forms';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -8,6 +8,7 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-default-value-property',
     templateUrl: './default-value-property.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class DefaultValuePropertyComponent implements OnInit {
@@ -20,12 +21,17 @@ export class DefaultValuePropertyComponent implements OnInit {
 
     ngOnInit(): void {
         this.setErrorLabelMap();
-        this.errorLabel = this.getErrorLabel(this.property.field.clazz);
+        this.updateErrorLabel();
     }
 
-    private getErrorLabel(clazz: string): string {
-        return this.errorLabelsMap.get(clazz)
-            ? this.errorLabelsMap.get(clazz)
+    /** Updates errorLabel from current property.field.clazz. Use after changing property/field type. */
+    updateErrorLabel(): void {
+        this.errorLabel = this.getErrorLabel(this.property?.field?.clazz ?? null);
+    }
+
+    private getErrorLabel(clazz: string | null): string {
+        return this.errorLabelsMap.get(clazz as string)
+            ? this.errorLabelsMap.get(clazz as string)
             : this.errorLabelsMap.get('default');
     }
 

@@ -10,7 +10,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     ReactiveFormsModule,
@@ -19,7 +20,9 @@ import {
     Validators
 } from '@angular/forms';
 
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { Select, SelectModule } from 'primeng/select';
 
 import { map, take, takeUntil, tap } from 'rxjs/operators';
 
@@ -28,7 +31,6 @@ import { LoggerService } from '@dotcms/dotcms-js';
 import { DotAjaxActionResponseView, DotBundle, DotDialogActions } from '@dotcms/dotcms-models';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
-import { DotDialogComponent } from '../../modules/dot-dialog/dot-dialog.component';
 import { DotFieldValidationMessageComponent } from '../dot-field-validation-message/dot-field-validation-message.component';
 
 const LAST_BUNDLE_USED = 'lastSelectedBundle';
@@ -37,14 +39,16 @@ const LAST_BUNDLE_USED = 'lastSelectedBundle';
     selector: 'dot-add-to-bundle',
     templateUrl: 'dot-add-to-bundle.component.html',
     imports: [
-        DotDialogComponent,
+        DialogModule,
+        ButtonModule,
         DotMessagePipe,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         AsyncPipe,
         DotFieldValidationMessageComponent
     ],
     providers: [AddToBundleService, DotCurrentUserService],
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['dot-add-to-bundle.component.scss']
 })
 export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy {
@@ -60,7 +64,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     @ViewChild('formEl', { static: true }) formEl: HTMLFormElement;
 
-    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Dropdown;
+    @ViewChild('addBundleDropdown', { static: true }) addBundleDropdown: Select;
     private destroy$: Subject<boolean> = new Subject<boolean>();
     readonly #dotMessageService = inject(DotMessageService);
     readonly #addToBundleService = inject(AddToBundleService);
@@ -69,6 +73,7 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
 
     ngOnInit() {
         this.initForm();
+        this.setDialogConfig(this.form);
 
         this.bundle$ = this.#addToBundleService.getBundles().pipe(
             take(1),
@@ -88,7 +93,6 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                 return bundles;
             }),
             tap(() => {
-                this.setDialogConfig(this.form);
                 this.dialogShow = true;
             })
         );

@@ -76,13 +76,19 @@
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="com.dotmarketing.util.ConfigUtils" %>
 <%@ page import="java.util.Optional" %>
+<%@ page import="com.liferay.portal.util.ReleaseInfo" %>
 <!DOCTYPE html>
 <script type='text/javascript' src='/dwr/interface/LanguageAjax.js'></script>
 
 <!--  dotCMS Block Editor Builder -->
-	<script src="/dotcms-block-editor/polyfills.js" type="module"></script>
-	<script src="/dotcms-block-editor/generator-runtime.js" defer></script>
-	<script src="/dotcms-block-editor/main.js" type="module"></script>
+	<%-- Cache-bust the web-component bundle by build revision. The bundle ships with fixed
+	     filenames (outputHashing: none), so without a version param the browser serves the
+	     stale editor from cache after an upgrade until a manual hard-reload. --%>
+	<% final String blockEditorAssetVer = ReleaseInfo.getBuildNumber(); %>
+	<link rel="stylesheet" href="/dotcms-block-editor/styles.css?v=<%= blockEditorAssetVer %>" />
+	<script src="/dotcms-block-editor/polyfills.js?v=<%= blockEditorAssetVer %>" type="module"></script>
+	<script src="/dotcms-block-editor/generator-runtime.js?v=<%= blockEditorAssetVer %>" defer></script>
+	<script src="/dotcms-block-editor/main.js?v=<%= blockEditorAssetVer %>" type="module"></script>
 <!--   End dotCMS Block Editor -->
 
 <!--  dotCMS Custom Field Bridge -->
@@ -563,8 +569,8 @@
                                 request.setAttribute("host", hostId);
                             }
                         }
-                        request.setAttribute("inode",contentlet.getInode());
-                        request.setAttribute("counter", catCounter.toString());
+						request.setAttribute("inode",contentlet.getInode());
+						request.setAttribute("counter", catCounter.toString());
                     %>
 
                     <%if(contentlet.isCalendarEvent()){

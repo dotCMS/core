@@ -1,0 +1,19 @@
+id: create-folder-at-root
+category: content
+description: Create a folder at the root of the default host
+difficulty: easy
+runs: 5
+
+prompt: |
+    Create a folder named "eval-test-folder" at the root of the default site.
+
+assertions:
+    - type: http_get
+      path: /api/v1/folder/byPath/eval-test-folder
+      expect: ok
+
+cleanup:
+    - method: DELETE
+      path: /api/v1/folder/byPath/eval-test-folder
+
+tags: [content, create]

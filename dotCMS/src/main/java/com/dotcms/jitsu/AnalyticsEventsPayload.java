@@ -4,6 +4,7 @@ import com.dotmarketing.util.json.JSONObject;
 
 import java.io.Serializable;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
@@ -21,7 +22,7 @@ public class AnalyticsEventsPayload extends EventsPayload {
     }
 
     @Override
-    public Iterable<EventPayload> payloads() {
+    public Collection<EventPayload> payloads() {
 
         final List<EventPayload> eventPayloads = new ArrayList<>();
 

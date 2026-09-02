@@ -1,24 +1,25 @@
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 import { Title } from '@angular/platform-browser';
 import { Event, NavigationEnd, Router } from '@angular/router';
 
 import { filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotIframeService, DotRouterService } from '@dotcms/data-access';
-import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 @Injectable()
 export class DotNavigationService {
     private dotIframeService = inject(DotIframeService);
     private dotMenuService = inject(DotMenuService);
     private dotRouterService = inject(DotRouterService);
-    private dotcmsEventsService = inject(DotcmsEventsService);
+    private dynamicRouteService = inject(DynamicRouteService);
     private loginService = inject(LoginService);
     private router = inject(Router);
     private titleService = inject(Title);
@@ -30,13 +31,16 @@ export class DotNavigationService {
 
         // Load initial menu - store handles menu link processing and entity transformation
         this.dotMenuService.loadMenu().subscribe((menus: DotMenu[]) => {
+            this.registerDynamicRoutes(menus);
             this.#globalStore.loadMenu(menus);
 
             if (this.dotRouterService.currentPortlet.id) {
-                this.#globalStore.setActiveMenu(
-                    this.dotRouterService.currentPortlet.id,
-                    this.dotRouterService.queryParams['mId']
-                );
+                this.#globalStore.setActiveMenu({
+                    portletId: this.dotRouterService.currentPortlet.id,
+                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                    bookmark: true,
+                    breadcrumbs: this.#globalStore.breadcrumbs()
+                });
             }
         });
 
@@ -53,11 +57,18 @@ export class DotNavigationService {
                                 this.titleService.setTitle(`${pageTitle} - ${this._appMainTitle}`);
                             }
 
+                            // validation for bookmark links with missing or invalid mId query param SHOULD MBE REMOVED SOON
+                            const queryParamsValid =
+                                !this.dotRouterService.queryParams['mId'] &&
+                                Object.keys(this.dotRouterService.queryParams).length === 0;
+
                             if (this.dotRouterService.currentPortlet.id) {
-                                this.#globalStore.setActiveMenu(
-                                    this.dotRouterService.currentPortlet.id,
-                                    this.dotRouterService.queryParams['mId']
-                                );
+                                this.#globalStore.setActiveMenu({
+                                    portletId: this.dotRouterService.currentPortlet.id,
+                                    shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                                    bookmark: queryParamsValid,
+                                    breadcrumbs: this.#globalStore.breadcrumbs()
+                                });
                             }
                         }),
                         map(() => true)
@@ -67,22 +78,22 @@ export class DotNavigationService {
             )
             .subscribe();
 
-        // Handle portlet layout updates
-        this.dotcmsEventsService.subscribeTo('UPDATE_PORTLET_LAYOUTS').subscribe(() => {
-            this.dotMenuService
-                .reloadMenu()
-                .pipe(take(1))
-                .subscribe((menus: DotMenu[]) => {
-                    this.#globalStore.loadMenu(menus);
+        // Handle portlet layout updates from the global store WebSocket feature
+        this.#globalStore
+            .portletLayoutUpdated$()
+            .pipe(switchMap(() => this.dotMenuService.reloadMenu().pipe(take(1))))
+            .subscribe((menus: DotMenu[]) => {
+                this.registerDynamicRoutes(menus);
+                this.#globalStore.loadMenu(menus);
 
-                    if (this.dotRouterService.currentPortlet.id) {
-                        this.#globalStore.setActiveMenu(
-                            this.dotRouterService.currentPortlet.id,
-                            this.dotRouterService.queryParams['mId']
-                        );
-                    }
-                });
-        });
+                if (this.dotRouterService.currentPortlet.id) {
+                    this.#globalStore.setActiveMenu({
+                        portletId: this.dotRouterService.currentPortlet.id,
+                        shortParentMenuId: this.dotRouterService.queryParams['mId'],
+                        breadcrumbs: this.#globalStore.breadcrumbs()
+                    });
+                }
+            });
 
         // Handle login/auth changes
         this.loginService.auth$
@@ -91,6 +102,7 @@ export class DotNavigationService {
                 switchMap(() => this.dotMenuService.reloadMenu())
             )
             .subscribe((menus: DotMenu[]) => {
+                this.registerDynamicRoutes(menus);
                 this.#globalStore.loadMenu(menus);
                 this.goToFirstPortlet();
             });
@@ -129,5 +141,10 @@ export class DotNavigationService {
         if (this.router.url.indexOf('c/') > -1) {
             this.dotIframeService.reload();
         }
+    }
+
+    private registerDynamicRoutes(menus: DotMenu[]): void {
+        const allMenuItems = menus.flatMap((menu) => menu.menuItems);
+        this.dynamicRouteService.registerRoutesFromMenuItems(allMenuItems);
     }
 }

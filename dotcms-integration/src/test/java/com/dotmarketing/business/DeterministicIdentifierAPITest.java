@@ -5,15 +5,26 @@ import static com.dotcms.datagen.TestDataUtils.FILE_ASSET_2;
 import static com.dotcms.datagen.TestDataUtils.getMultipleImageBinariesContent;
 import static com.dotmarketing.business.DeterministicIdentifierAPIImpl.GENERATE_DETERMINISTIC_IDENTIFIERS;
 import static com.dotmarketing.business.DeterministicIdentifierAPIImpl.NON_DETERMINISTIC_IDENTIFIER;
+import static com.dotmarketing.quartz.DotStatefulJob.EXECUTION_DATA;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
+import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.business.FieldAPI;
+import com.dotcms.contenttype.model.field.ColumnField;
+import com.dotcms.contenttype.model.field.DataTypes;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
 import com.dotcms.contenttype.model.field.RelationshipField;
+import com.dotcms.contenttype.model.field.RowField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
@@ -37,16 +48,22 @@ import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.portlets.workflows.business.SystemWorkflowConstants;
+import com.dotmarketing.quartz.job.CleanUpFieldReferencesJob;
+import com.dotmarketing.quartz.job.TestJobExecutor;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.UUIDUtil;
 import com.dotmarketing.util.WebKeys;
+import com.liferay.portal.model.User;
 import com.liferay.util.FileUtil;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
+import com.google.common.collect.ImmutableMap;
 import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
@@ -74,6 +91,13 @@ public class DeterministicIdentifierAPITest {
     }
 
     private final DeterministicIdentifierAPIImpl defaultGenerator = new DeterministicIdentifierAPIImpl();
+
+    /**
+     * Expected deterministic id seed for a field: {@code variable:typeName:dataType}.
+     */
+    private static String expectedFieldSeed(final Field field) {
+        return String.format("%s:%s:%s", field.variable(), field.typeName(), field.dataType().value);
+    }
 
 
     /**
@@ -320,14 +344,19 @@ public class DeterministicIdentifierAPITest {
             //Test it is idempotent
             assertEquals(generatedId1, generatedId2);
 
-            for(final Field field : testCase.contentType.fields()){
+            // RowField and ColumnField are layout-only fields that may already exist in the DB
+            // with pre-assigned deterministic IDs (e.g. from system initialization). Including them
+            // causes isFieldInode() to find the hash taken and fall back to a random UUID, breaking
+            // idempotency. Since they carry no content semantics, they are excluded from this check.
+            for(final Field field : testCase.contentType.fields().stream()
+                    .filter(f -> !(f instanceof RowField) && !(f instanceof ColumnField)).collect(Collectors.toList())){
 
                 final String fieldIdentifier1 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
                 assertTrue(UUIDUtil.isUUID(fieldIdentifier1));
                 final String fieldIdentifier2 = defaultGenerator.generateDeterministicIdBestEffort(field, field::variable);
                 //Test it is idempotent
                 assertEquals(fieldIdentifier1, fieldIdentifier2);
-                final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                final String expected = expectedFieldSeed(field);
                 assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
             }
 
@@ -581,7 +610,7 @@ public class DeterministicIdentifierAPITest {
 
             //verify the seed contains the field type
             for(final Field field : contentType.fields()){
-                 final String expected = String.format("%s:%s", field.variable(), field.typeName());
+                 final String expected = expectedFieldSeed(field);
                 assertEquals(expected, defaultGenerator.resolveName(field, field::variable));
             }
 
@@ -655,6 +684,451 @@ public class DeterministicIdentifierAPITest {
 
 
 
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#generateDeterministicIdBestEffort(Field, Supplier)}
+     * Given Scenario: A Text field is created with data type TEXT, then deleted, then re-created with the
+     * same variable name but data type INTEGER (the scenario behind issue #36636).
+     * ExpectedResult: The re-created field must get a DIFFERENT deterministic id (the data type is part of
+     * the seed) and its data type must be INTEGER.
+     */
+    @Test
+    public void Test_Delete_And_Recreate_Field_With_Different_DataType_Generates_New_Id() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final String fieldVarName = "myField" + System.currentTimeMillis();
+
+            final Field textField = new FieldDataGen()
+                    .type(TextField.class)
+                    .name(fieldVarName)
+                    .velocityVarName(fieldVarName)
+                    .dataType(DataTypes.TEXT)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(textField)
+                    .nextPersisted();
+            try {
+                final Field originalField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.TEXT, originalField.dataType());
+
+                fieldAPI.delete(originalField);
+
+                final Field recreatedField = fieldAPI.save(FieldBuilder.builder(TextField.class)
+                        .name(fieldVarName)
+                        .variable(fieldVarName)
+                        .contentTypeId(contentType.id())
+                        .dataType(DataTypes.INTEGER)
+                        .build(), systemUser);
+
+                assertEquals(DataTypes.INTEGER, recreatedField.dataType());
+                assertNotEquals(
+                        "A field re-created with the same variable but a different data type must get a different deterministic id",
+                        originalField.id(), recreatedField.id());
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.ContentTypeAPI#save(ContentType, List)}
+     * Given Scenario: Replicates the push-publish receiver flow for issue #36636.
+     * <p>
+     * The receiver holds a TextField with dataType=TEXT whose deterministic id was seeded as
+     * {@code contentType:variable:TextField:text}. The sender deleted that field and re-created it
+     * with dataType=INTEGER, producing a different deterministic id seeded as
+     * {@code contentType:variable:TextField:integer}. When the sender pushes the content type, the
+     * receiver gets a field list where the same variable maps to a different id.
+     * <p>
+     * This also covers the mixed-version case: a sender running old code (no dataType in the
+     * seed) generates {@code contentType:variable:TextField} as the seed, which again differs
+     * from the receiver's stored id. In both cases the contract is the same: the receiver must
+     * recognise the variable match, drop the stale field, and persist the incoming one.
+     * <p>
+     * ExpectedResult: The old field is removed, and the incoming field (new id, new dataType) is
+     * persisted — the dataType change is never silently dropped.
+     */
+    @Test
+    public void Test_ContentType_Save_Applies_DataType_Change_When_Field_Id_Differs() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+            final String fieldVarName = "myField" + System.currentTimeMillis();
+
+            final Field textField = new FieldDataGen()
+                    .type(TextField.class)
+                    .name(fieldVarName)
+                    .velocityVarName(fieldVarName)
+                    .dataType(DataTypes.TEXT)
+                    .next();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(textField)
+                    .nextPersisted();
+            try {
+                // Receiver's stored field: id seeded from contentType:variable:TextField:text
+                final Field originalField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.TEXT, originalField.dataType());
+
+                // Build the incoming (sender-side) field without a pre-set id so the
+                // deterministic API can compute it from the seed contentType:variable:TextField:integer.
+                // That seed differs from the receiver's stored seed (:text vs :integer), so the
+                // resulting id will differ — exactly the push-publish mismatch we want to test.
+                final Field incomingFieldTemplate = FieldBuilder.builder(TextField.class)
+                        .name(fieldVarName)
+                        .variable(fieldVarName)
+                        .contentTypeId(contentType.id())
+                        .dataType(DataTypes.INTEGER)
+                        .build();
+                final String senderSideId = APILocator.getDeterministicIdentifierAPI()
+                        .generateDeterministicIdBestEffort(incomingFieldTemplate, () -> fieldVarName);
+                final Field recreatedField = FieldBuilder.builder(incomingFieldTemplate)
+                        .id(senderSideId)
+                        .build();
+
+                assertNotEquals(
+                        "Sender id (seeded with :integer) must differ from receiver id (seeded with :text)",
+                        originalField.id(), recreatedField.id());
+
+                // The content type has exactly one field (CONTENT base type has no required fields),
+                // so we pass only the incoming field — the old one is replaced entirely.
+                contentTypeAPI.save(contentType, List.of(recreatedField));
+
+                final Field savedField = fieldAPI
+                        .byContentTypeIdAndVar(contentType.id(), fieldVarName);
+                assertEquals(DataTypes.INTEGER, savedField.dataType());
+                assertEquals(recreatedField.id(), savedField.id());
+                assertNotEquals(originalField.id(), savedField.id());
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#resolveAssetName(Versionable)}
+     * Given Scenario: Two generic contentlets of the same content type, on the same host and
+     * folder, share the same title but differ in a non-binary field value — exactly the
+     * cross-environment collision described in issue #36855.
+     * Expected Results:
+     * 1. The two contentlets receive different deterministic identifiers.
+     * 2. Two truly identical contentlets (same type, host, folder, and all field values) still
+     *    receive the same deterministic identifier, so legitimate cross-environment matching
+     *    is not broken.
+     */
+    @Test
+    public void Test_GenericContentlet_SameTitleDifferentFieldValues_GetDifferentIds()
+            throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            // Create contentlets with deterministic IDs OFF so they get random UUIDs
+            // and won't collide with the candidate hashes we test below.
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, false);
+
+            final Host systemHost = APILocator.getHostAPI().findSystemHost();
+            final String cssWidthVar = "cssWidth" + System.currentTimeMillis();
+
+            final ContentType deviceType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .field(new FieldDataGen().name("Title").velocityVarName("title")
+                            .type(TextField.class).next())
+                    .field(new FieldDataGen().name("CSS Width").velocityVarName(cssWidthVar)
+                            .type(TextField.class).dataType(DataTypes.INTEGER).next())
+                    .nextPersisted();
+
+            try {
+                // Instance A: title=iphone, cssWidth=100
+                final Contentlet contentletA = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 100)
+                        .nextPersisted();
+
+                // Instance B: title=iphone, cssWidth=200 (different field value)
+                final Contentlet contentletB = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 200)
+                        .nextPersisted();
+
+                // Instance C: identical to A — must resolve to the same ID as A
+                final Contentlet contentletC = new ContentletDataGen(deviceType.id())
+                        .setProperty("title", "iphone")
+                        .setProperty(cssWidthVar, 100)
+                        .nextPersisted();
+
+                Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+                final String idA = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletA, systemHost);
+                final String idB = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletB, systemHost);
+                final String idC = defaultGenerator
+                        .generateDeterministicIdBestEffort(contentletC, systemHost);
+
+                assertNotEquals(
+                        "Two generic contentlets with the same title but different field values "
+                                + "must receive different deterministic identifiers",
+                        idA, idB);
+
+                assertEquals(
+                        "Two identical generic contentlets must receive the same deterministic "
+                                + "identifier so legitimate cross-environment push matching works",
+                        idA, idC);
+
+                assertTrue("Generated id must be a valid UUID", UUIDUtil.isUUID(idA));
+                assertTrue(defaultGenerator.isDeterministicId(idA));
+            } finally {
+                ContentTypeDataGen.remove(deviceType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link DeterministicIdentifierAPIImpl#resolveName(Field, Supplier)}
+     * Given Scenario: Two fields share the same variable and field type but differ on data type.
+     * ExpectedResult: The seed always includes the data type ({@code variable:typeName:dataType}),
+     * so fields with the same variable but different data types produce different seeds.
+     */
+    @Test
+    public void Test_ResolveName_Seed_Includes_DataType_When_Present() {
+        final String fieldVarName = "seedField";
+
+        final Field textDataTypeField = FieldBuilder.builder(TextField.class)
+                .name(fieldVarName)
+                .variable(fieldVarName)
+                .contentTypeId("fakeContentTypeId")
+                .dataType(DataTypes.TEXT)
+                .build();
+
+        final Field integerDataTypeField = FieldBuilder.builder(TextField.class)
+                .name(fieldVarName)
+                .variable(fieldVarName)
+                .contentTypeId("fakeContentTypeId")
+                .dataType(DataTypes.INTEGER)
+                .build();
+
+        final String textSeed = defaultGenerator
+                .resolveName(textDataTypeField, textDataTypeField::variable);
+        final String integerSeed = defaultGenerator
+                .resolveName(integerDataTypeField, integerDataTypeField::variable);
+
+        assertEquals(String.format("%s:%s:%s", fieldVarName, textDataTypeField.typeName(),
+                DataTypes.TEXT.value), textSeed);
+        assertEquals(String.format("%s:%s:%s", fieldVarName, integerDataTypeField.typeName(),
+                DataTypes.INTEGER.value), integerSeed);
+        assertNotEquals(
+                "Fields with the same variable but different data types must produce different seeds",
+                textSeed, integerSeed);
+    }
+
+    /**
+     * Method to test: {@link com.dotcms.contenttype.business.FieldFactory#save(Field)}
+     * Given Scenario: A TagField (whose acceptedDataTypes is exclusively SYSTEM) is saved twice via
+     * the API — once with an explicit {@code dataType=TEXT} in the payload (e.g. a direct REST call
+     * or an import file), and once with no dataType (defaulting to SYSTEM). Both payloads produce
+     * the same persisted row after {@code normalizeData} forces the dataType to SYSTEM.
+     * Expected Result: Both saves must produce the same deterministic id, because the id is seeded
+     * from the normalised field (dataType=SYSTEM) rather than the raw incoming payload.
+     */
+    @Test
+    public void Test_TagField_DeterministicId_Is_Independent_Of_Incoming_DataType() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final String fieldVarName = "tags" + System.currentTimeMillis();
+
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .nextPersisted();
+            try {
+                // Save a TagField with an explicit dataType=TEXT (as a REST API caller might send)
+                final Field savedWithText = fieldAPI.save(
+                        FieldBuilder.builder(TagField.class)
+                                .name(fieldVarName)
+                                .variable(fieldVarName)
+                                .contentTypeId(contentType.id())
+                                .dataType(DataTypes.TEXT)
+                                .build(),
+                        systemUser);
+
+                assertEquals("normalizeData must force dataType to SYSTEM regardless of payload",
+                        DataTypes.SYSTEM, savedWithText.dataType());
+
+                fieldAPI.delete(savedWithText);
+
+                // Save the same TagField without specifying dataType (defaults to SYSTEM)
+                final Field savedWithDefault = fieldAPI.save(
+                        FieldBuilder.builder(TagField.class)
+                                .name(fieldVarName)
+                                .variable(fieldVarName)
+                                .contentTypeId(contentType.id())
+                                .build(),
+                        systemUser);
+
+                assertEquals("normalizeData must force dataType to SYSTEM",
+                        DataTypes.SYSTEM, savedWithDefault.dataType());
+
+                assertEquals(
+                        "TagField id must be the same regardless of whether the payload carries dataType=TEXT or omits it",
+                        savedWithText.id(), savedWithDefault.id());
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
+        } finally {
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
+        }
+    }
+
+    /**
+     * Method to test: {@link CleanUpFieldReferencesJob#run}
+     * Given Scenario: The receiver holds two TEXT fields — {@code myField} with a legacy id
+     * (generated before dataType was added to the seed, simulated by disabling deterministic
+     * generation) and {@code genuineField} with its own legacy id. A push-publish bundle
+     * arrives carrying a new-recipe id for {@code myField} (same variable, same dataType) but
+     * no entry for {@code genuineField}, making that a genuine delete.
+     * <p>
+     * {@code transactionalSave} detects the same-variable match for {@code myField} and treats
+     * it as an in-place update rather than a delete+insert, preserving the stored id and never
+     * triggering {@code CleanUpFieldReferencesJob}. {@code genuineField} has no matching
+     * variable in the incoming list and is deleted normally.
+     * <p>
+     * Two assertions together prove correctness:
+     * <ol>
+     *   <li>{@code myField} stored id is preserved (the legacy id, not the new-recipe id) and
+     *       contentlet data is intact — no delete was triggered.</li>
+     *   <li>{@code genuineField} column is cleared after {@code CleanUpFieldReferencesJob} runs
+     *       manually — proves the genuine delete path still works (no vacuous pass).</li>
+     * </ol>
+     */
+    @Test
+    public void Test_TransactionalSave_PreservesContent_WhenVariableMatchesUnderDifferentId() throws Exception {
+        prepareIfNecessary();
+        final boolean generateConsistentIdentifiers = Config
+                .getBooleanProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+        try {
+            final User systemUser = APILocator.systemUser();
+            final FieldAPI fieldAPI = APILocator.getContentTypeFieldAPI();
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+            final String myFieldVar      = "myField"      + System.currentTimeMillis();
+            final String genuineFieldVar = "genuineField" + System.currentTimeMillis();
+            final String myFieldContent      = "hello world "     + System.currentTimeMillis();
+            final String genuineFieldContent = "genuine content "  + System.currentTimeMillis();
+
+            // Create both fields with deterministic id OFF to simulate legacy ids
+            // (created before dataType was added to the seed).
+            Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, false);
+            final ContentType contentType = new ContentTypeDataGen()
+                    .workflowId(SystemWorkflowConstants.SYSTEM_WORKFLOW_ID)
+                    .baseContentType(BaseContentType.CONTENT)
+                    .nextPersisted();
+            try {
+                final Field legacyField = fieldAPI.save(
+                        FieldBuilder.builder(TextField.class)
+                                .name(myFieldVar).variable(myFieldVar)
+                                .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build(),
+                        systemUser);
+
+                final Field genuineField = fieldAPI.save(
+                        FieldBuilder.builder(TextField.class)
+                                .name(genuineFieldVar).variable(genuineFieldVar)
+                                .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build(),
+                        systemUser);
+
+                // Create a contentlet with data in both fields.
+                final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                        .setProperty(myFieldVar, myFieldContent)
+                        .setProperty(genuineFieldVar, genuineFieldContent)
+                        .nextPersisted();
+                assertEquals(myFieldContent,      contentlet.get(myFieldVar));
+                assertEquals(genuineFieldContent, contentlet.get(genuineFieldVar));
+
+                // Switch to new-recipe generation and compute the sender-side id for myField.
+                Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, true);
+                final Field incomingTemplate = FieldBuilder.builder(TextField.class)
+                        .name(myFieldVar).variable(myFieldVar)
+                        .contentTypeId(contentType.id()).dataType(DataTypes.TEXT).build();
+                final String newRecipeId = APILocator.getDeterministicIdentifierAPI()
+                        .generateDeterministicIdBestEffort(incomingTemplate, () -> myFieldVar);
+                final Field incomingField = FieldBuilder.builder(incomingTemplate)
+                        .id(newRecipeId).build();
+
+                assertNotEquals("Legacy and new-recipe ids must differ to exercise the variable-match path",
+                        legacyField.id(), incomingField.id());
+
+                // Simulate push: only incomingField arrives — myField by same variable, genuineField absent.
+                contentTypeAPI.save(contentType, List.of(incomingField));
+
+                // transactionalSave must have matched myField by variable and preserved the legacy id.
+                final Field savedField = fieldAPI.byContentTypeIdAndVar(contentType.id(), myFieldVar);
+                assertEquals(
+                        "transactionalSave must preserve the stored id when variable matches under a different incoming id",
+                        legacyField.id(), savedField.id());
+
+                // Content must be intact — no delete was triggered, no CleanUpFieldReferencesJob ran.
+                final Contentlet refreshed = APILocator.getContentletAPI()
+                        .find(contentlet.getInode(), systemUser, false);
+                assertEquals(
+                        "Contentlet data must survive a same-variable push with a different id",
+                        myFieldContent, refreshed.get(myFieldVar));
+
+                // Run CleanUpFieldReferencesJob manually for genuineField (genuine delete — no
+                // matching variable in the incoming list). This proves the normal delete path
+                // still works and the result is not a vacuous pass.
+                final CleanUpFieldReferencesJob job = new CleanUpFieldReferencesJob();
+                final Map<String, Object> props = new HashMap<>();
+                props.put(EXECUTION_DATA, ImmutableMap.of(
+                        "field", genuineField,
+                        "deletionDate", new Date(System.currentTimeMillis() + 24 * 60 * 60 * 1000),
+                        "user", systemUser));
+                TestJobExecutor.execute(job, props);
+
+                final DotConnect dc = new DotConnect();
+                dc.setSQL("SELECT " + genuineField.dbColumn() + " FROM contentlet WHERE inode = ?");
+                dc.addParam(contentlet.getInode());
+                assertNull(
+                        "Job must have cleared the genuine field column, confirming delete path is intact",
+                        dc.loadObjectResults().getFirst().get(genuineField.dbColumn()));
+
+            } finally {
+                ContentTypeDataGen.remove(contentType);
+            }
         } finally {
             Config.setProperty(GENERATE_DETERMINISTIC_IDENTIFIERS, generateConsistentIdentifiers);
         }

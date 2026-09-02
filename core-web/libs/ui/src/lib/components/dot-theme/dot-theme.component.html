@@ -1,0 +1,168 @@
+@if (buttonTemplate()) {
+    <ng-container
+        [ngTemplateOutlet]="buttonTemplate()!"
+        [ngTemplateOutletContext]="{
+            $selectedThemeTitle: $selectedThemeTitle(),
+            popover: popover
+        }" />
+} @else {
+    <p-button
+        styleClass="!justify-between w-full hover:!border-primary-500 hover:!bg-transparent"
+        [dt]="{
+            root: {
+                secondary: {
+                    focusRing: {
+                        color: 'var(--p-select-focus-ring-color)',
+                        shadow: 'var(--p-select-focus-ring-shadow)'
+                    }
+                }
+            }
+        }"
+        [label]="$selectedThemeTitle()"
+        variant="outlined"
+        severity="secondary"
+        icon="pi pi-chevron-down"
+        iconPos="right"
+        [disabled]="$disabled()"
+        (click)="!$disabled() && popover.toggle($event)" />
+}
+
+<p-popover #popover>
+    <div class="flex h-[420px] max-w-2xl min-w-2xl flex-col overflow-hidden" [id]="id()">
+        <!-- DataView with grid layout -->
+        <p-dataview
+            [dt]="{
+                header: {
+                    border: {
+                        width: '0'
+                    },
+                    background: 'transparent',
+                    padding: '0'
+                },
+                paginator: {
+                    bottom: {
+                        border: {
+                            width: '0'
+                        }
+                    }
+                },
+                root: {
+                    border: {
+                        width: '0'
+                    }
+                }
+            }"
+            [pt]="{
+                root: {
+                    class: 'h-full !flex flex-col'
+                },
+                content: {
+                    class: 'flex-1 min-h-0 overflow-y-auto flex flex-col'
+                },
+                pcPaginator: {
+                    root: {
+                        class: 'flex-shrink-0'
+                    }
+                }
+            }"
+            #dataView
+            [value]="$currentPageThemes()"
+            [lazy]="true"
+            [paginator]="true"
+            [rows]="pageSize"
+            [totalRecords]="$state.pagination()?.totalEntries ?? 0"
+            [loading]="$state.loading()"
+            (onLazyLoad)="onLazyLoad($event)"
+            layout="grid">
+            <ng-template #header>
+                <!-- Header with site selector and search -->
+                <div class="mb-4 flex flex-col gap-4">
+                    @if ($state.error()) {
+                        <div
+                            class="rounded-sm border border-red-200 bg-red-50 p-3 text-sm text-red-800">
+                            <i class="pi pi-exclamation-triangle mr-2"></i>
+                            {{ $state.error() }}
+                        </div>
+                    }
+                    <div class="flex flex-row items-center gap-4">
+                        <dot-site
+                            [value]="$state.hostId()"
+                            (onChange)="onSiteChange($event)"
+                            [placeholder]="placeholder()"
+                            [disabled]="$disabled()"
+                            class="flex-1" />
+                        <p-iconfield class="flex-1">
+                            <input
+                                pInputText
+                                type="text"
+                                class="w-full"
+                                [value]="$state.searchValue()"
+                                [disabled]="$disabled()"
+                                (input)="onSearchChange($any($event.target).value)"
+                                placeholder="Search themes..." />
+                            <p-inputicon class="pi pi-search" />
+                        </p-iconfield>
+                    </div>
+                </div>
+            </ng-template>
+            <ng-template #grid let-items>
+                <div class="grid grid-cols-12 gap-4">
+                    @for (theme of items; track theme.identifier) {
+                        <div class="col-span-4">
+                            <label [for]="'theme-' + theme.identifier" class="block cursor-pointer">
+                                <div class="hidden">
+                                    <p-radioButton
+                                        [inputId]="'theme-' + theme.identifier"
+                                        name="theme-selection"
+                                        [value]="theme.identifier"
+                                        [ngModel]="value()"
+                                        (ngModelChange)="onThemeSelect($event)"
+                                        [disabled]="$disabled()" />
+                                </div>
+                                <p-card
+                                    class="transition-all duration-200 hover:scale-105"
+                                    [class.opacity-50]="$disabled()"
+                                    [dt]="{
+                                        root: {
+                                            color:
+                                                value() === theme.identifier ? '{primary.800}' : '',
+                                            background:
+                                                value() === theme.identifier ? '{primary.100}' : ''
+                                        }
+                                    }">
+                                    <ng-template #header>
+                                        <div class="flex min-h-[90px] items-center justify-center">
+                                            <div
+                                                class="flex aspect-16/8 w-full items-center justify-center bg-gray-900/5">
+                                                @if (theme.themeThumbnail) {
+                                                    <img
+                                                        [src]="getThemeThumbnailUrl(theme)"
+                                                        [alt]="theme.title"
+                                                        class="size-full object-cover"
+                                                        style="display: block" />
+                                                } @else {
+                                                    <i
+                                                        class="pi pi-palette"
+                                                        style="font-size: 2rem"
+                                                        aria-hidden="true"></i>
+                                                }
+                                            </div>
+                                        </div>
+                                    </ng-template>
+                                    <div>
+                                        <p class="m-0 font-medium">
+                                            {{ theme.title }}
+                                        </p>
+                                        <span class="truncate-text block text-sm">
+                                            {{ theme.path }}
+                                        </span>
+                                    </div>
+                                </p-card>
+                            </label>
+                        </div>
+                    }
+                </div>
+            </ng-template>
+        </p-dataview>
+    </div>
+</p-popover>

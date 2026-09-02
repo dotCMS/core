@@ -1,6 +1,6 @@
 import { describe } from '@jest/globals';
 import { MonacoEditorLoaderService, MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { EditorComponent } from '@tinymce/tinymce-angular';
 import { MockComponent } from 'ng-mocks';
 import { of } from 'rxjs';
@@ -16,10 +16,12 @@ import {
     ReactiveFormsModule
 } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { BlockEditorModule } from '@dotcms/block-editor';
 import {
+    DotContentTypeService,
     DotHttpErrorManagerService,
     DotLicenseService,
     DotMessageDisplayService,
@@ -27,14 +29,14 @@ import {
     DotSystemConfigService,
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotCMSBaseTypesContentTypes, DotCMSContentType } from '@dotcms/dotcms-models';
+import { DotCMSEditorComponent } from '@dotcms/new-block-editor';
+import { GlobalStore } from '@dotcms/store';
 import { DotKeyValueComponent, DotLanguageVariableSelectorComponent } from '@dotcms/ui';
 import { monacoMock } from '@dotcms/utils-testing';
 
 import { DotEditContentFieldComponent } from './dot-edit-content-field.component';
 
-import { DotBinaryFieldWrapperComponent } from '../../fields/dot-edit-content-binary-field/components/dot-binary-field-wrapper/dot-binary-field-wrapper.component';
 import { DotEditContentBlockEditorComponent } from '../../fields/dot-edit-content-block-editor/dot-edit-content-block-editor.component';
 import { DotEditContentCalendarFieldComponent } from '../../fields/dot-edit-content-calendar-field/dot-edit-content-calendar-field.component';
 import { DotEditContentCategoryFieldComponent } from '../../fields/dot-edit-content-category-field/dot-edit-content-category-field.component';
@@ -45,6 +47,7 @@ import { DotFileFieldUploadService } from '../../fields/dot-edit-content-file-fi
 import { DotEditContentHostFolderFieldComponent } from '../../fields/dot-edit-content-host-folder-field/dot-edit-content-host-folder-field.component';
 import { DotEditContentJsonFieldComponent } from '../../fields/dot-edit-content-json-field/dot-edit-content-json-field.component';
 import { DotEditContentKeyValueComponent } from '../../fields/dot-edit-content-key-value/dot-edit-content-key-value.component';
+import { DotEditContentLineDividerFieldComponent } from '../../fields/dot-edit-content-line-divider-field/dot-edit-content-line-divider-field.component';
 import { DotEditContentMultiSelectFieldComponent } from '../../fields/dot-edit-content-multi-select-field/dot-edit-content-multi-select-field.component';
 import { DotEditContentRadioFieldComponent } from '../../fields/dot-edit-content-radio-field/dot-edit-content-radio-field.component';
 import { DotEditContentRelationshipFieldComponent } from '../../fields/dot-edit-content-relationship-field/dot-edit-content-relationship-field.component';
@@ -55,6 +58,7 @@ import { DotEditContentTextFieldComponent } from '../../fields/dot-edit-content-
 import { DotEditContentWYSIWYGFieldComponent } from '../../fields/dot-edit-content-wysiwyg-field/dot-edit-content-wysiwyg-field.component';
 import { FIELD_TYPES } from '../../models/dot-edit-content-field.enum';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
 import { DotEditContentMonacoEditorControlComponent } from '../../shared/dot-edit-content-monaco-editor-control/dot-edit-content-monaco-editor-control.component';
 import { DotEditContentStore } from '../../store/edit-content.store';
 import {
@@ -62,6 +66,7 @@ import {
     createFormGroupDirectiveMock,
     DOT_MESSAGE_SERVICE_MOCK,
     FIELDS_MOCK,
+    LINE_DIVIDER_MOCK,
     TREE_SELECT_MOCK
 } from '../../utils/mocks';
 
@@ -70,6 +75,8 @@ interface DotEditFieldTestBed {
     imports?: Type<unknown>[];
     providers?: Provider[];
     declarations?: Type<unknown>[];
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    overrideComponents?: any[];
     props?: { [key: string]: unknown }[]; // ContentField Props, that we need to pass to the component inside
     outsideFormControl?: boolean; //If the component have [formControlName] hardcoded inside this ContentField component
 }
@@ -94,7 +101,31 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
     [FIELD_TYPES.TEXT]: DotEditContentTextFieldComponent,
     [FIELD_TYPES.RELATIONSHIP]: {
         component: DotEditContentRelationshipFieldComponent,
-        providers: [mockProvider(DialogService)]
+        providers: [
+            mockProvider(DialogService),
+            mockProvider(DotEditContentStore, {
+                contentType: signal(null),
+                isCopyingLocale: signal(false),
+                currentLocale: signal(undefined),
+                isDialogMode: signal(false),
+                contentlet: signal(null)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
+            }),
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    inPlaceNavigation: false,
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn(),
+                    goToRelatedContent: jest.fn(),
+                    goToCrumb: jest.fn()
+                }
+            }
+        ]
     },
     [FIELD_TYPES.FILE]: {
         component: DotEditContentFileFieldComponent,
@@ -145,6 +176,15 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                 }
             }
         ],
+        overrideComponents: [
+            [
+                DotEditContentBlockEditorComponent,
+                {
+                    remove: { imports: [DotCMSEditorComponent] },
+                    add: { imports: [MockComponent(DotCMSEditorComponent)] }
+                }
+            ]
+        ],
         outsideFormControl: true
     },
     [FIELD_TYPES.CUSTOM_FIELD]: {
@@ -160,8 +200,12 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         ]
     },
     [FIELD_TYPES.BINARY]: {
-        component: DotBinaryFieldWrapperComponent,
+        component: DotEditContentFileFieldComponent,
         providers: [
+            {
+                provide: DotFileFieldUploadService,
+                useValue: {}
+            },
             {
                 provide: DotLicenseService,
                 useValue: {
@@ -177,28 +221,29 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
             {
                 contentlet: BINARY_FIELD_CONTENTLET
             }
-        ],
-        outsideFormControl: true
+        ]
     },
     [FIELD_TYPES.JSON]: {
         component: DotEditContentJsonFieldComponent,
-        imports: [ReactiveFormsModule, MonacoEditorModule],
+        imports: [
+            ReactiveFormsModule,
+            MonacoEditorModule,
+            MockComponent(DotLanguageVariableSelectorComponent),
+            MockComponent(DotEditContentMonacoEditorControlComponent)
+        ],
         providers: [
             mockProvider(DotMessageDisplayService),
             { provide: MonacoEditorLoaderService, useValue: { isMonacoLoaded$: of(true) } }
-        ],
-        declarations: [
-            MockComponent(DotLanguageVariableSelectorComponent),
-            MockComponent(DotEditContentMonacoEditorControlComponent)
         ]
     },
     [FIELD_TYPES.KEY_VALUE]: {
         component: DotEditContentKeyValueComponent,
-        declarations: [MockComponent(DotKeyValueComponent)],
+        imports: [MockComponent(DotKeyValueComponent)],
         providers: [mockProvider(DotMessageDisplayService)]
     },
     [FIELD_TYPES.WYSIWYG]: {
         component: DotEditContentWYSIWYGFieldComponent,
+        imports: [MockComponent(EditorComponent)],
         providers: [
             {
                 provide: DotFileFieldUploadService,
@@ -214,8 +259,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
                     showSidebar: signal(false)
                 }
             }
-        ],
-        declarations: [MockComponent(EditorComponent)]
+        ]
     },
     [FIELD_TYPES.CATEGORY]: {
         component: DotEditContentCategoryFieldComponent
@@ -227,7 +271,7 @@ const FIELD_TYPES_COMPONENTS: Record<FIELD_TYPES, Type<unknown> | DotEditFieldTe
         component: null // this field is not being rendered for now.
     },
     [FIELD_TYPES.LINE_DIVIDER]: {
-        component: null
+        component: DotEditContentLineDividerFieldComponent
     }
 };
 
@@ -253,14 +297,26 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     let spectator: Spectator<DotEditContentFieldComponent>;
 
     const createComponent = createComponentFactory({
-        imports: [...(fieldTestBed?.imports || [])],
+        imports: [DotEditContentFieldComponent, ...(fieldTestBed?.imports || [])],
         declarations: [...(fieldTestBed?.declarations || [])],
         component: DotEditContentFieldComponent,
+        overrideComponents: fieldTestBed?.overrideComponents ?? [],
         providers: [
             FormGroupDirective,
             provideHttpClient(),
             provideHttpClientTesting(),
             ...(fieldTestBed?.providers || []),
+            ConfirmationService,
+            mockProvider(DotContentTypeService),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -292,16 +348,17 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
                         cluster: { clusterId: 'cluster-id', companyKeyDigest: 'digest' }
                     })
                 )
-            }),
-            mockProvider(CoreWebService)
+            })
         ]
     });
 
     beforeEach(async () => {
+        const extraProps = fieldTestBed?.props;
+        const propsObject = Array.isArray(extraProps) ? (extraProps[0] ?? {}) : (extraProps ?? {});
         spectator = createComponent({
             props: {
                 field: fieldMock,
-                ...(fieldTestBed?.props || {})
+                ...propsObject
             },
             providers: [
                 ...(fieldTestBed?.providers || []),
@@ -330,7 +387,8 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
         if (
             fieldMock.fieldType !== FIELD_TYPES.DATE &&
             fieldMock.fieldType !== FIELD_TYPES.DATE_AND_TIME &&
-            fieldMock.fieldType !== FIELD_TYPES.TIME
+            fieldMock.fieldType !== FIELD_TYPES.TIME &&
+            fieldMock.fieldType !== FIELD_TYPES.BLOCK_EDITOR
         ) {
             it('should render the hint if present', () => {
                 spectator.detectChanges();
@@ -350,6 +408,55 @@ describe.each([...FIELDS_TO_BE_RENDER])('DotEditContentFieldComponent all fields
     });
 });
 
+describe('DotEditContentFieldComponent - Line Divider Field', () => {
+    let spectator: Spectator<DotEditContentFieldComponent>;
+
+    const createComponent = createComponentFactory({
+        component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
+        providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
+            mockProvider(DotHttpErrorManagerService),
+            {
+                provide: ControlContainer,
+                useValue: createFormGroupDirectiveMock()
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent({
+            props: {
+                field: LINE_DIVIDER_MOCK
+            }
+        });
+    });
+
+    it('should render the line divider field component', () => {
+        spectator.detectChanges();
+
+        const lineDividerField = spectator.query(DotEditContentLineDividerFieldComponent);
+        expect(lineDividerField).toBeTruthy();
+    });
+
+    it('should render the line divider title with the field name', () => {
+        spectator.detectChanges();
+
+        const title = spectator.query(byTestId('line-divider-title'));
+        expect(title?.textContent?.trim()).toBe(LINE_DIVIDER_MOCK.name);
+    });
+});
+
 describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
     let spectator: Spectator<DotEditContentFieldComponent>;
     let realForm: FormGroup;
@@ -357,9 +464,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -372,7 +489,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill', () => {
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -509,9 +625,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -524,7 +650,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Non-FILEASSET)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -576,9 +701,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -591,7 +726,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Null ContentTyp
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -642,9 +776,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -657,7 +801,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (Title Only)', (
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),
@@ -706,9 +849,19 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
 
     const createComponent = createComponentFactory({
         component: DotEditContentFieldComponent,
+        imports: [DotEditContentFieldComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
+            mockProvider(GlobalStore, {
+                systemConfig: signal({
+                    systemTimezone: {
+                        id: 'UTC',
+                        label: 'Coordinated Universal Time',
+                        offset: 0
+                    }
+                })
+            }),
             mockProvider(DotHttpErrorManagerService),
             mockProvider(DotSystemConfigService, {
                 getSystemConfig: jest.fn().mockReturnValue(
@@ -721,7 +874,6 @@ describe('DotEditContentFieldComponent - Binary Field Auto-fill (FileName Only)'
                     })
                 )
             }),
-            mockProvider(CoreWebService),
             mockProvider(DotMessageService),
             mockProvider(DotMessageDisplayService),
             mockProvider(DotLicenseService),

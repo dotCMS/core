@@ -2,19 +2,19 @@ import { Subject } from 'rxjs';
 
 import { ChangeDetectorRef, Directive, Input, OnDestroy, OnInit, inject } from '@angular/core';
 
-import { Dropdown } from 'primeng/dropdown';
+import { Select } from 'primeng/select';
 
 import { debounceTime, take, takeUntil } from 'rxjs/operators';
 
 import { DotEventsService, PaginatorService, DotSiteService } from '@dotcms/data-access';
-import { Site } from '@dotcms/dotcms-js';
+import { DotSite } from '@dotcms/dotcms-models';
 
 @Directive({
     selector: '[dotSiteSelector]',
     providers: [PaginatorService]
 })
 export class DotSiteSelectorDirective implements OnInit, OnDestroy {
-    private readonly primeDropdown = inject(Dropdown, { optional: true, self: true });
+    private readonly primeDropdown = inject(Select, { optional: true, self: true });
     private readonly dotEventsService = inject(DotEventsService);
     private readonly dotSiteService = inject(DotSiteService);
     private readonly cd = inject(ChangeDetectorRef);
@@ -26,7 +26,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
 
     private readonly destroy$: Subject<boolean> = new Subject<boolean>();
     private readonly dotEvents = ['login-as', 'logout-as'];
-    private readonly control: Dropdown;
+    private readonly control: Select;
 
     constructor() {
         this.control = this.primeDropdown;
@@ -60,7 +60,7 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      * Set the options of the dropdown
      * @param options
      */
-    private setOptions(options: Array<Site>): void {
+    private setOptions(options: Array<DotSite>): void {
         this.primeDropdown.options = [...options];
         this.cd.detectChanges();
     }
@@ -72,8 +72,8 @@ export class DotSiteSelectorDirective implements OnInit, OnDestroy {
      */
     private getSitesList(filter = ''): void {
         this.dotSiteService
-            .getSites(filter, this.pageSize)
+            .getSites({ filter, per_page: this.pageSize })
             .pipe(take(1))
-            .subscribe((items: Site[]) => this.setOptions(items));
+            .subscribe(({ sites }) => this.setOptions(sites));
     }
 }

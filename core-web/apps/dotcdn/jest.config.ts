@@ -1,13 +1,9 @@
-/* eslint-disable */
 export default {
     displayName: 'dotcdn',
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageReporters: [['lcovonly', { file: 'TEST-dotcdn.lcov' }]],
     reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {
@@ -25,6 +21,7 @@ export default {
         '^.+.(ts|mjs|js|html)$': [
             'jest-preset-angular',
             {
+                isolatedModules: true,
                 stringifyContentPathRegex: '\\.(html|svg)$',
                 tsconfig: '<rootDir>/tsconfig.spec.json'
             }

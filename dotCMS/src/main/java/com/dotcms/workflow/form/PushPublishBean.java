@@ -2,17 +2,37 @@ package com.dotcms.workflow.form;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import io.swagger.v3.oas.annotations.media.Schema;
 
+@Schema(description = "Push-publish settings applied when the resolved workflow action wires "
+        + "the Push Publish actionlet.")
 public class PushPublishBean {
 
+    @Schema(description = "Push-publish environment identifier or name to receive the content.")
     private final String whereToSend;
+
+    @Schema(description = "Publish date (yyyy-MM-dd).")
     private final String publishDate;
+
+    @Schema(description = "Publish time (HH:mm).")
     private final String publishTime;
+
+    @Schema(description = "Expire date (yyyy-MM-dd). Ignored when 'neverExpire' is true.")
     private final String expireDate;
+
+    @Schema(description = "Expire time (HH:mm). Ignored when 'neverExpire' is true.")
     private final String expireTime;
+
+    @Schema(description = "If 'true', the content does not expire. Overrides expireDate/expireTime.")
     private final String neverExpire;
+
+    @Schema(description = "Push-publish filter key (defines what gets bundled with the content).")
     private final String filterKey;
+
+    @Schema(description = "What the caller intends to do with the content (push-publish flow flag).")
     private final String iWantTo;
+
+    @Schema(description = "Timezone identifier (e.g. 'America/New_York') for publish/expire dates.")
     private final String timezoneId;
 
     @JsonCreator

@@ -1,0 +1,113 @@
+<script type="module">
+    const SOURCE_FIELD = 'title';
+    const TARGET_FIELD = 'urlTitle';
+    const SLUG_INPUT = 'slugInput';
+    const SUGGESTION_DIV = 'slugSuggestion';
+
+    let isLocked = false;
+    let currentValue = '';
+
+    const slugifyText = text => text
+        .toLowerCase()
+        .replace(/[àáäâ]/g, 'a')
+        .replace(/[èéëê]/g, 'e')
+        .replace(/[ìíïî]/g, 'i')
+        .replace(/[òóöô]/g, 'o')
+        .replace(/[ùúüû]/g, 'u')
+        .replace(/[ñ]/g, 'n')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+
+    DotCustomFieldApi.ready(() => {
+        const sourceField = DotCustomFieldApi.getField(SOURCE_FIELD);
+        const targetField = DotCustomFieldApi.getField(TARGET_FIELD);
+        const input = document.getElementById(SLUG_INPUT);
+        const suggestion = document.getElementById(SUGGESTION_DIV);
+        const savedValue = targetField.getValue();
+
+        if (savedValue) {
+            input.value = savedValue;
+            currentValue = savedValue;
+        }
+
+        const applyValidationState = state => {
+            const showError = state.invalid && state.touched;
+            input.classList.toggle('is-invalid', showError);
+        };
+
+        // onValidationChange emits the initial state synchronously, so no need
+        // to also call getValidationState() up front. Return value (unsubscribe)
+        // can be ignored — the bridge tears subscriptions down on form destroy.
+        targetField.onValidationChange(applyValidationState);
+
+        const hideSuggestion = () => {
+            suggestion.classList.add('hidden');
+            suggestion.classList.remove('block');
+            suggestion.innerHTML = '';
+        };
+
+        const applySuggestion = slug => {
+            input.value = slug;
+            currentValue = slug;
+            isLocked = true;
+            targetField.setValue(slug); // WRITE A VALUE
+            hideSuggestion();
+        };
+
+        const showSuggestion = newSlug => {
+            if (!newSlug || newSlug === currentValue) {
+                hideSuggestion();
+                return;
+            }
+
+            suggestion.innerHTML = '';
+
+            const link = document.createElement('a');
+            link.href = '#';
+            link.className = 'link link-primary';
+            link.textContent = `Use: ${newSlug}`;
+            link.addEventListener('click', event => {
+                event.preventDefault();
+                applySuggestion(newSlug);
+            });
+
+            suggestion.appendChild(link);
+            suggestion.classList.remove('hidden');
+            suggestion.classList.add('block');
+        };
+
+        const handleInput = () => {
+            const newSlug = slugifyText(input.value);
+            input.value = newSlug;
+            currentValue = newSlug;
+            isLocked = true;
+            targetField.setValue(newSlug); // WRITE A VALUE
+        };
+
+        sourceField.onChange(value => { // LISTEN A VALUE
+            const newSlug = slugifyText(value);
+            showSuggestion(newSlug);
+        });
+
+        input.addEventListener('keyup', handleInput);
+    });
+</script>
+
+<style>
+    #slugInput.is-invalid {
+        border-color: #ef4444;
+        outline-color: #ef4444;
+    }
+</style>
+
+<input
+    type="text"
+    id="slugInput"
+    class="input input-bordered w-full"
+/>
+<div
+    id="slugSuggestion"
+    class="hidden mt-2 text-primary"
+    role="region"
+    aria-live="polite"
+></div>

@@ -4,13 +4,14 @@
 
 Welcome to the frontend onboarding guide. This document will help you get set up quickly and efficiently, providing all the necessary information to start contributing to the project.
 
-> **📚 Important**: After completing this onboarding, refer to the comprehensive documentation in the `/docs/` directory for detailed development patterns, coding standards, and architectural guidance. Start with [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md) and [Testing Frontend](docs/frontend/TESTING_FRONTEND.md) for frontend development.
+> **📚 Important**: After completing this onboarding, refer to the comprehensive documentation in the `/docs/` directory for detailed development patterns, coding standards, and architectural guidance. For frontend development, start with the index at [docs/frontend/README.md](docs/frontend/README.md), which lists every frontend doc and when to load it — then read [Angular Standards](docs/frontend/ANGULAR_STANDARDS.md), the single source of truth.
 
 ### Tech Stack Overview
-- **Angular**: 18.2.3 with standalone components and signals
-- **UI Components**: PrimeNG 17.18.11, PrimeFlex 3.3.1  
-- **State Management**: NgRx Signals, Component Store
-- **Build Tool**: Nx 19.6.5
+- **Angular**: 22.0.7 with standalone components and signals
+- **UI Components**: PrimeNG 21.1.3
+- **State Management**: NgRx Signals, Component Store (21.1.1)
+- **Build Tool**: Nx 23.1.0
+- **Node**: 22.22.3+ (pinned via `.nvmrc`)
 - **Testing**: Jest + Spectator (required) 
 
 ## Prerequisites

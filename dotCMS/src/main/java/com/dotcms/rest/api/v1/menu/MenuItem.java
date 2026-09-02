@@ -1,5 +1,7 @@
 package com.dotcms.rest.api.v1.menu;
 
+import java.util.Map;
+
 /**
  * Created by freddyrodriguez on 18/5/16.
  */
@@ -10,21 +12,38 @@ public class MenuItem {
     private String label;
     private boolean angular = false;
     private boolean isAjax = false;
+    private Map<String, String> initParams;
 
     /**
      * Generate a Submenu portlet
      * @param id  Portlet id
      * @param url Portlet url
      * @param label Portlet label
-     * @param isAngular if the portlet is an PortletController portlet 
+     * @param isAngular if the portlet is an PortletController portlet
      * @param isAjax if the portlet is an BaseRestPortlet portlet
      */
     public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax) {
+        this(id, url, label, isAngular, isAjax, Map.of());
+    }
+
+    /**
+     * Generate a Submenu portlet with dynamic Angular module loading support
+     *
+     * @param id            Portlet id
+     * @param url           Portlet url
+     * @param label         Portlet label
+     * @param isAngular     if the portlet is an PortletController portlet
+     * @param isAjax        if the portlet is an BaseRestPortlet portlet
+     * @param initParams the Angular module path for dynamic lazy loading (e.g., "@dotcms/portlets/my-custom")
+     */
+    public MenuItem(String id, String url, String label, boolean isAngular, boolean isAjax,
+            Map<String, String> initParams) {
         this.url = url;
         this.id = id;
         this.label = label;
         this.angular = isAngular;
         this.isAjax = isAjax;
+        this.initParams = initParams;
     }
 
     /**
@@ -65,5 +84,15 @@ public class MenuItem {
      */
     public boolean isAjax() {
         return isAjax;
+    }
+
+    /**
+     * Get the Angular module path for dynamic lazy loading. This is used by the frontend to dynamically import and
+     * register the portlet's Angular module.
+     *
+     * @return the Angular module path (e.g., "@dotcms/portlets/my-custom"), or null if not set
+     */
+    public Map<String, String> getInitParams() {
+        return initParams;
     }
 }

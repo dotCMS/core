@@ -38,6 +38,7 @@ import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.liferay.portal.model.User;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.EscapeTool;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -47,6 +48,7 @@ import java.math.BigDecimal;
 import java.text.DecimalFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -147,6 +149,8 @@ public class ContentMapTest extends IntegrationTestBase {
 
         APILocator.getPermissionAPI().save(catsPermsSystemHost, APILocator.systemHost(),
                 APILocator.systemUser(), false);
+        // Ensure permissions are properly propagated to child categories
+        APILocator.getPermissionAPI().resetPermissionsUnder(APILocator.systemHost());
 
         //Create Categories
         final Category categoryChild1 = new CategoryDataGen().setCategoryName("RoadBike-"+System.currentTimeMillis()).setKey("RoadBike").setKeywords("RoadBike").setCategoryVelocityVarName("roadBike").next();
@@ -466,6 +470,46 @@ public class ContentMapTest extends IntegrationTestBase {
     }
 
     /**
+     * Method to test: {@link ContentMap#get(String)} applied on a text field whose value ends with a bare dollar sign.
+     * Given Scenario: A contentlet title is set to "Title $". Without the fix, Velocity throws a
+     *                 ParseException when merging the .field.vm template, ContentMap returns null,
+     *                 and the caller's $urlMapContent.title renders as a literal expression string.
+     * ExpectedResult: The field value is returned as-is with the dollar sign preserved ("Title $").
+     * @see <a href="https://github.com/dotCMS/core/issues/32951">Issue #32951</a>
+     */
+    @Test
+    public void testGet_textField_withTrailingDollarSign_preservesDollarSign()
+            throws DotDataException, DotSecurityException {
+        ContentType contentType = null;
+        try {
+            contentType = createContentType("testTrailingDollar" + System.currentTimeMillis());
+            createTextField("title", contentType.id());
+
+            final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                    .host(defaultHost)
+                    .setProperty("title", "Title $")
+                    .nextPersisted();
+            ContentletDataGen.publish(contentlet);
+
+            // A real VelocityContext with EscapeTool is required so that $esc.d
+            // in the generated .field.vm resolves to a literal "$" during merge.
+            final Context velocityContext = new VelocityContext();
+            velocityContext.put("esc", new EscapeTool());
+
+            final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                    PageMode.LIVE, defaultHost, velocityContext);
+
+            final Object result = contentMap.get("title");
+            assertNotNull("Field value must not be null when title ends with $", result);
+            assertEquals("Title $", result.toString());
+        } finally {
+            if (contentType != null) {
+                contentTypeAPI.delete(contentType);
+            }
+        }
+    }
+
+    /**
      * Method to test: {@link ContentMap#get(String)} applied on a request on context recycled
      * Given Scenario: Tries to recover a property, but the request is already recycled
      * ExpectedResult: The recycled request should not broke the get
@@ -475,7 +519,7 @@ public class ContentMapTest extends IntegrationTestBase {
     @Test
     public void testGetRecycledRequest() throws DotDataException, DotSecurityException {
 
-        final List<Contentlet> contentlets = APILocator.getContentletAPI().findAllContent(1, 5);
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(1, 5);
         if(contentlets.isEmpty()) {
             throw new DotDataException("No contentlets found");
         }
@@ -489,6 +533,54 @@ public class ContentMapTest extends IntegrationTestBase {
 
         final Object title = contentMap.get("title");
         Assert.assertNotNull(title);
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
+     * Given Scenario: Contentlet has dotStyleProperties in its map (from UVE style editor / MultiTree)
+     * ExpectedResult: get("dotStyleProperties") returns the style properties map
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenPresent() throws DotDataException, DotSecurityException {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Map<String, Object> styleProperties = new HashMap<>();
+        styleProperties.put("fontSize", "18px");
+        styleProperties.put("color", "#333");
+        contentlet.getMap().put(Contentlet.STYLE_PROPERTIES_KEY, styleProperties);
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        final Map<String, Object> result = (Map<String, Object>) contentMap.get(Contentlet.STYLE_PROPERTIES_KEY);
+        assertNotNull(result);
+        assertEquals("18px", result.get("fontSize"));
+        assertEquals("#333", result.get("color"));
+    }
+
+    /**
+     * Method to test: {@link ContentMap#get(String)} with "dotStyleProperties"
+     * Given Scenario: Contentlet has no dotStyleProperties (not on a page container or no styles set)
+     * ExpectedResult: get("dotStyleProperties") returns null
+     */
+    @Test
+    public void testGetDotStyleProperties_WhenAbsent() throws DotDataException, DotSecurityException {
+        final ContentType contentType = TestDataUtils.getNewsLikeContentType();
+        final Contentlet contentlet = new ContentletDataGen(contentType.id())
+                .host(defaultHost)
+                .setProperty("title", "Test")
+                .nextPersisted();
+
+        final Context velocityContext = mock(Context.class);
+        final ContentMap contentMap = new ContentMap(contentlet, userAPI.getAnonymousUser(),
+                PageMode.LIVE, defaultHost, velocityContext);
+
+        Assert.assertNull(contentMap.get(Contentlet.STYLE_PROPERTIES_KEY));
     }
 
 }

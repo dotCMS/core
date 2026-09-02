@@ -1,4 +1,4 @@
-import { useCallback, useReducer } from 'react';
+import { useCallback, useReducer, useRef, useEffect } from 'react';
 
 import {
     DotCMSAISearchResponse,
@@ -72,6 +72,14 @@ export const useAISearch = <T extends DotCMSBasicContentlet>({
         status: { state: DotCMSEntityState.IDLE }
     });
 
+    // Use ref to store params so search callback doesn't change when params change
+    const paramsRef = useRef(params);
+
+    // Keep ref updated with latest params
+    useEffect(() => {
+        paramsRef.current = params;
+    }, [params]);
+
     const reset = useCallback(() => {
         dispatch({ type: DotCMSEntityState.IDLE });
     }, []);
@@ -86,19 +94,19 @@ export const useAISearch = <T extends DotCMSBasicContentlet>({
             dispatch({ type: DotCMSEntityState.LOADING });
             try {
                 const response = await client.ai.search<T>(prompt, indexName, {
-                    ...params
+                    ...paramsRef.current
                 });
                 dispatch({ type: DotCMSEntityState.SUCCESS, payload: response });
             } catch (error) {
                 dispatch({ type: DotCMSEntityState.ERROR, payload: error as Error });
             }
         },
-        [client, indexName, params]
+        [client, indexName]
     );
 
     return {
         response: state.response,
-        results: state.response?.results,
+        results: state.response?.results ?? [],
         status: state.status,
         search,
         reset

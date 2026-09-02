@@ -10,160 +10,346 @@ import { MultiSelect, MultiSelectModule } from 'primeng/multiselect';
 
 import { getEditorBlockOptions } from '@dotcms/block-editor';
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
+import { DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService, mockFieldVariables } from '@dotcms/utils-testing';
 
 import { DotBlockEditorSettingsComponent } from './dot-block-editor-settings.component';
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
-describe('DotContentTypeFieldsVariablesComponent', () => {
-    let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
-    let component: DotBlockEditorSettingsComponent;
-    let de: DebugElement;
-    let dotFieldVariableService: DotFieldVariablesService;
-    let dotHttpErrorManagerService: DotHttpErrorManagerService;
-    let amountFields;
+const messageServiceMock = new MockDotMessageService({
+    'contenttypes.dropzone.action.save': 'Save',
+    'contenttypes.dropzone.action.cancel': 'Cancel'
+});
 
-    const messageServiceMock = new MockDotMessageService({
-        'contenttypes.dropzone.action.save': 'Save',
-        'contenttypes.dropzone.action.cancel': 'Cancel'
-    });
+const mockFieldVariablesServiceWithData = {
+    load: jest.fn().mockReturnValue(
+        of([
+            {
+                clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
+                fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
+                id: '9671d2c3-793b-41af-a485-e2c5fcba5fb',
+                key: 'allowedBlocks',
+                value: 'orderList,unorderList,table'
+            }
+        ])
+    ),
+    save: jest.fn().mockReturnValue(of([])),
+    delete: jest.fn().mockReturnValue(of([]))
+};
 
-    beforeEach(waitForAsync(() => {
-        TestBed.configureTestingModule({
-            declarations: [DotBlockEditorSettingsComponent],
-            imports: [MultiSelectModule, CommonModule, FormsModule, ReactiveFormsModule],
-            providers: [
-                FormBuilder,
-                {
-                    provide: DotFieldVariablesService,
-                    useValue: {
-                        load: () =>
-                            of([
-                                {
-                                    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField',
-                                    fieldId: 'f965a51b-130a-435f-b646-41e07d685363',
-                                    id: '9671d2c3-793b-41af-a485-e2c5fcba5fb',
-                                    key: 'allowedBlocks',
-                                    value: 'orderList,unorderList,table'
-                                }
-                            ]),
-                        save: () => of([]),
-                        delete: () => of([])
+const mockFieldVariablesServiceEmpty = {
+    load: jest.fn().mockReturnValue(of([])),
+    save: jest.fn().mockReturnValue(of([])),
+    delete: jest.fn().mockReturnValue(of([]))
+};
+
+const MOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    id: 'f965a51b-130a-435f-b646-41e07d685363',
+    name: 'testField',
+    clazz: 'com.dotcms.contenttype.model.field.ImmutableStoryBlockField'
+} as unknown;
+
+const CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            }
+                        ]
                     }
-                },
-                {
-                    provide: DotMessageService,
-                    useValue: messageServiceMock
-                },
-                {
-                    provide: DotHttpErrorManagerService,
-                    useValue: {
-                        handle: () => of([])
+                ]
+            })
+        }
+    ]
+} as unknown;
+
+const CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [
+        {
+            key: 'customBlocks',
+            value: JSON.stringify({
+                extensions: [
+                    {
+                        url: 'https://example.com/custom-gallery.js',
+                        actions: [
+                            {
+                                command: 'addCustomGallery',
+                                menuLabel: 'Custom Gallery',
+                                icon: 'photo_library',
+                                name: 'customGallery'
+                            },
+                            {
+                                command: 'addBynderImage',
+                                menuLabel: '',
+                                icon: 'image',
+                                name: 'bynderImage'
+                            },
+                            {
+                                command: 'addParagraphDuplicate',
+                                menuLabel: 'Paragraph Duplicate',
+                                icon: 'notes',
+                                name: 'paragraph'
+                            },
+                            {
+                                command: 'missingName',
+                                menuLabel: 'Missing Name',
+                                icon: 'warning'
+                            }
+                        ]
                     }
-                }
-            ]
-        }).compileComponents();
+                ]
+            })
+        }
+    ]
+} as unknown;
 
-        fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
-        de = fixture.debugElement;
-        component = de.componentInstance;
-        dotFieldVariableService = de.injector.get(DotFieldVariablesService);
-        dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
-        amountFields = component.settings.length;
-    }));
+const MALFORMED_CUSTOM_BLOCK_FIELD: Partial<DotCMSContentTypeField> = {
+    ...MOCK_FIELD,
+    fieldVariables: [{ key: 'customBlocks', value: '{ not json' }]
+} as unknown;
 
-    it('should not setup form values', () => {
-        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
-        fixture.detectChanges();
-        expect(component.form.get('allowedBlocks').value).toBe(null);
-    });
+describe('DotBlockEditorSettingsComponent', () => {
+    describe('with existing variables', () => {
+        let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
+        let component: DotBlockEditorSettingsComponent;
+        let de: DebugElement;
+        let dotFieldVariableService: DotFieldVariablesService;
+        let dotHttpErrorManagerService: DotHttpErrorManagerService;
+        let amountFields: number;
 
-    it('should setup from value', () => {
-        const value = ['orderList', 'unorderList', 'table'];
-        fixture.detectChanges();
-        const selector = de.query(By.css('p-multiselect'));
-        expect(component.form.get('allowedBlocks').value).toEqual(value);
-        expect(selector).toBeTruthy();
-    });
+        beforeEach(waitForAsync(() => {
+            // Reset mocks
+            mockFieldVariablesServiceWithData.load.mockClear();
+            mockFieldVariablesServiceWithData.save.mockClear();
+            mockFieldVariablesServiceWithData.delete.mockClear();
 
-    it('should emit changeControls when isVisible input is true', () => {
-        fixture.detectChanges();
-        jest.spyOn(component.changeControls, 'emit');
-        component.ngOnChanges({
-            isVisible: new SimpleChange(false, true, false)
-        });
-        fixture.detectChanges();
-        expect(component.changeControls.emit).toHaveBeenCalled();
-    });
+            TestBed.configureTestingModule({
+                declarations: [DotBlockEditorSettingsComponent],
+                imports: [MultiSelectModule, CommonModule, FormsModule, ReactiveFormsModule],
+                providers: [
+                    FormBuilder,
+                    {
+                        provide: DotFieldVariablesService,
+                        useValue: mockFieldVariablesServiceWithData
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useValue: {
+                            handle: () => of([])
+                        }
+                    }
+                ]
+            }).compileComponents();
 
-    it('should emit valid output on form change', () => {
-        jest.spyOn(component.valid, 'emit');
-        fixture.detectChanges();
-        component.form.get('allowedBlocks').setValue(['codeblock']);
-        expect(component.valid.emit).toHaveBeenCalled();
-    });
+            fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            de = fixture.debugElement;
+            component = de.componentInstance;
+            dotFieldVariableService = de.injector.get(DotFieldVariablesService);
+            dotHttpErrorManagerService = de.injector.get(DotHttpErrorManagerService);
+            amountFields = component.settings.length;
+        }));
 
-    it('should save properties on saveSettings', () => {
-        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(mockFieldVariables[0]));
-        jest.spyOn(component.save, 'emit');
-        fixture.detectChanges();
-        component.saveSettings();
-        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
-        expect(component.save.emit).toHaveBeenCalled();
-        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
-    });
-
-    it('should delete properties on saveSettings when is empty', () => {
-        jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of(mockFieldVariables[0]));
-        jest.spyOn(component.save, 'emit');
-        fixture.detectChanges();
-        component.form.get('allowedBlocks').setValue([]);
-        component.saveSettings();
-        expect(dotFieldVariableService.delete).toHaveBeenCalled();
-        expect(component.save.emit).toHaveBeenCalled();
-        expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
-    });
-
-    it('should not call save or delete when is empty and not previus vairable exist', () => {
-        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
-        jest.spyOn(dotFieldVariableService, 'delete');
-        jest.spyOn(dotFieldVariableService, 'save');
-        fixture.detectChanges();
-        component.form.get('allowedBlocks').setValue([]);
-        component.saveSettings();
-        expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
-        expect(dotFieldVariableService.save).not.toHaveBeenCalled();
-    });
-
-    it('should handler error if save proprties faild', () => {
-        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(throwError({}));
-        jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
-        jest.spyOn(component.save, 'emit');
-        fixture.detectChanges();
-        component.saveSettings();
-        expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
-        expect(component.save.emit).not.toHaveBeenCalled();
-    });
-
-    describe('MultiSelector', () => {
-        let multiselect: MultiSelect;
-
-        beforeEach(() => {
+        it('should setup form value', () => {
+            const value = ['orderList', 'unorderList', 'table'];
             fixture.detectChanges();
-            multiselect = de.query(By.css('p-multiselect')).componentInstance;
+            const selector = de.query(By.css('p-multiselect'));
+            expect(component.form.get('allowedBlocks').value).toEqual(value);
+            expect(selector).toBeTruthy();
         });
 
-        it('should have append to bobdy', () => {
-            expect(multiselect.appendTo).toEqual('body');
+        it('should emit changeControls when isVisible input is true', () => {
+            fixture.detectChanges();
+            jest.spyOn(component.$changeControls, 'emit');
+            component.ngOnChanges({
+                $isVisible: new SimpleChange(false, true, false)
+            });
+            fixture.detectChanges();
+            expect(component.$changeControls.emit).toHaveBeenCalled();
         });
 
-        it('should have Editor Block Options options', () => {
-            expect(multiselect.options).toEqual(getEditorBlockOptions());
+        it('should emit valid output on form change', () => {
+            jest.spyOn(component.$valid, 'emit');
+            fixture.detectChanges();
+            component.form.get('allowedBlocks').setValue(['codeblock']);
+            expect(component.$valid.emit).toHaveBeenCalled();
+        });
+
+        it('should save properties on saveSettings', () => {
+            mockFieldVariablesServiceWithData.save.mockReturnValue(of(mockFieldVariables[0]));
+            jest.spyOn(component.$save, 'emit');
+            fixture.detectChanges();
+            component.saveSettings();
+            expect(dotFieldVariableService.save).toHaveBeenCalledTimes(amountFields);
+            expect(component.$save.emit).toHaveBeenCalled();
+            expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
+        });
+
+        it('should delete properties on saveSettings when is empty', () => {
+            mockFieldVariablesServiceWithData.delete.mockReturnValue(of(mockFieldVariables[0]));
+            jest.spyOn(component.$save, 'emit');
+            fixture.detectChanges();
+            component.form.get('allowedBlocks').setValue([]);
+            component.saveSettings();
+            expect(dotFieldVariableService.delete).toHaveBeenCalled();
+            expect(component.$save.emit).toHaveBeenCalled();
+            expect(component.settingsMap['allowedBlocks'].variable).toEqual(mockFieldVariables[0]);
+        });
+
+        it('should handle error if save properties failed', () => {
+            mockFieldVariablesServiceWithData.save.mockReturnValue(throwError(() => ({})));
+            jest.spyOn(dotHttpErrorManagerService, 'handle').mockReturnValue(of());
+            jest.spyOn(component.$save, 'emit');
+            fixture.detectChanges();
+            component.saveSettings();
+            expect(dotHttpErrorManagerService.handle).toHaveBeenCalledTimes(1);
+            expect(component.$save.emit).not.toHaveBeenCalled();
+        });
+
+        describe('MultiSelector', () => {
+            let multiselect: MultiSelect;
+
+            beforeEach(() => {
+                fixture.detectChanges();
+                multiselect = de.query(By.css('p-multiselect')).componentInstance;
+            });
+
+            it('should have append to body', () => {
+                const appendToValue =
+                    typeof multiselect.appendTo === 'function'
+                        ? (multiselect.appendTo as () => string)()
+                        : multiselect.appendTo;
+                expect(appendToValue).toEqual('body');
+            });
+
+            it('should have Editor Block Options options', () => {
+                const optionsValue =
+                    typeof multiselect.options === 'function'
+                        ? (multiselect.options as () => unknown[])()
+                        : multiselect.options;
+                expect(optionsValue).toEqual(getEditorBlockOptions());
+            });
+        });
+    });
+
+    describe('without existing variables', () => {
+        let fixture: ComponentFixture<DotBlockEditorSettingsComponent>;
+        let component: DotBlockEditorSettingsComponent;
+        let de: DebugElement;
+        let dotFieldVariableService: DotFieldVariablesService;
+
+        beforeEach(waitForAsync(() => {
+            // Reset mocks
+            mockFieldVariablesServiceEmpty.load.mockClear();
+            mockFieldVariablesServiceEmpty.save.mockClear();
+            mockFieldVariablesServiceEmpty.delete.mockClear();
+
+            TestBed.configureTestingModule({
+                declarations: [DotBlockEditorSettingsComponent],
+                imports: [MultiSelectModule, CommonModule, FormsModule, ReactiveFormsModule],
+                providers: [
+                    FormBuilder,
+                    {
+                        provide: DotFieldVariablesService,
+                        useValue: mockFieldVariablesServiceEmpty
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useValue: {
+                            handle: () => of([])
+                        }
+                    }
+                ]
+            }).compileComponents();
+
+            fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            de = fixture.debugElement;
+            component = de.componentInstance;
+            dotFieldVariableService = de.injector.get(DotFieldVariablesService);
+        }));
+
+        it('should not setup form values when no variables exist', () => {
+            fixture.detectChanges();
+            expect(component.form.get('allowedBlocks').value).toBe(null);
+        });
+
+        it('should not call save or delete when is empty and no previous variable exist', () => {
+            fixture.detectChanges();
+            component.form.get('allowedBlocks').setValue([]);
+            component.saveSettings();
+            expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
+            expect(dotFieldVariableService.save).not.toHaveBeenCalled();
+        });
+
+        it('should persist custom remote block names exactly like built-in blocks', () => {
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            component.form.get('allowedBlocks').setValue(['customGallery']);
+            component.saveSettings();
+
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(
+                CUSTOM_BLOCK_FIELD,
+                expect.objectContaining({
+                    key: 'allowedBlocks',
+                    value: 'customGallery'
+                })
+            );
         });
     });
 
     describe('Options', () => {
+        let component: DotBlockEditorSettingsComponent;
+
+        beforeEach(waitForAsync(() => {
+            TestBed.configureTestingModule({
+                declarations: [DotBlockEditorSettingsComponent],
+                imports: [MultiSelectModule, CommonModule, FormsModule, ReactiveFormsModule],
+                providers: [
+                    FormBuilder,
+                    {
+                        provide: DotFieldVariablesService,
+                        useValue: mockFieldVariablesServiceEmpty
+                    },
+                    {
+                        provide: DotMessageService,
+                        useValue: messageServiceMock
+                    },
+                    {
+                        provide: DotHttpErrorManagerService,
+                        useValue: {
+                            handle: () => of([])
+                        }
+                    }
+                ]
+            }).compileComponents();
+
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            component = fixture.componentInstance;
+        }));
+
         it('should not have a "paragraph" option', () => {
             const options = component.settingsMap.allowedBlocks.options;
             const paragraphOption = options.find(
@@ -173,6 +359,69 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             );
 
             expect(paragraphOption).not.toBeDefined();
+        });
+
+        it('should append remote custom block options after the built-in list', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toHaveLength(builtInOptions.length + 1);
+            expect(options.slice(0, builtInOptions.length)).toEqual(builtInOptions);
+            expect(options.at(-1)).toEqual({ code: 'customGallery', label: 'Custom Gallery' });
+        });
+
+        it('should fallback the label to name, drop duplicates, and warn on missing names', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD_WITH_NAME_FALLBACK);
+            fixture.detectChanges();
+
+            const options = fixture.componentInstance.settingsMap.allowedBlocks.options;
+            const builtInOptions = getEditorBlockOptions();
+
+            expect(options).toContainEqual({ code: 'customGallery', label: 'Custom Gallery' });
+            expect(options).toContainEqual({ code: 'bynderImage', label: 'bynderImage' });
+            expect(options.filter((option) => option.code === 'paragraph')).toHaveLength(1);
+            expect(options).toHaveLength(builtInOptions.length + 3);
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should ignore malformed customBlocks payloads gracefully', () => {
+            const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MALFORMED_CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+            expect(warn).toHaveBeenCalled();
+
+            warn.mockRestore();
+        });
+
+        it('should recompute the options when the field input changes after init', () => {
+            const fixture = TestBed.createComponent(DotBlockEditorSettingsComponent);
+            fixture.componentRef.setInput('field', MOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options).toEqual(
+                getEditorBlockOptions()
+            );
+
+            fixture.componentRef.setInput('field', CUSTOM_BLOCK_FIELD);
+            fixture.detectChanges();
+
+            expect(fixture.componentInstance.settingsMap.allowedBlocks.options.at(-1)).toEqual({
+                code: 'customGallery',
+                label: 'Custom Gallery'
+            });
         });
     });
 });

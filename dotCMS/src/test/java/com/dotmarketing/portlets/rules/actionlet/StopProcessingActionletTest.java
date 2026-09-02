@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Maps;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import com.liferay.util.StringPool;
 import com.tngtech.java.junit.dataprovider.DataProvider;

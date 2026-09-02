@@ -11,6 +11,7 @@ import static org.mockito.Mockito.when;
 
 import com.dotcms.UnitTestBase;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.liferay.portal.model.User;
 import java.util.Base64;
 import org.junit.Assert;
@@ -21,6 +22,31 @@ import org.junit.jupiter.api.Assertions;
  * Unit test for {@link UtilMethods}
  */
 public class UtilMethodsTest extends UnitTestBase {
+
+
+	@Test
+	public void testIsNPEThrown() {
+
+		HTMLPageAsset page = null;
+		try {
+			assertFalse(UtilMethods.isSet(page::getIdentifier));
+		} catch (NullPointerException e) {
+			assertTrue("Throws an NPE", true);
+			return;
+		}
+		assertTrue("Should have thrown an NPE!", false);
+	}
+
+	@Test
+	public void testNoNPEThrown() {
+		HTMLPageAsset page = null;
+		assertFalse(UtilMethods.isSet(() -> page.getIdentifier()));
+
+	}
+
+
+
+
 
 	@Test
 	public void testIsValidURL_Valid() {
@@ -667,5 +693,23 @@ public class UtilMethodsTest extends UnitTestBase {
    public void test_base64Decode_invalidBase64String() {
       final String invalidBase64 = "This is not a valid base64 string!";
       UtilMethods.base64Decode(invalidBase64);
+   }
+
+   /**
+    * Method to test: {@link UtilMethods#escapeHTMLCodeFromJSON(String)}
+    * Given Scenario: A contentlet JSON value (e.g. a Story Block field) where {@code $}, {@code :} and
+    *                 {@code ,} have been stored as their decimal HTML numeric entities.
+    * Expected Result: The entities are decoded back to the literal characters so consumers such as the
+    *                  Block Editor display {@code $50} instead of {@code &#36;50} (issue #35782).
+    */
+   @Test
+   public void test_escapeHTMLCodeFromJSON_decodes_dollar_colon_and_comma() {
+      final String encoded = "{\"text\":\"The application fee is &#36;50, see http&#58;//x.com\"}";
+      final String decoded = UtilMethods.escapeHTMLCodeFromJSON(encoded);
+
+      assertEquals("{\"text\":\"The application fee is $50, see http://x.com\"}", decoded);
+      assertFalse(decoded.contains("&#36;"));
+      assertFalse(decoded.contains("&#58;"));
+      assertFalse(decoded.contains("&#44;"));
    }
 }

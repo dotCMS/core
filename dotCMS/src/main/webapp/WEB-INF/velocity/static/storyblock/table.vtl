@@ -1,5 +1,6 @@
 #parse( "static/storyblock/render.vtl" )
 
-<table>
+<table#if($!item.attrs.ariaLabel) aria-label="$esc.html($!item.attrs.ariaLabel)"#end#if($!item.attrs.ariaLabelledby) aria-labelledby="$esc.html($!item.attrs.ariaLabelledby)"#end>
+#if($!item.attrs.caption)<caption>$esc.html($!item.attrs.caption)</caption>#end
 #renderContentBlock($!item.content)
 </table>

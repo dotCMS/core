@@ -1,0 +1,7 @@
+.xmcp/
+xmcp-env.d.ts
+src/generated/
+dist/
+.env
+openapi.json
+.openapi-temp.json

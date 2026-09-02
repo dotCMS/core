@@ -1,17 +1,24 @@
 import { Observable } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, DestroyRef, ElementRef, inject, OnInit, ViewChild } from '@angular/core';
+import {
+    Component,
+    DestroyRef,
+    ElementRef,
+    inject,
+    OnInit,
+    ViewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { SkeletonModule } from 'primeng/skeleton';
-import { TooltipModule } from 'primeng/tooltip';
+import { Button } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
+import { Dialog } from 'primeng/dialog';
+import { Skeleton } from 'primeng/skeleton';
+import { Textarea } from 'primeng/textarea';
 
 import { delay, filter } from 'rxjs/operators';
 
@@ -36,19 +43,19 @@ interface AIContentForm {
     selector: 'dot-ai-content-prompt',
     templateUrl: './ai-content-prompt.component.html',
     imports: [
-        DialogModule,
+        Dialog,
         ReactiveFormsModule,
-        InputTextareaModule,
+        Textarea,
         DotMessagePipe,
-        ButtonModule,
-        TooltipModule,
-        SkeletonModule,
+        Button,
+        Skeleton,
         AsyncPipe,
         DotEmptyContainerComponent,
-        ConfirmDialogModule,
+        ConfirmDialog,
         DotCopyButtonComponent
     ],
-    styleUrls: ['./ai-content-prompt.component.scss']
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrls: ['./ai-content-prompt.component.css']
 })
 export class AIContentPromptComponent implements OnInit {
     store: AiContentPromptStore = inject(AiContentPromptStore);

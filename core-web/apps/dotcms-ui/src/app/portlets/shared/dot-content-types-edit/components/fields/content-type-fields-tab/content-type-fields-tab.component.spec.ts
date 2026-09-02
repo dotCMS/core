@@ -17,6 +17,7 @@ import { dotcmsContentTypeFieldBasicMock, MockDotMessageService } from '@dotcms/
 import { ContentTypeFieldsTabComponent } from '.';
 
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
+import { DotMaxlengthDirective } from '../../../../../../view/directives/dot-maxlength/dot-maxlength.directive';
 
 const tabField: DotCMSContentTypeField = {
     ...dotcmsContentTypeFieldBasicMock,
@@ -59,7 +60,7 @@ describe('ContentTypeFieldsTabComponent', () => {
     beforeEach(waitForAsync(() => {
         DOTTestBed.configureTestingModule({
             declarations: [ContentTypeFieldsTabComponent, DotTestHostComponent],
-            imports: [TooltipModule, ButtonModule, DotMessagePipe],
+            imports: [TooltipModule, ButtonModule, DotMessagePipe, DotMaxlengthDirective],
             providers: [
                 DotAlertConfirmService,
                 {
@@ -71,16 +72,13 @@ describe('ContentTypeFieldsTabComponent', () => {
 
         hostFixture = DOTTestBed.createComponent(DotTestHostComponent);
         hostComp = hostFixture.componentInstance;
+        hostComp.data = mockFieldTab;
         hostDe = hostFixture.debugElement;
+        hostFixture.detectChanges();
         de = hostDe.query(By.css('dot-content-type-fields-tab'));
         comp = de.componentInstance;
         dotDialogService = de.injector.get(DotAlertConfirmService);
     }));
-
-    beforeEach(() => {
-        hostComp.setData(mockFieldTab);
-        hostFixture.detectChanges();
-    });
 
     it('should render component', () => {
         const deleteBtn = de.query(By.css('p-button')).componentInstance;
@@ -94,7 +92,7 @@ describe('ContentTypeFieldsTabComponent', () => {
         jest.spyOn(comp.editTab, 'emit');
         const preventDefaultSpy = jest.fn();
         const stopPropagationSpy = jest.fn();
-        const labelInput = de.query(By.css('.tab__label'));
+        const labelInput = de.query(By.css('div[contenteditable]'));
 
         labelInput.triggerEventHandler('keydown.enter', {
             preventDefault: preventDefaultSpy,

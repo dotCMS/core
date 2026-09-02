@@ -3,24 +3,15 @@ import { Routes } from '@angular/router';
 import { CanDeactivateGuardService } from '@dotcms/data-access';
 
 import { DotTemplateCreateEditResolver } from './dot-template-create-edit/resolvers/dot-template-create-edit.resolver';
-import { DotTemplateListResolver } from './dot-template-list/dot-template-list-resolver.service';
 import { DotTemplateListComponent } from './dot-template-list/dot-template-list.component';
 
 import { DotTemplatesService } from '../../api/services/dot-templates/dot-templates.service';
 
-export const DotTemplatesRoutes: Routes = [
+export const dotTemplatesRoutes: Routes = [
     {
         path: '',
         component: DotTemplateListComponent,
-        providers: [
-            DotTemplatesService,
-            DotTemplateListResolver,
-            DotTemplateCreateEditResolver,
-            CanDeactivateGuardService
-        ],
-        resolve: {
-            dotTemplateListResolverData: DotTemplateListResolver
-        },
+        providers: [DotTemplatesService, DotTemplateCreateEditResolver, CanDeactivateGuardService],
         data: {
             reuseRoute: false
         }

@@ -35,6 +35,7 @@ import com.dotmarketing.portlets.structure.model.ContentletRelationships.Content
 import com.dotmarketing.portlets.structure.model.Relationship;
 import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.util.Config;
+import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.WebKeys.Relationship.RELATIONSHIP_CARDINALITY;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Lists;
@@ -629,6 +630,153 @@ public class DependencyManagerTest {
         dependencyManager.setDependencies();
 
         assertTrue("Template isn't in the bundle",dependencyManager.getTemplates().contains(template.getIdentifier()));
+    }
+
+    /**
+     * <b>Method to test:</b> {@link com.dotcms.publisher.util.dependencies.PushPublishigDependencyProcesor#processStoryBockDependencies(Contentlet)}<p>
+     * <b>Given Scenario:</b> A multi-language contentlet with Story Block field containing images/videos.
+     * Images are in the default language, but the contentlet is in a secondary language.<p>
+     * <b>ExpectedResult:</b> Dependencies (images/videos) from Story Block fields should be included
+     * in the bundle even when the parent contentlet is in a non-default language.
+     * This tests the fix for issue #34464 where dependencies were not being found because
+     * the code was using the parent contentlet's languageId instead of the dependency's stored languageId.
+     *
+     * @throws DotSecurityException
+     * @throws DotBundleException
+     * @throws DotDataException
+     */
+    @Test
+    public void test_PP_multiLanguage_storyBlock_should_include_dependencies() throws Exception {
+        // Declare variables outside try block for cleanup access
+        Host host = null;
+        Language secondaryLanguage = null;
+        java.io.File tempImageFile = null;
+        Contentlet imageContentlet = null;
+        ContentType contentTypeWithStoryBlock = null;
+        Contentlet contentDefault = null;
+        Contentlet contentSecondary = null;
+
+        try {
+            host = new SiteDataGen().nextPersisted();
+            final Language defaultLanguage = APILocator.getLanguageAPI().getDefaultLanguage();
+            secondaryLanguage = new LanguageDataGen().nextPersisted();
+
+            // Create a temporary image file
+            final Folder imageFolder = new FolderDataGen().site(host).nextPersisted();
+            tempImageFile = java.io.File.createTempFile("testImage", ".jpg");
+
+            // Create an image contentlet in the default language (typical for images/videos)
+            imageContentlet = new FileAssetDataGen(tempImageFile)
+                    .host(host)
+                    .folder(imageFolder)
+                    .languageId(defaultLanguage.getId())
+                    .nextPersisted();
+
+            // Create a ContentType with a StoryBlock field
+            contentTypeWithStoryBlock = new ContentTypeDataGen()
+                    .host(host)
+                    .nextPersisted();
+
+            final com.dotcms.contenttype.model.field.Field storyBlockField = new FieldDataGen()
+                    .type(com.dotcms.contenttype.model.field.StoryBlockField.class)
+                    .name("storyBlock")
+                    .contentTypeId(contentTypeWithStoryBlock.id())
+                    .nextPersisted();
+
+            // Create dummy Story Block JSON
+            final String dummyStoryBlock = "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\"," +
+                    "\"attrs\":{\"textAlign\":\"left\"}," + "\"content\":[{\"type\":\"text\",\"text\":\"test content\"}]}]}";
+
+            // Create contentlet in DEFAULT language with Story Block containing the image
+            contentDefault = new ContentletDataGen(contentTypeWithStoryBlock.id())
+                    .languageId(defaultLanguage.getId())
+                    .host(host)
+                    .setProperty(storyBlockField.variable(), dummyStoryBlock)
+                    .nextPersisted();
+
+            // Add image to Story Block
+            Object storyBlockValue = contentDefault.get(storyBlockField.variable());
+            Object updatedStoryBlockValue = APILocator.getStoryBlockAPI().addContentlet(storyBlockValue, imageContentlet);
+            contentDefault.setProperty(storyBlockField.variable(), updatedStoryBlockValue);
+            contentDefault.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            contentDefault.setInode("");
+            contentDefault = contentletAPI.checkin(contentDefault, user, false);
+
+            // Create contentlet in SECONDARY language with Story Block containing the image
+            contentSecondary = new ContentletDataGen(contentTypeWithStoryBlock.id())
+                    .languageId(secondaryLanguage.getId())
+                    .host(host)
+                    .setProperty(storyBlockField.variable(), dummyStoryBlock)
+                    .nextPersisted();
+
+            // Add image to Story Block
+            storyBlockValue = contentSecondary.get(storyBlockField.variable());
+            updatedStoryBlockValue = APILocator.getStoryBlockAPI().addContentlet(storyBlockValue, imageContentlet);
+            contentSecondary.setProperty(storyBlockField.variable(), updatedStoryBlockValue);
+            contentSecondary.setBoolProperty(Contentlet.DISABLE_WORKFLOW, true);
+            contentSecondary.setInode("");
+            contentSecondary = contentletAPI.checkin(contentSecondary, user, false);
+
+            // Test 1: Push publish DEFAULT language contentlet - should include image
+            final PushPublisherConfig configDefault = new PushPublisherConfig();
+            createBundle(configDefault, contentDefault);
+
+            DependencyManager dependencyManagerDefault = new DependencyManager(user, configDefault);
+            dependencyManagerDefault.setDependencies();
+
+            assertTrue("Image should be included when parent content is in default language",
+                    dependencyManagerDefault.getContents().contains(imageContentlet.getIdentifier()));
+
+            // Test 2: Push publish SECONDARY language contentlet - should ALSO include image
+            final PushPublisherConfig configSecondary = new PushPublisherConfig();
+            createBundle(configSecondary, contentSecondary);
+
+            DependencyManager dependencyManagerSecondary = new DependencyManager(user, configSecondary);
+            dependencyManagerSecondary.setDependencies();
+
+            // This is the bug fix verification - previously this assertion would fail
+            assertTrue("Image should be included when parent content is in secondary language (Bug #34464 fix)",
+                    dependencyManagerSecondary.getContents().contains(imageContentlet.getIdentifier()));
+        } finally {
+            // Clean up filesystem resource (must be done manually)
+            if (tempImageFile != null && tempImageFile.exists()) {
+                tempImageFile.delete();
+            }
+
+            // Clean up database objects to avoid test pollution
+            try {
+                // Clean up contentlets
+                if (contentDefault != null) {
+                    ContentletDataGen.remove(contentDefault);
+                }
+                if (contentSecondary != null) {
+                    ContentletDataGen.remove(contentSecondary);
+                }
+                if (imageContentlet != null) {
+                    ContentletDataGen.remove(imageContentlet);
+                }
+
+                // Clean up content type (will also remove the field)
+                if (contentTypeWithStoryBlock != null) {
+                    ContentTypeDataGen.remove(contentTypeWithStoryBlock);
+                }
+
+                // Clean up language (important to avoid ID conflicts)
+                if (secondaryLanguage != null) {
+                    LanguageDataGen.remove(secondaryLanguage);
+                }
+
+                // Clean up host (will cascade delete any remaining contentlets)
+                if (host != null) {
+                    APILocator.getHostAPI().archive(host, user, false);
+                    APILocator.getHostAPI().delete(host, user, false);
+                }
+            } catch (Exception e) {
+                // Log cleanup errors but don't fail the test
+                Logger.warn(DependencyManagerTest.class,
+                        "Error during test cleanup: " + e.getMessage(), e);
+            }
+        }
     }
 
 }

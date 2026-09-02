@@ -119,14 +119,6 @@
         submitForm(form);
     }
 
-    function viewAllRelationship()
-    {
-        var href = "<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>";
-        href = href + "<portlet:param name='struts_action' value='/ext/structure/view_relationships' />  <portlet:param name='structure_id' value='all' />";
-        href = href + "</portlet:actionURL>";
-        document.location = href;
-    }
-
 
     function editStructure(inode){
         var x ='<portlet:actionURL windowState='<%=WindowState.MAXIMIZED.toString()%>'>
@@ -156,14 +148,6 @@
 	 });
 	 menu.addChild(menuItem1);
 
-	 var menuItem3 = new dijit.MenuItem({
-	 label: "<%= LanguageUtil.get(pageContext, "View-all-Relationships") %>",
-	 iconClass: "previewIcon",
-	 onClick: function() {
-	 viewAllRelationship();
-	 }
-	 });
-	 menu.addChild(menuItem3);
 
 	 var button = new dijit.form.ComboButton({
 	 label: "<%= LanguageUtil.get(pageContext, "Add-New-Structure") %>",
@@ -306,9 +290,7 @@
 							<%= LanguageUtil.get(pageContext, "Add-New-Structure") %>
 						</div>
 
-						<div data-dojo-type="dijit/MenuItem" onClick="viewAllRelationship();">
-							<%= LanguageUtil.get(pageContext, "View-all-Relationships") %>
-						</div>
+
 					</div>
 				</div>
 				<!-- END Actions -->
@@ -343,7 +325,6 @@
 					</portlet:actionURL>" ><%= LanguageUtil.get(pageContext, "Description") %></a>
 					</th>
 					<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Entries") %></th>
-					<th width="10%" style="text-align:center;"><%= LanguageUtil.get(pageContext, "Relationships") %></th>
 				</tr>
 
 				<%
@@ -385,12 +366,6 @@
 						<portlet:param name='struts_action' value='/ext/contentlet/view_contentlets' />
 						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
 							<%= contentTypeEntriesNumber %></a>
-					</td>
-					<td align="center">
-						<a href="<portlet:renderURL>
-						<portlet:param name='struts_action' value='/ext/structure/view_relationships' />
-						<portlet:param name='structure_id' value='<%=structure.getInode()%>' /></portlet:renderURL>">
-							<%= LanguageUtil.get(pageContext, "view") %></a>
 					</td>
 				</tr>
 

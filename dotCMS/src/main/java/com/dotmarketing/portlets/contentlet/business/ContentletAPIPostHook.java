@@ -1,5 +1,6 @@
 package com.dotmarketing.portlets.contentlet.business;
 
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -35,16 +36,20 @@ import java.util.Set;
 /**
  * @author Jason Tesser
  * @since 1.6.5c
- * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI 
+ * This interface should be used as a post hook for the contentletAPI. The parameters are the same as the contentletAPI
  * methods except now they also take the return type as the first parameter.
  */
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPostHook {
 
 	/**
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
+	 * @param limit can be 0 if no limit
 	 * @param returnValue - value returned by primary API Method
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public default void findAllContent(int offset, int limit, List<Contentlet> returnValue){}
 	
 	/**
@@ -1697,29 +1702,25 @@ public interface ContentletAPIPostHook {
     public default void publishAssociated(Contentlet contentlet, boolean isNew) throws DotSecurityException, DotDataException, DotContentletStateException, DotStateException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
     public default void esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
 	public default void esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{}
 
+    public default void search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
+    public default void searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {}
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles
@@ -1839,4 +1840,16 @@ public interface ContentletAPIPostHook {
 	}
 
 	default void findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {}
+
+	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 *
+	 * @param luceneQuery The lucene query string
+	 * @param user The user executing the query
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize The size of each batch returned by the scroll
+	 * @param sortBy The sort criteria
+	 * @param returnValue The ESContentletScroll object returned by the API
+	 */
+	default void createScrollQuery(String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy, IndexContentletScroll returnValue) {}
 }

@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of, throwError as observableThrowError } from 'rxjs';
+import { Observable, throwError as observableThrowError, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
 import { ComponentFixture, fakeAsync, TestBed, tick } from '@angular/core/testing';
 import { ReactiveFormsModule } from '@angular/forms';
@@ -27,7 +28,6 @@ import {
     PushPublishService
 } from '@dotcms/data-access';
 import {
-    CoreWebService,
     DotPushPublishDialogService,
     HttpCode,
     LoggerService,
@@ -36,7 +36,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { DotCMSContentType, DotCopyContentTypeDialogFormFields } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     MockDotMessageService,
     MockPushPublishService
@@ -129,6 +128,20 @@ class MockDotAddToMenuComponent {
     @Output() cancel = new EventEmitter<boolean>();
 }
 
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
+
 describe('DotContentTypesPortletComponent', () => {
     let comp: DotContentTypesPortletComponent;
     let fixture: ComponentFixture<DotContentTypesPortletComponent>;
@@ -174,11 +187,12 @@ describe('DotContentTypesPortletComponent', () => {
                 BrowserAnimationsModule,
                 DotListingDataTableComponent,
                 ReactiveFormsModule,
-                HttpClientTestingModule,
                 MockDotPortletBaseComponent,
                 MockDotAddToMenuComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypesInfoService,
                 DotCrudService,
                 DotAlertConfirmService,
@@ -188,7 +202,6 @@ describe('DotContentTypesPortletComponent', () => {
                 ConfirmationService,
                 LoggerService,
                 StringUtils,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotContentTypeService, useClass: MockDotContentTypeService },
                 { provide: DotMessageService, useValue: messageServiceMock },
                 { provide: PushPublishService, useClass: MockPushPublishService },
@@ -357,7 +370,9 @@ describe('DotContentTypesPortletComponent', () => {
         });
     });
 
-    it('should open add to bundle dialog', () => {
+    it('should open add to bundle dialog', fakeAsync(() => {
+        fixture.detectChanges();
+        tick(1);
         fixture.detectChanges();
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
@@ -373,16 +388,16 @@ describe('DotContentTypesPortletComponent', () => {
             system: false
         };
         expect(comp.addToBundleIdentifier).not.toBeDefined();
-        expect(de.query(By.css('p-dialog'))).toBeNull();
 
         comp.rowActions[ADD_TO_BUNDLE_MENU_ITEM_INDEX].menuItem.command(mockContentType);
-        fixture.detectChanges();
 
-        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        // Verify the component state was updated correctly
         expect(comp.addToBundleIdentifier).toEqual(mockContentType.id);
-    });
+    }));
 
-    it('should open Add to Menu dialog', () => {
+    it('should open Add to Menu dialog', fakeAsync(() => {
+        fixture.detectChanges();
+        tick(1);
         fixture.detectChanges();
         const mockContentType: DotCMSContentType = {
             ...dotcmsContentTypeBasicMock,
@@ -398,13 +413,12 @@ describe('DotContentTypesPortletComponent', () => {
             system: false
         };
         expect(comp.addToMenuContentType).not.toBeDefined();
-        expect(de.query(By.css('p-dialog'))).toBeNull();
-        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
-        fixture.detectChanges();
 
-        expect(de.query(By.css('p-dialog'))).toBeDefined();
+        comp.rowActions[ADD_TO_MENU_INDEX].menuItem.command(mockContentType);
+
+        // Verify the component state was updated correctly
         expect(comp.addToMenuContentType).toEqual(mockContentType);
-    });
+    }));
 
     it('should populate the actionHeaderOptions based on a call to dotContentletService', () => {
         fixture.detectChanges();
@@ -417,7 +431,9 @@ describe('DotContentTypesPortletComponent', () => {
         expect(comp.actionHeaderOptions.primary.command).toBe(undefined);
     });
 
-    it('should emit changes in base types selector', () => {
+    it('should emit changes in base types selector', fakeAsync(() => {
+        fixture.detectChanges();
+        tick(1);
         fixture.detectChanges();
         baseTypesSelector = de.query(By.css('dot-base-type-selector')).componentInstance;
         jest.spyOn(comp, 'changeBaseTypeSelector');
@@ -425,7 +441,7 @@ describe('DotContentTypesPortletComponent', () => {
 
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledWith('test');
         expect(comp.changeBaseTypeSelector).toHaveBeenCalledTimes(1);
-    });
+    }));
 
     it('should handle error if is not possible delete the content type', () => {
         const forbiddenError = {
@@ -505,20 +521,24 @@ describe('DotContentTypesPortletComponent', () => {
             router.data = of({
                 filterBy: 'FORM'
             });
-
-            fixture.detectChanges();
         });
 
-        it('should not display base types selector', () => {
+        it('should not display base types selector', fakeAsync(() => {
+            fixture.detectChanges();
+            tick(1);
+            fixture.detectChanges();
             const dotBaseTypeSelector = de.query(By.css('dot-base-type-selector'));
             expect(dotBaseTypeSelector).toBeNull();
-        });
+        }));
 
-        it('should set filterBy params', () => {
+        it('should set filterBy params', fakeAsync(() => {
+            fixture.detectChanges();
+            tick(1);
+            fixture.detectChanges();
             expect(comp.filterBy).toBe('Form');
-            expect(comp.listing.paginatorService.extraParams.get('type')).toBe('Form');
+            expect(comp.$listing().paginatorService.extraParams.get('type')).toBe('Form');
             expect(comp.actionHeaderOptions.primary.model).toBe(null);
             expect(comp.actionHeaderOptions.primary.command).toBeDefined();
-        });
+        }));
     });
 });

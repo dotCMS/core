@@ -1,5 +1,13 @@
 import { animate, style, transition, trigger } from '@angular/animations';
-import { Component, EventEmitter, forwardRef, Input, OnInit, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    forwardRef,
+    Input,
+    OnInit,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     ControlValueAccessor,
     FormControl,
@@ -21,8 +29,8 @@ import { DotTextareaContentComponent } from '../../../../view/components/_common
     ],
     selector: 'dot-loop-editor',
     templateUrl: './dot-loop-editor.component.html',
-    styleUrls: ['./dot-loop-editor.component.scss'],
     imports: [ReactiveFormsModule, ButtonModule, DotMessagePipe, DotTextareaContentComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         {
             provide: NG_VALUE_ACCESSOR,

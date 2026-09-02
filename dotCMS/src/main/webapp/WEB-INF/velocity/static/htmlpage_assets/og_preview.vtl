@@ -1,0 +1,5 @@
+#if( $structures.isNewEditModeEnabled() )
+	#parse('/static/htmlpage_assets/og_preview_new.vtl')
+#else
+	#parse('/static/htmlpage_assets/og_preview_old.vtl')
+#end

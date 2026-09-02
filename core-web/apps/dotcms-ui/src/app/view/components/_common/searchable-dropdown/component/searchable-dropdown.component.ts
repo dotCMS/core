@@ -1,6 +1,6 @@
 import { fromEvent } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
     AfterContentInit,
     AfterViewInit,
@@ -18,7 +18,8 @@ import {
     SimpleChanges,
     TemplateRef,
     ViewChild,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -26,7 +27,7 @@ import { PrimeTemplate } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DataView, DataViewLazyLoadEvent, DataViewModule } from 'primeng/dataview';
 import { InputTextModule } from 'primeng/inputtext';
-import { OverlayPanel, OverlayPanelModule } from 'primeng/overlaypanel';
+import { Popover, PopoverModule } from 'primeng/popover';
 
 import { debounceTime, distinctUntilChanged, map, tap } from 'rxjs/operators';
 
@@ -49,15 +50,16 @@ import { DotIconComponent, DotMessagePipe } from '@dotcms/ui';
     selector: 'dot-searchable-dropdown',
     styleUrls: ['./searchable-dropdown.component.scss'],
     templateUrl: './searchable-dropdown.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        CommonModule,
         FormsModule,
         ButtonModule,
         DataViewModule,
         InputTextModule,
-        OverlayPanelModule,
+        PopoverModule,
         DotIconComponent,
-        DotMessagePipe
+        DotMessagePipe,
+        NgTemplateOutlet
     ]
 })
 export class SearchableDropdownComponent
@@ -146,7 +148,7 @@ export class SearchableDropdownComponent
     searchInput: ElementRef;
 
     @ViewChild('searchPanel', { static: true })
-    searchPanelRef: OverlayPanel;
+    searchPanelRef: Popover;
 
     @ViewChild('dataView', { static: true })
     dataViewRef: DataView;
@@ -267,8 +269,8 @@ export class SearchableDropdownComponent
      */
     paginate(event: DataViewLazyLoadEvent): void {
         const paginationEvent = {
-            first: event.first,
-            rows: event.rows,
+            first: event?.first ?? 0,
+            rows: event?.rows ?? this.rows,
             filter: ''
         };
         if (this.searchInput) {

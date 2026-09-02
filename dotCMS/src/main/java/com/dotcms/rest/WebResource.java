@@ -1,7 +1,7 @@
 package com.dotcms.rest;
 
-import static com.liferay.util.StringPool.BLANK;
-
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessor;
+import com.dotcms.auth.dotAuth.rest.DotAuthSessionCredentialProcessorImpl;
 import com.dotcms.auth.providers.jwt.JsonWebTokenAuthCredentialProcessor;
 import com.dotcms.auth.providers.jwt.services.JsonWebTokenAuthCredentialProcessorImpl;
 import com.dotcms.enterprise.LicenseUtil;
@@ -30,24 +30,29 @@ import com.liferay.portal.model.User;
 import com.liferay.portal.util.PortalUtil;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
+import org.apache.commons.io.IOUtils;
+import org.apache.commons.lang.StringUtils;
+import java.util.Base64;
+import org.glassfish.jersey.server.ContainerRequest;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.validation.constraints.NotNull;
+import javax.ws.rs.core.Response;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-import javax.validation.constraints.NotNull;
-import javax.ws.rs.core.Response;
-import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
-import org.glassfish.jersey.internal.util.Base64;
-import org.glassfish.jersey.server.ContainerRequest;
+import java.util.function.Supplier;
+
+import static com.liferay.util.StringPool.BLANK;
 
 /**
  * The Web Resource is a helper for all authentication and get the current user logged in
@@ -57,10 +62,17 @@ public  class WebResource {
 
     public static final String BASIC  = "Basic ";
 
+    // Credential-source labels (used for audit logging and to scope the anonymous fallback).
+    private static final String CRED_SOURCE_REQUEST_PARAMETER = "request-parameter";
+    private static final String CRED_SOURCE_DOTAUTH = "DOTAUTH";
+    private static final String CRED_SOURCE_BASIC = "BASIC Authorization";
+
     private final UserWebAPI        userWebAPI;
     private final UserAPI           userAPI;
     private final LayoutAPI         layoutAPI;
     private final JsonWebTokenAuthCredentialProcessor jsonWebTokenAuthCredentialProcessor;
+    private final DotAuthSessionCredentialProcessor dotAuthSessionCredentialProcessor =
+            DotAuthSessionCredentialProcessorImpl.getInstance();
 
     public WebResource() {
 
@@ -327,12 +339,16 @@ public  class WebResource {
      */
     public InitDataObject init(final InitBuilder builder) throws SecurityException {
 
-        checkForceSSL(builder.request);
+        if (!builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_FORCE_SSL)) {
+            checkForceSSL(builder.request);
+        }
 
         final InitDataObject initData = new InitDataObject();
         Map<String,String> paramsMap = builder.paramsMap();
 
-        final User user = getCurrentUser(builder.request, builder.response, paramsMap, builder.anonAccess);
+        final User user = getCurrentUser(
+                builder.request, builder.response, paramsMap, builder.anonAccess,
+                builder.authCheckOptions.toArray(new AuthCheckOptions[0]));
 
         checkAdminPermissions(builder, user);
         checkAnonymousPermissions(builder, user);
@@ -352,6 +368,9 @@ public  class WebResource {
      */
     @VisibleForTesting
     void checkAnonymousPermissions(final InitBuilder builder, @NotNull User user) {
+        if (builder.authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)) {
+            return;
+        }
         // if we are not an anonymous user
         if (user != null && !user.isAnonymousUser()) {
             return;
@@ -376,46 +395,9 @@ public  class WebResource {
     void checkAdminPermissions(final InitBuilder builder, User user) {
         if (builder.requiredRolesSet.contains(Role.CMS_ADMINISTRATOR_ROLE) && !user.isAdmin()) {
             throw new SecurityException(
-                    String.format(AnonymousAccess.CONTENT_APIS_ALLOW_ANONYMOUS
-                                    + " permission exceeded - system set to %s but %s was required",
-                            AnonymousAccess.systemSetting().name(), builder.anonAccess.name()),
+                    String.format("User " + user.getFullName() + ":" + user.getEmailAddress()
+                            + " is not a %s", Role.CMS_ADMINISTRATOR_ROLE),
                     Response.Status.UNAUTHORIZED);
-        }
-    }
-        
-        if(!builder.requiredRolesSet.isEmpty())
-
-    {
-        final RoleAPI roleAPI = APILocator.getRoleAPI();
-
-        boolean hasARequiredRole = builder.requiredRolesSet.stream()
-                .anyMatch(roleKey -> Try.of(() -> roleAPI
-                                .doesUserHaveRole(user, roleAPI.loadRoleByKey(roleKey)))
-                        .getOrElse(false));
-
-        if (!hasARequiredRole) {
-            throw new SecurityException(
-                    String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
-                            + " lacks one of the required role %s", builder.requiredRolesSet.toString()),
-                    Response.Status.UNAUTHORIZED);
-        }
-
-        if (builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER) &&
-                builder.request != null &&
-                builder.request.getRequestURL() != null) {
-            String host = builder.request.getHeader("host");
-            String portalUrl = APILocator.getCompanyAPI().getDefaultCompany().getPortalURL();
-            String scheme = builder.request.getScheme();
-
-            if (!StringUtils.containsIgnoreCase(scheme + "://" + host, portalUrl)) {
-                SecurityLogger.logInfo(getClass(),
-                        builder.request.getRequestURL().toString() + " must use the portalUrl "
-                                + portalUrl.toLowerCase());
-                throw new SecurityException("Not Found", Response.Status.NOT_FOUND);
-            }
-
-        }
-            
         }
     }
 
@@ -450,6 +432,7 @@ public  class WebResource {
         for (String roleKey : builder.requiredRolesSet) {
             if (Try.of(() -> APILocator.getRoleAPI()
                     .doesUserHaveRole(user, roleKey)).getOrElse(false)) {
+                checkCanonicalAdminUrl(builder, user);
                 return;
             }
         }
@@ -457,6 +440,29 @@ public  class WebResource {
                 String.format("User " + (user != null ? user.getFullName() + ":" + user.getEmailAddress() : user)
                         + " lacks one of the required role %s", builder.requiredRolesSet),
                 Response.Status.UNAUTHORIZED);
+    }
+
+    /**
+     * Enforces the canonical admin URL (dotCMS #23628): endpoints that require the
+     * {@link Role#DOTCMS_BACK_END_USER} role must be requested through the default Company's
+     * portal URL, so the backend is only reachable via its canonical host. Requests arriving
+     * through any other host get a {@code 404 Not Found}.
+     */
+    @VisibleForTesting
+    void checkCanonicalAdminUrl(final InitBuilder builder, User user) {
+        if (builder.requiredRolesSet.contains(Role.DOTCMS_BACK_END_USER)
+                && builder.request != null
+                && builder.request.getRequestURL() != null) {
+            String host = builder.request.getHeader("host");
+            String portalUrl = APILocator.getCompanyAPI().getDefaultCompany().getPortalURL();
+            String scheme = builder.request.getScheme();
+
+            if (!StringUtils.containsIgnoreCase(scheme + "://" + host, portalUrl)) {
+                SecurityLogger.logInfo(getClass(), builder.request.getRequestURL().toString()
+                        + " must use the portalUrl " + portalUrl.toLowerCase());
+                throw new SecurityException("Not Found", Response.Status.NOT_FOUND);
+            }
+        }
     }
 
 
@@ -469,24 +475,47 @@ public  class WebResource {
      * @param response {@link HttpServletResponse}
      * @param paramsMap {@link Map}
      * @param access {@link AnonymousAccess}
+     * @param authCheckOptions {@link AuthCheckOptions}
      *
      * @return the login user or the login as user if exist any
      */
     public User getCurrentUser(final HttpServletRequest  request,
                                final HttpServletResponse response,
-            final Map<String, String> paramsMap, final AnonymousAccess access) {
+                               final Map<String, String> paramsMap,
+                               final AnonymousAccess access,
+                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
+        return getCurrentUser(request, response, paramsMap, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}
+     * that can fall through to the anonymous user when a header-based credential fails to
+     * authenticate. {@code fallbackToAnonymousOnAuthFailure} must only be {@code true} for the
+     * static/binary asset servlets (it is set exclusively by
+     * {@link com.dotmarketing.servlets.ServletUtils}); JAX-RS callers must use the overload without
+     * the flag so credential failures keep returning {@code 401}.
+     */
+    public User getCurrentUser(final HttpServletRequest  request,
+                               final HttpServletResponse response,
+                               final Map<String, String> paramsMap,
+                               final AnonymousAccess access,
+                               final boolean fallbackToAnonymousOnAuthFailure,
+                               final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
         User user = PortalUtil.getUser(request);
 
         if(user==null) {
-            user = authenticate(request, response, paramsMap, access);
+            user = authenticate(request, response, paramsMap, access,
+                    fallbackToAnonymousOnAuthFailure, authCheckOptions);
         }
         return user;
     }
 
     /**
      * @deprecated
-     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess) 
+     * @see #getCurrentUser(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)
      *
      * Return the current login user.<br>
      * if exist a user login by login as then return this user not the principal user
@@ -507,7 +536,7 @@ public  class WebResource {
 
     /**
      * @deprecated
-     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess)
+     * @see #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)
      * Returns an authenticated {@link User}. There are five ways to get the User's credentials.
      * They are executed in the specified order. When found, the remaining ways won't be executed.
      * <br>1) Using username and password contained in <code>params</code>.
@@ -533,24 +562,83 @@ public  class WebResource {
      * <br>5) If no user found, tries to get the Frontend logged in user.
      */
     public User authenticate(HttpServletRequest request, final HttpServletResponse response,
-            final Map<String, String> params, final AnonymousAccess access) throws SecurityException {
+                             final Map<String, String> params, final AnonymousAccess access,
+                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
 
-        ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        return authenticate(request, response, params, access, false, authCheckOptions);
+    }
+
+    /**
+     * Servlet-only overload of
+     * {@link #authenticate(HttpServletRequest, HttpServletResponse, Map, AnonymousAccess, AuthCheckOptions...)}.
+     * When {@code fallbackToAnonymousOnAuthFailure} is {@code true}, a header-based credential
+     * (BASIC/DOTAUTH) that is malformed or fails authentication does NOT abort with a {@code 401};
+     * instead authentication falls through to the anonymous user, letting the downstream resource
+     * permission check decide. This is used only by the static/binary asset servlets (via
+     * {@link com.dotmarketing.servlets.ServletUtils}) so that an upstream Basic-Auth gating layer
+     * (whose credentials the browser replays on sub-resource requests, per RFC 7617) does not break
+     * anonymously-readable assets. JAX-RS endpoints must pass {@code false} (or use the overload
+     * without the flag) to keep strict credential rejection. An explicit request-parameter login is
+     * never downgraded, regardless of this flag.
+     */
+    public User authenticate(final HttpServletRequest request, final HttpServletResponse response,
+                             final Map<String, String> params, final AnonymousAccess access,
+                             final boolean fallbackToAnonymousOnAuthFailure,
+                             final AuthCheckOptions... authCheckOptions) throws SecurityException {
+
+        if (Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_FORCE_SSL::equals)) {
+            ServletPreconditions.checkSslIsEnabledIfRequired(request);
+        }
 
         User user = null;
 
         Optional<UsernamePassword> userPass = getAuthCredentialsFromMap(params);
+        // Track which source supplied the credential so the audit log names it and so the anonymous
+        // fallback can be scoped to header-based auth only (never to explicit request-parameter logins).
+        String credentialSource = userPass.isPresent() ? CRED_SOURCE_REQUEST_PARAMETER : null;
 
+        // Both header parsers (DOTAUTH and BASIC) can throw on a malformed header; route them through
+        // the same tolerant policy so the fallback option's guarantee holds for every credential header.
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromHeaderAuth(request);
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromHeaderAuth(request),
+                    CRED_SOURCE_DOTAUTH, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_DOTAUTH : null;
         }
 
         if(userPass.isEmpty()) {
-            userPass = getAuthCredentialsFromBasicAuth(request);
+            userPass = parseCredentialsTolerantly(() -> getAuthCredentialsFromBasicAuth(request),
+                    CRED_SOURCE_BASIC, fallbackToAnonymousOnAuthFailure);
+            credentialSource = userPass.isPresent() ? CRED_SOURCE_BASIC : null;
         }
 
         if(userPass.isPresent()) {
-            user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            final String source = credentialSource;
+            final String attemptedUsername = userPass.get().username;
+            try {
+                user = authenticateUser(userPass.get().username, userPass.get().password, request, response, userAPI);
+            } catch (SecurityException e) {
+                // The anonymous fallback only covers header-replayed credentials (BASIC/DOTAUTH).
+                // An explicit request-parameter login (?userid=&pwd=) must still fail hard so it is
+                // never silently downgraded to anonymous. REST callers (option off) also fail hard.
+                if (!fallbackToAnonymousOnAuthFailure || CRED_SOURCE_REQUEST_PARAMETER.equals(source)) {
+                    throw e;
+                }
+                Logger.debug(this, () -> source + " credentials are not a valid dotCMS user; "
+                        + "falling through to anonymous.");
+                // A correctly-formatted credential that fails authentication is a real auth failure
+                // (potential credential-stuffing against the fallback path), so log at WARN and
+                // include the attempted username (never the password) for forensic correlation.
+                SecurityLogger.logWarn(WebResource.class, () -> source
+                        + " credential failure for user [" + attemptedUsername + "] on asset request "
+                        + "absorbed; proceeding as anonymous.");
+                user = null;
+            }
+        }
+
+        if(null == user) {
+            // dotAuth session-ref bearer — short-circuits when the credential carries the
+            // `dsr_` prefix; returns null for any other bearer so the JWT processor runs next.
+            user = this.dotAuthSessionCredentialProcessor.processAuthHeaderFromSessionRef(request);
         }
 
         if(null == user) {
@@ -576,8 +664,9 @@ public  class WebResource {
           user = this.getAnonymousUser();
         }
 
-        if (UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
 
+        if(Arrays.stream(authCheckOptions).noneMatch(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS::equals)
+                && UserAPI.CMS_ANON_USER_ID.equals(user.getUserId()) && access == AnonymousAccess.NONE) {
             throw new SecurityException("Invalid User", Response.Status.UNAUTHORIZED);
         } 
 
@@ -586,6 +675,38 @@ public  class WebResource {
         PrincipalThreadLocal.setName(user.getUserId());
 
         return user;
+    }
+
+    /**
+     * Runs a credential-parsing step under the servlet anonymous-fallback policy. When
+     * {@code fallbackToAnonymous} is active and the parser throws a {@link SecurityException}
+     * (e.g. a malformed credential header — both parsers convert bad Base64 to SecurityException),
+     * the exception is absorbed and an empty result is returned so authentication can continue as
+     * anonymous; otherwise the exception is rethrown (strict behavior for REST callers). Only
+     * {@link SecurityException} is caught: an unexpected exception (e.g. an NPE from a code defect)
+     * still surfaces so the bug can be found.
+     *
+     * @param parser the credential-parsing step (may throw {@link SecurityException})
+     * @param headerLabel human-readable header name, used only for logging
+     * @param fallbackToAnonymous whether the fallback policy is active for this request
+     * @return the parsed credentials, or empty when absent or when a malformed header was tolerated
+     */
+    private Optional<UsernamePassword> parseCredentialsTolerantly(
+            final Supplier<Optional<UsernamePassword>> parser,
+            final String headerLabel,
+            final boolean fallbackToAnonymous) {
+        try {
+            return parser.get();
+        } catch (SecurityException e) {
+            if (!fallbackToAnonymous) {
+                throw e;
+            }
+            Logger.debug(this, () -> "Ignoring malformed " + headerLabel
+                    + " header; falling through to anonymous.");
+            SecurityLogger.logInfo(WebResource.class, () -> "Malformed " + headerLabel
+                    + " header on asset request absorbed; proceeding as anonymous.");
+            return Optional.empty();
+        }
     }
 
     /**
@@ -625,7 +746,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 // "Invalid syntax for username and password"
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
@@ -633,6 +754,20 @@ public  class WebResource {
             result = Optional.of(new UsernamePassword(values[0], values[1]));
         }
         return result;
+    }
+
+    /**
+     * Base64-decodes a credential header value, converting the {@link IllegalArgumentException}
+     * thrown for malformed Base64 into a {@link SecurityException} so callers only have to handle a
+     * single (security) exception type for a bad header.
+     */
+    private static byte[] decodeBase64Credentials(final String encoded) throws SecurityException {
+        try {
+            return Base64.getDecoder().decode(encoded);
+        } catch (IllegalArgumentException e) {
+            throw new SecurityException("Invalid Base64 encoding for username and password",
+                    Response.Status.BAD_REQUEST);
+        }
     }
 
     @VisibleForTesting
@@ -644,7 +779,7 @@ public  class WebResource {
             // @todo ggranum: this should be a split limit 1.
             // "username:SomePass:word".split(":") ==> ["username", "SomePass", "word"]
             // "username:SomePass:word".split(":", 1) ==> ["username", "SomePass:word"]
-            String[] values = Base64.decodeAsString(authentication).split(":");
+            String[] values = new String(decodeBase64Credentials(authentication), java.nio.charset.StandardCharsets.UTF_8).split(":");
             if(values.length < 2) {
                 throw new SecurityException("Invalid syntax for username and password", Response.Status.BAD_REQUEST);
             }
@@ -686,13 +821,11 @@ public  class WebResource {
 
                 throw e;
             } catch (Exception e) {  // doLogin throwing Exception
-
                 Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user. Username: " + username);
                 throw new SecurityException("Authentication credentials are required", e, Response.Status.UNAUTHORIZED);
             }
         } else if(StringUtils.isNotEmpty(username) || StringUtils.isNotEmpty(password)) { // providing login or password
-
             Logger.warn(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             SecurityLogger.logDebug(WebResource.class, "Request IP: " + ip + ". Can't authenticate user.");
             throw new SecurityException("Authentication credentials are required", Response.Status.UNAUTHORIZED);
@@ -801,6 +934,14 @@ public  class WebResource {
         }
     }
 
+    /**
+     * This enum includes the different options to check for the user authentication
+     */
+   public enum AuthCheckOptions {
+        SKIP_CHECK_FORCE_SSL,
+        SKIP_CHECK_ANONYMOUS_PERMISSIONS,
+   }
+
    public static class InitBuilder {
 
         private final WebResource webResource;
@@ -814,6 +955,8 @@ public  class WebResource {
         private final Set<String> requiredRolesSet = new HashSet<>();
         private AnonymousAccess anonAccess=AnonymousAccess.NONE;
         private boolean requireLicense = false;
+        private final Set<AuthCheckOptions> authCheckOptions = new HashSet<>();
+
         public InitBuilder() {
           this(new WebResource());
 
@@ -916,8 +1059,18 @@ public  class WebResource {
             return this;
         }
 
+        @VisibleForTesting
+        public Set<String> getRequiredPortlets() {
+            return Collections.unmodifiableSet(requiredPortlet);
+        }
+
         public InitBuilder requireLicense(final boolean requireLicense){
             this.requireLicense = requireLicense;
+            return this;
+        }
+
+        public InitBuilder authCheckOptions(final AuthCheckOptions... options){
+            this.authCheckOptions.addAll(Arrays.asList(options));
             return this;
         }
 
@@ -937,7 +1090,9 @@ public  class WebResource {
                         "A request is always required and it hasn't been set.");
             }
 
-            if (anonAccess != AnonymousAccess.NONE) {
+
+            if (!authCheckOptions.contains(AuthCheckOptions.SKIP_CHECK_ANONYMOUS_PERMISSIONS)
+                    && anonAccess != AnonymousAccess.NONE) {
 
                 if(UtilMethods.isSet(requiredPortlet) || UtilMethods.isSet(requiredRolesSet)){
                     Logger.debug(InitBuilder.class,

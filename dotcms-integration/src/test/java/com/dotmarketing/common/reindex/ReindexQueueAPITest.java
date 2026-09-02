@@ -54,8 +54,9 @@ public class ReindexQueueAPITest {
             final ReindexEntry currentEntry = getReindexEntry(recordId);
 
             //marks the entry as failed and verifies it is returned
-            currentEntry.setPriority(REINDEX_MAX_FAILURE_ATTEMPTS);
-            reindexQueueAPI.markAsFailed(currentEntry, "Testing failed record");
+            reindexQueueAPI.markAsFailed(
+                    ImmutableReindexEntry.builder().from(currentEntry).priority(REINDEX_MAX_FAILURE_ATTEMPTS).build(),
+                    "Testing failed record");
 
             failedRecords = reindexQueueAPI.getFailedReindexRecords();
             assertTrue(UtilMethods.isSet(failedRecords));
@@ -91,8 +92,9 @@ public class ReindexQueueAPITest {
             ReindexEntry currentEntry = getReindexEntry(recordId);
 
             //forces the priority to be set to Priority.REINDEX
-            currentEntry.setPriority(Priority.REINDEX.ordinal() - 1);
-            reindexQueueAPI.markAsFailed(currentEntry, "Testing failed record");
+            reindexQueueAPI.markAsFailed(
+                    ImmutableReindexEntry.builder().from(currentEntry).priority(Priority.REINDEX.ordinal() - 1).build(),
+                    "Testing failed record");
             failedRecords = reindexQueueAPI.getFailedReindexRecords();
             assertFalse(UtilMethods.isSet(failedRecords));
 

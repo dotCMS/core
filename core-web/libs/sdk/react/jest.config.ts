@@ -1,4 +1,3 @@
-/* eslint-disable */
 export default {
     displayName: 'sdk-react',
     preset: '../../../jest.preset.js',

@@ -1,13 +1,14 @@
 {
 	"info": {
-		"_postman_id": "eb368c08-8543-40cf-b207-fc4ec18294cd",
+		"_postman_id": "e0f929f8-5e92-4068-970e-aa21933be9d0",
 		"name": "ContentTypePagesResource",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
-		"_exporter_id": "781456"
+		"_exporter_id": "10041132",
+		"_collection_link": "https://speeding-firefly-555540.postman.co/workspace/Secret-World~fc6a9777-5040-4aa5-ab80-d34684cf3895/collection/10041132-e0f929f8-5e92-4068-970e-aa21933be9d0?action=share&source=collection_link&creator=10041132"
 	},
 	"item": [
 		{
-			"name": "ContentTypeForPages",
+			"name": "Setup",
 			"item": [
 				{
 					"name": "Logout",
@@ -38,39 +39,32 @@
 								"logout"
 							]
 						},
-						"description": "Logout before try with invalid user"
+						"description": "Logout before starting tests"
 					},
 					"response": []
 				},
 				{
-					"name": "GetCurrentSite",
+					"name": "Create First Content Type",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Storing workflow data\", function () {",
+									"pm.test(\"Store first content type ID\", function () {",
 									"    var jsonData = pm.response.json();",
-									"    pm.collectionVariables.set(\"currentSiteHost\", jsonData.entity.hostname);",
-									"});",
-									""
+									"    pm.expect(jsonData.entity).to.not.be.null;",
+									"    pm.expect(jsonData.entity[0]).to.not.be.null;",
+									"    pm.expect(jsonData.entity[0].id).to.not.be.null;",
+									"    pm.collectionVariables.set(\"contentType1Id\", jsonData.entity[0].id);",
+									"    pm.collectionVariables.set(\"contentType1VarName\", jsonData.entity[0].variable);",
+									"    console.log('First content type created with ID:', jsonData.entity[0].id);",
+									"});"
 								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						},
-						{
-							"listen": "prerequest",
-							"script": {
-								"exec": [
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -85,65 +79,11 @@
 								}
 							]
 						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{serverURL}}/api/v1/site/currentSite",
-							"host": [
-								"{{serverURL}}"
-							],
-							"path": [
-								"api",
-								"v1",
-								"site",
-								"currentSite"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "GetFirstPage",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
-									"    pm.response.to.have.status(200);",
-									"});",
-									"",
-									"",
-									"var jsonData = pm.response.json();",
-									"pm.collectionVariables.set(\"currentPageId\", jsonData.contentlets[0].identifier);",
-									"pm.collectionVariables.set(\"currentPageUrl\", jsonData.contentlets[0].url);",
-									"",
-									""
-								],
-								"type": "text/javascript",
-								"packages": {}
-							}
-						}
-					],
-					"protocolProfileBehavior": {
-						"disableBodyPruning": true
-					},
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{jwt}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
 						"body": {
 							"mode": "raw",
-							"raw": "",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"PageTest_BlogContent_{{$timestamp}}\",\n    \"description\": \"First content type for page tests\",\n    \"host\": \"SYSTEM_HOST\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"LONG_TEXT\",\n            \"dbColumn\": \"text_area2\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Tags\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"tags\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
 							"options": {
 								"raw": {
 									"language": "json"
@@ -151,51 +91,41 @@
 							}
 						},
 						"url": {
-							"raw": "{{serverURL}}/api/content/render/false/query/+contentType:htmlpageasset",
+							"raw": "{{serverURL}}/api/v1/contenttype",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
-								"content",
-								"render",
-								"false",
-								"query",
-								"+contentType:htmlpageasset"
+								"v1",
+								"contenttype"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPages",
+					"name": "Create Second Content Type",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Storing workflow data\", function () {",
-									"    let jsonData = pm.response.json();",
-									"    let length = jsonData.entity.length;",
-									"    let currentPage = jsonData.pagination.currentPage;",
-									"    let perPage = jsonData.pagination.perPage;",
-									"    let totalEntries = jsonData.pagination.totalEntries;",
-									"    ",
-									"    pm.expect(length).to.greaterThan(0)",
-									"    pm.expect(totalEntries).to.greaterThan(0)",
-									"    pm.expect(perPage).to.eql(10)",
-									"    pm.expect(currentPage).to.eql(1)",
-									"",
-									"});",
-									"",
-									""
+									"pm.test(\"Store second content type ID\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.not.be.null;",
+									"    pm.expect(jsonData.entity[0]).to.not.be.null;",
+									"    pm.expect(jsonData.entity[0].id).to.not.be.null;",
+									"    pm.collectionVariables.set(\"contentType2Id\", jsonData.entity[0].id);",
+									"    pm.collectionVariables.set(\"contentType2VarName\", jsonData.entity[0].variable);",
+									"    console.log('Second content type created with ID:', jsonData.entity[0].id);",
+									"});"
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -210,58 +140,51 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"clazz\": \"com.dotcms.contenttype.model.type.ImmutableSimpleContentType\",\n    \"defaultType\": false,\n    \"name\": \"PageTest_NewsContent_{{$timestamp}}\",\n    \"description\": \"Second content type for page tests\",\n    \"host\": \"SYSTEM_HOST\",\n    \"owner\": \"dotcms.org.1\",\n    \"fixed\": false,\n    \"system\": false,\n    \"folder\": \"SYSTEM_FOLDER\",\n    \"fields\": [\n        {\n            \"dataType\": \"SYSTEM\",\n            \"dbColumn\": \"system_field1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableHostFolderField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Host/Folder\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 1,\n            \"unique\": false,\n            \"variable\": \"hostfolder\"\n        },\n        {\n            \"dataType\": \"LONG_TEXT\",\n            \"dbColumn\": \"text_area2\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTagField\",\n            \"indexed\": true,\n            \"listed\": false,\n            \"name\": \"Tags\",\n            \"readOnly\": false,\n            \"required\": false,\n            \"searchable\": true,\n            \"sortOrder\": 3,\n            \"unique\": false,\n            \"variable\": \"tags\"\n        },\n        {\n            \"dataType\": \"TEXT\",\n            \"dbColumn\": \"text1\",\n            \"fieldVariables\": [],\n            \"fixed\": false,\n            \"clazz\": \"com.dotcms.contenttype.model.field.ImmutableTextField\",\n            \"indexed\": true,\n            \"listed\": true,\n            \"name\": \"title\",\n            \"readOnly\": false,\n            \"required\": true,\n            \"searchable\": true,\n            \"sortOrder\": 2,\n            \"unique\": false,\n            \"variable\": \"title\"\n        }\n    ],\n    \"workflow\": [\"d61a59e1-a49c-46f2-a929-db2b4bfa88b2\"]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageId}}",
+							"raw": "{{serverURL}}/api/v1/contenttype",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"contenttype",
-								"page"
-							],
-							"query": [
-								{
-									"key": "pagePathOrId",
-									"value": "{{currentPageId}}"
-								}
+								"contenttype"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPagesByUrl",
+					"name": "Create Container",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 200 \", function () {",
+									"pm.test(\"Status code is 200\", function () {",
 									"    pm.response.to.have.status(200);",
 									"});",
 									"",
-									"pm.test(\"Checking Content Type Information\", function () {",
-									"    let jsonData = pm.response.json();",
-									"    let length = jsonData.entity.length;",
-									"    let currentPage = jsonData.pagination.currentPage;",
-									"    let perPage = jsonData.pagination.perPage;",
-									"    let totalEntries = jsonData.pagination.totalEntries;",
-									"    ",
-									"    pm.expect(length).to.greaterThan(0)",
-									"    pm.expect(totalEntries).to.greaterThan(0)",
-									"    pm.expect(perPage).to.eql(10)",
-									"    pm.expect(currentPage).to.eql(1)",
-									"",
-									"});",
-									"",
-									""
+									"pm.test(\"Store container information\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.not.be.null;",
+									"    pm.expect(jsonData.entity.identifier).to.not.be.null;",
+									"    pm.collectionVariables.set(\"containerId\", jsonData.entity.identifier);",
+									"    console.log('Container created with ID:', jsonData.entity.identifier);",
+									"});"
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -276,43 +199,51 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"PageTest_Container_{{$timestamp}}\",\n    \"friendlyName\": \"Container for page content type tests\",\n    \"maxContentlets\": 25,\n    \"code\": \"<div class=\\\"content-wrapper\\\">\\n#foreach($contentlet in $contents)\\n  <h2>$contentlet.title</h2>\\n#end\\n</div>\",\n    \"preLoop\": \"<div class=\\\"container-start\\\">\",\n    \"postLoop\": \"</div>\",\n    \"containerStructures\": [\n        {\n            \"structureId\": \"{{contentType1Id}}\",\n            \"code\": \"<div class=\\\"blog-content\\\">\\n  <h3>$title</h3>\\n</div>\"\n        },\n        {\n            \"structureId\": \"{{contentType2Id}}\",\n            \"code\": \"<div class=\\\"news-content\\\">\\n  <h3>$title</h3>\\n</div>\"\n        }\n    ]\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{currentPageUrl}}",
+							"raw": "{{serverURL}}/api/v1/containers",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"contenttype",
-								"page"
-							],
-							"query": [
-								{
-									"key": "pagePathOrId",
-									"value": "{{currentPageUrl}}"
-								}
+								"containers"
 							]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "CheckContentTypeForPagesBadRequest",
+					"name": "Create Template",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 400 \", function () {",
-									"    pm.response.to.have.status(400);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});",
-									""
+									"",
+									"pm.test(\"Store template information\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.not.be.null;",
+									"    pm.expect(jsonData.entity.identifier).to.not.be.null;",
+									"    pm.collectionVariables.set(\"templateId\", jsonData.entity.identifier);",
+									"    console.log('Template created with ID:', jsonData.entity.identifier);",
+									"});"
 								],
-								"type": "text/javascript",
-								"packages": {}
+								"type": "text/javascript"
 							}
 						}
 					],
@@ -327,24 +258,96 @@
 								}
 							]
 						},
-						"method": "GET",
+						"method": "POST",
 						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n    \"title\": \"PageTest_Template_{{$timestamp}}\",\n    \"friendlyName\": \"Template for page content type tests\",\n    \"body\": \"#dotParse('/application/templates/htmlpage_head.vtl')\\n<body>\\n<div class=\\\"page-wrapper\\\">\\n  <h1>Page Content Type Test</h1>\\n  #parseContainer('{{containerId}}')\\n</div>\\n</body>\\n</html>\",\n    \"header\": \"\",\n    \"footer\": \"\"\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
 						"url": {
-							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId=NONEXIST",
+							"raw": "{{serverURL}}/api/v1/templates",
 							"host": [
 								"{{serverURL}}"
 							],
 							"path": [
 								"api",
 								"v1",
-								"contenttype",
-								"page"
-							],
-							"query": [
+								"templates"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Create Test Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Store page information\", function () {",
+									"    var jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity).to.not.be.null;",
+									"    pm.expect(jsonData.entity.identifier).to.not.be.null;",
+									"    pm.expect(jsonData.entity.url).to.not.be.null;",
+									"    pm.collectionVariables.set(\"testPageId\", jsonData.entity.identifier);",
+									"    pm.collectionVariables.set(\"testPageUrl\", jsonData.entity.url);",
+									"    pm.collectionVariables.set(\"testPageTitle\", jsonData.entity.title);",
+									"    console.log('Page created with ID:', jsonData.entity.identifier);",
+									"    console.log('Page URL:', jsonData.entity.url);",
+									"    console.log('Page Title:', jsonData.entity.title);",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
 								{
-									"key": "pagePathOrId",
-									"value": "NONEXIST"
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
 								}
+							]
+						},
+						"method": "PUT",
+						"header": [],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n   \"contentlet\":{\n    \"stName\": \"htmlpageasset\",\n    \"title\": \"PageTest_TestPage_{{$timestamp}}\",\n    \"friendlyName\": \"Test page for content type endpoint\",\n    \"template\": \"{{templateId}}\",\n    \"showOnMenu\": false,\n    \"sortOrder\": 1,\n    \"cachettl\": \"10\",\n    \"url\": \"page_test_{{$timestamp}}\",\n    \"hostFolder\": \"8a7d5e23-da1e-420a-b4f0-471e7da8ea2d\"\n   }\n}",
+							"options": {
+								"raw": {
+									"language": "json"
+								}
+							}
+						},
+						"url": {
+							"raw": "{{serverURL}}/api/v1/workflow/actions/default/fire/PUBLISH",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"workflow",
+								"actions",
+								"default",
+								"fire",
+								"PUBLISH"
 							]
 						}
 					},
@@ -359,58 +362,389 @@
 						"packages": {},
 						"exec": [
 							"if (!pm.environment.get('jwt')) {",
-							"    console.log(\"generating....\")",
-							"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-							"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+							"    console.log(\"generating jwt token...\")",
+							"    const serverURL = pm.environment.get('serverURL');",
+							"    const apiUrl = `${serverURL}/api/v1/apitoken`;",
 							"",
-							"    if (!pm.environment.get('jwt')) {",
-							"        const username = pm.environment.get(\"user\");",
-							"        const password = pm.environment.get(\"password\");",
-							"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+							"    const username = pm.environment.get(\"user\");",
+							"    const password = pm.environment.get(\"password\");",
+							"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 							"",
-							"        const requestOptions = {",
-							"            url: apiUrl,",
-							"            method: \"POST\",",
-							"            header: {",
-							"                \"accept\": \"*/*\",",
-							"                \"content-type\": \"application/json\",",
-							"                \"Authorization\": `Basic ${basicAuth}`",
-							"            },",
-							"            body: {",
-							"                mode: \"raw\",",
-							"                raw: JSON.stringify({",
-							"                    \"expirationSeconds\": 7200,",
-							"                    \"userId\": \"dotcms.org.1\",",
-							"                    \"network\": \"0.0.0.0/0\",",
-							"                    \"claims\": {\"label\": \"postman-tests\"}",
-							"                })",
-							"            }",
-							"        };",
+							"    const requestOptions = {",
+							"        url: apiUrl,",
+							"        method: \"POST\",",
+							"        header: {",
+							"            \"accept\": \"*/*\",",
+							"            \"content-type\": \"application/json\",",
+							"            \"Authorization\": `Basic ${basicAuth}`",
+							"        },",
+							"        body: {",
+							"            mode: \"raw\",",
+							"            raw: JSON.stringify({",
+							"                \"expirationSeconds\": 7200,",
+							"                \"userId\": \"dotcms.org.1\",",
+							"                \"network\": \"0.0.0.0/0\",",
+							"                \"claims\": {\"label\": \"postman-tests\"}",
+							"            })",
+							"        }",
+							"    };",
 							"",
-							"        pm.sendRequest(requestOptions, function (err, response) {",
-							"            if (err) {",
-							"                console.log(err);",
-							"            } else {",
-							"                const jwt = response.json().entity.jwt;",
-							"                pm.environment.set('jwt', jwt);",
-							"                console.log(jwt);",
-							"            }",
-							"        });",
-							"    }",
-							"}",
-							""
+							"    pm.sendRequest(requestOptions, function (err, response) {",
+							"        if (err) {",
+							"            console.log(err);",
+							"        } else {",
+							"            const jwt = response.json().entity.jwt;",
+							"            pm.environment.set('jwt', jwt);",
+							"            console.log('JWT token generated successfully');",
+							"        }",
+							"    });",
+							"}"
 						]
 					}
+				}
+			]
+		},
+		{
+			"name": "Content Type for Pages Tests",
+			"item": [
+				{
+					"name": "Test 1: Basic - Get Content Types for Page by ID",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains expected content types for page: \" + pm.collectionVariables.get('testPageId'), function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity, 'The response entity should not be null').to.not.be.null;",
+									"    pm.expect(jsonData.entity.length, 'Should return at least one content type').to.be.greaterThan(0);",
+									"    ",
+									"    // Check that our created content types are present",
+									"    const contentTypeVariables = jsonData.entity.map(ct => ct.variable);",
+									"    const contentType1VarName = pm.collectionVariables.get('contentType1VarName');",
+									"    const contentType2VarName = pm.collectionVariables.get('contentType2VarName');",
+									"    ",
+									"    pm.expect(contentTypeVariables, `Content types should include ${contentType1VarName}`).to.include(contentType1VarName);",
+									"    pm.expect(contentTypeVariables, `Content types should include ${contentType2VarName}`).to.include(contentType2VarName);",
+									"});",
+									"",
+									"pm.test(\"Pagination data is correct\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination, 'Pagination should exist').to.not.be.null;",
+									"    pm.expect(jsonData.pagination.totalEntries, 'Total entries should be greater than 0').to.be.greaterThan(0);",
+									"    pm.expect(jsonData.pagination.perPage, 'Per page should be 10 by default').to.eql(10);",
+									"    pm.expect(jsonData.pagination.currentPage, 'Current page should be 1').to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageId}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageId}}"
+								}
+							]
+						}
+					},
+					"response": []
 				},
 				{
-					"listen": "test",
-					"script": {
-						"type": "text/javascript",
-						"packages": {},
-						"exec": [
-							""
-						]
-					}
+					"name": "Test 2: Basic - Get Content Types for Page by URL",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Response contains expected content types for page URL: \" + pm.collectionVariables.get('testPageUrl'), function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity, 'The response entity should not be null').to.not.be.null;",
+									"    pm.expect(jsonData.entity.length, 'Should return at least one content type').to.be.greaterThan(0);",
+									"    ",
+									"    // Check that our created content types are present",
+									"    const contentTypeVariables = jsonData.entity.map(ct => ct.variable);",
+									"    const contentType1VarName = pm.collectionVariables.get('contentType1VarName');",
+									"    const contentType2VarName = pm.collectionVariables.get('contentType2VarName');",
+									"    ",
+									"    pm.expect(contentTypeVariables, `Content types should include ${contentType1VarName}`).to.include(contentType1VarName);",
+									"    pm.expect(contentTypeVariables, `Content types should include ${contentType2VarName}`).to.include(contentType2VarName);",
+									"});",
+									"",
+									"pm.test(\"Pagination data is correct\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination, 'Pagination should exist').to.not.be.null;",
+									"    pm.expect(jsonData.pagination.totalEntries, 'Total entries should be greater than 0').to.be.greaterThan(0);",
+									"    pm.expect(jsonData.pagination.perPage, 'Per page should be 10 by default').to.eql(10);",
+									"    pm.expect(jsonData.pagination.currentPage, 'Current page should be 1').to.eql(1);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageUrl}}",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageUrl}}"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test 3: Filter - Find Content Type by Partial Name Match",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Filter returns only matching content type for 'BlogContent'\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity, 'The response entity should not be null').to.not.be.null;",
+									"    ",
+									"    if (jsonData.entity.length > 0) {",
+									"        // Check that returned content types contain 'BlogContent' in their name",
+									"        const hasMatchingType = jsonData.entity.some(ct => ct.name.includes('BlogContent'));",
+									"        pm.expect(hasMatchingType, 'Should contain content type with BlogContent in the name').to.be.true;",
+									"        ",
+									"        // Verify all returned types match the filter",
+									"        jsonData.entity.forEach((ct, index) => {",
+									"            pm.expect(ct.name.toLowerCase(), `Content type ${index + 1} name should match filter`).to.include('blogcontent');",
+									"        });",
+									"    } else {",
+									"        console.log('No content types returned for filter BlogContent');",
+									"    }",
+									"});",
+									"",
+									"pm.test(\"Pagination data reflects filtered results\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination, 'Pagination should exist').to.not.be.null;",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageId}}&filter=BlogContent",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageId}}"
+								},
+								{
+									"key": "filter",
+									"value": "BlogContent"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test 4: No Match - Filter with Non-matching Name",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"",
+									"pm.test(\"Filter returns empty results for non-matching name 'NonExistentContentType'\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.entity, 'The response entity should be an empty array').to.be.an('array');",
+									"    pm.expect(jsonData.entity.length, 'Should return no content types for non-matching filter').to.eql(0);",
+									"});",
+									"",
+									"pm.test(\"Pagination reflects no results found\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.pagination, 'Pagination should exist').to.not.be.null;",
+									"    pm.expect(jsonData.pagination.totalEntries, 'Total entries should be 0').to.eql(0);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId={{testPageId}}&filter=NonExistentContentType",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "{{testPageId}}"
+								},
+								{
+									"key": "filter",
+									"value": "NonExistentContentType"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "Test 5: Bad Request - Non-existent Page",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 400 for non-existent page\", function () {",
+									"    pm.response.to.have.status(400);",
+									"});",
+									"",
+									"pm.test(\"Response contains error message for non-existent page 'NONEXISTENTPAGE123'\", function () {",
+									"    let jsonData = pm.response.json();",
+									"    pm.expect(jsonData.error, 'Error message should indicate page not found').to.include('not found');",
+									"});"
+								],
+								"type": "text/javascript",
+								"packages": {},
+								"requests": {}
+							}
+						}
+					],
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{jwt}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{serverURL}}/api/v1/contenttype/page?pagePathOrId=NONEXISTENTPAGE123",
+							"host": [
+								"{{serverURL}}"
+							],
+							"path": [
+								"api",
+								"v1",
+								"contenttype",
+								"page"
+							],
+							"query": [
+								{
+									"key": "pagePathOrId",
+									"value": "NONEXISTENTPAGE123"
+								}
+							]
+						}
+					},
+					"response": []
 				}
 			]
 		}
@@ -423,46 +757,43 @@
 				"packages": {},
 				"exec": [
 					"if (!pm.environment.get('jwt')) {",
-					"    console.log(\"generating....\")",
-					"    const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
-					"    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+					"    console.log(\"generating jwt token...\");",
+					"    const serverURL = pm.environment.get('serverURL');",
+					"    const apiUrl = `${serverURL}/api/v1/apitoken`;",
 					"",
-					"    if (!pm.environment.get('jwt')) {",
-					"        const username = pm.environment.get(\"user\");",
-					"        const password = pm.environment.get(\"password\");",
-					"        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+					"    const username = pm.environment.get(\"user\");",
+					"    const password = pm.environment.get(\"password\");",
+					"    const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
 					"",
-					"        const requestOptions = {",
-					"            url: apiUrl,",
-					"            method: \"POST\",",
-					"            header: {",
-					"                \"accept\": \"*/*\",",
-					"                \"content-type\": \"application/json\",",
-					"                \"Authorization\": `Basic ${basicAuth}`",
-					"            },",
-					"            body: {",
-					"                mode: \"raw\",",
-					"                raw: JSON.stringify({",
-					"                    \"expirationSeconds\": 7200,",
-					"                    \"userId\": \"dotcms.org.1\",",
-					"                    \"network\": \"0.0.0.0/0\",",
-					"                    \"claims\": {\"label\": \"postman-tests\"}",
-					"                })",
-					"            }",
-					"        };",
+					"    const requestOptions = {",
+					"        url: apiUrl,",
+					"        method: \"POST\",",
+					"        header: {",
+					"            \"accept\": \"*/*\",",
+					"            \"content-type\": \"application/json\",",
+					"            \"Authorization\": `Basic ${basicAuth}`",
+					"        },",
+					"        body: {",
+					"            mode: \"raw\",",
+					"            raw: JSON.stringify({",
+					"                \"expirationSeconds\": 7200,",
+					"                \"userId\": \"dotcms.org.1\",",
+					"                \"network\": \"0.0.0.0/0\",",
+					"                \"claims\": {\"label\": \"postman-tests\"}",
+					"            })",
+					"        }",
+					"    };",
 					"",
-					"        pm.sendRequest(requestOptions, function (err, response) {",
-					"            if (err) {",
-					"                console.log(err);",
-					"            } else {",
-					"                const jwt = response.json().entity.jwt;",
-					"                pm.environment.set('jwt', jwt);",
-					"                console.log(jwt);",
-					"            }",
-					"        });",
-					"    }",
-					"}",
-					""
+					"    pm.sendRequest(requestOptions, function (err, response) {",
+					"        if (err) {",
+					"            console.log(err);",
+					"        } else {",
+					"            const jwt = response.json().entity.jwt;",
+					"            pm.environment.set('jwt', jwt);",
+					"            console.log('JWT token generated successfully');",
+					"        }",
+					"    });",
+					"}"
 				]
 			}
 		},
@@ -479,19 +810,39 @@
 	],
 	"variable": [
 		{
-			"key": "currentSiteJost",
+			"key": "contentType1Id",
 			"value": ""
 		},
 		{
-			"key": "currentSiteHost",
+			"key": "contentType1VarName",
 			"value": ""
 		},
 		{
-			"key": "currentPageId",
+			"key": "contentType2Id",
 			"value": ""
 		},
 		{
-			"key": "currentPageUrl",
+			"key": "contentType2VarName",
+			"value": ""
+		},
+		{
+			"key": "containerId",
+			"value": ""
+		},
+		{
+			"key": "templateId",
+			"value": ""
+		},
+		{
+			"key": "testPageId",
+			"value": ""
+		},
+		{
+			"key": "testPageUrl",
+			"value": ""
+		},
+		{
+			"key": "testPageTitle",
 			"value": ""
 		}
 	]

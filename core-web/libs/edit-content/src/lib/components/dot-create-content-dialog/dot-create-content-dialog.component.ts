@@ -8,13 +8,18 @@ import {
     viewChild,
     signal
 } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
+import { ButtonModule } from 'primeng/button';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotCMSContentlet, ComponentStatus } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { pushFormBridge, popFormBridge } from '@dotcms/edit-content-bridge';
+import { ASSET_PICKER_LAUNCHER, AngularAssetPickerLauncher, DotMessagePipe } from '@dotcms/ui';
 
 import { EditContentDialogData } from '../../models/dot-edit-content-dialog.interface';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-edit-content.layout.component';
 
 /**
@@ -42,7 +47,21 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
  */
 @Component({
     selector: 'dot-edit-content-dialog',
-    imports: [DotEditContentLayoutComponent, DotMessagePipe],
+    imports: [DotEditContentLayoutComponent, DotMessagePipe, ButtonModule],
+    providers: [
+        // Overlay presentation: identity comes from the dialog config, navigation
+        // is in-place, and chrome updates are no-ops. Inherited by the layout
+        // rendered in the template and its store. The concrete class is provided so
+        // this component can read `saved$`; the layout/store see it via the token.
+        OverlayEditContentHost,
+        { provide: EDIT_CONTENT_HOST, useExisting: OverlayEditContentHost },
+        // This is an Angular Edit Content host too — opened by UVE and by the Relationship
+        // field — so the new AssetPicker belongs here as much as in the shell and the side
+        // panel. Without it the three asset-selection entry points would silently fall back to
+        // the legacy picker in both of those flows. The launcher borrows the caller's
+        // `DialogService`, so unlike `IMAGE_EDITOR_LAUNCHER` it needs no provider of its own.
+        { provide: ASSET_PICKER_LAUNCHER, useClass: AngularAssetPickerLauncher }
+    ],
     templateUrl: './dot-edit-content-dialog.component.html',
     styleUrls: ['./dot-edit-content-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -50,6 +69,7 @@ import { DotEditContentLayoutComponent } from '../dot-edit-content-layout/dot-ed
 export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     readonly #dialogRef = inject(DynamicDialogRef);
     readonly #dialogConfig = inject(DynamicDialogConfig);
+    readonly #host = inject(OverlayEditContentHost);
 
     readonly editContentLayout = viewChild<DotEditContentLayoutComponent>('editContentLayout');
 
@@ -60,7 +80,6 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     // Track content changes for callback when dialog closes
     readonly #savedContentlet = signal<DotCMSContentlet | null>(null);
     readonly #hasContentBeenSaved = signal<boolean>(false);
-    #isClosing = false;
 
     /**
      * Expose ComponentStatus enum to template
@@ -75,16 +94,23 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     ngOnInit(): void {
-        // Set state to loaded since this dialog only supports the new editor
         this.state.set(ComponentStatus.LOADED);
     }
 
     constructor() {
-        // Subscribe to dialog close events to handle callback when dialog is closed by any means
-        this.#dialogRef.onClose.subscribe(() => {
-            if (!this.#isClosing) {
-                this.#handleDialogClose();
-            }
+        pushFormBridge();
+
+        // Track saves reported by the editor through the host (replaces the old
+        // (contentSaved) output binding). The callback fires on close.
+        this.#host.saved$.pipe(takeUntilDestroyed()).subscribe((contentlet) => {
+            this.#savedContentlet.set(contentlet);
+            this.#hasContentBeenSaved.set(true);
+        });
+
+        // Single source of truth for callbacks — only fires when the close actually completes.
+        // This prevents callbacks from firing if the dirty-close guard cancels the close.
+        this.#dialogRef.onClose.pipe(takeUntilDestroyed()).subscribe(() => {
+            this.#handleDialogClose();
         });
 
         // Effect to monitor layout component errors
@@ -104,40 +130,11 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
     }
 
     /**
-     * Handles the dialog close event and executes callbacks if content was saved
+     * Fires all close callbacks. Called only from the onClose subscription so
+     * callbacks never run if the dirty-close guard cancels the close.
      */
     #handleDialogClose(): void {
         const data: EditContentDialogData = this.#dialogConfig.data;
-
-        // Check if content was saved during the dialog session
-        const savedContent = this.#savedContentlet();
-        const hasBeenSaved = this.#hasContentBeenSaved();
-
-        if (hasBeenSaved && savedContent && data.onContentSaved) {
-            data.onContentSaved(savedContent);
-        }
-    }
-
-    /**
-     * Handles content saved event from the layout component.
-     * This tracks content changes but doesn't close the dialog immediately.
-     * The callback will be called when the dialog is manually closed.
-     */
-    onContentSaved(contentlet: DotCMSContentlet): void {
-        // Track the latest saved content and mark that content has been saved
-        this.#savedContentlet.set(contentlet);
-        this.#hasContentBeenSaved.set(true);
-    }
-
-    /**
-     * Handles dialog cancellation and cleanup
-     */
-    closeDialog(): void {
-        this.#isClosing = true;
-
-        const data: EditContentDialogData = this.#dialogConfig.data;
-
-        // Check if content was saved during the dialog session
         const savedContent = this.#savedContentlet();
         const hasBeenSaved = this.#hasContentBeenSaved();
 
@@ -148,12 +145,19 @@ export class DotEditContentDialogComponent implements OnInit, OnDestroy {
         if (data.onCancel) {
             data.onCancel();
         }
+    }
 
-        // Close dialog and return the final saved contentlet (or null if nothing was saved)
+    /**
+     * Requests the dialog to close. Callbacks fire only if the dirty-close guard
+     * does not cancel the close (i.e. from #handleDialogClose via onClose).
+     */
+    closeDialog(): void {
+        const hasBeenSaved = this.#hasContentBeenSaved();
+        const savedContent = this.#savedContentlet();
         this.#dialogRef.close(hasBeenSaved ? savedContent : null);
     }
 
     ngOnDestroy(): void {
-        this.#isClosing = true;
+        popFormBridge();
     }
 }

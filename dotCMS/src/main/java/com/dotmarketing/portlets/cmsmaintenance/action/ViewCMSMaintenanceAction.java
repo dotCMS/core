@@ -37,14 +37,10 @@ import com.dotmarketing.util.WebKeys;
 import com.dotmarketing.util.ZipUtil;
 import com.dotmarketing.util.starter.ExportStarterUtil;
 import com.google.common.collect.ImmutableList;
+import com.liferay.portal.model.User;
 import com.liferay.portlet.ActionResponseImpl;
 import com.liferay.util.FileUtil;
 import com.liferay.util.servlet.SessionMessages;
-import org.apache.commons.io.output.TeeOutputStream;
-import org.apache.commons.lang.StringUtils;
-
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.jsp.PageContext;
 import java.io.BufferedOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -58,6 +54,10 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.zip.ZipOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.jsp.PageContext;
+import org.apache.commons.io.output.TeeOutputStream;
+import org.apache.commons.lang.StringUtils;
 
 /**
  * This class group all the CMS Maintenance Task
@@ -131,6 +131,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 		//Manage all the cache Task
 		if(cmd.equals("cache")){
 
+			final User cacheUser = _getUser(req);
+			final String cacheUserId = null != cacheUser ? cacheUser.getUserId() : "unknown";
 			String cacheName = ccf.getCacheName();
 			if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_CONTENTS_INDEX))
 			{
@@ -142,19 +144,14 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				if(!InodeUtils.isSet(structure.getInode()))
 				{
 
-						int shards = Config.getIntProperty("es.index.number_of_shards", 2);
-						try{
-							shards = Integer.parseInt(req.getParameter("shards"));
-						}catch(Exception e){
+					int shards = Config.getIntProperty("es.index.number_of_shards", 1);
+					System.setProperty("es.index.number_of_shards", String.valueOf(shards));
+					Logger.info(this, "Running Contentlet Reindex");
 
-						}
-						System.setProperty("es.index.number_of_shards", String.valueOf(shards));
-						Logger.info(this, "Running Contentlet Reindex");
+					conAPI.refreshAllContent();
 
-						conAPI.refreshAllContent();
-
-						message = "message.cmsmaintenance.cache.indexrebuilt";
-						AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
+					message = "message.cmsmaintenance.cache.indexrebuilt";
+					AdminLogger.log(ViewCMSMaintenanceAction.class, "processAction", "Running Contentlet Reindex");
 
 				}
 				else
@@ -171,7 +168,7 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}
 			} else if (cacheName.equals(com.dotmarketing.util.WebKeys.Cache.CACHE_MENU_FILES))
 			{
-				Logger.info(this, "Deleting Menu Files");
+				Logger.info(this, String.format("User '%s' is deleting Menu Files", cacheUserId));
 				_deleteMenusCache();
 				message = "message.cmsmaintenance.cache.flushmenucaches";
 			} else if (cacheName.equals("flushCache"))
@@ -183,7 +180,9 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}catch (NullPointerException e) {
 					isAllCachesFlush = true;//is a NPE is returned means it's cleaning all the caches
 				}
-				final String msgLogger = isAllCachesFlush ? "Flushing All Caches" : "Flushing " + cacheToFlush +" Cache";
+				final String msgLogger = isAllCachesFlush
+						? String.format("User '%s' is flushing All Caches", cacheUserId)
+						: String.format("User '%s' is flushing %s Cache", cacheUserId, cacheToFlush);
 				Logger.info(this, msgLogger);
 				_flush(cacheToFlush);
 				//Reloads PushPublishing Filters if all cache or system cache is flushed
@@ -192,7 +191,8 @@ public class ViewCMSMaintenanceAction extends DotPortletAction {
 				}
 				message = isAllCachesFlush ? "message.cmsmaintenance.cache.flushallcache" : "message.cmsmaintenance.cache.flushcache";
 			} else {
-				Logger.info(this, "Flushing Live and Working File Cache");
+				Logger.info(this, String.format(
+						"User '%s' is flushing Live and Working File Cache", cacheUserId));
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_LIVE_FILES);
 				_deleteFiles(com.dotmarketing.util.WebKeys.Cache.CACHE_WORKING_FILES);
 

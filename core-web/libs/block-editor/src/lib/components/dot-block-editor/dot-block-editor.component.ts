@@ -1,5 +1,5 @@
 import { combineLatest, from, Observable, Subject } from 'rxjs';
-import { array, assert, object, optional, string } from 'superstruct';
+import { array, assert, optional, string, type as structType } from 'superstruct';
 import tippy from 'tippy.js';
 
 import {
@@ -15,16 +15,22 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    ViewContainerRef
+    ViewContainerRef,
+    ChangeDetectionStrategy
 } from '@angular/core';
-import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
+import {
+    AbstractControl,
+    ControlValueAccessor,
+    NG_VALUE_ACCESSOR,
+    NgControl
+} from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { debounceTime, map, take, takeUntil } from 'rxjs/operators';
 
 import { AnyExtension, Content, Editor, JSONContent } from '@tiptap/core';
-import CharacterCount, { CharacterCountStorage } from '@tiptap/extension-character-count';
+import CharacterCount from '@tiptap/extension-character-count';
 import { Level } from '@tiptap/extension-heading';
 import { Highlight } from '@tiptap/extension-highlight';
 import { Link } from '@tiptap/extension-link';
@@ -41,8 +47,10 @@ import {
     DotCMSContentlet,
     DotCMSContentTypeField,
     EDITOR_MARKETING_KEYS,
+    getDeclaredRemoteBlockNames,
     IMPORT_RESULTS,
-    RemoteCustomExtensions
+    RemoteCustomExtensions,
+    warnOnUnmatchedRemoteBlockNames
 } from '@dotcms/dotcms-models';
 
 import {
@@ -52,29 +60,43 @@ import {
     AssetUploader,
     BubbleAssetFormExtension,
     BubbleFormExtension,
+    DotCMSTableExtensions,
     DotComands,
     DotConfigExtension,
-    DotTableCellContextMenu,
     DotFloatingButton,
-    DotCMSTableExtensions,
+    DotTableCellContextMenu,
     FREEZE_SCROLL_KEY,
     FreezeScroll,
     IndentExtension
 } from '../../extensions';
-import { AIContentNode, ContentletBlock, ImageNode, LoaderNode, VideoNode } from '../../nodes';
 import {
+    AIContentNode,
+    AudioNode,
+    ContentletBlock,
+    createGridColumn,
+    GridBlock,
+    ImageNode,
+    LoaderNode,
+    UnsupportedBlockMark,
+    UnsupportedBlockNode,
+    VideoNode
+} from '../../nodes';
+import {
+    DEFAULT_LANG_ID,
     DotMarketingConfigService,
     formatHTML,
     removeInvalidNodes,
+    restoreUnknownBlockNodes,
     RestoreDefaultDOMAttrs,
-    SetDocAttrStep,
-    DEFAULT_LANG_ID
+    preserveUnknownBlockMarks,
+    preserveUnknownBlockNodes,
+    SetDocAttrStep
 } from '../../shared';
 
 @Component({
-    selector: 'dot-block-editor',
+    selector: 'dot-old-block-editor',
     templateUrl: './dot-block-editor.component.html',
-    styleUrls: ['./dot-block-editor.component.scss'],
+    styleUrls: ['./dot-block-editor.component.css'],
     providers: [
         DialogService,
         {
@@ -83,16 +105,30 @@ import {
             multi: true
         }
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
+/**
+ * @deprecated Legacy block editor — kept on the rollback path behind `FEATURE_FLAG_NEW_BLOCK_EDITOR`
+ * so customers can opt out of the new TipTap-v3 editor (`DotCMSEditorComponent` in `@dotcms/new-block-editor`).
+ * Slated for removal once the new editor exits QA. Do not extend this component — file new work against the new editor.
+ */
 export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, ControlValueAccessor {
     readonly #injector = inject(Injector);
+    /** Schema node names captured as soon as the TipTap editor instance exists. */
+    readonly #knownEditorNodeNames = new Set<string>();
+    readonly #knownEditorMarkNames = new Set<string>();
+    /** Buffers incoming form content until the editor create lifecycle can safely consume it. */
+    #pendingValue: Content | null = null;
+    /** Field-level allowed blocks, with paragraph forced in as the legacy default. */
+    #allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
 
     @Input() field: DotCMSContentTypeField;
     @Input() contentlet: DotCMSContentlet;
 
     @Input() languageId = DEFAULT_LANG_ID;
     @Input() isFullscreen = false;
+    @Input() hasFieldError = false;
     @Input() value: Content = '';
     @Output() valueChange = new EventEmitter<JSONContent>();
     public allowedContentTypes: string;
@@ -109,13 +145,14 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     private onChange: (value: string) => void;
     private onTouched: () => void;
     private destroy$: Subject<boolean> = new Subject<boolean>();
-    private allowedBlocks: string[] = ['paragraph']; //paragraph should be always.
     private _customNodes = new Map([
         ['dotContent', ContentletBlock(this.#injector)],
         ['image', ImageNode],
         ['video', VideoNode],
+        ['audio', AudioNode],
         ['aiContent', AIContentNode],
-        ['loader', LoaderNode]
+        ['loader', LoaderNode],
+        ['gridBlock', GridBlock]
     ]);
     private readonly cd = inject(ChangeDetectorRef);
     private readonly dotPropertiesService = inject(DotPropertiesService);
@@ -133,7 +170,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         placement: 'left'
     };
 
-    get characterCount(): CharacterCountStorage {
+    // v3 stopped exporting CharacterCountStorage; mirror the shape locally.
+    get characterCount(): { characters: () => number; words: () => number } {
         return this.editor?.storage.characterCount;
     }
 
@@ -151,6 +189,35 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         return Math.ceil(this.characterCount.words() / 265);
     }
 
+    /**
+     * Returns the charLimitExceeded error if it exists on the control.
+     * Used in the template to display the error message.
+     */
+    get charLimitError(): { max: number; actual: number } | null {
+        const ngControl = this.#injector.get(NgControl, null);
+
+        return ngControl?.control?.errors?.['charLimitExceeded'] ?? null;
+    }
+
+    /**
+     * Returns true if the editor should show error styling (red border).
+     * Combines the external error state (from parent) with internal charLimit validation.
+     */
+    get hasError(): boolean {
+        return this.hasFieldError || !!this.charLimitError;
+    }
+
+    /**
+     * Returns true if the control has a required error and has been touched.
+     * Used to display the required error message in the footer.
+     */
+    get requiredError(): boolean {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+
+        return !!(control?.errors?.['required'] && control?.touched);
+    }
+
     registerOnChange(fn: (value: string) => void) {
         this.onChange = fn;
     }
@@ -161,6 +228,12 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
     writeValue(content: JSONContent): void {
         this.value = content;
+        if (!this.editor) {
+            this.#pendingValue = content;
+
+            return;
+        }
+
         this.setEditorContent(content);
     }
 
@@ -195,6 +268,14 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                     ],
                     editable: true
                 });
+                this.#knownEditorNodeNames.clear();
+                Object.keys(this.editor.schema.nodes).forEach((nodeName) =>
+                    this.#knownEditorNodeNames.add(nodeName)
+                );
+                this.#knownEditorMarkNames.clear();
+                Object.keys(this.editor.schema.marks).forEach((markName) =>
+                    this.#knownEditorMarkNames.add(markName)
+                );
 
                 this.dotMarketingConfigService.setProperty(
                     EDITOR_MARKETING_KEYS.SHOW_VIDEO_THUMBNAIL,
@@ -222,20 +303,99 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         this.destroy$.complete();
     }
 
-    onBlockEditorChange(value: JSONContent) {
+    onBlockEditorChange(value: JSONContent): void {
         if (this.disabled) {
             return;
         }
 
-        this.valueChange.emit(value);
-        this.onChange?.(JSON.stringify(value));
-        this.onTouched?.();
+        const restoredValue = {
+            ...value,
+            content: restoreUnknownBlockNodes(value.content)
+        };
+
+        // Eagerly include charCount/wordCount/readingTime in the doc attrs so the
+        // API response always contains this metadata. Without this patch the attrs
+        // would only arrive after the 250 ms debounce fired by the (keyup) handler.
+        // `characterCount` is derived from `this.editor?.storage`, so it can be
+        // undefined when the editor hasn't finished initializing (async ngOnInit).
+        const charCount = this.characterCount?.characters?.() ?? 0;
+        const updatedValue: JSONContent =
+            charCount > 0
+                ? {
+                      ...restoredValue,
+                      attrs: {
+                          ...(restoredValue.attrs || {}),
+                          charCount,
+                          wordCount: this.characterCount?.words?.() ?? 0,
+                          readingTime: this.readingTime
+                      }
+                  }
+                : restoredValue;
+
+        this.valueChange.emit(updatedValue);
+        this.onChange?.(JSON.stringify(updatedValue));
+        this.updateCharLimitValidity();
+    }
+
+    /**
+     * Updates the form control validity based on charLimit.
+     * When character count exceeds charLimit, sets charLimitExceeded error
+     * so the form cannot be saved.
+     *
+     * @private
+     * @memberof DotBlockEditorComponent
+     */
+    private updateCharLimitValidity(): void {
+        const ngControl = this.#injector.get(NgControl, null);
+        const control = ngControl?.control;
+        if (!control) {
+            return;
+        }
+
+        const limit = this.charLimit;
+        if (!Number.isFinite(limit) || limit <= 0) {
+            this.clearCharLimitError(control);
+
+            return;
+        }
+
+        const count = this.characterCount?.characters?.() ?? 0;
+        if (count > limit) {
+            control.setErrors({
+                ...(control.errors || {}),
+                charLimitExceeded: { max: limit, actual: count }
+            });
+            control.markAsTouched();
+        } else {
+            this.clearCharLimitError(control);
+        }
+    }
+
+    /**
+     * Removes the charLimitExceeded error from the control while preserving other errors.
+     *
+     * @private
+     * @param {AbstractControl} control - The form control to clear the error from
+     * @memberof DotBlockEditorComponent
+     */
+    private clearCharLimitError(control: AbstractControl): void {
+        const errors = control.errors;
+        if (!errors || !('charLimitExceeded' in errors)) {
+            return;
+        }
+
+        // Remove charLimitExceeded while preserving other errors
+        const rest = Object.keys(errors)
+            .filter((key) => key !== 'charLimitExceeded')
+            .reduce((acc, key) => ({ ...acc, [key]: errors[key] }), {});
+
+        control.setErrors(Object.keys(rest).length > 0 ? rest : null);
     }
 
     setAllowedBlocks(blocks: string) {
         const allowedBlocks = blocks ? blocks.replace(/ /g, '').split(',').filter(Boolean) : [];
 
-        this.allowedBlocks = [...this.allowedBlocks, ...allowedBlocks];
+        this.#allowedBlocks = [...this.#allowedBlocks, ...allowedBlocks];
     }
 
     /**
@@ -246,9 +406,25 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private subscribeToEditorEvents() {
         this.editor.on('create', () => {
-            this.setEditorContent(this.value);
+            // A CVA write can arrive before TipTap finishes booting; replay that buffered
+            // value first so the initial document is wrapped/filtered against the real schema.
+            this.setEditorContent(this.#pendingValue ?? this.value);
+            this.#pendingValue = null;
             this.updateCharCount();
+            // Validate char limit on initial load (e.g., existing content over limit)
+            this.updateCharLimitValidity();
         });
+
+        // Validate char limit on every update (typing, paste, etc.)
+        this.editor.on('update', () => {
+            this.updateCharLimitValidity();
+        });
+
+        // Mark control as touched when user leaves the editor (proper ControlValueAccessor pattern)
+        this.editor.on('blur', () => {
+            this.onTouched?.();
+        });
+
         this.subject
             .pipe(takeUntil(this.destroy$), debounceTime(250))
             .subscribe(() => this.updateCharCount());
@@ -294,16 +470,17 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      *
      */
     private isValidSchema(data: RemoteCustomExtensions): void {
-        const RemoteExtensionsSchema = object({
+        const RemoteExtensionsSchema = structType({
             extensions: array(
-                object({
+                structType({
                     url: string(),
                     actions: optional(
                         array(
-                            object({
+                            structType({
                                 command: string(),
                                 menuLabel: string(),
-                                icon: string()
+                                icon: string(),
+                                name: optional(string())
                             })
                         )
                     )
@@ -364,28 +541,54 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         const data: RemoteCustomExtensions = this.getParsedCustomBlocks();
         const extensionUrls = data?.extensions?.map((extension) => extension.url);
         const customModules = await this.loadCustomBlocks(extensionUrls);
-        const blockNames = [];
-
-        data.extensions.forEach((extension) => {
-            blockNames.push(...(extension.actions?.map((item) => item.name) || []));
-        });
-
         const moduleObj = customModules.reduce(this.parsedCustomModules, {});
+        const loadedExtensions = Object.values(moduleObj) as AnyExtension[];
+        const registeredExtensionNames = loadedExtensions
+            .map((extension) => extension?.name)
+            .filter((name): name is string => typeof name === 'string' && name.length > 0);
 
-        return Object.values(moduleObj);
+        warnOnUnmatchedRemoteBlockNames(data, registeredExtensionNames);
+
+        // Only register the remote blocks this field actually allows. A remote block
+        // deselected in Allowed Blocks is never added to the schema, so it cannot be
+        // inserted (slash menu included) — while any existing content using it still
+        // round-trips as a `dotUnsupportedBlock` placeholder, since an unregistered
+        // node is unknown to `#knownEditorNodeNames`.
+        return loadedExtensions.filter((extension) => this.#isRemoteBlockAllowed(extension?.name));
+    }
+
+    /**
+     * Whether a remote block may be registered on this field.
+     *
+     * Unrestricted fields (`allowedBlocks.length <= 1`, i.e. paragraph-only) register
+     * everything, matching `getAllowedCustomNodes`. On a restricted field the block's
+     * declared `action.name` must appear in `allowedBlocks`.
+     */
+    #isRemoteBlockAllowed(extensionName: string | undefined): boolean {
+        if (this.#allowedBlocks.length <= 1) {
+            return true;
+        }
+
+        return typeof extensionName === 'string' && this.#allowedBlocks.includes(extensionName);
     }
 
     private getEditorNodes(): AnyExtension[] {
+        // StarterKit v3 bundles Link and Underline, but this editor registers its own
+        // Link.extend(...) and Underline in getEditorMarks(). Always disable StarterKit's
+        // bundled copies (in BOTH branches) so we don't double-register them and trigger
+        // "Duplicate extension names found: ['link', 'underline']".
+        const baseConfig: Partial<StarterKitOptions> = { link: false, underline: false };
+
         // If you have more than one allow block (other than the paragraph),
         // we customize the starterkit.
         const starterkit =
-            this.allowedBlocks?.length > 1
-                ? StarterKit.configure(this.starterConfig())
-                : StarterKit;
+            this.#allowedBlocks?.length > 1
+                ? StarterKit.configure({ ...baseConfig, ...this.starterConfig() })
+                : StarterKit.configure(baseConfig);
 
         const customNodes = this.getAllowedCustomNodes();
 
-        return [starterkit, ...customNodes];
+        return [starterkit, UnsupportedBlockNode, ...customNodes];
     }
 
     /**
@@ -407,11 +610,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
         //Heading types supported by default in the editor.
         const heading = ['heading1', 'heading2', 'heading3', 'heading4', 'heading5', 'heading6'];
         const levels = heading
-            .filter((heading) => this.allowedBlocks?.includes(heading))
+            .filter((heading) => this.#allowedBlocks?.includes(heading))
             .map((heading) => +heading.slice(-1) as Level);
 
         const starterKit = staterKitOptions
-            .filter((option) => !this.allowedBlocks?.includes(option))
+            .filter((option) => !this.#allowedBlocks?.includes(option))
             .reduce((options, option) => ({ ...options, [option]: false }), {});
 
         return {
@@ -432,11 +635,11 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
         // If only paragraph is included
         // We do not need to filter
-        if (this.allowedBlocks.length <= 1) {
+        if (this.#allowedBlocks.length <= 1) {
             return [...this._customNodes.values()];
         }
 
-        for (const block of this.allowedBlocks) {
+        for (const block of this.#allowedBlocks) {
             const node = this._customNodes.get(block);
             if (node) {
                 whiteList.push(node);
@@ -457,7 +660,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             DotConfigExtension({
                 lang: this.contentlet?.languageId || this.languageId,
                 allowedContentTypes: this.allowedContentTypes,
-                allowedBlocks: this.allowedBlocks,
+                allowedBlocks: this.#allowedBlocks,
                 contentletIdentifier: this.contentletIdentifier
             }),
             DotComands,
@@ -505,7 +708,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                         return this.#dotMessageService.get('block-editor.placeholder.quote');
                     }
 
-                    if (node.type.name === 'table') {
+                    if (node.type.name === 'table' || node.type.name === 'gridBlock') {
                         return '';
                     }
 
@@ -513,7 +716,8 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 }
             }),
             ...DotCMSTableExtensions,
-            DotTableCellContextMenu(this.viewContainerRef)
+            DotTableCellContextMenu(this.viewContainerRef),
+            createGridColumn(this.#allowedBlocks.length > 1 ? this.#allowedBlocks : [])
         ];
 
         if (isAIPluginInstalled) {
@@ -535,18 +739,69 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private getEditorMarks() {
         return [
+            UnsupportedBlockMark,
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
-            Link.configure({ autolink: false, openOnClick: false })
+            // Extends the default Link mark with accessibility attributes (title, aria-label)
+            // and rel. These are persisted in the TipTap JSON and rendered in the editor DOM.
+            Link.extend({
+                addAttributes() {
+                    return {
+                        ...this.parent?.(),
+                        title: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('title'),
+                            renderHTML: (attrs) => (attrs.title ? { title: attrs.title } : {})
+                        },
+                        'aria-label': {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('aria-label'),
+                            renderHTML: (attrs) =>
+                                attrs['aria-label'] ? { 'aria-label': attrs['aria-label'] } : {}
+                        },
+                        rel: {
+                            default: null,
+                            parseHTML: (el) => el.getAttribute('rel'),
+                            renderHTML: (attrs) => (attrs.rel ? { rel: attrs.rel } : {})
+                        }
+                    };
+                }
+            }).configure({ autolink: false, openOnClick: false })
         ];
     }
 
     private setEditorJSONContent(content: Content) {
+        if (!this.editor || typeof content === 'string') {
+            this.content = content;
+
+            return;
+        }
+
+        // Nodes first, then marks: an unknown node is swallowed whole into the placeholder's
+        // `originalNode` payload, which must stay exactly as stored, so the mark pass only
+        // ever walks what is left of the real tree.
+        const preservedContent = Array.isArray(content)
+            ? preserveUnknownBlockMarks(
+                  preserveUnknownBlockNodes(content, this.#knownEditorNodeNames),
+                  this.#knownEditorMarkNames
+              )
+            : {
+                  ...content,
+                  content: preserveUnknownBlockMarks(
+                      preserveUnknownBlockNodes(content.content, this.#knownEditorNodeNames),
+                      this.#knownEditorMarkNames
+                  )
+              };
+
         this.content =
-            this.allowedBlocks?.length > 1
-                ? removeInvalidNodes(content, this.allowedBlocks)
-                : content;
+            this.#allowedBlocks?.length > 1
+                ? removeInvalidNodes(
+                      preservedContent,
+                      this.#allowedBlocks,
+                      this.#getDeclaredRemoteBlockNames()
+                  )
+                : preservedContent;
     }
 
     private setEditorContent(content: Content) {
@@ -588,5 +843,24 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 {}
             ) || {}
         );
+    }
+
+    /**
+     * Declared remote block names that this field also allows.
+     *
+     * Passing these to `removeInvalidNodes` keeps a selected remote block's content intact
+     * even when its bundle fails to load. Names the field does not allow are deliberately
+     * excluded so deselecting a remote block actually restricts it — the node is then
+     * wrapped as a `dotUnsupportedBlock` placeholder (never stripped, since that
+     * placeholder is always allowed), so restricting still never destroys content.
+     */
+    #getDeclaredRemoteBlockNames(): string[] {
+        const declaredNames = getDeclaredRemoteBlockNames(this.getParsedCustomBlocks());
+
+        if (this.#allowedBlocks.length <= 1) {
+            return declaredNames;
+        }
+
+        return declaredNames.filter((name) => this.#allowedBlocks.includes(name));
     }
 }

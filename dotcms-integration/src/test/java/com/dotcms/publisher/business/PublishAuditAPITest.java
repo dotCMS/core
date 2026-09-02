@@ -19,6 +19,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -384,6 +385,101 @@ public class PublishAuditAPITest {
                         assertEquals(2, publishAuditStatus.getStatusPojo().getAssets().size());
                     }
                 });
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatuses(List)}
+     * When: three audit statuses are inserted and two of them are requested by id
+     * Should: return exactly the two requested rows.
+     */
+    @Test
+    public void test_getPublishAuditStatuses_returnsRequestedRows() throws DotPublisherException {
+        final String bundleId1 = UUIDGenerator.generateUuid();
+        final String bundleId2 = UUIDGenerator.generateUuid();
+        final String bundleId3 = UUIDGenerator.generateUuid();
+        insertPublishAuditStatus(Status.SUCCESS, bundleId1);
+        insertPublishAuditStatus(Status.FAILED_TO_PUBLISH, bundleId2);
+        insertPublishAuditStatus(Status.SUCCESS, bundleId3);
+
+        try {
+            final List<PublishAuditStatus> result = publishAuditAPI.getPublishAuditStatuses(
+                    Arrays.asList(bundleId1, bundleId2));
+
+            assertNotNull(result);
+            assertEquals(2, result.size());
+            final Set<String> ids = result.stream()
+                    .map(PublishAuditStatus::getBundleId)
+                    .collect(Collectors.toSet());
+            assertTrue(ids.contains(bundleId1));
+            assertTrue(ids.contains(bundleId2));
+            assertFalse(ids.contains(bundleId3));
+        } finally {
+            publishAuditAPI.deletePublishAuditStatus(bundleId1);
+            publishAuditAPI.deletePublishAuditStatus(bundleId2);
+            publishAuditAPI.deletePublishAuditStatus(bundleId3);
+        }
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatuses(List)}
+     * When: an empty list is passed
+     * Should: return an empty result, not throw or produce invalid SQL.
+     */
+    @Test
+    public void test_getPublishAuditStatuses_emptyList_returnsEmpty() throws DotPublisherException {
+        final List<PublishAuditStatus> result = publishAuditAPI.getPublishAuditStatuses(Collections.emptyList());
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatuses(List)}
+     * When: null is passed
+     * Should: return an empty result, not throw NPE.
+     */
+    @Test
+    public void test_getPublishAuditStatuses_nullList_returnsEmpty() throws DotPublisherException {
+        final List<PublishAuditStatus> result = publishAuditAPI.getPublishAuditStatuses(null);
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    /**
+     * Method to test: {@link PublishAuditAPI#getPublishAuditStatuses(List)}
+     * When: bundle ids contain SQL meta-characters (single quotes, OR 1=1, ; DROP TABLE)
+     * Should: bind the values as parameters, return an empty result, leave the
+     *         publishing_queue_audit table intact.
+     *
+     * Regression test for the previous String.format-based IN-clause that
+     * concatenated quote-wrapped ids directly into the SQL.
+     */
+    @Test
+    public void test_getPublishAuditStatuses_neutralizesSqlInjectionAttempts() throws DotPublisherException {
+        final String realBundleId = UUIDGenerator.generateUuid();
+        insertPublishAuditStatus(Status.SUCCESS, realBundleId);
+
+        try {
+            final List<String> maliciousIds = Arrays.asList(
+                    "x' OR '1'='1",
+                    "x'; DROP TABLE publishing_queue_audit; --",
+                    "x' UNION SELECT '" + realBundleId + "' --",
+                    "x'/*",
+                    "x\\' OR \\'1\\'=\\'1"
+            );
+
+            final List<PublishAuditStatus> result = publishAuditAPI.getPublishAuditStatuses(maliciousIds);
+
+            assertNotNull(result);
+            assertTrue("Malicious bundle ids should not match any rows; got "
+                    + result.size() + " rows back, indicating values were not bound as parameters",
+                    result.isEmpty());
+
+            final PublishAuditStatus stillThere = publishAuditAPI.getPublishAuditStatus(realBundleId);
+            assertNotNull("publishing_queue_audit row was lost after SQL injection attempt — "
+                    + "DROP TABLE payload may have executed", stillThere);
+        } finally {
+            publishAuditAPI.deletePublishAuditStatus(realBundleId);
+        }
     }
 
     @Test

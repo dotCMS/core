@@ -8,7 +8,7 @@ import com.dotcms.api.system.event.verifier.ExcludeOwnerVerifierBean;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.rendering.velocity.services.ContainerLoader;
 import com.dotcms.rendering.velocity.services.TemplateLoader;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotcms.util.transform.DBTransformer;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.*;

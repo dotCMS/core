@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.system;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageException;
 import com.liferay.portal.language.LanguageRuntimeException;
 

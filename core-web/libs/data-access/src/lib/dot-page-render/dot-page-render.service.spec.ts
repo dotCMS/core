@@ -1,7 +1,8 @@
-import { HttpTestingController, HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { LoginService, CoreWebService, CoreWebServiceMock } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import { DotPageRenderParameters, DotPageMode } from '@dotcms/dotcms-models';
 import {
     LoginServiceMock,
@@ -21,10 +22,10 @@ describe('DotPageRenderService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotSessionStorageService,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 {
                     provide: LoginService,
                     useClass: LoginServiceMock
@@ -38,7 +39,7 @@ describe('DotPageRenderService', () => {
 
     it('should check page permissions based on url', () => {
         dotPageRenderService.checkPermission({ url, language_id: '1' }).subscribe();
-        const req = httpMock.expectOne(`v1/page/_check-permission`);
+        const req = httpMock.expectOne(`/api/v1/page/_check-permission`);
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual({ url, language_id: '1' });
         req.flush({
@@ -52,7 +53,7 @@ describe('DotPageRenderService', () => {
         });
 
         const req = httpMock.expectOne(
-            'v1/page/render/about-us?mode=PREVIEW_MODE&variantName=DEFAULT'
+            '/api/v1/page/render/about-us?mode=PREVIEW_MODE&variantName=DEFAULT'
         );
         expect(req.request.method).toBe('GET');
         req.flush({ entity: mockDotRenderedPage() });
@@ -60,12 +61,12 @@ describe('DotPageRenderService', () => {
 
     it('should get a page with just the url', () => {
         dotPageRenderService.get({ url }).subscribe();
-        httpMock.expectOne('v1/page/render/about-us?mode=PREVIEW_MODE&variantName=DEFAULT');
+        httpMock.expectOne('/api/v1/page/render/about-us?mode=PREVIEW_MODE&variantName=DEFAULT');
     });
 
     it('should get a page with just the mode', () => {
         dotPageRenderService.get({ url, mode: DotPageMode.LIVE }).subscribe();
-        httpMock.expectOne(`v1/page/render/${url}?mode=ADMIN_MODE&variantName=DEFAULT`);
+        httpMock.expectOne(`/api/v1/page/render/${url}?mode=ADMIN_MODE&variantName=DEFAULT`);
     });
 
     describe('view as', () => {
@@ -79,7 +80,7 @@ describe('DotPageRenderService', () => {
                 })
                 .subscribe();
             httpMock.expectOne(
-                'v1/page/render/about-us?language_id=3&mode=PREVIEW_MODE&variantName=DEFAULT'
+                '/api/v1/page/render/about-us?language_id=3&mode=PREVIEW_MODE&variantName=DEFAULT'
             );
         });
 
@@ -96,7 +97,7 @@ describe('DotPageRenderService', () => {
                 })
                 .subscribe();
             httpMock.expectOne(
-                'v1/page/render/about-us?device_inode=1234&mode=PREVIEW_MODE&variantName=DEFAULT'
+                '/api/v1/page/render/about-us?device_inode=1234&mode=PREVIEW_MODE&variantName=DEFAULT'
             );
         });
 
@@ -113,7 +114,7 @@ describe('DotPageRenderService', () => {
                 })
                 .subscribe();
             httpMock.expectOne(
-                'v1/page/render/about-us?com.dotmarketing.persona.id=6789&mode=PREVIEW_MODE&variantName=DEFAULT'
+                '/api/v1/page/render/about-us?com.dotmarketing.persona.id=6789&mode=PREVIEW_MODE&variantName=DEFAULT'
             );
         });
 
@@ -136,7 +137,7 @@ describe('DotPageRenderService', () => {
                 .subscribe();
 
             httpMock.expectOne(
-                'v1/page/render/about-us?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3&mode=PREVIEW_MODE&variantName=DEFAULT'
+                '/api/v1/page/render/about-us?com.dotmarketing.persona.id=6789&device_inode=1234&language_id=3&mode=PREVIEW_MODE&variantName=DEFAULT'
             );
         });
     });

@@ -11,24 +11,32 @@ import java.util.function.Supplier;
 
 public class SecurityLogger {
 
-    private static String filename = "dotcms-security.log";
+    private static final String filename = "dotcms-security.log";
 
-    public static void logInfo(Class clazz, final Supplier<String> message) {
+    public static void logInfo(final Class<?> clazz, final Supplier<String> message) {
         logInfo(clazz, message.get());
     }
 
-    public static void logInfo(Class cl, String msg) {
+    public static void logInfo(final Class<?> clazz, final String msg) {
 
-        Logger.info(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
+        Logger.info(SecurityLogger.class, clazz.toString() + " : " + annointMessage(msg));
         
     }
 
-    public static void logDebug(Class clazz, final Supplier<String> message) {
+    public static void logWarn(final Class<?> clazz, final Supplier<String> message) {
+        logWarn(clazz, message.get());
+    }
+
+    public static void logWarn(final Class<?> clazz, final String msg) {
+        Logger.warn(SecurityLogger.class, clazz.toString() + " : " + annointMessage(msg));
+    }
+
+    public static void logDebug(final Class<?> clazz, final Supplier<String> message) {
         logDebug(clazz, message.get());
     }
 
-    public static void logDebug(Class cl, String msg) {
-        Logger.debug(SecurityLogger.class, cl.toString() + " : " + annointMessage(msg));
+    public static void logDebug(final Class<?> clazz, final String msg) {
+        Logger.debug(SecurityLogger.class, clazz.toString() + " : " + annointMessage(msg));
     }
     
     private static String annointMessage(String msg) {

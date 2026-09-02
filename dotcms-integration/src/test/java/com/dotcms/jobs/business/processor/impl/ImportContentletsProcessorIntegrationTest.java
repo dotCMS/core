@@ -30,6 +30,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
 import javax.servlet.http.HttpServletRequest;
 import org.jboss.weld.junit5.EnableWeld;
 import org.junit.jupiter.api.Assertions;
@@ -971,6 +973,97 @@ public class ImportContentletsProcessorIntegrationTest extends com.dotcms.Junit5
                 APILocator.getContentTypeAPI(systemUser).delete(testContentType);
             }
         }
+    }
+
+    /**
+     * Regression test for issue #35790.
+     * <p>
+     * Scenario: A multilingual CSV without an {@code identifier} column is imported using a
+     * mixed-case key field. The CSV carries {@code languageCode}/{@code countryCode} columns and
+     * French/Spanish rows for content that already exists in English.
+     * <p>
+     * Expected: The French and Spanish rows are recognised as language versions of the existing
+     * English contentlet (same identifier), not as brand-new content (different identifier).
+     * <p>
+     * Two bugs are covered:
+     * <ol>
+     *   <li>{@code isMultilingual} was never set in the {@code ImmutableImportFileParams} builder,
+     *       so {@code languageCode}/{@code countryCode} headers were treated as invalid and a
+     *       per-row {@code +languageId:X} constraint was added to the ES key-field query, making
+     *       cross-language matching impossible.</li>
+     *   <li>The {@code _dotraw} keyword query used the original-case CSV value; ES stores values
+     *       lowercased, causing a guaranteed miss for any mixed-case key value.</li>
+     * </ol>
+     *
+     * @throws Exception if there is an error during test execution
+     */
+    @Test
+    void test_multilingual_import_without_identifier_reuses_existing_identifier_via_key_field()
+            throws Exception {
+
+        ContentType testContentType = null;
+
+        try {
+            final var processor = new ImportContentletsProcessor();
+            testContentType = createTestContentType();
+
+            // Step 1: publish one English row — establishes the base contentlet
+            final File englishCsv = createCsvFile("title,body\nMixedCaseTitle,BodyEN\n");
+            final var englishJob = createTestJob(
+                    englishCsv, "publish", "en-US", testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID, List.of("title")
+            );
+            processor.process(englishJob);
+
+            final List<Contentlet> afterEnglish = findImportedContent(testContentType.id());
+            assertEquals(1, afterEnglish.size(),
+                    "English import should create exactly one contentlet");
+            final String expectedIdentifier = afterEnglish.get(0).getIdentifier();
+
+            // Step 2: import French and Spanish rows via a multilingual CSV.
+            // No identifier column, mixed-case key value, no language parameter on the job.
+            final File multilingualCsv = createCsvFile(
+                    "languageCode,countryCode,title,body\n"
+                            + "fr,FR,MixedCaseTitle,BodyFR\n"
+                            + "es,ES,MixedCaseTitle,BodyES\n"
+            );
+            final var multilingualJob = createTestJob(
+                    multilingualCsv, "publish", null, testContentType.id(),
+                    WORKFLOW_PUBLISH_ACTION_ID, List.of("title")
+            );
+            processor.process(multilingualJob);
+
+            // Step 3: every language version must share the original English identifier.
+            // Before the fix, the French row created a brand-new identifier instead.
+            final List<Contentlet> allVersions = findImportedContent(testContentType.id());
+            final Set<String> distinctIdentifiers = allVersions.stream()
+                    .map(Contentlet::getIdentifier)
+                    .collect(Collectors.toSet());
+
+            assertEquals(1, distinctIdentifiers.size(),
+                    "All language versions (en/fr/es) must share exactly one identifier; "
+                            + "found " + distinctIdentifiers.size() + ": " + distinctIdentifiers);
+            assertEquals(expectedIdentifier, distinctIdentifiers.iterator().next(),
+                    "The single identifier must be the one established by the English import");
+
+        } finally {
+            if (testContentType != null) {
+                APILocator.getContentTypeAPI(systemUser).delete(testContentType);
+            }
+        }
+    }
+
+    /**
+     * Creates a temporary CSV file with the given content string.
+     *
+     * @param content the full CSV content, including the header row
+     * @return a temporary {@link File} containing the CSV data
+     * @throws IOException if there is an error creating or writing to the file
+     */
+    private File createCsvFile(final String content) throws IOException {
+        final File csvFile = File.createTempFile("test", ".csv");
+        Files.write(csvFile.toPath(), content.getBytes());
+        return csvFile;
     }
 
     /**

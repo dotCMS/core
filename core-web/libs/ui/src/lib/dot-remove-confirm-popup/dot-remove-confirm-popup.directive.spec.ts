@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 
@@ -10,7 +10,7 @@ import { DotRemoveConfirmPopupWithEscapeDirective } from './dot-remove-confirm-p
 @Component({
     selector: 'dot-escape-confirm-popup-host',
     template: `
-        <p-confirmPopup dotRemoveConfirmPopupWithEscape></p-confirmPopup>
+        <p-confirmpopup dotRemoveConfirmPopupWithEscape />
     `,
     imports: [ConfirmPopupModule, DotRemoveConfirmPopupWithEscapeDirective]
 })

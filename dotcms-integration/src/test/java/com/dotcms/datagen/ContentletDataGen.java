@@ -363,6 +363,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @WrapInTransaction
     public static void archive(Contentlet contentlet) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.archive(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -377,6 +378,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
     @WrapInTransaction
     public static void delete(Contentlet contentlet) {
         try{
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
             contentletAPI.delete(contentlet, APILocator.systemUser(), false);
         } catch (DotContentletStateException | DotDataException | DotSecurityException e) {
             throw new RuntimeException(e);
@@ -405,6 +407,7 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
 
         if (null != contentlet) {
             try {
+                contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
                 APILocator.getContentletAPI().destroy(contentlet, APILocator.systemUser(), false);
             } catch (Exception e) {
                 if (failSilently) {
@@ -504,5 +507,37 @@ public class ContentletDataGen extends AbstractDataGen<Contentlet> {
             throw new RuntimeException(e);
         }
 
+    }
+
+    /**
+     * Retrieves contentlets from the database for test purposes.
+     * This method queries the contentlet_version_info table directly to get working contentlet inodes,
+     * which is more reliable than using ES index (which may have stale entries after deletions).
+     *
+     * @param offset the starting position (0-based)
+     * @param limit  the maximum number of contentlets to return
+     * @return list of contentlets (never null, may be empty)
+     * @throws DotDataException if a database error occurs
+     */
+    public static List<Contentlet> findAllContent(final int offset, final int limit) throws DotDataException {
+        final List<Contentlet> contentlets = new ArrayList<>();
+        try {
+            final com.dotmarketing.common.db.DotConnect dotConnect = new com.dotmarketing.common.db.DotConnect();
+            dotConnect.setSQL("SELECT working_inode FROM contentlet_version_info LIMIT ? OFFSET ?");
+            dotConnect.addParam(limit);
+            dotConnect.addParam(offset);
+
+            final List<Map<String, Object>> results = dotConnect.loadObjectResults();
+            for (final Map<String, Object> result : results) {
+                final Contentlet contentlet = contentletAPI.find(
+                        (String) result.get("working_inode"), APILocator.systemUser(), false);
+                if (contentlet != null) {
+                    contentlets.add(contentlet);
+                }
+            }
+        } catch (DotSecurityException e) {
+            throw new DotDataException("Error finding all content", e);
+        }
+        return contentlets;
     }
 }

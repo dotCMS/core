@@ -1,4 +1,4 @@
-import { initializeContentAnalytics } from '../../core/dot-content-analytics';
+import { initializeContentAnalytics } from '../../core/dot-analytics.content';
 import { DotCMSAnalytics, DotCMSAnalyticsConfig } from '../../core/shared/models';
 
 /**

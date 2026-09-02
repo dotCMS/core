@@ -1,4 +1,12 @@
-import { Component, EventEmitter, forwardRef, HostListener, Input, Output } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    forwardRef,
+    HostListener,
+    Input,
+    Output,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
 
 @Component({
@@ -6,6 +14,7 @@ import { ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
     selector: 'dot-layout-properties-item',
     templateUrl: './dot-layout-properties-item.component.html',
     styleUrls: ['./dot-layout-properties-item.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [
         {
             multi: true,
@@ -27,7 +36,7 @@ export class DotLayoutPropertiesItemComponent implements ControlValueAccessor {
         /**/
     };
 
-    @HostListener('click', ['$event'])
+    @HostListener('click')
     onClick() {
         this.value = !this.value;
         this.propagateChange(this.value);

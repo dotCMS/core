@@ -254,17 +254,27 @@ public class PublisherTestUtil {
         final HTMLPageAsset pageAsset = (HTMLPageAsset) APILocator.getHTMLPageAssetAPI()
                 .findPage(page.getInode(), sysuser, false);
 
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        pageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
         APILocator.getContentletAPI().publish(pageAsset, user, false);
 
-        pageAsset.setIndexPolicy(IndexPolicy.FORCE);
-        pageAsset.setIndexPolicyDependencies(IndexPolicy.FORCE);
+        // Use WAIT_FOR policy to block until ES refresh completes and document is searchable.
+        // This fixes the race condition where FORCE would trigger a refresh but return before
+        // completion, causing flaky tests under CI load (see issue #34544).
+        // In a single-node test environment with no replicas, WAIT_FOR should be very fast.
+        pageAsset.setIndexPolicy(IndexPolicy.WAIT_FOR);
+        pageAsset.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
         pageAsset.setBoolProperty(Contentlet.IS_TEST_MODE, true);
 
+        final long startTime = System.currentTimeMillis();
         APILocator.getContentletIndexAPI().addContentToIndex(pageAsset);
+        final long waitTime = System.currentTimeMillis() - startTime;
+        Logger.info(PublisherTestUtil.class,
+                "IndexPolicy.WAIT_FOR completed in " + waitTime + "ms for page inode: "
+                        + pageAsset.getInode());
+
         assertEquals(1, APILocator.getContentletAPI()
                 .indexCount("+inode:" + pageAsset.getInode() + " " + UUIDGenerator.ulid(), user,
                         false));

@@ -1,17 +1,49 @@
+import { PermissionType } from './dot-content-drive.model';
+
 /**
  * Represents a folder in the DotCMS system
  *
  * @interface DotFolder
  * @property {string} id - Unique identifier for the folder
+ * @property {string} [inode] - The inode of the folder (used by the legacy content editor to pre-select the target folder)
  * @property {string} hostName - The hostname where the folder resides
  * @property {string} path - The path to the folder in the system
  * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
+ * @property {boolean} [hasChildren] - Whether the folder has at least one child folder visible to
+ * the current user. Populated by the folder-search endpoint; `undefined` when the source does not
+ * report it (e.g. legacy callers), in which case the folder is treated as potentially expandable.
  */
 export interface DotFolder {
     id: string;
+    inode?: string;
     hostName: string;
     path: string;
     addChildrenAllowed: boolean;
+    hasChildren?: boolean;
+    /**
+     * Folder upload preference: `DOTASSET`/`FILEASSET` forces every upload to that base type,
+     * `null`/`undefined` means "ask each time" (no preference). Backed by #35577.
+     */
+    defaultBaseType?: string | null;
+    /**
+     * The folder's own name (last path segment). Populated by the folder-search adapter; other
+     * producers leave it unset and callers fall back to deriving it from `path`.
+     */
+    name?: string;
+    /**
+     * Fields below back the shared folder actions (context menu gating + "Edit folder" dialog) and
+     * are populated only by {@link FolderSearchView} sources.
+     *
+     * `permissions` stays `undefined` when the search did not request them — distinct from `[]`
+     * ("resolved: the user holds none"), so a consumer can resolve them on demand instead of
+     * silently rendering an empty menu.
+     */
+    title?: string;
+    sortOrder?: number;
+    filesMasks?: string;
+    defaultFileType?: string;
+    showOnMenu?: boolean;
+    permissions?: PermissionType[];
 }
 
 /**
@@ -25,6 +57,8 @@ export interface DotFolder {
  * @property {number} [data.sortOrder] - The sort order position of the folder
  * @property {string[]} [data.fileMasks] - Array of file patterns/masks allowed in this folder
  * @property {string} [data.defaultAssetType] - The default type for new assets created in this folder
+ * @property {string | null} [data.defaultBaseType] - The upload preference for this folder: `DOTASSET`/`FILEASSET` forces uploads to that base type, `null` means "ask each time" (no preference)
+ * @property {string} [data.url] - The URL of the folder
  */
 export interface DotFolderEntity {
     assetPath: string;
@@ -34,5 +68,83 @@ export interface DotFolderEntity {
         sortOrder?: number;
         fileMasks?: string[];
         defaultAssetType?: string;
+        defaultBaseType?: string | null;
+        name?: string;
     };
+}
+
+/**
+ * Result item returned by the unified folder search endpoint (`GET /api/v1/folder/search`).
+ * Unlike {@link DotFolder}, the folder's own `name` and its parent `path` are exposed
+ * separately, and `siteId`/hostname are not included (the search is scoped by `siteId`).
+ *
+ * @interface FolderSearchView
+ * @property {string} id - Unique identifier for the folder
+ * @property {string} inode - Inode of the folder
+ * @property {string} name - The folder's own name (not the full path)
+ * @property {string} path - The path of the parent folder that contains this folder
+ * @property {boolean} addChildrenAllowed - Whether new child folders can be added to this folder
+ * @property {boolean} hasChildren - Whether the folder has at least one visible child folder for the requesting user
+ */
+export interface FolderSearchView {
+    id: string;
+    inode: string;
+    name: string;
+    path: string;
+    addChildrenAllowed: boolean;
+    hasChildren: boolean;
+    /**
+     * Folder upload preference (`DOTASSET`/`FILEASSET`, or `null`/absent for "ask each time").
+     */
+    defaultBaseType?: string | null;
+    title: string;
+    sortOrder: number;
+    /** Comma-separated file-name masks allowed in this folder, e.g. `*.jpg,*.png`. */
+    filesMasks: string;
+    /** Velocity variable name of the Content Type used by default for new files in this folder. */
+    defaultFileType: string;
+    showOnMenu: boolean;
+    /**
+     * Permission types the requesting user holds on this folder, drawn from the same set the table
+     * exposes (`READ`, `EDIT`, `PUBLISH`, `EDIT_PERMISSIONS`, `CAN_ADD_CHILDREN`).
+     *
+     * `null` when the request did not pass `includePermissions=true` — deliberately distinct from
+     * `[]` ("requested, but the user holds none"), so callers can tell "not fetched" from "no
+     * grants". Consumers must normalize before gating; see `folderSearchViewToDotFolder`.
+     */
+    permissions: PermissionType[] | null;
+}
+
+/**
+ * Query parameters accepted by `GET /api/v1/folder/search`.
+ *
+ * @interface FolderSearchParams
+ * @property {string} siteId - Site identifier to scope the search (required)
+ * @property {string} [path] - Path scope for the search. Defaults to '/' (site root)
+ * @property {boolean} [recursive] - false = direct children of `path` only (default); true = search all descendants
+ * @property {string} [name] - Optional case-insensitive partial match on folder name (minimum 2 characters when provided)
+ * @property {'name' | 'mod_date'} [orderby] - Column to sort by
+ * @property {'ASC' | 'DESC'} [direction] - Sort direction
+ * @property {number} [page] - Page number (1-based, default 1)
+ * @property {number} [per_page] - Number of results per page (default 40)
+ */
+export interface FolderSearchParams {
+    siteId: string;
+    path?: string;
+    recursive?: boolean;
+    name?: string;
+    orderby?: 'name' | 'mod_date';
+    direction?: 'ASC' | 'DESC';
+    page?: number;
+    per_page?: number;
+    /**
+     * Request per-folder `permissions` on each result. Off by default: resolving them costs extra
+     * batch permission queries per page, so only callers that are about to gate a folder action
+     * (e.g. opening the sidebar context menu) should opt in.
+     *
+     * The backend caps `per_page` when this is `true`
+     * (`content.drive.folder.search.permissions.max.per.page`, default 200) and rejects larger
+     * pages with a 400 — so never combine it with a bulk load such as the deep-link tree hydration.
+     */
+    includePermissions?: boolean;
 }

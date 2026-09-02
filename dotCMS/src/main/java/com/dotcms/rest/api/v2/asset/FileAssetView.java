@@ -1,0 +1,115 @@
+package com.dotcms.rest.api.v2.asset;
+
+import io.swagger.v3.oas.annotations.media.Schema;
+
+/**
+ * Lightweight view returned by write operations (save/publish) in the v2 file-asset endpoint.
+ * Contains the persisted asset's key metadata so callers can verify what was stored.
+ *
+ * <p>Implemented as a Java {@code record} — native, compiler-generated value semantics with no
+ * third-party dependency or annotation-processing build step. This is preferred for new code over
+ * the {@code Abstract*} convention used by the older v1 asset views, which relies on the Immutables
+ * library and its compile-time code generator. A hand-written {@link Builder} preserves the fluent
+ * {@code FileAssetView.builder()...build()} construction style.
+ *
+ * @param identifier asset identifier
+ * @param inode      asset inode
+ * @param name       file name
+ * @param path       host-qualified path to the asset
+ * @param lang       language tag for the asset version
+ * @param live       whether this is the live (published) version
+ * @param working    whether this is the working version
+ * @param fileSize   file size in bytes as stored in the content repository
+ */
+@Schema(description = "File asset view returned after a save or publish operation")
+public record FileAssetView(
+
+        @Schema(description = "Asset identifier", example = "48190c8c-42c4-46af-8d1a-0cd5db894797")
+        String identifier,
+
+        @Schema(description = "Asset inode", example = "a1b2c3d4-e5f6-7890-abcd-ef1234567890")
+        String inode,
+
+        @Schema(description = "File name", example = "banner.vtl")
+        String name,
+
+        @Schema(description = "Host-qualified path to the asset",
+                example = "//demo.dotcms.com/application/containers/default/banner.vtl")
+        String path,
+
+        @Schema(description = "Language tag for the asset version", example = "en-US")
+        String lang,
+
+        @Schema(description = "Whether this is the live (published) version", example = "false")
+        boolean live,
+
+        @Schema(description = "Whether this is the working version", example = "true")
+        boolean working,
+
+        @Schema(description = "File size in bytes as stored in the content repository", example = "4096")
+        long fileSize) {
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    /**
+     * Hand-written fluent builder, so call sites construct a {@link FileAssetView} the same way
+     * they did before this view was migrated to a record.
+     */
+    public static final class Builder {
+
+        private String identifier;
+        private String inode;
+        private String name;
+        private String path;
+        private String lang;
+        private boolean live;
+        private boolean working;
+        private long fileSize;
+
+        public Builder identifier(final String identifier) {
+            this.identifier = identifier;
+            return this;
+        }
+
+        public Builder inode(final String inode) {
+            this.inode = inode;
+            return this;
+        }
+
+        public Builder name(final String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder path(final String path) {
+            this.path = path;
+            return this;
+        }
+
+        public Builder lang(final String lang) {
+            this.lang = lang;
+            return this;
+        }
+
+        public Builder live(final boolean live) {
+            this.live = live;
+            return this;
+        }
+
+        public Builder working(final boolean working) {
+            this.working = working;
+            return this;
+        }
+
+        public Builder fileSize(final long fileSize) {
+            this.fileSize = fileSize;
+            return this;
+        }
+
+        public FileAssetView build() {
+            return new FileAssetView(identifier, inode, name, path, lang, live, working, fileSize);
+        }
+    }
+}

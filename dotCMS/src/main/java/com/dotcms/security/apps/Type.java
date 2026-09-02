@@ -13,6 +13,8 @@ public enum Type {
     BOOL,
     SELECT,
     BUTTON,
-    GENERATED_STRING
+    GENERATED_STRING,
+    HEADING,
+    INFO
 
 }

@@ -6,6 +6,311 @@
 		"_exporter_id": "11174695"
 	},
 	"item": [
+      {
+        "name": "Feature Flag Tests",
+        "item": [
+          {
+            "name": "Set Feature Flag to False",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is disabled\", function () {",
+                    "    const entity = pm.response.json().entity;",
+                    "    pm.expect(entity).to.exist;",
+                    "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"false\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{serverURL}}/api/v1/system-table/",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "system-table",
+                  ""
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Validate Feature Flag is False",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code should be ok 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "var jsonData = pm.response.json();",
+                    "",
+                    "pm.test(\"FEATURE_FLAG has the defined false value\", function () {",
+                    "    var value = jsonData.entity[\"FEATURE_FLAG_UVE_STYLE_EDITOR\"];",
+                    "    pm.expect(typeof value).to.eql(\"string\", \"Expected a string but got \" + typeof value);",
+                    "    pm.expect(value).to.eql(\"false\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{serverURL}}/api/v1/configuration/config?keys=FEATURE_FLAG_UVE_STYLE_EDITOR",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "configuration",
+                  "config"
+                ],
+                "query": [
+                  {
+                    "key": "keys",
+                    "value": "FEATURE_FLAG_UVE_STYLE_EDITOR"
+                  }
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Set Feature Flag to True",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is enabled\", function () {",
+                    "    const entity = pm.response.json().entity;",
+                    "    pm.expect(entity).to.exist;",
+                    "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR saved/updated');",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "POST",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\n    \"key\": \"FEATURE_FLAG_UVE_STYLE_EDITOR\",\n    \"value\": \"true\"\n}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{serverURL}}/api/v1/system-table/",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "system-table",
+                  ""
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Validate Feature Flag is True",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code should be ok 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "var jsonData = pm.response.json();",
+                    "",
+                    "pm.test(\"FEATURE_FLAG has the defined true value\", function () {",
+                    "    var value = jsonData.entity[\"FEATURE_FLAG_UVE_STYLE_EDITOR\"];",
+                    "    pm.expect(typeof value).to.eql(\"string\", \"Expected a string but got \" + typeof value);",
+                    "    pm.expect(value).to.eql(\"true\");",
+                    "",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{serverURL}}/api/v1/configuration/config?keys=FEATURE_FLAG_UVE_STYLE_EDITOR",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "configuration",
+                  "config"
+                ],
+                "query": [
+                  {
+                    "key": "keys",
+                    "value": "FEATURE_FLAG_UVE_STYLE_EDITOR"
+                  }
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Delete Feature Flag",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code is 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "pm.test(\"FEATURE_FLAG_UVE_STYLE_EDITOR is deleted\", function () {",
+                    "    const entity = pm.response.json().entity;",
+                    "    pm.expect(entity).to.exist;",
+                    "    pm.expect(entity).to.eql('FEATURE_FLAG_UVE_STYLE_EDITOR Deleted');",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "DELETE",
+              "header": [],
+              "body": {
+                "mode": "raw",
+                "raw": "{\"key\":\"FEATURE_FLAG_UVE_STYLE_EDITOR\"}",
+                "options": {
+                  "raw": {
+                    "language": "json"
+                  }
+                }
+              },
+              "url": {
+                "raw": "{{serverURL}}/api/v1/system-table/_delete",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "system-table",
+                  "_delete"
+                ]
+              }
+            },
+            "response": []
+          },
+          {
+            "name": "Non existing Feature Flag key defaults to True",
+            "event": [
+              {
+                "listen": "test",
+                "script": {
+                  "exec": [
+                    "pm.test(\"Status code should be ok 200\", function () {",
+                    "    pm.response.to.have.status(200);",
+                    "});",
+                    "",
+                    "var jsonData = pm.response.json();",
+                    "",
+                    "// Validate that non existing FF is NOT_FOUND",
+                    "",
+                    "pm.test(\"FEATURE_FLAG unconfigured key returns boolean true, not false\", function () {",
+                    "    var value = jsonData.entity[\"FEATURE_FLAG_UVE_STYLE_EDITOR\"];",
+                    "    pm.expect(typeof value).to.eql(\"string\", \"Expected a string but got \" + typeof value);",
+                    "    pm.expect(value).to.eql(\"NOT_FOUND\");",
+                    "});"
+                  ],
+                  "type": "text/javascript",
+                  "packages": {},
+                  "requests": {}
+                }
+              }
+            ],
+            "request": {
+              "method": "GET",
+              "header": [],
+              "url": {
+                "raw": "{{serverURL}}/api/v1/configuration/config?keys=FEATURE_FLAG_UVE_STYLE_EDITOR",
+                "host": [
+                  "{{serverURL}}"
+                ],
+                "path": [
+                  "api",
+                  "v1",
+                  "configuration",
+                  "config"
+                ],
+                "query": [
+                  {
+                    "key": "keys",
+                    "value": "FEATURE_FLAG_UVE_STYLE_EDITOR"
+                  }
+                ]
+              }
+            },
+            "response": []
+          }
+        ]
+      },
 		{
 			"name": "Getting config variables",
 			"event": [
@@ -341,5 +646,78 @@
 			},
 			"response": []
 		}
-	]
+	],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{jwt}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          "   const serverURL = pm.environment.get('serverURL'); // Get the server URL from the environment variable",
+          "   const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+          "",
+          "// If we are unable to get the JWT we need to generate a new one",
+          "   if (!pm.environment.get('jwt')) {",
+          "       const username = pm.environment.get(\"user\");",
+          "       const password = pm.environment.get(\"password\");",
+          "       const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+          "",
+          "",
+          "       const requestOptions = {",
+          "           url: apiUrl,",
+          "           method: \"POST\",",
+          "           header: {",
+          "               \"accept\": \"*/*\",",
+          "               \"content-type\": \"application/json\",",
+          "               \"Authorization\": `Basic ${basicAuth}`",
+          "           },",
+          "           body: {",
+          "               mode: \"raw\",",
+          "               raw: JSON.stringify({",
+          "                   \"expirationSeconds\": 7200,",
+          "                   \"userId\": \"dotcms.org.1\",",
+          "                   \"network\": \"0.0.0.0/0\",",
+          "                   \"claims\": {\"label\": \"postman-tests\"}",
+          "               })",
+          "           }",
+          "       };",
+          "",
+          "",
+          "       pm.sendRequest(requestOptions, function (err, response) {",
+          "           if (err) {",
+          "               console.log(err);",
+          "           } else {",
+          "               const jwt = response.json().entity.jwt;",
+          "               pm.environment.set('jwt', jwt);",
+          "               console.log(jwt);",
+          "           }",
+          "       });",
+          "   }"
+        ]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "packages": {},
+        "requests": {},
+        "exec": [
+          ""
+        ]
+      }
+    }
+  ]
 }

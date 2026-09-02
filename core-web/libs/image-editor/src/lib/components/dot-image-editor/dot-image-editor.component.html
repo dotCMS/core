@@ -1,0 +1,39 @@
+<dot-dialog data-testid="image-editor-root">
+    <dot-dialog-header
+        [title]="'edit.content.image-editor.title' | dm"
+        [closeLabel]="'edit.content.image-editor.close.aria' | dm"
+        (close)="requestClose()">
+        <dot-image-editor-fullscreen-toggle dialogHeaderActions />
+    </dot-dialog-header>
+
+    <dot-dialog-content>
+        <!-- Canvas (fluid) and panels (fixed). `minmax(0, …)` on both tracks is what lets the canvas
+             contain and the panels scroll instead of forcing the tracks to grow — without the row
+             track, the panels' accordion sets the min-content height and stops scrolling. -->
+        <div
+            class="grid h-full min-h-0 grid-cols-[minmax(0,1fr)_23rem] grid-rows-[minmax(0,1fr)] overflow-hidden">
+            <dot-image-editor-canvas class="min-h-0 min-w-0" />
+
+            <aside class="min-h-0 overflow-y-auto border-l border-gray-200">
+                <dot-image-editor-panels />
+            </aside>
+        </div>
+    </dot-dialog-content>
+
+    <dot-dialog-footer>
+        @if (store.saveStatus() === 'error') {
+            <!-- `w-full` plus the footer's `flex-wrap`: the error takes its own line above the
+                 buttons, and the footer's row gap replaces what used to be a margin. -->
+            <p
+                class="m-0 w-full text-sm text-red-600"
+                role="alert"
+                data-testid="image-editor-save-error">
+                {{ store.saveError() }}
+            </p>
+        }
+
+        <dot-image-editor-footer (cancel)="requestClose()" />
+    </dot-dialog-footer>
+</dot-dialog>
+
+<p-confirmDialog [style]="{ width: '500px' }" />

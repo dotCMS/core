@@ -1,0 +1,142 @@
+<html>
+<head>
+    <title>Request Accounting</title>
+    <style>
+        body {
+
+            max-width: 80%;
+            padding: 1em;
+            margin: auto;
+            line-height: 1.75;
+            font-size: 1.25em;
+        }
+
+        img {
+            max-width: 100%;
+            height: auto;
+        }
+
+        h1, h2, h3, h4, h5, h6 {
+            margin: 3em 0 1em;
+        }
+
+        p, ul, ol {
+            margin-bottom: 2em;
+            color: #1d1d1d;
+            font-family: sans-serif;
+        }
+
+        /* Basic Table Styling */
+        table {
+            width: 100%; /* Make the table fill its container */
+            border-collapse: collapse; /* Remove double borders between cells */
+            margin-bottom: 1em; /* Add space below the table */
+            table-layout: fixed; /* Fixed layout for better column control */
+        }
+
+        /* Header Styling */
+        th {
+            background-color: #f2f2f2; /* Light grey background for headers */
+            text-align: left; /* Align header text to the left */
+            padding: 8px; /* Add padding inside header cells */
+            border: 1px solid #ddd; /* Light grey border for header cells */
+            word-wrap: break-word; /* Break long words */
+
+        }
+
+        /* Cell Styling */
+        td {
+            padding: 8px; /* Add padding inside data cells */
+            border: 1px solid #ddd; /* Light grey border for data cells */
+            word-wrap: break-word; /* Break long words */
+            overflow-wrap: break-word; /* Modern word breaking */
+            max-width: 0; /* Force table-layout: fixed to work */
+
+        }
+
+        /* Column width control */
+        th:nth-child(1), td:nth-child(1) {
+            width: 5%; /* Row number column */
+        }
+
+        th:nth-child(2), td:nth-child(2) {
+            width: 20%; /* Class column */
+        }
+
+        th:nth-child(3), td:nth-child(3) {
+            width: 20%; /* Method column */
+        }
+
+        th:nth-child(4), td:nth-child(4) {
+            width: 45%; /* Args column - largest */
+        }
+
+        th:nth-child(5), td:nth-child(5) {
+            width: 10%; /* Cost column */
+            text-align: right;
+        }
+
+        /* Alternating Row Colors (Optional, for better readability) */
+        tbody tr:nth-child(even) {
+            background-color: #f9f9f9; /* Slightly lighter background for even rows */
+        }
+
+        /* Hover Effect (Optional, for interactivity) */
+        tbody tr:hover {
+            background-color: #e9e9e9; /* Lighten background on hover */
+        }
+
+    </style>
+
+</head>
+
+<body>
+<h2>Request Accounting URL: $url</h2>
+
+    #set($myCost=$requestCost)
+
+<h3>Cost: $myCost </h3>
+
+
+<table>
+    <tr>
+        <th></th>
+        <th>Class</th>
+        <th>Method</th>
+        <th>Args</th>
+        <th style="text-align: center;vertical-align: top">Cost</th>
+    </tr>
+    #set($i=0)
+
+
+    #foreach($account in $accounting)
+        #set($i = $i + 1)
+
+        <tr>
+            <td style="text-align: center;vertical-align: top">$i</td>
+            <td style=";vertical-align: top">$account.get("class")</td>
+            <td style=";vertical-align: top">$account.get("method")</td>
+            <td>
+                #foreach( $arg in $account.get("args"))
+                    $arg
+                    <hr/>
+                #end
+            </td>
+            #set($rowCost = $account.get("cost") / $denominator)
+            <td style="text-align: center;vertical-align: top">$rowCost</td>
+        </tr>
+    #end
+    <tr>
+        <th></th>
+        <th></th>
+        <th></th>
+        <th align="right">Total:</th>
+        <th>$myCost</th>
+    </tr>
+
+
+</table>
+
+
+</body>
+</html>

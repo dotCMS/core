@@ -71,10 +71,7 @@ export const mockDefaultContainerWithPath: DotContainer = {
     title: 'Default Container Title',
     path: '/default/container/path',
     archived: false,
-    categoryId: 'default-category',
-    parentPermissionable: {
-        hostname: 'default-host'
-    }
+    categoryId: 'default-category'
 };
 
 export const mockDefaultContainerWithoutPath: DotContainer = {
@@ -88,10 +85,7 @@ export const mockDefaultContainerWithoutPath: DotContainer = {
     locked: false,
     title: 'Default Container Title',
     archived: false,
-    categoryId: 'default-category',
-    parentPermissionable: {
-        hostname: 'default-host'
-    }
+    categoryId: 'default-category'
 };
 
 export const mockTempContainer: DotContainer = {
@@ -106,10 +100,7 @@ export const mockTempContainer: DotContainer = {
     title: 'Temp Container Title',
     path: '/temp/container/path',
     archived: false,
-    categoryId: 'temp-category',
-    parentPermissionable: {
-        hostname: 'temp-host'
-    }
+    categoryId: 'temp-category'
 };
 
 export const CONTAINERS_DATA_MOCK = [
@@ -291,7 +282,7 @@ export const FULL_DATA_MOCK: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: 'bg-white py-5'
+            styleClass: 'bg-white py-8'
         },
         {
             columns: [
@@ -447,7 +438,7 @@ export const FULL_DATA_MOCK_UNSORTED: DotLayoutBody = {
                     styleClass: ''
                 }
             ],
-            styleClass: 'bg-white py-5'
+            styleClass: 'bg-white py-8'
         },
         {
             columns: [
@@ -513,18 +504,18 @@ export const MOCK_TEXT = 'Header';
 
 export const MOCK_SELECTED_STYLE_CLASSES = [
     'd-flex',
-    'flex-column',
-    'justify-content-center',
-    'align-items-center',
-    'justify-content-start',
-    'justify-content-end',
-    'justify-content-center',
-    'justify-content-between',
-    'justify-content-around',
-    'justify-content-evenly',
-    'align-items-start',
-    'align-items-end',
-    'align-items-center'
+    'flex-col',
+    'justify-center',
+    'items-center',
+    'justify-start',
+    'justify-end',
+    'justify-center',
+    'justify-between',
+    'justify-around',
+    'justify-evenly',
+    'items-start',
+    'items-end',
+    'items-center'
 ];
 
 export const MOCK_STYLE_CLASSES_FILE = {
@@ -543,30 +534,30 @@ export const MOCK_STYLE_CLASSES_FILE = {
         'd-sm-inline',
         'd-sm-inline-block',
         'flex-row',
-        'flex-column',
+        'flex-col',
         'flex-row-reverse',
-        'flex-column-reverse',
-        'flex-grow-0',
-        'flex-grow-1',
-        'flex-shrink-0',
-        'flex-shrink-1',
+        'flex-col-reverse',
+        'grow-0',
+        'grow',
+        'shrink-0',
+        'shrink',
         'flex-fill',
-        'justify-content-start',
-        'justify-content-end',
-        'justify-content-center',
-        'justify-content-between',
-        'justify-content-around',
-        'justify-content-evenly',
-        'align-items-start',
-        'align-items-end',
-        'align-items-center',
-        'align-items-baseline',
-        'align-items-stretch',
-        'align-self-start',
-        'align-self-end',
-        'align-self-center',
-        'align-self-baseline',
-        'align-self-stretch',
+        'justify-start',
+        'justify-end',
+        'justify-center',
+        'justify-between',
+        'justify-around',
+        'justify-evenly',
+        'items-start',
+        'items-end',
+        'items-center',
+        'items-baseline',
+        'items-stretch',
+        'self-start',
+        'self-end',
+        'self-center',
+        'self-baseline',
+        'self-stretch',
         'flex-nowrap',
         'flex-wrap',
         'flex-wrap-reverse',

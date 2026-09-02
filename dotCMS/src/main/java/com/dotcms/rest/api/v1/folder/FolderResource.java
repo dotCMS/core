@@ -1,7 +1,12 @@
 package com.dotcms.rest.api.v1.folder;
 
 import com.dotcms.exception.ExceptionUtil;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.dotcms.rest.ResponseEntityPaginatedDataView;
+import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.PaginationUtilParams;
+import com.dotcms.util.pagination.FolderSearchPaginator;
+import com.dotcms.util.pagination.OrderDirection;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.WebResource;
@@ -11,19 +16,26 @@ import com.dotcms.rest.exception.ForbiddenException;
 import com.dotcms.rest.exception.mapper.ExceptionMapperUtil;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.browser.BrowserUtil;
 import com.dotmarketing.portlets.folders.model.Folder;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
+import com.dotcms.rest.ResponseEntityListView;
 import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.media.Content;
 import io.swagger.v3.oas.annotations.media.ExampleObject;
+import io.swagger.v3.oas.annotations.media.Schema;
+import io.swagger.v3.oas.annotations.parameters.RequestBody;
 import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -34,11 +46,13 @@ import org.glassfish.jersey.server.JSONP;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.Consumes;
+import javax.ws.rs.DefaultValue;
 import javax.ws.rs.GET;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.Produces;
+import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
@@ -54,20 +68,47 @@ import java.util.Map;
 @Tag(name = "Folders", description = "Endpoints for managing folder structure and organization")
 public class FolderResource implements Serializable {
 
+    static final String SITE_ID_PARAM  = "siteId";
+    static final String PATH_PARAM     = "path";
+    static final String RECURSIVE_PARAM = "recursive";
+    static final String INCLUDE_PERMISSIONS_PARAM = "includePermissions";
+
+    /**
+     * Upper bound on {@code perPage} when {@code includePermissions=true}. Permission resolution is
+     * batched but chunked by 500 ids per type, so an unbounded page turns three batch calls into
+     * hundreds of queries. Requests above this cap are rejected rather than silently served without
+     * permissions, which would be indistinguishable from "the user has no grants".
+     */
+    static final String PERMISSIONS_MAX_PER_PAGE_KEY = "content.drive.folder.search.permissions.max.per.page";
+    static final int PERMISSIONS_MAX_PER_PAGE_DEFAULT = 200;
+
+    /** Mirrors {@link PaginationUtil}'s own fallback for {@code dotcms.paginator.rows}. */
+    static final int DEFAULT_PAGINATION_ROWS = 10;
+
     private final WebResource webResource;
     private final FolderHelper folderHelper;
+    private final PaginationUtil folderSearchPaginationUtil;
 
     public FolderResource() {
         this(new WebResource(),
-                FolderHelper.getInstance());
+                FolderHelper.getInstance(),
+                new PaginationUtil(new FolderSearchPaginator()));
     }
 
     @VisibleForTesting
     public FolderResource(final WebResource webResource,
                           final FolderHelper folderHelper) {
+        this(webResource, folderHelper, new PaginationUtil(new FolderSearchPaginator()));
+    }
+
+    @VisibleForTesting
+    public FolderResource(final WebResource webResource,
+                          final FolderHelper folderHelper,
+                          final PaginationUtil folderSearchPaginationUtil) {
 
         this.webResource = webResource;
         this.folderHelper = folderHelper;
+        this.folderSearchPaginationUtil = folderSearchPaginationUtil;
     }
 
     /**
@@ -89,6 +130,7 @@ public class FolderResource implements Serializable {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     @Operation(
+            operationId = "deleteFoldersBySiteName",
             summary = "Delete one or more path for a site",
             description = "Delete one or more path for a site if they exist"
     )
@@ -152,6 +194,21 @@ public class FolderResource implements Serializable {
         return Response.ok(new ResponseEntityView<>(deletedFolders)).build(); // 200
     }
 
+    @Operation(
+            operationId = "createFoldersBySiteName",
+            summary = "Create folders by paths on a site",
+            description = "Creates one or more folders on the specified site. The request body is a raw JSON " +
+                    "array of folder paths (e.g., [\"/path1\", \"/path2/subpath\"]). Nested paths will " +
+                    "create intermediate folders as needed."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folders created successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityListView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     @POST
     @Path("/createfolders/{siteName}")
     @JSONP
@@ -178,6 +235,15 @@ public class FolderResource implements Serializable {
             return Response.ok(new ResponseEntityView<>(createdFolders)).build(); // 200
     }
 
+    @Operation(
+            operationId = "selectFolderInFileBrowser",
+            summary = "Select folder in file browser",
+            description = "Marks a folder as the currently selected folder in the file browser session."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder selected successfully"),
+            @ApiResponse(responseCode = "401", description = "Authentication required")
+    })
     @PUT
     @Path("/{id}/file-browser-selected")
     @NoCache
@@ -198,6 +264,19 @@ public class FolderResource implements Serializable {
         return Response.ok().build(); // 200
     }
 
+    @Operation(
+            operationId = "loadFolderByURI",
+            summary = "Load a folder by site name and URI",
+            description = "Retrieves a folder by its URI path within the specified site."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/sitename/{siteName}/uri/{uri : .+}")
     @JSONP
@@ -205,7 +284,15 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
     public final Response loadFolderByURI(@Context final HttpServletRequest httpServletRequest,
                                           @Context final HttpServletResponse httpServletResponse,
+                                          @Parameter(description = "Site hostname the folder lives on (e.g. 'demo.dotcms.com').",
+                                                  required = true)
                                           @PathParam("siteName") final String siteName,
+                                          @Parameter(description = "Folder path within the site, as a plain path — "
+                                                  + "e.g. 'application/themes/travel' (a leading slash is optional and added "
+                                                  + "if missing). Embedded slashes are allowed (they select nested folders). "
+                                                  + "Pass the raw path; do NOT percent-encode the slashes (a pre-encoded "
+                                                  + "'%2F...' will not match).",
+                                                  required = true)
                                           @PathParam("uri") final String uri){
         Response response = null;
         final InitDataObject initData = this.webResource.init(null, httpServletRequest, httpServletResponse, true, null);
@@ -236,6 +323,20 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "loadFolderAndSubFoldersByPath",
+            summary = "Load folder and subfolders by path",
+            description = "Finds a folder by the given path within the specified site and returns the " +
+                    "folder along with all its subfolders, respecting the user's permissions."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder and subfolders retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderWithSubfoldersView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/siteId/{siteId}/path/{path : .+}")
     @JSONP
@@ -259,6 +360,8 @@ public class FolderResource implements Serializable {
     }
 
     /**
+     * @deprecated Use {@link FolderResource#searchFolders} (GET /api/v1/folder/search) instead.
+     *
      * This endpoint is to retrieve subfolders of a given path,
      * will also filter these subfolders by the path sent. The subfolders returned will be the ones
      * the user has permissions over.
@@ -307,6 +410,23 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Deprecated(since = "Jun 19th, 26", forRemoval = true)
+    @Operation(
+            operationId = "findSubFoldersByPath",
+            summary = "Find subfolders by path (deprecated)",
+            description = "Retrieves subfolders of a given path, filtered by the path sent. " +
+                    "This endpoint is deprecated — use GET /api/v1/folder/search instead.",
+            deprecated = true
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Subfolders retrieved successfully (deprecated endpoint)",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderSearchResultView.class))),
+            @ApiResponse(responseCode = "400", description = "Path property must be sent"),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Site not found")
+    })
     @POST
     @Path ("/byPath")
     @JSONP
@@ -314,7 +434,11 @@ public class FolderResource implements Serializable {
     @Produces({MediaType.APPLICATION_JSON})
     public final Response findSubFoldersByPath(@Context final HttpServletRequest httpServletRequest,
             @Context final HttpServletResponse httpServletResponse,
-            final SearchByPathForm searchByPathForm
+            final SearchByPathForm searchByPathForm,
+            @Parameter(description = "Number of results to skip for pagination. Must be >= 0.")
+            @DefaultValue("0") @QueryParam("offset") final int offset,
+            @Parameter(description = "Maximum number of results to return. Default 40. Use -1 for unlimited (capped at " + FolderHelper.SUB_FOLDER_UNLIMITED_SAFETY_CAP + " as a safety limit).")
+            @DefaultValue("40") @QueryParam("limit") final int limit
             ) throws  DotDataException, DotSecurityException   {
 
         final InitDataObject initData =
@@ -329,7 +453,14 @@ public class FolderResource implements Serializable {
 
         if(!UtilMethods.isSet(searchByPathForm) ||
                 UtilMethods.isNotSet(searchByPathForm.getPath())){
-            throw new BadRequestException("Path property must be send");
+            throw new BadRequestException("Path property must be sent");
+        }
+
+        if (offset < 0) {
+            throw new BadRequestException("offset must be >= 0");
+        }
+        if (limit == 0 || limit < -1) {
+            throw new BadRequestException("limit must be > 0, or -1 for unlimited");
         }
 
         String path = searchByPathForm.getPath().toLowerCase();
@@ -353,7 +484,7 @@ public class FolderResource implements Serializable {
 
         folderPath = !folderPath.startsWith(StringPool.FORWARD_SLASH) ? StringPool.FORWARD_SLASH.concat(folderPath) : folderPath;
 
-        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId,folderPath, user))).build(); // 200
+        return Response.ok(new ResponseEntityView<>(folderHelper.findSubFoldersPathByParentPath(siteId, folderPath, user, offset, limit))).build(); // 200
     }
 
     /**
@@ -363,6 +494,19 @@ public class FolderResource implements Serializable {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    @Operation(
+            operationId = "findFolderById",
+            summary = "Find a folder by ID",
+            description = "Retrieves a folder by its identifier. Returns 404 if the folder does not exist."
+    )
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200", description = "Folder retrieved successfully",
+                    content = @Content(mediaType = "application/json",
+                            schema = @Schema(implementation = ResponseEntityFolderView.class))),
+            @ApiResponse(responseCode = "401", description = "Authentication required"),
+            @ApiResponse(responseCode = "403", description = "Insufficient permissions"),
+            @ApiResponse(responseCode = "404", description = "Folder not found")
+    })
     @GET
     @Path ("/{folderId}")
     @JSONP
@@ -391,6 +535,174 @@ public class FolderResource implements Serializable {
         return null == folder || !UtilMethods.isSet(folder.getIdentifier())?
                 Response.status(Response.Status.NOT_FOUND).build():
                 Response.ok(new ResponseEntityView(folder)).build(); // 200
+    }
+
+    /**
+     * Unified folder search. Searches folders within a site by optional name fil @param httpServletResponse The current instance of the {@link HttpServletResponse}.
+     * @param name                optional case-insensitive partial match on folder name (min 2 chars if provided)
+     * @param path                path scope; defaults to {@code /} (site root)
+     * @param recursive           {@code true} = all descendants (default); {@code false} = direct children only
+     * @param siteId              site identifier (required)
+     * @param page                1-based page number (default: 1)
+     * @param perPage             results per page (default: 40)
+     * @param includePermissions  {@code true} to populate each view's {@code permissions} array
+     * @return paginated list of matching {@link FolderSearchView} objects
+     */
+    @GET
+    @Path("/search")
+    @JSONP
+    @NoCache
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "searchFolders",
+            summary = "Search folders",
+            description = "Returns folders within a site matching an optional name filter and/or " +
+                    "path scope. Supports recursive depth control, standard pagination, and sorting. " +
+                    "With no 'name' and default path '/' + recursive=true, all site folders are returned. " +
+                    "Each folder carries the detail fields a folder-edit form needs (title, sortOrder, " +
+                    "filesMasks, defaultFileType, showOnMenu, defaultBaseType). Set " +
+                    "'includePermissions=true' to also receive the permission types the requesting user " +
+                    "holds on each folder; that flag caps 'perPage' (see the parameter description).")
+    @ApiResponses(value = {
+            @ApiResponse(responseCode = "200",
+                    description = "Paginated list of matching folders",
+                    content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                            schema = @Schema(implementation = ResponseEntityFolderSearchView.class))),
+            @ApiResponse(responseCode = "400", description = "'siteId' is required; 'name' must be at least 2 characters if provided; " +
+                    "'perPage' exceeds the maximum allowed when 'includePermissions' is true"),
+            @ApiResponse(responseCode = "401", description = "User is not authenticated"),
+            @ApiResponse(responseCode = "500", description = "Internal server error")
+    })
+    public final ResponseEntityPaginatedDataView searchFolders(
+            @Context final HttpServletRequest httpServletRequest,
+            @Context final HttpServletResponse httpServletResponse,
+            @Parameter(description = "Optional case-insensitive partial match on folder name (minimum 2 characters when provided)")
+            @QueryParam("name") final String name,
+            @Parameter(description = "Path scope for the search. Defaults to '/' (site root).")
+            @DefaultValue("/") @QueryParam(PATH_PARAM) final String path,
+            @Parameter(description = "false = direct children of 'path' only (default); true = search all descendants")
+            @DefaultValue("false") @QueryParam(RECURSIVE_PARAM) final boolean recursive,
+            @Parameter(description = "Site ID to scope the search (required)")
+            @QueryParam(SITE_ID_PARAM) final String siteId,
+            @Parameter(description = "Column to sort by.",
+                    schema = @Schema(allowableValues = {"name", "mod_date"}, defaultValue = "name"))
+            @DefaultValue("name") @QueryParam(PaginationUtil.ORDER_BY) final String orderBy,
+            @Parameter(description = "Sort direction",
+                    schema = @Schema(allowableValues = {"ASC", "DESC"}, defaultValue = "ASC"))
+            @DefaultValue("ASC") @QueryParam(PaginationUtil.DIRECTION) final String direction,
+            @Parameter(description = "Page number (1-based, default 1)")
+            @DefaultValue("1") @QueryParam(PaginationUtil.PAGE) final int page,
+            @Parameter(description = "Number of results per page (default 40)")
+            @DefaultValue("40") @QueryParam(PaginationUtil.PER_PAGE) final int perPage,
+            @Parameter(description = "When true, each returned folder includes a 'permissions' array with the "
+                    + "permission types the requesting user holds on it (READ, EDIT, PUBLISH, EDIT_PERMISSIONS, "
+                    + "CAN_ADD_CHILDREN). When false (the default) 'permissions' is null — meaning 'not requested', "
+                    + "which is not the same as an empty array ('requested, no grants'). Because permissions are "
+                    + "resolved per page, enabling this flag caps 'perPage' at the value of the '"
+                    + PERMISSIONS_MAX_PER_PAGE_KEY + "' configuration property (default "
+                    + PERMISSIONS_MAX_PER_PAGE_DEFAULT + "); a larger 'perPage' is rejected with a 400.")
+            @DefaultValue("false") @QueryParam(INCLUDE_PERMISSIONS_PARAM) final boolean includePermissions) {
+
+        if (!UtilMethods.isSet(siteId)) {
+            throw new BadRequestException("'siteId' query parameter is required");
+        }
+        if (UtilMethods.isSet(name) && name.length() < 2) {
+            throw new BadRequestException("'name' must be at least 2 characters long");
+        }
+        final User user = new WebResource.InitBuilder(webResource)
+                .requestAndResponse(httpServletRequest, httpServletResponse)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .rejectWhenNoUser(true)
+                .init().getUser();
+
+        // Deliberately below init(): unlike the checks above, this message discloses a configured
+        // value, so an unauthenticated caller should get a 401 rather than the cap.
+        validatePermissionsPerPage(includePermissions, perPage);
+
+        validateSiteReadAccess(siteId, user);
+
+        final Map<String, Object> extraParams = Map.of(
+                SITE_ID_PARAM, siteId,
+                PATH_PARAM, path,
+                RECURSIVE_PARAM, recursive,
+                INCLUDE_PERMISSIONS_PARAM, includePermissions);
+
+        final OrderDirection orderDirection = switch (direction.toUpperCase()) {
+            case "DESC" -> OrderDirection.DESC;
+            default -> OrderDirection.ASC;
+        };
+
+        final PaginationUtilParams<?, ?> params = new PaginationUtilParams.Builder<>()
+                .withRequest(httpServletRequest)
+                .withResponse(httpServletResponse)
+                .withUser(user)
+                .withFilter(name)   // name is the search filter — may be null
+                .withPage(page)
+                .withPerPage(perPage)
+                .withOrderBy(orderBy)
+                .withDirection(orderDirection)
+                .withExtraParams(extraParams)
+                .build();
+
+        return folderSearchPaginationUtil.getPageView(params);
+    }
+
+    /**
+     * Rejects requests that would resolve permissions for a page larger than
+     * {@link #PERMISSIONS_MAX_PER_PAGE_KEY} allows.
+     *
+     * <p>The check runs against the <b>effective</b> page size, not the raw query parameter:
+     * {@link PaginationUtil} replaces any {@code perPage <= 0} with
+     * {@code Config.getIntProperty(DOTCMS_PAGINATION_ROWS, 10)}. Validating the raw value would let
+     * {@code ?includePermissions=true&per_page=0} through and then page at whatever
+     * {@code dotcms.paginator.rows} happens to be — harmless at its default of 10, but it makes this
+     * guard depend on an unrelated property, so a deployment that raises that property above the cap
+     * would silently reopen the hole this check exists to close.
+     *
+     * @param includePermissions whether the caller asked for the {@code permissions} array
+     * @param perPage            the raw {@code per_page} query parameter
+     */
+    private void validatePermissionsPerPage(final boolean includePermissions, final int perPage) {
+        if (!includePermissions) {
+            return;
+        }
+        final int effectivePerPage = perPage <= 0
+                ? Config.getIntProperty(WebKeys.DOTCMS_PAGINATION_ROWS, DEFAULT_PAGINATION_ROWS)
+                : perPage;
+        final int permissionsMaxPerPage =
+                Config.getIntProperty(PERMISSIONS_MAX_PER_PAGE_KEY, PERMISSIONS_MAX_PER_PAGE_DEFAULT);
+        if (effectivePerPage > permissionsMaxPerPage) {
+            // Varargs form on purpose: HttpStatusCodeException runs String.format over the message
+            // itself, so pre-formatting here would format twice and blow up on a literal '%'.
+            throw new BadRequestException(
+                    "'perPage' cannot exceed %s when '%s' is true (effective page size: %s). "
+                            + "Request a smaller page, or drop '%s' to page without permissions.",
+                    String.valueOf(permissionsMaxPerPage), INCLUDE_PERMISSIONS_PARAM,
+                    String.valueOf(effectivePerPage), INCLUDE_PERMISSIONS_PARAM);
+        }
+    }
+
+    /**
+     * Verifies that the given user has READ permission on the specified site.
+     * Throws {@link DoesNotExistException} if the site is not found,
+     * {@link ForbiddenException} if the user lacks READ access,
+     * and {@link BadRequestException} if the siteId is malformed.
+     */
+    private void validateSiteReadAccess(final String siteId, final User user) {
+        try {
+            final Host site = APILocator.getHostAPI().find(siteId, user, false);
+            if (site == null || !UtilMethods.isSet(site.getIdentifier())) {
+                throw new DoesNotExistException("No site found with id: " + siteId);
+            }
+            if (!APILocator.getPermissionAPI()
+                    .doesUserHavePermission(site, PermissionAPI.PERMISSION_READ, user, false)) {
+                throw new ForbiddenException("User does not have permission to access site: " + siteId);
+            }
+        } catch (final DotSecurityException e) {
+            throw new ForbiddenException(e);
+        } catch (final DotDataException e) {
+            throw new BadRequestException("Invalid siteId: " + siteId);
+        }
     }
 
 }

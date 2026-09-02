@@ -10,19 +10,21 @@ import { NavigationEnd, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import {
+    DotCurrentUserService,
     DotEventsService,
     DotIframeService,
     DotRouterService,
     DotSystemConfigService
 } from '@dotcms/data-access';
-import { Auth, DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { Auth, LoginService } from '@dotcms/dotcms-js';
 import { DotMenu } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavigationService } from './dot-navigation.service';
 
 import { DotMenuService } from '../../../../api/services/dot-menu.service';
+import { DynamicRouteService } from '../../../../api/services/dynamic-route.service';
 
 class RouterMock {
     _events: Subject<any> = new Subject();
@@ -37,7 +39,7 @@ class RouterMock {
 
     url = '';
 
-    currentNavigation() {
+    getCurrentNavigation() {
         return this._currentNavigation;
     }
 
@@ -87,23 +89,12 @@ class TitleServiceMock {
     setTitle = jest.fn();
 }
 
-class DotcmsEventsServiceMock {
-    _events: Subject<any> = new Subject();
-
-    subscribeTo() {
-        return this._events;
-    }
-
-    trigger() {
-        this._events.next();
-    }
-}
-
 export const dotMenuMock = () => {
     return {
         active: false,
         id: '123',
         isOpen: false,
+        label: 'Name',
         menuItems: [
             {
                 active: false,
@@ -174,7 +165,6 @@ describe('DotNavigationService', () => {
 
     let service: DotNavigationService;
     let dotRouterService: DotRouterService;
-    let dotcmsEventsService: DotcmsEventsService;
     let dotEventService: DotEventsService;
     let dotMenuService: DotMenuService;
     let loginService: LoginService;
@@ -220,10 +210,6 @@ describe('DotNavigationService', () => {
                 DotEventsService,
                 DotNavigationService,
                 {
-                    provide: DotcmsEventsService,
-                    useClass: DotcmsEventsServiceMock
-                },
-                {
                     provide: Title,
                     useClass: TitleServiceMock
                 },
@@ -253,7 +239,23 @@ describe('DotNavigationService', () => {
                     provide: DotSystemConfigService,
                     useValue: { getSystemConfig: () => of({}) }
                 },
+                {
+                    provide: DynamicRouteService,
+                    useValue: {
+                        registerRoutesFromMenuItems: jest.fn().mockReturnValue(0),
+                        getRegisteredRoutes: jest.fn().mockReturnValue([])
+                    }
+                },
+                { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
                 GlobalStore,
+                {
+                    useValue: {
+                        connect: jest.fn().mockReturnValue(of(null)),
+                        status$: jest.fn().mockReturnValue(of('connected')),
+                        on: jest.fn().mockReturnValue(of()),
+                        destroy: jest.fn()
+                    }
+                },
                 provideHttpClient(),
                 provideHttpClientTesting()
             ],
@@ -262,7 +264,6 @@ describe('DotNavigationService', () => {
 
         service = TestBed.inject(DotNavigationService);
         dotRouterService = TestBed.inject(DotRouterService);
-        dotcmsEventsService = TestBed.inject(DotcmsEventsService);
         dotMenuService = TestBed.inject(DotMenuService);
         loginService = TestBed.inject(LoginService);
         dotEventService = TestBed.inject(DotEventsService);
@@ -359,11 +360,5 @@ describe('DotNavigationService', () => {
             expect(titleService.setTitle).toHaveBeenCalledTimes(1);
             done();
         }, 100);
-    });
-
-    // TODO: needs to fix this, looks like the dotcmsEventsService instance is different here not sure why.
-    xit('should subscribe to UPDATE_PORTLET_LAYOUTS websocket event', () => {
-        expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledWith('UPDATE_PORTLET_LAYOUTS');
-        expect(dotcmsEventsService.subscribeTo).toHaveBeenCalledTimes(1);
     });
 });

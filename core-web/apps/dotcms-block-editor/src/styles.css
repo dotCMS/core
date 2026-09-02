@@ -1,0 +1,4 @@
+@import 'tailwindcss';
+@import 'tailwindcss-primeui';
+@import '../../../libs/dotcms-scss/tailwind/theme.css';
+@plugin '@tailwindcss/typography';

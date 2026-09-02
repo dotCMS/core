@@ -1,4 +1,4 @@
-import { SpectatorRouting, createRoutingFactory } from '@ngneat/spectator/jest';
+import { SpectatorRouting, createRoutingFactory } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { Component } from '@angular/core';

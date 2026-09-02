@@ -1,4 +1,4 @@
-import { Component, Input, signal } from '@angular/core';
+import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
@@ -32,11 +32,21 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
  *   [customRenderers]="myCustomRenderers">
  * </dotcms-block-editor-renderer>
  * ```
+ *
+ * @deprecated Use {@link DotCMSBlockEditorRendererNativeComponent}
+ * (`<dotcms-block-editor-renderer-native>`) for accessible, semantic DOM output.
+ * This component wraps every semantic tag in a custom element (e.g. a dispatcher
+ * element sits between `<ul>` and its `<li>` children), which breaks the
+ * `list → listitem` relationship required by the HTML spec and assistive technology.
+ * The native renderer keeps the identical public input API — migration is just
+ * swapping the tag and import. This component is retained for backward compatibility
+ * and will be removed in a future major version.
  */
 @Component({
     selector: 'dotcms-block-editor-renderer',
     templateUrl: './dotcms-block-editor-renderer.component.html',
     styleUrls: ['./dotcms-block-editor-renderer.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotCMSBlockEditorItemComponent]
 })
 export class DotCMSBlockEditorRendererComponent {

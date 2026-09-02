@@ -35,6 +35,9 @@ on:
         required: false
         type: string
         default: '1.0.0-SNAPSHOT'
+      # Note: Java override inputs are intentionally not supported for CLI native builds
+      # due to GraalVM/Quarkus compatibility requirements. The calling workflows skip
+      # CLI builds when java-version is overridden.
     outputs:
       artifact-id:
         description: 'The ID of the uploaded artifact'
@@ -84,11 +87,12 @@ jobs:
       artifact-url: ${{ steps.upload-artifact.outputs.artifact-url }}
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: ${{ env.BRANCH }}
 
       # Use custom Maven job action to build the native image
+      # Note: Java override not supported for CLI - uses default from .sdkmanrc
       - uses: ./.github/actions/core-cicd/maven-job
         with:
           cleanup-runner: true
@@ -103,7 +107,7 @@ jobs:
       # Upload the built distribution as an artifact
       - name: 'Upload built distribution'
         id: upload-artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: cli-artifacts-${{ matrix.platform }}
           path: |

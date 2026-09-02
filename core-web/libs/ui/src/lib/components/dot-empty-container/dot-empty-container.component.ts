@@ -4,10 +4,13 @@ import { ButtonModule } from 'primeng/button';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
+export type EmptyContainerIconStyle = 'pi' | 'material-symbols-rounded';
+
 export interface PrincipalConfiguration {
     title: string;
     subtitle?: string;
     icon: string;
+    iconStyle?: EmptyContainerIconStyle;
 }
 
 /**
@@ -18,8 +21,10 @@ export interface PrincipalConfiguration {
     selector: 'dot-empty-container',
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-empty-container.component.html',
-    styleUrls: ['./dot-empty-container.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'h-full flex justify-center content-center flex-wrap'
+    }
 })
 export class DotEmptyContainerComponent {
     //Todo: change to input signal when ui migrated to jest

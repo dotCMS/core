@@ -7,6 +7,8 @@ import com.dotmarketing.portlets.categories.model.Category;
 
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
+import java.util.Collections;
+import java.util.List;
 
 
 /**
@@ -53,6 +55,15 @@ public abstract class CategoryQueryBuilder {
     }
 
     public abstract String build() throws DotDataException, DotSecurityException;
+
+    /**
+     * Returns any extra positional parameters that must be bound to the query before
+     * {@code rootInode} and filter params. Subclasses override this when they embed
+     * {@code ?} placeholders in the SQL that is not covered by the standard param pipeline.
+     */
+    public List<Object> getQueryParams() {
+        return Collections.emptyList();
+    }
 
     protected String getChildrenCount() {
         return this.countChildren ?

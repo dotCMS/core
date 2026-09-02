@@ -1,0 +1,37 @@
+@let loading = $loading();
+
+@if (!loading) {
+    <dot-folder-tree
+        [folders]="$folders()"
+        [loading]="false"
+        [selectedNode]="$selectedNode()"
+        selectionMode="single"
+        styleClass="size-full w-full h-full min-w-0"
+        [pt]="treePt"
+        treeTestId="browser-selector-folder-tree"
+        loadMoreTestId="browser-selector-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+        [showLoadMorePlusIcon]="true"
+        (onNodeSelect)="handleNodeSelect($event)"
+        (onNodeExpand)="onNodeExpand.emit($event)"
+        (loadMore)="loadMore.emit($event)">
+        <ng-template #folderTreeNodeLabel let-node>
+            <span
+                data-testid="tree-node-label"
+                class="block min-w-0 truncate font-normal"
+                [pTooltip]="node.label"
+                [tooltipDisabled]="!node.label || node.label.length <= 10"
+                tooltipPosition="right"
+                [pTooltipPT]="nodeTooltipPt"
+                [showDelay]="800">
+                {{ node.label | dotFolderName }}
+            </span>
+        </ng-template>
+    </dot-folder-tree>
+} @else {
+    <div class="flex size-full flex-col p-2">
+        @for (col of $fakeColumns(); track $index) {
+            <p-skeleton styleClass="mb-4" [width]="col" />
+        }
+    </div>
+}

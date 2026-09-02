@@ -106,8 +106,16 @@ public class SpeedyAssetServlet extends HttpServlet {
         }
 
 
-        PageMode mode = PageMode.get(request);
-        Logger.debug(this, "SpeedyAssetServlet_service PageMode: " + mode);
+        // File assets (theme stylesheets, images, etc.) are fetched by the browser as standalone requests
+        // that carry no ?mode= of their own and do not update the session mode, so PageMode.get() alone
+        // would serve the working version to a backend user even when the page was requested with
+        // ?mode=LIVE. getWithReferer() honors the mode declared on the page's Referer in that case;
+        // anonymous users remain forced to LIVE.
+        PageMode mode = PageMode.getWithReferer(request);
+        // Log only the resolved mode and the explicit ?mode= param; the raw Referer header can carry
+        // sensitive query-string data and is unnecessary now that the mode is already resolved.
+        Logger.debug(this, () -> "SpeedyAssetServlet_service PageMode: " + mode
+                + " (?mode=" + request.getParameter("mode") + ")");
 
 
         //GIT-4506

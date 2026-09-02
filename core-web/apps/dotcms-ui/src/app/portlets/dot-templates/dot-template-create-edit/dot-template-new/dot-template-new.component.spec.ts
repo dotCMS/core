@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Subject } from 'rxjs';
 
 import { ComponentFixture, TestBed } from '@angular/core/testing';
@@ -75,6 +73,8 @@ describe('DotTemplateNewComponent', () => {
             {
                 header: 'Create a template',
                 width: '37rem',
+                closable: true,
+                draggable: false,
                 contentStyle: { padding: '0px' },
                 data: {
                     options: {

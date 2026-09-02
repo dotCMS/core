@@ -7,8 +7,6 @@ package com.dotcms.featureflag;
 public interface FeatureFlagName {
 
     // Experiments and Analytics
-    String TELEMETRY_API_METRICS_ENABLED = "TELEMETRY_API_METRICS_ENABLED";
-
     String FEATURE_FLAG_EXPERIMENTS = "FEATURE_FLAG_EXPERIMENTS";
 
     String FEATURE_FLAG_TELEMETRY_CORE_ENABLED = "FEATURE_FLAG_TELEMETRY_CORE_ENABLED";
@@ -46,4 +44,64 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_UVE_TOGGLE_LOCK = "FEATURE_FLAG_UVE_TOGGLE_LOCK";
 
     String FEATURE_FLAG_UVE_STYLE_EDITOR = "FEATURE_FLAG_UVE_STYLE_EDITOR";
+
+    String FEATURE_FLAG_PAGE_SCANNER = "FEATURE_FLAG_PAGE_SCANNER";
+
+    String FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION = "FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION";
+
+    /**
+     * Controls the active ES → OpenSearch migration phase (integer ordinal 0–3).
+     *
+     * <ul>
+     *   <li>0 — ES only (default)</li>
+     *   <li>1 — dual-write, ES reads</li>
+     *   <li>2 — dual-write, OS reads</li>
+     *   <li>3 — OS only</li>
+     * </ul>
+     *
+     * @see com.dotcms.content.index.IndexConfigHelper.MigrationPhase
+     */
+    String FEATURE_FLAG_OPEN_SEARCH_PHASE = "FEATURE_FLAG_OPEN_SEARCH_PHASE";
+
+    String FEATURE_FLAG_NEW_BLOCK_EDITOR = "FEATURE_FLAG_NEW_BLOCK_EDITOR";
+
+    String FEATURE_FLAG_REPORT_ISSUE_ENABLED = "FEATURE_FLAG_REPORT_ISSUE_ENABLED";
+    /**
+     * Enables the new content editor (Edit Content v2).
+     * Also checked in content-type metadata to opt individual types out.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED}.
+     */
+    String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
+
+    /**
+     * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
+     * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
+     * ({@code dotmarketing-config.properties} sets {@code FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL=true}).
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL}.
+     */
+    String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";
+
+    /**
+     * Minifies rendered page HTML (collapses insignificant whitespace and strips comments) before
+     * it is written to the response. Off by default.
+     *
+     * @see com.dotcms.rendering.util.HtmlMinifier
+     */
+    String FEATURE_FLAG_MINIFY_HTML = "FEATURE_FLAG_MINIFY_HTML";
+
+    /**
+     * libvips image-engine toggle (off by default; the legacy Java2D engine is used
+     * otherwise). The new image editor reads this through the configuration endpoint
+     * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so
+     * {@code ConfigurationResource} can reference it as a constant like the others.
+     */
+    String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
+
+    /**
+     * Gates the redesigned dotAI provider configuration page ({@code dot-ai-config-detail}).
+     * Off by default so existing customers keep seeing the restored pre-redesign dotAI config
+     * screen ({@code dot-ai-config-detail-legacy}) until they opt in.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
+     */
+    String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
 }

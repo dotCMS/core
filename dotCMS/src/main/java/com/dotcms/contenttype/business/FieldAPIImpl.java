@@ -55,7 +55,7 @@ import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.rendering.velocity.services.ContentTypeLoader;
 import com.dotcms.rendering.velocity.services.ContentletLoader;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
 import com.dotcms.util.I18NMessage;
 import com.dotmarketing.business.APILocator;
@@ -658,7 +658,6 @@ public class FieldAPIImpl implements FieldAPI {
         }
         try {
             final List<FieldVariable> existingVariables = loadVariables(field);
-
             // Delete variables that either:
             // 1. Don't have a complete match (key, id, value) in incoming list, OR
             // 2. Their key doesn't exist at all in incoming list

@@ -1,7 +1,10 @@
 import { expect, it } from '@jest/globals';
-import { byTestId, createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
+import { By } from '@angular/platform-browser';
+
+import { Button } from 'primeng/button';
 import { Dialog } from 'primeng/dialog';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
@@ -92,6 +95,21 @@ describe('DotCategoryFieldDialogComponent', () => {
 
         expect(closedDialogSpy).toHaveBeenCalled();
         expect(addConfirmedCategoriesSky).toHaveBeenCalled();
+    });
+
+    it('should render `Cancel` as tertiary (text + secondary) and `Apply` as primary', () => {
+        const cancelButton = spectator.fixture.debugElement
+            .query(By.css('[data-testId="dialog-cancel"]'))
+            .injector.get(Button);
+        const applyButton = spectator.fixture.debugElement
+            .query(By.css('[data-testId="dialog-apply"]'))
+            .injector.get(Button);
+
+        expect(cancelButton.text).toBe(true);
+        expect(cancelButton.severity).toBe('secondary');
+
+        expect(applyButton.text).toBeFalsy();
+        expect(applyButton.severity).toBeFalsy();
     });
 
     it('should render the CategoryFieldCategoryList component', () => {

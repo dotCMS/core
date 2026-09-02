@@ -1,20 +1,23 @@
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 p-fileupload {
-    margin-top: $spacing-1;
+    margin-top: spacing.$spacing-1;
     display: block;
 }
 
 .form__file-detail {
-    margin-top: $spacing-1;
+    margin-top: spacing.$spacing-1;
     display: flex;
     align-items: center;
 
     span {
-        margin: 0px $spacing-1 0px $spacing-3;
+        margin: 0px spacing.$spacing-1 0px spacing.$spacing-3;
     }
     img {
-        border: 1px solid $color-palette-gray-700;
+        border: 1px solid colors.$color-palette-gray-700;
         width: 100px;
     }
 }

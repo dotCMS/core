@@ -1,5 +1,8 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 $notification-icon-size: 16px;
 
@@ -8,26 +11,26 @@ $notification-icon-size: 16px;
 }
 
 dot-custom-time {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
     display: block;
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
 }
 
 a {
-    color: $black;
+    color: colors.$black;
 }
 
 .notification-item {
-    border-top: solid 1px $color-palette-gray-200;
+    border-top: solid 1px colors.$color-palette-gray-200;
 }
 
 .notification-item__icon {
-    padding-top: $spacing-0;
-    color: $color-palette-primary;
+    padding-top: spacing.$spacing-0;
+    color: colors.$color-palette-primary;
 }
 
 .notification-item__title {
-    font-size: $font-size-sm;
+    font-size: fonts.$font-size-sm;
 }
 
 .notification-item__title,
@@ -42,9 +45,9 @@ a {
 .notification-item__wrapper {
     display: flex;
     flex-direction: row;
-    padding: $spacing-3 0;
+    padding: spacing.$spacing-3 0;
     align-items: self-start;
-    gap: $spacing-3;
+    gap: spacing.$spacing-3;
 }
 
 .warning {
@@ -52,7 +55,7 @@ a {
     .notification-item__link,
     .notification-item__title,
     .notification-item__title a {
-        color: $color-palette-primary;
+        color: colors.$color-palette-primary;
     }
 }
 
@@ -61,6 +64,6 @@ a {
     .notification-item__link,
     .notification-item__title,
     .notification-item__title a {
-        color: $color-palette-secondary;
+        color: colors.$color-palette-secondary;
     }
 }

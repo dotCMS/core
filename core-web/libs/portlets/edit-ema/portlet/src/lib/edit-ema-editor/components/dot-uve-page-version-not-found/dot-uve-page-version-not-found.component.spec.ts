@@ -1,5 +1,5 @@
-import { Spectator } from '@ngneat/spectator';
-import { createComponentFactory } from '@ngneat/spectator/jest';
+import { Spectator } from '@openng/spectator';
+import { createComponentFactory } from '@openng/spectator/jest';
 
 import { signal } from '@angular/core';
 
@@ -25,7 +25,7 @@ describe('DotUveErrorComponent', () => {
             {
                 provide: UVEStore,
                 useValue: {
-                    errorCode: signal(404)
+                    pageErrorCode: signal(404)
                 }
             },
             {

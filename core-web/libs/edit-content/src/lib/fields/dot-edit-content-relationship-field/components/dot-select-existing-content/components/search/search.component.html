@@ -1,36 +1,44 @@
 <form [formGroup]="form" #formElement>
-    <p-inputGroup styleClass="flex align-items-center">
-        <i class="pi pi-search ml-1 mr-1 search-icon"></i>
-        @for (filter of $activeFilters(); track filter.value) {
-            <p-chip
-                [label]="filter.label"
-                [removable]="true"
-                (onRemove)="removeFilter(filter.type)"
-                [styleClass]="'mr-2 p-chip-sm flex align-items-center'" />
-        }
-        <input
-            pInputText
-            type="text"
-            class="content-search__input w-22rem h-auto"
-            [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
-            formControlName="query" />
-        <p-button
-            (onClick)="popover.toggle($event, formElement)"
-            data-testid="open-filters-button"
-            size="small"
-            type="button"
-            icon="pi pi-sliders-h"
-            [text]="true" />
-    </p-inputGroup>
+    <p-inputgroup>
+        <div
+            class="p-inputtext flex min-w-0 flex-1 items-center gap-1 rounded-none! rounded-l-md! px-2 py-0.5!">
+            <i class="pi pi-search mr-1 shrink-0 text-muted-color"></i>
+            @for (filter of $activeFilters(); track filter.value) {
+                <p-chip
+                    [label]="filter.label"
+                    [removable]="true"
+                    (onRemove)="removeFilter(filter.type)"
+                    class="shrink-0 gap-1! px-2! text-xs" />
+            }
 
-    <p-overlayPanel #popover styleClass="w-24rem">
-        <div class="flex flex-column gap-4">
-            <div class="flex flex-column gap-4" formGroupName="systemSearchableFields">
+            <input
+                type="text"
+                class="min-w-24 flex-1 border-0 bg-transparent px-1 py-0.5 text-sm outline-none"
+                [placeholder]="'dot.file.relationship.dialog.search.placeholder' | dm"
+                formControlName="query"
+                data-testid="relationship-dialog-search-query" />
+        </div>
+
+        <p-inputgroup-addon styleClass="!p-0">
+            <p-button
+                (onClick)="popover.toggle($event, formElement)"
+                data-testid="open-filters-button"
+                size="small"
+                type="button"
+                icon="pi pi-sliders-h"
+                styleClass="!rounded-l-none"
+                [text]="true" />
+        </p-inputgroup-addon>
+    </p-inputgroup>
+
+    <p-popover #popover [style]="{ width: formElement.offsetWidth + 'px' }">
+        <div class="flex flex-col gap-6">
+            <div class="flex flex-col gap-6" formGroupName="systemSearchableFields">
                 <dot-language-field formControlName="languageId" />
-                <dot-site-field formControlName="siteOrFolderId" />
+                <dot-site-field formControlName="siteOrFolderId" [siteContext]="$siteContext()" />
             </div>
 
-            <div class="flex justify-content-end gap-2">
+            <div class="flex justify-end gap-2">
                 <p-button
                     (onClick)="clearForm()"
                     data-testid="clear-button"
@@ -51,5 +59,5 @@
                     severity="primary" />
             </div>
         </div>
-    </p-overlayPanel>
+    </p-popover>
 </form>

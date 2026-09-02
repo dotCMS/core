@@ -1,9 +1,9 @@
 package com.dotmarketing.portlets.rules.conditionlet;
 
 import com.dotcms.UnitTestBase;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMultimap;
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.ImmutableMultimap;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.dotcms.unittest.TestUtil;
 import com.dotmarketing.portlets.rules.exception.ComparisonNotSupportedException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;

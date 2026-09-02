@@ -5,6 +5,7 @@ import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateAllContentle
 import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateContentletTitlesContainingInternal;
 import static com.dotcms.rest.api.v1.page.PageScenarioUtils.validateNoContentlets;
 import static com.dotcms.util.CollectionsUtils.list;
+import static com.dotmarketing.portlets.htmlpageasset.business.render.page.HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -23,10 +24,13 @@ import static org.mockito.Mockito.when;
 import com.dotcms.JUnit4WeldRunner;
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.api.web.HttpServletResponseThreadLocal;
-import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
+import com.dotcms.content.index.domain.SearchHits;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.field.TextField;
 import com.dotcms.contenttype.model.type.ContentType;
+import com.dotcms.contenttype.model.type.ContentTypeBuilder;
 import com.dotcms.datagen.ContainerAsFileDataGen;
 import com.dotcms.datagen.ContainerDataGen;
 import com.dotcms.datagen.ContentTypeDataGen;
@@ -92,6 +96,7 @@ import com.dotmarketing.portlets.personas.model.Persona;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.design.bean.TemplateLayout;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.PaginatedArrayList;
@@ -110,6 +115,7 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.Tuple;
 import java.io.IOException;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -134,7 +140,6 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 import javax.ws.rs.core.Response;
-import org.elasticsearch.action.search.SearchResponse;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -309,14 +314,353 @@ public class PageResourceTest {
         final ContentType bannerLikeContentType = TestDataUtils.getBannerLikeContentType();
         final Contentlet contentlet = TestDataUtils.getBannerLikeContent(true, 1, bannerLikeContentType.id(),
                 host);
-        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
+        final List<ContainerEntry> entries = new ArrayList<>();
         final String requestJson = null;
-        final PageContainerForm.ContainerEntry containerEntry =
-            new PageContainerForm.ContainerEntry(null, container.getIdentifier(), "1");
+        final ContainerEntry containerEntry = new ContainerEntry(null, container.getIdentifier(), "1");
         containerEntry.addContentId(contentlet.getIdentifier());
         entries.add(containerEntry);
         final PageContainerForm pageContainerForm = new PageContainerForm(entries, requestJson);
         this.pageResource.addContent(request, response, pagetest.getIdentifier(), VariantAPI.DEFAULT_VARIANT.name(), pageContainerForm);
+    }
+
+    /**
+     * Method to test: {@link PageResource#addContent} with styleProperties
+     * When: Add content to a page with styleProperties using the PageAPI
+     * Should: Save styleProperties in the {@link MultiTree} and be retrievable
+     */
+    @Test
+    public void test_addContent_with_styleProperties() throws Exception {
+        // Save the original feature flag value
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+        try {
+            // Enable the Style Editor feature flag
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+            final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+            final HTMLPageAsset testPage = pageRenderTest.getPage();
+            final Container container = pageRenderTest.getFirstContainer();
+
+            // Create contentlet
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .folder(APILocator.getFolderAPI().findSystemFolder())
+                    .host(host)
+                    .setProperty("title", "Test Content with Style Properties")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersisted();
+
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            APILocator.getContentletAPI().publish(contentlet, user, false);
+
+            // Prepare styleProperties
+            final Map<String, Object> styleProperties = new HashMap<>();
+            styleProperties.put("backgroundColor", "red");
+            styleProperties.put("fontSize", "16px");
+            styleProperties.put("padding", "10px");
+
+            // Create ContainerEntry
+            final List<ContainerEntry> entries = new ArrayList<>();
+            final String containerUUID = UUIDGenerator.generateUuid();
+            final Map<String, Map<String, Object>> stylePropertiesMap = new HashMap<>();
+            stylePropertiesMap.put(contentlet.getIdentifier(), styleProperties);
+
+            final ContainerEntry containerEntry = new ContainerEntry(
+                    null,
+                    container.getIdentifier(),
+                    containerUUID,
+                    list(contentlet.getIdentifier())
+            );
+
+            entries.add(containerEntry);
+            final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+            // Save content
+            final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(),
+                    pageContainerForm
+            );
+
+            // Verify response is successful
+            assertNotNull(addContentResponse);
+            assertEquals(200, addContentResponse.getStatus());
+
+            // create ContentWithStylesForm with styleProperties
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID,
+                    null
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            // Save styleProperties for the content previously created
+            final Response addContentStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            // Verify response is successful Styles definition
+            assertNotNull(addContentStylesResponse);
+            assertEquals(200, addContentStylesResponse.getStatus());
+
+            // Retrieve MultiTree and verify styleProperties are saved
+            final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+            final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+            assertNotNull("MultiTrees should not be null", multiTrees);
+            assertFalse("MultiTrees should not be empty", multiTrees.isEmpty());
+
+            // Find the MultiTree for our contentlet
+            final Optional<MultiTree> multiTreeOpt = multiTrees.stream()
+                    .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                    .findFirst();
+
+            assertTrue("MultiTree for the contentlet should exist", multiTreeOpt.isPresent());
+
+            final MultiTree multiTree = multiTreeOpt.get();
+            final Map<String, Object> savedStyleProperties = multiTree.getStyleProperties();
+
+            // Verify styleProperties were saved correctly
+            assertNotNull("StyleProperties should not be null", savedStyleProperties);
+            assertFalse("StyleProperties should not be empty", savedStyleProperties.isEmpty());
+            assertEquals("backgroundColor should match", "red", savedStyleProperties.get("backgroundColor"));
+            assertEquals("fontSize should match", "16px", savedStyleProperties.get("fontSize"));
+            assertEquals("padding should match", "10px", savedStyleProperties.get("padding"));
+
+            Logger.info(this, "StyleProperties saved successfully: " + savedStyleProperties);
+        } finally {
+            // Restore the original feature flag value
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
+        }
+    }
+
+    /**
+     * methodToTest {@link PageResource#updateStyles(HttpServletRequest, HttpServletResponse, String, List)}
+     * Given Scenario: A contentlet is personalized under a non-default Persona (not {@code dot:default})
+     * and the Style Editor sends a style update carrying that Persona's {@code personaTag}.
+     * ExpectedResult: The save succeeds (no CONTENT_NOT_FOUND/400) and the styles are persisted on the
+     * MultiTree row personalized for that Persona -- not on the default-personalization row. This is the
+     * regression scenario for issue #36597, where {@code reduceStyleForms()} used to hardcode a {@code null}
+     * persona tag, always resolving to {@code dot:default} and causing the lookup to fail for any other
+     * Persona.
+     */
+    @Test
+    public void test_updateStyles_with_nonDefaultPersona() throws Exception {
+        // Save the original feature flag value
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+        try {
+            // Enable the Style Editor feature flag
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+            final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+            final HTMLPageAsset testPage = pageRenderTest.getPage();
+            final Container container = pageRenderTest.getFirstContainer();
+
+            // Create a non-default Persona
+            final Persona persona = new PersonaDataGen()
+                    .keyTag("persona" + System.currentTimeMillis())
+                    .hostFolder(host.getIdentifier())
+                    .nextPersisted();
+            persona.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            APILocator.getContentletAPI().publish(persona, user, false);
+            final String personaTag = persona.getKeyTag();
+            final String personalization = Persona.DOT_PERSONA_PREFIX_SCHEME + StringPool.COLON + personaTag;
+
+            // Create contentlet
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .folder(APILocator.getFolderAPI().findSystemFolder())
+                    .host(host)
+                    .setProperty("title", "Test Content Personalized for Non-Default Persona")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersisted();
+
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            APILocator.getContentletAPI().publish(contentlet, user, false);
+
+            // Add the contentlet to the container under the non-default Persona
+            final List<ContainerEntry> entries = new ArrayList<>();
+            final String containerUUID = UUIDGenerator.generateUuid();
+
+            final ContainerEntry containerEntry = new ContainerEntry(
+                    personaTag,
+                    container.getIdentifier(),
+                    containerUUID,
+                    list(contentlet.getIdentifier())
+            );
+
+            entries.add(containerEntry);
+            final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+            final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(),
+                    pageContainerForm
+            );
+
+            assertNotNull(addContentResponse);
+            assertEquals(200, addContentResponse.getStatus());
+
+            // Prepare styleProperties, including the same personaTag used above
+            final Map<String, Object> styleProperties = new HashMap<>();
+            styleProperties.put("backgroundColor", "blue");
+            styleProperties.put("fontSize", "20px");
+
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID,
+                    personaTag
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            // Save styleProperties for the non-default-Persona content -- this used to fail with
+            // a 400 CONTENT_NOT_FOUND because the personaTag was silently dropped.
+            final Response updateStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            assertNotNull(updateStylesResponse);
+            assertEquals(200, updateStylesResponse.getStatus());
+
+            // Verify the styles were saved on the row personalized for our Persona, not on default
+            final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+            final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+            assertNotNull("MultiTrees should not be null", multiTrees);
+
+            final Optional<MultiTree> personalizedMultiTreeOpt = multiTrees.stream()
+                    .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                    .filter(mt -> personalization.equals(mt.getPersonalization()))
+                    .findFirst();
+
+            assertTrue("MultiTree personalized for the non-default Persona should exist",
+                    personalizedMultiTreeOpt.isPresent());
+
+            final Map<String, Object> savedStyleProperties = personalizedMultiTreeOpt.get().getStyleProperties();
+            assertNotNull("StyleProperties should not be null", savedStyleProperties);
+            assertEquals("backgroundColor should match", "blue", savedStyleProperties.get("backgroundColor"));
+            assertEquals("fontSize should match", "20px", savedStyleProperties.get("fontSize"));
+
+            Logger.info(this, "Non-default Persona styleProperties saved successfully: " + savedStyleProperties);
+        } finally {
+            // Restore the original feature flag value
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
+        }
+    }
+
+    /**
+     * methodToTest {@link PageResource#updateStyles(HttpServletRequest, HttpServletResponse, String, List)}
+     * Given Scenario: The Style Editor saves a style update for the Default Visitor -- i.e. with no
+     * {@code personaTag} (null), and separately with the bare {@code "dot:persona"} prefix scheme sent
+     * as the tag (an edge case a client should never send, but the backend must not misinterpret).
+     * ExpectedResult: Both cases resolve to the default personalization ({@code dot:default}), not to
+     * {@code dot:persona:dot:persona}. Locks down the contract behind.
+     */
+    @Test
+    public void test_updateStyles_with_defaultVisitor() throws Exception {
+        final boolean originalFeatureFlagValue = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+            final PageRenderTestUtil.PageRenderTest pageRenderTest = PageRenderTestUtil.createPage(1, host);
+            final HTMLPageAsset testPage = pageRenderTest.getPage();
+            final Container container = pageRenderTest.getFirstContainer();
+
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(APILocator.systemUser());
+            final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+            final Contentlet contentlet = new ContentletDataGen(contentGenericType.id())
+                    .languageId(1)
+                    .folder(APILocator.getFolderAPI().findSystemFolder())
+                    .host(host)
+                    .setProperty("title", "Test Content for Default Visitor")
+                    .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                    .nextPersisted();
+
+            contentlet.setIndexPolicy(IndexPolicy.WAIT_FOR);
+            contentlet.setIndexPolicyDependencies(IndexPolicy.WAIT_FOR);
+            contentlet.setBoolProperty(Contentlet.IS_TEST_MODE, true);
+            APILocator.getContentletAPI().publish(contentlet, user, false);
+
+            final List<ContainerEntry> entries = new ArrayList<>();
+            final String containerUUID = UUIDGenerator.generateUuid();
+
+            final ContainerEntry containerEntry = new ContainerEntry(
+                    null,
+                    container.getIdentifier(),
+                    containerUUID,
+                    list(contentlet.getIdentifier())
+            );
+
+            entries.add(containerEntry);
+            final PageContainerForm pageContainerForm = new PageContainerForm(entries, null);
+
+            final Response addContentResponse = this.pageResourceWithHelper.addContent(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    VariantAPI.DEFAULT_VARIANT.name(),
+                    pageContainerForm
+            );
+
+            assertNotNull(addContentResponse);
+            assertEquals(200, addContentResponse.getStatus());
+
+            final Map<String, Object> styleProperties = new HashMap<>();
+            styleProperties.put("backgroundColor", "green");
+
+            // Simulate the edge case: a client sending the bare "dot:persona" prefix instead of
+            // omitting personaTag. Must still resolve to the default personalization.
+            final ContentWithStylesForm contentWithStylesForm = new ContentWithStylesForm(
+                    container.getIdentifier(),
+                    containerUUID,
+                    Persona.DOT_PERSONA_PREFIX_SCHEME
+            );
+            contentWithStylesForm.addContentletStyle(contentlet.getIdentifier(), styleProperties);
+
+            final Response updateStylesResponse = this.pageResourceWithHelper.updateStyles(
+                    request,
+                    response,
+                    testPage.getIdentifier(),
+                    List.of(contentWithStylesForm)
+            );
+
+            assertNotNull(updateStylesResponse);
+            assertEquals(200, updateStylesResponse.getStatus());
+
+            final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+            final List<MultiTree> multiTrees = multiTreeAPI.getMultiTrees(testPage.getIdentifier());
+
+            final Optional<MultiTree> defaultMultiTreeOpt = multiTrees.stream()
+                    .filter(mt -> mt.getContentlet().equals(contentlet.getIdentifier()))
+                    .filter(mt -> MultiTree.DOT_PERSONALIZATION_DEFAULT.equals(mt.getPersonalization()))
+                    .findFirst();
+
+            assertTrue("MultiTree should be personalized as dot:default, not dot:persona:dot:persona",
+                    defaultMultiTreeOpt.isPresent());
+
+            final Map<String, Object> savedStyleProperties = defaultMultiTreeOpt.get().getStyleProperties();
+            assertNotNull("StyleProperties should not be null", savedStyleProperties);
+            assertEquals("backgroundColor should match", "green", savedStyleProperties.get("backgroundColor"));
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFeatureFlagValue);
+        }
     }
 
     /**
@@ -443,12 +787,12 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
         final String path = pagePath;
 
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final Contentlet contentlet = pageAsset;
 
         final List contentlets = list(contentlet);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         final String query = String.format("{"
                 + "query: {"
                 + "query_string: {"
@@ -458,7 +802,7 @@ public class PageResourceTest {
                 + "}", path.replace("/", "\\\\/"));
 
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -483,10 +827,10 @@ public class PageResourceTest {
             throws DotSecurityException, DotDataException {
 
         final String path = String.format("//%s/%s/%s", hostName, folderName, pageName);
-        final SearchResponse searchResponse = mock(SearchResponse.class);
-
         final List contentlets = list(pageAsset);
-        final ESSearchResults results = new ESSearchResults(searchResponse, contentlets);
+        final ContentSearchResults<Contentlet> results = new ContentSearchResults<>(
+                ContentSearchResponse.builder().hits(SearchHits.empty()).tookMillis(0).build(),
+                contentlets);
         String preparedPagePath = String.format("%s/%s",folderName,pageName).replace("/", "\\\\/");
         final String query = String.format("{"
                 + "query: {"
@@ -496,7 +840,7 @@ public class PageResourceTest {
                 + "}"
                 + "}", preparedPagePath, host.getHostname());
 
-        when(esapi.esSearch(query, false, user, false)).thenReturn(results);
+        when(esapi.search(query, false, user, false)).thenReturn(results);
 
         final Response response = pageResource.searchPage(request,  new EmptyHttpResponse(), path, false, true);
         RestUtilTest.verifySuccessResponse(response);
@@ -538,7 +882,7 @@ public class PageResourceTest {
 
         final Contentlet checkin = APILocator.getContentletAPIImpl().checkin(checkout, systemUser, false);
         final Response response = pageResource
-                .loadJson(request, this.response, pageUri, null, null,
+                .loadJson(request, this.response, pageUri, null, null, null,
                         String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -619,13 +963,94 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .loadJson(request, this.response, pagePath, "PREVIEW_MODE", null,
+                .loadJson(request, this.response, pagePath, null, "PREVIEW_MODE", null,
                         "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
         assertEquals(pageView.getNumberContents(), 1);
+    }
+
+    /**
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
+     * Given Scenario: A page has a container with a single contentlet, and that contentlet is then
+     *                 archived. Archiving keeps the working version (it only sets deleted=true on the
+     *                 version info), so a showLive=false lookup still resolves it in EDIT/PREVIEW mode.
+     * Expected Result: The archived contentlet must NOT be rendered on the page in EDIT or PREVIEW mode,
+     *                 consistent with LIVE-mode behavior. See issue #35993.
+     */
+    @Test
+    public void testArchivedContentNotRenderedInEditAndPreviewMode()
+            throws DotDataException, DotSecurityException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+
+        final ContentType containerContentType = new ContentTypeDataGen().nextPersisted();
+        final Container localContainer = new ContainerDataGen().withContentType(containerContentType, "")
+                .friendlyName("container-archived-friendly-name").title("container-archived-title")
+                .nextPersisted();
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(localContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(localContainer.getIdentifier())
+                .nextPersisted();
+        APILocator.getVersionableAPI().setWorking(newTemplate);
+        APILocator.getVersionableAPI().setLive(newTemplate);
+
+        final Contentlet checkout = APILocator.getContentletAPI().checkout(pageAsset.getInode(), systemUser, false);
+        checkout.setStringProperty(HTMLPageAssetAPI.TEMPLATE_FIELD, newTemplate.getIdentifier());
+        APILocator.getContentletAPI().checkin(checkout, systemUser, false);
+
+        final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(systemUser);
+        final ContentType contentGenericType = contentTypeAPI.find("webPageContent");
+
+        final ContentletDataGen contentletDataGen = new ContentletDataGen(contentGenericType.id());
+        final Contentlet contentlet = contentletDataGen.setProperty("title", "title")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT).languageId(languageId).nextPersisted();
+
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+        final MultiTree multiTree = new MultiTree(pageAsset.getIdentifier(), localContainer.getIdentifier(),
+                contentlet.getIdentifier(), "1", 1);
+        multiTreeAPI.saveMultiTree(multiTree);
+
+        when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
+
+        // Baseline: while the contentlet is live/working it must render in PREVIEW mode.
+        // This proves the test setup actually places the content on the page.
+        final int previewCountBeforeArchive = renderAndCountContents(PageMode.PREVIEW_MODE);
+        assertEquals("Content should render in PREVIEW mode before archiving", 1,
+                previewCountBeforeArchive);
+
+        // Archive the contentlet placed in the container
+        APILocator.getContentletAPI().archive(contentlet, systemUser, false);
+        assertTrue("Contentlet should be archived", contentlet.isArchived());
+
+        // PREVIEW_MODE: archived content must not render
+        assertEquals("Archived content must not render in PREVIEW mode", 0,
+                renderAndCountContents(PageMode.PREVIEW_MODE));
+
+        // EDIT_MODE: archived content must not render
+        assertEquals("Archived content must not render in EDIT mode", 0,
+                renderAndCountContents(PageMode.EDIT_MODE));
+    }
+
+    /**
+     * Renders {@code pagePath} in the given {@link PageMode} via {@link PageResource#loadJson} and
+     * returns the number of contentlets placed in the page's containers.
+     */
+    private int renderAndCountContents(final PageMode mode)
+            throws DotDataException, DotSecurityException {
+        final Response response = pageResource
+                .loadJson(request, this.response, pagePath, null, mode.name(), null, "1", null, null);
+        RestUtilTest.verifySuccessResponse(response);
+        final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+        return pageView.getNumberContents();
     }
 
     @Test
@@ -664,7 +1089,7 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         final Response response = pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), "PREVIEW_MODE", null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, "PREVIEW_MODE", null,
                         "1", null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -672,7 +1097,7 @@ public class PageResourceTest {
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -712,12 +1137,12 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.ADMIN_MODE.toString(), null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, PageMode.ADMIN_MODE.toString(), null,
                         "1", null, null);
     }
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with URL Pattern, with a no publish content, and try to get it in ADMIN_MODE
      * ExpectedResult: Should return a 404 HTTP error
      *
@@ -757,7 +1182,7 @@ public class PageResourceTest {
         Thread.sleep(500);
 
         pageResource
-                .render(request, this.response, String.format("%s/text", baseUrl), PageMode.LIVE.toString(), null,
+                .render(request, this.response, String.format("%s/text", baseUrl), null, PageMode.LIVE.toString(), null,
                         "1", null, null);
     }
 
@@ -813,7 +1238,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .loadJson(request, this.response, pageUri, null, null,
+                .loadJson(request, this.response, pageUri, null, null, null,
                         String.valueOf(languageId), null, null);
 
         RestUtilTest.verifySuccessResponse(response);
@@ -853,7 +1278,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, persona.getIdentifier(),
+                .render(request, this.response, page.getURI(), null, modeParam, persona.getIdentifier(),
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -916,7 +1341,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         final Response response = pageResourceWithHelper
-                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                .render(request, this.response, pageAsset.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final EmptyPageView pageView = (EmptyPageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -936,7 +1361,7 @@ public class PageResourceTest {
         filtersUtil.publishVanityUrl(vanityURLContentlet2);
 
         final Response response2 = pageResourceWithHelper
-                .render(request, this.response, pageAsset.getURI(), modeParam, null,
+                .render(request, this.response, pageAsset.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final EmptyPageView pageView2 = (EmptyPageView) ((ResponseEntityView) response2.getEntity()).getEntity();
@@ -982,7 +1407,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), null, persona.getIdentifier(),
+                .render(request, this.response, page.getURI(), null, null, persona.getIdentifier(),
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -992,7 +1417,7 @@ public class PageResourceTest {
     }
 
     /***
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with two containers and a content in each of then
      * ExpectedResult: Should render the containers with the contents, the check it look into the render code the
      * content div <pre>assertTrue(code.indexOf("data-dot-object=\"contentlet\"") != -1)</pre>
@@ -1023,7 +1448,7 @@ public class PageResourceTest {
         when(request.getAttribute(WebKeys.HTMLPAGE_LANGUAGE)).thenReturn(String.valueOf(languageId));
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), "EDIT_MODE", null,
+                .render(request, this.response, page.getURI(), null, "EDIT_MODE", null,
                         String.valueOf(languageId), null, null);
 
         final PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1047,7 +1472,7 @@ public class PageResourceTest {
 
 
     /**
-     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}
+     * methodToTest {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}
      * Given Scenario: Create a page with not LIVE version, then publish the page, and then update the page to crate a
      * new working version
      * ExpectedResult: Should return a LIVE attribute to true just in after the page is publish
@@ -1068,7 +1493,7 @@ public class PageResourceTest {
         when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
 
         Response response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         PageView pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1079,7 +1504,7 @@ public class PageResourceTest {
         APILocator.getContentletAPI().publish(page, user, false);
 
         response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1090,7 +1515,7 @@ public class PageResourceTest {
         APILocator.getContentletAPI().checkin(checkout, user, false);
 
         response = pageResource
-                .render(request, this.response, page.getURI(), PageMode.PREVIEW_MODE.toString(), null,
+                .render(request, this.response, page.getURI(), null, PageMode.PREVIEW_MODE.toString(), null,
                         String.valueOf(languageId), null, null);
 
         pageView = (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1150,12 +1575,13 @@ public class PageResourceTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, null,
+                .render(request, this.response, page.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
 
-        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>", htmlPageAssetRendered.getHtml());
+        assertEquals("Rendered HTML Page is NOT the same as the expected one", "<div>" + TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT + "</div><div></div>"
+                + SDK_EDITOR_SCRIPT_SOURCE, htmlPageAssetRendered.getHtml());
 
         final ObjectMapper MAPPER = new ObjectMapper();
         final String layoutString =
@@ -1256,7 +1682,7 @@ public class PageResourceTest {
         APILocator.getMultiTreeAPI().saveMultiTree(multiTree);
 
         final Response response = pageResource
-                .render(request, this.response, page.getURI(), modeParam, null,
+                .render(request, this.response, page.getURI(), null, modeParam, null,
                         String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered = (HTMLPageAssetRendered) ((ResponseEntityView) response.getEntity()).getEntity();
@@ -1281,9 +1707,8 @@ public class PageResourceTest {
      */
     private PageContainerForm createPageContainerForm(final String containerId, final List<String> contentletIds,
                                                       final String containerUUID) {
-        final List<PageContainerForm.ContainerEntry> entries = new ArrayList<>();
-        final PageContainerForm.ContainerEntry containerEntry = new PageContainerForm.ContainerEntry(null,
-                containerId, containerUUID);
+        final List<ContainerEntry> entries = new ArrayList<>();
+        final ContainerEntry containerEntry = new ContainerEntry(null, containerId, containerUUID);
         contentletIds.forEach(containerEntry::addContentId);
         entries.add(containerEntry);
         return new PageContainerForm(entries, null);
@@ -1291,7 +1716,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> In Edit Mode, test the rest API</li>
      *     <li><b>Expected Result:</b> Receive the on-number-of-pages data attribute for the contentlet object inside rendered element.</li>
      * </ul>
@@ -1312,7 +1737,7 @@ public class PageResourceTest {
         final HTMLPageAsset pageOne = pageRenderTestOne.getPage();
         final Container container = pageRenderTestOne.getFirstContainer();
         final Contentlet testContent = pageRenderTestOne.addContent(container);
-        Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), modeParam, null,
+        Response pageResponse = this.pageResource.render(this.request, this.response, pageOne.getURI(), null, modeParam, null,
                 String.valueOf(languageId), null, null);
 
         final HTMLPageAssetRendered htmlPageAssetRendered =
@@ -1325,7 +1750,7 @@ public class PageResourceTest {
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode is not set as part of the request</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1334,14 +1759,14 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsNull() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null, null);
+        pageResource.render(request, response, pagePath, null, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), null, null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
 
     /**
      * <ul>
-     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String)}</li>
+     *     <li><b>Method to Test:</b> {@link PageResource#render(HttpServletRequest, HttpServletResponse, String, String, String, String, String, String, String)}</li>
      *     <li><b>Given Scenario:</b> The deviceInode in the request is blank</li>
      *     <li><b>Expected Result:</b> The {@link WebKeys#CURRENT_DEVICE} is removed from session</li>
      * </ul>
@@ -1350,7 +1775,7 @@ public class PageResourceTest {
     public void testCleanUpSessionWhenDeviceInodeIsBlank() throws Exception {
         when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
 
-        pageResource.render(request, response, pagePath, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "", null);
+        pageResource.render(request, response, pagePath, null, null, null, APILocator.getLanguageAPI().getDefaultLanguage().getLanguage(), "", null);
 
         verify(session).removeAttribute(WebKeys.CURRENT_DEVICE);
     }
@@ -1562,7 +1987,7 @@ public class PageResourceTest {
 
         final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
         final Response myResponse = pageResource
-                .loadJson(this.request, this.response, myPagePath, mode.name(), null,
+                .loadJson(this.request, this.response, myPagePath, null, mode.name(), null,
                         String.valueOf(languageId), null, futureIso8601);
 
         RestUtilTest.verifySuccessResponse(myResponse);
@@ -1649,7 +2074,7 @@ public class PageResourceTest {
     private void validatePageContents(final String pageUri, final String futureTimeMachineIso8601, final String expectedTitle, final boolean live)
             throws DotDataException, DotSecurityException {
         final Response endpointResponse = pageResource
-                .loadJson(this.request, this.response, pageUri, PageMode.LIVE.name(), null,
+                .loadJson(this.request, this.response, pageUri, null, PageMode.LIVE.name(), null,
                         "1", null, futureTimeMachineIso8601);
 
         RestUtilTest.verifySuccessResponse(endpointResponse);
@@ -1963,7 +2388,7 @@ public class PageResourceTest {
             addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
 
             final Response endpointResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             RestUtilTest.verifySuccessResponse(endpointResponse);
@@ -2192,6 +2617,70 @@ public class PageResourceTest {
         return createTestPageWithContentConfigs(contentConfigs, referenceDate);
     }
 
+    /**
+     * Test validates that PageMode.LIVE + future date returns correct content versions.
+     * Creates 2 contentlets:
+     * - Contentlet A: Single LIVE version
+     * - Contentlet B: LIVE version + scheduled future version
+     *
+     * When querying with PageMode.LIVE + future date BEFORE scheduled publication:
+     * - Contentlet A: Should return LIVE version
+     * - Contentlet B: Should return LIVE version (NOT future version)
+     *
+     * @throws Exception
+     */
+    @Test
+    public void TestPageWithFutureDateShowsCorrectVersions() throws Exception {
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Setup dates: query date is before scheduled publication
+            final Date queryDate = Date.from(LocalDateTime.now().plusDays(5).atZone(utc.toZoneId()).toInstant());
+            final Date futurePublishDate = Date.from(LocalDateTime.now().plusDays(10).atZone(utc.toZoneId()).toInstant());
+            final String queryDateIso8601 = queryDate.toInstant().toString();
+
+            final PageInfo pageInfo = createPageWithMixedContentVersions(queryDate, futurePublishDate);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            // Test: PageMode.LIVE with future date before scheduled publication
+            final Response pareResponse = pageResource
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
+                            "1", null, queryDateIso8601);
+
+            final PageView pageView = PageScenarioUtils.extractPageViewFromResponse(pareResponse);
+
+            // Validate: Should get exactly 2 contentlets
+            final List<? extends ContainerRaw> containers = (List<? extends ContainerRaw>) pageView.getContainers();
+            assertEquals(1, containers.size());
+            final Map<String, List<Contentlet>> contentlets = containers.get(0).getContentlets();
+
+            final List<Contentlet> contentletList = contentlets.values().iterator().next();
+            assertEquals("Should have exactly 2 contentlets", 2, contentletList.size());
+
+            // Validate titles: Should get LIVE versions only
+            List<String> titles = contentletList.stream()
+                    .map(c -> c.getStringProperty("title"))
+                    .sorted()
+                    .collect(Collectors.toList());
+
+            //This is the regular Live Contentlet
+            assertEquals("Contentlet A - LIVE Version", titles.get(0));
+            //This is the Live version that should still show, regardless of having a new version set to be published in the future
+            //Remember that this one has two versions
+            assertEquals("Contentlet B - LIVE Version", titles.get(1));
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
 
     /**
      * Given scenario: A page with a container and a contentlet is created. The contentlet is set to be published in the future.
@@ -2219,7 +2708,7 @@ public class PageResourceTest {
             addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
 
             final Response noPublishDateResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, null);
 
             //When no publish date is passed, we should get all contentlets that are valid!
@@ -2227,12 +2716,87 @@ public class PageResourceTest {
                     validateNoContentlets(noPublishDateResponse));
 
             final Response withFutureDatePassed = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             //When publish date is passed, we should still get only valid content since the base case only created expired content in the past, so we should only get valid content
             assertTrue("All content returned should be the valid - publish date provided",
                     validateAllContentletTitlesContaining(withFutureDatePassed, "Valid"));
+
+        } finally {
+            TimeZone.setDefault(defaultZone);
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResource#loadJson}
+     * Given scenario: A headless page holds content that is live right now: one item expiring in 2 days,
+     *                 one expiring in 30 days, one that never expires, and one not published until day 20.
+     *                 The page is requested with a Time Machine date of now + 10 days.
+     * Expected result: The item whose Online To has passed at the Time Machine date is excluded, while the
+     *                 still-valid items are returned. Requesting now + 25 days additionally shows the
+     *                 not-yet-published item, proving the Online From fallback is preserved.
+     * @see <a href="https://github.com/dotCMS/core/issues/36731">#36731</a>
+     */
+    @Test
+    public void TestFutureTimeMachineExcludesLiveContentExpiredAtTimeMachineDate() throws Exception {
+        final TimeZone defaultZone = TimeZone.getDefault();
+        try {
+            final TimeZone utc = TimeZone.getTimeZone("UTC");
+            TimeZone.setDefault(utc);
+
+            // Reference date is NOW, so this content really is live at request time -- that is precisely the
+            // scenario in which the live fallback used to resurrect expired content.
+            final Date now = new Date();
+            final PageInfo pageInfo = createTestPageWithContentConfigs(List.of(
+                    ContentConfig.validWithExpiration("TM Live Expiring Soon", 1, 2),
+                    ContentConfig.validWithExpiration("TM Live Expiring Later", 1, 30),
+                    ContentConfig.neverExpires("TM Live Never Expires", 1),
+                    ContentConfig.neverExpires("TM Not Published Yet", -20)
+            ), now);
+
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER)).thenReturn(user);
+            addPermission(host, user, PermissionAPI.INDIVIDUAL_PERMISSION_TYPE, PermissionAPI.PERMISSION_READ);
+
+            // Sanity check: with no Time Machine date the expiring content IS live and returned. Without this,
+            // the assertions below could pass simply because the content was never live to begin with.
+            final PageView livePageView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, null));
+            assertEquals("Content expiring in 2 days must be live right now", 1,
+                    validateContentletTitlesContainingInternal(livePageView, "TM Live Expiring Soon").matched);
+            assertEquals("Content with a future publish date must not be live yet", 0,
+                    validateContentletTitlesContainingInternal(livePageView, "TM Not Published Yet").matched);
+
+            // Time Machine 10 days ahead: past the Online To of "Expiring Soon", before the Online From of
+            // "Not Published Yet".
+            final String tenDaysAhead = now.toInstant().plus(Duration.ofDays(10)).toString();
+            final PageView tenDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, tenDaysAhead));
+
+            assertEquals("Content expired at the Time Machine date must be excluded", 0,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Expiring Soon").matched);
+            assertEquals("Content expiring after the Time Machine date must be included", 1,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Expiring Later").matched);
+            assertEquals("Content with no expire date must be included", 1,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Live Never Expires").matched);
+            assertEquals("Content not yet published at the Time Machine date must be excluded", 0,
+                    validateContentletTitlesContainingInternal(tenDaysView, "TM Not Published Yet").matched);
+
+            // Time Machine 25 days ahead: the scheduled content is now past its Online From, so the live
+            // fallback for the publish-date case must keep working.
+            final String twentyFiveDaysAhead = now.toInstant().plus(Duration.ofDays(25)).toString();
+            final PageView twentyFiveDaysView = extractPageViewFromResponse(pageResource.loadJson(this.request,
+                    this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null, "1", null, twentyFiveDaysAhead));
+
+            assertEquals("Content past its publish date must be included", 1,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Not Published Yet").matched);
+            assertEquals("Expired content must stay excluded further into the future", 0,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Live Expiring Soon").matched);
+            assertEquals("Content expiring after the Time Machine date must still be included", 1,
+                    validateContentletTitlesContainingInternal(twentyFiveDaysView, "TM Live Expiring Later").matched);
 
         } finally {
             TimeZone.setDefault(defaultZone);
@@ -2266,7 +2830,7 @@ public class PageResourceTest {
 
             // Test with current date - should only show valid content
             final Response currentDateResponse = pageResource
-                    .loadJson(this.request, this.response, pageInfo.pageUri, PageMode.LIVE.name(), null,
+                    .loadJson(this.request, this.response, pageInfo.pageUri, null, PageMode.LIVE.name(), null,
                             "1", null, matchingFutureIso8601);
 
             final PageView pageView = extractPageViewFromResponse(currentDateResponse);
@@ -2290,5 +2854,214 @@ public class PageResourceTest {
         }
     }
 
+    /**
+     * Creates a page with mixed content versions for testing future date queries.
+     * - Contentlet A: Single LIVE version
+     * - Contentlet B: LIVE version + scheduled future version
+     *
+     * @param queryDate The date for the query (before future publish)
+     * @param futurePublishDate The scheduled publication date for Contentlet B's second version
+     * @return PageInfo with the created page and contentlets
+     * @throws DotDataException if there is an error creating the page
+     * @throws DotSecurityException if there is an error creating the page
+     * @throws WebAssetException if there is an error creating the page
+     */
+    PageInfo createPageWithMixedContentVersions(final Date queryDate, final Date futurePublishDate)
+            throws DotDataException, DotSecurityException, WebAssetException {
+
+        final User systemUser = APILocator.getUserAPI().getSystemUser();
+        final long languageId = 1L;
+        final ContentType blogLikeContentType = TestDataUtils.getBlogLikeContentType();
+
+        final Structure structure = new StructureDataGen().nextPersisted();
+        final Container myContainer = new ContainerDataGen()
+                .withStructure(structure, "")
+                .friendlyName("container-friendly-name" + System.currentTimeMillis())
+                .title("container-title")
+                .site(host)
+                .nextPersisted();
+
+        ContainerDataGen.publish(myContainer);
+
+        final TemplateLayout templateLayout = TemplateLayoutDataGen.get()
+                .withContainer(myContainer.getIdentifier())
+                .next();
+
+        final Template newTemplate = new TemplateDataGen()
+                .drawedBody(templateLayout)
+                .withContainer(myContainer.getIdentifier())
+                .nextPersisted();
+
+        final VersionableAPI versionableAPI = APILocator.getVersionableAPI();
+        versionableAPI.setWorking(newTemplate);
+        versionableAPI.setLive(newTemplate);
+
+        final String myFolderName = "folder-" + System.currentTimeMillis();
+        final Folder myFolder = new FolderDataGen().name(myFolderName).site(host).nextPersisted();
+        final String myPageName = "my-mixed-versions-test-page-" + System.currentTimeMillis();
+        final HTMLPageAsset myPage = new HTMLPageDataGen(myFolder, newTemplate)
+                .languageId(languageId)
+                .pageURL(myPageName)
+                .title(myPageName)
+                .nextPersisted();
+
+        final ContentletAPI contentletAPI = APILocator.getContentletAPI();
+        contentletAPI.publish(myPage, systemUser, false);
+
+        assertNotNull(blogLikeContentType.publishDateVar());
+        final MultiTreeAPI multiTreeAPI = APILocator.getMultiTreeAPI();
+
+        // Create Contentlet A: Single LIVE version
+        final Contentlet contentletA = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Contentlet A - LIVE Version")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
+                .nextPersistedAndPublish();
+
+        // Create Contentlet B: Start with the LIVE version
+        final Contentlet contentletBV1 = new ContentletDataGen(blogLikeContentType.id())
+                .languageId(languageId)
+                .host(host)
+                .setProperty("title", "Contentlet B - LIVE Version")
+                .setProperty("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .setProperty(Contentlet.IS_TEST_MODE, true)
+                .nextPersistedAndPublish();
+
+        // Create Contentlet B Version 2: Scheduled for future publication
+        final Map<String, Object> newProps = new HashMap<>();
+        newProps.put("title", "Contentlet B - Future Version");
+        newProps.put("body", TestDataUtils.BLOCK_EDITOR_DUMMY_CONTENT);
+        newProps.put("publishDate", futurePublishDate);
+
+        final Contentlet contentletBV2 = ContentletDataGen.createNewVersion(contentletBV1, VariantAPI.DEFAULT_VARIANT, newProps);
+
+        // Don't publish V2 yet - it should be scheduled for the future
+        assertFalse("Contentlet B V2 should not be live (scheduled for future)", contentletBV2.isLive());
+        assertTrue("Contentlet B V1 should be live", contentletBV1.isLive());
+
+        final String uuid = UUIDUtil.uuid();
+        // Add both contentlets to the page
+        final MultiTree multiTreeA = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), contentletA.getIdentifier(), uuid, 1);
+        multiTreeAPI.saveMultiTree(multiTreeA);
+
+        final MultiTree multiTreeB = new MultiTree(myPage.getIdentifier(),
+                myContainer.getIdentifier(), contentletBV1.getIdentifier(), uuid, 2);
+        multiTreeAPI.saveMultiTree(multiTreeB);
+
+        final String myPagePath = String.format("/%s/%s", myFolderName, myPageName);
+        Logger.info(this, "Mixed versions page created: " + myPagePath);
+        Logger.info(this, "Query Date: " + queryDate);
+        Logger.info(this, "Future Publish Date: " + futurePublishDate);
+        Logger.info(this, "Contentlet A ID: " + contentletA.getIdentifier());
+        Logger.info(this, "Contentlet B ID: " + contentletBV1.getIdentifier());
+
+        return new PageInfo(myPagePath, contentletBV1.getIdentifier(),
+                Set.of(contentletA.getInode(), contentletBV1.getInode(), contentletBV2.getInode()));
+    }
+
+    /**
+     * Method to test: {@link PageResource#render}
+     * Given Scenario: A page with a contentlet whose ContentType defines DOT_STYLE_EDITOR_SCHEMA,
+     *                 rendered in EDIT_MODE with the style editor feature flag enabled.
+     * Should: Return styleEditorSchemas populated inside the PageView, gated to EDIT_MODE.
+     */
+    @Test
+    public void render_inEditMode_withSchemaContentType_returnsStyleEditorSchemas()
+            throws DotDataException, DotSecurityException {
+        final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+            ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final String schema = String.format(
+                    "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+            contentType = ContentTypeBuilder.builder(contentType)
+                    .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                    .build();
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+            final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                    PageRenderTestUtil.createPage(1, host);
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+            pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
+
+            when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.EDIT_MODE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
+
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(), null,
+                            PageMode.EDIT_MODE.name(), null, "1", null, null);
+
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+
+            assertFalse("styleEditorSchemas should be present in EDIT_MODE when schema is defined",
+                    pageView.getStyleEditorSchemas().isEmpty());
+            assertEquals("Schema contentType should match the content type variable",
+                    contentType.variable(),
+                    pageView.getStyleEditorSchemas().get(0).get("contentType").asText());
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFlag);
+        }
+    }
+
+    /**
+     * Method to test: {@link PageResource#render}
+     * Given Scenario: A page with a contentlet whose ContentType defines DOT_STYLE_EDITOR_SCHEMA,
+     *                 rendered in PREVIEW_MODE (any non-EDIT_MODE) with the style editor feature
+     *                 flag enabled.
+     * Should: Return no styleEditorSchemas — schemas are gated exclusively to EDIT_MODE to avoid
+     *         unnecessary database queries on public/preview page loads.
+     */
+    @Test
+    public void render_inNonEditMode_withSchemaContentType_doesNotReturnStyleEditorSchemas()
+            throws DotDataException, DotSecurityException {
+        final boolean originalFlag = Config.getBooleanProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+        try {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", true);
+
+            ContentType contentType = new ContentTypeDataGen().nextPersisted();
+            final String schema = String.format(
+                    "{\"contentType\":\"%s\",\"sections\":[]}", contentType.variable());
+            contentType = ContentTypeBuilder.builder(contentType)
+                    .metadata(Map.of("DOT_STYLE_EDITOR_SCHEMA", schema))
+                    .build();
+            contentType = APILocator.getContentTypeAPI(APILocator.systemUser()).save(contentType);
+
+            final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                    PageRenderTestUtil.createPage(1, host);
+            // Publish the contentlet so LIVE mode containers are non-empty — this ensures the test
+            // truly verifies that schemas are absent because of mode gating, not empty containers.
+            final Contentlet contentlet = new ContentletDataGen(contentType.id()).nextPersisted();
+            APILocator.getContentletAPI().publish(contentlet, APILocator.systemUser(), false);
+            pageRenderTest.addContent(pageRenderTest.getFirstContainer(), contentlet);
+
+            when(initDataObject.getUser()).thenReturn(APILocator.systemUser());
+            HttpServletResponseThreadLocal.INSTANCE.setResponse(this.response);
+            HttpServletRequestThreadLocal.INSTANCE.setRequest(this.request);
+            when(request.getAttribute(WebKeys.PAGE_MODE_PARAMETER)).thenReturn(PageMode.LIVE);
+            when(request.getAttribute(com.liferay.portal.util.WebKeys.USER))
+                    .thenReturn(APILocator.systemUser());
+
+            final Response response = pageResource
+                    .render(this.request, this.response, pageRenderTest.getPage().getURI(), null,
+                            PageMode.LIVE.name(), null, "1", null, null);
+
+            final PageView pageView = (PageView) ((ResponseEntityView<?>) response.getEntity()).getEntity();
+
+            assertTrue("styleEditorSchemas should be empty in non-EDIT_MODE",
+                    pageView.getStyleEditorSchemas().isEmpty());
+        } finally {
+            Config.setProperty("FEATURE_FLAG_UVE_STYLE_EDITOR", originalFlag);
+        }
+    }
 
 }

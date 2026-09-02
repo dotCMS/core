@@ -3,9 +3,29 @@ import { nxE2EPreset } from '@nx/playwright/preset';
 import { defineConfig, devices } from '@playwright/test';
 import * as dotenv from 'dotenv';
 
-// For CI, you may want to set BASE_URL to the deployed application.
-const baseURL = process.env['E2E_BASE_URL'] || 'http://localhost:4200';
+import path from 'path';
+
+// Environment configuration
+const currentEnv = process.env['CURRENT_ENV'] || 'dev';
+const baseURL = process.env['E2E_BASE_URL'] || getBaseURL(currentEnv);
 const reuseExistingServer = process.env['E2E_REUSE_EXISTING_SERVER'] === 'false' ? false : true;
+const headless = process.env['HEADLESS'] === 'true' || currentEnv === 'ci';
+
+console.warn('Playwright config - Current environment:', currentEnv);
+console.warn('Playwright config - Base URL:', baseURL);
+
+/**
+ * Get base URL based on environment
+ */
+function getBaseURL(env: string): string {
+    switch (env) {
+        case 'ci':
+            return 'http://localhost:8080'; // dotCMS directly
+        case 'dev':
+        default:
+            return 'http://localhost:4200'; // Angular with proxy to 8080
+    }
+}
 
 /**
  * Read environment variables from file.
@@ -18,53 +38,80 @@ dotenv.config();
  */
 export default defineConfig({
     ...nxE2EPreset(__filename, { testDir: './src' }),
+    outputDir: 'test-results',
+    /* Run tests in files in parallel */
+    fullyParallel: true,
+    /* Fail the build on CI if you accidentally left test.only in the source code. */
+    forbidOnly: !!process.env.CI,
+    /* Retry on CI only */
+    retries: process.env.CI ? 2 : 0,
+    /*
+     * Parallelize CI (2 workers); local keeps Playwright default.
+     *
+     * Do NOT lower this to work around a crashing shard. The 1 -> 2 bump is a measured improvement
+     * from #36567 / PR #36647: the Playwright phase went from ~49m to a <30m target, so going back
+     * roughly doubles E2E time for every PR in the repo. If concurrency ever is proven to be the
+     * cause, that belongs in its own change against #36567, not smuggled into a feature PR.
+     */
+    workers: process.env.CI ? 2 : undefined,
+    timeout: 60000,
+    /* Reporter to use. See https://playwright.dev/docs/test-reporters */
+    reporter:
+        currentEnv === 'dev'
+            ? [
+                  ['html', { open: 'always', outputFolder: 'playwright-report' }], // Open report automatically in dev
+                  ['junit', { outputFile: 'test-results/junit.xml' }]
+              ]
+            : [
+                  ['html', { outputFolder: 'playwright-report' }],
+                  ['junit', { outputFile: 'test-results/junit.xml' }]
+              ],
     /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
     use: {
         baseURL,
         /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
-        trace: 'on-first-retry'
+        trace: 'on-first-retry',
+        screenshot: 'only-on-failure',
+        video: 'retain-on-failure',
+        headless: headless,
+        launchOptions: {
+            /*
+             * Chromium puts its shared-memory allocations in /dev/shm, which a container gives 64MB
+             * of by default. Exhausting it crashes the browser process outright — a SIGSEGV with no
+             * Playwright output and no JUnit report, which is exactly how the CI shard died. This
+             * flag moves those allocations to regular temp files instead.
+             */
+            args: ['--disable-dev-shm-usage']
+        }
     },
     /* Run your local dev server before starting the tests */
-    webServer: {
-        command: 'yarn nx run dotcms-ui:serve',
-        url: `${baseURL}/dotAdmin/#`,
-        reuseExistingServer: reuseExistingServer,
-        cwd: workspaceRoot
-    },
+    webServer:
+        currentEnv === 'dev'
+            ? {
+                  command: 'pnpm exec nx run dotcms-ui:serve',
+                  url: `${baseURL}/dotAdmin/#/public/login`,
+                  reuseExistingServer: reuseExistingServer,
+                  cwd: workspaceRoot
+              }
+            : undefined,
     projects: [
         {
+            name: 'setup',
+            testMatch: /auth\.setup\.ts/
+        },
+        {
             name: 'chromium',
+            testIgnore: /tests\/login\//,
+            use: {
+                ...devices['Desktop Chrome'],
+                storageState: path.join(__dirname, '.auth', 'admin.json')
+            },
+            dependencies: ['setup']
+        },
+        {
+            name: 'chromium-no-auth',
+            testMatch: /tests\/login\//,
             use: { ...devices['Desktop Chrome'] }
-        },
-
-        {
-            name: 'firefox',
-            use: { ...devices['Desktop Firefox'] }
-        },
-
-        {
-            name: 'webkit',
-            use: { ...devices['Desktop Safari'] }
         }
-
-        // Uncomment for mobile browsers support
-        /* {
-      name: 'Mobile Chrome',
-      use: { ...devices['Pixel 5'] }
-},
-    {
-      name: 'Mobile Safari',
-      use: { ...devices['iPhone 12'] }
-}, */
-
-        // Uncomment for branded browsers
-        /* {
-      name: 'Microsoft Edge',
-      use: { ...devices['Desktop Edge'], channel: 'msedge' }
-},
-    {
-      name: 'Google Chrome',
-      use: { ...devices['Desktop Chrome'], channel: 'chrome' }
-} */
     ]
 });

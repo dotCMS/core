@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.authentication;
 
 import com.dotcms.api.web.WebSessionContext;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.LoginAsAPI;
 import com.dotmarketing.exception.DotDataException;

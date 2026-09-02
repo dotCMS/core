@@ -1,3 +1,7 @@
+@use "../../../../../../../../dotcms-scss/shared/colors";
+@use "../../../../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host {
@@ -10,20 +14,20 @@
 
 .icon {
     font-size: 4.12rem;
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
 }
 
 .title {
-    font-size: $font-size-xl;
-    font-weight: $font-weight-medium-bold;
-    color: $color-palette-gray-700;
+    font-size: fonts.$font-size-xl;
+    font-weight: fonts.$font-weight-medium-bold;
+    color: colors.$color-palette-gray-700;
     margin: 0;
-    margin-top: $spacing-2;
+    margin-top: spacing.$spacing-2;
 }
 
 .description {
-    font-size: $font-size-lmd;
-    font-weight: $font-weight-regular-bold;
-    color: $color-palette-gray-700;
+    font-size: fonts.$font-size-lmd;
+    font-weight: fonts.$font-weight-regular-bold;
+    color: colors.$color-palette-gray-700;
     margin: 0;
 }

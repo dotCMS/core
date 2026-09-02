@@ -1,11 +1,19 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Input, OnInit, Output, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { map, take } from 'rxjs/operators';
 
@@ -16,7 +24,8 @@ import { DotCMSContentType } from '@dotcms/dotcms-models';
     selector: 'dot-content-type-selector',
     templateUrl: './dot-content-type-selector.component.html',
     styleUrls: ['./dot-content-type-selector.component.scss'],
-    imports: [CommonModule, DropdownModule, FormsModule]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [SelectModule, FormsModule, AsyncPipe]
 })
 export class DotContentTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);
@@ -28,7 +37,7 @@ export class DotContentTypeSelectorComponent implements OnInit {
     options$: Observable<SelectItem[]>;
 
     ngOnInit() {
-        this.options$ = this.dotContentTypeService.getContentTypes({ page: 999 }).pipe(
+        this.options$ = this.dotContentTypeService.getContentTypes({ per_page: 999 }).pipe(
             take(1),
             map((contentTypes: DotCMSContentType[]) => this.setOptions(contentTypes))
         );

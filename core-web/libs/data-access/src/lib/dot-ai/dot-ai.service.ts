@@ -1,18 +1,26 @@
 import { Observable, of, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { catchError, map, pluck, switchMap } from 'rxjs/operators';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
     DotCMSContentlet,
     AiPluginResponse,
-    DotAICompletionsConfig,
     DotAIImageContent,
-    DotAIImageOrientation,
-    DotAIImageResponse
+    DotAIImageResponse,
+    DotAiProviderConfig,
+    DotAiProviderMetadata,
+    DotAiTestConnectionResult,
+    DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
+
+interface ResponseEntityView<T> {
+    entity: T;
+}
+
+export { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'
@@ -61,10 +69,10 @@ export class DotAiService {
                 }),
                 catchError((error) => {
                     if (error instanceof HttpErrorResponse) {
-                        return throwError(error.statusText);
+                        return throwError(() => error.statusText);
                     }
 
-                    return throwError(error);
+                    return throwError(() => error);
                 })
             );
     }
@@ -78,7 +86,7 @@ export class DotAiService {
      */
     public generateAndPublishImage(
         prompt: string,
-        size: string = DotAIImageOrientation.HORIZONTAL
+        size = DEFAULT_IMAGE_SIZE
     ): Observable<DotAIImageContent> {
         return this.#http
             .post<DotAIImageResponse>(
@@ -89,9 +97,17 @@ export class DotAiService {
                 }
             )
             .pipe(
-                catchError(() =>
-                    throwError('block-editor.extension.ai-image.api-error.missing-token')
-                ),
+                catchError((error: HttpErrorResponse) => {
+                    const body = error?.error;
+                    const message =
+                        body?.error?.message ??
+                        (typeof body?.error === 'string' ? body.error : null) ??
+                        body?.message;
+
+                    return throwError(
+                        () => message ?? 'block-editor.extension.ai-image.api-error.missing-token'
+                    );
+                }),
                 switchMap((response: DotAIImageResponse) => {
                     return this.createAndPublishContentlet(response);
                 })
@@ -105,15 +121,70 @@ export class DotAiService {
      */
     checkPluginInstallation(): Observable<boolean> {
         return this.#http
-            .get<DotAICompletionsConfig>(`${API_ENDPOINT}/completions/config`, {
+            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
                 observe: 'response'
             })
             .pipe(
-                map((res) => res.status === 200 && res?.body?.apiKey !== AI_PLUGIN_KEY.NOT_SET),
+                map((res) => res.status === 200 && !!res?.body?.providerConfig),
                 catchError(() => {
                     return of(false);
                 })
             );
+    }
+
+    getConfig(siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
+            params
+        });
+    }
+
+    saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
+            headers,
+            params
+        });
+    }
+
+    /**
+     * Lists capability and field metadata for every registered dotAI provider, so the
+     * configuration form can render dynamic provider/field UI without hardcoding provider
+     * knowledge. A new backend provider appears here automatically.
+     *
+     * @returns {Observable<DotAiProviderMetadata[]>} provider metadata list.
+     */
+    getProviders(): Observable<DotAiProviderMetadata[]> {
+        return this.#http
+            .get<ResponseEntityView<DotAiProviderMetadata[]>>(`${API_ENDPOINT}/providers`)
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
+     * Tests a provider configuration for one capability by asking the backend to build the
+     * provider client and issue a minimal real request against it. Masked credential fields
+     * (`"*****"`) in `config` are resolved server-side against the value already stored for
+     * `siteId` — the real secret never has to round-trip through the browser.
+     *
+     * @param {string} capability - the capability section to test: `chat`, `embeddings`, or `image`.
+     * @param {Record<string, unknown>} config - the assembled provider config section to test.
+     * @param {string} [siteId] - site identifier (or `SYSTEM_HOST`) whose stored config resolves masked credentials.
+     * @returns {Observable<DotAiTestConnectionResult>} the test outcome.
+     */
+    testConnection(
+        capability: string,
+        config: Record<string, unknown>,
+        siteId?: string
+    ): Observable<DotAiTestConnectionResult> {
+        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
+
+        return this.#http
+            .post<
+                ResponseEntityView<DotAiTestConnectionResult>
+            >(`${API_ENDPOINT}/providers/test/${capability}`, JSON.stringify(config), { headers, params })
+            .pipe(map((response) => response.entity));
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {
@@ -137,7 +208,7 @@ export class DotAiService {
                 }
             )
             .pipe(
-                pluck('entity', 'results'),
+                map((x) => x?.entity?.results),
                 map((contentlets: DotCMSContentlet[]) => {
                     if (contentlets.length === 0) {
                         throw new Error('contentlets is empty.');
@@ -160,7 +231,7 @@ export class DotAiService {
                 }),
                 catchError(() =>
                     throwError(
-                        'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
+                        () => 'block-editor.extension.ai-image.api-error.error-publishing-ai-image'
                     )
                 )
             );

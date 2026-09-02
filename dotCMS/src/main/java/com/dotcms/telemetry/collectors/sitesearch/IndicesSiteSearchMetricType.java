@@ -1,6 +1,6 @@
 package com.dotcms.telemetry.collectors.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.IndexStats;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.MetricType;

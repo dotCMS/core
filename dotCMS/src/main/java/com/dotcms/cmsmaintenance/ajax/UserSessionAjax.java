@@ -2,7 +2,6 @@ package com.dotcms.cmsmaintenance.ajax;
 
 import com.liferay.portal.util.PortalUtil;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -11,14 +10,12 @@ import java.util.UUID;
 import java.time.Duration;
 import java.time.Instant;
 
-import javax.crypto.Mac;
-import javax.crypto.spec.SecretKeySpec;
-import javax.mail.Session;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
 import com.dotcms.repackage.org.directwebremoting.WebContextFactory;
 import com.dotcms.listeners.SessionMonitor;
+import com.dotcms.rest.api.v1.maintenance.SessionTokenUtil;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.NoSuchUserException;
 import com.dotmarketing.cms.factories.PublicCompanyFactory;
@@ -27,7 +24,6 @@ import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.util.DateUtil;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 
 /**
@@ -38,7 +34,6 @@ public class UserSessionAjax {
     private static final String CSRF_TOKEN_ATTRIBUTE = "csrfToken";
     private static final String CSRF_TOKEN_TIMESTAMP_ATTRIBUTE = "csrfTokenTimestamp";
     private static final Duration TOKEN_EXPIRY_DURATION = Duration.ofMinutes(15);
-    private static final String HMAC_ALGORITHM = "HmacSHA256";
 
     /**
      * Validates if the current user has access to the CMS Maintenance Portlet.
@@ -187,19 +182,11 @@ public class UserSessionAjax {
      * @param sessionId the session ID to obfuscate
      * @param secretKey the secret key for HMAC
      * @return the obfuscated session ID
+     * @deprecated use {@link SessionTokenUtil#obfuscateSessionId(String, String)} directly.
      */
+    @Deprecated
     public static String obfuscateSessionId(String sessionId, String secretKey) {
-        try {
-            Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            SecretKeySpec key = new SecretKeySpec(secretKey.getBytes(), HMAC_ALGORITHM);
-            mac.init(key);
-            byte[] hash = mac.doFinal(sessionId.getBytes());
-            byte[] truncatedHash = new byte[16];
-            System.arraycopy(hash, 0, truncatedHash, 0, 16);
-            return Base64.getUrlEncoder().withoutPadding().encodeToString(truncatedHash);
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
+        return SessionTokenUtil.obfuscateSessionId(sessionId, secretKey);
     }
 
     /**
@@ -209,10 +196,11 @@ public class UserSessionAjax {
      * @param secretKey the secret key for HMAC
      * @param obfuscatedId the obfuscated session ID to validate
      * @return true if the session IDs match, false otherwise
+     * @deprecated use {@link SessionTokenUtil#validateSessionId(String, String, String)} directly.
      */
+    @Deprecated
     public static boolean validateSessionId(String sessionId, String secretKey, String obfuscatedId) {
-        String generatedObfuscatedId = obfuscateSessionId(sessionId, secretKey);
-        return generatedObfuscatedId.equals(obfuscatedId);
+        return SessionTokenUtil.validateSessionId(sessionId, secretKey, obfuscatedId);
     }
 
     /**

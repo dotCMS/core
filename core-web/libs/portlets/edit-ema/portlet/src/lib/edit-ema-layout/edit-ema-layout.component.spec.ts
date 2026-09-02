@@ -1,10 +1,12 @@
 import { expect, describe } from '@jest/globals';
-import { SpyObject } from '@ngneat/spectator';
-import { Spectator, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpyObject } from '@openng/spectator';
+import { Spectator, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { MockComponent, MockProvider } from 'ng-mocks';
-import { of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { signal } from '@angular/core';
 import { fakeAsync, tick } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -22,21 +24,24 @@ import {
     DotMessageService,
     DotPageLayoutService,
     DotRouterService,
+    DotWorkflowActionsFireService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { CoreWebService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
+import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
 import {
+    CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
     MockDotRouterJestService
 } from '@dotcms/utils-testing';
 
-import { EditEmaLayoutComponent } from './edit-ema-layout.component';
+import { DEBOUNCE_TIME, EditEmaLayoutComponent } from './edit-ema-layout.component';
 
 import { DotActionUrlService } from '../services/dot-action-url/dot-action-url.service';
-import { DotPageApiService } from '../services/dot-page-api.service';
+import { DotPageApiService } from '../services/dot-page-api/dot-page-api.service';
 import { PERSONA_KEY } from '../shared/consts';
 import { UVE_STATUS } from '../shared/enums';
 import { UVEStore } from '../store/dot-uve.store';
@@ -88,8 +93,10 @@ describe('EditEmaLayoutComponent', () => {
 
     const createComponent = createComponentFactory({
         component: EditEmaLayoutComponent,
-        imports: [HttpClientTestingModule, MockComponent(TemplateBuilderComponent)],
+        imports: [MockComponent(TemplateBuilderComponent)],
         providers: [
+            provideHttpClient(),
+            provideHttpClientTesting(),
             UVEStore,
             DotMessageService,
             DotActionUrlService,
@@ -98,7 +105,6 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(Router),
             mockProvider(ActivatedRoute),
             mockProvider(DotContentTypeService),
-            mockProvider(CoreWebService),
             {
                 provide: DotAnalyticsTrackerService,
                 useValue: {
@@ -114,6 +120,11 @@ describe('EditEmaLayoutComponent', () => {
             mockProvider(DotWorkflowsActionsService, {
                 getByInode: jest.fn(() => of([]))
             }),
+            mockProvider(DotWorkflowActionsFireService),
+            {
+                provide: GlobalStore,
+                useValue: { loggedUser: signal(CurrentUserDataMock) }
+            },
             mockProvider(ConfirmationService),
             MockProvider(DotExperimentsService, DotExperimentsServiceMock, 'useValue'),
             MockProvider(DotRouterService, new MockDotRouterJestService(jest), 'useValue'),
@@ -147,6 +158,8 @@ describe('EditEmaLayoutComponent', () => {
     });
 
     beforeEach(async () => {
+        jest.clearAllMocks();
+
         spectator = createComponent();
         component = spectator.component;
         dotRouter = spectator.inject(DotRouterService);
@@ -154,7 +167,12 @@ describe('EditEmaLayoutComponent', () => {
         dotPageLayoutService = spectator.inject(DotPageLayoutService);
         messageService = spectator.inject(MessageService);
 
-        store.loadPageAsset({
+        // Reset save mock to default — jest.clearAllMocks() does not reset mockReturnValue/
+        // mockImplementation overrides, so tests that call mockReturnValue(throwError(...))
+        // would contaminate subsequent tests that rely on the default of(PAGE_RESPONSE) behavior.
+        (dotPageLayoutService.save as jest.Mock).mockImplementation(() => of(PAGE_RESPONSE));
+
+        store.pageLoad({
             clientHost: 'http://localhost:3000',
             language_id: '1',
             url: 'test',
@@ -174,16 +192,25 @@ describe('EditEmaLayoutComponent', () => {
             expect(dotRouter.forbidRouteDeactivation).toHaveBeenCalled();
         });
 
-        it('should trigger a save after 5 secs', fakeAsync(() => {
+        it('should set uveStatus to LOADING immediately when templateChange is emitted', fakeAsync(() => {
             const setUveStatusSpy = jest.spyOn(store, 'setUveStatus');
-            const reloadSpy = jest.spyOn(store, 'reloadCurrentPage');
+
+            templateBuilder.templateChange.emit();
+
+            // tap fires synchronously before debounce — no tick needed
+            expect(setUveStatusSpy).toHaveBeenCalledWith(UVE_STATUS.LOADING);
+
+            tick(5000); // flush timer to avoid pending-timer warning
+        }));
+
+        it('should trigger a save after 5 secs', fakeAsync(() => {
+            const reloadSpy = jest.spyOn(store, 'pageReload');
 
             templateBuilder.templateChange.emit();
             tick(5000);
 
             expect(dotPageLayoutService.save).toHaveBeenCalled();
             expect(reloadSpy).toHaveBeenCalled();
-            expect(setUveStatusSpy).toHaveBeenCalledWith(UVE_STATUS.LOADING);
 
             expect(messageService.add).toHaveBeenNthCalledWith(1, {
                 severity: 'info',
@@ -235,5 +262,110 @@ describe('EditEmaLayoutComponent', () => {
                 detail: 'dot.common.message.saved'
             });
         });
+    });
+
+    describe('Canvas lock (#layoutSaveInFlight)', () => {
+        it('should drop templateChange events and not forbid navigation while save is in-flight', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            // First emit starts the debounce; forbidRouteDeactivation called once
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME); // debounce fires → POST sent → #layoutSaveInFlight = true
+
+            // Save still in-flight. Second emit should be dropped by the in-flight guard.
+            templateBuilder.templateChange.emit();
+
+            expect(dotRouter.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
+
+            saveSubject.complete(); // clean up
+        }));
+
+        it('should process templateChange events and forbid navigation when not saving', () => {
+            templateBuilder.templateChange.emit();
+
+            expect(dotRouter.forbidRouteDeactivation).toHaveBeenCalledTimes(1);
+        });
+
+        it('should pass disabled=true to the template builder while save is in-flight', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(true);
+
+            saveSubject.complete();
+        }));
+
+        it('should pass disabled=false to the template builder when not saving', () => {
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        });
+
+        it('should unlock canvas (disabled=false) after save completes', fakeAsync(() => {
+            const saveSubject = new Subject();
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(saveSubject.asObservable());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+
+            saveSubject.next(PAGE_RESPONSE);
+            saveSubject.complete();
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        }));
+
+        it('should unlock canvas (disabled=false) on save error', fakeAsync(() => {
+            (dotPageLayoutService.save as jest.Mock).mockReturnValue(
+                throwError(() => new HttpErrorResponse({ status: 400 }))
+            );
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        }));
+
+        it('should unlock canvas when pageReload fails (uveStatus = ERROR) to avoid a permanent lock', fakeAsync(() => {
+            const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(true);
+            expect(pageReloadSpy).toHaveBeenCalled();
+
+            // Simulate re-fetch failure
+            store.setUveStatus(UVE_STATUS.ERROR);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        }));
+
+        it('should keep canvas locked through the pageReload window and unlock only when reload completes', fakeAsync(() => {
+            // Prevent the real pageReload from running so we can control when it "finishes"
+            const pageReloadSpy = jest.spyOn(store, 'pageReload').mockImplementation(jest.fn());
+
+            templateBuilder.templateChange.emit();
+            tick(DEBOUNCE_TIME); // POST fires and succeeds synchronously (default mock)
+            spectator.detectChanges();
+
+            // POST returned 200 but reload hasn't signalled LOADED yet — canvas must stay locked
+            expect(templateBuilder.disabled).toBe(true);
+            expect(pageReloadSpy).toHaveBeenCalled();
+
+            // Simulate the reload completing
+            store.setUveStatus(UVE_STATUS.LOADED);
+            spectator.detectChanges();
+
+            expect(templateBuilder.disabled).toBe(false);
+        }));
     });
 });

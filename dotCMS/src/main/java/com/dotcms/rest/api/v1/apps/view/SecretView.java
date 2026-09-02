@@ -136,6 +136,7 @@ public class SecretView {
             map.put("hasEnvVar", property.hasEnvVar());
             map.put("envShow", property.isEnvShow());
             map.put("hasEnvVarValue", property.hasEnvVarValue());
+            map.put("fromEnv", property.isFromEnv());
             if (type.equals(Type.BOOL)) {
                 map.put("value", property.getBoolean());
             } else {

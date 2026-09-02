@@ -1,0 +1,16 @@
+:host {
+    display: block;
+    height: 100%;
+    width: 100%;
+    box-sizing: border-box;
+    margin-bottom: 1rem;
+}
+
+:host.ProseMirror-selectednode ::ng-deep .p-card,
+:host.ProseMirror-selectednode ::ng-deep .p-card:hover {
+    outline: 2px solid var(--color-palette-primary-500);
+}
+
+::ng-deep .p-card:hover {
+    outline: 2px solid var(--color-palette-primary-400);
+}

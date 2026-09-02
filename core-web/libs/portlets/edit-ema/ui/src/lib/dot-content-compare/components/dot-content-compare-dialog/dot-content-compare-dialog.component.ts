@@ -1,13 +1,22 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
-import { map, pluck, takeUntil, tap } from 'rxjs/operators';
+import { DialogModule } from 'primeng/dialog';
+
+import { map, takeUntil, tap } from 'rxjs/operators';
 
 import { DotEventsService } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotContentCompareComponent } from '../../dot-content-compare.component';
 
@@ -17,10 +26,12 @@ const COMPARE_CUSTOM_EVENT = 'compare-contentlet';
     selector: 'dot-content-compare-dialog',
     templateUrl: './dot-content-compare-dialog.component.html',
     styleUrls: ['./dot-content-compare-dialog.component.scss'],
-    imports: [CommonModule, DotDialogComponent, DotContentCompareComponent, DotMessagePipe]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [DialogModule, DotContentCompareComponent, DotMessagePipe, AsyncPipe]
 })
 export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     private dotEventsService = inject(DotEventsService);
+    private cdr = inject(ChangeDetectorRef);
 
     show = false;
     data$: Observable<DotContentCompareEvent>;
@@ -29,10 +40,11 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
     ngOnInit(): void {
         this.data$ = this.dotEventsService.listen(COMPARE_CUSTOM_EVENT).pipe(
             takeUntil(this.destroy$),
-            pluck('data'),
+            map((x) => x?.data),
             map((data: DotContentCompareEvent) => data),
             tap(() => {
                 this.show = true;
+                this.cdr.detectChanges();
             })
         );
     }
@@ -44,5 +56,15 @@ export class DotContentCompareDialogComponent implements OnInit, OnDestroy {
 
     close(): void {
         this.show = false;
+    }
+
+    /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
     }
 }

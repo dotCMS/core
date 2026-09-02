@@ -1,7 +1,7 @@
 import { ComponentStore } from '@ngrx/component-store';
 import { Observable } from 'rxjs';
 
-import { Injectable, inject } from '@angular/core';
+import { inject, Injectable } from '@angular/core';
 
 import { MenuItem } from 'primeng/api';
 
@@ -132,7 +132,12 @@ export class DotToolbarUserStore extends ComponentStore<DotToolbarUserState> {
                 visible: !auth.isLoginAs,
                 command: () => this.showLoginAs(true)
             },
-            { separator: true, visible: !auth.isLoginAs },
+            {
+                id: 'dot-toolbar-user-link-report-issue',
+                label: this.#dotMessageService.get('report-an-issue'),
+                icon: 'pi pi-wrench'
+            },
+            { separator: true },
             {
                 id: 'dot-toolbar-user-link-logout',
                 label: this.#dotMessageService.get('Logout'),

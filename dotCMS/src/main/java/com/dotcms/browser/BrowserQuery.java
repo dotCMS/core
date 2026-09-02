@@ -42,6 +42,10 @@ import org.apache.commons.lang3.StringUtils;
 @JsonDeserialize(builder = BrowserQuery.Builder.class)
 public class BrowserQuery {
     private static final int MAX_FETCH_PER_REQUEST = Config.getIntProperty("BROWSER_MAX_FETCH_PER_REQUEST", 300);
+    final boolean respectFrontEndRoles;
+    final int contentCursor;
+    final int folderCursor;
+    final int linkCursor;
     final User user;
     final String  filter;
     final String fileName;
@@ -73,6 +77,14 @@ public class BrowserQuery {
     final Role[] roles;
     final List<String> extensions;
     final List<String> mimeTypes;
+    /** Workflow scheme ids to match by content-type assignment (scheme-only filter entries). */
+    final Set<String> workflowSchemeIds;
+    /** Workflow step ids to match by the contentlet's current task (step-pinned filter entries). */
+    final Set<String> workflowStepIds;
+    /** Per-field value filters (Content Drive only); empty for the legacy Site Browser path. */
+    final List<FieldSearchCriteria> fieldCriteria;
+    /** Content states to filter by, OR'd together; empty means no status filtering. */
+    final Set<ContentStatus> contentStatuses;
 
     /**
      * Returns the primary language ID for backward compatibility.
@@ -96,9 +108,27 @@ public class BrowserQuery {
         return contentTypeIds;
     }
 
+    /**
+     * Returns the per-field value filters (Content Drive only). Never null.
+     */
+    public List<FieldSearchCriteria> getFieldCriteria() {
+        return fieldCriteria;
+    }
+
+    /**
+     * Returns the content states to filter by, OR'd together. Never null; empty means no status
+     * filtering, in which case no status clause is emitted at all.
+     */
+    public Set<ContentStatus> getContentStatuses() {
+        return contentStatuses;
+    }
+
     @Override
     public String toString() {
-        return "BrowserQuery {user:" + user + ", site:" + site + ", folder:" + folder + ", filter:"
+        return "BrowserQuery {user:" + user + ", respectFronEndRoles:" + respectFrontEndRoles +
+                ", contentCursor=" + contentCursor + ", folderCursor=" + folderCursor +
+                ", linkCursor=" + linkCursor +
+                " ,site:" + site + ", folder:" + folder + ", filter:"
                 + filter + ", sortBy:" + sortBy + ", forceSystemHost:" + forceSystemHost
                 + ", skipFolder:" + skipFolder + ", ignoreSiteForFolders:" + ignoreSiteForFolders
                 + ", offset:" + offset + ", maxResults:" + maxResults + ", showWorking:"
@@ -108,12 +138,19 @@ public class BrowserQuery {
                 + showLinks + ", showContent:" + showContent + ", showShorties:" + showShorties
                 + ", luceneQuery:" + luceneQuery
                 + ", languageIds:" + StringUtils.join(languageIds)
+                + ", mimeTypes:" + StringUtils.join(mimeTypes)
                 + ", baseTypes:" + StringUtils.join(baseTypes)
                 + ", contentTypes:" + StringUtils.join(contentTypeIds)
+                + ", fieldCriteria:" + StringUtils.join(fieldCriteria)
+                + ", contentStatuses:" + contentStatuses
                 + "}";
     }
 
     private BrowserQuery(final Builder builder) {
+        this.respectFrontEndRoles = builder.respectFrontEndRoles;
+        this.contentCursor = builder.contentCursor;
+        this.folderCursor = builder.folderCursor;
+        this.linkCursor = builder.linkCursor;
         this.user = builder.user == null ? APILocator.systemUser() : builder.user;
         final Tuple2<Host, Folder> siteAndFolder = getParents(builder.hostFolderId,this.user, builder.hostIdSystemFolder);
         this.filter = builder.filter;
@@ -126,7 +163,19 @@ public class BrowserQuery {
         this.sortBy = UtilMethods.isEmpty(builder.sortBy) ? "moddate" : builder.sortBy;
         this.offset = builder.offset;
         this.maxResults = Math.min(builder.maxResults, MAX_FETCH_PER_REQUEST);
-        this.showWorking = builder.showWorking || builder.showArchived;
+        // ARCHIVED and UNPUBLISHED rows have no live version by definition, so the working inode
+        // must be the one joined (see selectQuery) or the join can never match and the filter
+        // silently returns nothing. LOCKED does not need this — a locked item may well be live.
+        //
+        // Note the join is chosen for the WHOLE query, not per disjunct. So a mixed request such as
+        // {live: true, status: [LOCKED, ARCHIVED]} resolves the LOCKED disjunct against
+        // working_inode as well, and a live locked item with pending edits comes back carrying its
+        // working version's fields rather than the live ones the caller asked for. Unreachable from
+        // the Content Drive UI (the form's live() defaults to false); it only affects direct API
+        // callers who combine live:true with ARCHIVED or UNPUBLISHED.
+        this.showWorking = builder.showWorking || builder.showArchived
+                || builder.contentStatuses.contains(ContentStatus.ARCHIVED)
+                || builder.contentStatuses.contains(ContentStatus.UNPUBLISHED);
         this.showArchived = builder.showArchived;
         this.showFolders = builder.showFolders;
         this.showContent = builder.showContent;
@@ -143,6 +192,10 @@ public class BrowserQuery {
         this.languageIds = Set.copyOf(builder.languageIds);
         this.contentTypeIds = Set.copyOf(builder.contentTypes);
         this.excludedContentTypeIds = Set.copyOf(builder.excludedContentTypes);
+        this.workflowSchemeIds = Set.copyOf(builder.workflowSchemeIds);
+        this.workflowStepIds = Set.copyOf(builder.workflowStepIds);
+        this.fieldCriteria = List.copyOf(builder.fieldCriteria);
+        this.contentStatuses = Set.copyOf(builder.contentStatuses);
         this.showMenuItemsOnly = builder.showMenuItemsOnly;
         this.site = siteAndFolder._1;
         this.folder = siteAndFolder._2;
@@ -195,7 +248,11 @@ public class BrowserQuery {
         if (null == folderObj || UtilMethods.isEmpty(folderObj.getIdentifier()) || null == siteObj || UtilMethods.isEmpty(siteObj.getIdentifier())) {
             final String errorMsg = String.format("Parent ID '%s' [ %s ] does not match any existing Folder or Site.",
                     parentId, siteId);
-            Logger.error(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
+            // Logged at warn rather than error because this is typically a transient
+            // race after a folder copy/move/delete: the client refreshes with a now-stale
+            // parent ID before the corresponding system event reaches it. The thrown
+            // DotRuntimeException still surfaces to the caller so the UI can recover.
+            Logger.warn(this, errorMsg + ". Maybe the Site/Folder was modified or deleted in the background. If " +
                                        "System Folder is specified, then set a value for hostIdSystemFolder as well.");
             throw new DotRuntimeException(errorMsg);
         }
@@ -226,7 +283,11 @@ public class BrowserQuery {
      * Builder to build {@link BrowserQuery}.
      */
     public static final class Builder {
-
+        //setting respectFrontEndRoles to true by default to maintain backward compatibility.
+        private boolean respectFrontEndRoles = true;
+        private int contentCursor = 0;
+        private int folderCursor = 0;
+        private int linkCursor = 0;
         private User user;
         private boolean useElasticsearchFiltering = false;
         private boolean filterFolderNames = false;
@@ -256,10 +317,17 @@ public class BrowserQuery {
         private String hostIdSystemFolder = null;
         private List<String> mimeTypes = new ArrayList<>();
         private List<String> extensions = new ArrayList<>();
+        private Set<String> workflowSchemeIds = new LinkedHashSet<>();
+        private Set<String> workflowStepIds = new LinkedHashSet<>();
+        private List<FieldSearchCriteria> fieldCriteria = new ArrayList<>();
+        private Set<ContentStatus> contentStatuses = new LinkedHashSet<>();
         private Builder() {
         }
 
         private Builder(BrowserQuery browserQuery) {
+            this.contentCursor = browserQuery.contentCursor;
+            this.folderCursor = browserQuery.folderCursor;
+            this.linkCursor = browserQuery.linkCursor;
             this.user = browserQuery.user;
             this.hostFolderId = browserQuery.folder.isSystemFolder()
                     ? browserQuery.site.getIdentifier()
@@ -284,12 +352,55 @@ public class BrowserQuery {
             this.languageIds = new LinkedHashSet<>(browserQuery.languageIds);
             this.contentTypes = new LinkedHashSet<>(browserQuery.contentTypeIds);
             this.excludedContentTypes = new LinkedHashSet<>(browserQuery.excludedContentTypeIds);
+            this.workflowSchemeIds = new LinkedHashSet<>(browserQuery.workflowSchemeIds);
+            this.workflowStepIds = new LinkedHashSet<>(browserQuery.workflowStepIds);
+            this.fieldCriteria = new ArrayList<>(browserQuery.fieldCriteria);
+            this.contentStatuses = new LinkedHashSet<>(browserQuery.contentStatuses);
             this.showMenuItemsOnly = browserQuery.showMenuItemsOnly;
             this.mimeTypes = browserQuery.mimeTypes;
             this.extensions = browserQuery.extensions;
             this.showContent = browserQuery.showContent;
             this.showShorties = browserQuery.showShorties;
             this.showDefaultLangItems = browserQuery.showDefaultLangItems;
+        }
+
+        public Builder respectFrontEndRoles(boolean respectFrontEndRoles) {
+            this.respectFrontEndRoles = respectFrontEndRoles;
+            return this;
+        }
+
+        /**
+         * Cursors are designed to be echoed back verbatim from a previous response, so a client
+         * replaying a corrupted value is plausible. All three are clamped at zero: the folder and
+         * link slices index a list directly, so a negative cursor would reach
+         * {@code List.subList} and surface as a 500 rather than an empty page.
+         *
+         * @param contentCursor DB row to resume the content scan from; negatives are treated as 0
+         * @return this builder
+         */
+        public Builder contentCursor(int contentCursor) {
+            this.contentCursor = Math.max(0, contentCursor);
+            return this;
+        }
+
+        /**
+         * @param folderCursor index into the folder list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
+        public Builder folderCursor(int folderCursor) {
+            this.folderCursor = Math.max(0, folderCursor);
+            return this;
+        }
+
+        /**
+         * @param linkCursor index into the link list to start from; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
+        public Builder linkCursor(int linkCursor) {
+            this.linkCursor = Math.max(0, linkCursor);
+            return this;
         }
 
         public Builder withUser(@Nonnull User user) {
@@ -397,8 +508,13 @@ public class BrowserQuery {
             return this;
         }
 
+        /**
+         * @param offset row offset for the content query; negatives are treated as 0
+         * @return this builder
+         * @see #contentCursor(int)
+         */
         public Builder offset(@Nonnull int offset) {
-            this.offset = offset;
+            this.offset = Math.max(0, offset);
             return this;
         }
 
@@ -514,6 +630,54 @@ public class BrowserQuery {
             if (UtilMethods.isSet(contentType)) {
                 this.contentTypes.add(contentType);
             }
+            return this;
+        }
+
+        /**
+         * Workflow scheme ids matched by content-type assignment (scheme-only filter
+         * entries) — includes content with no workflow task yet (import/push-publish).
+         */
+        public Builder withWorkflowSchemeIds(@Nonnull Set<String> workflowSchemeIds) {
+            this.workflowSchemeIds.clear();
+            this.workflowSchemeIds.addAll(workflowSchemeIds);
+            return this;
+        }
+
+        /**
+         * Workflow step ids matched by the contentlet's current task (step-pinned
+         * filter entries).
+         */
+        public Builder withWorkflowStepIds(@Nonnull Set<String> workflowStepIds) {
+            this.workflowStepIds.clear();
+            this.workflowStepIds.addAll(workflowStepIds);
+            return this;
+        }
+
+        /**
+         * Per-field value filters for the Content Drive path. Typed so the resolver can route each
+         * criterion deterministically (DB vs index). Not used by the legacy Site Browser.
+         *
+         * @param fieldCriteria the parsed field criteria
+         * @return this
+         */
+        public Builder withFieldCriteria(@Nonnull List<FieldSearchCriteria> fieldCriteria) {
+            this.fieldCriteria.clear();
+            this.fieldCriteria.addAll(fieldCriteria);
+            return this;
+        }
+
+        /**
+         * Content states to filter by ({@link ContentStatus}). The selected statuses are OR'd into
+         * one group and that group is AND'd against the archived baseline, which only
+         * {@link ContentStatus#ARCHIVED} lifts. Empty means no status filtering and emits no clause
+         * at all. Not used by the legacy Site Browser.
+         *
+         * @param contentStatuses the states to match
+         * @return this
+         */
+        public Builder withContentStatuses(@Nonnull Set<ContentStatus> contentStatuses) {
+            this.contentStatuses.clear();
+            this.contentStatuses.addAll(contentStatuses);
             return this;
         }
 

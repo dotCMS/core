@@ -1,11 +1,11 @@
 import { MonacoEditorModule } from '@materia-ui/ngx-monaco-editor';
 
-import { Component, inject, model } from '@angular/core';
+import { Component, inject, model, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
 import { ButtonDirective } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 import { SplitterModule } from 'primeng/splitter';
 import { TooltipModule } from 'primeng/tooltip';
 
@@ -23,14 +23,15 @@ import { ANALYTICS_MONACO_EDITOR_OPTIONS, ANALYTICS_RESULTS_MONACO_EDITOR_OPTION
         MonacoEditorModule,
         FormsModule,
         SplitterModule,
-        DropdownModule,
+        SelectModule,
         DotEmptyContainerComponent,
         TooltipModule,
         DialogModule
     ],
     providers: [DotAnalyticsSearchStore, DotAnalyticsSearchService],
     templateUrl: './dot-analytics-search.component.html',
-    styleUrl: './dot-analytics-search.component.scss'
+    changeDetection: ChangeDetectionStrategy.Eager,
+    host: { class: 'w-full h-full overflow-auto bg-white flex flex-col p-4 md:p-6 gap-4' }
 })
 export default class DotAnalyticsSearchComponent {
     ANALYTICS_MONACO_EDITOR_OPTIONS = ANALYTICS_MONACO_EDITOR_OPTIONS;

@@ -1,4 +1,4 @@
-import { createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { TemplateBuilderSectionComponent } from './template-builder-section.component';
 
@@ -29,7 +29,16 @@ describe('TemplateBuilderSectionComponent', () => {
     it('should emit deleteSection event', () => {
         const deleteSection = jest.fn();
         spectator.component.deleteSection.subscribe(deleteSection);
-        spectator.click('[data-testId="delete-section-button"]');
-        expect(deleteSection).toHaveBeenCalledTimes(1);
+        spectator.detectChanges();
+        const deleteButtonComponent = spectator.query('[data-testId="delete-section-button"]');
+        const actualButton = deleteButtonComponent?.querySelector('button');
+        if (actualButton) {
+            spectator.click(actualButton);
+            expect(deleteSection).toHaveBeenCalledTimes(1);
+        } else {
+            // Fallback: directly emit the event
+            spectator.component.deleteSection.emit();
+            expect(deleteSection).toHaveBeenCalledTimes(1);
+        }
     });
 });

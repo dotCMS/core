@@ -1,8 +1,16 @@
-import { Component, forwardRef, Input, OnInit, ViewChild, inject } from '@angular/core';
+import {
+    Component,
+    forwardRef,
+    Input,
+    OnInit,
+    ViewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { ControlValueAccessor, NG_VALUE_ACCESSOR, FormsModule } from '@angular/forms';
 
 import { AutoComplete, AutoCompleteUnselectEvent, AutoCompleteModule } from 'primeng/autocomplete';
-import { ChipsModule } from 'primeng/chips';
+import { ChipModule } from 'primeng/chip';
 
 import { take } from 'rxjs/operators';
 
@@ -16,10 +24,11 @@ import { DotTag } from '@dotcms/dotcms-models';
  * @class DotAutocompleteTagsComponent
  */
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-autocomplete-tags',
     templateUrl: './dot-autocomplete-tags.component.html',
     styleUrls: ['./dot-autocomplete-tags.component.scss'],
-    imports: [ChipsModule, AutoCompleteModule, FormsModule],
+    imports: [ChipModule, AutoCompleteModule, FormsModule],
     providers: [
         {
             multi: true,

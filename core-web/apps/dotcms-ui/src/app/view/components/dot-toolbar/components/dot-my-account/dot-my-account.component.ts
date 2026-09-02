@@ -216,6 +216,7 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
      */
     handleClose(): void {
         this.formStatus.set(FormStatus.INIT);
+        // TODO: The 'emit' function requires a mandatory void argument
         this.shutdown.emit();
     }
 
@@ -258,12 +259,12 @@ export class DotMyAccountComponent implements OnInit, OnDestroy {
                     this.resetFormState();
                     this.handleClose();
 
-                    if (response.entity.reauthenticate) {
+                    if (response.reauthenticate) {
                         this.dotRouterService.doLogOut();
                     } else {
                         this.loginService.setAuth({
                             loginAsUser: null,
-                            user: response.entity.user
+                            user: response.user
                         });
                     }
                 },

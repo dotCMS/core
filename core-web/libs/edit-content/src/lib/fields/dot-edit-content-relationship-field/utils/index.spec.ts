@@ -1,37 +1,57 @@
 import { createFakeRelationshipField } from '@dotcms/utils-testing';
 
-import { getSelectionModeByCardinality, getContentTypeIdFromRelationship } from './index';
-
-import { RELATIONSHIP_OPTIONS } from '../dot-edit-content-relationship-field.constants';
-import { RelationshipTypes } from '../models/relationship.models';
+import {
+    getSelectionModeByCardinality,
+    getContentTypeIdFromRelationship,
+    needsCardinalityConstraintCheck
+} from './index';
 
 describe('Relationship Field Utils', () => {
     describe('getSelectionModeByCardinality', () => {
-        it('should return "single" for ONE_TO_ONE relationship', () => {
-            const oneToOneCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
-                ([_, value]) => value === RelationshipTypes.ONE_TO_ONE
-            )?.[0];
+        describe('parent side (isParentField=true)', () => {
+            it('should return "single" for ONE_TO_ONE', () => {
+                expect(getSelectionModeByCardinality(2, true)).toBe('single');
+            });
 
-            const result = getSelectionModeByCardinality(Number(oneToOneCardinality));
-            expect(result).toBe('single');
+            it('should return "multiple" for ONE_TO_MANY', () => {
+                expect(getSelectionModeByCardinality(0, true)).toBe('multiple');
+            });
+
+            it('should return "multiple" for MANY_TO_MANY', () => {
+                expect(getSelectionModeByCardinality(1, true)).toBe('multiple');
+            });
+
+            it('should return "single" for MANY_TO_ONE', () => {
+                expect(getSelectionModeByCardinality(3, true)).toBe('single');
+            });
         });
 
-        it('should return "single" for MANY_TO_ONE relationship', () => {
-            const manyToOneCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
-                ([_, value]) => value === RelationshipTypes.MANY_TO_ONE
-            )?.[0];
+        describe('child side (isParentField=false)', () => {
+            it('should return "single" for ONE_TO_ONE', () => {
+                expect(getSelectionModeByCardinality(2, false)).toBe('single');
+            });
 
-            const result = getSelectionModeByCardinality(Number(manyToOneCardinality));
-            expect(result).toBe('single');
+            it('should return "single" for ONE_TO_MANY', () => {
+                expect(getSelectionModeByCardinality(0, false)).toBe('single');
+            });
+
+            it('should return "multiple" for MANY_TO_MANY', () => {
+                expect(getSelectionModeByCardinality(1, false)).toBe('multiple');
+            });
+
+            it('should return "single" for MANY_TO_ONE', () => {
+                expect(getSelectionModeByCardinality(3, false)).toBe('single');
+            });
         });
 
-        it('should return "multiple" for ONE_TO_MANY relationship', () => {
-            const oneToManyCardinality = Object.entries(RELATIONSHIP_OPTIONS).find(
-                ([_, value]) => value === RelationshipTypes.ONE_TO_MANY
-            )?.[0];
+        describe('backward compatible (no isParentField)', () => {
+            it('should return "single" for ONE_TO_ONE', () => {
+                expect(getSelectionModeByCardinality(2)).toBe('single');
+            });
 
-            const result = getSelectionModeByCardinality(Number(oneToManyCardinality));
-            expect(result).toBe('multiple');
+            it('should return "multiple" for ONE_TO_MANY', () => {
+                expect(getSelectionModeByCardinality(0)).toBe('multiple');
+            });
         });
 
         it('should throw error for invalid cardinality', () => {
@@ -112,6 +132,38 @@ describe('Relationship Field Utils', () => {
 
             const result = getContentTypeIdFromRelationship(field);
             expect(result).toBeNull();
+        });
+    });
+
+    describe('needsCardinalityConstraintCheck', () => {
+        it('should return true for ONE_TO_ONE when isParentField is true', () => {
+            expect(needsCardinalityConstraintCheck(2, true)).toBe(true);
+        });
+
+        it('should return true for ONE_TO_MANY when isParentField is true', () => {
+            expect(needsCardinalityConstraintCheck(0, true)).toBe(true);
+        });
+
+        it('should return false for ONE_TO_ONE when isParentField is false', () => {
+            expect(needsCardinalityConstraintCheck(2, false)).toBe(false);
+        });
+
+        it('should return false for ONE_TO_MANY when isParentField is false', () => {
+            expect(needsCardinalityConstraintCheck(0, false)).toBe(false);
+        });
+
+        it('should return false for MANY_TO_MANY regardless of isParentField', () => {
+            expect(needsCardinalityConstraintCheck(1, true)).toBe(false);
+            expect(needsCardinalityConstraintCheck(1, false)).toBe(false);
+        });
+
+        it('should return false for MANY_TO_ONE regardless of isParentField', () => {
+            expect(needsCardinalityConstraintCheck(3, true)).toBe(false);
+            expect(needsCardinalityConstraintCheck(3, false)).toBe(false);
+        });
+
+        it('should return false for invalid cardinality', () => {
+            expect(needsCardinalityConstraintCheck(999, true)).toBe(false);
         });
     });
 });

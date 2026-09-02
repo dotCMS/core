@@ -40,7 +40,23 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
             final String iconUrl,
             final Boolean allowExtraParameters,
             final Map<String, ParamDescriptor> params) {
-        super(name, description, iconUrl, allowExtraParameters, params);
+        this(fileName, systemApp, name, description, iconUrl, null, null, allowExtraParameters, params);
+    }
+
+    /**
+     * Full-signature test constructor including the optional {@code icon} / {@code color} fields.
+     */
+    @VisibleForTesting
+    public AppDescriptorImpl(final String fileName,
+            final boolean systemApp,
+            final String name,
+            final String description,
+            final String iconUrl,
+            final String icon,
+            final String color,
+            final Boolean allowExtraParameters,
+            final Map<String, ParamDescriptor> params) {
+        super(name, description, iconUrl, icon, color, allowExtraParameters, params);
         this.fileName = fileName;
         this.systemApp =  systemApp;
         this.key = removeExtension(fileName);
@@ -52,7 +68,8 @@ public class AppDescriptorImpl extends AppSchema implements AppDescriptor {
      * @param appSchema
      */
     AppDescriptorImpl(final String fileName, final boolean systemApp, final AppSchema appSchema) {
-        this(fileName,systemApp, appSchema.getName(), appSchema.getDescription(), appSchema.getIconUrl(),
+        this(fileName, systemApp, appSchema.getName(), appSchema.getDescription(), appSchema.getIconUrl(),
+                appSchema.getIcon(), appSchema.getColor(),
                 appSchema.getAllowExtraParameters(), appSchema.getParams());
     }
 

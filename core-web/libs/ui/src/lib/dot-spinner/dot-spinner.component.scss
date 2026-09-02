@@ -1,7 +1,11 @@
+@use "../../../../dotcms-scss/shared/colors";
+@use "../../../../dotcms-scss/shared/common";
+@use "../../../../dotcms-scss/shared/fonts";
+
 @use "sass:math";
 @use "variables" as *;
 
-$size: $field-height-md;
+$size: common.$field-height-md;
 $border-size: math.div($size, 5);
 
 div {
@@ -10,19 +14,19 @@ div {
     height: $size;
     display: inline-block;
     vertical-align: middle;
-    font-size: $font-size-xs;
+    font-size: fonts.$font-size-xs;
     position: relative;
     text-indent: -9999em;
-    border: $border-size solid $color-palette-primary-op-20;
-    border-left-color: $color-palette-primary;
+    border: $border-size solid colors.$color-palette-primary-op-20;
+    border-left-color: colors.$color-palette-primary;
     transform: translateZ(0);
     animation: load8 1.1s infinite linear;
     overflow: hidden;
 }
 
 .edit-page-variant-mode :host div {
-    border: $border-size solid $color-palette-white-op-20;
-    border-left-color: $color-palette-white-op-90;
+    border: $border-size solid colors.$color-palette-white-op-20;
+    border-left-color: colors.$color-palette-white-op-90;
 }
 
 @-webkit-keyframes load8 {

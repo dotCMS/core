@@ -1,8 +1,10 @@
-import { expect, it, describe } from '@jest/globals';
-import { SpectatorService, createServiceFactory } from '@ngneat/spectator/jest';
-import { of } from 'rxjs';
+import { describe, expect, it } from '@jest/globals';
+import { SpectatorService, createServiceFactory } from '@openng/spectator/jest';
+import { of, throwError } from 'rxjs';
 
 import { signal } from '@angular/core';
+
+import { MessageService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSPage, DotCMSUVEAction } from '@dotcms/types';
@@ -17,21 +19,24 @@ import { PAYLOAD_MOCK } from '../../../shared/mocks';
 import { UVEStore } from '../../../store/dot-uve.store';
 
 const TEST_VARIANT = 'my-test-variant';
+const TEST_SITE_ID = 'test-site-identifier';
+
+/** Mock UVEStore signals used by DotEmaDialogStore (same shape as real store's pageVariantId) */
+const mockUveStore = {
+    pageVariantId: signal(TEST_VARIANT),
+    pageAsset: signal({ site: { identifier: TEST_SITE_ID } })
+};
 
 describe('DotEmaDialogStoreService', () => {
     let spectator: SpectatorService<DotEmaDialogStore>;
 
     const createService = createServiceFactory({
         service: DotEmaDialogStore,
-        mocks: [DotActionUrlService],
+        mocks: [DotActionUrlService, MessageService],
         providers: [
             {
                 provide: UVEStore,
-                useValue: {
-                    pageParams: signal({
-                        variantName: TEST_VARIANT // Is the only thing we need to test the component
-                    })
-                }
+                useValue: mockUveStore
             },
 
             {
@@ -39,6 +44,8 @@ describe('DotEmaDialogStoreService', () => {
                 useValue: new MockDotMessageService({
                     'edit.ema.page.dialog.header.search.content': 'Search Content',
                     'edit.ema.page.dialog.header.search.form': 'Search Form',
+                    'edit.ema.page.dialog.error.content.type.not.found':
+                        'Content type Id or variable not found.',
                     'contenttypes.content.create.contenttype': 'Create {0}'
                 })
             }
@@ -122,9 +129,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -157,9 +165,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: 'undefined',
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -191,9 +200,10 @@ describe('DotEmaDialogStoreService', () => {
             _content_struts_action: '/ext/contentlet/edit_contentlet',
             _content_cmd: 'edit',
             inode: '123',
-            angularCurrentPortlet: null,
+            angularCurrentPortlet: 'edit-page',
             variantName: TEST_VARIANT
         });
+        queryParams.set('host_id', TEST_SITE_ID);
 
         spectator.service.dialogState$.subscribe((state) => {
             expect(state).toEqual({
@@ -332,6 +342,27 @@ describe('DotEmaDialogStoreService', () => {
         expect(dotActionUrlService.getCreateContentletUrl).toHaveBeenCalledWith('blogPost', 2);
     });
 
+    it('should show an error toast when the content type variable or id is not found', () => {
+        const dotActionUrlService = spectator.inject(DotActionUrlService);
+        const messageService = spectator.inject(MessageService);
+
+        dotActionUrlService.getCreateContentletUrl.andReturn(
+            throwError(() => new Error('Not Found'))
+        );
+
+        spectator.service.createContentletFromPalette({
+            variable: 'unknownType',
+            name: 'Unknown',
+            language_id: 1
+        });
+
+        expect(messageService.add).toHaveBeenCalledWith({
+            severity: 'error',
+            summary: '[dotCMS Create Contentlet]',
+            detail: 'Content type Id or variable not found.'
+        });
+    });
+
     it('should initialize with loading iframe properties', (done) => {
         spectator.service.loadingIframe('test');
 
@@ -420,6 +451,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({
@@ -466,6 +498,7 @@ describe('DotEmaDialogStoreService', () => {
                 reuseLastLang: 'true',
                 variantName: TEST_VARIANT
             });
+            queryParams.set('host_id', TEST_SITE_ID);
 
             spectator.service.dialogState$.subscribe((state) => {
                 expect(state).toEqual({

@@ -9,6 +9,8 @@
 
 package com.dotcms.enterprise.priv;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.content.elasticsearch.business.ESContentFactoryImpl;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.IndiciesInfo;
@@ -19,6 +21,7 @@ import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.common.model.ContentletSearch;
+import com.dotmarketing.common.model.ImmutableContentletSearch;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -42,6 +45,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
+import static com.dotcms.content.elasticsearch.business.ContentFactoryIndexOperationsES.addBuilderSort;
 import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
 
 /**
@@ -74,9 +78,9 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 		for (SearchHit sh : contents.getHits()) {
 			try {
 				Map<String, Object> sourceMap = sh.getSourceAsMap();
-				ContentletSearch conwrapper = new ContentletSearch();
-				conwrapper.setInode(sourceMap.get("inode").toString());
-				list.add(conwrapper);
+				list.add(ImmutableContentletSearch.builder()
+						.inode(sourceMap.get("inode").toString())
+						.build());
 			} catch (Exception e) {
 				Logger.error(this, e.getMessage(), e);
 			}
@@ -104,6 +108,13 @@ public class ESSearchAPIImpl implements ESSeachAPI {
         if (!UtilMethods.isSet(esQuery)) {
             throw new DotStateException("ES Query is null");
         }
+
+        // Normalize the query the same way esSearch() does, so the raw path resolves mixed-case
+        // field names (e.g. "contentType" -> the physical lower-case index field "contenttype").
+        // Reuses the existing lowercasing helper for parity with esSearch(); idempotent when the
+        // caller already lowercased (esSearch delegates here after lowercasing).
+        esQuery = StringUtils.lowercaseStringExceptMatchingTokens(
+                esQuery, ESContentFactoryImpl.LUCENE_RESERVED_KEYWORDS_REGEX);
 
         JSONObject completeQueryJSON;
 
@@ -195,6 +206,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 	 * @throws DotDataException
 	 *             An error occurred when retrieving the data.
 	 */
+	@RequestCost(Price.ES_QUERY)
 	private SearchResponse esSearchRaw(JSONObject jsonObject, boolean live, User user,
             boolean respectFrontendRoles, int limit, int offset, String sortBy)
 			throws DotSecurityException, DotDataException {
@@ -339,7 +351,7 @@ public class ESSearchAPIImpl implements ESSeachAPI {
 				searchSourceBuilder.from(offset);
 
 			if(UtilMethods.isSet(sortBy) ) {
-				ESContentFactoryImpl.addBuilderSort(sortBy, searchSourceBuilder);
+                addBuilderSort(sortBy, searchSourceBuilder);
 			}
 
             request.source(searchSourceBuilder);

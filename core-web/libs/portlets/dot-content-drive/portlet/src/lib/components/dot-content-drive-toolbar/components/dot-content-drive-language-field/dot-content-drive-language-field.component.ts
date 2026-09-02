@@ -1,66 +1,47 @@
-import { patchState, signalState } from '@ngrx/signals';
-import { of } from 'rxjs';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
-import { Component, inject, linkedSignal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { DotLanguageFilterComponent } from '@dotcms/ui';
 
-import { MultiSelectModule } from 'primeng/multiselect';
-
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-
-import { DotLanguagesService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
-
-import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
+/**
+ * Store adapter over the shared {@link DotLanguageFilterComponent}. The store persists language ids
+ * as strings (they travel through the URL); the shared filter works with numbers.
+ */
 @Component({
     selector: 'dot-content-drive-language-field',
-    imports: [MultiSelectModule, FormsModule, DotMessagePipe],
-    templateUrl: './dot-content-drive-language-field.component.html',
-    styleUrls: ['./dot-content-drive-language-field.component.scss']
+    template: `
+        <dot-language-filter
+            [selectedLanguageIds]="$selectedLanguageIds()"
+            [removable]="$removable()"
+            (selectionChange)="onSelectionChange($event)" />
+    `,
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    imports: [DotLanguageFilterComponent]
 })
 export class DotContentDriveLanguageFieldComponent {
-    readonly #dotLanguagesService = inject(DotLanguagesService);
     readonly #store = inject(DotContentDriveStore);
 
-    $selectedLanguages = linkedSignal(() => {
-        const languageIds = this.#store.getFilterValue('languageId') as string[];
+    protected readonly $selectedLanguageIds = computed(() =>
+        ((this.#store.getFilterValue('languageId') as string[]) ?? []).map(Number)
+    );
 
-        if (!languageIds) {
-            return [];
+    /**
+     * Whether the chip should offer its "remove" X. Hidden while the selection is exactly the
+     * environment default, because removing it re-selects that same default — the X would do nothing
+     * visible. Computed here rather than in the shared filter, which has no notion of a default.
+     */
+    protected readonly $removable = computed(() => {
+        const selected = this.$selectedLanguageIds();
+
+        return !(selected.length === 1 && selected[0] === this.#store.defaultLanguageId());
+    });
+
+    protected onSelectionChange(languageIds: number[]): void {
+        if (languageIds.length) {
+            this.#store.patchFilters({ languageId: languageIds.map(String) });
+        } else {
+            this.#store.removeFilter('languageId');
         }
-
-        return languageIds.map((language) => Number(language));
-    });
-
-    readonly $state = signalState<{ languages: DotLanguage[] }>({
-        languages: []
-    });
-
-    protected readonly MULTISELECT_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
-
-    ngOnInit(): void {
-        this.#dotLanguagesService.get().subscribe((languages) => {
-            patchState(this.$state, { languages });
-        });
-    }
-
-    onChange() {
-        of(this.$selectedLanguages() ?? [])
-            .pipe(
-                debounceTime(DEBOUNCE_TIME), // Debounce to avoid spamming the server
-                distinctUntilChanged()
-            )
-            .subscribe((value) => {
-                if (value.length > 0) {
-                    this.#store.patchFilters({
-                        languageId: value.map((language) => language.toString())
-                    });
-                } else {
-                    this.#store.removeFilter('languageId');
-                }
-            });
     }
 }

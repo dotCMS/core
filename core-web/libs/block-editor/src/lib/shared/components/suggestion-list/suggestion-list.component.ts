@@ -9,7 +9,8 @@ import {
     HostListener,
     Input,
     OnDestroy,
-    QueryList
+    QueryList,
+    ChangeDetectionStrategy
 } from '@angular/core';
 
 // Components
@@ -24,7 +25,8 @@ import { DotMenuItem } from '../suggestions/suggestions.component';
 @Component({
     selector: 'dot-suggestion-list',
     templateUrl: './suggestion-list.component.html',
-    styleUrls: ['./suggestion-list.component.scss'],
+    styleUrls: ['./suggestion-list.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SuggestionListComponent implements AfterViewInit, OnDestroy {
@@ -36,7 +38,7 @@ export class SuggestionListComponent implements AfterViewInit, OnDestroy {
     private destroy$ = new Subject<boolean>();
     private mouseMove = true;
 
-    @HostListener('mousemove', ['$event'])
+    @HostListener('mousemove')
     onMouseMove() {
         this.mouseMove = true;
     }

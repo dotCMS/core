@@ -6,6 +6,15 @@
         "-y",
         "nx-mcp@latest"
       ]
+    },
+    "angular-cli": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "@angular/cli",
+        "mcp"
+      ],
+      "env": {}
     }
   }
 }

@@ -3,7 +3,7 @@ import { Observable, of } from 'rxjs';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { HttpCode, LoginService } from '@dotcms/dotcms-js';
+import { HttpCode } from '@dotcms/dotcms-js';
 import { DotMessageSeverity, DotMessageType } from '@dotcms/dotcms-models';
 
 import { DotAlertConfirmService } from '../dot-alert-confirm/dot-alert-confirm.service';
@@ -26,7 +26,6 @@ export class DotHttpErrorManagerService {
     private dotDialogService = inject(DotAlertConfirmService);
     private dotMessageDisplayService = inject(DotMessageDisplayService);
     private dotMessageService = inject(DotMessageService);
-    private loginService = inject(LoginService);
     private dotRouterService = inject(DotRouterService);
 
     private readonly errorHandlers?: Record<HttpCode, (response?: HttpErrorResponse) => boolean>;
@@ -40,6 +39,7 @@ export class DotHttpErrorManagerService {
                 [HttpCode.FORBIDDEN]: this.handleForbidden.bind(this),
                 [HttpCode.SERVER_ERROR]: this.handleServerError.bind(this),
                 [HttpCode.BAD_REQUEST]: this.handleBadRequestError.bind(this),
+                [HttpCode.CONFLICT]: this.handleConflictError.bind(this),
                 [HttpCode.NO_CONTENT]: this.handleNotContentError.bind(this)
             };
         }
@@ -77,7 +77,7 @@ export class DotHttpErrorManagerService {
             ? this.isLicenseError(response)
                 ? this.handleLicense()
                 : this.handleForbidden()
-            : (this.errorHandlers?.[code as HttpCode](response) ?? false);
+            : (this.errorHandlers?.[code as HttpCode]?.(response) ?? false);
     }
 
     private contentletIsForbidden(error: string): boolean {
@@ -148,6 +148,20 @@ export class DotHttpErrorManagerService {
         return false;
     }
 
+    private handleConflictError(response?: HttpErrorResponse): boolean {
+        const header = this.dotMessageService.get('dot.common.http.error.409.header');
+        // 409s carry the actionable reason in the body (e.g. "Role has child
+        // roles and cannot be deleted", "duplicate roleKey"). Surface the BE
+        // message when present; fall back to a generic string otherwise.
+        const message =
+            this.getErrorMessage(response) ||
+            this.dotMessageService.get('dot.common.http.error.409.message');
+
+        this.showErrorMessage(message, header);
+
+        return false;
+    }
+
     private handleNotContentError(response?: HttpErrorResponse): boolean {
         const header = this.dotMessageService.get('dot.common.http.error.204.header');
         const message =
@@ -176,15 +190,9 @@ export class DotHttpErrorManagerService {
     }
 
     private handleUnathorized(): boolean {
-        if (this.loginService.auth.user) {
-            this.handleForbidden();
-        } else {
-            this.dotRouterService.goToLogin();
+        this.dotRouterService.goToLogin();
 
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     /**

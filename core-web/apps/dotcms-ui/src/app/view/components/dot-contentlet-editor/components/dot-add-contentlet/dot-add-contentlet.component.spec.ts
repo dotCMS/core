@@ -1,6 +1,7 @@
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -21,11 +22,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -33,7 +30,6 @@ import {
 } from '@dotcms/dotcms-js';
 import {
     cleanUpDialog,
-    CoreWebServiceMock,
     DotMessageDisplayServiceMock,
     LoginServiceMock,
     MockDotRouterService
@@ -41,8 +37,9 @@ import {
 
 import { DotAddContentletComponent } from './dot-add-contentlet.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -63,10 +60,11 @@ describe('DotAddContentletComponent', () => {
                 DotContentletWrapperComponent,
                 DotIframeDialogComponent,
                 BrowserAnimationsModule,
-                RouterTestingModule,
-                HttpClientTestingModule
+                RouterTestingModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotMenuService,
                 {
@@ -82,7 +80,6 @@ describe('DotAddContentletComponent', () => {
                     provide: DotMessageDisplayService,
                     useClass: DotMessageDisplayServiceMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 ApiRoot,
                 DotIframeService,
@@ -96,13 +93,16 @@ describe('DotAddContentletComponent', () => {
                         toggle: jest.fn()
                     }
                 },
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
-                UserModel
+                UserModel,
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
+                }
             ]
         });
     }));

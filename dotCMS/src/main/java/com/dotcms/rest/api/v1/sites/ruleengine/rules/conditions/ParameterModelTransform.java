@@ -1,6 +1,6 @@
 package com.dotcms.rest.api.v1.sites.ruleengine.rules.conditions;
 
-import com.dotcms.repackage.com.google.common.base.Function;
+import com.google.common.base.Function;
 import com.dotmarketing.portlets.rules.model.ParameterModel;
 import org.apache.commons.lang.SerializationUtils;
 

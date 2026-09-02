@@ -1,0 +1,163 @@
+<!-- inert: blocks all user interaction (clicks, keyboard, focus) on
+     this element and its subtree while saving. Must use
+     [attr.inert]="'' : null" — null removes the attribute entirely;
+     [inert]="false" sets inert="false", which still activates it (any
+     presence triggers it). -->
+@let form = $contentletForm();
+@if (form) {
+    <form
+        [formGroup]="form"
+        class="form flex min-h-0 w-full flex-1 flex-col overflow-auto px-6 pt-3 pb-6"
+        [attr.inert]="loading() ? '' : null"
+        tabindex="0">
+        @if (data().contentlet?.inode) {
+            <input type="hidden" formControlName="inode" />
+        }
+        <div class="mb-0! flex justify-end">
+            <p-button
+                [text]="true"
+                size="small"
+                icon="pi pi-pencil"
+                [label]="'uve.quick-edit.open-full-editor' | dm"
+                data-testid="open-full-editor-button"
+                (onClick)="openFullEditor.emit()" />
+        </div>
+        <div class="flex flex-col gap-4">
+            @for (field of fields(); track field.variable) {
+                <div class="field">
+                    <label [class.p-label-input-required]="field.required" [for]="field.variable">
+                        {{ field.name }}
+                    </label>
+                    @switch (field.clazz) {
+                        @case (DotCMSClazzes.TEXT) {
+                            <input
+                                class="w-full"
+                                pInputText
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly" />
+                        }
+                        @case (DotCMSClazzes.TEXTAREA) {
+                            <textarea
+                                class="w-full"
+                                [style]="{ height: '9.375rem', lineHeight: '1.5' }"
+                                pInputTextarea
+                                [id]="field.variable"
+                                [formControlName]="field.variable"
+                                [readonly]="field.readOnly"
+                                rows="4"></textarea>
+                        }
+                        @case (DotCMSClazzes.CHECKBOX) {
+                            @if (field.options && field.options.length > 0) {
+                                <div class="flex flex-col gap-2">
+                                    @for (option of field.options; track option.value) {
+                                        <div class="align-items-center flex gap-2">
+                                            <p-checkbox
+                                                [formControlName]="field.variable"
+                                                [name]="field.variable"
+                                                [value]="option.value"
+                                                [inputId]="field.variable + '-' + option.value"
+                                                [binary]="false" />
+                                            <label [for]="field.variable + '-' + option.value">
+                                                {{ option.label }}
+                                            </label>
+                                        </div>
+                                    }
+                                </div>
+                            } @else {
+                                <p-checkbox
+                                    [formControlName]="field.variable"
+                                    [name]="field.variable"
+                                    [inputId]="field.variable"
+                                    [binary]="true"></p-checkbox>
+                            }
+                        }
+                        @case (DotCMSClazzes.SELECT) {
+                            <p-select
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="('Select' | dm) + ' ' + field.name"></p-select>
+                        }
+                        @case (DotCMSClazzes.RADIO) {
+                            <div class="flex flex-col gap-2">
+                                @for (option of field.options; track option.value) {
+                                    <div class="align-items-center flex gap-2">
+                                        <p-radioButton
+                                            [formControlName]="field.variable"
+                                            [name]="field.variable"
+                                            [value]="option.value"
+                                            [inputId]="field.variable + '-' + option.value"
+                                            [disabled]="field.readOnly"></p-radioButton>
+                                        <label [for]="field.variable + '-' + option.value">
+                                            {{ option.label }}
+                                        </label>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        @case (DotCMSClazzes.MULTI_SELECT) {
+                            <p-multiSelect
+                                [formControlName]="field.variable"
+                                [inputId]="field.variable"
+                                [options]="field.options"
+                                optionLabel="label"
+                                optionValue="value"
+                                [showClear]="true"
+                                [disabled]="field.readOnly"
+                                [placeholder]="('Select' | dm) + ' ' + field.name"></p-multiSelect>
+                        }
+                        @case (DotCMSClazzes.BINARY) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [enableImageEditor]="false"
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.IMAGE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [enableImageEditor]="false"
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.FILE) {
+                            <dot-file-field
+                                [formControlName]="field.variable"
+                                [field]="$any(field)"
+                                [contentlet]="data().contentlet"
+                                [enableImageEditor]="false"
+                                [hasError]="form.get(field.variable)?.invalid ?? false"
+                                [vertical]="true" />
+                        }
+                        @case (DotCMSClazzes.TAG) {
+                            <dot-tag-field
+                                [formControlName]="field.variable"
+                                [variableName]="field.variable"
+                                [hasError]="form.get(field.variable)?.invalid ?? false" />
+                        }
+                    }
+                </div>
+            }
+        </div>
+    </form>
+    <div class="flex shrink-0 justify-between border-t border-gray-300 p-4">
+        <p-button
+            [outlined]="true"
+            [label]="'Cancel' | dm"
+            data-testid="cancel-button"
+            (onClick)="cancel()" />
+        <p-button
+            [label]="'uve.quick-edit.save' | dm"
+            data-testid="save-button"
+            (onClick)="save()" />
+    </div>
+}

@@ -126,6 +126,11 @@ public enum ImportLineValidationCodes {
     /**
      * Invalid Json
      */
-    INVALID_JSON
+    INVALID_JSON,
+
+    /**
+     * Story Block field exceeds configured character limit
+     */
+    CHAR_LIMIT_EXCEEDED
 
 }

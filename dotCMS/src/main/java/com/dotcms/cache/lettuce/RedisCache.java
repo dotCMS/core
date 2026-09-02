@@ -10,17 +10,16 @@ import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.liferay.util.StringPool;
-import io.lettuce.core.ScriptOutputType;
-import io.lettuce.core.api.StatefulRedisConnection;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
 
 import java.io.Serializable;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-import java.util.LinkedHashMap;
+import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -46,8 +45,6 @@ import java.util.stream.Collectors;
 public class RedisCache extends CacheProvider {
 
     private static final long serialVersionUID = -855583393078878276L;
-
-    private static final Long ZERO = 0L;
 
     protected final String REDIS_GROUP_KEY;
     protected final String REDIS_PREFIX_KEY;
@@ -206,8 +203,7 @@ public class RedisCache extends CacheProvider {
     }
 
     private Object extractObject(final Object o) {
-        return o != null && o instanceof DotCloneable ?
-                this.extractObject(DotCloneable.class.cast(o)) : o;
+        return o instanceof DotCloneable cloneable ? this.extractObject(cloneable) : o;
     }
 
     private Object extractObject(final DotCloneable o) {
@@ -229,19 +225,6 @@ public class RedisCache extends CacheProvider {
         }
     }
 
-    /**
-     * removes cache keys async and resets the get timer that reenables get functions
-     *
-     * @param keys
-     */
-    private void removeKeysRaw(final String... keys) {
-
-        if (UtilMethods.isSet(keys)) {
-
-            this.getClient().deleteNonBlocking(keys);
-        }
-    }
-
     @Override
     public void remove(final String group, final String key) {
 
@@ -254,21 +237,22 @@ public class RedisCache extends CacheProvider {
 
         if (!UtilMethods.isEmpty(group)) {
 
-            // todo: this should be a wildcard deletion instead of keys scan
-
-            final String prefix =  StringPool.STAR + cacheKey(group) + StringPool.STAR;
-            // Getting all the keys for the given groups
-            /*DotConcurrentFactory.getInstance().getSingleSubmitter
-                    (CacheWiper.class.getSimpleName()).submit(new CacheWiper(prefix));*/
-            this.getClient().deleteFromPattern(prefix);
+            // No leading "*": deleteFromPattern prepends the cluster prefix so the scan stays scoped to THIS
+            // client's keys. A leading "*" would match (and delete) other clusters' keys in a shared Redis space.
+            final String pattern = cacheKey(group) + StringPool.STAR;
+            this.getClient().deleteFromPattern(pattern);
         }
     }
 
     @Override
     public void removeAll() {
 
-        final String prefix = StringPool.STAR + this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
-        this.getClient().deleteFromPattern(prefix);
+        // cluster-scoped by deleteFromPattern (keyPrefix); no leading "*" so we never touch other clusters' keys
+        final String pattern = this.REDIS_PREFIX_KEY + "." + StringPool.STAR;
+        this.getClient().deleteFromPattern(pattern);
+        // also clear the group registry SET; otherwise getGroups() (and getStats()) keep returning every group
+        // ever used after a full flush, growing unbounded and making stats do O(groups) pooled SCANs
+        this.getClient().deleteNonBlocking(REDIS_GROUP_KEY);
     }
 
     @Override
@@ -277,9 +261,13 @@ public class RedisCache extends CacheProvider {
         final String prefix = this.cacheKey(group);
         final String matchesPattern = prefix + StringPool.STAR;
         final Set<String> keys = new LinkedHashSet<>();
-        this.getClient().scanKeys(matchesPattern, this.keyBatchingSize, //keys::addAll);
-                redisKeys -> redisKeys.stream().map(redisKey ->  // we remove the prefix in order to have the real key
-                        redisKey.replace(prefix, StringPool.BLANK)).forEach(keys::add));
+        this.getClient().scanKeys(matchesPattern, this.keyBatchingSize,
+                redisKeys -> redisKeys.stream()
+                        // strip only the leading group prefix to recover the real key (replace() is global)
+                        .map(redisKey -> redisKey.startsWith(prefix)
+                                ? redisKey.substring(prefix.length())
+                                : redisKey)
+                        .forEach(keys::add));
 
         return keys;
     }
@@ -300,21 +288,22 @@ public class RedisCache extends CacheProvider {
      */
     private long keyCount(final String group) {
 
-        final String prefix = LettuceAdapter.getMasterReplicaLettuceClient(this.getClient())
-                .wrapKey(this.cacheKey(group) + StringPool.STAR);
-        final String script = "return #redis.pcall('keys', '" + prefix + "')";
-        Object keyCount = ZERO;
+        // Never throw: getStats() aggregates per-provider and a thrown exception here makes
+        // CacheProviderAPIImpl.getStats() drop the entire Redis provider from the cache stats screen.
+        // Use the cluster-scoped, non-blocking SCAN (via scanKeys) rather than a blocking Lua KEYS eval;
+        // this also avoids the MasterReplicaLettuceClient downcast and any Lua string injection.
+        final long[] count = {0};
+        try {
+            final String matchesPattern = this.cacheKey(group) + StringPool.STAR;
+            this.getClient().scanKeys(matchesPattern, this.keyBatchingSize,
+                    keys -> count[0] += keys.size());
+        } catch (final Exception e) {
 
-        try (StatefulRedisConnection<String, Object> conn = LettuceAdapter.getStatefulRedisConnection(
-                this.getClient())) {
-
-            if (conn.isOpen()) {
-
-                keyCount = conn.sync().eval(script, ScriptOutputType.INTEGER, "0");
-            }
+            Logger.warnAndDebug(RedisCache.class,
+                    "Unable to count Redis keys for group '" + group + "': " + e.getMessage(), e);
         }
 
-        return (Long) keyCount;
+        return count[0];
     }
 
 
@@ -322,7 +311,8 @@ public class RedisCache extends CacheProvider {
     public Set<String> getGroups() {
 
         return this.getClient().getMembers(REDIS_GROUP_KEY).stream()
-                .map(k -> k.toString()).collect(Collectors.toSet());
+                .filter(Objects::nonNull)
+                .map(Object::toString).collect(Collectors.toSet());
     }
 
     @Override
@@ -330,33 +320,17 @@ public class RedisCache extends CacheProvider {
 
         final CacheStats providerStats = new CacheStats();
         final CacheProviderStats cacheProviderStats = new CacheProviderStats(providerStats, getName());
-        String memoryStats = null;
-
-        try (StatefulRedisConnection<String, Object> conn =
-                     LettuceAdapter.getStatefulRedisConnection(this.getClient())) {
-
-            if (!conn.isOpen()) {
-
-                return cacheProviderStats;
-            }
-
-            memoryStats = conn.sync().info();
-        }
-
-        // Read the total memory usage
-        final Map<String, String> redis = getRedisProperties(memoryStats);
-
-        for (final Map.Entry<String, String> entry : redis.entrySet()) {
-
-            final CacheStats stats = new CacheStats();
-            stats.addStat(CacheStats.REGION, "redis: " + entry.getKey());
-            stats.addStat(CacheStats.REGION_SIZE, entry.getValue());
-            // ret.addStatRecord(stats);
-        }
 
         final NumberFormat nf = DecimalFormat.getInstance();
-        // Getting the list of groups
-        final Set<String> currentGroups = getGroups();
+        // Getting the list of groups. Guard against a throw: CacheProviderAPIImpl.getStats() drops the whole
+        // provider from the cache stats screen if getStats() throws, so the Redis region would vanish entirely.
+        Set<String> currentGroups;
+        try {
+            currentGroups = getGroups();
+        } catch (final Exception e) {
+            Logger.warnAndDebug(RedisCache.class, "Unable to list Redis groups: " + e.getMessage(), e);
+            currentGroups = Collections.emptySet();
+        }
 
         for (final String group : currentGroups) {
 
@@ -364,6 +338,16 @@ public class RedisCache extends CacheProvider {
             stats.addStat(CacheStats.REGION, "dotCMS: " + group);
             stats.addStat(CacheStats.REGION_SIZE, nf.format(keyCount(group)));
 
+            cacheProviderStats.addStatRecord(stats);
+        }
+
+        // Always emit at least one record; otherwise the cache stats screen renders an empty/blank table
+        // (no columns, no rows) for this provider. Mirrors CaffineCache's empty-groups fallback.
+        if (currentGroups.isEmpty()) {
+
+            final CacheStats stats = new CacheStats();
+            stats.addStat(CacheStats.REGION, "n/a");
+            stats.addStat(CacheStats.REGION_SIZE, 0);
             cacheProviderStats.addStatRecord(stats);
         }
 
@@ -376,32 +360,5 @@ public class RedisCache extends CacheProvider {
         Logger.info(this.getClass(), "*** Shutdown [" + getName() + "] .");
 
     }
-
-    /**
-     * Reads and parses the string report generated for the INFO Redis command in order to return any specific required
-     * property.
-     *
-     * @param redisReport
-     * @return Map
-     */
-    private Map<String, String> getRedisProperties(final String redisReport) {
-
-        final Map<String, String> map = new LinkedHashMap<>();
-        final String[] readLines = redisReport.split("\r\n");
-
-        for (final String readLine : readLines) {
-
-            final String[] lineValues = readLine.split(":", 2);
-
-            // First check if it is a property or a header
-            if (lineValues.length > 1) {
-
-                map.put(lineValues[0], lineValues[1]);
-            }
-        }
-
-        return map;
-    }
-
 
 }

@@ -1,4 +1,9 @@
-import { Component, CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA } from '@angular/core';
+import {
+    Component,
+    CUSTOM_ELEMENTS_SCHEMA,
+    NO_ERRORS_SCHEMA,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 /**
  * Common schemas to suppress Angular component/element errors in tests.
@@ -22,39 +27,38 @@ export const TEST_SCHEMAS = [CUSTOM_ELEMENTS_SCHEMA, NO_ERRORS_SCHEMA];
  */
 @Component({
     selector: 'dot-global-message',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: '<div data-testid="mock-dot-global-message"></div>'
 })
 export class MockDotGlobalMessage {}
 
 @Component({
     selector: 'dot-portlet-base',
-    template: '<ng-content></ng-content>'
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
 })
 export class MockDotPortletBase {}
 
 @Component({
     selector: 'dot-loading-indicator',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: '<div data-testid="mock-loading-indicator"></div>'
 })
 export class MockDotLoadingIndicator {}
 
 @Component({
     selector: 'dot-spinner',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: '<div data-testid="mock-spinner"></div>'
 })
 export class MockDotSpinner {}
 
 @Component({
     selector: 'dot-empty-state',
-    template: '<div data-testid="mock-empty-state"><ng-content></ng-content></div>'
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<div data-testid="mock-empty-state"><ng-content /></div>'
 })
 export class MockDotEmptyState {}
-
-@Component({
-    selector: 'dot-dialog',
-    template: '<div data-testid="mock-dialog"><ng-content></ng-content></div>'
-})
-export class MockDotDialog {}
 
 /**
  * Collection of commonly needed mock dotCMS components
@@ -64,41 +68,73 @@ export const MOCK_DOTCMS_COMPONENTS = [
     MockDotPortletBase,
     MockDotLoadingIndicator,
     MockDotSpinner,
-    MockDotEmptyState,
-    MockDotDialog
+    MockDotEmptyState
 ];
 
 /**
  * Mock components for PrimeNG elements that commonly cause issues
  */
 @Component({
-    selector: 'p-tabView',
-    template: '<ng-content></ng-content>'
+    selector: 'p-tabs, p-tabView',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
 })
 export class MockPTabView {}
 
 @Component({
-    selector: 'p-tabPanel',
-    template: '<ng-content></ng-content>'
+    selector: 'p-tabPanel, p-tabpanel',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
 })
 export class MockPTabPanel {}
 
 @Component({
+    selector: 'p-tablist',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
+})
+export class MockPTabList {}
+
+@Component({
+    selector: 'p-tab',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
+})
+export class MockPTab {}
+
+@Component({
+    selector: 'p-tabpanels',
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<ng-content />'
+})
+export class MockPTabPanels {}
+
+@Component({
     selector: 'p-dropdown',
+    changeDetection: ChangeDetectionStrategy.Eager,
     template: '<div data-testid="mock-dropdown"></div>'
 })
 export class MockPDropdown {}
 
 @Component({
     selector: 'p-button',
-    template: '<button data-testid="mock-p-button"><ng-content></ng-content></button>'
+    changeDetection: ChangeDetectionStrategy.Eager,
+    template: '<button data-testid="mock-p-button"><ng-content /></button>'
 })
 export class MockPButton {}
 
 /**
  * Collection of commonly needed mock PrimeNG components
  */
-export const MOCK_PRIMENG_COMPONENTS = [MockPTabView, MockPTabPanel, MockPDropdown, MockPButton];
+export const MOCK_PRIMENG_COMPONENTS = [
+    MockPTabView,
+    MockPTabPanel,
+    MockPTabList,
+    MockPTab,
+    MockPTabPanels,
+    MockPDropdown,
+    MockPButton
+];
 
 /**
  * All mock components combined

@@ -179,8 +179,10 @@ dojo.declare("dotcms.dijit.osgi.Bundles", null, {
             }
 
             dijit.byId("uploadOSGIDialog").hide();
-            dijit.byId("savingOSGIDialog").show();
-            setTimeout(() => mainAdmin.refresh(), 7000);
+            // Give bundle time to deploy, then refresh the list via API (not full page reload)
+            setTimeout(() => {
+                getBundlesData();
+            }, 4000);
 
             return JSON.parse(request.response);
         })

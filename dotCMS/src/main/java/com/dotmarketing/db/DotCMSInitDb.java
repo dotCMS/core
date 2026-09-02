@@ -36,12 +36,32 @@ public class DotCMSInitDb {
     static final String ADMIN_DEFAULT_MAIL = "admin@dotcms.com";
     static final String DEFAULT_STARTER_PATH = "/WEB-INF/classes/starter.zip";
 
+    /**
+     * Existence probe for the {@code inode} table, shared by the run-always startup tasks that gate
+     * schema load and starter import.
+     * <p>
+     * These call sites only ever need to know <i>whether</i> a row exists, never how many, so this
+     * deliberately avoids {@code count(*)} -- which forces a full scan of {@code inode}.
+     * PostgreSQL plans the {@code EXISTS} sub-query as an {@code InitPlan} over a {@code Limit},
+     * so it stops at the first row.
+     * <p>
+     * The {@code CASE} wrapper is load-bearing: it guarantees exactly one row with a single integer
+     * column named {@code test}, so {@link DotConnect#getInt(String)} still resolves against an
+     * empty table.
+     * <p>
+     * {@link com.dotmarketing.startup.runalways.Task00001LoadSchema#forceRun()} further relies on
+     * this statement failing with a {@code SQLException} when {@code inode} does not exist at all;
+     * any replacement must preserve that signal.
+     */
+    public static final String INODE_EXISTS_SQL =
+            "select case when exists (select 1 from inode) then 1 else 0 end as test";
+
 
     @CloseDBIfOpened
 	private static boolean isConfigured () {
 
 		return new DotConnect()
-                .setSQL("select count(*) as test from inode")
+                .setSQL(INODE_EXISTS_SQL)
                 .getInt("test")>0;
 
 	}
@@ -188,7 +208,7 @@ public class DotCMSInitDb {
         if(UtilMethods.isSet(preSetPassword)){
             return Tuple.of(false, preSetPassword);
         }
-        final PasswordGenerator passwordGenerator = new PasswordGenerator.Builder().withDefaultValues().build();
+        final PasswordGenerator passwordGenerator = new PasswordGenerator.Builder().withRegExpToolkitValues().build();
         return Tuple.of(true, passwordGenerator.nextPassword());
     }
 

@@ -1,14 +1,10 @@
-/* eslint-disable */
 export default {
     displayName: 'DotExperiments Data Access',
     preset: '../../../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
     coverageDirectory: '../../../../../target/core-web-reports/',
-    coverageReporters: [['lcovonly', { file: 'TEST-data-access-experiment.lcov' }]],
     reporters: [
-        'default',
-        ['github-actions', { silent: false }],
         [
             'jest-junit',
             {

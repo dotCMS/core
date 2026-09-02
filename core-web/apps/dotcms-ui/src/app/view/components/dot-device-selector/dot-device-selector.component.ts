@@ -13,9 +13,9 @@ import {
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
-import { filter, map, flatMap, take, toArray } from 'rxjs/operators';
+import { filter, map, mergeMap, take, toArray } from 'rxjs/operators';
 
 import { DotDevicesService, DotMessageService } from '@dotcms/data-access';
 import { DotDevice } from '@dotcms/dotcms-models';
@@ -26,7 +26,7 @@ import { DotIconComponent } from '@dotcms/ui';
     templateUrl: './dot-device-selector.component.html',
     styleUrls: ['./dot-device-selector.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [DropdownModule, FormsModule, DotIconComponent],
+    imports: [SelectModule, FormsModule, DotIconComponent],
     providers: [DotDevicesService]
 })
 export class DotDeviceSelectorComponent implements OnInit, OnChanges {
@@ -64,7 +64,7 @@ export class DotDeviceSelectorComponent implements OnInit, OnChanges {
             .get()
             .pipe(
                 take(1),
-                flatMap((devices: DotDevice[]) => devices),
+                mergeMap((devices: DotDevice[]) => devices),
                 filter((device: DotDevice) => +device.cssHeight > 0 && +device.cssWidth > 0),
                 toArray(),
                 map((devices: DotDevice[]) =>

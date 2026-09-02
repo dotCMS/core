@@ -2,7 +2,7 @@ package com.dotcms.rest.api.v1.contenttype;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.JsonContentTypeTransformer;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeForm.ContentTypeFormDeserialize;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;

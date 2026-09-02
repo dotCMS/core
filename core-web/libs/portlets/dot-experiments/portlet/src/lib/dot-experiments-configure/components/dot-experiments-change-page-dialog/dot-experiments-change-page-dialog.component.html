@@ -1,0 +1,40 @@
+<div class="flex flex-col gap-4" data-testid="change-page-dialog">
+    <p class="m-0 text-surface-700" data-testid="change-page-warning">
+        {{ $warningKey() | dm: $warningArgs() }}
+    </p>
+
+    <ul class="m-0 flex list-none flex-col gap-2 p-0">
+        @for (variant of $variantList(); track variant.id) {
+            <li class="flex min-w-0 items-center gap-2" data-testid="change-page-variant">
+                <span
+                    class="size-2.5 flex-none rounded-full"
+                    [style.background]="variant.color"
+                    aria-hidden="true"></span>
+                <span class="truncate text-surface-900">{{ variant.name }}</span>
+            </li>
+        }
+    </ul>
+
+    @if ($hasFailed()) {
+        <small class="p-error" data-testid="change-page-error">
+            {{ 'experiments.configure.page.change.error' | dm }}
+        </small>
+    }
+
+    <div class="flex justify-end gap-2">
+        <p-button
+            type="button"
+            severity="secondary"
+            [outlined]="true"
+            [label]="'experiments.configure.page.change.reject' | dm"
+            [disabled]="$isDeleting()"
+            (onClick)="cancel()"
+            data-testid="change-page-cancel-btn" />
+        <p-button
+            type="button"
+            [label]="'experiments.configure.page.change.confirm' | dm"
+            [loading]="$isDeleting()"
+            (onClick)="confirm()"
+            data-testid="change-page-confirm-btn" />
+    </div>
+</div>

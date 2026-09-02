@@ -1,11 +1,12 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Input, Output, ChangeDetectionStrategy } from '@angular/core';
 
 import { FileStatus } from '@dotcms/data-access';
 
 @Component({
     selector: 'dot-floating-button',
     templateUrl: './floating-button.component.html',
-    styleUrls: ['./floating-button.component.scss'],
+    styleUrls: ['./floating-button.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class FloatingButtonComponent {

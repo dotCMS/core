@@ -1,7 +1,7 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, OnInit, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DataViewModule } from 'primeng/dataview';
@@ -16,8 +16,8 @@ import { DotAddVariableState, DotAddVariableStore } from './store/dot-add-variab
 @Component({
     selector: 'dot-add-variable',
     templateUrl: './dot-add-variable.component.html',
-    styleUrls: ['./dot-add-variable.component.scss'],
-    imports: [CommonModule, ButtonModule, DataViewModule, DotMessagePipe],
+    imports: [ButtonModule, DataViewModule, DotMessagePipe, AsyncPipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotAddVariableStore, DotFieldsService]
 })
 export class DotAddVariableComponent implements OnInit {

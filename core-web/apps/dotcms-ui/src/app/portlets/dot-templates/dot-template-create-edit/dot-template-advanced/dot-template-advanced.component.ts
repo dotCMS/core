@@ -9,7 +9,8 @@ import {
     OnInit,
     Output,
     SimpleChanges,
-    inject
+    inject,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { UntypedFormBuilder, UntypedFormGroup, ReactiveFormsModule } from '@angular/forms';
 
@@ -46,6 +47,7 @@ interface MonacoEditor {
     selector: 'dot-template-advanced',
     templateUrl: './dot-template-advanced.component.html',
     styleUrls: ['./dot-template-advanced.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotContainerSelectorComponent,
         DotTextareaContentComponent,
@@ -122,12 +124,10 @@ export class DotTemplateAdvancedComponent implements OnInit, OnDestroy, OnChange
         this.editor.executeEdits('source', [operation]);
     }
 
-    private setContainerId({ identifier, parentPermissionable }: DotContainer): string {
-        const regex = new RegExp('//' + parentPermissionable.hostname);
+    private setContainerId({ identifier, hostName }: DotContainer): string {
+        const regex = new RegExp('//' + hostName);
 
-        return identifier?.includes(parentPermissionable.hostname)
-            ? identifier.replace(regex, '')
-            : identifier;
+        return identifier?.includes(hostName) ? identifier.replace(regex, '') : identifier;
     }
 
     private getActions(disabled = true): DotPortletToolbarActions {

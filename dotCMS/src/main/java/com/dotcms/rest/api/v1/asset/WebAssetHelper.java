@@ -51,6 +51,7 @@ import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -225,6 +226,7 @@ public class WebAssetHelper {
                     .sortOrder(folder.getSortOrder())
                     .filesMasks(folder.getFilesMasks())
                     .defaultFileType(folder.getDefaultFileType())
+                    .defaultBaseType(folder.getDefaultBaseType())
                     .host(folder.getHost().getHostname())
                     .path(folder.getPath())
                     .name(folder.getName())
@@ -320,18 +322,17 @@ public class WebAssetHelper {
                     return false;
                 });
 
-        final Map<String, ? extends Serializable> metadata = Map.of(
-                "name", fileAsset.getUnderlyingFileName(),
-                "title", fileAsset.getFileTitle(),
-                "path", fileAsset.getPath(),
-                "sha256", fileAsset.getSha256(),
-                "contentType", fileAsset.getMimeType(),
-                "size", fileAsset.getFileSize(),
-                "isImage", fileAsset.isImage(),
-                "width", fileAsset.getWidth(),
-                "height", fileAsset.getHeight(),
-                SORT_BY, fileAsset.getModDate().toInstant()
-        );
+        final Map<String, Serializable> metadata = new HashMap<>();
+        metadata.put("name", fileAsset.getUnderlyingFileName());
+        metadata.put("title", fileAsset.getFileTitle());
+        metadata.put("path", fileAsset.getPath());
+        metadata.put("sha256", fileAsset.getSha256());
+        metadata.put("contentType", fileAsset.getMimeType());
+        metadata.put("size", fileAsset.getFileSize());
+        metadata.put("isImage", fileAsset.isImage());
+        metadata.put("width", fileAsset.getWidth());
+        metadata.put("height", fileAsset.getHeight());
+        metadata.put(SORT_BY, fileAsset.getModDate().toInstant());
 
         return AssetView.builder()
                 .sortOrder(fileAsset.getSortOrder())
@@ -368,6 +369,7 @@ public class WebAssetHelper {
                 .host(folder.getHost().getHostname())
                 .filesMasks(folder.getFilesMasks())
                 .defaultFileType(folder.getDefaultFileType())
+                .defaultBaseType(folder.getDefaultBaseType())
                 .showOnMenu(folder.isShowOnMenu())
                 .modDate(folder.getModDate().toInstant())
                 .identifier(folder.getIdentifier())
@@ -857,6 +859,25 @@ public class WebAssetHelper {
                 folder.setDefaultFileType(contentType.id());
             }
 
+            // Content Drive upload-mode preference (orthogonal to defaultAssetType/defaultFileType).
+            // A present value is validated against the DOTASSET/FILEASSET base types and stored as the
+            // canonical uppercase enum name. A null/absent value clears the preference ("ask each
+            // time"); Jackson can't distinguish an omitted field from an explicit null here, and the
+            // client always sends this field, so treat both as "clear."
+            final String defaultBaseType = meta.defaultBaseType();
+            if (UtilMethods.isSet(defaultBaseType)) {
+                final BaseContentType baseType = BaseContentType.getBaseContentType(defaultBaseType);
+                if (baseType != BaseContentType.DOTASSET && baseType != BaseContentType.FILEASSET) {
+                    throw new IllegalArgumentException(
+                            "The specified defaultBaseType [" + defaultBaseType
+                                    + "] must be one of DOTASSET or FILEASSET."
+                    );
+                }
+                folder.setDefaultBaseType(baseType.name());
+            } else {
+                folder.setDefaultBaseType(null);
+            }
+
             if (UtilMethods.isSet(meta.fileMasks())) {
                 folder.setFilesMasks(String.join(",", Objects.requireNonNull(meta.fileMasks())));
             }
@@ -884,16 +905,24 @@ public class WebAssetHelper {
         if (null != meta) {
             final String name = meta.name();
             if (UtilMethods.isSet(name)) {
+                final String currentPath = folder.getPath();
+                // /application/container/
                 //If the field name is used to rename the folder to something else that already exists
-                final String folderName = name.trim().replaceAll("^/+", "").replaceAll("/+$", "");
-                final Folder byPath = folderAPI.findFolderByPath(PATH_SEPARATOR + folderName, host, user, false);
+                final String folderName = name.toLowerCase().trim().replaceAll("^/+", "").replaceAll("/+$", "");
+
+                // Build the new path by replacing the last component of the current path
+                final String newPath = buildNewFolderPath(currentPath, folderName);
+
+                final Folder byPath = folderAPI.findFolderByPath(newPath, host, user, false);
                 if (null != byPath && UtilMethods.isSet(byPath.getInode())) {
                     throw new ConflictException(String.format("The name [%s] on [%s] already exists. ", folderName, host.getHostname()));
                 }
                 folder.setName(folderName);
+                folder.setPath(newPath);
             }
         }
         applyDetail(folder, host, meta);
+        //The returning folder must be set with the new path if changed
         return folder;
     }
 
@@ -903,7 +932,7 @@ public class WebAssetHelper {
      * @param defaultLangFallback if true, it will return the default language if the language param is not found
      * @return
      */
-    Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
+    public Optional<Language> parseLang(final String language, final boolean defaultLangFallback) {
         Language resolvedLang = Try.of(() -> {
                     //Typically locales are separated by a dash, but our Language API uses an underscore in the toString method,
                     //So here I'm preparing for both cases
@@ -939,6 +968,49 @@ public class WebAssetHelper {
         return Optional.empty();
     }
 
+
+    /**
+     * Builds a new folder path by replacing the last component of the current path with the new folder name.
+     * Examples:
+     * - currentPath="/images/gallery/", folderName="lol" -> "/images/lol/"
+     * - currentPath="/", folderName="lol" -> "/lol/"
+     * - currentPath="/images/", folderName="lol" -> "/lol/"
+     * @param currentPath the current folder path
+     * @param folderName the new folder name (already cleaned)
+     * @return the new folder path
+     */
+    private String buildNewFolderPath(final String currentPath, final String folderName) {
+        if (!UtilMethods.isSet(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Handle root folder case
+        if (PATH_SEPARATOR.equals(currentPath)) {
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Remove trailing slash for processing
+        String pathToProcess = currentPath.endsWith(PATH_SEPARATOR)
+            ? currentPath.substring(0, currentPath.length() - 1)
+            : currentPath;
+
+        // Find the last separator to replace the last component
+        int lastSeparatorIndex = pathToProcess.lastIndexOf(PATH_SEPARATOR);
+
+        if (lastSeparatorIndex == -1) {
+            // No separator found, treat as root level
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        if (lastSeparatorIndex == 0) {
+            // Only root separator found (e.g., "/images")
+            return PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+        }
+
+        // Replace the last component
+        String parentPath = pathToProcess.substring(0, lastSeparatorIndex);
+        return parentPath + PATH_SEPARATOR + folderName + PATH_SEPARATOR;
+    }
 
     /**
      * Creates a new instance of {@link WebAssetHelper}

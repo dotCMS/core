@@ -1,18 +1,11 @@
-import { createComponentFactory, Spectator, byTestId, mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, Spectator, byTestId } from '@openng/spectator/jest';
 
-import { DatePipe } from '@angular/common';
 import { By } from '@angular/platform-browser';
 
 import { AvatarModule } from 'primeng/avatar';
-import { TooltipModule } from 'primeng/tooltip';
 
-import { DotMessageService, DotFormatDateService } from '@dotcms/data-access';
-import {
-    DotCopyButtonComponent,
-    DotMessagePipe,
-    DotRelativeDatePipe,
-    DotGravatarDirective
-} from '@dotcms/ui';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective } from '@dotcms/ui';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotPushpublishTimelineItemComponent } from './dot-pushpublish-timeline-item.component';
@@ -31,24 +24,17 @@ describe('DotPushpublishTimelineItemComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotPushpublishTimelineItemComponent,
-        imports: [
-            AvatarModule,
-            TooltipModule,
-            DotCopyButtonComponent,
-            DotMessagePipe,
-            DotRelativeDatePipe,
-            DotGravatarDirective
-        ],
+        imports: [AvatarModule, DotCopyButtonComponent, DotMessagePipe, DotGravatarDirective],
         providers: [
-            DatePipe,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'edit.content.sidebar.pushpublish.bundle': 'Bundle',
-                    'edit.content.sidebar.pushpublish.environment': 'Environment'
+                    'edit.content.sidebar.pushpublish.environment': 'Environment',
+                    'edit.content.sidebar.pushpublish.bundle.id.label': 'Bundle ID',
+                    'edit.content.sidebar.pushpublish.copy.bundle.id': 'Copy Bundle ID'
                 })
-            },
-            mockProvider(DotFormatDateService)
+            }
         ]
     });
 
@@ -61,14 +47,36 @@ describe('DotPushpublishTimelineItemComponent', () => {
     });
 
     describe('Data Display', () => {
+        it('should not render a tooltip on the content wrapper', () => {
+            const wrapper = spectator.query(byTestId('content-wrapper'));
+            expect(wrapper).toBeTruthy();
+            expect(wrapper.getAttribute('tooltipPosition')).toBeNull();
+        });
+
+        it('should show the exact date/time — never a relative string — for the push date', () => {
+            spectator.setInput('item', {
+                ...mockPushPublishHistoryItem,
+                pushDate: new Date(2026, 4, 16, 13, 10).getTime()
+            });
+            spectator.detectChanges();
+
+            const timeDisplay = spectator.query(byTestId('time-display'));
+            expect(timeDisplay.textContent?.trim()).toBe('May 16, 2026 - 1:10 PM');
+            expect(timeDisplay.textContent?.trim()).not.toMatch(/now|ago/i);
+        });
+
         it('should display correct user name', () => {
             const userName = spectator.query(byTestId('pushpublish-user'));
             expect(userName.textContent?.trim()).toBe('Admin User');
         });
 
-        it('should display truncated bundle ID', () => {
-            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-            expect(bundleIdText.textContent?.trim()).toBe('01K6NY'); // First 6 characters
+        it('should display "Bundle ID" label on the copy button instead of the raw UUID', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
 
         it('should display correct user avatar label', () => {
@@ -117,9 +125,14 @@ describe('DotPushpublishTimelineItemComponent', () => {
         });
     });
 
-    describe('Computed Signals', () => {
-        it('should compute truncated bundle ID correctly', () => {
-            expect(spectator.component.$truncatedBundleId()).toBe('01K6NY');
+    describe('Bundle ID Display', () => {
+        it('should render the static "Bundle ID" i18n label on the copy button', () => {
+            const copyButtonDebugElement = spectator.debugElement.query(
+                By.css('[data-testid="copy-bundle-id"]')
+            );
+            const copyButtonComponent = copyButtonDebugElement?.componentInstance;
+            expect(copyButtonComponent).toBeTruthy();
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
     });
 
@@ -136,10 +149,7 @@ describe('DotPushpublishTimelineItemComponent', () => {
             spectator.detectChanges();
 
             const userName = spectator.query(byTestId('pushpublish-user'));
-            const bundleIdText = spectator.query(byTestId('bundle-id-text'));
-
             expect(userName.textContent?.trim()).toBe('System Administrator');
-            expect(bundleIdText.textContent?.trim()).toBe('XYZ789');
 
             // Access the PrimeNG Avatar component instance to verify label property
             const avatarDebugElement = spectator.debugElement.query(
@@ -149,13 +159,14 @@ describe('DotPushpublishTimelineItemComponent', () => {
             expect(avatarComponent).toBeTruthy();
             expect(avatarComponent.label).toBe('S');
 
-            // Access the DotCopyButtonComponent instance to verify copy property
+            // Access the DotCopyButtonComponent instance to verify copy + label
             const copyButtonDebugElement = spectator.debugElement.query(
                 By.css('[data-testid="copy-bundle-id"]')
             );
             const copyButtonComponent = copyButtonDebugElement?.componentInstance;
             expect(copyButtonComponent).toBeTruthy();
             expect(copyButtonComponent.copy()).toBe('XYZ789NEWBUNDLE123');
+            expect(copyButtonComponent.label()).toBe('Bundle ID');
         });
     });
 });

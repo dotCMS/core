@@ -1,7 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-/* eslint-disable @typescript-eslint/ban-ts-comment */
 
-import { SpectatorHost, createHostFactory } from '@ngneat/spectator/jest';
+import { SpectatorHost, createHostFactory } from '@openng/spectator/jest';
 
 import { CommonModule } from '@angular/common';
 
@@ -53,13 +52,10 @@ describe('DotDropZoneComponent', () => {
                 </div>
             </dot-drop-zone>`,
             {
-                hostProps: {
-                    disabled: false
-                }
+                hostProps: { disabled: false },
+                detectChanges: false
             }
         );
-
-        spectator.detectChanges();
     });
 
     beforeEach(() => {
@@ -71,6 +67,7 @@ describe('DotDropZoneComponent', () => {
     });
 
     it('should have content', () => {
+        spectator.detectChanges();
         expect(spectator.query('#dot-drop-zone__content')).toBeTruthy();
     });
 

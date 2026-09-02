@@ -9,10 +9,11 @@
       },
       "title": {
         "type": "string",
-        "required": true
+        "required": false
       },
-      "language_id": {
-        "type": "string"
+      "locale_id": {
+        "type": "string",
+        "required": true
       },
       "persona": {
         "type": "string"

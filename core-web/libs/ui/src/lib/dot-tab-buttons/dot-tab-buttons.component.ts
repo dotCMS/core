@@ -1,5 +1,12 @@
-import { NgClass } from '@angular/common';
-import { Component, EventEmitter, Input, OnChanges, Output, SimpleChanges } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnChanges,
+    Output,
+    SimpleChanges,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
 import { SelectItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -23,8 +30,9 @@ interface TabButtonOptions {
  */
 @Component({
     selector: 'dot-tab-buttons',
-    imports: [ButtonModule, NgClass, TooltipModule, DotMessagePipe],
+    imports: [ButtonModule, TooltipModule, DotMessagePipe],
     templateUrl: './dot-tab-buttons.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     styleUrls: ['./dot-tab-buttons.component.scss']
 })
 export class DotTabButtonsComponent implements OnChanges {
@@ -78,13 +86,15 @@ export class DotTabButtonsComponent implements OnChanges {
         // This method is public so you can easily break everything if you force this to open.
         if (!this.shouldOpenMenu(menuId)) return;
 
-        this._options = this._options.map((option) => {
-            if (menuId.includes(option.value.id)) {
-                option.value.toggle = !option.value.toggle;
+        this._options = this._options.map((option) => ({
+            ...option,
+            value: {
+                ...option.value,
+                toggle: menuId.includes(option.value.id)
+                    ? !option.value.toggle
+                    : option.value.toggle
             }
-
-            return option;
-        });
+        }));
 
         const target = event?.target as HTMLElement;
         const menuOption = target?.closest('.dot-tab') as HTMLElement;
@@ -98,11 +108,10 @@ export class DotTabButtonsComponent implements OnChanges {
      * @memberof DotTabButtonsComponent
      */
     resetDropdowns() {
-        this._options = this._options.map((option) => {
-            option.value.toggle = false;
-
-            return option;
-        });
+        this._options = this._options.map((option) => ({
+            ...option,
+            value: { ...option.value, toggle: false }
+        }));
     }
 
     /**
@@ -112,11 +121,13 @@ export class DotTabButtonsComponent implements OnChanges {
      * @memberof DotTabButtonsComponent
      */
     resetDropdownById(id: string) {
-        this._options = this._options.map((option) => {
-            if (option.value.id === id) option.value.toggle = false;
-
-            return option;
-        });
+        this._options = this._options.map((option) => ({
+            ...option,
+            value: {
+                ...option.value,
+                toggle: option.value.id === id ? false : option.value.toggle
+            }
+        }));
     }
 
     /**

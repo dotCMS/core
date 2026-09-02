@@ -4,6 +4,9 @@ import com.dotcms.browser.BrowserAPI;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.browser.BrowserQuery;
 import com.dotcms.browser.BrowserQuery.Builder;
+import com.dotcms.browser.ContentStatus;
+import com.dotcms.browser.FieldSearchCriteria;
+import com.dotcms.rest.exception.BadRequestException;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -21,8 +24,11 @@ import com.google.common.annotations.VisibleForTesting;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.control.Try;
-import java.util.ArrayList;
+
+import java.util.Arrays;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.List;
 import java.util.Objects;
 import java.util.Set;
@@ -36,6 +42,8 @@ import java.util.stream.Collectors;
 public class ContentDriveHelper {
 
     private final BrowserAPI browserAPI;
+    private final ContentDriveFieldFilterResolver fieldFilterResolver =
+            new ContentDriveFieldFilterResolver();
 
     /**
      * Constructor with injected API dependencies
@@ -54,17 +62,23 @@ public class ContentDriveHelper {
     }
 
     /**
-     * Drive search functionality for content browsing with advanced filtering.
-     * This endpoint is intended to be used to feed content-drive functionality.
-     * It behaves similarly to BrowserResource but with enhanced capabilities:
-     * - Can take a site/folder path expressed in the form //site/folder/subfolder/
-     * - Supports multiple languages and content-types for more flexible filtering
-     * - Uses Elasticsearch for text filtering while maintaining database reliability
+     * Drive search functionality for content browsing with advanced filtering. This endpoint is
+     * intended to be used to feed content-drive functionality. It behaves similarly to the
+     * {@link com.dotcms.rest.api.v1.browser.BrowserResource} but with enhanced capabilities:
+     * <ul>
+     *     <li>Can take a site/folder path expressed in the form of
+     *     {@code //site/folder/subfolder/}.</li>
+     *     <li>Supports multiple languages and content-types for more flexible filtering.</li>
+     *     <li>Uses Elasticsearch for text filtering while maintaining database reliability.</li>
+     * </ul>
      *
-     * @param requestForm JSON body request with search parameters
-     * @param user Current logged in user
+     * @param requestForm The {@link DriveRequestForm} as the JSON body request with search
+     *                    parameters
+     * @param user        Current logged in {@link User}.
+     *
      * @return a Map with all requested content and metadata
-     * @throws DotDataException any data-related exception
+     *
+     * @throws DotDataException     any data-related exception
      * @throws DotSecurityException any security violation exception
      */
     public PaginatedContents driveSearch(final DriveRequestForm requestForm, final User user)
@@ -75,7 +89,9 @@ public class ContentDriveHelper {
                 .collect(Collectors.toList());
 
         List<BaseContentType> baseContentTypes = BaseContentType.allBaseTypes();
-        if (null != requestForm.baseTypes()) {
+        if (UtilMethods.isSet(requestForm.mimeTypes())) {
+            baseContentTypes = List.of(BaseContentType.FILEASSET, BaseContentType.DOTASSET);
+        } else if (null != requestForm.baseTypes()) {
             baseContentTypes = requestForm.baseTypes().stream()
                     .map(s -> BaseContentType.getBaseContentType(s.toUpperCase()))
                     .collect(Collectors.toList());
@@ -85,7 +101,7 @@ public class ContentDriveHelper {
         List<ContentType> contentTypes = List.of();
         if (null != requestForm.contentTypes()) {
             contentTypes = requestForm.contentTypes().stream()
-                    .map(s -> Try.of(() -> myContentTypeAPI.find(s)).getOrNull())
+                    .map(inodeOrVar -> Try.of(() -> myContentTypeAPI.find(inodeOrVar)).getOrNull())
                     .filter(Objects::nonNull)
                     .collect(Collectors.toList());
         }
@@ -108,46 +124,54 @@ public class ContentDriveHelper {
         final boolean showFiles = isShowFile(types);
         final boolean showDotAssets = isShowDotAsset(types);
         final boolean showFolders = requestForm.showFolders();
+        // A Link carries no file MIME type, and the paginated path does not run the mimeType
+        // filter, so links would otherwise leak through a mimeType-narrowed search unfiltered.
+        final boolean showLinks = requestForm.showLinks()
+                && !UtilMethods.isSet(requestForm.mimeTypes());
         if (null != requestForm.mimeTypes()){
             builder.showMimeTypes(requestForm.mimeTypes());
         }
         final String sortBy = sortBy(requestForm.sortBy());
         final boolean sortDesc = sortDesc(requestForm.sortBy());
         builder.withUser(user)
-        //These are not always present
-        .withContentTypes(
-            contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-        )
-        //However, these are
-        .excludedContentTypes(
-            excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
-        )
-        .withBaseTypes(List.copyOf(types))
-        .showDotAssets(showDotAssets)
-        .showFiles(showFiles)
-        .showImages(showFiles)
-        .showArchived(showArchived)
-        .showWorking(!live)
-        .showFolders(showFolders)
-        .showLinks(false)
-        .showContent(!baseContentTypes.isEmpty())
-        .withLanguageIds(langIds)
-        .offset(requestForm.offset())
-        .maxResults(requestForm.maxResults())
-        .sortBy(sortBy)
-        .sortByDesc(sortDesc);
+            .respectFrontEndRoles(false)
+            .contentCursor(requestForm.contentCursor())
+            .folderCursor(requestForm.folderCursor())
+            .linkCursor(requestForm.linkCursor())
+            //These are not always present
+            .withContentTypes(
+                contentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+            )
+            //However, these are
+            .excludedContentTypes(
+                excludedContentTypes.stream().map(ContentType::id).collect(Collectors.toSet())
+            )
+            .withBaseTypes(List.copyOf(types))
+            .showDotAssets(showDotAssets)
+            .showFiles(showFiles)
+            .showImages(showFiles)
+            .showArchived(showArchived)
+            .showWorking(!live)
+            .showFolders(showFolders)
+            .showLinks(showLinks)
+            .showContent(!baseContentTypes.isEmpty())
+            .withLanguageIds(langIds)
+            .offset(requestForm.offset())
+            .maxResults(requestForm.maxResults())
+            .sortBy(sortBy)
+            .sortByDesc(sortDesc);
 
         // Determine if we're requesting from a specific folder or host root
         if (folder.isSystemFolder()) {
             builder.withHostOrFolderId(host.getIdentifier())
-             /// if we're setting a site-name directly, we care fore all subfolders
-             /// Therefore, we should skip setting a folder path
-            .skipFolder(true);
+                 /// if we're setting a site-name directly, we care fore all subfolders
+                 /// Therefore, we should skip setting a folder path
+                .skipFolder(true);
         } else {
             builder.withHostOrFolderId(folder.getInode())
-            // When a specific folder is selected, enable ignoreSiteForFolders to allow
-            // folder selection without being limited by site filtering
-            .ignoreSiteForFolders(true);
+                // When a specific folder is selected, enable ignoreSiteForFolders to allow
+                // folder selection without being limited by site filtering
+                .ignoreSiteForFolders(true);
         }
         //This ensures that despite the site passed systemHost will be included too
         builder.forceSystemHost(requestForm.includeSystemHost());
@@ -155,15 +179,85 @@ public class ContentDriveHelper {
         // Enable Elasticsearch filtering for text search when filter is provided
         if (null != requestForm.filters() && UtilMethods.isSet(requestForm.filters().text())) {
              builder.useElasticsearchFiltering(true) // Rely on ES for enhanced text filtering
-             .filterFolderNames(requestForm.filters().filterFolders())
-             .withFilter(requestForm.filters().text());
+                 .filterFolderNames(requestForm.filters().filterFolders())
+                 .withFilter(requestForm.filters().text());
         }
 
-        Logger.debug(this, String.format(
-                "Content drive search - User: %s, Path: %s, Languages: %s, ContentTypes: %s, Filter: %s",
-                user.getUserId(), assetPath, requestForm.language(), requestForm.contentTypes(), requestForm.filters()));
+        // Per-field value filters (Content Drive). Field types are resolved against a single
+        // content type; index-routed criteria also flip on ES filtering, while DB-routed criteria
+        // (Tag) are resolved in the DB path.
+        if (UtilMethods.isSet(requestForm.userSearchable())) {
+            if (contentTypes.size() != 1) {
+                throw new BadRequestException(
+                        "Exactly one content type is required when using 'userSearchable' field filters.");
+            }
+            final List<FieldSearchCriteria> fieldCriteria =
+                    fieldFilterResolver.parse(requestForm.userSearchable(), contentTypes.get(0));
+            // Field filters are resolved against a single content type; links have no fields, so
+            // they could never satisfy one — drop them as folders already are elsewhere.
+            builder.withFieldCriteria(fieldCriteria).showLinks(false);
+            final boolean hasIndexCriteria = fieldCriteria.stream()
+                    .anyMatch(criteria ->
+                            criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX);
+            if (hasIndexCriteria) {
+                builder.useElasticsearchFiltering(true);
+            }
+        }
 
-        return browserAPI.getPaginatedContents(builder.build());
+        // Workflow filter — split entries into scheme-only (match by content-type assignment,
+        // so never-actioned content still appears) and step-pinned (match the current task).
+        if (UtilMethods.isSet(requestForm.workflow())) {
+            final Set<String> workflowSchemeIds = requestForm.workflow().stream()
+                    .filter(entry -> !UtilMethods.isSet(entry.step()))
+                    .map(WorkflowFilterForm::scheme)
+                    .filter(UtilMethods::isSet)
+                    .collect(Collectors.toSet());
+            final Set<String> workflowStepIds = requestForm.workflow().stream()
+                    .filter(entry -> UtilMethods.isSet(entry.step()))
+                    .map(WorkflowFilterForm::step)
+                    .collect(Collectors.toSet());
+
+            if (!workflowSchemeIds.isEmpty() || !workflowStepIds.isEmpty()) {
+                builder.withWorkflowSchemeIds(workflowSchemeIds)
+                        .withWorkflowStepIds(workflowStepIds)
+                        // Folders and links carry no workflow state — drop them when filtering
+                        // by workflow.
+                        .showFolders(false)
+                        .showLinks(false);
+            }
+        }
+
+        // Status filter — the selected states are OR'd together server-side (see
+        // BrowserAPIImpl#appendContentStatusQuery). Empty means no status filtering at all, which
+        // is the path every pre-existing caller takes.
+        //
+        // Deliberately does NOT touch showFolders. Folders carry no status, so the Content Drive UI
+        // stops asking for them when a status is selected — but that is the caller's decision to
+        // make, not ours. Overriding an explicit showFolders:true here would be a silent side
+        // effect: the response would stop matching the request, and folderCursor/hasMoreFolders
+        // would report on a folder query the caller never got.
+        final Set<ContentStatus> contentStatuses = parseStatuses(requestForm.status());
+        if (!contentStatuses.isEmpty()) {
+            builder.withContentStatuses(contentStatuses);
+        }
+
+        // Build once and log the query itself: flags such as showLinks and showFolders can be
+        // overridden by the workflow and userSearchable branches above, so logging the locals would
+        // misreport what actually ran. (The status branch is deliberately not in that list — it
+        // sets no flags, see the comment above it.) BrowserQuery.toString() carries the effective
+        // flags, all three cursors and the filters.
+        //
+        // ⚠ EVERY builder mutation MUST go ABOVE this line. build() snapshots the builder, so a
+        // `builder.withX(...)` placed after it is silently discarded — the request succeeds and the
+        // filter simply does nothing. That is exactly how the status filter shipped broken once:
+        // the block was anchored on the Logger.debug below, and a refactor that hoisted build()
+        // above the log moved it to the wrong side without any compile or test failure.
+        final BrowserQuery browserQuery = builder.build();
+
+        Logger.debug(this, () -> String.format("Content drive search - User: %s, Path: %s, %s",
+                user.getUserId(), assetPath, browserQuery));
+
+        return browserAPI.getPaginatedContents(browserQuery);
     }
 
     /**
@@ -245,6 +339,63 @@ public class ContentDriveHelper {
             Logger.warn(ContentDriveHelper.class, "Unable to retrieve excluded content types: " + e.getMessage(), e);
             return Set.of(); // Return empty set as fallback
         }
+    }
+
+    /**
+     * Parses the raw {@code status} values of a drive-search request into {@link ContentStatus}.
+     * <p>
+     * Declared on the form as strings rather than the enum so this rejection stays an explicit
+     * {@link BadRequestException} — the deterministic 400 the contract asks for — rather than a
+     * Jackson deserialization failure whose status mapping is not under our control. Mirrors how
+     * {@code userSearchable} rejects unknown keys.
+     * <p>
+     * Matching is case-insensitive and duplicates collapse (the result is a Set), so a repeated
+     * value cannot widen the generated OR group. An unrecognized or blank value is rejected rather
+     * than skipped: silently dropping it would return a <b>wider</b> result set than the caller
+     * asked for, which is worse than failing.
+     *
+     * @param statuses raw status values from the request; may be empty, never null
+     * @return the parsed statuses; empty means no status filtering
+     * @throws BadRequestException if any value does not name a {@link ContentStatus}
+     */
+    static Set<ContentStatus> parseStatuses(final List<String> statuses) {
+        if (!UtilMethods.isSet(statuses)) {
+            return Set.of();
+        }
+
+        final Set<ContentStatus> parsed = new LinkedHashSet<>();
+        for (final String status : statuses) {
+            if (!UtilMethods.isSet(status)) {
+                throw invalidStatus(status);
+            }
+            try {
+                // Locale.ROOT, not the JVM default: under a Turkish locale
+                // "unpublished".toUpperCase() yields "UNPUBLİSHED" (dotted capital I), which fails
+                // valueOf and turns a perfectly valid lowercase value into a 400.
+                parsed.add(ContentStatus.valueOf(status.trim().toUpperCase(Locale.ROOT)));
+            } catch (final IllegalArgumentException e) {
+                throw invalidStatus(status);
+            }
+        }
+
+        return parsed;
+    }
+
+    /**
+     * Builds the 400 for an unusable status value, naming both the offending value and every
+     * accepted one.
+     * <p>
+     * The offending value is passed as a format <b>argument</b>, never concatenated into the format
+     * string: {@code HttpStatusCodeException} runs {@link String#format} over the message it is
+     * given, so a pre-formatted string carrying user input would blow up on a stray {@code %} — a
+     * request for {@code "50%"} would raise UnknownFormatConversionException and surface as a 500
+     * instead of the 400 this method exists to produce.
+     */
+    private static BadRequestException invalidStatus(final String status) {
+        return new BadRequestException("Invalid status '%s'. Accepted values are: %s.",
+                String.valueOf(status),
+                Arrays.stream(ContentStatus.values()).map(Enum::name)
+                        .collect(Collectors.joining(", ")));
     }
 
     /**

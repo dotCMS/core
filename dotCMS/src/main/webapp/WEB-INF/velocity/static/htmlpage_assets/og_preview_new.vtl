@@ -1,0 +1,72 @@
+<button type="button" id="ogPreviewButton" class="btn btn-primary">Preview</button>
+
+<dialog id="ogPreview" class="modal" tabindex="0">
+  <div class="modal-box">
+    <h3 class="text-lg font-bold">Facebook</h3>
+    <div class="card card-border w-full max-w-[600px] overflow-hidden rounded-none border-t-0">
+      <figure class="h-[313px] overflow-hidden m-0">
+        <img id="cardImage" src="" alt="" class="w-full h-full object-cover object-center" />
+      </figure>
+      <div class="card-body p-3 bg-base-200 min-h-[83px] text-left">
+        <div id="cardHost" class="text-xs uppercase text-base-content/70 truncate leading-4 mb-0.5">$!{host.map.aliases}</div>
+        <div id="cardTitle" class="font-bold text-base text-base-content leading-5 m-0 mb-0.5"></div>
+        <div id="cardDescription" class="text-sm text-base-content/70 leading-5 break-words"></div>
+      </div>
+    </div>
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn">Close</button>
+      </form>
+    </div>
+  </div>
+</dialog>
+
+<script>
+  function truncateDescription(text, maxLength) {
+    if (text.length > maxLength) {
+      return text.substring(0, maxLength) + "...";
+    }
+    return text;
+  }
+
+  DotCustomFieldApi.ready(() => {
+    const ogTitleField = DotCustomFieldApi.getField("ogTitle");
+    const ogDescriptionField = DotCustomFieldApi.getField("ogDescription");
+    const ogImageField = DotCustomFieldApi.getField("ogImage");
+
+    const dialog = document.getElementById("ogPreview");
+    const previewButton = document.getElementById("ogPreviewButton");
+    const cardImage = document.getElementById("cardImage");
+    const cardTitle = document.getElementById("cardTitle");
+    const cardDescription = document.getElementById("cardDescription");
+
+    // Open dialog and populate preview
+    previewButton.addEventListener("click", () => {
+      const ogTitle = ogTitleField.getValue() || "";
+      const ogDescription = ogDescriptionField.getValue() || "";
+
+      // Get image from ogImage field container
+      const imgInode = ogImageField.getValue() || "";
+      const imgUrl = imgInode
+        ? `/dA/${imgInode}/asset/500w/50q/`
+        : "https://placehold.co/600x400";
+
+      // Truncate description to 92 characters
+      const truncatedDescription = truncateDescription(ogDescription, 92);
+
+      // Update preview card
+      cardImage.src = imgUrl;
+      cardTitle.textContent = ogTitle;
+      cardDescription.textContent = truncatedDescription;
+
+      dialog.showModal();
+    });
+
+    // Close dialog when clicking outside (backdrop)
+    dialog.addEventListener("click", (e) => {
+      if (e.target === dialog) {
+        dialog.close();
+      }
+    });
+  });
+</script>

@@ -1,3 +1,5 @@
+'use client';
+
 import { DotCMSBasicContentlet } from '@dotcms/types';
 
 import { useIsDevMode } from '../../hooks/useIsDevMode';

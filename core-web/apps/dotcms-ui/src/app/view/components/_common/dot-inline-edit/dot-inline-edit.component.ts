@@ -1,5 +1,5 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input, TemplateRef, ViewChild } from '@angular/core';
+import { NgTemplateOutlet } from '@angular/common';
+import { Component, Input, TemplateRef, ViewChild, ChangeDetectionStrategy } from '@angular/core';
 
 import { SharedModule } from 'primeng/api';
 import { Inplace, InplaceModule } from 'primeng/inplace';
@@ -7,7 +7,8 @@ import { Inplace, InplaceModule } from 'primeng/inplace';
 @Component({
     selector: 'dot-inline-edit',
     templateUrl: './dot-inline-edit.component.html',
-    imports: [CommonModule, InplaceModule, SharedModule]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [InplaceModule, SharedModule, NgTemplateOutlet]
 })
 export class DotInlineEditComponent {
     @Input()

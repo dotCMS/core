@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotContentletsComponent } from './dot-contentlets/dot-contentlets.component';
@@ -8,6 +8,7 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task/dot-workflow-task.
     selector: 'dot-portlet-detail',
     templateUrl: './dot-portlet-detail.component.html',
     styleUrls: ['./dot-portlet-detail.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotWorkflowTaskComponent, DotContentletsComponent]
 })
 export class DotPortletDetailComponent implements OnInit {
@@ -17,7 +18,7 @@ export class DotPortletDetailComponent implements OnInit {
     isContent = false;
 
     ngOnInit() {
-        const currentPortlet: string = this.route.parent.parent.snapshot.params.id;
+        const currentPortlet: string = this.route.parent.snapshot.params.id;
         this.isWorkflow = currentPortlet === 'workflow';
         this.isContent = !this.isWorkflow;
     }

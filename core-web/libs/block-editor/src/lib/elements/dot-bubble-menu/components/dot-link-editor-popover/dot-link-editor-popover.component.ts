@@ -11,23 +11,37 @@ import {
     ViewChild,
     ElementRef,
     computed,
-    HostListener
+    HostListener,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
-import { AutoCompleteModule } from 'primeng/autocomplete';
-import { ButtonModule } from 'primeng/button';
-import { InputTextModule } from 'primeng/inputtext';
-import { Listbox, ListboxModule } from 'primeng/listbox';
-import { SkeletonModule } from 'primeng/skeleton';
+import { Button } from 'primeng/button';
+import { InputText } from 'primeng/inputtext';
+import { Listbox } from 'primeng/listbox';
+import { Select } from 'primeng/select';
+import { Skeleton } from 'primeng/skeleton';
 
-import { debounceTime, distinctUntilChanged, takeUntil, pluck } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, map, takeUntil } from 'rxjs/operators';
 
 import { Editor } from '@tiptap/core';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { EditorModalDirective } from '../../../../directive/editor-modal.directive';
+
+/**
+ * Extended link attributes supported by the block editor's custom Link mark.
+ * Includes standard HTML anchor attributes plus accessibility-related fields
+ * (title, aria-label) registered via TipTap's `addAttributes()`.
+ */
+interface LinkAttributes {
+    href: string;
+    target?: string | null;
+    rel?: string | null;
+    title?: string | null;
+    'aria-label'?: string | null;
+}
 
 interface SearchResultItem {
     displayName: string;
@@ -36,27 +50,38 @@ interface SearchResultItem {
     inode?: string;
 }
 
+/** Available options for the HTML `target` attribute on links. */
+const TARGET_OPTIONS = [
+    { label: 'New window (_blank)', value: '_blank' },
+    { label: 'Same window (_self)', value: '_self' },
+    { label: 'Parent frame (_parent)', value: '_parent' },
+    { label: 'Full window (_top)', value: '_top' }
+];
+
+/** Available options for the HTML `rel` attribute on links. */
+const REL_OPTIONS = [
+    { label: 'noopener noreferrer', value: 'noopener noreferrer' },
+    { label: 'noopener', value: 'noopener' },
+    { label: 'noreferrer', value: 'noreferrer' },
+    { label: 'nofollow', value: 'nofollow' },
+    { label: 'sponsored', value: 'sponsored' },
+    { label: 'ugc', value: 'ugc' }
+];
+
 /**
  * A popover component for creating and editing links in the DotCMS block editor.
  * This component provides functionality to:
  * - Search for internal content to link to
  * - Create links to external URLs
- * - Edit existing link properties (URL, target attribute)
+ * - Edit existing link properties (URL, target, title, aria-label, rel)
  * - Remove links from selected text or images
  */
 @Component({
     selector: 'dot-link-editor-popover',
     templateUrl: './dot-link-editor-popover.component.html',
-    styleUrls: ['./dot-link-editor-popover.component.scss'],
-    imports: [
-        FormsModule,
-        ListboxModule,
-        AutoCompleteModule,
-        InputTextModule,
-        SkeletonModule,
-        ButtonModule,
-        EditorModalDirective
-    ]
+    styleUrls: ['./dot-link-editor-popover.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [FormsModule, Listbox, InputText, Select, Skeleton, Button, EditorModalDirective]
 })
 export class DotLinkEditorPopoverComponent implements OnDestroy {
     @ViewChild('popover', { read: EditorModalDirective }) private popover: EditorModalDirective;
@@ -71,6 +96,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     protected readonly isSearching = signal<boolean>(false);
     protected readonly existingLinkUrl = signal<string | null>(null);
     protected readonly linkTargetAttribute = signal<string>('_blank');
+
+    /** Link title attribute for tooltip display and accessibility. */
+    protected readonly linkTitle = signal<string>('');
+
+    /** Link aria-label attribute for screen reader accessibility. */
+    protected readonly linkAriaLabel = signal<string>('');
+
+    /** Link rel attribute controlling the relationship between current and linked document. */
+    protected readonly linkRel = signal<string | null>(null);
+
+    /** Whether the advanced accessibility fields section is expanded. */
+    protected readonly showAdvanced = signal<boolean>(false);
+
+    readonly targetOptions = TARGET_OPTIONS;
+    readonly relOptions = REL_OPTIONS;
 
     protected readonly showLoading = computed(
         () => this.isSearching() && !this.showLinkDetails() && !this.isFullURL()
@@ -194,11 +234,12 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const searchResult = this.searchResults()[searchResultIndex];
 
         const linkToSave = searchResult?.url || linkUrl;
+        const linkAttrs = this.#buildLinkAttributes(linkToSave, target);
 
         if (isImageNode) {
             this.editor().chain().focus().setImageLink({ href: linkToSave, target }).run();
         } else {
-            this.editor().chain().focus().setLink({ href: linkToSave, target }).run();
+            this.#applyLink(linkAttrs);
         }
 
         this.popover.hide();
@@ -219,11 +260,21 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
     private initializeExistingLinkData() {
         const isTextLink = this.editor().isActive('link');
         const linkAttrs = this.editor().getAttributes(isTextLink ? 'link' : 'dotImage');
-        const { href: existingUrl = '', target: existingTarget = '_blank' } = linkAttrs;
+        const {
+            href: existingUrl = '',
+            target: existingTarget = '_blank',
+            title: existingTitle = '',
+            'aria-label': existingAriaLabel = '',
+            rel: existingRel = null
+        } = linkAttrs;
 
         this.searchQuery.set(existingUrl);
         this.existingLinkUrl.set(existingUrl);
         this.linkTargetAttribute.set(existingTarget);
+        this.linkTitle.set(existingTitle || '');
+        this.linkAriaLabel.set(existingAriaLabel || '');
+        this.linkRel.set(existingRel || null);
+        this.showAdvanced.set(!!(existingTitle || existingAriaLabel || existingRel));
         this.searchResults.set([]);
     }
 
@@ -238,25 +289,56 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
      * The text content remains but the link formatting is removed.
      */
     protected removeLinkFromEditor() {
-        this.editor().chain().unsetLink().run();
+        const isImageNode = this.editor().isActive('dotImage');
+
+        if (isImageNode) {
+            this.editor().chain().focus().unsetImageLink().run();
+        } else {
+            this.editor().chain().focus().unsetLink().run();
+        }
+
         this.popover.hide();
     }
 
     /**
-     * Updates the target attribute of an existing link based on user preference.
-     * Allows users to control whether links open in the same window or a new tab.
+     * Saves all link attributes (target, title, aria-label, rel) to the existing link.
      */
-    protected updateLinkTargetAttribute(event: Event) {
-        const shouldOpenInNewWindow = (event.target as HTMLInputElement).checked;
-        const newTargetValue = shouldOpenInNewWindow ? '_blank' : '_self';
+    protected saveLinkAttributes() {
+        const url = this.existingLinkUrl();
+        if (!url?.trim()) return;
 
+        const linkAttrs = this.#buildLinkAttributes(url, this.linkTargetAttribute());
+        this.#applyLink(linkAttrs);
+        this.popover.hide();
+    }
+
+    /**
+     * Applies link attributes to the editor selection.
+     * Uses type assertion because our extended Link mark supports
+     * additional attributes (title, aria-label) beyond the base type definition.
+     */
+    #applyLink(attrs: LinkAttributes) {
         this.editor()
             .chain()
-            .setLink({ href: this.existingLinkUrl(), target: newTargetValue })
+            .focus()
+            .setLink(attrs as { href: string; target?: string; rel?: string; class?: string })
             .run();
+    }
 
-        this.linkTargetAttribute.set(newTargetValue);
-        this.popover.hide();
+    /**
+     * Builds a complete LinkAttributes object from the current signal state.
+     * Whitespace-only title and aria-label values are trimmed to null.
+     * @param href - The link URL.
+     * @param target - The link target attribute.
+     */
+    #buildLinkAttributes(href: string, target: string): LinkAttributes {
+        return {
+            href,
+            target,
+            rel: this.linkRel() || null,
+            title: this.linkTitle()?.trim() || null,
+            'aria-label': this.linkAriaLabel()?.trim() || null
+        };
     }
 
     /**
@@ -267,7 +349,7 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         this.searchContentletsByQuery(searchTerm).subscribe({
             next: (results) => {
                 this.searchResults.set(
-                    results.map((c) => ({
+                    (results || []).map((c) => ({
                         hasTitleImage: c.hasTitleImage,
                         inode: c.inode,
                         displayName: c.title,
@@ -305,13 +387,15 @@ export class DotLinkEditorPopoverComponent implements OnDestroy {
         const languageId = this.editor().storage.dotConfig.lang;
 
         return this.httpClient
-            .post('/api/content/_search', {
+            .post<{
+                entity: { jsonObjectView: { contentlets: DotCMSContentlet[] } };
+            }>('/api/content/_search', {
                 query: `+languageId:${languageId || 1} +deleted:false +working:true +(urlmap:* OR basetype:5) +deleted:false +(title:${searchTerm}* OR path:*${searchTerm}* OR urlmap:*${searchTerm}*)`,
                 sort: 'modDate desc',
                 offset: 0,
                 limit: 5
             })
-            .pipe(pluck('entity', 'jsonObjectView', 'contentlets'));
+            .pipe(map((x) => x?.entity?.jsonObjectView?.contentlets));
     }
 
     /**

@@ -49,7 +49,7 @@ public class SearchToolTest {
     @BeforeClass
     public static void beforeClass() throws Exception {
         IntegrationTestInitService.getInstance().init();
-        AiTest.aiAppSecrets(APILocator.systemHost(), "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        AiTest.aiAppSecretsWithProviderConfig(APILocator.systemHost(), AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
     }
 
     @Before
@@ -58,7 +58,7 @@ public class SearchToolTest {
         when(viewContext.getRequest()).thenReturn(mock(HttpServletRequest.class));
         host = new SiteDataGen().nextPersisted();
         searchTool = prepareSearchTool(viewContext);
-        AiTest.aiAppSecrets(host, "gpt-4o-mini", "dall-e-3", "text-embedding-ada-002");
+        AiTest.aiAppSecretsWithProviderConfig(host, AiTest.providerConfigJson(AiTest.PORT, "gpt-4o-mini"));
     }
 
     /**

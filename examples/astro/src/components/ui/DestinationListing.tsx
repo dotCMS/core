@@ -11,9 +11,7 @@ interface DestinationListingProps {
   destinations: Destination[];
 }
 
-export function DestinationListing({
-  destinations,
-}: DestinationListingProps) {
+export function DestinationListing({ destinations }: DestinationListingProps) {
   if (!destinations || !destinations.length) {
     return <div>No destinations found</div>;
   }
@@ -32,7 +30,7 @@ export function DestinationListing({
             <EditButton contentlet={destination} />
             <div className="relative h-64 overflow-hidden">
               <img
-                src={`/dA/${destination.inode}`}
+                src={destination.image}
                 alt={destination.title}
                 className="transition-transform duration-300 hover:scale-105"
               />

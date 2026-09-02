@@ -45,6 +45,7 @@ describe('dot-select-button', () => {
             );
             expect(await buttons[1].getProperty('icon')).toEqual('backup');
             expect(await buttons[1].getProperty('label')).toEqual('Backup');
+            expect(await buttons[1].getProperty('ariaLabel')).toEqual('Backup');
             expect(await buttons[1].getProperty('disabled')).toEqual(true);
         });
 

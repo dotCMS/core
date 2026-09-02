@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By, Title } from '@angular/platform-browser';
@@ -20,18 +21,8 @@ import {
     DotRouterService,
     DotUiColorsService
 } from '@dotcms/data-access';
+import { DotcmsConfigService, LoggerService, LoginService, StringUtils } from '@dotcms/dotcms-js';
 import {
-    CoreWebService,
-    DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
-    LoggerService,
-    LoginService,
-    StringUtils
-} from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -39,8 +30,9 @@ import {
 
 import { DotContentletWrapperComponent } from './dot-contentlet-wrapper.component';
 
+import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../_common/iframe/service/iframe-overlay.service';
 import { DotIframeDialogComponent } from '../../../dot-iframe-dialog/dot-iframe-dialog.component';
 import { DotContentletEditorService } from '../../services/dot-contentlet-editor.service';
@@ -63,6 +55,7 @@ describe('DotContentletWrapperComponent', () => {
     let titleService: Title;
     let dotIframeService: DotIframeService;
     let dotEventsService: DotEventsService;
+    let dotCustomEventHandlerService: DotCustomEventHandlerService;
 
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
@@ -70,23 +63,21 @@ describe('DotContentletWrapperComponent', () => {
                 DotContentletWrapperComponent,
                 DotIframeDialogComponent,
                 RouterTestingModule,
-                BrowserAnimationsModule,
-                HttpClientTestingModule
+                BrowserAnimationsModule
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentletEditorService,
                 DotIframeService,
                 DotAlertConfirmService,
                 DotEventsService,
                 IframeOverlayService,
                 ConfirmationService,
-                DotcmsEventsService,
-                DotEventsSocket,
                 DotcmsConfigService,
                 LoggerService,
                 StringUtils,
                 Title,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 {
                     provide: DotHttpErrorManagerService,
                     useValue: {
@@ -109,12 +100,14 @@ describe('DotContentletWrapperComponent', () => {
                     provide: DotMessageService,
                     useValue: messageServiceMock
                 },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                },
                 { provide: DotRouterService, useClass: MockDotRouterService },
-                { provide: DotUiColorsService, useClass: MockDotUiColorsService }
+                { provide: DotUiColorsService, useClass: MockDotUiColorsService },
+                {
+                    provide: DotCustomEventHandlerService,
+                    useValue: {
+                        handle: jest.fn()
+                    }
+                }
             ]
         });
     }));
@@ -129,6 +122,7 @@ describe('DotContentletWrapperComponent', () => {
         titleService = de.injector.get(Title);
         dotIframeService = de.injector.get(DotIframeService);
         dotEventsService = de.injector.get(DotEventsService);
+        dotCustomEventHandlerService = de.injector.get(DotCustomEventHandlerService);
 
         jest.spyOn(titleService, 'setTitle');
         jest.spyOn(dotIframeService, 'reload');
@@ -439,6 +433,84 @@ describe('DotContentletWrapperComponent', () => {
                     );
                 });
             });
+        });
+    });
+
+    describe('onCustomEvent', () => {
+        beforeEach(() => {
+            component.url = 'hello.world.com';
+            fixture.detectChanges();
+        });
+
+        it('should call the handler from customEventsHandler when event name exists', () => {
+            const mockEvent = {
+                detail: {
+                    name: 'close',
+                    data: {
+                        redirectUrl: 'testUrl',
+                        languageId: '1'
+                    }
+                }
+            } as CustomEvent;
+
+            jest.spyOn(component, 'onClose');
+            jest.spyOn(dotRouterService, 'goToEditPage');
+
+            component.onCustomEvent(mockEvent);
+
+            expect(component.onClose).toHaveBeenCalledTimes(1);
+            expect(dotRouterService.goToEditPage).toHaveBeenCalledWith({
+                url: 'testUrl',
+                language_id: '1'
+            });
+            expect(dotCustomEventHandlerService.handle).not.toHaveBeenCalled();
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should call dotCustomEventHandlerService.handle when event name does not exist in customEventsHandler', () => {
+            const mockEvent = {
+                detail: {
+                    name: 'unknown-event',
+                    data: {
+                        someData: 'test'
+                    }
+                }
+            } as CustomEvent;
+
+            component.onCustomEvent(mockEvent);
+
+            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledWith(mockEvent);
+            expect(dotCustomEventHandlerService.handle).toHaveBeenCalledTimes(1);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEvent);
+        });
+
+        it('should always emit custom event regardless of handler existence', () => {
+            const mockEventWithHandler = {
+                detail: {
+                    name: 'edit-page',
+                    data: {
+                        url: 'some/url',
+                        languageId: '1',
+                        hostId: '123'
+                    }
+                }
+            } as CustomEvent;
+
+            const mockEventWithoutHandler = {
+                detail: {
+                    name: 'unknown-event',
+                    data: {}
+                }
+            } as CustomEvent;
+
+            jest.spyOn(dotRouterService, 'goToEditPage');
+
+            component.onCustomEvent(mockEventWithHandler);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEventWithHandler);
+
+            component.onCustomEvent(mockEventWithoutHandler);
+            expect(component.custom.emit).toHaveBeenCalledWith(mockEventWithoutHandler);
+            expect(component.custom.emit).toHaveBeenCalledTimes(2);
         });
     });
 });

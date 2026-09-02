@@ -6,7 +6,7 @@ import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.business.web.ExperimentWebAPI;
 import com.dotcms.mock.request.MockAttributeRequest;
 import com.dotcms.rendering.velocity.services.PageLoader;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.variant.business.web.VariantWebAPI.RenderContext;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.beans.Host;
@@ -43,15 +43,17 @@ import com.dotmarketing.portlets.rules.model.Rule.FireOn;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PageMode;
 import com.dotmarketing.util.UUIDUtil;
+import com.dotmarketing.util.UtilMethods;
 import com.dotmarketing.util.WebKeys;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
-import org.apache.commons.lang3.StringUtils;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.Optional;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.Set;
 
 /**
@@ -63,6 +65,26 @@ import java.util.Set;
 public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     public static final String HTML_HEAD = "<head>";
+
+    /**
+     * Matches the opening {@code <head>} tag case-insensitively against the <b>original</b> HTML,
+     * for the same reason as {@code CLOSING_BODY_TAG_PATTERN} in
+     * {@link HTMLPageAssetRenderedBuilder} — an index taken from a lowercased copy is not valid
+     * against the source string, because some code points lowercase to more than one char
+     * (e.g. {@code İ} U+0130 -> {@code i} + U+0307). See #37072.
+     */
+    private static final Pattern OPENING_HEAD_TAG_PATTERN =
+            Pattern.compile(Pattern.quote(HTML_HEAD), Pattern.CASE_INSENSITIVE);
+
+    // Matches either the full UVE script block (init function + <script src> with onload)
+    // or the plain SDK script tag injected when no schemas are found.
+    // The prefix literal is sourced from HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX
+    // to keep the pattern in sync with the template — update both together if the template changes.
+    private static final Pattern UVE_SCRIPT_BLOCK_PATTERN = Pattern.compile(
+            "(?:" + Pattern.quote(HTMLPageAssetRenderedBuilder.UVE_INIT_FUNCTION_PREFIX) + ".*?</script>" +
+            "<script src=\"/ext/uve/dot-uve\\.js\"[^>]*></script>" +
+            "|" + Pattern.quote(HTMLPageAssetRenderedBuilder.SDK_EDITOR_SCRIPT_SOURCE) + ")",
+            Pattern.DOTALL);
     private final HostWebAPI hostWebAPI;
     private final HTMLPageAssetAPI htmlPageAssetAPI;
     private final LanguageAPI languageAPI;
@@ -339,14 +361,17 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
 
     }
 
-    private String injectJSCode(final String pageHTML, final String JsCode) {
+    private String injectJSCode(final String pageHTML, final String jsCode) {
 
-        if (StringUtils.containsIgnoreCase(pageHTML, HTML_HEAD)) {
-            final int indexOf = pageHTML.toLowerCase().indexOf(HTML_HEAD);
-            return pageHTML.substring(0, indexOf + HTML_HEAD.length()) + JsCode + pageHTML.substring(indexOf + 6);
-        } else {
-            return JsCode + "\n" + pageHTML;
+        if (!UtilMethods.isSet(pageHTML)) {
+            return jsCode;
         }
+        final Matcher headMatcher = OPENING_HEAD_TAG_PATTERN.matcher(pageHTML);
+        if (headMatcher.find()) {
+            final int headTagEnd = headMatcher.end();
+            return pageHTML.substring(0, headTagEnd) + jsCode + pageHTML.substring(headTagEnd);
+        }
+        return jsCode + "\n" + pageHTML;
     }
 
     /**
@@ -665,7 +690,10 @@ public class HTMLPageAssetRenderedAPIImpl implements HTMLPageAssetRenderedAPI {
                 .setSite(host).setURLMapper(pageURI)
                 .setLive(false).build(true, PageMode.PREVIEW_MODE)).getHtml();
 
-        return new PageLivePreviewVersionBean(renderLive, renderWorking);
+        // strips the UVE script block so the comparison is purely on page content
+        return new PageLivePreviewVersionBean(
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderLive).replaceAll(""),
+                UVE_SCRIPT_BLOCK_PATTERN.matcher(renderWorking).replaceAll(""));
     }
 
     private static class DiffMockRequest extends MockAttributeRequest {

@@ -1,0 +1,94 @@
+:host {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.75rem;
+    // White header band; the gray pills sit on it (UVE toolbar-center look).
+    background-color: var(--p-surface-0, #ffffff);
+    // Muted dark text/icons at rest; full-strength dark is reserved for hover/active.
+    color: var(--p-surface-600, #4b5563);
+    border-bottom: 1px solid var(--p-surface-200, #e2e8f0);
+}
+
+// Rounded-full gray pill grouping a row of small icon buttons (mirrors the UVE
+// editor toolbar-center segments).
+.address-bar__pill {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    // Pills keep their natural (content) width and never shrink, so the tool and the
+    // zoom/undo/redo controls always stay intact; only the URL pill flexes.
+    flex: 0 0 auto;
+    min-width: 0;
+    padding: 0.125rem;
+    border-radius: 1000px;
+    // Light slate fill from the design (surface-100), not the heavier neutral
+    // gray-200 we were falling back to. `--p-surface-*` is the PrimeNG 21 token;
+    // the bare `--surface-*` we used before is undefined in the theme.
+    background-color: var(--p-surface-100, #f1f5f9);
+}
+
+// The URL pill fills the free space between the tool and zoom pills. `flex-basis: 0`
+// (not `auto`) is key: the long, server-generated URL truncates inside the pill
+// instead of sizing it to the content and pushing the zoom/undo/redo controls out
+// of the header when more filters are appended.
+.address-bar__pill--url {
+    flex: 1 1 0;
+    padding-right: 0.75rem;
+}
+
+// Material Symbols default to 24px; scale the bar's glyphs (projected into the
+// pButton-component icons and the inline tool glyphs) down to the previous
+// footprint (~1.125rem) so they read as compact controls.
+:host ::ng-deep .material-symbols-outlined {
+    font-size: 1.125rem;
+}
+
+// Tool toggle: the active tool renders as a filled white rounded square inside the
+// gray pill (subtle shadow); the inactive one stays transparent. `styleClass` puts
+// `address-bar__tool--active` directly on the inner PrimeNG `.p-button`, so the
+// override targets that element (and its hover) and uses `!important` to beat the
+// theme's text-button background.
+:host ::ng-deep .p-button.address-bar__tool--active,
+:host ::ng-deep .p-button.address-bar__tool--active:hover {
+    // Active tool reads as a primary tint (matches the design's .iem-iconbtn.active:
+    // primary-50 fill + primary-700 icon), not a white chip.
+    background-color: var(--p-primary-50, #f6f7fe) !important;
+    // Circular (like the rounded icon buttons and the pill), so it sits cleanly
+    // inside the pill instead of a square poking past its rounded ends.
+    border-radius: 9999px;
+    color: var(--p-primary-700, #3747a9) !important;
+}
+
+.address-bar__field {
+    flex: 1 1 auto;
+    min-width: 0;
+    color: inherit;
+    font-size: 0.8125rem;
+}
+
+// Hairline divider grouping items inside a pill.
+.address-bar__divider {
+    flex: 0 0 auto;
+    width: 1px;
+    height: 1rem;
+    background-color: var(--p-surface-300, #cbd5e1);
+}
+
+.address-bar__zoom-value {
+    min-width: 3.5rem;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
+    // Rendered as a <button> (click to fit), so strip the native chrome and
+    // inherit the bar's text treatment.
+    padding: 0;
+    border: 0;
+    background: none;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+
+    &:hover {
+        color: var(--p-surface-900, #111827);
+    }
+}

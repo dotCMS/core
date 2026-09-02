@@ -1,15 +1,14 @@
 <p-dialog
-    [(visible)]="visible"
+    [visible]="visible()"
     [header]="'login-as' | dm"
     [modal]="true"
     [draggable]="false"
     [resizable]="false"
     [style.width]="'400px'"
     appendTo="body"
-    styleClass="dot-login-as-dialog"
     data-testid="dot-login-as-dialog"
     (onHide)="close()">
-    <div class="login-as" data-testid="dot-login-as-container">
+    <div class="login-as mt-[5px]" data-testid="dot-login-as-container">
         @if (errorMessage()) {
             <p class="login-as__error-message" data-testid="dot-login-as-error-message">
                 {{ errorMessage() }}
@@ -22,9 +21,9 @@
             #formEl="ngForm"
             novalidate
             data-testid="dot-login-as-form"
-            class="p-fluid">
+            class="form">
             <div class="field">
-                <p-dropdown
+                <p-select
                     #dropdown
                     formControlName="loginAsUser"
                     [options]="userCurrentPage()"
@@ -51,7 +50,7 @@
                             {{ user.fullName }}
                         </div>
                     </ng-template>
-                </p-dropdown>
+                </p-select>
             </div>
             @if (needPassword()) {
                 <div class="field">

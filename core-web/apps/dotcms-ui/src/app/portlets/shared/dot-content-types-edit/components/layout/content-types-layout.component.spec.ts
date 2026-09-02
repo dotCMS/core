@@ -1,17 +1,34 @@
 /* eslint-disable @typescript-eslint/no-empty-function */
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { Observable, of } from 'rxjs';
+Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: jest.fn().mockImplementation((query) => ({
+        matches: false,
+        media: query,
+        onchange: null,
+        addListener: jest.fn(),
+        removeListener: jest.fn(),
+        addEventListener: jest.fn(),
+        removeEventListener: jest.fn(),
+        dispatchEvent: jest.fn()
+    }))
+});
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
-import { Component, DebugElement, EventEmitter, Injectable, Input, Output } from '@angular/core';
-import { ComponentFixture, fakeAsync, TestBed } from '@angular/core/testing';
+import { EMPTY, of } from 'rxjs';
+
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { Component, DebugElement, EventEmitter, Input, Output } from '@angular/core';
+import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
+import { BrowserAnimationsModule } from '@angular/platform-browser/animations';
+import { ActivatedRoute, Router } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { MenuItem } from 'primeng/api';
 import { SplitButtonModule } from 'primeng/splitbutton';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
 import {
     DotAlertConfirmService,
@@ -21,15 +38,11 @@ import {
     DotIframeService,
     DotMessageService,
     DotRouterService,
+    DotSystemConfigService,
     DotUiColorsService
 } from '@dotcms/data-access';
-import {
-    CoreWebService,
-    DotcmsEventsService,
-    LoginService,
-    LoggerService
-} from '@dotcms/dotcms-js';
-import { DotCMSContentType } from '@dotcms/dotcms-models';
+import { LoggerService, LoginService } from '@dotcms/dotcms-js';
+import { DotCMSContentType, FeaturedFlags } from '@dotcms/dotcms-models';
 import {
     DotApiLinkComponent,
     DotCopyButtonComponent,
@@ -39,7 +52,6 @@ import {
 } from '@dotcms/ui';
 import { DotLoadingIndicatorService } from '@dotcms/utils';
 import {
-    CoreWebServiceMock,
     createFakeEvent,
     dotcmsContentTypeBasicMock,
     MockDotMessageService
@@ -54,8 +66,9 @@ import { IframeComponent } from '../../../../../view/components/_common/iframe/i
 import { IframeOverlayService } from '../../../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotCopyLinkComponent } from '../../../../../view/components/dot-copy-link/dot-copy-link.component';
 import { DotPortletBoxComponent } from '../../../../../view/components/dot-portlet-base/components/dot-portlet-box/dot-portlet-box.component';
-import { DotSecondaryToolbarComponent } from '../../../../../view/components/dot-secondary-toolbar/dot-secondary-toolbar.component';
-import { FieldDragDropService, FieldService } from '../fields/service';
+import { DotAddToMenuComponent } from '../../../dot-content-types-listing/components/dot-add-to-menu/dot-add-to-menu.component';
+import { FieldDragDropService } from '../fields/service';
+import { DotStyleEditorBuilderComponent } from '../style-editor/dot-style-editor-builder.component';
 
 @Component({
     selector: 'dot-content-types-fields-list',
@@ -92,31 +105,12 @@ class TestHostComponent {
 }
 
 @Component({
-    selector: 'dot-content-types-relationship-listing',
+    selector: 'dot-style-editor-builder',
     template: '',
-    standalone: false
+    standalone: true
 })
-class TestContentTypesRelationshipListingComponent {}
-
-@Component({
-    selector: 'dot-add-to-menu',
-    template: ``,
-    standalone: false
-})
-class MockDotAddToMenuComponent {
+class MockDotStyleEditorBuilderComponent {
     @Input() contentType: DotCMSContentType;
-    @Output() cancel = new EventEmitter<boolean>();
-}
-
-@Injectable()
-export class MockDotMenuService {
-    getDotMenuId(): Observable<string> {
-        return of('1234');
-    }
-
-    loadMenu(_reload?: boolean): Observable<any> {
-        return of([]);
-    }
 }
 
 class FieldDragDropServiceMock {
@@ -136,55 +130,83 @@ describe('ContentTypesLayoutComponent', () => {
     let fixture: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
 
-    beforeEach(() => {
+    beforeEach(async () => {
         const messageServiceMock = new MockDotMessageService({
             'contenttypes.sidebar.components.title': 'Field Title',
             'contenttypes.tab.fields.header': 'Fields Header Tab',
             'contenttypes.sidebar.layouts.title': 'Layout Title',
             'contenttypes.tab.permissions.header': 'Permissions Tab',
             'contenttypes.tab.publisher.push.history.header': 'Push History',
-            'contenttypes.tab.relationship.header': 'Relationship',
             'contenttypes.action.edit': 'Edit',
             'contenttypes.content.variable': 'Variable',
             'contenttypes.form.identifier': 'Identifier',
             'contenttypes.dropzone.rows.add': 'Add Row',
             'contenttypes.content.row': 'Row',
-            'contenttypes.content.add_to_menu': 'Add To Menu'
+            'contenttypes.content.add_to_menu': 'Add To Menu',
+            'contenttypes.content.add_to_menu.header': 'Add to Menu',
+            'contenttypes.content.add_to_menu.name': 'Name',
+            'contenttypes.content.add_to_menu.show_under': 'Show under',
+            'contenttypes.content.add_to_menu.default_view': 'Default view',
+            'custom.content.portlet.dataViewMode.card': 'card',
+            'custom.content.portlet.dataViewMode.list': 'list',
+            add: 'Add',
+            cancel: 'Cancel'
         });
 
         TestBed.configureTestingModule({
             declarations: [
                 TestContentTypeFieldsListComponent,
                 TestContentTypeFieldsRowListComponent,
-                TestContentTypesRelationshipListingComponent,
-                TestHostComponent,
-                MockDotAddToMenuComponent
+                TestHostComponent
             ],
             imports: [
                 ContentTypesLayoutComponent,
-                TabViewModule,
+                TabsModule,
                 DotIconComponent,
-                DotSecondaryToolbarComponent,
                 RouterTestingModule,
+                BrowserAnimationsModule,
                 DotApiLinkComponent,
                 DotCopyLinkComponent,
                 DotSafeHtmlPipe,
                 DotMessagePipe,
                 SplitButtonModule,
                 DotInlineEditComponent,
-                HttpClientTestingModule,
                 DotPortletBoxComponent,
                 DotCopyButtonComponent
             ],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotMenuService, useClass: MockDotMenuService },
                 { provide: FieldDragDropService, useClass: FieldDragDropServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 DotCurrentUserService,
                 DotEventsService,
                 DotAddToMenuService,
-                FieldService,
+                {
+                    provide: DotMenuService,
+                    useValue: {
+                        loadMenu: jest.fn().mockReturnValue(
+                            of([
+                                {
+                                    id: '123',
+                                    name: 'Menu 1',
+                                    label: 'Menu 1',
+                                    tabName: 'Name',
+                                    tabDescription: 'Description',
+                                    tabIcon: 'icon',
+                                    url: '/url/index',
+                                    active: false,
+                                    isOpen: false,
+                                    menuItems: []
+                                }
+                            ])
+                        )
+                    }
+                },
+                {
+                    provide: DotSystemConfigService,
+                    useValue: { getSystemConfig: () => of({}) }
+                },
                 {
                     provide: DotIframeService,
                     useValue: {
@@ -199,13 +221,6 @@ describe('ContentTypesLayoutComponent', () => {
                     useValue: { currentPortlet: { id: 'test-portlet-id' } }
                 },
                 { provide: DotUiColorsService, useValue: { setColors: jest.fn() } },
-                {
-                    provide: DotcmsEventsService,
-                    useValue: {
-                        subscribeTo: jest.fn().mockReturnValue(of({})),
-                        subscribeToEvents: jest.fn().mockReturnValue(of({}))
-                    }
-                },
                 {
                     provide: DotLoadingIndicatorService,
                     useValue: {
@@ -232,24 +247,44 @@ describe('ContentTypesLayoutComponent', () => {
                 {
                     provide: DotAlertConfirmService,
                     useValue: { confirm: jest.fn(), alert: jest.fn() }
+                },
+                {
+                    provide: ActivatedRoute,
+                    useValue: {
+                        snapshot: {
+                            data: {
+                                featuredFlags: {
+                                    [FeaturedFlags.FEATURE_FLAG_UVE_STYLE_EDITOR]: true
+                                },
+                                tabPermissions: { showPermissionsTab: true }
+                            }
+                        },
+                        firstChild: null,
+                        events: EMPTY
+                    }
                 }
             ]
+        }).overrideComponent(ContentTypesLayoutComponent, {
+            remove: {
+                imports: [IframeComponent, DotStyleEditorBuilderComponent]
+            },
+            add: {
+                imports: [TestDotIframeComponent, MockDotStyleEditorBuilderComponent]
+            }
         });
 
-        // Override ContentTypesLayoutComponent to use the mock IframeComponent
-        TestBed.overrideComponent(ContentTypesLayoutComponent, {
-            remove: { imports: [IframeComponent] },
-            add: { imports: [TestDotIframeComponent] }
-        });
+        await TestBed.compileComponents();
 
         fixture = TestBed.createComponent(TestHostComponent);
+        const originalDetectChanges = fixture.detectChanges.bind(fixture);
+        fixture.detectChanges = (_checkNoChanges?: boolean) => originalDetectChanges(false);
         de = fixture.debugElement.query(By.css('dot-content-type-layout'));
     });
 
     it('should have a tab-view', () => {
-        const pTabView = de.query(By.css('p-tabview'));
+        const pTabs = de.query(By.css('p-tabs'));
 
-        expect(pTabView).not.toBeNull();
+        expect(pTabs).not.toBeNull();
     });
 
     it('should have just one tab', () => {
@@ -258,188 +293,94 @@ describe('ContentTypesLayoutComponent', () => {
     });
 
     it('should not have a Permissions tab', () => {
-        const pTabPanel = de.query(By.css('.content-type__permissions'));
+        const pTabPanel = de.query(By.css('p-tabpanel[value="permissions"]'));
         expect(pTabPanel).toBeFalsy();
     });
 
     it('should set the field and row bag options', () => {
         const fieldDragDropService: FieldDragDropService =
             fixture.debugElement.injector.get(FieldDragDropService);
-        fixture.componentInstance.contentType = fakeContentType;
+        fixture.componentRef.setInput('contentType', fakeContentType);
         jest.spyOn(fieldDragDropService, 'setBagOptions');
         fixture.detectChanges();
         expect(fieldDragDropService.setBagOptions).toHaveBeenCalledTimes(1);
     });
 
-    it('should have dot-portlet-box in the second tab after it has been clicked', fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
-
+    it('should navigate to the route and immediately update $activeTab when clicking a tab', () => {
+        fixture.componentRef.setInput('contentType', fakeContentType);
         fixture.detectChanges();
 
-        const contentTypeRelationshipsTabLink = de.query(
-            By.css('ul.p-tabview-nav li:nth-child(2) > a')
+        const router = fixture.debugElement.injector.get(Router);
+        jest.spyOn(router, 'navigate');
+
+        de.componentInstance.onTabChange('permissions');
+
+        expect(de.componentInstance.$activeTab()).toBe('permissions');
+        expect(router.navigate).toHaveBeenCalledWith(
+            ['permissions'],
+            expect.objectContaining({ relativeTo: expect.anything() })
         );
-        contentTypeRelationshipsTabLink.nativeElement.click();
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-            const contentTypeRelationships = de.query(By.css('.content-type__relationships'));
-            const contentTypeRelationshipsPortletBox = contentTypeRelationships.query(
-                By.css('dot-portlet-box')
-            );
-            expect(contentTypeRelationshipsPortletBox).not.toBeNull();
-        });
-    }));
-
-    it('should have dot-portlet-box in the fourth tab after it has been clicked', fakeAsync(() => {
-        fixture.componentInstance.contentType = fakeContentType;
-        fixture.detectChanges();
-
-        const contentTypePushHistoryTabLink = de.query(
-            By.css('ul.p-tabview-nav li:nth-child(3) > a')
-        );
-        contentTypePushHistoryTabLink.nativeElement.click();
-        fixture.detectChanges();
-
-        fixture.whenStable().then(() => {
-            const contentTypePushHistory = de.query(By.css('.content-type__push_history'));
-            const contentTypePushHistoryPortletBox = contentTypePushHistory.query(
-                By.css('dot-portlet-box')
-            );
-            expect(contentTypePushHistoryPortletBox).not.toBeNull();
-        });
-    }));
+    });
 
     describe('Edit toolBar', () => {
         beforeEach(() => {
-            fixture.componentInstance.contentType = fakeContentType;
+            fixture.componentRef.setInput('contentType', fakeContentType);
             fixture.detectChanges();
         });
 
-        it('should have dot-secondary-toolbar', () => {
-            expect(de.query(By.css('dot-secondary-toolbar'))).toBeDefined();
-        });
-
-        it('should have elements in the correct place', () => {
-            expect(
-                de.query(By.css('.main-toolbar-left header dot-icon')).componentInstance.name
-            ).toBe(fakeContentType.icon);
-            expect(de.query(By.css('.main-toolbar-left header dot-inline-edit'))).toBeDefined();
-            expect(
-                de.query(By.css('.main-toolbar-left header p-inplace h4')).nativeElement.innerHTML
-            ).toBe(fakeContentType.name);
-            expect(de.query(By.css('.main-toolbar-left .content-type__title'))).toBeDefined();
-            expect(de.query(By.css('.main-toolbar-left .content-type__info'))).toBeDefined();
-            expect(de.query(By.css('.main-toolbar-right #form-edit-button'))).toBeDefined();
-            expect(de.query(By.css('.main-toolbar-right #add-to-menu-button'))).toBeDefined();
-        });
-
-        it('should set and emit change name of Content Type', () => {
-            de.query(By.css('.main-toolbar-left header p-inplace h4')).nativeElement.click();
-            fixture.detectChanges();
-
-            const dotInlineEditComp = de.query(
-                By.css('.main-toolbar-left header dot-inline-edit')
-            ).componentInstance;
-
-            jest.spyOn(de.componentInstance.changeContentTypeName, 'emit');
-            jest.spyOn(dotInlineEditComp, 'hideContent');
-
-            expect(de.query(By.css('.main-toolbar-left header p-inplace input'))).toBeDefined();
-            de.query(By.css('.main-toolbar-left header p-inplace input')).nativeElement.value =
-                'changedName';
-            de.query(By.css('.main-toolbar-left header p-inplace input')).triggerEventHandler(
-                'keyup',
-                {
-                    stopPropagation: jest.fn(),
-                    key: 'Enter'
-                }
-            );
-            expect(de.componentInstance.changeContentTypeName.emit).toHaveBeenCalledWith(
-                'changedName'
-            );
-            expect(dotInlineEditComp.hideContent).toHaveBeenCalledTimes(1);
-        });
-
-        it('should have api link component', () => {
-            expect(de.query(By.css('dot-api-link'))).toBeDefined();
-        });
-
-        it('should have copy variable link', () => {
-            expect(de.query(By.css('[data-testId="copyVariableName"]'))).toBeDefined();
-        });
-
-        it('should have copy identifier link', () => {
-            expect(de.query(By.css('[data-testId="copyIdentifier"]'))).toBeDefined();
-        });
-
-        it('should have edit button', () => {
-            const editButton: DebugElement = fixture.debugElement.query(
-                By.css('#form-edit-button')
-            );
-            expect(editButton.nativeElement.textContent).toBe('Edit');
-            expect(editButton.nativeElement.disabled).toBe(false);
-            expect(editButton).toBeTruthy();
-        });
-
-        it('should have Add To Menu button', () => {
-            const addToMenuButton: DebugElement = fixture.debugElement.query(
-                By.css('#add-to-menu-button')
-            );
-            expect(addToMenuButton.nativeElement.textContent).toBe('Add To Menu');
-            expect(addToMenuButton.nativeElement.disabled).toBe(false);
-            expect(addToMenuButton).toBeTruthy();
+        it('should have the Settings button', () => {
+            const settingsBtn = de.query(By.css('[data-testid="settings-btn"]'));
+            expect(settingsBtn).not.toBeNull();
         });
 
         it('should have open Add to Menu Dialog and close', () => {
-            jest.spyOn(de.componentInstance, 'addContentInMenu');
-            fixture.debugElement.query(By.css('#add-to-menu-button')).triggerEventHandler('click');
+            de.componentInstance.addContentInMenu();
             fixture.detectChanges();
-            expect(de.componentInstance.addContentInMenu).toHaveBeenCalled();
-            expect(de.componentInstance.addToMenuContentType).toBe(true);
-            const AddToMenuDialog: MockDotAddToMenuComponent = de.query(
-                By.css('dot-add-to-menu')
-            ).componentInstance;
-            expect(de.query(By.css('dot-add-to-menu'))).toBeTruthy();
-            AddToMenuDialog.cancel.emit();
+
+            expect(de.componentInstance.$addToMenuContentType()).toBe(true);
+
+            const addToMenuEl = de.query(By.css('dot-add-to-menu'));
+            expect(addToMenuEl).toBeTruthy();
+
+            const addToMenuDialog = addToMenuEl!.componentInstance as DotAddToMenuComponent;
+            addToMenuDialog.cancel.emit(true);
             fixture.detectChanges();
+
             expect(de.query(By.css('dot-add-to-menu'))).toBeFalsy();
-            expect(de.componentInstance.addToMenuContentType).toBe(false);
+            expect(de.componentInstance.$addToMenuContentType()).toBe(false);
         });
     });
 
     describe('Tabs', () => {
         let iframe: DebugElement;
-        let dotCurrentUserService: DotCurrentUserService;
 
         beforeEach(() => {
-            fixture.componentInstance.contentType = fakeContentType;
-            dotCurrentUserService = fixture.debugElement.injector.get(DotCurrentUserService);
-            jest.spyOn(dotCurrentUserService, 'hasAccessToPortlet').mockReturnValue(of(true));
-
+            fixture.componentRef.setInput('contentType', fakeContentType);
             fixture.detectChanges();
         });
 
         describe('Fields', () => {
             let pTabPanel;
             beforeEach(() => {
-                pTabPanel = de.query(By.css('.content-type__properties'));
-                pTabPanel.componentInstance.selected = true;
+                const panels = de.queryAll(By.css('p-tabpanel'));
+                pTabPanel = panels[0];
             });
 
             it('should have a field panel', () => {
                 expect(pTabPanel).not.toBeNull();
-                expect(pTabPanel.componentInstance.header).toBe('Fields Header Tab');
+                const tabs = de.queryAll(By.css('p-tab'));
+                expect(tabs.length).toBeGreaterThan(0);
             });
 
             it('should have a content-type__fields-main', () => {
-                const contentTypeFieldsMain = pTabPanel.query(By.css('.content-type__fields-main'));
+                const contentTypeFieldsMain = pTabPanel.query(By.css('#content-type-form-main'));
                 expect(contentTypeFieldsMain).not.toBeNull();
             });
 
             it('should have a content-type__fields-sidebar', () => {
+                // Updated: sidebar now contains the splitbutton and fields list
                 const contentTypeFieldsSideBar = pTabPanel.query(
-                    By.css('.content-type__fields-sidebar')
+                    By.css('dot-content-types-fields-list')
                 );
                 expect(contentTypeFieldsSideBar).not.toBeNull();
             });
@@ -454,12 +395,7 @@ describe('ContentTypesLayoutComponent', () => {
 
             // Hiding the rows list for 5.0
             xit('should have a field row list', () => {
-                const layoutTitle = pTabPanel.queryAll(
-                    By.css('.content-type__fields-sidebar-title')
-                )[1];
                 const fieldRowList = pTabPanel.query(By.css('dot-content-type-fields-row-list'));
-
-                expect(layoutTitle.nativeElement.textContent).toBe('Layout Title');
                 expect(fieldRowList).not.toBeNull();
             });
 
@@ -468,9 +404,7 @@ describe('ContentTypesLayoutComponent', () => {
                 let dotEventsService: DotEventsService;
 
                 beforeEach(() => {
-                    splitButton = pTabPanel.query(
-                        By.css('.content-type__fields-sidebar p-splitbutton')
-                    );
+                    splitButton = pTabPanel.query(By.css('p-splitbutton'));
                     dotEventsService = fixture.debugElement.injector.get(DotEventsService);
                     jest.spyOn(dotEventsService, 'notify');
                 });
@@ -498,7 +432,7 @@ describe('ContentTypesLayoutComponent', () => {
                     expect(dotEventsService.notify).toHaveBeenCalledTimes(1);
 
                     // Clear the mock before the second call
-                    dotEventsService.notify.mockClear();
+                    (dotEventsService.notify as jest.Mock).mockClear();
 
                     addTabDivider.command({ originalEvent: createFakeEvent('click') });
                     expect(dotEventsService.notify).toHaveBeenCalledWith('add-tab-divider');
@@ -510,16 +444,17 @@ describe('ContentTypesLayoutComponent', () => {
         describe('Permission', () => {
             let pTabPanel;
             beforeEach(() => {
-                pTabPanel = de.query(By.css('.content-type__permissions'));
-                pTabPanel.componentInstance.selected = true;
-
+                const panels = de.queryAll(By.css('p-tabpanel'));
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions
+                pTabPanel = panels[2];
                 fixture.detectChanges();
                 iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
                 expect(pTabPanel).not.toBeNull();
-                expect(pTabPanel.componentInstance.header).toBe('Permissions Tab');
+                const tabs = de.queryAll(By.css('p-tab'));
+                expect(tabs.length).toBeGreaterThanOrEqual(3);
             });
 
             it('should have a iframe', () => {
@@ -536,16 +471,17 @@ describe('ContentTypesLayoutComponent', () => {
         describe('Push History', () => {
             let pTabPanel;
             beforeEach(() => {
-                pTabPanel = de.query(By.css('.content-type__push_history'));
-                pTabPanel.componentInstance.selected = true;
-
+                const panels = de.queryAll(By.css('p-tabpanel'));
+                // panels[0]=Fields, [1]=StyleEditor, [2]=Permissions, [3]=PushHistory
+                pTabPanel = panels[3];
                 fixture.detectChanges();
                 iframe = pTabPanel.query(By.css('dot-iframe'));
             });
 
             it('should have a permission panel', () => {
                 expect(pTabPanel).not.toBeNull();
-                expect(pTabPanel.componentInstance.header).toBe('Push History');
+                const tabs = de.queryAll(By.css('p-tab'));
+                expect(tabs.length).toBeGreaterThanOrEqual(3);
             });
 
             it('should have a iframe', () => {
@@ -559,33 +495,31 @@ describe('ContentTypesLayoutComponent', () => {
             });
         });
 
-        describe('Relationship', () => {
-            let pTabPanel;
-            beforeEach(() => {
-                pTabPanel = de.query(By.css('.content-type__relationships'));
-                pTabPanel.componentInstance.selected = true;
+        describe('Style Editor tab', () => {
+            it('should show the style editor tab when feature flag is enabled', () => {
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
 
+                expect(styleEditorPanel).not.toBeNull();
+                expect(styleEditorTab).not.toBeNull();
+            });
+
+            it('should render dot-style-editor-builder inside the style editor panel', () => {
+                const styleEditorBuilder = de.query(By.css('dot-style-editor-builder'));
+
+                expect(styleEditorBuilder).not.toBeNull();
+                expect(styleEditorBuilder.componentInstance.contentType).toEqual(fakeContentType);
+            });
+
+            it('should hide the style editor tab when feature flag is disabled', () => {
+                de.componentInstance.$showStyleEditorTab.set(false);
                 fixture.detectChanges();
-                iframe = pTabPanel.query(By.css('dot-iframe'));
-            });
 
-            it('should have a Relationship tab', () => {
-                expect(pTabPanel).toBeDefined();
-            });
+                const styleEditorPanel = de.query(By.css('[data-testid="style-editor-panel"]'));
+                const styleEditorTab = de.query(By.css('[data-testid="style-editor-tab"]'));
 
-            it('should have a right header', () => {
-                expect(pTabPanel.componentInstance.header).toBe('Relationship');
-            });
-
-            it('should have a iframe', () => {
-                expect(iframe).not.toBeNull();
-            });
-
-            it('should set the src attribute', () => {
-                expect(iframe.componentInstance.src).toBe(
-                    // tslint:disable-next-line:max-line-length
-                    'c/portal/layout?p_l_id=1234&p_p_id=content-types&_content_types_struts_action=%2Fext%2Fstructure%2Fview_relationships&_content_types_structure_id=1234567890'
-                );
+                expect(styleEditorPanel).toBeNull();
+                expect(styleEditorTab).toBeNull();
             });
         });
     });

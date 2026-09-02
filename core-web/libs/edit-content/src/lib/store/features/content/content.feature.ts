@@ -5,7 +5,6 @@ import { forkJoin, of, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
-import { Title } from '@angular/platform-browser';
 import { Router } from '@angular/router';
 
 import { switchMap } from 'rxjs/operators';
@@ -18,25 +17,18 @@ import {
     DotWorkflowsActionsService,
     DotWorkflowService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotContentletDepth, FeaturedFlags } from '@dotcms/dotcms-models';
-import { GlobalStore } from '@dotcms/store';
+import {
+    ComponentStatus,
+    DotCMSBaseTypesContentTypes,
+    DotContentletDepth,
+    FeaturedFlags
+} from '@dotcms/dotcms-models';
 
 import { DotEditContentService } from '../../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../../services/host/edit-content-host.model';
 import { transformFormDataFn } from '../../../utils/functions.util';
 import { parseCurrentActions, parseWorkflows } from '../../../utils/workflows.utils';
 import { EditContentState } from '../../edit-content.store';
-
-const DEFAULT_TITLE_PLATFORM = 'dotcms.content.management.platform.title';
-
-/**
- * Options for initializing the store in dialog mode
- */
-export interface DialogInitializationOptions {
-    /** Content type ID for creating new content */
-    contentTypeId?: string;
-    /** Contentlet inode for editing existing content */
-    contentletInode?: string;
-}
 
 export function withContent() {
     return signalStoreFeature(
@@ -85,6 +77,16 @@ export function withContent() {
             tabs: computed(() => transformFormDataFn(store.contentType())),
 
             /**
+             * Computed property that determines if the current content type is an HTML Page.
+             * Single source of truth shared by the form and sidebar components.
+             *
+             * @returns {boolean} True when the content type's base type is HTMLPAGE.
+             */
+            isPage: computed(
+                () => store.contentType()?.baseType === DotCMSBaseTypesContentTypes.HTMLPAGE
+            ),
+
+            /**
              * Computed property that determines if the new content editor feature is enabled.
              *
              * This function retrieves the content type from the store, accesses its metadata,
@@ -113,7 +115,51 @@ export function withContent() {
             /**
              * Computed property that determines if the store's status is equal to ComponentStatus.SAVING.
              */
-            isSaving: computed(() => store.state() === ComponentStatus.SAVING)
+            isSaving: computed(() => store.state() === ComponentStatus.SAVING),
+
+            /**
+             * True while new content is being fetched but the previously loaded
+             * content is still in the store (an in-place reload — e.g. navigating
+             * the related-content breadcrumb). `initializeExistingContent` sets the
+             * state to LOADING without clearing `contentType`/`contentlet`, so the
+             * layout can keep the old data on screen behind a non-destructive
+             * loading overlay (stale-while-revalidate) instead of collapsing the
+             * whole editor to a blank screen. False on the very first load, when
+             * there is no prior content to show.
+             */
+            isReloading: computed(
+                () => store.state() === ComponentStatus.LOADING && !!store.contentType()
+            ),
+
+            /**
+             * True when BOTH sides of the editor are ready: the content (left) is
+             * LOADED and the sidebar's initial data (right — reference pages and
+             * activities) has settled. Used to hold the initial loading state until
+             * the whole screen is populated, instead of revealing the form while the
+             * sidebar still loads.
+             *
+             * There is nothing to wait for — so it returns as soon as the content is
+             * LOADED — when the sidebar is closed (its data never loads) or the
+             * content is new / has no identifier (reference pages and activities only
+             * load for existing content). ERROR counts as settled so a failed sidebar
+             * request never hangs the editor behind the loader.
+             */
+            isFullyLoaded: computed(() => {
+                if (store.state() !== ComponentStatus.LOADED) {
+                    return false;
+                }
+
+                if (!store.uiState().isSidebarOpen || !store.contentlet()?.identifier) {
+                    return true;
+                }
+
+                const settled = (status: ComponentStatus) =>
+                    status === ComponentStatus.LOADED || status === ComponentStatus.ERROR;
+
+                return (
+                    settled(store.information().status) && settled(store.activitiesStatus().status)
+                );
+            })
         })),
         withMethods(
             (
@@ -124,9 +170,8 @@ export function withContent() {
                 dotHttpErrorManagerService = inject(DotHttpErrorManagerService),
                 router = inject(Router),
                 dotWorkflowService = inject(DotWorkflowService),
-                title = inject(Title),
                 dotMessageService = inject(DotMessageService),
-                globalStore = inject(GlobalStore)
+                host = inject(EDIT_CONTENT_HOST)
             ) => ({
                 /**
                  * Initializes the state for creating new content of a specified type.
@@ -148,10 +193,14 @@ export function withContent() {
                 initializeNewContent: rxMethod<string>(
                     pipe(
                         switchMap((contentType) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {}
+                            });
 
                             return forkJoin({
-                                contentType: dotContentTypeService.getContentType(contentType),
+                                contentType:
+                                    dotContentTypeService.getContentTypeWithRender(contentType),
                                 schemes: workflowActionService.getDefaultActions(contentType)
                             }).pipe(
                                 tapResponse({
@@ -169,12 +218,12 @@ export function withContent() {
 
                                         const titleString = `${dotMessageService.get('New')} ${contentType.variable}`;
 
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
                                             label: titleString,
-                                            target: '_self',
                                             url: `/dotAdmin/#/content/new/${contentType.variable}`
                                         });
 
@@ -185,7 +234,8 @@ export function withContent() {
                                             currentContentActions: parsedCurrentActions,
                                             state: ComponentStatus.LOADED,
                                             initialContentletState: 'new',
-                                            error: null
+                                            error: null,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {
@@ -222,15 +272,62 @@ export function withContent() {
                 initializeExistingContent: rxMethod<{ inode: string; depth: DotContentletDepth }>(
                     pipe(
                         switchMap(({ inode, depth }) => {
-                            patchState(store, { state: ComponentStatus.LOADING });
+                            patchState(store, {
+                                state: ComponentStatus.LOADING,
+                                hiddenFields: {},
+                                // The full-screen editor now reuses its component across
+                                // content navigations, so the store persists. Clear the
+                                // previous content's volatile, content-scoped slices to
+                                // prevent leaks (version/push-publish lists accumulate for
+                                // infinite scroll; the compare/historical views belong to
+                                // the old inode). `contentlet`/`contentType` are kept on
+                                // purpose so the previous content stays rendered until the
+                                // new data loads (stale-while-revalidate).
+                                //
+                                // Reference pages + activities are reset to LOADING so that,
+                                // during an in-place reload, `isFullyLoaded` stays false until
+                                // they are re-fetched for the new content (the store-level
+                                // effects in `withInformation`/`withActivities` refire when the
+                                // contentlet swaps). Without this, their stale LOADED status
+                                // from the previous content would make `isFullyLoaded` briefly
+                                // true and drop the reload overlay before they actually reloaded.
+                                information: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null,
+                                    relatedContent: '0'
+                                },
+                                activitiesStatus: {
+                                    status: ComponentStatus.LOADING,
+                                    error: null
+                                },
+                                versions: [],
+                                versionsPagination: null,
+                                versionsStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                pushPublishHistory: [],
+                                pushPublishHistoryPagination: null,
+                                pushPublishHistoryStatus: {
+                                    status: ComponentStatus.INIT,
+                                    error: null
+                                },
+                                isViewingHistoricalVersion: false,
+                                historicalVersionInode: null,
+                                originalContentlet: null,
+                                compareContentlet: null,
+                                translationSourceInode: null
+                            });
 
                             return dotEditContentService.getContentById({ id: inode, depth }).pipe(
                                 switchMap((contentlet) => {
                                     const { contentType } = contentlet;
 
                                     return forkJoin({
-                                        contentType:
-                                            dotContentTypeService.getContentType(contentType),
+                                        contentType: dotContentTypeService.getContentTypeWithRender(
+                                            contentType,
+                                            inode
+                                        ),
                                         // Allowed actions for this inode
                                         currentContentActions: workflowActionService.getByInode(
                                             inode,
@@ -272,12 +369,13 @@ export function withContent() {
                                             !scheme || !step ? 'reset' : 'existing';
 
                                         const titleString = `${contentlet.title}`;
-                                        title.setTitle(
-                                            `${titleString} - ${dotMessageService.get(DEFAULT_TITLE_PLATFORM)}`
-                                        );
-                                        globalStore.addNewBreadcrumb({
+
+                                        // The host decides whether these apply: the full-screen
+                                        // host updates the title/breadcrumb, the dialog host
+                                        // no-ops them (it overlays another route context).
+                                        host.setContentTitle(titleString);
+                                        host.addBreadcrumb({
                                             label: titleString,
-                                            target: '_self',
                                             url: `/dotAdmin/#/content/${contentlet.inode}`
                                         });
 
@@ -290,7 +388,8 @@ export function withContent() {
                                             state: ComponentStatus.LOADED,
                                             currentStep: step,
                                             lastTask: task,
-                                            initialContentletState
+                                            initialContentletState,
+                                            hiddenFields: {}
                                         });
                                     },
                                     error: (error: HttpErrorResponse) => {

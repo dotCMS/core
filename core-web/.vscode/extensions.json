@@ -1,0 +1,9 @@
+{
+    "recommendations": [
+        "angular.ng-template",
+        "dbaeumer.vscode-eslint",
+        "esbenp.prettier-vscode",
+        "editorconfig.editorconfig",
+        "bradlc.vscode-tailwindcss"
+    ]
+}

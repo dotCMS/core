@@ -1,4 +1,4 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { FormsModule, UntypedFormGroup } from '@angular/forms';
 
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -27,7 +27,6 @@ import { FieldProperty } from '../field-properties.model';
 @Component({
     selector: 'dot-relationships-property',
     templateUrl: './dot-relationships-property.component.html',
-    styleUrls: ['./dot-relationships-property.component.scss'],
     imports: [
         RadioButtonModule,
         FormsModule,
@@ -37,6 +36,7 @@ import { FieldProperty } from '../field-properties.model';
         DotFieldRequiredDirective,
         DotFieldValidationMessageComponent
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotRelationshipService]
 })
 export class DotRelationshipsPropertyComponent implements OnInit {

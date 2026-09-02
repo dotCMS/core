@@ -1,11 +1,11 @@
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 import { DotLinkComponent } from '../dot-link/dot-link.component';
 
 @Component({
     selector: 'dot-api-link',
     templateUrl: './dot-api-link.component.html',
-    styleUrls: ['./dot-api-link.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [DotLinkComponent]
 })
 export class DotApiLinkComponent {

@@ -15,7 +15,6 @@ export interface DotKeyValue {
 
 @Component({
     selector: 'dot-key-value-ng',
-    styleUrls: ['./dot-key-value-ng.component.scss'],
     templateUrl: './dot-key-value-ng.component.html',
     imports: [
         TableModule,

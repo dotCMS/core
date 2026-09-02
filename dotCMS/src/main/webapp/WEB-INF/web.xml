@@ -1,8 +1,8 @@
 <?xml version="1.0"?>
 <web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/javaee
-                      http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
-		 version="3.0" metadata-complete="true">
+                      http://java.sun.com/xml/ns/javaee/web-app_4_0.xsd"
+		 version="4.0" metadata-complete="false">
     <display-name>dotCMS</display-name>
 
 	<request-character-encoding>UTF-8</request-character-encoding>
@@ -28,15 +28,25 @@
 		<async-supported>true</async-supported>
 	</filter>
 	<filter>
+		<filter-name>WebDavAuthenticationFilter</filter-name>
+		<filter-class>com.dotcms.filters.WebDavAuthenticationFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+	<filter>
+		<filter-name>WebDavXmlValidationFilter</filter-name>
+		<filter-class>com.dotcms.filters.WebDavXmlValidationFilter</filter-class>
+		<async-supported>true</async-supported>
+	</filter>
+    <filter>
+        <filter-name>RequestCostFilter</filter-name>
+        <filter-class>com.dotcms.cost.RequestCostFilter</filter-class>
+        <async-supported>true</async-supported>
+    </filter>
+	<filter>
 		<filter-name>RequestTrackingFilter</filter-name>
 		<filter-class>com.dotcms.filters.RequestTrackingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-    <filter>
-        <filter-name>ManagementRequestFilter</filter-name>
-        <filter-class>com.dotcms.management.ManagementRequestFilter</filter-class>
-        <async-supported>true</async-supported>
-    </filter>
 	<filter>
 		<filter-name>InterceptorFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.InterceptorFilter</filter-class>
@@ -80,7 +90,7 @@
 		<filter-class>com.dotmarketing.filters.CharsetEncodingFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-	
+
 	<filter>
 	    <filter-name>TimeMachineFilter</filter-name>
 		<filter-class>com.dotmarketing.filters.TimeMachineFilter</filter-class>
@@ -112,7 +122,6 @@
 		<filter-class>com.dotmarketing.filters.LoginRequiredFilter</filter-class>
 		<async-supported>true</async-supported>
 	</filter>
-
 	<filter>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<filter-class>com.dotcms.repackage.com.liferay.filters.secure.SecureFilter</filter-class>
@@ -131,7 +140,7 @@
 		<filter-name>ScssQueryParamFilter</filter-name>
 		<filter-class>com.dotcms.csspreproc.ScssQueryParamFilter</filter-class>
 		<async-supported>true</async-supported>
-    </filter>
+	</filter>
 	<!--END DOTMARKETING FILTERS-->
 	
 	
@@ -148,16 +157,28 @@
 		<filter-name>NormalizationFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
+
+	<!-- Runs early and only on /webdav/*: requires credentials before the WebDAV servlet handles
+	     anything. Covers all four /webdav/ servlet mappings. -->
+	<filter-mapping>
+		<filter-name>WebDavAuthenticationFilter</filter-name>
+		<url-pattern>/webdav/*</url-pattern>
+	</filter-mapping>
+
+	<!-- Runs after authentication and only on /webdav/*: validates XML request bodies before the
+	     WebDAV servlet parses them. Covers all four /webdav/ servlet mappings. -->
+	<filter-mapping>
+		<filter-name>WebDavXmlValidationFilter</filter-name>
+		<url-pattern>/webdav/*</url-pattern>
+	</filter-mapping>
+
     <filter-mapping>
-        <filter-name>ManagementRequestFilter</filter-name>
-        <url-pattern>/*</url-pattern>
-    </filter-mapping>
-    <filter-mapping>
-        <filter-name>HttpHeaderSecurityFilter</filter-name>
+        <filter-name>RequestCostFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
 
-	<!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
+
+    <!-- Request tracking filter runs early to capture all requests for metrics and shutdown coordination -->
 	<filter-mapping>
 		<filter-name>RequestTrackingFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -192,7 +213,7 @@
 	</filter-mapping>
 	
 
-
+	
 	<filter-mapping>
 		<filter-name>ThreadNameFilter</filter-name>
 		<url-pattern>/*</url-pattern>
@@ -217,27 +238,22 @@
         <filter-name>VanityURLFilter</filter-name>
         <url-pattern>/*</url-pattern>
     </filter-mapping>
-
-	<filter-mapping>
-		<filter-name>VisitorFilter</filter-name>
-		<url-pattern>/*</url-pattern>
-	</filter-mapping>
-
+    <filter-mapping>
+        <filter-name>VisitorFilter</filter-name>
+        <url-pattern>/*</url-pattern>
+    </filter-mapping>
 	<filter-mapping>
 		<filter-name>AutoLoginFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>LoginRequiredFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>CMSFilter</filter-name>
 		<url-pattern>/*</url-pattern>
 	</filter-mapping>
-
 	<filter-mapping>
 		<filter-name>Secure MainServlet Filter</filter-name>
 		<url-pattern>/c/*</url-pattern>
@@ -277,6 +293,11 @@
 		<listener-class>com.dotcms.listeners.SwitchSiteListener</listener-class>
 	</listener>
     <listener>
+        <listener-class>com.dotcms.cost.RequestCostRequestListener</listener-class>
+    </listener>
+
+
+    <listener>
       <listener-class>com.dotcms.api.web.RequestThreadLocalListener</listener-class>
     </listener>
 	<!-- this must be the last listener -->
@@ -310,7 +331,7 @@
 		<servlet-class>com.dotmarketing.servlets.FinalStartupServlet</servlet-class>
 		<load-on-startup>99999</load-on-startup>
 	</servlet>
-
+	
 	<servlet>
 		<servlet-name>VelocityServlet</servlet-name>
 		<servlet-class>com.dotcms.rendering.velocity.servlet.VelocityServlet</servlet-class>
@@ -395,7 +416,7 @@
     </servlet>
 	<servlet>
 		<servlet-name>WebDav</servlet-name>
-		<servlet-class>com.bradmcevoy.http.MiltonServlet</servlet-class>
+		<servlet-class>com.dotmarketing.webdav.DotWebdavServlet</servlet-class>
 		<init-param>
 				<param-name>resource.factory.class</param-name>
 				<param-value>com.dotmarketing.webdav.ResourceFactoryImpl</param-value>
@@ -426,13 +447,10 @@
         <servlet-name>SassPreProcessServlet</servlet-name>
         <servlet-class>com.dotcms.csspreproc.SassPreProcessServlet</servlet-class>
     </servlet>
-
     <!-- REST -->
-    <servlet>
+  <servlet>
 		<servlet-name>RESTAPI</servlet-name>
-		<servlet-class>
-		  com.dotcms.rest.servlet.ReloadableServletContainer
-		</servlet-class>
+		<servlet-class>org.glassfish.jersey.servlet.ServletContainer</servlet-class>
 		<init-param>
 			<param-name>jersey.config.server.mediaTypeMappings</param-name>
 			<param-value>txt : text/plain, xml : application/xml, json : application/json, js : application/javascript</param-value>
@@ -452,13 +470,7 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 
-	<servlet>
-		<servlet-name>ManagementMetricsServlet</servlet-name>
-		<servlet-class>com.dotcms.metrics.servlet.ManagementMetricsServlet</servlet-class>
-		<load-on-startup>1</load-on-startup>
-	</servlet>
-
-
+    
 	<!--END DOTMARKETING SERVLETS-->
 	
 	
@@ -490,18 +502,12 @@
       <servlet-name>SassPreProcessServlet</servlet-name>
       <url-pattern>*.dotsass</url-pattern>
     </servlet-mapping>
-
-
+    
     <servlet-mapping>
       <servlet-name>CSSPreProcessServlet</servlet-name>
       <url-pattern>/DOTSASS/*</url-pattern>
     </servlet-mapping>
-
-    <servlet-mapping>
-      <servlet-name>CSSPreProcessServlet</servlet-name>
-      <url-pattern>*.scss</url-pattern>
-    </servlet-mapping>
-
+    
     <servlet-mapping>
         <servlet-name>AjaxDirector</servlet-name>
         <url-pattern>/DotAjaxDirector/*</url-pattern>
@@ -598,9 +604,9 @@
 	<!-- Health service endpoint mappings
 	     These paths must match HealthEndpointConstants.Endpoints values:
 	     - LIVENESS  = /dotmgt/livez  (Kubernetes liveness probe)
-	     - READINESS = /dotmgt/readyz (Kubernetes readiness probe)
+	     - READINESS = /dotmgt/readyz (Kubernetes readiness probe) 
 	     - HEALTH    = /dotmgt/health (Detailed health status)
-
+	     
 	     See: com.dotcms.health.config.HealthEndpointConstants for validation -->
 	<servlet-mapping>
 		<servlet-name>HealthProbeServlet</servlet-name>
@@ -617,16 +623,7 @@
 		<url-pattern>/dotmgt/health</url-pattern>
 	</servlet-mapping>
 
-	<!-- Metrics service endpoint mappings
-	     These paths must match MetricsEndpointConstants.Endpoints values:
-	     - METRICS = /dotmgt/metrics (Prometheus metrics scraping)
 
-	     See: com.dotcms.metrics.config.MetricsEndpointConstants for validation -->
-	<servlet-mapping>
-		<servlet-name>ManagementMetricsServlet</servlet-name>
-		<url-pattern>/dotmgt/metrics</url-pattern>
-	</servlet-mapping>
-	
 	<!--END DOTMARKETING SERVLET-MAPPING-->
 	
 	<!-- Don't ever delete the following comment tags, it will break the plugin system -->
@@ -672,6 +669,27 @@
 	</welcome-file-list>
 	
 	<error-page>
+      <error-code>404</error-code>
+      <location>/html/error/custom-error-page.jsp</location>
+  </error-page>
+
+    <error-page>
+        <error-code>401</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>403</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>500</error-code>
+        <location>/html/error/custom-error-page.jsp</location>
+    </error-page>
+
+    <error-page>
+        <error-code>503</error-code>
 	   <location>/html/error/custom-error-page.jsp</location>
 	</error-page>
 

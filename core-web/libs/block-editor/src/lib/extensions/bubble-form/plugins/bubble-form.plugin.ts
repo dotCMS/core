@@ -11,7 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 import { Editor, posToDOMRect } from '@tiptap/core';
 import { BubbleMenuView } from '@tiptap/extension-bubble-menu';
 
-import { BASIC_TIPPY_OPTIONS, getNodePosition } from '../../../shared';
+import { BASIC_TIPPY_OPTIONS, getEditorElement, getNodePosition } from '../../../shared';
 import { BubbleFormComponent } from '../bubble-form.component';
 import { BUBBLE_FORM_PLUGIN_KEY } from '../bubble-form.extension';
 import { imageFormControls } from '../utils';
@@ -44,9 +44,10 @@ export class BubbleFormView extends BubbleMenuView {
 
     public override view: EditorView;
 
-    public override tippy: Instance | undefined;
+    // v3 removed `tippy` and `tippyOptions` from BubbleMenuView; declared locally as instance fields.
+    public tippy: Instance | undefined;
 
-    public override tippyOptions?: Partial<Props>;
+    public tippyOptions?: Partial<Props>;
 
     public pluginKey: PluginKey;
 
@@ -137,11 +138,12 @@ export class BubbleFormView extends BubbleMenuView {
         next.open ? this.show() : this.hide();
     }
 
-    override createTooltip() {
-        const { element: editorElement } = this.editor.options;
-        const editorIsAttached = !!editorElement.parentElement;
+    // v3 removed `createTooltip` from BubbleMenuView; called manually from `update()`.
+    createTooltip() {
+        const editorElement = getEditorElement(this.editor);
+        const editorIsAttached = !!editorElement?.parentElement;
 
-        if (this.tippy || !editorIsAttached) {
+        if (this.tippy || !editorElement || !editorIsAttached) {
             return;
         }
 
@@ -158,7 +160,7 @@ export class BubbleFormView extends BubbleMenuView {
                     }
                 });
             }
-        });
+        }) as Instance;
     }
 
     override focusHandler = () => {

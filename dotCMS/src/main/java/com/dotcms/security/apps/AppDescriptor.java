@@ -32,6 +32,21 @@ public interface AppDescriptor {
     String getIconUrl();
 
     /**
+     * Material icon name used when no {@link #getIconUrl()} is set. May be {@code null}.
+     */
+    default String getIcon() {
+        return null;
+    }
+
+    /**
+     * Hex color (e.g. {@code #3b82f6}) or PrimeNG token (e.g. {@code blue}) used to tint the icon.
+     * May be {@code null}.
+     */
+    default String getColor() {
+        return null;
+    }
+
+    /**
      * Tells the API if we allow any additional beside the ones already defined in the params map.
      * @return
      */

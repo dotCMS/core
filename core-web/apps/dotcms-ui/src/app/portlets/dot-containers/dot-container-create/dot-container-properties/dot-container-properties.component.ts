@@ -1,8 +1,8 @@
 import { Subject } from 'rxjs';
 
 import { animate, style, transition, trigger } from '@angular/animations';
-import { CommonModule } from '@angular/common';
-import { AfterViewInit, Component, inject, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { AfterViewInit, Component, inject, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     FormArray,
     FormBuilder,
@@ -18,9 +18,9 @@ import { CardModule } from 'primeng/card';
 import { InplaceModule } from 'primeng/inplace';
 import { InputTextModule } from 'primeng/inputtext';
 import { MenuModule } from 'primeng/menu';
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
-import { pairwise, startWith, take, takeUntil } from 'rxjs/operators';
+import { debounceTime, pairwise, startWith, take, takeUntil } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService, DotRouterService } from '@dotcms/data-access';
 import { DotContainerPayload, DotContainerStructure } from '@dotcms/dotcms-models';
@@ -50,16 +50,14 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
     ],
     selector: 'dot-container-properties',
     templateUrl: './dot-container-properties.component.html',
-    styleUrls: ['./dot-container-properties.component.scss'],
     imports: [
-        CommonModule,
         ReactiveFormsModule,
         InplaceModule,
         SharedModule,
         InputTextModule,
         CardModule,
         DotTextareaContentComponent,
-        TabViewModule,
+        TabsModule,
         MenuModule,
         DotMessagePipe,
         DotLoopEditorComponent,
@@ -67,8 +65,10 @@ import { DotLoopEditorComponent } from '../dot-loop-editor/dot-loop-editor.compo
         DotApiLinkComponent,
         DotAutofocusDirective,
         DotFieldRequiredDirective,
-        ButtonModule
+        ButtonModule,
+        AsyncPipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotContainerPropertiesStore, DotContainersService]
 })
 export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
@@ -117,7 +117,12 @@ export class DotContainerPropertiesComponent implements OnInit, AfterViewInit {
             });
 
         this.form.valueChanges
-            .pipe(takeUntil(this.destroy$), startWith(this.form.value), pairwise())
+            .pipe(
+                takeUntil(this.destroy$),
+                startWith(this.form.value),
+                pairwise(),
+                debounceTime(100)
+            )
             .subscribe(([prevValue, currValue]) => {
                 this.#store.updateFormStatus({
                     invalidForm: !this.form.valid,

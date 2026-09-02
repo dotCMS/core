@@ -24,7 +24,6 @@ import java.util.Set;
 import com.dotcms.contenttype.model.field.Field;
 import com.dotcms.contenttype.model.field.FieldVariable;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.contenttype.transform.field.FieldVariableTransformer;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.enterprise.LicenseUtil;
@@ -117,7 +116,7 @@ public class ContentTypeBundler implements IBundler {
 
 		final com.dotmarketing.portlets.structure.business.FieldAPI fieldAPI = APILocator.getFieldAPI();
 		final WorkflowAPI workflowAPI = APILocator.getWorkflowAPI();
-		final ContentType contentType = new StructureTransformer(structure).from();
+		final ContentType contentType = APILocator.getContentTypeAPI(systemUser).find(structure.getInode());
 		final List<Field> fields      = new LegacyFieldTransformer(
 				FieldsCache.getFieldsByStructureInode(structure.getInode())).asList();
 		final List<FieldVariable> fieldVariables = new ArrayList<>();

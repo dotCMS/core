@@ -7,3 +7,9 @@ export * from './lib/editor/internal';
 
 // AI
 export * from './lib/ai/internal';
+
+// Client
+export * from './lib/client/internal';
+
+// Style Editor
+export * from './lib/style-editor/internal';

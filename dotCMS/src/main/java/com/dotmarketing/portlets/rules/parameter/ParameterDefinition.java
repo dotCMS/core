@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.parameter;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.dotcms.rest.exception.InvalidRuleParameterException;
 import com.dotmarketing.portlets.rules.exception.RuleEngineException;
 import com.dotmarketing.portlets.rules.model.ParameterModel;

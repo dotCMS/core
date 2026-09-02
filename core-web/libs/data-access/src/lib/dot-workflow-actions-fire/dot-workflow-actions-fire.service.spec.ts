@@ -1,8 +1,12 @@
-import { createHttpFactory, HttpMethod, SpectatorHttp } from '@ngneat/spectator/jest';
+import { createHttpFactory, HttpMethod, SpectatorHttp } from '@openng/spectator/jest';
 
 import { HttpHeaders } from '@angular/common/http';
 
-import { DotActionBulkRequestOptions, DotActionBulkResult } from '@dotcms/dotcms-models';
+import {
+    DotActionBulkRequestOptions,
+    DotActionBulkResult,
+    DotFireDefaultActionResult
+} from '@dotcms/dotcms-models';
 import { dotcmsContentletMock } from '@dotcms/utils-testing';
 
 import { DotWorkflowActionsFireService } from './dot-workflow-actions-fire.service';
@@ -102,6 +106,66 @@ describe('DotWorkflowActionsFireService', () => {
         req.flush({
             entity: [mockResult]
         });
+    });
+
+    it('should fire NEW with a baseType (no contentType) in the body', (done) => {
+        const mockResult = { name: 'test' };
+
+        const requestBody = {
+            contentlet: {
+                baseType: 'FILEASSET',
+                name: 'Test'
+            }
+        };
+
+        spectator.service
+            .newContentletByBaseType('FILEASSET', { name: 'Test' })
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body).toEqual(requestBody);
+        expect(req.request.body.contentlet.contentType).toBeUndefined();
+        expect(req.request.headers).toEqual(defaultHeaders);
+
+        req.flush({ entity: [mockResult] });
+    });
+
+    it('should fire NEW with a baseType and FormData', (done) => {
+        const mockResult = { name: 'test' };
+        const file = new File(['hello'], 'hello.txt', { type: 'text/plain' });
+
+        const requestBody = {
+            contentlet: {
+                baseType: 'FILEASSET',
+                file: file.name
+            }
+        };
+
+        const formData = new FormData();
+        formData.append('file', file);
+
+        spectator.service
+            .newContentletByBaseType('FILEASSET', { file: file.name }, formData)
+            .subscribe((res) => {
+                expect(res).toEqual([mockResult]);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/NEW',
+            HttpMethod.PUT
+        );
+
+        expect(req.request.body.get('json')).toEqual(JSON.stringify(requestBody));
+
+        req.flush({ entity: [mockResult] });
     });
 
     it('should EDIT and return the updated contentlet', (done) => {
@@ -284,6 +348,31 @@ describe('DotWorkflowActionsFireService', () => {
         req.flush({
             entity: mockResult
         });
+    });
+
+    it('should fire a default system action over multiple inodes and return its summary', (done) => {
+        // The endpoint streams one entry per contentlet plus a summary. The summary is the only
+        // honest source of success/fail counts: individual items can fail while the request is 200.
+        const mockResult: DotFireDefaultActionResult = {
+            results: [],
+            summary: { affected: 2, successCount: 1, failCount: 1, time: 12 }
+        };
+
+        spectator.service
+            .fireDefaultAction({ action: 'UNLOCK', inodes: ['1', '2'] })
+            .subscribe((res) => {
+                expect(res).toEqual(mockResult);
+                done();
+            });
+
+        const req = spectator.expectOne(
+            '/api/v1/workflow/actions/default/fire/UNLOCK?indexPolicy=WAIT_FOR',
+            HttpMethod.POST
+        );
+
+        expect(req.request.body).toEqual({ contentlet: [{ inode: '1' }, { inode: '2' }] });
+
+        req.flush({ entity: mockResult });
     });
 
     afterEach(() => {

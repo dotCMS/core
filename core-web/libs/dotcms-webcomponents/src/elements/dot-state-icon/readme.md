@@ -3,6 +3,8 @@
 <!-- Auto Generated Below -->
 
 
+> **[DEPRECATED]** Use dot-contentlet-status-badge instead
+
 ## Properties
 
 | Property | Attribute | Description | Type                                                                        | Default                                                                                                                      |

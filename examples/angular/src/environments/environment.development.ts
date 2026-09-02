@@ -1,6 +1,5 @@
 export const environment = {
   dotcmsUrl: 'http://localhost:8080',
-  authToken:
-    'YOUR_TOKEN_HERE',
-  siteId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+  authToken: 'YOUR_AUTH_TOKEN_HERE',
+  siteId: 'YOUR_SITE_ID_HERE',
 };

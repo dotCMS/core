@@ -20,6 +20,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.liferay.util.StringPool;
 
+// ES-DECOMMISSION: Implements ActionListener<BulkResponse> and references ES bulk action types directly.
+// Decommission entire class — migrate callers to the vendor-neutral IndexBulkListener.
+@Deprecated(forRemoval = true)
 class BulkActionListener implements ActionListener<BulkResponse> {
 
     BulkActionListener(final Map<String, ReindexEntry> workingRecords) {

@@ -1,0 +1,259 @@
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { MockComponent } from 'ng-mocks';
+
+import { signal } from '@angular/core';
+import { DeferBlockState } from '@angular/core/testing';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+
+import { DotMessageService } from '@dotcms/data-access';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+import type {
+    ChartData,
+    EngagementKPIs,
+    EngagementPlatforms,
+    SparklineDataPoint
+} from '@dotcms/portlets/dot-analytics/data-access';
+// eslint-disable-next-line no-duplicate-imports
+import { DotAnalyticsDashboardStore } from '@dotcms/portlets/dot-analytics/data-access';
+import { DotMessagePipe } from '@dotcms/ui';
+
+import DotAnalyticsEngagementReportComponent from './dot-analytics-engagement-report.component';
+
+import { DotAnalyticsBarEngagementChartComponent } from '../../../shared/components/dot-analytics-bar-engagement-chart/dot-analytics-bar-engagement-chart.component';
+import { DotAnalyticsMetricComponent } from '../../../shared/components/dot-analytics-metric/dot-analytics-metric.component';
+import { DotAnalyticsPieChartComponent } from '../../../shared/components/dot-analytics-pie-chart/dot-analytics-pie-chart.component';
+import { DotAnalyticsSparklineComponent } from '../../../shared/components/dot-analytics-sparkline/dot-analytics-sparkline.component';
+
+const MOCK_KPIS: EngagementKPIs = {
+    totalSessions: { value: 45000, trend: 5, label: 'Total Sessions' },
+    engagementRate: {
+        value: 45,
+        format: 'percentage',
+        trend: 8,
+        subtitle: '29,203 Engaged Sessions',
+        label: 'Engagement Rate'
+    },
+    avgInteractions: { value: 6.4, trend: 18, label: 'Avg Interactions (Engaged)' },
+    avgSessionTime: { value: 154, format: 'time', trend: 12, label: 'Average Session Time' },
+    conversionRate: { value: 3.2, format: 'percentage', trend: -0.3, label: 'Conversion Rate' }
+};
+
+const MOCK_BREAKDOWN: ChartData = {
+    labels: ['Engaged Sessions (65%)', 'Bounced Sessions (35%)'],
+    datasets: [
+        { label: 'Engagement Breakdown', data: [65, 35], backgroundColor: ['#6366F1', '#000000'] }
+    ]
+};
+
+const MOCK_PLATFORMS: EngagementPlatforms = {
+    device: [
+        { name: 'Desktop', views: 720, percentage: 72, totalSessions: 1000, time: '2m 45s' },
+        { name: 'Mobile', views: 180, percentage: 20, totalSessions: 900, time: '1m 47s' },
+        { name: 'Tablet', views: 64, percentage: 8, totalSessions: 800, time: '2m 00s' }
+    ],
+    browser: [
+        { name: 'Chrome', views: 600, percentage: 60, totalSessions: 1000, time: '2m 50s' },
+        { name: 'Safari', views: 200, percentage: 25, totalSessions: 800, time: '2m 30s' },
+        { name: 'Firefox', views: 100, percentage: 20, totalSessions: 500, time: '2m 40s' }
+    ],
+    language: [
+        { name: 'English', views: 560, percentage: 70, totalSessions: 800, time: '2m 30s' },
+        { name: 'Spanish', views: 160, percentage: 20, totalSessions: 800, time: '2m 00s' },
+        { name: 'French', views: 80, percentage: 10, totalSessions: 800, time: '1m 45s' }
+    ]
+};
+
+describe('DotAnalyticsEngagementReportComponent', () => {
+    let spectator: Spectator<DotAnalyticsEngagementReportComponent>;
+
+    const mockKpis = signal({
+        status: ComponentStatus.LOADED,
+        data: MOCK_KPIS,
+        error: null
+    });
+    const mockBreakdown = signal({
+        status: ComponentStatus.LOADED,
+        data: MOCK_BREAKDOWN,
+        error: null
+    });
+    const mockPlatforms = signal({
+        status: ComponentStatus.LOADED,
+        data: MOCK_PLATFORMS,
+        error: null
+    });
+    const mockSparkline = signal({
+        status: ComponentStatus.LOADED,
+        data: { current: [], previous: null as SparklineDataPoint[] | null },
+        error: null
+    });
+
+    const createComponent = createComponentFactory({
+        component: DotAnalyticsEngagementReportComponent,
+        imports: [
+            ButtonModule,
+            DialogModule,
+            DotMessagePipe,
+            MockComponent(DotAnalyticsBarEngagementChartComponent),
+            MockComponent(DotAnalyticsMetricComponent),
+            MockComponent(DotAnalyticsPieChartComponent),
+            MockComponent(DotAnalyticsSparklineComponent)
+        ],
+        providers: [
+            {
+                provide: DotAnalyticsDashboardStore,
+                useValue: {
+                    engagementKpis: mockKpis,
+                    engagementBreakdown: mockBreakdown,
+                    engagementPlatforms: mockPlatforms,
+                    engagementSparkline: mockSparkline,
+                    timeRange: signal('last7days')
+                }
+            },
+            mockProvider(DotMessageService, {
+                get: jest
+                    .fn()
+                    .mockImplementation((key: string, ...args: string[]) =>
+                        args.length ? `${key}[${args.join(',')}]` : key
+                    )
+            })
+        ]
+    });
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        mockKpis.set({
+            status: ComponentStatus.LOADED,
+            data: MOCK_KPIS,
+            error: null
+        });
+        mockBreakdown.set({
+            status: ComponentStatus.LOADED,
+            data: MOCK_BREAKDOWN,
+            error: null
+        });
+        mockPlatforms.set({
+            status: ComponentStatus.LOADED,
+            data: MOCK_PLATFORMS,
+            error: null
+        });
+        mockSparkline.set({
+            status: ComponentStatus.LOADED,
+            data: { current: [], previous: null },
+            error: null
+        });
+    });
+
+    describe('Component Initialization', () => {
+        it('should create', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            expect(spectator.component).toBeTruthy();
+        });
+    });
+
+    describe('Dashboard Layout', () => {
+        it('should display 4 metric components (1 engagement rate + 3 KPIs)', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const metrics = spectator.queryAll(DotAnalyticsMetricComponent);
+            expect(metrics.length).toBe(4);
+        });
+
+        it('should display breakdown pie chart in deferred content', async () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
+            spectator.detectChanges();
+            const pies = spectator.queryAll(DotAnalyticsPieChartComponent);
+            expect(pies.length).toBe(1);
+        });
+
+        it('should display sparkline component inside engagement rate metric', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const sparklines = spectator.queryAll(DotAnalyticsSparklineComponent);
+            expect(sparklines.length).toBe(1);
+        });
+
+        it('should display 3 bar engagement charts (browser, device, language) in deferred content', async () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
+            spectator.detectChanges();
+            const charts = spectator.queryAll(DotAnalyticsBarEngagementChartComponent);
+            expect(charts.length).toBe(3);
+        });
+
+        it('should render browser, device, and language bar charts with correct testids', async () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const deferBlocks = await spectator.fixture.getDeferBlocks();
+            for (const block of deferBlocks) {
+                await block.render(DeferBlockState.Complete);
+            }
+            spectator.detectChanges();
+            expect(spectator.query(byTestId('analytics-engagement-device-chart'))).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-browser-chart'))).toBeTruthy();
+            expect(spectator.query(byTestId('analytics-engagement-language-chart'))).toBeTruthy();
+        });
+    });
+
+    describe("How it's calculated Dialog", () => {
+        it('should have dialog hidden by default', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            expect(spectator.component.$showCalculationDialog()).toBe(false);
+        });
+
+        it('should show info icon in engagement rate metric', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            const infoIcon = spectator.query(byTestId('engagement-info-icon'));
+            expect(infoIcon).toBeTruthy();
+        });
+
+        it('should open dialog when info icon is clicked', () => {
+            spectator = createComponent();
+            spectator.detectChanges();
+            expect(spectator.component.$showCalculationDialog()).toBe(false);
+
+            spectator.click(byTestId('engagement-info-icon'));
+            spectator.detectChanges();
+            expect(spectator.component.$showCalculationDialog()).toBe(true);
+        });
+    });
+
+    describe('Loading State', () => {
+        it('should have $isKpisLoaded as false when KPIs are loading', () => {
+            mockKpis.set({
+                status: ComponentStatus.LOADING,
+                data: null,
+                error: null
+            });
+
+            spectator = createComponent();
+            spectator.detectChanges();
+            expect(spectator.component.$isKpisLoaded()).toBe(false);
+        });
+
+        it('should have $isKpisLoaded as true when KPIs are loaded', () => {
+            mockKpis.set({
+                status: ComponentStatus.LOADED,
+                data: MOCK_KPIS,
+                error: null
+            });
+
+            spectator = createComponent();
+            spectator.detectChanges();
+            expect(spectator.component.$isKpisLoaded()).toBe(true);
+        });
+    });
+});

@@ -32,6 +32,8 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 -   [How-to Guides](#how-to-guides)
     -   [How to Fetch Complete Pages](#how-to-fetch-complete-pages)
     -   [How to Query Content Collections](#how-to-query-content-collections)
+        -   [Including System Host Content](#including-system-host-content)
+    -   [How to Run Raw Lucene Content Queries](#how-to-run-raw-lucene-content-queries)
     -   [How to Use AI-Powered Search](#how-to-use-ai-powered-search)
     -   [How to Work with GraphQL](#how-to-work-with-graphql)
     -   [How to Use with TypeScript](#how-to-use-with-typescript)
@@ -41,6 +43,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
     -   [HTTP Client Configuration](#http-client-configuration)
     -   [page.get() Method](#pageget-method)
     -   [content.getCollection() Method](#contentgetcollection-method)
+    -   [content.query() Method](#contentquery-method)
     -   [ai.search() Method](#aisearch-method)
     -   [navigation.get() Method](#navigationget-method)
     -   [Error Handling](#error-handling)
@@ -61,9 +64,33 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 
 #### Get a dotCMS Environment
 
--   **Recommended**: dotCMS Evergreen
--   **Minimum**: dotCMS v25.05
--   **Best Experience**: Latest Evergreen release
+##### Which SDK Version Should I Use?
+
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
+at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
+`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+
+**Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
+
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
+Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
+fine against a newer dotCMS instance. Occasionally, though, a release does include a real
+breaking change — and if your SDK is older than that point, it will stop working correctly.
+
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
+version it still supports, and the SDK checks itself against it automatically. If you're
+using an SDK that's too old, you'll see a clear warning in your console telling you to
+upgrade.
+
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
+them when you upgrade dotCMS — or when the console tells you to.
+
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
+> Until that's addressed, use the SDK version published for the closest regular release at
+> or before your LTS version.
+>
+> Want more background on how dotCMS releases and support windows work? See
+> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 #### Environment Setup
 
@@ -81,7 +108,7 @@ The `@dotcms/client` is a powerful JavaScript/TypeScript SDK designed to simplif
 **For Local Development:**
 
 -   🐳 [Docker setup guide](https://github.com/dotCMS/core/tree/main/docker/docker-compose-examples/single-node-demo-site)
--   💻 [Local installation guide](https://dev.dotcms.com/docs/quick-start-guide)
+-   💻 [Local installation guide](https://dev.dotcms.com/getting-started/setup/run-locally)
 
 #### Create a dotCMS API Key
 
@@ -97,7 +124,7 @@ This integration requires an API Key with read-only permissions for security bes
 
 For detailed instructions, please refer to the [dotCMS API Documentation - Read-only token](https://dev.dotcms.com/docs/rest-api-authentication#ReadOnlyToken).
 
-#### Installation
+### Installation
 
 Install the SDK and required dependencies:
 
@@ -118,7 +145,7 @@ import { createDotCMSClient } from '@dotcms/client';
 // Create a client instance
 const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
-    authToken: 'your-auth-token', // Optional for public content
+    authToken: 'your-auth-token',
     siteId: 'your-site-id' // Optional site identifier
 });
 
@@ -218,6 +245,58 @@ const products = await client.content
     .limit(10);
 ```
 
+#### Including System Host Content
+
+By default, `getCollection()` scopes queries to the configured `siteId`. Call `.includeSystemHost()` to also return content that belongs to the dotCMS **System Host** — shared content available across all sites.
+
+```typescript
+// Return content from both the configured site AND the System Host
+const blogs = await client.content
+    .getCollection('Blog')
+    .includeSystemHost()
+    .limit(10);
+```
+
+Under the hood, all positive `+conhost:` constraints in the assembled query are collected and grouped into a single `+(conhost:<siteId> conhost:SYSTEM_HOST)` OR group, so dotCMS returns content from any of the matched hosts.
+
+```typescript
+// Multiple sites + System Host (multisite scenario)
+const blogs = await client.content
+    .getCollection('Blog')
+    .query('+conhost:site-a')
+    .includeSystemHost()
+    .limit(10);
+// Resulting conhost constraint: +(conhost:site-a conhost:<configured-siteId> conhost:SYSTEM_HOST)
+```
+
+> [!NOTE]
+> Negative conhost exclusions (`-conhost:excluded-site`) in raw queries are preserved as-is and are not affected by `includeSystemHost()`.
+
+### How to Run Raw Lucene Content Queries
+
+Use `client.content.query()` when you want to execute a **raw Lucene query string** (without the query-builder DSL), and you want full control over constraints like `contentType`, `live`, `languageId`, `conhost`, etc.
+
+> [!NOTE]
+> `content.query()` does **not** prefix fields with `contentType.` (unlike `getCollection()`), and it does **not** inject system constraints into your query string.
+
+#### Basic Raw Query
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .limit(10)
+    .page(1);
+```
+
+#### Setting Language (request body)
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .language(1) // sets languageId in the request body (does not alter the Lucene string)
+    .limit(10);
+```
+
 ### How to Use AI-Powered Search
 
 > [!WARNING]
@@ -306,7 +385,7 @@ const response = await client.ai.search(
 );
 
 // Access results with match scores
-resp[onse].results.forEach(result => {
+response.results.forEach(result => {
     console.log(result.title);
     console.log('Matches:', result.matches); // Distance and extracted text
 });
@@ -402,11 +481,8 @@ response.contentlets.forEach(post => {
 #### Typing AI Search Results
 
 ```typescript
-import type {
-    DotCMSAISearchResponse,
-    DotCMSBasicContentlet,
-    DISTANCE_FUNCTIONS
-} from '@dotcms/types';
+import { DISTANCE_FUNCTIONS } from '@dotcms/types';
+import type { DotCMSAISearchResponse, DotCMSBasicContentlet } from '@dotcms/types';
 
 // Define your content type
 interface Article extends DotCMSBasicContentlet {
@@ -633,6 +709,69 @@ const response = await client.page.get('/about-us', {
 });
 ```
 
+### How to Enable Page Editing
+
+The `@dotcms/client` SDK is responsible for **fetching** your page, while a framework SDK ([`@dotcms/react`](https://www.npmjs.com/package/@dotcms/react) or [`@dotcms/angular`](https://www.npmjs.com/package/@dotcms/angular)) makes that page **editable** inside the [Universal Visual Editor (UVE)](https://dev.dotcms.com/docs/uve-headless-config).
+
+The flow is always the same three steps:
+
+1. **Fetch the page** on the server with `client.page.get()`.
+2. **Connect the page to the editor** with the framework hook/service (`useEditableDotCMSPage` in React, `DotCMSEditablePageService` in Angular).
+3. **Render the layout** with `DotCMSLayoutBody`, mapping your content types to components.
+
+#### 1. Fetch the page with `client.page.get()`
+
+Fetch the full page response on the server. The complete response object — not just `pageAsset` — must be forwarded to the editor layer, because it carries the data UVE needs to track changes.
+
+```typescript
+// server-side, e.g. a Next.js Server Component
+import { createDotCMSClient } from '@dotcms/client';
+
+const client = createDotCMSClient({
+    dotcmsUrl: 'https://your-dotcms-instance.com',
+    authToken: 'your-auth-token',
+    siteId: 'your-site-id'
+});
+
+// Return the whole response so the framework SDK can make it editable
+export async function getPage(path: string) {
+    return await client.page.get(path);
+}
+```
+
+#### 2. Make the page editable (React example)
+
+Pass the full page response into `useEditableDotCMSPage`. The hook keeps the page in sync with UVE while editing and returns the same `pageAsset` / `content` shape you get from `client.page.get()`, so the component works identically in and out of the editor.
+
+```tsx
+'use client';
+
+import { DotCMSLayoutBody, useEditableDotCMSPage } from '@dotcms/react';
+import { pageComponents } from '@/components/content-types';
+
+export function Page({ pageContent }) {
+    // `pageContent` is the full response from client.page.get()
+    const { pageAsset } = useEditableDotCMSPage(pageContent);
+
+    return (
+        <DotCMSLayoutBody
+            page={pageAsset}
+            components={pageComponents}
+            mode={process.env.NEXT_PUBLIC_DOTCMS_MODE}
+        />
+    );
+}
+```
+
+> 💡 Using Angular? Use [`DotCMSEditablePageService`](https://www.npmjs.com/package/@dotcms/angular) together with `DotCMSLayoutBody` — the same fetch → make-editable → render flow applies.
+
+#### 3. Render the layout with `DotCMSLayoutBody`
+
+`DotCMSLayoutBody` renders the page's rows, columns, and containers, and maps each contentlet to one of your components via the `components` prop. When loaded inside UVE it automatically applies the `data-dot-*` attributes that make the page editable — no extra wiring required.
+
+#### Working example
+
+See the page-editing flow end to end in the official Next.js example — [`examples/nextjs`](https://github.com/dotCMS/core/tree/main/examples/nextjs). In particular, [`src/views/Page.tsx`](https://github.com/dotCMS/core/blob/main/examples/nextjs/src/views/Page.tsx) uses `useEditableDotCMSPage` and `DotCMSLayoutBody` exactly as shown above.
 
 ## API Reference
 
@@ -644,13 +783,14 @@ createDotCMSClient(config: DotCMSClientConfig): DotCMSClient
 
 #### Parameters
 
-| Option           | Type              | Required | Description                                                   |
-| ---------------- | ----------------- | -------- | ------------------------------------------------------------- |
-| `dotcmsUrl`      | string            | ✅       | Your dotCMS instance URL                                      |
-| `authToken`      | string            | ✅       | Authentication token                                          |
-| `siteId`         | string            | ❌       | Site identifier (falls back to default site if not specified) |
-| `requestOptions` | DotRequestOptions | ❌       | Additional request options                                    |
-| `httpClient`     | DotHttpClient     | ❌       | Custom HTTP client implementation                             |
+| Option           | Type                       | Required | Description                                                   |
+| ---------------- | -------------------------- | -------- | ------------------------------------------------------------- |
+| `dotcmsUrl`      | string                     | ✅       | Your dotCMS instance URL                                      |
+| `authToken`      | string                     | ✅       | Authentication token                                          |
+| `siteId`         | string                     | ❌       | Site identifier (falls back to default site if not specified) |
+| `requestOptions` | DotRequestOptions          | ❌       | Additional request options                                    |
+| `httpClient`     | DotHttpClient              | ❌       | Custom HTTP client implementation                             |
+| `logLevel`       | `'default'` \| `'verbose'` | ❌       | Controls log verbosity. `'verbose'` adds status, code, and variables to error logs. Defaults to `'default'` |
 
 #### Example
 ```typescript
@@ -658,9 +798,13 @@ const client = createDotCMSClient({
     dotcmsUrl: 'https://your-dotcms-instance.com',
     authToken: 'your-auth-token',
     siteId: 'your-site-id',
-    httpClient: customHttpClient // Optional: provide custom HTTP client
+    httpClient: customHttpClient, // Optional: provide custom HTTP client
+    logLevel: 'verbose'           // Optional: enable detailed error logs
 });
 ```
+
+> [!TIP]
+> Enable `logLevel: 'verbose'` during development to see HTTP status codes, error codes, and request variables in error logs. In verbose mode, error logs also include a hint to access the full GraphQL query via `error.graphql.query`. Keep it at `'default'` (or omit it) in production to avoid noisy logs.
 
 ### HTTP Client Configuration
 
@@ -756,18 +900,53 @@ getCollection<T = DotCMSBasicContentlet>(
 
 #### Builder Methods
 
-| Method       | Arguments                     | Description                              |
-| ------------ | ----------------------------- | ---------------------------------------- |
-| `query()`    | `string` \| `BuildQuery`      | Filter content using query builder       |
-| `limit()`    | `number`                      | Set number of items to return            |
-| `page()`     | `number`                      | Set which page of results to fetch       |
-| `sortBy()`   | `SortBy[]`                    | Sort by one or more fields               |
-| `language()` | `number \| string`            | Set content language                     |
-| `depth()`    | `number`                      | Set depth of related content             |
+| Method                | Arguments                     | Description                                                        |
+| --------------------- | ----------------------------- | ------------------------------------------------------------------ |
+| `query()`             | `string` \| `BuildQuery`      | Filter content using query builder                                 |
+| `limit()`             | `number`                      | Set number of items to return                                      |
+| `page()`              | `number`                      | Set which page of results to fetch                                 |
+| `sortBy()`            | `SortBy[]`                    | Sort by one or more fields                                         |
+| `language()`          | `number \| string`            | Set content language                                               |
+| `depth()`             | `number`                      | Set depth of related content                                       |
+| `includeSystemHost()` | -                             | Include content from the System Host alongside the configured site |
 
 #### Example
 ```typescript
 const blogs = await client.content.getCollection('Blog').limit(10).page(1);
+```
+
+### content.query() Method
+
+```typescript
+query<T = DotCMSBasicContentlet>(
+  rawQuery: string
+): RawQueryBuilder<T>
+```
+
+#### Parameters
+
+| Parameter  | Type     | Required | Description            |
+| ---------- | -------- | -------- | ---------------------- |
+| `rawQuery` | `string` | ✅       | Raw Lucene query string |
+
+#### Builder Methods
+
+| Method       | Arguments          | Description                                                                 |
+| ------------ | ------------------ | --------------------------------------------------------------------------- |
+| `limit()`    | `number`           | Set number of items to return                                               |
+| `page()`     | `number`           | Set which page of results to fetch                                          |
+| `sortBy()`   | `SortBy[]`         | Sort by one or more fields                                                  |
+| `render()`   | -                  | Enable server-side rendering (velocity) for widgets in returned content     |
+| `depth()`    | `number`           | Set depth of related content                                                |
+| `language()` | `number \| string` | Set `languageId` in the request body (does not modify the raw Lucene string) |
+
+#### Example
+
+```typescript
+const response = await client.content
+    .query('+contentType:Blog +title:"Hello World"')
+    .language(1)
+    .limit(10);
 ```
 
 ### ai.search() Method
@@ -1043,12 +1222,13 @@ DotHttpError: "Network request failed"
 
 ### Choosing the Right Method
 
-The dotCMS Client SDK provides four core methods for fetching data. Use this quick guide to decide which one is best for your use case:
+The dotCMS Client SDK provides five core methods for fetching data. Use this quick guide to decide which one is best for your use case:
 
 | Method                           | Use When You Need...                                          | Best For                                                                                                                                                                                         |
 | -------------------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `client.page.get()`              | A full page with layout, containers, and related content      | **Rendering entire pages** with a single request. Ideal for headless setups, SSR/SSG frameworks, and cases where you want everything—page structure, content, and navigation—tied to a URL path. |
-| `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components.                                                                                                               |
+| `client.content.getCollection()` | A filtered list of content items from a specific content type | Populating dynamic blocks, lists, search results, widgets, or reusable components using the fluent query builder.                                                                                |
+| `client.content.query()`         | Full control over a raw Lucene query string                   | Advanced search scenarios where you need direct Lucene syntax without the `getCollection()` query-builder DSL or automatic `contentType.` field prefixing.                                        |
 | `client.ai.search()`             | Semantic/AI-powered content discovery based on natural language | **Intelligent search experiences** where users describe what they're looking for in natural language. Great for search features, content recommendations, and finding relevant content by meaning rather than exact keywords. ⚠️ **Experimental API** |
 | `client.navigation.get()`        | Only the site's navigation structure (folders and links)      | Standalone menus or use cases where navigation is needed outside of page context.                                                                                                                |
 
@@ -1062,7 +1242,7 @@ For most use cases, `client.page.get()` is all you need. It lets you retrieve:
 
 All in a single request using GraphQL.
 
-Only use `content.getCollection()` or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
+Only use `content.getCollection()`, `content.query()`, or `navigation.get()` if you have advanced needs, like real-time data fetching or building custom dynamic components.
 
 > 🔍 **For comprehensive examples of advanced GraphQL querying including relationships and custom fields,** see the [How to Work with GraphQL](#how-to-work-with-graphql) section.
 
@@ -1071,7 +1251,7 @@ Only use `content.getCollection()` or `navigation.get()` if you have advanced ne
 The SDK follows a client-builder pattern with four main APIs:
 
 - **Page API** (`client.page.get()`) - Fetches complete page content with layout and containers
-- **Content API** (`client.content.getCollection()`) - Builder pattern for querying content collections
+- **Content API** (`client.content.getCollection()`, `client.content.query()`) - Builder pattern for querying content collections or raw Lucene queries
 - **AI API** (`client.ai.search()`) - AI-powered semantic search using embeddings and vector similarity ⚠️ **Experimental**
 - **Navigation API** (`client.navigation.get()`) - Fetches site navigation structure
 
@@ -1088,7 +1268,7 @@ We offer multiple channels to get help with the dotCMS Client SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository.
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions.
 -   **Stack Overflow**: Use the tag `dotcms-client` when posting questions.
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/).
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support).
 
 When reporting issues, please include:
 
@@ -1108,6 +1288,14 @@ GitHub pull requests are the preferred method to contribute code to dotCMS. We w
 5. Open a Pull Request
 
 Please ensure your code follows the existing style and includes appropriate tests.
+
+## Licensing
+
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
+
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
+
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).
 
 ## Changelog
 
@@ -1268,11 +1456,3 @@ import { RequestOptions } from '@dotcms/types';
 // After
 import { DotRequestOptions } from '@dotcms/types';
 ```
-
-## Licensing
-
-dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
-
-This SDK is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
-
-[Learn more ](https://www.dotcms.com)at [dotcms.com](https://www.dotcms.com).

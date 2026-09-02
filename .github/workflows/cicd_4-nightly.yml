@@ -10,8 +10,17 @@
 # - Optional NPM package publishing
 # - Deployment to the nightly environment
 # - Final reporting of the workflow status
+#
+# Commit pinning:
+# - Default (both scheduled and manual dispatch): builds from the last commit on main
+#   at or before midnight UTC. This ensures repeatability — manually re-running the
+#   nightly later in the day to investigate a failure produces the same build.
+#   The date tag (nightly_YYYYMMDD) correctly labels the day covered, not the run day.
+# - Manual dispatch with use-latest-commit=true: builds from current HEAD of main,
+#   useful when you want to pick up commits made after midnight.
 
 name: '-4 Nightly Workflow'
+run-name: "Nightly${{ inputs.use-latest-commit && ' (HEAD)' || '' }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
 
 on:
   schedule:
@@ -34,22 +43,114 @@ on:
         description: 'Run all tests'
         type: boolean
         default: true
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open)'
+        type: string
+        required: false
+        default: ''
+      maven-compiler-release:
+        description: 'Override Maven compiler release version (e.g., 21). Preferred over source/target.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Override artifact suffix (e.g., -java25, -java25.0.1, -java25-ms). If not set, derived from java-version major.'
+        type: string
+        required: false
+        default: ''
+      use-latest-commit:
+        description: 'Use current HEAD of main instead of the midnight UTC commit. Set to true when you want to pick up commits made after midnight rather than reproduce the scheduled run.'
+        type: boolean
+        default: false
+      opensearch_phase:
+        description: 'Run the integration suites under ES->OS migration phase(s). none=off/default; 1/2/3 = single phase; 1,2 / 1,3 / 2,3 = subset; all = sweep 1,2,3. Any active value skips deployment (test-only run).'
+        type: choice
+        required: false
+        default: 'none'
+        options:
+          - 'none'
+          - '1'
+          - '2'
+          - '3'
+          - '1,2'
+          - '1,3'
+          - '2,3'
+          - 'all'
 
 jobs:
+  # Setup job - determines the commit to build from.
+  # Default (scheduled and manual): last commit on main at or before midnight UTC for repeatability.
+  # Manual with use-latest-commit=true: current HEAD of main.
+  setup:
+    name: Setup
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      build-ref: ${{ steps.find-commit.outputs.build-ref }}
+      tag-date: ${{ steps.find-commit.outputs.tag-date }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          # Bounded shallow checkout: Find Build Commit walks `git log` on main
+          # back to midnight UTC. The window that matters is commits landing
+          # between midnight and run time (~3h); max observed is ~19 commits/day,
+          # so 1000 commits is ~52 days of volume and can't realistically overrun
+          # the midnight boundary. use-latest-commit only needs HEAD. Avoids the
+          # fetch-depth: 0 full fetch (~2k+ branches, ~1.1 GB pack) when only
+          # main's recent history is consulted.
+          fetch-depth: 1000
+          ref: main
+
+      - name: Find Build Commit
+        id: find-commit
+        run: |
+          if [[ "${{ inputs.use-latest-commit }}" == "true" ]]; then
+            # Explicit override: use current HEAD of main.
+            # Useful when you want to pick up commits made after midnight.
+            BUILD_REF=$(git rev-parse HEAD)
+            TAG_DATE=$(date -u +%Y%m%d)
+            echo "use-latest-commit=true: building from current HEAD of main: ${BUILD_REF}"
+          else
+            # Default for both scheduled and manual dispatch: use the last commit
+            # at or before midnight UTC. This ensures repeatability — manually
+            # re-running later in the day to investigate a failure gives the same build.
+            MIDNIGHT=$(date -u +"%Y-%m-%dT00:00:00")
+            BUILD_REF=$(git log --before="${MIDNIGHT}" --format="%H" -1)
+            if [[ -z "${BUILD_REF}" ]]; then
+              # No commits before today's midnight — use the absolute last commit.
+              # This handles edge cases (e.g., very new repos) without falling back to
+              # current HEAD which might include post-midnight commits.
+              BUILD_REF=$(git log --format="%H" -1)
+              echo "⚠️ No commit found before ${MIDNIGHT}, using last available commit: ${BUILD_REF}"
+            else
+              echo "Building from commit at midnight UTC (${MIDNIGHT}): ${BUILD_REF}"
+            fi
+            # Tag with yesterday's date: the nightly covers the previous calendar day
+            TAG_DATE=$(date -u -d "yesterday" +%Y%m%d)
+          fi
+          echo "build-ref=${BUILD_REF}" >> "$GITHUB_OUTPUT"
+          echo "tag-date=${TAG_DATE}" >> "$GITHUB_OUTPUT"
+
   # Initialize the nightly build process
   initialize:
     name: Initialize
     uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Nightly runs all tests - no change detection needed
     with:
+      change-detection: 'disabled'
       reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
       build-on-missing-artifacts: ${{ inputs.build-on-missing-artifacts || false }}
 
   # Build job - only runs if no artifacts were found during initialization
   build:
     name: Nightly Build
-    needs: [ initialize ]
+    needs: [ setup, initialize ]
     if: needs.initialize.outputs.found_artifacts == 'false'
     uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      ref: ${{ needs.setup.outputs.build-ref }}
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     permissions:
       contents: read
       packages: write
@@ -63,6 +164,13 @@ jobs:
     with:
       run-all-tests: ${{ inputs.run-all-tests || true }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
+      e2e: false
+      # On-demand ES->OS phased run: 'none'/empty (or scheduled) -> off; 1/2/3 -> single phase;
+      # all -> sweep phases 1,2,3 across the integration battery.
+      opensearch_phase: ${{ inputs.opensearch_phase }}
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      maven-compiler-release: ${{ github.event.inputs.maven-compiler-release || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOTCMS_LICENSE: ${{ secrets.DOTCMS_LICENSE }}
     permissions:
@@ -70,27 +178,34 @@ jobs:
       packages: write
 
   # CLI Build job - builds CLI artifacts
+  # Skipped when java-version is overridden due to GraalVM/Quarkus compatibility requirements
   build-cli:
     name: Nightly CLI Build
     needs: [ initialize, test ]
-    if: always() && !failure() && !cancelled()
+    if: always() && !failure() && !cancelled() && !inputs.java-version
     uses: ./.github/workflows/cicd_comp_cli-native-build-phase.yml
     with:
       buildNativeImage: true
       branch: ${{ github.ref }}
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
 
-  # Deployment job - deploys to the nightly environment
+  # Deployment job - deploys to the nightly environment.
+  # Skipped for ANY on-demand ES->OS phased run (single phase, a subset like 1,2, or all):
+  # those are test-only, so we never deploy a build that ran under a non-default migration
+  # phase. Derived from "phase off" so comma-list subsets are covered too.
   deployment:
-    needs: [ initialize,build-cli,test ]
-    if: always() && !failure() && !cancelled()
+    needs: [ setup, initialize,build-cli,test ]
+    if: always() && !failure() && !cancelled() && (inputs.opensearch_phase == '' || inputs.opensearch_phase == 'none' || inputs.opensearch_phase == '0')
     uses: ./.github/workflows/cicd_comp_deployment-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}
       environment: nightly
+      tag-identifier: ${{ needs.setup.outputs.tag-date }}
+      deploy-cli: true
       deploy-dev-image: true
       publish-npm-cli: ${{ ( github.event_name == 'workflow_dispatch' && inputs.publish-npm-cli == true ) || github.event_name == 'schedule' }}
-      reuse-previous-build: ${{ inputs.reuse-previous-build || false }}
+      java-version: ${{ github.event.inputs.java-version || '' }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix || '' }}
     secrets:
       DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
       DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
@@ -104,7 +219,7 @@ jobs:
   finalize:
     name: Finalize
     if: always()
-    needs: [ initialize, build, build-cli, test, deployment ]
+    needs: [ setup, initialize, build, build-cli, test, deployment ]
     uses: ./.github/workflows/cicd_comp_finalize-phase.yml
     with:
       artifact-run-id: ${{ needs.initialize.outputs.artifact-run-id }}

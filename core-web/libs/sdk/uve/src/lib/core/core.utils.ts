@@ -7,11 +7,7 @@ import {
     UVEState
 } from '@dotcms/types';
 
-import {
-    __UVE_EVENT_ERROR_FALLBACK__,
-    __UVE_EVENTS__,
-    ANALYTICS_WINDOWS_ACTIVE_KEY
-} from '../../internal/constants';
+import { __UVE_EVENT_ERROR_FALLBACK__, __UVE_EVENTS__ } from '../../internal/constants';
 
 /**
  * Gets the current state of the Universal Visual Editor (UVE).
@@ -74,6 +70,39 @@ export function getUVEState(): UVEState | undefined {
 }
 
 /**
+ * Detects whether a request's query parameters came through the UVE iframe - for server-only
+ * contexts (e.g. a Next.js Server Component fetching data before any client code runs) where
+ * `getUVEState()` can't be used, since it reads `window.location` and there is no `window` yet.
+ *
+ * UVE always appends `dotCMSHost` to the iframed URL, so its presence is the signal checked here.
+ *
+ * @remarks
+ * This is a heuristic based on a single query parameter, not a security boundary - it can be
+ * forced onto any URL. A forced/spoofed request only ever gets a blank/placeholder response
+ * instead of a real 404 or error page: the actual page content still only ever arrives through a
+ * genuine UVE editor `postMessage`, so nothing sensitive leaks. If a wrong HTTP status in that
+ * forced case matters for your use case (SEO, monitoring), validate the request further
+ * server-side (e.g. the `Sec-Fetch-Dest: iframe` header) before trusting this.
+ *
+ * @param searchParams - The request's query parameters, as a plain object (e.g. a Next.js
+ * Server Component's `searchParams` prop).
+ *
+ * @example
+ * ```ts
+ * export default async function Page({ searchParams }) {
+ *   const sp = await searchParams;
+ *   const insideUVE = isRequestFromUVE(sp);
+ *   // ...decide whether to bail to notFound() or render the page shell
+ * }
+ * ```
+ */
+export function isRequestFromUVE(
+    searchParams: Record<string, string | string[] | undefined>
+): boolean {
+    return Boolean(searchParams['dotCMSHost']);
+}
+
+/**
  * Creates a subscription to a UVE event.
  *
  * @param eventType - The type of event to subscribe to
@@ -112,56 +141,4 @@ export function createUVESubscription<T extends UVEEventType>(
     }
 
     return eventCallback(callback as UVEEventHandler);
-}
-
-/**
- * Checks if DotCMS Analytics is active by verifying the global window flag.
- *
- * This function checks for the presence of the `__dotAnalyticsActive__` flag on the window object,
- * which is set by the `@dotcms/analytics` SDK when Analytics is successfully initialized.
- *
- * This utility can be used in any JavaScript framework (React, Angular, Vue, etc.) to conditionally
- * enable analytics-related features or data attributes.
- *
- * @export
- * @returns {boolean} true if Analytics is initialized and active, false otherwise
- *
- * @example
- * ```ts
- * // React example
- * import { isAnalyticsActive } from '@dotcms/uve/internal';
- *
- * function MyComponent() {
- *   const shouldTrack = isAnalyticsActive();
- *
- *   if (shouldTrack) {
- *     // Add analytics tracking
- *   }
- * }
- * ```
- *
- * @example
- * ```ts
- * // Angular example
- * import { isAnalyticsActive } from '@dotcms/uve/internal';
- *
- * if (isAnalyticsActive()) {
- *   // Apply analytics attributes to elements
- *   element.setAttribute('data-dot-object', 'contentlet');
- * }
- * ```
- *
- * @example
- * ```ts
- * // Vanilla JavaScript / Any framework
- * import { isAnalyticsActive } from '@dotcms/uve/internal';
- *
- * if (isAnalyticsActive()) {
- *   console.log('DotCMS Analytics is active');
- * }
- * ```
- */
-export function isAnalyticsActive(): boolean {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    return typeof window !== 'undefined' && (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] === true;
 }

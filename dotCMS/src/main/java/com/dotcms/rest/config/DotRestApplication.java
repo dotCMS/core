@@ -20,6 +20,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import javax.ws.rs.ApplicationPath;
 import org.glassfish.jersey.media.multipart.MultiPartFeature;
 import org.glassfish.jersey.server.ResourceConfig;
+import org.glassfish.jersey.server.ServerProperties;
 
 /**
  * This class provides the list of all the REST end-points in dotCMS. Every new
@@ -40,6 +41,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 						description = "dotCMS Server",
 						url = "/"),
 		tags = {
+				@Tag(name = "Accessibility Agent", description = "Streaming a11y-fix agent proxy"),
 				@Tag(name = "Accessibility Checker", description = "Web accessibility checking and compliance"),
 				@Tag(name = "Administration", description = "System administration and management tools"),
 				@Tag(name = "AI", description = "AI-powered content generation and analysis endpoints"),
@@ -66,6 +68,7 @@ import org.glassfish.jersey.server.ResourceConfig;
 						url = "https://www.dotcms.com/docs/latest/content-type-api")),
 				@Tag(name = "Content Type Field", description = "Content type field definitions and configuration"),
 				@Tag(name = "Data Integrity", description = "Data integrity checking and conflict resolution"),
+				@Tag(name = "dotAuth", description = "OAuth/OIDC and SAML authentication: per-site configuration (SYSTEM_HOST is the global default) and headless OIDC token exchange"),
 				@Tag(name = "Environment", description = "Publishing environment management and configuration"),
 				@Tag(name = "Experiments", description = "A/B testing and experimentation management"),
 				@Tag(name = "File Assets", description = "File asset management and download operations"),
@@ -142,6 +145,7 @@ public class DotRestApplication extends ResourceConfig {
 				"com.dotcms.contenttype.model.field",
 				"com.dotcms.rendering.js",
 				"com.dotcms.ai.rest",
+				"com.dotcms.auth.dotAuth.rest",
 				"com.dotcms.health",
 				"io.swagger.v3.jaxrs2"));
 
@@ -149,7 +153,8 @@ public class DotRestApplication extends ResourceConfig {
 			packages.add(TelemetryResource.class.getPackageName());
 		}
 
-		register(MultiPartFeature.class)
+		property(ServerProperties.WADL_FEATURE_DISABLE, true)
+		.register(MultiPartFeature.class)
 		.register(JacksonJaxbJsonProvider.class)
 		.registerClasses(customClasses.keySet())
 		.packages(packages.toArray(new String[0])
@@ -174,10 +179,25 @@ public class DotRestApplication extends ResourceConfig {
 			Logger.warn(DotRestApplication.class, "Bypassing activation of Telemetry REST Endpoint from OSGi");
 			return;
 		}
-		if (Boolean.TRUE.equals(customClasses.computeIfAbsent(clazz,c -> true))) {
-			final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
-            reloader.ifPresent(ContainerReloader::reload);
+
+		// Check if class with same name already exists (by name, not Class object identity)
+		// This is necessary because OSGI can reload the same class with a different classloader,
+		// resulting in a different Class<?> object with the same name
+		final boolean alreadyRegistered = customClasses.keySet().stream()
+				.anyMatch(registeredClass -> registeredClass.getName().equals(clazz.getName()));
+
+		if (alreadyRegistered) {
+			Logger.warn(DotRestApplication.class,
+				"REST resource class already registered, skipping: " + clazz.getName());
+			return;
 		}
+
+		// Add the new class and reload
+		customClasses.put(clazz, true);
+		Logger.info(DotRestApplication.class,
+			"Registering new REST resource class: " + clazz.getName());
+		final Optional<ContainerReloader> reloader = CDIUtils.getBean(ContainerReloader.class);
+		reloader.ifPresent(ContainerReloader::reload);
 	}
 
 	/**

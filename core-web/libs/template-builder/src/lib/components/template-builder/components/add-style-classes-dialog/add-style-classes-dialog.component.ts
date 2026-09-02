@@ -23,7 +23,7 @@ const UNIQUE_CLASSES = true;
     selector: 'dotcms-add-style-classes-dialog',
     imports: [AutoCompleteModule, FormsModule, ButtonModule, DotMessagePipe],
     templateUrl: './add-style-classes-dialog.component.html',
-    styleUrls: ['./add-style-classes-dialog.component.scss'],
+    styleUrls: ['./add-style-classes-dialog.component.css'],
     providers: [JsonClassesService],
     changeDetection: ChangeDetectionStrategy.OnPush
 })

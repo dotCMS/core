@@ -2,7 +2,7 @@ package com.dotcms.aspects.interceptors;
 
 import com.dotcms.aspects.DelegateMethodInvocation;
 import com.dotcms.aspects.MethodInterceptor;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.LogTime;
 import com.dotcms.util.LogTimeUtil;
 

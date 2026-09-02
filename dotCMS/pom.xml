@@ -11,6 +11,10 @@
     <packaging>jar</packaging>
     <properties>
         <maven.deploy.skip>false</maven.deploy.skip>
+        <!-- Preload the byte-buddy agent for this module's tests so CacheSizingUtil can use
+             Instrumentation.getObjectSize(). The path is populated by the dependency-plugin
+             'properties' goal (see build/plugins). Consumed by the shared surefire/failsafe argLine. -->
+        <bytebuddy.agent.argline>-javaagent:${net.bytebuddy:byte-buddy-agent:jar}</bytebuddy.agent.argline>
         <servlet.port>8080</servlet.port>
         <palantirJavaFormat.version>2.29.0</palantirJavaFormat.version>
         <src.dir>${project.basedir}/src/main/java</src.dir>
@@ -155,10 +159,6 @@
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.commons-io</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.commons-httpclient</artifactId>
         </dependency>
         <dependency>
@@ -215,10 +215,6 @@
         <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.google</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>com.dotcms.lib</groupId>
-            <artifactId>dot.guava</artifactId>
         </dependency>
         <dependency>
             <groupId>com.dotcms.lib</groupId>
@@ -392,6 +388,22 @@
             <artifactId>dot.txtmark</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-tables</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.commonmark</groupId>
+            <artifactId>commonmark-ext-gfm-strikethrough</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.jsoup</groupId>
+            <artifactId>jsoup</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.dotcms.lib</groupId>
             <artifactId>dot.util-taglib</artifactId>
         </dependency>
@@ -502,6 +514,51 @@
             <!-- Functional programming utilities including Try, Tuple, Option, Either, Collections, etc. -->
             <groupId>io.vavr</groupId>
             <artifactId>vavr</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J OpenAI provider: Chat, Embedding, Image models via OpenAI API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Azure OpenAI provider: Chat, Embedding models via Azure OpenAI Service -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-azure-open-ai</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Amazon Bedrock provider: Chat and Embedding models via AWS Bedrock Runtime -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-bedrock</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J official OpenAI SDK provider: Image model via gpt-image-1 on Azure (Microsoft Foundry) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-open-ai-official</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Anthropic provider: Chat model via the Anthropic Messages API -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-anthropic</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google AI Gemini provider: Chat, Embedding models via Google AI Studio (API key auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-google-ai-gemini</artifactId>
+        </dependency>
+        <dependency>
+            <!-- LangChain4J Google Vertex AI provider: Chat model via Vertex AI Gemini (ADC auth) -->
+            <groupId>dev.langchain4j</groupId>
+            <artifactId>langchain4j-vertex-ai-gemini</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.checkerframework</groupId>
+                    <artifactId>checker-qual</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>com.google.android</groupId>
+                    <artifactId>annotations</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>jakarta.inject</groupId>
@@ -712,6 +769,10 @@
             <artifactId>aws-java-sdk-s3</artifactId>
         </dependency>
         <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>sqs</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.amazonaws</groupId>
             <artifactId>jmespath-java</artifactId>
         </dependency>
@@ -725,6 +786,37 @@
         <dependency>
             <groupId>redis.clients</groupId>
             <artifactId>jedis</artifactId>
+        </dependency>
+
+        <!-- Open search migration -->
+        <dependency>
+            <groupId>org.opensearch.client</groupId>
+            <artifactId>opensearch-java</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.client5</groupId>
+                    <artifactId>httpclient5</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.apache.httpcomponents.core5</groupId>
+                    <artifactId>httpcore5</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.core5</groupId>
+            <artifactId>httpcore5-h2</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>org.apache.httpcomponents.client5</groupId>
+            <artifactId>httpclient5</artifactId>
         </dependency>
 
         <dependency>
@@ -872,6 +964,15 @@
 
         <!-- Image Processing -->
         <dependency>
+            <groupId>com.github.gotson</groupId>
+            <artifactId>webp-imageio</artifactId>
+        </dependency>
+        <!-- libvips bindings (FFM) — alternative image engine; native libvips must be present on host -->
+        <dependency>
+            <groupId>app.photofox.vips-ffm</groupId>
+            <artifactId>vips-ffm-core</artifactId>
+        </dependency>
+        <dependency>
             <groupId>com.twelvemonkeys.imageio</groupId>
             <artifactId>imageio-batik</artifactId>
         </dependency>
@@ -944,10 +1045,6 @@
             <artifactId>imageio-tiff</artifactId>
         </dependency>
         <dependency>
-            <groupId>com.twelvemonkeys.imageio</groupId>
-            <artifactId>imageio-webp</artifactId>
-        </dependency>
-        <dependency>
             <groupId>com.twelvemonkeys.servlet</groupId>
             <artifactId>servlet</artifactId>
         </dependency>
@@ -961,17 +1058,27 @@
 
         <!-- Security -->
         <dependency>
+            <groupId>org.owasp.encoder</groupId>
+            <artifactId>encoder</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt</artifactId>
         </dependency>
 
         <dependency>
+            <groupId>com.nimbusds</groupId>
+            <artifactId>nimbus-jose-jwt</artifactId>
+        </dependency>
+
+        <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcpkix-jdk15on</artifactId>
+            <artifactId>bcpkix-jdk18on</artifactId>
         </dependency>
         <dependency>
             <groupId>org.bouncycastle</groupId>
-            <artifactId>bcprov-jdk15on</artifactId>
+            <artifactId>bcprov-jdk18on</artifactId>
         </dependency>
 
 
@@ -1376,18 +1483,19 @@
 
         <!-- Graalvm Js Engine -->
         <dependency>
-            <groupId>org.graalvm.sdk</groupId>
-            <artifactId>graal-sdk</artifactId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <artifactId>polyglot</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.graalvm.js</groupId>
+            <groupId>org.graalvm.polyglot</groupId>
+            <!-- Select language: js, ruby, python, java, llvm, wasm, languages -->
             <artifactId>js</artifactId>
+            <type>pom</type>
         </dependency>
         <dependency>
             <groupId>org.graalvm.js</groupId>
             <artifactId>js-scriptengine</artifactId>
         </dependency>
-
         <!-- AI -->
         <dependency>
             <groupId>com.knuddels</groupId>
@@ -1524,6 +1632,15 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-dependency-plugin</artifactId>
                 <executions>
+                    <execution>
+                        <!-- Populate ${net.bytebuddy:byte-buddy-agent:jar} so the test argLine can
+                             preload it via -javaagent (see bytebuddy.agent.argline property). -->
+                        <id>resolve-bytebuddy-agent-path</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>properties</goal>
+                        </goals>
+                    </execution>
                     <execution>
                         <id>unpack</id>
                         <phase>prepare-package</phase>
@@ -1867,6 +1984,7 @@
                 <configuration>
                     <imagesMap>
                         <dotcms>
+                            <name>${dotcms.image.name}</name>
                             <build>
                                 <dockerFileDir>${project.basedir}/src/main/docker/original</dockerFileDir>
                                 <buildx>
@@ -1916,6 +2034,40 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
+                <executions>
+                    <!-- First execution: Process annotations to generate immutable classes -->
+                    <execution>
+                        <id>process-annotations</id>
+                        <phase>generate-sources</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Include both main and enterprise sources for annotation processing -->
+                            <compileSourceRoots>
+                                <compileSourceRoot>${basedir}/src/main/java</compileSourceRoot>
+                                <compileSourceRoot>${basedir}/src/enterprise/java</compileSourceRoot>
+                            </compileSourceRoots>
+                            <!-- Only process annotations, don't fail on errors from missing generated classes -->
+                            <proc>only</proc>
+                            <annotationProcessors>
+                                <annotationProcessor>org.immutables.processor.ProxyProcessor</annotationProcessor>
+                            </annotationProcessors>
+                        </configuration>
+                    </execution>
+                    <!-- Second execution: Normal compilation with generated sources available -->
+                    <execution>
+                        <id>default-compile</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <goal>compile</goal>
+                        </goals>
+                        <configuration>
+                            <!-- Disable annotation processing in this phase since it was already done -->
+                            <proc>none</proc>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
@@ -1930,6 +2082,8 @@
                         <configuration>
                             <sources>
                                 <source>${basedir}/src/enterprise/java</source>
+                                <!-- Add generated immutable classes to source path -->
+                                <source>${project.build.directory}/generated-sources/annotations</source>
                             </sources>
                         </configuration>
                     </execution>
@@ -2009,6 +2163,7 @@
                         <package>com.dotcms.rendering.js</package>
                         <package>com.dotcms.ai.rest</package>
                         <package>com.dotcms.health</package>
+                        <package>com.dotcms.auth.dotAuth.rest</package>
                     </resourcePackages>
                 </configuration>
                 <executions>
@@ -2128,7 +2283,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>
@@ -2196,7 +2351,7 @@
                         <groupId>io.fabric8</groupId>
                         <artifactId>docker-maven-plugin</artifactId>
                         <configuration>
-                            <filter>database,opensearch</filter>
+                            <filter>database,opensearch,opensearch-upgrade</filter>
                         </configuration>
                         <executions>
                             <execution>

@@ -4,7 +4,7 @@
             <div class="dot-tab" data-testId="dot-tab-container">
                 <button
                     (click)="onClickOption($event, item.value.id)"
-                    [ngClass]="{
+                    [class]="{
                         'dot-tab--active': activeId === item.value.id,
                         'dot-tab__button--right': item.value.showDropdownButton
                     }"
@@ -24,7 +24,7 @@
                         (click)="onClickDropdown($event, item.value.id)"
                         [disabled]="item.disabled"
                         [attr.aria-disabled]="item.disabled"
-                        [ngClass]="{ 'dot-tab-dropdown--active': activeId === item.value.id }"
+                        [class.dot-tab-dropdown--active]="activeId === item.value.id"
                         class="dot-tab__dropdown"
                         data-testId="dot-tab-button-dropdown">
                         <i

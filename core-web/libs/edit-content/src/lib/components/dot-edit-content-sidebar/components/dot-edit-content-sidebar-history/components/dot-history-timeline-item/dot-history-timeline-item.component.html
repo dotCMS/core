@@ -1,124 +1,100 @@
-<div
-    class="dot-history-timeline-item"
-    [class.dot-history-timeline-item--active]="$isActive()"
-    data-testid="history-item">
-    <!-- Timeline Marker Column -->
-    <div class="dot-history-timeline-item__marker-column">
-        <!-- Top connector line -->
-        <div
-            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--top"></div>
-
-        <!-- Marker -->
-        <div
-            class="dot-history-timeline-item__marker"
-            [class]="$timelineMarkerClass()"
-            data-testid="timeline-marker"></div>
-
-        <!-- Bottom connector line (fills remaining space) -->
-        <div
-            class="dot-history-timeline-item__connector dot-history-timeline-item__connector--bottom"></div>
-    </div>
-
-    <!-- Timeline Item Content Wrapper -->
+<div data-testid="history-item" class="block pb-2">
     <div
-        class="dot-history-timeline-item__content-wrapper"
-        [class.dot-history-timeline-item__content-wrapper--active]="$isActive()"
         data-testid="content-wrapper"
-        [pTooltip]="tooltipContent"
-        tooltipPosition="bottom"
-        [tooltipOptions]="{
-            showDelay: 100,
-            hideDelay: 100,
-            tooltipStyleClass: 'dot-history-timeline-item__tooltip',
-            escape: false,
-            positionStyle: 'absolute',
-            appendTo: 'body'
-        }">
-        <!-- Tooltip Content Template -->
-        <ng-template #tooltipContent>
-            <div class="dot-history-timeline-item__overlay-content">
-                <h4 class="dot-history-timeline-item__overlay-title" data-testid="overlay-title">
-                    {{ $item().title }}
-                </h4>
-                <ul class="dot-history-timeline-item__overlay-list">
-                    <li>
-                        {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
-                    </li>
-                    <li>
-                        {{ $item().languageFlag }}
-                    </li>
-                    @if ($item().experimentVariant) {
-                        <li>
-                            {{ 'edit.content.sidebar.history.variant' | dm }}:
-                            {{ $item().experimentVariant }}
-                        </li>
-                    }
-                </ul>
-            </div>
-        </ng-template>
+        class="group flex cursor-pointer flex-col gap-0.5 rounded-md border px-3 py-1.5 transition-colors"
+        [class.bg-surface-50]="!$isActive()"
+        [class.border-transparent]="!$isActive()"
+        [class.hover:bg-gray-100]="!$isActive()"
+        [class.bg-primary-50]="$isActive()"
+        [class.border-primary-200]="$isActive()">
+        <!-- Row 1: title (left) | chips + 3-dot (right) -->
+        <div class="flex items-center justify-between gap-2">
+            <span
+                data-testid="time-display"
+                class="min-w-0 truncate text-sm leading-tight font-bold text-gray-900">
+                {{ $item().modDate | date: 'MMM d, yyyy - h:mm a' }}
+            </span>
 
-        <!-- Timeline Item Content -->
-        <div class="dot-history-timeline-item__content">
-            <!-- Timeline Item Header -->
-            <div class="dot-history-timeline-item__header">
-                <span class="dot-history-timeline-item__time-relative" data-testid="time-display">
-                    @if ($item().working) {
-                        {{ 'edit.content.sidebar.history.menu.current' | dm }}
-                    } @else {
-                        {{ $item().modDate | dotRelativeDate }}
-                    }
-                </span>
+            <div class="flex shrink-0 items-center gap-2">
+                @if ($isLoadingVersion()) {
+                    <i
+                        class="pi pi-spinner pi-spin text-sm text-primary"
+                        data-testid="version-loading-spinner"
+                        aria-hidden="true"></i>
+                }
+                @if ($item().live) {
+                    <p-tag
+                        severity="success"
+                        [value]="'edit.content.sidebar.history.published' | dm"
+                        data-testid="state-live" />
+                } @else if ($item().working) {
+                    <p-tag
+                        severity="warn"
+                        [value]="'edit.content.sidebar.history.draft' | dm"
+                        data-testid="state-draft" />
+                }
+                @if ($item().experimentVariant) {
+                    <p-tag
+                        severity="info"
+                        [value]="'edit.content.sidebar.history.variant.tag' | dm"
+                        data-testid="state-variant" />
+                }
 
-                <div class="dot-history-timeline-item__time-section">
-                    @if ($item().live) {
-                        <p-chip
-                            styleClass="p-chip-sm p-chip-success"
-                            [label]="'edit.content.sidebar.history.published' | dm"
-                            data-testid="state-live" />
-                    } @else if ($item().working) {
-                        <p-chip
-                            styleClass="p-chip-sm p-chip-warning"
-                            [label]="'edit.content.sidebar.history.draft' | dm"
-                            data-testid="state-draft" />
-                    }
-
-                    @if ($item().experimentVariant) {
-                        <p-chip
-                            styleClass="p-chip-sm p-chip-secondary"
-                            [label]="'edit.content.sidebar.history.variant.tag' | dm"
-                            data-testid="state-variant" />
-                    }
-                </div>
-            </div>
-
-            <!-- User Information Section -->
-            <div class="dot-history-timeline-item__user-section">
-                <p-avatar
-                    dotGravatar
-                    [email]="$item().modUserName"
-                    shape="circle"
-                    styleClass="dot-history-timeline-item__avatar"
-                    data-testid="user-avatar"></p-avatar>
-                <span class="dot-history-timeline-item__user-name" data-testid="history-user">
-                    {{ $item().modUserName }}
-                </span>
+                <!-- 3-dot: outlined + circular, visible only on hover or while menu is open -->
+                @if ($menuItems().length > 0) {
+                    <div
+                        [class]="
+                            'transition-opacity ' +
+                            ($isMenuOpen() ? 'opacity-100' : 'opacity-0 group-hover:opacity-100')
+                        "
+                        (mouseenter)="cancelHideMenu()"
+                        (mouseleave)="scheduleHideMenu()">
+                        <p-button
+                            icon="pi pi-ellipsis-v"
+                            [outlined]="true"
+                            [rounded]="true"
+                            size="small"
+                            (click)="versionMenu.toggle($event); $event.stopPropagation()"
+                            data-testid="version-menu-button" />
+                        <p-menu
+                            #versionMenu
+                            [appendTo]="'body'"
+                            [model]="$menuItems()"
+                            [popup]="true"
+                            (onShow)="onMenuShown()"
+                            (onHide)="onMenuHidden()" />
+                    </div>
+                }
             </div>
         </div>
 
-        <!-- Actions Button - Positioned independently -->
-        @if ($menuItems().length > 0) {
-            <div class="dot-history-timeline-item__actions">
-                <p-button
-                    icon="pi pi-ellipsis-v"
-                    styleClass="p-button-rounded p-button-sm p-button-text dot-history-timeline-item__menu-button p-button-tertiary"
-                    (click)="versionMenu.toggle($event); $event.stopPropagation()"
-                    data-testid="version-menu-button"></p-button>
-                <p-menu
-                    #versionMenu
-                    [appendTo]="'body'"
-                    [model]="$menuItems()"
-                    [popup]="true"></p-menu>
+        <!-- Row 2: avatar + username (left) | inode hover-only (right) -->
+        <div class="flex items-center justify-between gap-2">
+            <div class="flex min-w-0 items-center gap-2">
+                <div
+                    class="size-6 shrink-0 overflow-hidden rounded-full [&_img]:size-full [&_img]:object-cover">
+                    <p-avatar
+                        dotGravatar
+                        [email]="$item().modUserName"
+                        shape="circle"
+                        styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
+                        data-testid="user-avatar" />
+                </div>
+                <span data-testid="history-user" class="min-w-0 truncate text-xs text-gray-700">
+                    {{ $item().modUserName }}
+                </span>
             </div>
-        }
+
+            <div
+                class="shrink-0 opacity-0 transition-opacity group-hover:opacity-100"
+                (click)="$event.stopPropagation()">
+                <dot-copy-button
+                    [copy]="$item().inode"
+                    [label]="$inodeShort()"
+                    [tooltipText]="'edit.content.sidebar.history.copy.inode' | dm"
+                    customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case [&_.p-button-label]:font-mono"
+                    data-testid="copy-inode" />
+            </div>
+        </div>
     </div>
 </div>

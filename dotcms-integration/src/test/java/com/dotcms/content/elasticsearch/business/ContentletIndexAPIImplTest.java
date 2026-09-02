@@ -1,10 +1,27 @@
 package com.dotcms.content.elasticsearch.business;
 
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
+import static org.hamcrest.Matchers.hasSize;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThrows;
+import static org.junit.Assert.assertTrue;
+
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexTag;
+import com.dotcms.content.index.domain.IndexBulkRequest;
 import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.contenttype.business.FieldAPI;
-import com.dotcms.contenttype.model.field.*;
+import com.dotcms.contenttype.model.field.DataTypes;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.FieldBuilder;
+import com.dotcms.contenttype.model.field.ImmutableTextField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.field.WysiwygField;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.ContentTypeBuilder;
@@ -45,36 +62,27 @@ import com.dotmarketing.portlets.structure.factories.StructureFactory;
 import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
+import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
-import com.rainerhahnekamp.sneakythrow.Sneaky;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 import org.apache.commons.lang3.RandomStringUtils;
 import org.awaitility.Awaitility;
 import org.awaitility.core.ConditionTimeoutException;
-import org.elasticsearch.ElasticsearchStatusException;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.action.search.SearchRequest;
-import org.elasticsearch.action.search.SearchResponse;
-import org.elasticsearch.action.support.WriteRequest.RefreshPolicy;
-import org.elasticsearch.client.RequestOptions;
-import org.elasticsearch.common.unit.TimeValue;
-import org.elasticsearch.index.query.QueryBuilders;
-import org.elasticsearch.search.SearchHits;
-import org.elasticsearch.search.builder.SearchSourceBuilder;
 import org.jetbrains.annotations.Nullable;
 import org.junit.BeforeClass;
 import org.junit.Test;
-
-import java.util.*;
-import java.util.concurrent.TimeUnit;
-import java.util.stream.Collectors;
-
-import static com.dotcms.content.elasticsearch.business.ESIndexAPI.INDEX_OPERATIONS_TIMEOUT_IN_MS;
-import static org.hamcrest.Matchers.*;
-import static org.junit.Assert.*;
 
 /**
  * @author Jonathan Gamba Date: 4/18/13
@@ -93,7 +101,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     private static ContentletAPI contentletAPI;
     private static ContentletIndexAPI indexAPI;
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
     private static ContentTypeAPI contentTypeAPI;
 
     private static FieldAPI fieldAPI;
@@ -139,6 +147,35 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
                 "root word... On the other hand, argue, argued, argues, arguing, " +
                 "and argus reduce to the stem ... (illustrating the case where the stem is " +
                 "not itself a word or root) but arguments reduce to the stem .....";
+    }
+
+    /**
+     * True when {@code indices} holds the given logical index name, whatever vendor tag the listing
+     * carries. From Phase 3 the listings return the {@code .os}-tagged physical name while the tests
+     * build logical names, so a plain {@code contains} would miss the very index it just created
+     * (issue #36360).
+     *
+     * @param indices     an index listing, logical or physical
+     * @param logicalName the untagged name to look for
+     * @return whether the listing holds that index
+     */
+    private static boolean containsLogicalIndex(final List<String> indices, final String logicalName) {
+        return indices.stream().map(IndexTag::strip).anyMatch(logicalName::equals);
+    }
+
+    /**
+     * Resolves logical index names to the physical names the current engine actually holds, by
+     * matching them against the live index listing. Needed by the tag-dispatched operations
+     * ({@code optimize}, {@code flushCaches}), which route each name by the vendor tag it carries.
+     *
+     * @param logicalNames the untagged names to resolve
+     * @return the matching physical names, in listing order
+     */
+    private static List<String> physicalNamesOf(final String... logicalNames) {
+        final List<String> wanted = Arrays.asList(logicalNames);
+        return esIndexAPI.getIndices(true, true).stream()
+                .filter(physical -> wanted.contains(IndexTag.strip(physical)))
+                .collect(Collectors.toList());
     }
 
     @Test
@@ -203,8 +240,7 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         generateTestContentlets();
 
-        final List<Contentlet> contentlets = contentletAPI.findAllContent(0, 100)
-                .stream().filter(Objects::nonNull).collect(Collectors.toList());
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 100);
 
         assertNotNull(contentlets);
         assertTrue("The number of contentlet returned is: " + contentlets.size(),
@@ -318,9 +354,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         boolean foundWorking = false;
         boolean foundLive = false;
         for (String index : indices) {
-            if (index.equals(liveIndex)) {
+            // Tolerate the .os tag added to OS-backed indices under migration phases 1/2/3
+            // (in OS-only phase 3 listDotCMSIndices() returns only the .os-tagged names).
+            final String logical = IndexTag.strip(index);
+            if (logical.equals(liveIndex)) {
                 foundLive = true;
-            } else if (index.equals(workingIndex)) {
+            } else if (logical.equals(workingIndex)) {
                 foundWorking = true;
             }
         }
@@ -328,8 +367,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         assertTrue(foundWorking);
         assertTrue(foundLive);
 
-        //Verify we just added two more indices
-        assertEquals((long) oldIndices + 2, newIndices);
+        // Under a dual-write migration phase, createContentIndex fans out to both the ES and OS
+        // stores, so listDotCMSIndices() reports two physical entries per logical index. Assert the
+        // two indices we created are present (checked above) and that the total grew by at least
+        // two, rather than asserting a single-store exact delta of +2.
+        assertTrue("expected at least two new indices, delta was " + (newIndices - oldIndices),
+                newIndices >= oldIndices + 2);
 
         //***************************************************
         //Now lets delete the created indices
@@ -350,9 +393,12 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         foundWorking = false;
         foundLive = false;
         for (String index : indices) {
-            if (index.equals(liveIndex)) {
+            // Tolerate the .os tag added to OS-backed indices under migration phases 1/2/3
+            // (in OS-only phase 3 listDotCMSIndices() returns only the .os-tagged names).
+            final String logical = IndexTag.strip(index);
+            if (logical.equals(liveIndex)) {
                 foundLive = true;
-            } else if (index.equals(workingIndex)) {
+            } else if (logical.equals(workingIndex)) {
                 foundWorking = true;
             }
         }
@@ -400,9 +446,10 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Get the current indices
         String liveActiveIndex = indexAPI.getActiveIndexName(IndexType.LIVE.getPrefix());
 
-        //Validate
+        //Validate — compare logical identity: from Phase 3 the active pointer is reported with the
+        //.os vendor tag, which is the intended display contract, not a different index.
         assertNotNull(liveActiveIndex);
-        assertEquals(liveActiveIndex, liveIndex);
+        assertEquals(liveIndex, IndexTag.strip(liveActiveIndex));
 
         //***************************************************
         //Now lets deactivate the indices
@@ -411,9 +458,110 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Deactivate this live index
         indexAPI.deactivateIndex(liveIndex);
 
-        // restore old active index
-        indexAPI.activateIndex(oldActiveWorking);
-        indexAPI.activateIndex(oldActiveLive);
+        // restore old active index — skip when the environment had none, since activateIndex now
+        // rejects a name that maps to no content slot instead of silently doing nothing.
+        if (UtilMethods.isSet(oldActiveWorking)) {
+            indexAPI.activateIndex(oldActiveWorking);
+        }
+        if (UtilMethods.isSet(oldActiveLive)) {
+            indexAPI.activateIndex(oldActiveLive);
+        }
+    }
+
+    /**
+     * Guard for issue #35640 (TC-018): {@link ContentletIndexAPI#delete(String)} must refuse
+     * to delete the currently active index (the maintenance UI hides Delete for active indices,
+     * but a direct REST/AJAX call previously bypassed that and could wipe the only index). The
+     * refusal is enforced via a {@link DotStateException} and can be overridden with the
+     * {@code ALLOW_ACTIVE_INDEX_DELETE} config property.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_activeIndex_isRejected_unlessFeatureFlagOverrides() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        try {
+            // The active index is reported by getCurrentIndex(): delete must be rejected and
+            // the index must survive.
+            assertThrows(DotStateException.class, () -> indexAPI.delete(workingIndex));
+            assertTrue("Active index must survive a rejected delete",
+                    containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
+
+            // Feature-flag bypass: the same delete now goes through.
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+            try {
+                assertTrue(indexAPI.delete(workingIndex));
+                assertFalse(containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
+            } finally {
+                Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+            }
+        } finally {
+            // Restore the prior active working pointer (best effort).
+            try {
+                if (UtilMethods.isSet(oldActiveWorking)) {
+                    indexAPI.activateIndex(oldActiveWorking);
+                }
+            } catch (final Exception e) {
+                Logger.warn(this, "Unable to restore active working index after test", e);
+            }
+        }
+    }
+
+    /**
+     * Issue #35640: deleting an index must also remove its pointer row from the {@code indicies}
+     * DB table, so no row is left dangling at a deleted index. Uses the feature-flag bypass to
+     * delete an active index (whose pointer exists in the store) and asserts the pointer is gone.
+     *
+     * @see ContentletIndexAPIImpl#delete(String)
+     */
+    @Test
+    public void delete_clearsDbPointer() throws Exception {
+
+        final String timeStamp = String.valueOf(new Date().getTime());
+        final String workingIndex = IndexType.WORKING.getPrefix() + "_" + timeStamp;
+
+        final String oldActiveWorking = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+
+        assertTrue(indexAPI.createContentIndex(workingIndex));
+        indexAPI.activateIndex(workingIndex);
+
+        // Sanity: the working pointer now references the new index. Read it through the phase-aware
+        // getter — loadIndicies() only ever returns the legacy (non-versioned) rows, so from Phase 3
+        // the pointer it reports is empty even though activateIndex did write the active store.
+        final String pointerBefore = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+        assertTrue("Pre: working pointer must reference the new index",
+                pointerBefore != null && IndexTag.strip(pointerBefore).endsWith(workingIndex));
+
+        // Delete it, bypassing the active-index guard — the DB pointer must be cleared too.
+        Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, true);
+        try {
+            assertTrue(indexAPI.delete(workingIndex));
+        } finally {
+            Config.setProperty(ContentletIndexAPIImpl.ALLOW_ACTIVE_INDEX_DELETE, false);
+        }
+
+        final String pointerAfter = indexAPI.getActiveIndexName(IndexType.WORKING.getPrefix());
+        assertTrue("Working pointer must no longer reference the deleted index",
+                pointerAfter == null || !IndexTag.strip(pointerAfter).endsWith(workingIndex));
+        assertFalse("Deleted index must be gone from the cluster",
+                containsLogicalIndex(indexAPI.listDotCMSIndices(), workingIndex));
+
+        // Restore the prior active working pointer (best effort).
+        try {
+            if (UtilMethods.isSet(oldActiveWorking)) {
+                indexAPI.activateIndex(oldActiveWorking);
+            }
+        } catch (final Exception e) {
+            Logger.warn(this, "Unable to restore active working index after test", e);
+        }
     }
 
     /**
@@ -464,10 +612,20 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
         //Validate
         assertTrue(result);
 
-        //Test the optimize method
-        List<String> indices = new ArrayList<>();
-        indices.add(workingIndex);
-        indices.add(liveIndex);
+        //Test the optimize method. optimize() dispatches by the vendor tag each name carries, the way
+        //production callers do (they feed it names straight from getIndices()), so hand it the physical
+        //names the engine actually holds — a logical name would be routed to Elasticsearch even in the
+        //phases where the index only exists in OpenSearch.
+        final List<String> indices = physicalNamesOf(workingIndex, liveIndex);
+        //Both names must have resolved before optimize() is asked anything: it returns true on an
+        //empty list, so an unresolved name would leave assertTrue(optimized) green without a single
+        //index having been force-merged. Asserted by logical identity rather than by count, since
+        //the dual-write phases list each index under both an ES and an OS physical name.
+        assertTrue("optimize must be handed the physical name of " + workingIndex + ", resolved: "
+                + indices, containsLogicalIndex(indices, workingIndex));
+        assertTrue("optimize must be handed the physical name of " + liveIndex + ", resolved: "
+                + indices, containsLogicalIndex(indices, liveIndex));
+
         boolean optimized = indexAPI.optimize(indices);
         //Validate
         assertTrue(optimized);
@@ -1059,11 +1217,13 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             Logger.warn(this, "Requested Inode is not indexed because Inode is not set");
         }
         try {
+            // Vendor-neutral, phase-aware read: SiteSearchAPI.search routes to ES or OS per the
+            // active migration phase, replacing the former ES-direct RestHighLevelClient search so
+            // this test works under any phase.
             Awaitility.await().atMost(10, TimeUnit.SECONDS)
-                    .until(() ->
-                                    Objects.requireNonNull(
-                                                    indexSearch(indexName, String.format(ID_QUERY, id)))
-                                            .getTotalHits().value,
+                    .until(() -> APILocator.getSiteSearchAPI()
+                                    .search(indexName, String.format(ID_QUERY, id), 0, 10)
+                                    .getTotalResults(),
                             greaterThan(0L)
                     );
             return true;
@@ -1071,33 +1231,6 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
             Logger.error(this.getClass(), e.getMessage(), e);
             return false;
         }
-    }
-
-    private SearchHits indexSearch(String indexName, String query) throws Exception {
-
-        String qq = ESContentFactoryImpl.translateQuery(query,
-                ContentletIndexAPIImplTest.MOD_DATA_SORT).getQuery();
-
-        if (indexName == null) {
-            indexName = SiteSearchAPI.ES_SITE_SEARCH_NAME + "_"
-                    + ContentletIndexAPIImpl.timestampFormatter.format(new Date());
-            APILocator.getSiteSearchAPI().createSiteSearchIndex(indexName, null, 1);
-            APILocator.getSiteSearchAPI().activateIndex(indexName);
-        }
-
-        SearchSourceBuilder searchSourceBuilder = new SearchSourceBuilder();
-        searchSourceBuilder.query(QueryBuilders.queryStringQuery(qq));
-        searchSourceBuilder.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-        searchSourceBuilder.fetchSource(new String[]{"inode"}, null);
-        searchSourceBuilder.storedField("id");
-        SearchRequest searchRequest = new SearchRequest();
-        searchRequest.indices(esIndexAPI.getNameWithClusterIDPrefix(indexName));
-        searchRequest.source(searchSourceBuilder);
-
-        final SearchResponse response = Sneaky.sneak(() ->
-                RestHighLevelClientProvider
-                        .getInstance().getClient().search(searchRequest, RequestOptions.DEFAULT));
-        return response.getHits();
     }
 
     @Nullable
@@ -1207,8 +1340,8 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
 
         Map<String, ReindexEntry> entries = APILocator.getReindexQueueAPI().findContentToReindex();
 
-        final BulkRequest bulk = indexAPI.createBulkRequest();
-        bulk.setRefreshPolicy(RefreshPolicy.IMMEDIATE);
+        final IndexBulkRequest bulk = indexAPI.createBulkRequest();
+        indexAPI.setRefreshPolicy(bulk, IndexBulkRequest.RefreshPolicy.IMMEDIATE);
         indexAPI.appendBulkRequest(bulk, entries.values());
         indexAPI.putToIndex(bulk);
 
@@ -1240,10 +1373,14 @@ public class ContentletIndexAPIImplTest extends IntegrationTestBase {
     /**
      * Method to test: {@link ContentletIndexAPI#getIndexDocumentCount(String)} Test Case: Tries to
      * get the document count of an index that does not exist Expected Results: Throws
-     * ElasticsearchStatusException
+     * a runtime exception, without coupling to a vendor-specific type.
      */
-    @Test(expected = ElasticsearchStatusException.class)
+    @Test
     public void testGetIndexDocumentCountWithInvalidIndexNameFails() {
-        indexAPI.getIndexDocumentCount("invalidIndexName");
+        // Vendor/phase-neutral: an invalid index name must fail. The concrete type differs by
+        // backend (ES throws ElasticsearchStatusException, the OS read path wraps as
+        // DotRuntimeException), so assert the common RuntimeException rather than a vendor type.
+        assertThrows(RuntimeException.class,
+                () -> indexAPI.getIndexDocumentCount("invalidIndexName"));
     }
 }

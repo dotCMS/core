@@ -2,7 +2,6 @@ package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIGenerateImageActionletTest;
 import com.dotcms.analytics.track.RequestMatcherTest;
-import com.dotcms.content.elasticsearch.business.ESContentletAPIImplTest;
 import com.dotcms.contenttype.business.SiteAndFolderResolverImplTest;
 import com.dotcms.enterprise.publishing.remote.PushPublishBundleGeneratorTest;
 import com.dotcms.enterprise.publishing.remote.bundler.DependencyBundlerTest;
@@ -10,6 +9,7 @@ import com.dotcms.enterprise.publishing.remote.bundler.RuleBundlerTest;
 import com.dotcms.enterprise.publishing.staticpublishing.StaticPublisherIntegrationTest;
 import com.dotcms.enterprise.rules.RulesAPIImplIntegrationTest;
 import com.dotcms.experiments.business.ExperimentAPIImpIntegrationTest;
+import com.dotcms.rest.api.v1.experiments.ExperimentsResourceIntegrationTest;
 import com.dotcms.experiments.business.ExperimentUrlPatternCalculatorIntegrationTest;
 import com.dotcms.experiments.business.web.ExperimentWebAPIImplIntegrationTest;
 import com.dotcms.graphql.DotGraphQLHttpServletTest;
@@ -43,10 +43,20 @@ import org.junit.runners.Suite.SuiteClasses;
 
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Data-scanning tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so anything
+        // that walks the whole dataset (executeUpgrade, findAll*) costs
+        // O(all content created so far). Scheduled late these pay for every
+        // preceding test's leftovers. Keep new full-scan tests in this block.
+        Task240306MigrateLegacyLanguageVariablesTest.class,
+        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
+        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
+
         StartEndScheduledExperimentsJobTest.class,
         RulesAPIImplIntegrationTest.class,
-        ESContentletAPIImplTest.class,
         ExperimentAPIImpIntegrationTest.class,
+        ExperimentsResourceIntegrationTest.class,
         ExperimentWebAPIImplIntegrationTest.class,
         ContentletWebAPIImplIntegrationTest.class, // moved to top because of failures on GHA
         DependencyBundlerTest.class, // moved to top because of failures on GHA
@@ -59,7 +69,6 @@ import org.junit.runners.Suite.SuiteClasses;
         PushPublishBundleGeneratorTest.class,
         LegacyShortyIdApiTest.class,
         RuleBundlerTest.class,
-        com.dotcms.content.elasticsearch.business.ESMappingAPITest.class,
         org.apache.velocity.runtime.parser.node.SimpleNodeTest.class,
         com.liferay.portal.ejb.UserLocalManagerTest.class,
         com.liferay.portal.ejb.UserUtilTest.class,
@@ -86,18 +95,19 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotcms.auth.providers.jwt.services.JsonWebTokenServiceIntegrationTest.class,
         DependencyModDateUtilTest.class,
         com.dotcms.publisher.business.PublisherTest.class,
+        com.dotcms.enterprise.publishing.PublishDateUpdaterIntegrationTest.class,
         com.dotcms.publisher.endpoint.bean.PublishingEndPointTest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointAPITest.class,
         com.dotcms.publisher.endpoint.business.PublishingEndPointFactoryImplTest.class,
         com.dotcms.publisher.assets.business.PushedAssetsAPITest.class,
         com.dotcms.notification.business.NotificationAPITest.class,
         com.dotcms.business.LocalTransactionAndCloseDBIfOpenedFactoryTest.class,
+        com.dotcms.business.bytebuddy.ByteBuddyAdviceWeavingTest.class,
         FolderIntegrityCheckerTest.class,
         HostFactoryImplTest.class,
         BundleFactoryImplTest.class,
         ExperimentUrlPatternCalculatorIntegrationTest.class,
         JsEngineTest.class,
-        Task240306MigrateLegacyLanguageVariablesTest.class,
         EmailActionletTest.class,
         OpenAIGenerateImageActionletTest.class,
         RequestMatcherTest.class,
@@ -109,8 +119,6 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.rules.conditionlet.VisitorOperatingSystemConditionletTest.class,
         com.dotmarketing.portlets.rules.conditionlet.VisitedUrlConditionletTest.class,
         com.dotmarketing.portlets.rules.business.RulesCacheFTest.class,
-        com.dotmarketing.portlets.templates.business.TemplateAPITest.class,
-        com.dotmarketing.portlets.containers.business.ContainerAPIImplTest.class,
         com.dotmarketing.portlets.folders.business.FolderAPITest.class,
         com.dotmarketing.portlets.containers.business.ContainerAPITest.class,
         com.dotmarketing.portlets.containers.business.FileAssetContainerUtilTest.class,

@@ -52,7 +52,8 @@ export class DotRouterService {
     get currentPortlet(): PortletNav {
         return {
             url: this.router.routerState.snapshot.url,
-            id: this.getPortletId(this.router.routerState.snapshot.url)
+            id: this.getPortletId(this.router.routerState.snapshot.url),
+            parentMenuId: this.route.snapshot.queryParams['mId']
         };
     }
 
@@ -73,7 +74,7 @@ export class DotRouterService {
     }
 
     get queryParams(): Params {
-        const nav = this.router.currentNavigation();
+        const nav = this.router.getCurrentNavigation();
 
         return nav ? nav.finalUrl.queryParams : this.route.snapshot.queryParams;
     }
@@ -317,7 +318,7 @@ export class DotRouterService {
      * @returns boolean
      * @memberof DotRouterService
      */
-    isJSPPortletURL(url): boolean {
+    isJSPPortletURL(url: string): boolean {
         return url.startsWith('/c/');
     }
 
@@ -328,7 +329,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isEditPage(): boolean {
-        return this.currentPortlet.id === 'edit-page';
+        return this.currentPortlet.id === 'site-browser';
     }
 
     /**
@@ -339,11 +340,7 @@ export class DotRouterService {
      * @return {*}  {Promise<boolean>}
      * @memberof DotRouterService
      */
-    gotoPortlet(
-        link: string,
-        navigateToPorletOptions?: DotNavigateToOptions,
-        parentMenuId?: string
-    ): Promise<boolean> {
+    gotoPortlet(link: string, navigateToPorletOptions?: DotNavigateToOptions): Promise<boolean> {
         const {
             replaceUrl = false,
             queryParamsHandling = '',
@@ -352,7 +349,7 @@ export class DotRouterService {
 
         const url = this.router.createUrlTree([link], {
             queryParamsHandling,
-            queryParams: { ...queryParams, ...(parentMenuId ? { mId: parentMenuId } : {}) }
+            queryParams
         });
 
         return this.router.navigateByUrl(url, { replaceUrl });
@@ -364,6 +361,7 @@ export class DotRouterService {
 
     getPortletId(url: string): string {
         url = decodeURIComponent(url);
+
         if (url.indexOf('?') > 0) {
             url = url.substring(0, url.indexOf('?'));
         }
@@ -372,7 +370,13 @@ export class DotRouterService {
             .split('/')
             .filter((item) => item !== '' && item !== '#' && item !== 'c');
 
-        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : urlSegments[0];
+        const key = urlSegments[0];
+
+        if (key && PORTLET_ID_RESOLVERS[key]) {
+            return PORTLET_ID_RESOLVERS[key](urlSegments);
+        }
+
+        return urlSegments.indexOf('add') > -1 ? urlSegments.splice(-1)[0] : key || '';
     }
 
     isPublicPage(): boolean {
@@ -386,7 +390,7 @@ export class DotRouterService {
      * @memberof DotRouterService
      */
     isCurrentPortletCustom(): boolean {
-        return this.isCustomPortlet(this.currentPortlet.id);
+        return this.isCustomPortlet(this.currentPortlet.id || '');
     }
 
     /**
@@ -460,3 +464,21 @@ export class DotRouterService {
         return navExtras;
     }
 }
+
+const PORTLET_ID_RESOLVERS: Record<string, (urlSegments: string[]) => string> = {
+    analytics: (urlSegments: string[]) => {
+        // Handle edge case: /analytics without second segment should return 'analytics'
+        if (!urlSegments[1]) {
+            return urlSegments[0] || '';
+        }
+
+        return `${urlSegments[0]}-${urlSegments[1]}`;
+    },
+    'edit-page': () => {
+        return 'site-browser';
+    },
+    // URL is kebab-case; backend portlet-name stays snake_case for DB compat (#35809).
+    'velocity-playground': () => {
+        return 'velocity_playground';
+    }
+};

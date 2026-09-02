@@ -1,4 +1,13 @@
-import { Component, ElementRef, input, output, viewChild, inject } from '@angular/core';
+import {
+    Component,
+    ElementRef,
+    effect,
+    input,
+    output,
+    viewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     AbstractControl,
     FormsModule,
@@ -10,19 +19,20 @@ import {
 } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule } from 'primeng/toggleswitch';
 
 import { DotMessagePipe } from '../../../dot-message/dot-message.pipe';
 import { DotKeyValue } from '../dot-key-value-ng.component';
 
 @Component({
     selector: 'dot-key-value-table-header-row',
-    styleUrls: ['./dot-key-value-table-header-row.component.scss'],
     templateUrl: './dot-key-value-table-header-row.component.html',
+    host: { class: 'contents' },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
-        InputSwitchModule,
+        ToggleSwitchModule,
         InputTextModule,
         FormsModule,
         ReactiveFormsModule,
@@ -60,6 +70,13 @@ export class DotKeyValueTableHeaderRowComponent {
         value: ['', Validators.required],
         hidden: [false]
     });
+
+    constructor() {
+        effect(() => {
+            this.$forbiddenkeys();
+            this.keyControl.updateValueAndValidity({ emitEvent: false });
+        });
+    }
 
     /** Gets the key form control */
     get keyControl() {

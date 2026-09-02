@@ -2,10 +2,12 @@ import { useState, useEffect } from 'react';
 
 import {
     DotCMSComposedPageResponse,
+    DotCMSPageResponse,
     UVEEventType,
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@dotcms/uve';
+import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
 
 /**
  * Custom hook to manage the editable state of a DotCMS page.
@@ -90,29 +92,41 @@ import { getUVEState, initUVE, createUVESubscription, updateNavigation } from '@
  *   </div>
  * );
  * ```
- * @param {DotCMSPageResponse} pageResponse - The initial editable page data from client.page.get().
+ * @param {DotCMSPageResponse | Pick<DotCMSPageResponse, 'graphql'>} [pageResponse] - The page data
+ * from client.page.get(). If that call threw (draft/non-live page, permissions), pass
+ * `{ graphql: error.graphql }` instead — `DotErrorPage` always carries the GraphQL query it
+ * attempted, even on failure. Forwarding it here lets the editor retry the fetch with edit-mode
+ * permissions and deliver the real content via `postMessage`; pass `undefined` and there's nothing
+ * for the editor to retry.
  *
  * @returns {DotCMSPageResponse} The updated editable page state that reflects any changes made in the UVE.
  * The structure includes page data and any GraphQL content that was requested.
  */
 export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
-    pageResponse: DotCMSComposedPageResponse<T>
-): DotCMSComposedPageResponse<T> => {
-    const [updatedPageResponse, setUpdatedPageResponse] =
-        useState<DotCMSComposedPageResponse<T>>(pageResponse);
+    pageResponse: DotCMSComposedPageResponse<T> | Pick<DotCMSPageResponse, 'graphql'> | undefined
+): DotCMSComposedPageResponse<T> | undefined => {
+    const pageData = pageResponse && 'pageAsset' in pageResponse ? pageResponse : undefined;
+
+    const [updatedPageResponse, setUpdatedPageResponse] = useState<
+        DotCMSComposedPageResponse<T> | undefined
+    >(pageData);
 
     useEffect(() => {
         if (!getUVEState()) {
+            // Outside UVE, state only ever comes from props - keep it in sync with
+            // whatever pageResponse the parent re-renders with (e.g. after a client-side
+            // navigation refetches page data), since the initial useState value above is
+            // otherwise frozen after the first render.
+            setUpdatedPageResponse(pageData);
+
             return;
         }
 
-        if (!pageResponse) {
-            console.warn('[useEditableDotCMSPage]: No DotCMSPageResponse provided');
-
-            return;
-        }
-
-        const pageURI = pageResponse?.pageAsset?.page?.pageURI;
+        // Inside UVE, pageResponse can be undefined, or just `{ graphql }` (e.g. a draft/non-live
+        // page the customer's own fetch treated as a 404, but still knows the GraphQL query it
+        // attempted) - forward it to initUVE either way so the editor has something to retry with
+        // edit-mode permissions. Without a query to retry, CONTENT_CHANGES never arrives.
+        const pageURI = pageData?.pageAsset?.page?.pageURI;
 
         const { destroyUVESubscriptions } = initUVE(pageResponse);
 
@@ -123,10 +137,14 @@ export const useEditableDotCMSPage = <T extends DotCMSExtendedPageResponse>(
             updateNavigation(pageURI);
         }
 
+        if (pageData?.styleEditorSchemas?.length) {
+            registerStyleEditorSchemas(pageData.styleEditorSchemas);
+        }
+
         return () => {
             destroyUVESubscriptions();
         };
-    }, [pageResponse]);
+    }, [pageResponse, pageData]);
 
     useEffect(() => {
         const { unsubscribe } = createUVESubscription(

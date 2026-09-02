@@ -1,27 +1,31 @@
-import {
-    DotDeviceListItem,
-    DotExperiment,
-    DotLanguage,
-    SeoMetaTags,
-    SeoMetaTagsResult
-} from '@dotcms/dotcms-models';
+import { DotDeviceListItem, SeoMetaTags, SeoMetaTagsResult } from '@dotcms/dotcms-models';
 import { DotCMSViewAsPersona } from '@dotcms/types';
+import { StyleEditorFormSchema } from '@dotcms/types/internal';
 
 import {
     Container,
     ContentletArea,
     EmaDragItem
 } from '../../../edit-ema-editor/components/ema-page-dropzone/types';
-import { EDITOR_STATE, PALETTE_CLASSES } from '../../../shared/enums';
-import { Orientation } from '../../models';
+import { EDITOR_STATE } from '../../../shared/enums';
+import { ActionPayload } from '../../../shared/models';
+import { Orientation, PageType } from '../../models';
 
 export interface EditorState {
     bounds: Container[];
     state: EDITOR_STATE;
-    contentletArea?: ContentletArea;
+    styleSchemas: StyleEditorFormSchema[];
     dragItem?: EmaDragItem;
     ogTags?: SeoMetaTags;
-    paletteOpen: boolean;
+    activeContentlet?: ActionPayload;
+    contentArea?: ContentletArea;
+    palette: {
+        open: boolean;
+        // currentTab is now managed as local state via signalState in DotUvePaletteComponent
+    };
+    rightSidebar: {
+        open: boolean;
+    };
 }
 
 export interface EditorToolbarState {
@@ -48,73 +52,26 @@ export interface PageData {
 }
 
 export interface ReloadEditorContent {
-    isTraditionalPage: boolean;
-}
-
-export interface EditorProps {
-    seoResults?: {
-        ogTags: SeoMetaTags;
-        socialMedia: string;
-    };
-    iframe: {
-        wrapper?: {
-            width: string;
-            height: string;
-        };
-        pointerEvents: string;
-        opacity: string;
-    };
-
-    contentletTools?: {
-        contentletArea: ContentletArea;
-        hide: boolean;
-        isEnterprise: boolean;
-        disableDeleteButton?: string;
-    };
-    dropzone?: {
-        bounds: Container[];
-        dragItem: EmaDragItem;
-    };
-    palette?: {
-        languageId: number;
-        paletteClass: PALETTE_CLASSES;
-        pagePath: string;
-        variantId?: string;
-    };
-    showDialogs: boolean;
-    progressBar: boolean;
-    showBlockEditorSidebar: boolean;
-}
-
-/**
- * This is used for model the props of
- * the New UVE Toolbar with Preview Mode and Future Time Machine
- *
- * @export
- * @interface UVEToolbarProps
- */
-export interface UVEToolbarProps {
-    editor: {
-        bookmarksUrl: string;
-        apiUrl: string;
-    };
-    preview?: {
-        deviceSelector: {
-            apiLink: string;
-            hideSocialMedia: boolean;
-        };
-    };
-    runningExperiment?: DotExperiment;
-    currentLanguage: DotLanguage;
-    workflowActionsInode?: string;
-    unlockButton?: {
-        inode: string;
-        loading: boolean;
-    };
-    showInfoDisplay?: boolean;
+    code: string | undefined;
+    pageType: PageType;
+    enableInlineEdit: boolean;
+    /**
+     * Reference to the page-asset response. Used as part of the equal
+     * comparator so the effect fires when contentlets are edited /
+     * removed / dragged (the asset reference changes via setPageAsset)
+     * but not on unrelated signal cycles where every field is identical.
+     */
+    pageAssetRef: unknown;
 }
 
 export interface PersonaSelectorProps {
     pageId: string;
     value: DotCMSViewAsPersona;
+}
+
+export enum UVE_PALETTE_TABS {
+    CONTENT_TYPES = 0,
+    WIDGETS = 1,
+    FAVORITES = 2,
+    LAYERS = 3
 }

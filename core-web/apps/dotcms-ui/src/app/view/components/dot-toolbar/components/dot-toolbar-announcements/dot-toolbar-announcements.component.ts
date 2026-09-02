@@ -1,19 +1,26 @@
 import { DatePipe, LowerCasePipe } from '@angular/common';
-import { Component, OnInit, inject, signal, viewChild } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    inject,
+    signal,
+    viewChild,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { SiteService } from '@dotcms/dotcms-js';
 import { DotMessagePipe } from '@dotcms/ui';
 
-import { TypesIcons, AnnouncementsStore, AnnouncementLink } from './store/dot-announcements.store';
+import { AnnouncementLink, AnnouncementsStore, TypesIcons } from './store/dot-announcements.store';
 
 import { DotToolbarBtnOverlayComponent } from '../dot-toolbar-overlay/dot-toolbar-btn-overlay.component';
 
 @Component({
     selector: 'dot-toolbar-announcements',
     templateUrl: './dot-toolbar-announcements.component.html',
-    styleUrls: ['./dot-toolbar-announcements.component.scss'],
     imports: [DotMessagePipe, LowerCasePipe, DatePipe, DotToolbarBtnOverlayComponent],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [AnnouncementsStore]
 })
 export class DotToolbarAnnouncementsComponent implements OnInit {

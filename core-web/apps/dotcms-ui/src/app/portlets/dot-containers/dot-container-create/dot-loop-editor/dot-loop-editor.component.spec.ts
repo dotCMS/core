@@ -125,9 +125,9 @@ describe('DotLoopEditorComponent', () => {
         fixture.detectChanges();
         de = fixture.debugElement.query(By.css('dot-loop-editor'));
         const showEditorBtn = de.query(By.css('[data-testId="showEditorBtn"]'));
-        jest.spyOn(de.componentInstance.buttonClick, 'emit');
-        showEditorBtn.triggerEventHandler('click');
         expect(showEditorBtn).toBeDefined();
+        jest.spyOn(de.componentInstance.buttonClick, 'emit');
+        showEditorBtn.triggerEventHandler('onClick', {});
         expect(de.componentInstance.buttonClick.emit).toHaveBeenCalled();
     });
 });

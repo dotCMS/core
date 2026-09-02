@@ -1,18 +1,44 @@
+import { Observable } from 'rxjs';
+
 import { NgZone } from '@angular/core';
 import { FormGroup } from '@angular/forms';
+
+import { DialogService } from 'primeng/dynamicdialog';
+
+import { DotSite } from '@dotcms/dotcms-models';
 
 import { AngularFormBridge } from '../bridges/angular-form-bridge';
 import { DojoFormBridge } from '../bridges/dojo-form-bridge';
 import { FormBridge } from '../interfaces/form-bridge.interface';
 
 /**
- * Configuration interface for Angular form bridge implementation
+ * Configuration interface for Angular form bridge implementation.
  * @interface
  */
 interface AngularConfig {
     type: 'angular';
     form: FormGroup;
     zone: NgZone;
+    dialogService: DialogService;
+    /**
+     * Optional callback invoked when a field's visibility changes via show()/hide().
+     * Used to propagate visibility state back to the Angular store.
+     *
+     * @param fieldVariable - The variable name of the field whose visibility changed.
+     * @param visible - `true` if the field should be shown, `false` if hidden.
+     */
+    onFieldVisibilityChange?: (fieldVariable: string, visible: boolean) => void;
+    /**
+     * How `openBrowserModal` finds the site to browse.
+     *
+     * The asset picker cannot browse without one, and the bridge is a plain class with no injector
+     * of its own — so the host resolves it. A function, not a `DotSite`, because the user can switch
+     * site between two opens.
+     *
+     * Omit it and `openBrowserModal` opens nothing and resolves `null`, which is the honest outcome
+     * for a host that cannot browse.
+     */
+    resolveSite?: () => Observable<DotSite | null>;
 }
 
 /**
@@ -36,8 +62,31 @@ type BridgeConfig = AngularConfig | DojoConfig;
  */
 export function createFormBridge(config: BridgeConfig): FormBridge {
     if (config.type === 'angular') {
-        return AngularFormBridge.getInstance(config.form, config.zone);
+        return AngularFormBridge.getInstance(
+            config.form,
+            config.zone,
+            config.dialogService,
+            config.onFieldVisibilityChange,
+            config.resolveSite
+        );
     }
 
     return new DojoFormBridge();
+}
+
+/**
+ * Saves the current form bridge singleton onto an internal stack
+ * so a nested context (e.g. a dialog) can create its own bridge.
+ * Call `popFormBridge()` when the nested context is destroyed.
+ */
+export function pushFormBridge(): void {
+    AngularFormBridge.pushInstance();
+}
+
+/**
+ * Destroys the current form bridge singleton and restores the
+ * previous one from the stack (saved by `pushFormBridge()`).
+ */
+export function popFormBridge(): void {
+    AngularFormBridge.popInstance();
 }

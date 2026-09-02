@@ -2,21 +2,24 @@ package com.dotcms.rest.api.v1.apps;
 
 import static com.dotmarketing.util.UtilMethods.isNotSet;
 
-import com.dotcms.util.SecurityLoggerServiceAPI;
-import com.dotmarketing.util.json.JSONException;
+import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.apps.view.AppView;
 import com.dotcms.rest.api.v1.apps.view.SecretView;
 import com.dotcms.rest.api.v1.apps.view.SiteView;
 import com.dotcms.security.apps.AppDescriptor;
+import com.dotcms.security.apps.AppDescriptorHelper;
+import com.dotcms.security.apps.AppDescriptorLoadError;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.AppsAPI;
 import com.dotcms.security.apps.AppsUtil;
 import com.dotcms.security.apps.ParamDescriptor;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotcms.security.apps.Type;
 import com.dotcms.util.CollectionsUtils;
 import com.dotcms.util.PaginationUtil;
+import com.dotcms.util.SecurityLoggerServiceAPI;
 import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
@@ -24,16 +27,19 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.exception.AlreadyExistException;
 import com.dotmarketing.exception.DoesNotExistException;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.PaginatedArrayList;
 import com.dotmarketing.util.UtilMethods;
+import com.dotmarketing.util.json.JSONException;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.ImmutableList;
 import com.liferay.portal.model.User;
 import com.liferay.util.EncryptorException;
 import io.vavr.Tuple;
+import io.vavr.Tuple2;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -60,6 +66,9 @@ import org.glassfish.jersey.media.multipart.FormDataMultiPart;
  * and forward it to AppsResource
  */
 class AppsHelper {
+
+    /** Reported as the "file" for an unreadable secrets store, mirroring the per-file YAML errors. */
+    private static final String SECRETS_STORE_FILE_NAME = "dotSecretsStore.p12";
 
     private final AppsAPI appsAPI;
     private final HostAPI hostAPI;
@@ -97,21 +106,84 @@ class AppsHelper {
      */
     List<AppView> getAvailableDescriptorViews(final User user, final String filter)
             throws DotSecurityException, DotDataException {
+        return getAvailableDescriptorViewsWithErrors(user, filter)._1;
+    }
+
+    /**
+     * Same as {@link #getAvailableDescriptorViews(User, String)} but also returns the partial
+     * failures the REST layer should surface via the response's {@code errors} field without
+     * preventing the apps it could resolve from being listed: YAML descriptor files that failed to
+     * load, and -- since issue #36724 -- a secrets store this node cannot read, in which case the
+     * configuration counts are reported as zero rather than raising.
+     */
+    Tuple2<List<AppView>, List<AppDescriptorLoadError>> getAvailableDescriptorViewsWithErrors(
+            final User user, final String filter) throws DotSecurityException, DotDataException {
         final List<AppView> views = new ArrayList<>();
         List<AppDescriptor> appDescriptors = appsAPI.getAppDescriptors(user);
+        final List<AppDescriptorLoadError> loadErrors = collectLoadErrors();
         if(UtilMethods.isSet(filter)) {
             final String regexFilter = "(?i).*"+filter+"(.*)";
             appDescriptors = appDescriptors.stream().filter(appDescriptor -> appDescriptor.getName().matches(regexFilter)).collect(
                     Collectors.toList());
         }
-        final Set<String> siteIdentifiers = appsAPI.appKeysByHost().keySet();
+        final List<AppDescriptorLoadError> errors = new ArrayList<>(loadErrors);
+        // appKeysByHost() reads the secrets store, which raises when this node cannot open it
+        // (issue #36724, where it previously wiped the store and returned nothing). Note this is
+        // evaluated as the *argument* to the guarded filterSitesForAppKey below, so that method's
+        // own guard cannot help here -- the raise happens before it is entered.
+        //
+        // The listing degrades to zero counts rather than propagating, so the portlet still renders
+        // and the administrator can reach the rest of it. But it must not degrade *silently*: "0
+        // configurations" on the secrets screen reads as "your secrets are gone", which is the exact
+        // misreading that would prompt someone to re-enter them. So the condition rides this
+        // endpoint's existing partial-failure channel and is reported explicitly instead.
+        //
+        // Deliberately guarded here and not inside appKeysByHost(): removeApp(), removeSecretsForSite()
+        // and exportSecrets() all read it too, and an empty map would turn the removes into silent
+        // no-ops and make exportSecrets() write an empty backup that reports success -- worse than
+        // the bug this fixes. Those paths must keep raising.
+        Set<String> siteIdentifiers;
+        try {
+            siteIdentifiers = appsAPI.appKeysByHost().keySet();
+        } catch (final DotRuntimeException e) {
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.warnAndDebug(AppsHelper.class,
+                    "App secrets store is unreadable on this node; listing apps with no configuration"
+                            + " counts. Stored secrets are intact.", e);
+            siteIdentifiers = Set.of();
+            errors.add(new AppDescriptorLoadError(SECRETS_STORE_FILE_NAME,
+                    "This node cannot read the App secrets store, so configuration counts are"
+                            + " unavailable. Existing secrets are intact and are not modified by this"
+                            + " condition; a node with the correct key still serves them. Check the"
+                            + " server log for the underlying cause.",
+                    AppDescriptorLoadError.SECRETS_STORE_UNREADABLE_ERROR_CODE));
+        }
         for (final AppDescriptor appDescriptor : appDescriptors) {
             final String appKey = appDescriptor.getKey();
             final int configurationsCount = appsAPI.filterSitesForAppKey(appKey, siteIdentifiers, user).size();
             final int sitesWithWarning = computeWarningsBySite(appDescriptor, siteIdentifiers, user);
             views.add(new AppView(appDescriptor, configurationsCount, sitesWithWarning));
         }
-        return views.stream().sorted(compareByCountAndName).collect(CollectionsUtils.toImmutableList());
+        final List<AppView> sorted = views.stream().sorted(compareByCountAndName)
+                .collect(CollectionsUtils.toImmutableList());
+        return Tuple.of(sorted, List.copyOf(errors));
+    }
+
+    /**
+     * Re-reads the app yaml directories to capture per-file load errors. Called from the list
+     * endpoint only; the main descriptor path is still served from the cache in {@link AppsAPI}.
+     */
+    @VisibleForTesting
+    List<AppDescriptorLoadError> collectLoadErrors() {
+        try {
+            return new AppDescriptorHelper().loadAppDescriptorsWithErrors()._2;
+        } catch (Exception e) {
+            Logger.warn(AppsHelper.class,
+                    "Unable to collect app descriptor load errors: " + e.getMessage());
+            return Collections.emptyList();
+        }
     }
 
     /**
@@ -378,10 +450,7 @@ class AppsHelper {
         // We're gonna build the secret upfront and have it ready.
         // Since the next step is potentially risky (delete a secret that already exist).
         final AppSecrets secrets = builder.build();
-        if (appSecretsOptional.isPresent()) {
-            Logger.debug(AppsHelper.class, () -> "Secrets already exist in storage. We must override it.");
-            appsAPI.deleteSecrets(key, host, user);
-        }
+
         appsAPI.saveSecrets(secrets, host, user);
         securityLoggerAPI.logInfo(this.getClass(),
                 String.format("User `%s` saved secret for app `%s` on host `%s`", user, key, host.getIdentifier()));

@@ -1,0 +1,36 @@
+<div class="flex flex-col">
+    @for (option of options; track option.baseType) {
+        <button
+            type="button"
+            class="flex cursor-pointer items-start gap-4 border-0 bg-transparent px-5 py-4 text-left transition-colors hover:bg-primary/5"
+            [attr.data-testid]="'upload-selector-option-' + option.baseType"
+            (click)="onSelect(option.baseType)">
+            <i class="material-symbols-outlined text-[1.5rem]! leading-none text-primary">
+                {{ option.icon }}
+            </i>
+            <span class="flex flex-col gap-1">
+                <span class="flex items-center gap-2">
+                    <span class="text-base font-semibold text-gray-800">
+                        {{ option.labelKey | dm }}
+                    </span>
+                    @if (option.recommended) {
+                        <span
+                            class="rounded-sm bg-green-100 px-2 py-0.5 text-xs font-semibold tracking-wide text-green-700 uppercase"
+                            data-testid="upload-selector-recommended">
+                            {{ 'content-drive.dialog.upload-selector.recommended' | dm }}
+                        </span>
+                    }
+                </span>
+                <span class="text-sm leading-snug text-gray-600">
+                    {{ option.descriptionKey | dm }}
+                </span>
+            </span>
+        </button>
+    }
+
+    <p
+        class="m-0 mt-1 border-t border-gray-200 px-5 py-3 text-sm text-gray-600"
+        data-testid="upload-selector-settings-hint">
+        {{ 'content-drive.dialog.upload-selector.settings-hint' | dm }}
+    </p>
+</div>

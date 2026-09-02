@@ -1,9 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { mockProvider } from '@ngneat/spectator/jest';
+import { mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement, Injectable } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -36,11 +37,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     LoggerService,
     LoginService,
     StringUtils,
@@ -48,7 +45,6 @@ import {
 } from '@dotcms/dotcms-js';
 import { FeaturedFlags } from '@dotcms/dotcms-models';
 import {
-    CoreWebServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -59,7 +55,7 @@ import { DotWorkflowTaskComponent } from './dot-workflow-task.component';
 import { DotCustomEventHandlerService } from '../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotDownloadBundleDialogService } from '../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
 import { DotMenuService } from '../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../test/dot-test-bed';
 import { IframeOverlayService } from '../../../view/components/_common/iframe/service/iframe-overlay.service';
 import { DotContentletEditorService } from '../../../view/components/dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotWorkflowTaskDetailComponent } from '../../../view/components/dot-workflow-task-detail/dot-workflow-task-detail.component';
@@ -94,11 +90,9 @@ describe('DotWorkflowTaskComponent', () => {
                 DotWorkflowTaskDetailComponent,
                 BrowserAnimationsModule,
                 RouterTestingModule,
-                HttpClientTestingModule,
                 DotWorkflowTaskComponent
             ],
             providers: [
-                DotWorkflowTaskDetailService,
                 {
                     provide: ActivatedRoute,
                     useValue: {
@@ -108,10 +102,6 @@ describe('DotWorkflowTaskComponent', () => {
                             }
                         }
                     }
-                },
-                {
-                    provide: DotWorkflowTaskDetailService,
-                    useClass: MockDotWorkflowTaskDetailService
                 },
                 {
                     provide: DotMessageService,
@@ -136,12 +126,10 @@ describe('DotWorkflowTaskComponent', () => {
                 UserModel,
                 LoggerService,
                 StringUtils,
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
                 DotcmsConfigService,
                 DotWizardService,
                 DotHttpErrorManagerService,
@@ -162,10 +150,22 @@ describe('DotWorkflowTaskComponent', () => {
             ]
         });
 
+        TestBed.overrideComponent(DotWorkflowTaskComponent, {
+            set: {
+                providers: [
+                    {
+                        provide: DotWorkflowTaskDetailService,
+                        useClass: MockDotWorkflowTaskDetailService
+                    }
+                ]
+            }
+        });
+
         fixture = TestBed.createComponent(DotWorkflowTaskComponent);
         de = fixture.debugElement;
         component = de.componentInstance;
-        dotWorkflowTaskDetailService = TestBed.inject(DotWorkflowTaskDetailService);
+        // Get the service from the component's injector since it has its own provider
+        dotWorkflowTaskDetailService = de.injector.get(DotWorkflowTaskDetailService);
         dotRouterService = TestBed.inject(DotRouterService);
         dotIframeService = TestBed.inject(DotIframeService);
         dotCustomEventHandlerService = TestBed.inject(DotCustomEventHandlerService);

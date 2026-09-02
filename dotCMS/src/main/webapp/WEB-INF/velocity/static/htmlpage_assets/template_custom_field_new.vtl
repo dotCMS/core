@@ -1,0 +1,843 @@
+<script type="module">
+  // Global Constants
+  const initialHostId =
+    "$request.getSession().getAttribute('CMS_SELECTED_HOST_ID')";
+  const defaultTemplateName =
+    '$config.getStringProperty("DEFAULT_TEMPLATE_NAME", "System Template")';
+
+  // Configuration constants
+  const DEFAULT_PER_PAGE = 15;
+  const ALL_SITES_IDENTIFIER = "0";
+  const SYSTEM_HOST = "System Host";
+  const ALL_SITES_TITLE = "All Sites";
+  const ALL_SITES_FORMATTED = "-- All Sites ---";
+
+  // UTILS
+  /**
+   * Normalizes the key of a template
+   */
+  const normalizeKey = function (template) {
+    return template.fullTitle
+      .replace(new RegExp("\\(" + template.hostName + "\\)"), "")
+      .replace(/\s+/g, "")
+      .toLowerCase();
+  }; // [cite: 3]
+
+  /**
+   * Returns a map of templates by name and by id
+   */
+  const getTemplatesMaps = (templates) => {
+    const mapByName = templates.reduce(function (map, template) {
+      const key = normalizeKey(template);
+      if (!map[key]) {
+        map[key] = template;
+      }
+      return map;
+    }, {});
+
+    const mapById = templates.reduce(function (map, template) {
+      map[template.identifier] = template;
+      return map;
+    }, {}); // [cite: 5]
+
+    return {
+      mapByName,
+      mapById,
+    };
+  };
+
+  /**
+   * Validates if an inode is set and valid
+   * @param {string} inode - The inode to validate
+   * @returns {boolean} - True if inode is valid, false otherwise
+   */
+  function isInodeSet(inode) {
+    if (!inode) {
+      return false;
+    }
+
+    if (inode === "SYSTEM_HOST" || inode === "SYSTEM_FOLDER") {
+      return true;
+    }
+
+    const inodeStr = String(inode);
+
+    // UUID format: 8-4-4-4-12 hexadecimal characters (with or without hyphens)
+    const validUUIDRegex =
+      /^[a-f0-9]{8}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{4}-?[a-f0-9]{12}$/i;
+    // Older numeric inode format
+    const olderInodeRegex = /^\d+$/;
+
+    if (validUUIDRegex.test(inodeStr)) {
+      return true;
+    }
+
+    if (olderInodeRegex.test(inodeStr) && inodeStr !== "0") {
+      return true;
+    }
+
+    return false;
+  }
+
+  /**
+   * Helper function to safely get DOM element
+   * @param {string} id - Element ID
+   * @returns {HTMLElement|null} - The element or null if not found
+   */
+  function getElement(id) {
+    return document.getElementById(id);
+  }
+
+  /**
+   * Updates the selected state of options in dropdown (Tailwind bg-primary/20 for selected)
+   */
+  function updateSelectedOption(dropdown, identifier) {
+    const options = dropdown.querySelectorAll(".template-dropdown-option");
+    options.forEach((opt) => {
+      opt.classList.remove( "bg-primary/20");
+      if (opt.dataset.identifier === identifier) {
+        opt.classList.add("bg-primary/20");
+      }
+    });
+  }
+
+  /**
+   * Shows or hides the template thumbnail container
+   * @param {boolean} show - Whether to show or hide the container
+   */
+  function toggleThumbnailContainer(show) {
+    const container = getElement("templateThumbnailContainer");
+    if (container) {
+      if (show) {
+        container.classList.remove("hidden");
+        container.classList.add("block");
+      } else {
+        container.classList.add("hidden");
+        container.classList.remove("block");
+      }
+    }
+  }
+
+  // UTILS END
+
+  /**
+   * Fetches a single template by ID (used when selected template is not in first page)
+   */
+  async function fetchTemplateById(templateId) {
+    try {
+      const response = await fetch(`/api/v1/templates/${templateId}/working`);
+      if (response.ok) {
+        const data = await response.json();
+        return data.entity || null;
+      }
+    } catch (error) {
+      console.warn(
+        "Failed to fetch template by ID, returning null. Template may have been deleted or an error occurred.",
+        {
+          templateId,
+          error,
+        },
+      );
+    }
+    return null;
+  }
+
+  /**
+   * Fetches the template image from the server
+   */
+  async function fetchTemplateImage(templateId) {
+    try {
+      const response = await fetch("/api/v1/templates/image", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ templateId }),
+      });
+
+      // The ok value represents the result of the response status 200 codes
+      if (response.ok) {
+        const result = await response.json();
+        getTemplateCallBack(result); // here we pass the result of the json response to the callback function
+      } else {
+        throw new Error("Error fetching template image");
+      }
+    } catch (error) {
+      toggleThumbnailContainer(false);
+    }
+  }
+
+  /**
+   * Fetches templates from the API
+   */
+  async function fetchTemplates(queryParams) {
+    const {
+      hostId,
+      filter = "",
+      page = 1,
+      perPage = 15,
+      allSiteLabel = true,
+    } = queryParams;
+    const urlParams = new URLSearchParams();
+    urlParams.set("per_page", perPage);
+    urlParams.set("page", page);
+    urlParams.set("filter", filter);
+
+    if (hostId) {
+      urlParams.set("host", hostId);
+    }
+
+    const url = `/api/v1/templates/?${urlParams.toString()}`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+
+    const templates = data.entity || [];
+
+    // Calculate hasMore BEFORE adding "All Sites" to avoid affecting pagination logic
+    // Use pagination info from API response if available, otherwise fallback to length check
+    let hasMore = false;
+    if (data.pagination) {
+      const {
+        currentPage: apiCurrentPage,
+        perPage: apiPerPage,
+        totalEntries,
+      } = data.pagination;
+      // Check if there are more pages available
+      hasMore = apiCurrentPage * apiPerPage < totalEntries;
+    } else {
+      // Fallback: check if we got a full page of results
+      hasMore = templates.length === perPage;
+    }
+
+    // Check for first page and add the all site template, so it does not break the pagination
+    // This matches the ALL_SITE_TEMPLATE from TemplateReadStore.js
+    if (allSiteLabel && page === 1) {
+      const ALL_SITE_TEMPLATE = {
+        title: ALL_SITES_TITLE,
+        fullTitle: ALL_SITES_TITLE,
+        htmlTitle: `<div>${ALL_SITES_FORMATTED}</div>`,
+        identifier: ALL_SITES_IDENTIFIER,
+        inode: ALL_SITES_IDENTIFIER,
+        hostName: SYSTEM_HOST,
+      };
+      templates.unshift(ALL_SITE_TEMPLATE);
+    }
+
+    return {
+      templates,
+      hasMore,
+      currentPage: page,
+    };
+  }
+
+  /**
+   * Callback function to handle the template fetch
+   */
+  const onTemplateFetchComplete = async function (
+    templates,
+    templateField,
+    selectedTemplate,
+  ) {
+    const templateId = templateField.getValue() || "";
+    const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
+
+    if (!templates || templates.length === 0) {
+      // If no templates, show "All Sites" as placeholder
+      updateSelectButton(null);
+      return;
+    }
+
+    let template = selectedTemplate;
+
+    if (!template) {
+      const { mapById, mapByName } = getTemplatesMaps(templates);
+      const normalizedName = defaultTemplateName
+        .replace(/\s+/g, "")
+        .toLowerCase();
+      template = isTemplateValid
+        ? mapById[templateId]
+        : mapByName[normalizedName]; // [cite: 18]
+    }
+
+    // When selected template is not in first page (e.g. user chose from page 2 and came back),
+    // fetch it by ID so the correct option is displayed
+    if (!template && isTemplateValid) {
+      template = await fetchTemplateById(templateId);
+    }
+
+    if (!template) {
+      // If no template found, show "All Sites" as placeholder
+      updateSelectButton(null);
+      return;
+    }
+
+    const { identifier, fullTitle } = template;
+    // We set the values directly into the components
+    const currentTemplateIdElement = getElement("currentTemplateId");
+    if (currentTemplateIdElement) {
+      currentTemplateIdElement.value = identifier;
+    }
+    templateField.setValue(identifier);
+
+    updateSelectButton(template);
+
+    // Update selected state in dropdown
+    const dropdown = getElement("customDropdown");
+    if (dropdown) {
+      updateSelectedOption(dropdown, identifier);
+    }
+
+    fetchTemplateImage(identifier);
+  };
+
+  function resetTemplateSelection(templateField) {
+    templateField.setValue("");
+
+    const currentTemplateIdElement = getElement("currentTemplateId");
+    if (currentTemplateIdElement) {
+      currentTemplateIdElement.value = "";
+    }
+
+    updateSelectButton(null);
+
+    const dropdown = getElement("customDropdown");
+    if (dropdown) {
+      const options = dropdown.querySelectorAll(".template-dropdown-option");
+      options.forEach((opt) => opt.classList.remove("selected", "bg-primary/20"));
+    }
+
+    toggleThumbnailContainer(false);
+  }
+
+  /**
+   * Get the template callback
+   */
+  function getTemplateCallBack(data) {
+    const imageInode = data.identifier;
+    const imageEl = getElement("templateThumbnailHolder");
+
+    if (!imageEl) {
+      return;
+    }
+
+    if (isInodeSet(imageInode)) {
+      imageEl.src = `/dA/${imageInode}/250w`;
+      imageEl.classList.add("border", "border-primary/30", "mt-4", "rounded");
+      toggleThumbnailContainer(true);
+    } else {
+      imageEl.classList.remove("border", "border-primary/30", "mt-4", "rounded");
+      toggleThumbnailContainer(false);
+    }
+  }
+
+  /**
+   * Extracts hostName from template
+   */
+  function getHostName(template) {
+    if (template.hostName) {
+      return template.hostName;
+    }
+
+    // Try to extract from fullTitle if it contains hostname in parentheses
+    const fullTitle = template.fullTitle || template.title || "";
+    const match = fullTitle.match(/\(([^)]+)\)/);
+    if (match) {
+      return match[1];
+    }
+
+    return SYSTEM_HOST;
+  }
+
+  /**
+   * Gets clean title without hostname in parentheses
+   */
+  function getCleanTitle(template) {
+    const fullTitle = template.fullTitle || template.title || "";
+
+    // For "All Sites", return the formatted version
+    if (
+      template.identifier === ALL_SITES_IDENTIFIER ||
+      fullTitle === ALL_SITES_TITLE
+    ) {
+      return ALL_SITES_FORMATTED;
+    }
+
+    // Remove hostname in parentheses if present
+    return fullTitle.replace(/\s*\([^)]+\)\s*$/, "").trim();
+  }
+
+  /**
+   * Creates an option element for the DaisyUI dropdown (li with option content).
+   * Styles: Tailwind/DaisyUI only (flex, gap, padding, hover:bg-primary/10, bg-primary/20 when selected).
+   */
+  function createOptionElement(template, selectedValue) {
+    const option = document.createElement("li");
+    option.className =
+      "template-dropdown-option w-full min-w-0 py-2 px-3 my-2 cursor-pointer hover:bg-primary/10 text-left" +
+      (template.identifier === selectedValue ? " bg-primary/20" : "");
+    option.dataset.identifier = template.identifier;
+
+    const hostName = getHostName(template);
+    option.dataset.hostName = hostName;
+
+    if (template.identifier === ALL_SITES_IDENTIFIER) {
+      option.classList.add("placeholder");
+    }
+
+    // Single wrapper so title+subtitle render as one option (not two separate menu items)
+    const content = document.createElement("div");
+    content.className = "flex flex-col gap-0.5 items-start text-left w-full min-w-0 overflow-hidden";
+
+    const title = document.createElement("span");
+    title.className = "option-title font-medium block truncate";
+
+    // For "All Sites", show the formatted version from htmlTitle or use the format
+    if (template.identifier === ALL_SITES_IDENTIFIER) {
+      if (template.htmlTitle) {
+        const tempDiv = document.createElement("div");
+        tempDiv.innerHTML = template.htmlTitle;
+        title.textContent = tempDiv.textContent || ALL_SITES_FORMATTED;
+      } else {
+        title.textContent = ALL_SITES_FORMATTED;
+      }
+    } else {
+      title.textContent = getCleanTitle(template);
+    }
+
+    const subtitle = document.createElement("span");
+    subtitle.className = "option-subtitle text-xs opacity-80 block truncate";
+    subtitle.textContent = hostName;
+
+    content.appendChild(title);
+    content.appendChild(subtitle);
+    option.appendChild(content);
+
+    return option;
+  }
+
+  /**
+   * Creates and populates the DaisyUI dropdown content (ul)
+   */
+  function populateCustomDropdown(templates, selectedValue, append = false) {
+    const dropdown = getElement("customDropdown");
+    if (!dropdown) {
+      return;
+    }
+
+    const moreChoicesLi = getElement("moreChoicesButton")?.parentElement;
+
+    if (!append) {
+      const existingOptions = dropdown.querySelectorAll("li.template-dropdown-option");
+      existingOptions.forEach((opt) => opt.remove());
+    }
+
+    templates.forEach((template) => {
+      const option = createOptionElement(template, selectedValue);
+      if (moreChoicesLi) {
+        dropdown.insertBefore(option, moreChoicesLi);
+      } else {
+        dropdown.appendChild(option);
+      }
+    });
+  }
+
+  /**
+   * Sets the select button label (span only, keeps PrimeNG chevron icon)
+   */
+  function setSelectButtonLabel(text) {
+    const labelSpan = getElement("templateSelectButtonLabel");
+    if (labelSpan) labelSpan.textContent = text;
+    else {
+      const button = getElement("customSelectButton");
+      if (button) button.textContent = text;
+    }
+  }
+
+  /**
+   * Updates the button text with selected template (DaisyUI btn; placeholder = muted)
+   */
+  function updateSelectButton(template) {
+    const button = getElement("customSelectButton");
+    if (!button) {
+      return;
+    }
+
+    if (template && template.identifier !== ALL_SITES_IDENTIFIER) {
+      setSelectButtonLabel(getCleanTitle(template));
+      button.classList.remove("text-base-content/70");
+    } else {
+      setSelectButtonLabel(ALL_SITES_TITLE);
+      button.classList.add("text-base-content/70");
+    }
+  }
+
+  /**
+   * Handles the template selection
+   */
+  function handleTemplateSelection(
+    template,
+    templateField,
+    setAllSiteLabel,
+    reloadTemplates,
+  ) {
+    // Always close dropdown as soon as user picks an option
+    closeDropdown();
+
+    if (!template) {
+      resetTemplateSelection(templateField);
+      return;
+    }
+
+    const value = template.identifier;
+    if (!value || value === ALL_SITES_IDENTIFIER) {
+      // Handle all sites selection - similar to handleAllSiteClick in old code
+      if (setAllSiteLabel) {
+        setAllSiteLabel(false);
+      }
+
+      // Change hostId to "*" to show all sites templates
+      if (reloadTemplates) {
+        reloadTemplates("*", false);
+      }
+
+      resetTemplateSelection(templateField);
+      return;
+    }
+
+    templateField.setValue(value);
+
+    const currentTemplateIdElement = getElement("currentTemplateId");
+    if (currentTemplateIdElement) {
+      currentTemplateIdElement.value = value;
+    }
+
+    updateSelectButton(template);
+
+    // Update selected state in dropdown
+    const dropdown = getElement("customDropdown");
+    if (dropdown) {
+      updateSelectedOption(dropdown, value);
+    }
+
+    fetchTemplateImage(value);
+  }
+
+  /**
+   * Opens the DaisyUI dropdown (details/summary: set attribute "open")
+   */
+  function openDropdown() {
+    const details = getElement("templateDropdownDetails");
+    if (details) {
+      details.setAttribute("open", "");
+    }
+  }
+
+  /**
+   * Closes the DaisyUI dropdown (remove attribute "open")
+   */
+  function closeDropdown() {
+    const details = getElement("templateDropdownDetails");
+    if (details) {
+      details.removeAttribute("open");
+    }
+  }
+
+  DotCustomFieldApi.ready(() => {
+    const templateField = DotCustomFieldApi.getField("template");
+    const templateId = templateField.getValue() || "";
+    const isTemplateValid = templateId && templateId !== ALL_SITES_IDENTIFIER;
+
+    const currentTemplateIdElement = getElement("currentTemplateId");
+    if (currentTemplateIdElement) {
+      currentTemplateIdElement.value = templateId;
+    }
+
+    let currentHostId = initialHostId || "";
+    let allSiteLabel = true;
+    let currentPage = 1;
+    let allTemplates = [];
+    let hasMore = false;
+    let isLoading = false;
+
+    const templateHolder = getElement("templateHolder");
+    if (!templateHolder) {
+      return;
+    }
+
+    // DaisyUI dropdown: <details class="dropdown"> + <summary class="btn"> + <ul class="menu dropdown-content ...">
+    let detailsEl = getElement("templateDropdownDetails");
+    if (!detailsEl) {
+      detailsEl = document.createElement("details");
+      detailsEl.id = "templateDropdownDetails";
+      detailsEl.className = "dropdown dropdown-end w-full";
+      const existingSummary = getElement("customSelectButton");
+      if (existingSummary && existingSummary.tagName.toLowerCase() === "summary") {
+        existingSummary.parentNode.insertBefore(detailsEl, existingSummary);
+        detailsEl.appendChild(existingSummary);
+      } else {
+        templateHolder.appendChild(detailsEl);
+      }
+    }
+
+    // Summary (trigger): use existing or create (DaisyUI: summary class="btn ...")
+    let selectButton = getElement("customSelectButton");
+    if (!selectButton) {
+      const summary = document.createElement("summary");
+      summary.id = "customSelectButton";
+      summary.className = "btn btn-outline w-full justify-between text-base-content/70";
+      summary.setAttribute("aria-label", "Select template");
+      summary.setAttribute("role", "button");
+      const labelSpan = document.createElement("span");
+      labelSpan.id = "templateSelectButtonLabel";
+      labelSpan.textContent = ALL_SITES_TITLE;
+      const icon = document.createElement("i");
+      icon.className = "pi pi-chevron-down";
+      icon.setAttribute("aria-hidden", "true");
+      summary.appendChild(labelSpan);
+      summary.appendChild(icon);
+      detailsEl.appendChild(summary);
+      selectButton = summary;
+    }
+
+    // DaisyUI dropdown content: <ul class="menu dropdown-content bg-base-100 rounded-box z-[1] w-52 p-2 shadow-sm">
+    let dropdown = getElement("customDropdown");
+
+    // "More choices" button (DaisyUI btn inside li)
+    let moreChoicesButton = getElement("moreChoicesButton");
+    if (!moreChoicesButton) {
+      const moreLi = document.createElement("li");
+      moreChoicesButton = document.createElement("button");
+      moreChoicesButton.type = "button";
+      moreChoicesButton.id = "moreChoicesButton";
+      moreChoicesButton.className = "btn btn-ghost btn-sm w-full hidden";
+      moreChoicesButton.textContent = "More choices";
+      moreLi.appendChild(moreChoicesButton);
+      dropdown.appendChild(moreLi);
+    }
+
+    // Load more templates
+    async function loadMoreTemplates() {
+      if (isLoading || !hasMore) {
+        return;
+      }
+
+      isLoading = true;
+      moreChoicesButton.classList.add("loading");
+      moreChoicesButton.textContent = "Loading...";
+
+      currentPage++;
+      try {
+        const result = await fetchTemplates({
+          hostId: currentHostId,
+          filter: "",
+          page: currentPage,
+          perPage: DEFAULT_PER_PAGE,
+          allSiteLabel: false,
+        });
+
+        allTemplates = allTemplates.concat(result.templates);
+        hasMore = result.hasMore;
+
+        populateCustomDropdown(result.templates, templateId, true);
+
+        if (!hasMore) {
+          moreChoicesButton.classList.add("hidden");
+          moreChoicesButton.classList.remove("block");
+        }
+
+        isLoading = false;
+        moreChoicesButton.classList.remove("loading");
+        moreChoicesButton.textContent = "More choices";
+      } catch (error) {
+        isLoading = false;
+        moreChoicesButton.classList.remove("loading");
+        moreChoicesButton.textContent = "More choices";
+      }
+    }
+
+    // Reload templates with new hostId (for "All Sites" functionality)
+    async function reloadTemplates(newHostId, showAllSiteLabel) {
+      currentHostId = newHostId || "";
+      allSiteLabel = showAllSiteLabel;
+      currentPage = 1;
+      allTemplates = [];
+      isLoading = true;
+
+      // Show loading state
+      const button = getElement("customSelectButton");
+      if (button) {
+        button.disabled = true;
+      }
+
+      try {
+        const result = await fetchTemplates({
+          hostId: currentHostId,
+          filter: "",
+          page: 1,
+          perPage: DEFAULT_PER_PAGE,
+          allSiteLabel: allSiteLabel,
+        });
+
+        allTemplates = result.templates;
+        hasMore = result.hasMore;
+        currentPage = 1;
+
+        populateCustomDropdown(result.templates, "");
+
+        if (hasMore) {
+          moreChoicesButton.classList.remove("hidden");
+          moreChoicesButton.classList.add("block");
+        } else {
+          moreChoicesButton.classList.add("hidden");
+          moreChoicesButton.classList.remove("block");
+        }
+
+        isLoading = false;
+        if (button) {
+          button.disabled = false;
+        }
+      } catch (error) {
+        isLoading = false;
+        if (button) {
+          button.disabled = false;
+        }
+      }
+    }
+
+    // Handle option click
+    dropdown.addEventListener("click", (e) => {
+      if (e.target.closest("#moreChoicesButton") || e.target.closest("button#moreChoicesButton")) {
+        return;
+      }
+
+      const option = e.target.closest("li.template-dropdown-option");
+      if (option) {
+        const identifier = option.dataset.identifier;
+        const hostName = option.dataset.hostName;
+        const titleElement = option.querySelector(".option-title");
+        const fullTitle = titleElement ? titleElement.textContent : "";
+
+        const template = allTemplates.find(
+          (t) => t.identifier === identifier,
+        ) || {
+          identifier,
+          fullTitle: fullTitle,
+          title: fullTitle,
+          hostName: hostName || SYSTEM_HOST,
+        };
+        handleTemplateSelection(
+          template,
+          templateField,
+          (value) => {
+            allSiteLabel = value;
+          },
+          reloadTemplates,
+        );
+      }
+    });
+
+    // Handle "More choices" button click
+    moreChoicesButton.addEventListener("click", (e) => {
+      e.stopPropagation();
+      loadMoreTemplates();
+    });
+
+    // Open/close is native with <details>/<summary>; only close when clicking outside
+    document.addEventListener("click", (e) => {
+      if (!templateHolder.contains(e.target)) {
+        closeDropdown();
+      }
+    });
+
+    // Fetch initial templates
+    (async () => {
+      try {
+        const result = await fetchTemplates({
+          hostId: currentHostId,
+          filter: "",
+          page: 1,
+          perPage: DEFAULT_PER_PAGE,
+          allSiteLabel: allSiteLabel,
+        });
+
+        allTemplates = result.templates;
+        hasMore = result.hasMore;
+        currentPage = 1;
+
+        populateCustomDropdown(result.templates, templateId);
+
+        if (hasMore) {
+          moreChoicesButton.classList.remove("hidden");
+          moreChoicesButton.classList.add("block");
+        } else {
+          moreChoicesButton.classList.add("hidden");
+          moreChoicesButton.classList.remove("block");
+        }
+
+        // Find selected template
+        let selectedTemplate = null;
+        if (isTemplateValid) {
+          selectedTemplate = allTemplates.find(
+            (t) => t.identifier === templateId,
+          );
+        }
+
+        await onTemplateFetchComplete(
+          result.templates,
+          templateField,
+          selectedTemplate,
+        );
+      } catch (error) {
+        console.error("Error fetching initial templates:", error);
+      }
+    })();
+
+    if (isTemplateValid) {
+      fetchTemplateImage(templateId);
+    }
+  });
+</script>
+
+<div class="custom-field-wrapper">
+  <div class="select-wrapper">
+    <div id="templateHolder">
+      <details id="templateDropdownDetails" class="dropdown dropdown-end w-full">
+        <summary
+          id="customSelectButton"
+          class="btn btn-outline w-full justify-between text-base-content/70"
+          aria-label="Select template"
+          role="button"
+        >
+          <span id="templateSelectButtonLabel">All Sites</span>
+          <i class="pi pi-chevron-down" aria-hidden="true"></i>
+        </summary>
+        <ul
+          id="customDropdown"
+          class="dropdown-content mt-2 bg-base-100 text-base-content rounded-box z-[1] w-full min-w-0 min-h-0 p-2 shadow-sm max-h-64 overflow-y-auto overflow-x-hidden list-none text-left"
+          role="listbox"
+        >
+        </ul>
+      </details>
+    </div>
+  </div>
+
+  <input
+    id="currentTemplateId"
+    type="hidden"
+    name="currentTemplateId"
+    value=""
+  />
+
+  <div id="templateThumbnailContainer" class="hidden">
+    <img
+      id="templateThumbnailHolder"
+      class="transition-all duration-300 ease-in-out max-w-full"
+      alt="Template Thumbnail"
+    />
+  </div>
+</div>

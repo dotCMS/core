@@ -3,9 +3,7 @@ import { afterEach, beforeAll, beforeEach, describe, expect, it } from '@jest/gl
 import { UVE_MODE, UVEEventType } from '@dotcms/types';
 import { __DOTCMS_UVE_EVENT__ } from '@dotcms/types/internal';
 
-import { createUVESubscription, getUVEState, isAnalyticsActive } from './core.utils';
-
-import { ANALYTICS_WINDOWS_ACTIVE_KEY } from '../../internal/constants';
+import { createUVESubscription, getUVEState, isRequestFromUVE } from './core.utils';
 
 describe('getUVEStatus', () => {
     beforeAll(() => {
@@ -444,49 +442,16 @@ describe('createUVESubscription', () => {
     });
 });
 
-describe('isAnalyticsActive', () => {
-    let windowSpy: jest.SpyInstance;
-
-    beforeEach(() => {
-        // Reset window.__dotAnalyticsActive__ before each test
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY];
+describe('isRequestFromUVE', () => {
+    it('should return true when dotCMSHost is present', () => {
+        expect(isRequestFromUVE({ dotCMSHost: 'https://demo.dotcms.com' })).toBe(true);
     });
 
-    afterEach(() => {
-        windowSpy?.mockRestore();
+    it('should return false when dotCMSHost is absent', () => {
+        expect(isRequestFromUVE({})).toBe(false);
     });
 
-    it('should return true when __dotAnalyticsActive__ is true', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] = true;
-
-        const result = isAnalyticsActive();
-
-        expect(result).toBe(true);
-    });
-
-    it('should return false when __dotAnalyticsActive__ is false', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (window as any)[ANALYTICS_WINDOWS_ACTIVE_KEY] = false;
-
-        const result = isAnalyticsActive();
-
-        expect(result).toBe(false);
-    });
-
-    it('should return false when __dotAnalyticsActive__ is undefined', () => {
-        const result = isAnalyticsActive();
-
-        expect(result).toBe(false);
-    });
-
-    it('should return false when window is not defined (SSR)', () => {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        windowSpy = jest.spyOn(global, 'window', 'get').mockImplementation(() => undefined as any);
-
-        const result = isAnalyticsActive();
-
-        expect(result).toBe(false);
+    it('should return false when dotCMSHost is an empty string', () => {
+        expect(isRequestFromUVE({ dotCMSHost: '' })).toBe(false);
     });
 });

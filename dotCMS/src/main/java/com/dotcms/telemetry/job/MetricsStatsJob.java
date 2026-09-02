@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.job;
 
+import com.dotcms.cdi.CDIUtils;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.telemetry.MetricsSnapshot;
 import com.dotcms.telemetry.collectors.MetricStatsCollector;
@@ -32,7 +33,16 @@ public class MetricsStatsJob implements StatefulJob {
     public void execute(final JobExecutionContext jobExecutionContext) throws JobExecutionException {
         final MetricsSnapshot metricsSnapshot;
         try {
-            metricsSnapshot = MetricStatsCollector.getStatsAndCleanUp();
+            final MetricStatsCollector collector = CDIUtils.getBeanThrows(MetricStatsCollector.class);
+            final com.dotcms.telemetry.cache.MetricCacheConfig config = 
+                    CDIUtils.getBeanThrows(com.dotcms.telemetry.cache.MetricCacheConfig.class);
+            
+            // Use cron profile (typically FULL) to collect all metrics for persistence
+            // This is separate from the dashboard profile (typically MINIMAL) for fast loading
+            final com.dotcms.telemetry.ProfileType cronProfile = config.getCronProfile();
+            Logger.debug(this, () -> String.format("Cron job collecting metrics with profile: %s", cronProfile));
+            
+            metricsSnapshot = collector.getStatsAndCleanUp(cronProfile);
             APILocator.getMetricsAPI().persistMetricsSnapshot(metricsSnapshot);
         } catch (final Throwable e) {
             Logger.debug(this, String.format("An error occurred during job execution: %s",

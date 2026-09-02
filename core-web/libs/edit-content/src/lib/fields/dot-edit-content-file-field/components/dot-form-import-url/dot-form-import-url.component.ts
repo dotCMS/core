@@ -33,7 +33,7 @@ type DialogData = {
         InputTextModule
     ],
     templateUrl: './dot-form-import-url.component.html',
-    styleUrls: ['./dot-form-import-url.component.scss'],
+    styleUrl: './dot-form-import-url.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [FormImportUrlStore]
 })

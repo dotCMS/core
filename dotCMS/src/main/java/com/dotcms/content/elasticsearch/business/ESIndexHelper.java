@@ -1,8 +1,9 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.LicenseService;
 import com.dotcms.enterprise.license.LicenseLevel;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.sitesearch.business.SiteSearchAPI;
 import com.dotmarketing.util.UtilMethods;
@@ -58,7 +59,7 @@ public class ESIndexHelper implements Serializable{
 	 * @param map map containing the key (type) and the name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map, ESIndexAPI esIndexAPI) {
+	public String getIndexNameOrAlias(Map<String, String> map, IndexAPI esIndexAPI) {
 		return getIndexNameOrAlias(map, INDEX, ALIAS, esIndexAPI);
 	}
 
@@ -69,11 +70,15 @@ public class ESIndexHelper implements Serializable{
 	 * @param aliasAttr alias key name
 	 * @return
 	 */
-	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, ESIndexAPI esIndexAPI) {
+	public String getIndexNameOrAlias(Map<String, String> map, String indexAttr, String aliasAttr, IndexAPI esIndexAPI) {
 		String indexName = map.get(indexAttr);
 		String indexAlias = map.get(aliasAttr);
 		if (UtilMethods.isSet(indexAlias) && licenseService.getLevel() >= LicenseLevel.STANDARD.level) {
-			String currentIndexName = esIndexAPI.getAliasToIndexMap(siteSearchAPI.listIndices()).get(aliasAttr);
+			// Resolve via the site-search API for .os-aware, phase-correct alias lookup (issue #36360).
+			// Also fixes a latent bug: this previously looked up the map by the attribute KEY name
+			// (aliasAttr, e.g. "alias") instead of the alias VALUE (indexAlias), so the branch never
+			// resolved regardless of phase.
+			String currentIndexName = siteSearchAPI.getAliasToIndexMap().get(indexAlias);
 			if (UtilMethods.isSet(currentIndexName))
 				indexName = currentIndexName;
 		}

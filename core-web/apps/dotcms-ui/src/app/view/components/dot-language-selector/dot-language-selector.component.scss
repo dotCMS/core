@@ -1,9 +1,12 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
-@import "dotcms-theme/utils/extends";
+@use "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/extends";
+@use "../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
-    padding: $spacing-1;
+    padding: spacing.$spacing-1;
     min-width: 150px;
 
     &::ng-deep {
@@ -13,8 +16,8 @@
             width: 100%;
 
             .p-dropdown-label {
-                color: $black;
-                font-size: $font-size-md;
+                color: colors.$black;
+                font-size: fonts.$font-size-md;
             }
         }
 
@@ -30,13 +33,13 @@
     &.disabled {
         &::ng-deep dot-icon i,
         label {
-            color: $field-disabled-color;
+            color: theme-variables.$field-disabled-color;
         }
     }
 
     @media only screen and (max-width: $screen-lg-max) {
         .dot-language-selector.gap-3 {
-            gap: $spacing-1 !important;
+            gap: spacing.$spacing-1 !important;
         }
         ::ng-deep {
             p-dropdown.p-dropdown-sm .p-dropdown {

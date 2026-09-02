@@ -1,59 +1,30 @@
-@use "variables" as *;
-
 :host {
-    &.dot-category-field__container--has-categories .dot-category-field__select {
-        border-radius: 0 0 $border-radius-md $border-radius-md;
-    }
-
-    &.dot-category-field__container--has-categories .dot-category-field__categories {
-        border-bottom: none;
-        padding: $spacing-1;
-    }
-
-    &.dot-category-field__container--disabled {
-        .dot-category-field__categories,
-        .dot-category-field__select {
-            border-color: $color-palette-gray-200;
-            background: $color-palette-gray-100;
-            color: $color-palette-gray-500;
-        }
-    }
-}
-
-.dot-category-field__categories,
-.dot-category-field__select {
-    border: $field-border-size solid $color-palette-gray-400;
     display: flex;
-    flex-wrap: wrap;
-    align-items: center;
+    flex-direction: column;
+    box-sizing: border-box;
+    // Match pInputText rendered height: padding-y * 2 + line-height + border
+    min-height: calc(var(--p-form-field-padding-y) * 2 + 1.4em + 2px);
+    border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius);
+    overflow: hidden;
+    transition:
+        border-color var(--p-inputtext-transition-duration),
+        box-shadow var(--p-inputtext-transition-duration);
 }
 
-.dot-category-field__categories {
-    gap: $spacing-1;
-    border-radius: $border-radius-md $border-radius-md 0 0;
-
-    &--disabled {
-        border-color: $color-palette-gray-200;
-        background: $color-palette-gray-100;
-        color: $color-palette-gray-500;
-    }
+:host .dot-category-field__actions {
+    flex: 1;
+    min-height: 0;
 }
 
-.dot-category-field__select {
-    height: $field-height-md;
-    border-radius: $border-radius-md;
-    padding: 0 $spacing-0;
-    justify-content: flex-end;
+:host:not(.dot-category-field__container--disabled):not(.ng-invalid):hover {
+    border-color: var(--p-inputtext-hover-border-color);
 }
 
-// Disabled chips styling
-:host ::ng-deep {
-    .p-chip-disabled {
-        background-color: $color-palette-gray-200 !important;
-        color: $color-palette-gray-500 !important;
+:host.ng-invalid.ng-touched {
+    border-color: var(--p-inputtext-invalid-border-color);
+}
 
-        .p-chip-remove-icon {
-            color: $color-palette-gray-500 !important;
-        }
-    }
+:host.dot-category-field__container--has-categories .dot-category-field__chips {
+    border-bottom: 1px solid var(--p-inputtext-border-color);
 }

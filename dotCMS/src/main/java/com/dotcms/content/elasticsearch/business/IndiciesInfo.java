@@ -13,6 +13,8 @@ import java.util.Map;
 import org.apache.commons.beanutils.PropertyUtils;
 
 /**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
  * Handle the current Index name into the cluster.
  * Also provide some util method for index name, the index name has to have the follow sintax:
  *
@@ -24,6 +26,7 @@ import org.apache.commons.beanutils.PropertyUtils;
  * - INDEX_TYPE_PREFIX: Prefix define for the Index's typs, also see {@link IndexType}
  * - TIME_STAMP: current time stamop when the index was created
  */
+@Deprecated(forRemoval = true)
 public class IndiciesInfo implements Serializable {
 
     /**

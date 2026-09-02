@@ -1,5 +1,3 @@
-@use "variables" as *;
-
 @keyframes slideIn {
     from {
         opacity: 0;
@@ -17,52 +15,51 @@
         "topBar topBar"
         "header sidebar"
         "body sidebar";
-    grid-template-columns: 1fr 0;
+    grid-template-columns: minmax(0, 1fr) 0;
     grid-template-rows: auto auto 1fr;
     padding-bottom: 0;
     height: 100%;
     width: 100%;
-    transition: grid-template-columns $basic-speed ease-in-out;
+    max-width: 100%;
+    overflow-x: hidden;
+    transition: grid-template-columns 150ms ease-in-out;
 
     &.edit-content--with-sidebar {
-        grid-template-columns: 1fr 21.875rem;
+        grid-template-columns: minmax(0, 1fr) 360px;
     }
 }
 
+// Stale-while-revalidate reload overlay. Spans BOTH the body and the sidebar (every
+// grid row except the top bar, so the breadcrumb stays visible) so the two share a
+// single loading state — a translucent scrim keeps the old data faintly visible for
+// continuity while blocking interaction until BOTH the content and the sidebar have
+// reloaded. Without spanning the sidebar, its faster reload would finish visibly out
+// of sync with the content.
+.edit-content-layout__reloading-overlay {
+    grid-column: 1 / -1;
+    grid-row: 2 / -1;
+    z-index: 10;
+    background-color: rgba(255, 255, 255, 0.6);
+}
+
+// Normalize every p-message banner in the top bar to the same compact banner padding
+// (12px vertical / 28px horizontal) so the info, lock and workflow messages all align with
+// each other. Done here once instead of per-instance styleClass so they can't drift apart.
 .edit-content-layout__topBar {
-    grid-area: topBar;
-
-    display: flex;
-    flex-direction: column;
-
-    &--beta-message-visible {
-        border-bottom: solid 1px $color-palette-gray-300;
+    ::ng-deep .p-message-content-wrapper {
+        padding: 0 !important;
     }
 
-    .pi {
-        font-size: $icon-sm-box;
-        margin-right: $spacing-1;
+    // Fixed banner height + vertical centering (instead of vertical padding) so every top-bar
+    // message is the same height regardless of its content. The info banner carries a close
+    // button (~32px) that would otherwise stretch its row taller than the text-only lock banner.
+    // Font is set in px (not rem) because the app root is 14px, so a rem value would not land
+    // on the intended 13.5px.
+    ::ng-deep .p-message-content {
+        display: flex;
+        align-items: center;
+        min-height: 54px;
+        padding: 0 1.75rem !important;
+        font-size: 13.5px;
     }
-
-    :host ::ng-deep .p-messages {
-        animation: slideIn $basic-speed ease-out;
-        margin-bottom: $spacing-2;
-    }
-
-    .edit-content-layout__beta-message,
-    .edit-content-layout__select-workflow-warning {
-        animation: slideIn $basic-speed ease-out;
-    }
-}
-
-.edit-content-layout__header {
-    grid-area: header;
-}
-
-.edit-content-layout__body {
-    grid-area: body;
-}
-
-.edit-content-layout__sidebar {
-    grid-area: sidebar;
 }

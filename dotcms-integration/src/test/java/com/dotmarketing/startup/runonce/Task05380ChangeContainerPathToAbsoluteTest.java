@@ -5,7 +5,7 @@ import com.dotcms.datagen.SiteDataGen;
 import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.ThemeDataGen;
 import com.dotcms.rendering.velocity.viewtools.DotTemplateTool;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;

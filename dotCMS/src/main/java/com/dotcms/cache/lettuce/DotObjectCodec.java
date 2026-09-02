@@ -6,7 +6,7 @@ import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
-import com.dotmarketing.exception.DotRuntimeException;
+import java.nio.charset.StandardCharsets;
 import io.lettuce.core.codec.RedisCodec;
 
 /**
@@ -17,7 +17,7 @@ import io.lettuce.core.codec.RedisCodec;
  */
 public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
 
-    private final Charset charset = Charset.forName("UTF-8");
+    private final Charset charset = StandardCharsets.UTF_8;
 
     @Override
     public K decodeKey(final ByteBuffer bytes) {
@@ -28,11 +28,18 @@ public class DotObjectCodec<K,V> implements RedisCodec<K, V> {
     @Override
     public V decodeValue(final ByteBuffer bytes) {
 
-        try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(bytes.array()))){
-        
-            final Object o = in.readObject();
-            return  (V)o;
-        } catch(Exception e) {
+        try {
+            // copy exactly the readable region: bytes.array() ignores position/limit/arrayOffset and can
+            // read stale bytes when the buffer is a slice. (null buffer -> NPE -> DecodeException, as before.)
+            final byte[] data = new byte[bytes.remaining()];
+            bytes.get(data);
+
+            try (ObjectInputStream in = new ObjectInputStream(new ByteArrayInputStream(data))) {
+
+                final Object o = in.readObject();
+                return (V) o;
+            }
+        } catch (Exception e) {
 
             throw new DecodeException(e);
         }

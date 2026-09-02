@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.parameter.type.constraint;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import java.util.Collections;
 import java.util.Map;
 import java.util.function.Function;

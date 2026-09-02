@@ -1,14 +1,18 @@
 @use "variables" as *;
-@import "dotcms-theme/components/form/common";
-@import "mixins";
+@use "dotcms-theme/components/form/common";
+@use "mixins";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/common" as common2;
+@use "../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 dot-material-icon-picker {
     @extend #form-field-extend;
     padding-right: 0;
 
     &.is-open {
-        border: $field-border-size solid $color-palette-primary-400;
-        @include field-focus;
+        border: common2.$field-border-size solid colors.$color-palette-primary-400;
+        @include mixins.field-focus;
     }
 
     &::ng-deep {
@@ -17,14 +21,14 @@ dot-material-icon-picker {
         .dot-material-icon__preview {
             border: 0;
             height: calc(
-                $field-height-md - ($field-border-size * 2)
+                common2.$field-height-md - (common2.$field-border-size * 2)
             ); // All of this is relative so it's not really taking the height of the field and we need to center the icon
         }
 
         .dot-material-icon__input {
-            padding: $spacing-2;
+            padding: spacing.$spacing-2;
             padding-right: 0;
-            font-size: $font-size-md;
+            font-size: fonts.$font-size-md;
 
             &:focus {
                 outline: none;
@@ -32,7 +36,7 @@ dot-material-icon-picker {
         }
 
         .dot-material-icon__preview {
-            font-size: $font-size-lg;
+            font-size: fonts.$font-size-lg;
         }
 
         .dot-material-icon__button {
@@ -43,33 +47,33 @@ dot-material-icon-picker {
             justify-content: center;
 
             mwc-icon {
-                font-size: $font-size-lg;
-                width: $field-height-md;
+                font-size: fonts.$font-size-lg;
+                width: common2.$field-height-md;
             }
         }
 
         .dot-material-icon__list {
             border: 0;
             box-shadow:
-                0 5px 5px -3px $color-palette-black-op-20,
-                0 8px 10px 1px $color-palette-black-op-10,
-                0 3px 14px 2px $color-palette-black-op-10;
-            color: $black;
+                0 5px 5px -3px colors.$color-palette-black-op-20,
+                0 8px 10px 1px colors.$color-palette-black-op-10,
+                0 3px 14px 2px colors.$color-palette-black-op-10;
+            color: colors.$black;
 
             li:hover {
                 background: $bg-hover;
-                color: $black;
+                color: colors.$black;
             }
 
             label {
                 align-items: center;
                 cursor: pointer;
                 display: flex;
-                padding: $spacing-2;
+                padding: spacing.$spacing-2;
             }
 
             mwc-icon {
-                font-size: $font-size-lmd;
+                font-size: fonts.$font-size-lmd;
             }
         }
     }

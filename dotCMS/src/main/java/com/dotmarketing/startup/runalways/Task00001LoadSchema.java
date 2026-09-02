@@ -5,17 +5,16 @@ import com.dotcms.enterprise.license.LicenseManager;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.common.util.SQLUtil;
 import com.dotmarketing.db.DbConnectionFactory;
+import com.dotmarketing.db.DotCMSInitDb;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.startup.StartupTask;
 import com.dotmarketing.util.Logger;
-import com.dotmarketing.util.MaintenanceUtil;
 import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.List;
@@ -94,24 +93,17 @@ public class Task00001LoadSchema implements StartupTask {
 
 	@Override
 	public boolean forceRun() {
-		
-		Connection conn = null;
-		
-		try{
-			conn =DbConnectionFactory.getConnection();
-		}
-		catch(DotRuntimeException dre){
-			Logger.fatal(this.getClass(),"Unable to get the dotCMS database connection. Please " +
-					"change your connection properties and restart");
-			Logger.fatal(this.getClass(),"Unable to get the dotCMS database connection. Please " +
-					"change your connection properties and restart");
-			Logger.fatal(this.getClass(),"Unable to get the dotCMS database connection. Please " +
-					"change your connection properties and restart");
-		}
-		try {
-			Statement stmt = conn.createStatement();
-			ResultSet rs = stmt.executeQuery("select count(*) as test from inode");
-			rs.next();
+		// Use a direct pool connection (not the ThreadLocal-managed one) because
+		// StartupTasksExecutor may already have a transaction open on the ThreadLocal
+		// connection. If the probe query fails (expected on an empty DB), the PostgreSQL
+		// transaction is aborted and cannot be reused. A direct pool connection is
+		// independently closed and returned to the pool without affecting the outer scope.
+		try (Connection conn = DbConnectionFactory.getDataSource().getConnection();
+			 Statement stmt = conn.createStatement();
+			 var _ = stmt.executeQuery(DotCMSInitDb.INODE_EXISTS_SQL)) {
+			// The row's value is irrelevant here -- reaching this point means `inode` resolved,
+			// so the schema is already loaded. Only a SQLException, raised when the table does
+			// not exist, signals an empty database.
 			return false;
 		} catch (SQLException e1) {
 			Logger.info(this.getClass(),"-------------------------------------------------------------------------------------");
@@ -120,15 +112,6 @@ public class Task00001LoadSchema implements StartupTask {
 			Logger.info(this.getClass(),"");
 			Logger.info(this.getClass(),"-------------------------------------------------------------------------------------");
 			return true;
-		}finally{
-			try{
-				if(conn != null){
-					conn.close();
-				}
-			}
-			catch(Exception e){
-				Logger.error(this.getClass(),"Unable to close connection... Should not be here.");
-			}
 		}
 	}
 

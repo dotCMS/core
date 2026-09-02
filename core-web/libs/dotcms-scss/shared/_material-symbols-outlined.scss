@@ -1,0 +1,41 @@
+@use "./fonts" as *;
+
+// MATERIAL DESIGN SYMBOLS - Outlined (variable font, weights 100-700)
+// Replaces the deprecated Material Icons library.
+@font-face {
+    font-family: "Material Symbols Outlined";
+    font-style: normal;
+    font-weight: 100 700;
+    font-display: swap;
+    src: url("/dotAdmin/assets/MaterialSymbolsOutlined-Regular.woff2") format("woff2");
+}
+
+// @material/mwc-icon (used by dotcms-webcomponents) reads
+// `font-family: var(--mdc-icon-font, 'Material Icons')` inside its shadow DOM.
+// CSS custom properties inherit across the shadow boundary, so setting it here
+// routes every mwc-icon to the new Material Symbols font.
+:root {
+    --mdc-icon-font: "Material Symbols Outlined";
+}
+
+.material-symbols-outlined {
+    font-family: "Material Symbols Outlined";
+    font-weight: normal;
+    font-style: normal;
+    font-size: 24px;
+    line-height: 1;
+    letter-spacing: normal;
+    text-transform: none;
+    display: inline-block;
+    white-space: nowrap;
+    word-wrap: normal;
+    direction: ltr;
+    font-variation-settings:
+        "FILL" 0,
+        "wght" 400,
+        "GRAD" 0,
+        "opsz" 24;
+    font-feature-settings: "liga";
+    -webkit-font-feature-settings: "liga";
+    -webkit-font-smoothing: antialiased;
+}

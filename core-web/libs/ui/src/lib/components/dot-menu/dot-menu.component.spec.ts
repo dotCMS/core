@@ -41,14 +41,14 @@ describe('DotMenuComponent', () => {
     beforeEach(() => {
         fixture = TestBed.createComponent(DotMenuComponent);
         component = fixture.componentInstance;
-        component.float = true;
-        component.model = menuItems;
+        fixture.componentRef.setInput('float', true);
+        fixture.componentRef.setInput('model', menuItems);
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
     });
 
     it('should set the button to float', () => {
-        component.float = false;
+        fixture.componentRef.setInput('float', false);
         fixture.detectChanges();
         button = fixture.debugElement.query(By.css('[data-testid="dot-menu-button"]'));
 
@@ -63,30 +63,32 @@ describe('DotMenuComponent', () => {
     });
 
     it('should show the menu list on click', () => {
-        const stopPropagation = jest.fn();
-        button.triggerEventHandler('click', { stopPropagation });
+        const event = new MouseEvent('click');
+        jest.spyOn(event, 'stopPropagation');
+
+        component.toggle(event);
         fixture.detectChanges();
 
         const menuList: DebugElement = fixture.debugElement.query(By.css('p-menu'));
 
         expect(menuList).not.toBeNull();
-        expect(stopPropagation).toHaveBeenCalled();
+        expect(event.stopPropagation).toHaveBeenCalled();
     });
 
     it('should close menus when click the button', () => {
-        const stopPropagation = jest.fn();
-        button.triggerEventHandler('click', { stopPropagation });
+        const event1 = new MouseEvent('click');
+        const event2 = new MouseEvent('click');
+
+        component.toggle(event1);
         fixture.detectChanges();
 
         const menuList: Menu = fixture.debugElement.query(By.css('p-menu')).componentInstance;
 
         expect(menuList.visible).toBe(true);
-        expect(stopPropagation).toHaveBeenCalled();
 
-        button.triggerEventHandler('click', { stopPropagation });
-
+        component.toggle(event2);
         fixture.detectChanges();
+
         expect(menuList.visible).toBe(false);
-        expect(stopPropagation).toHaveBeenCalledTimes(2);
     });
 });

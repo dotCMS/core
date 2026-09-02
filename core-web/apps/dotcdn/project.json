@@ -4,9 +4,11 @@
     "projectType": "application",
     "sourceRoot": "apps/dotcdn/src",
     "prefix": "dotcms",
+    "tags": [],
     "targets": {
         "build": {
             "executor": "@angular-devkit/build-angular:browser",
+            "defaultConfiguration": "",
             "options": {
                 "outputPath": "dist/apps/dotcdn",
                 "index": "apps/dotcdn/src/index.html",
@@ -17,8 +19,6 @@
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "stylePreprocessorOptions": {
@@ -60,11 +60,11 @@
                         }
                     ]
                 }
-            },
-            "defaultConfiguration": ""
+            }
         },
         "serve": {
-            "executor": "@angular-devkit/build-angular:dev-server",
+            "executor": "@angular/build:dev-server",
+            "continuous": true,
             "options": {
                 "proxyConfig": "apps/dotcms-ui/proxy.conf.json",
                 "buildTarget": "dotcdn:build"
@@ -76,25 +76,18 @@
             }
         },
         "extract-i18n": {
-            "executor": "@angular-devkit/build-angular:extract-i18n",
+            "executor": "@angular/build:extract-i18n",
             "options": {
                 "buildTarget": "dotcdn:build"
             }
         },
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        },
         "test": {
-            "executor": "@nx/jest:jest",
             "outputs": ["{workspaceRoot}/coverage/apps/dotcdn"],
             "options": {
-                "jestConfig": "apps/dotcdn/jest.config.ts",
+                "passWithNoTests": true,
                 "styles": [
                     "libs/dotcms-scss/angular/styles.scss",
                     "node_modules/primeicons/primeicons.css",
-                    "node_modules/primeflex/primeflex.css",
-                    "node_modules/primeng/resources/primeng.min.css",
                     "apps/dotcdn/src/styles.scss"
                 ],
                 "assets": ["apps/dotcdn/src/favicon.ico", "apps/dotcdn/src/assets"],
@@ -102,8 +95,13 @@
                     "includePaths": ["libs/dotcms-scss/angular"]
                 },
                 "scripts": ["node_modules/chart.js/dist/Chart.js"]
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
             }
         }
-    },
-    "tags": []
+    }
 }

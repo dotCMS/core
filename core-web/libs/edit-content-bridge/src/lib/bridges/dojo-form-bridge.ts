@@ -1,4 +1,11 @@
-import { FormBridge, FormFieldValue } from '../interfaces/form-bridge.interface';
+import {
+    DotBrowserController,
+    DotBrowserOptions,
+    FieldValidationState,
+    FormBridge,
+    FormFieldAPI,
+    FormFieldValue
+} from '../interfaces/form-bridge.interface';
 
 interface FieldCallback {
     id: symbol;
@@ -195,6 +202,104 @@ export class DojoFormBridge implements FormBridge {
     }
 
     /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     *
+     * @param fieldId - The ID of the field to get the API for.
+     * @returns A FormFieldAPI object for the specified field.
+     */
+    getField(fieldId: string): FormFieldAPI {
+        return {
+            getValue: (): FormFieldValue => {
+                return this.get(fieldId);
+            },
+
+            setValue: (value: FormFieldValue): void => {
+                this.set(fieldId, value);
+            },
+
+            onChange: (callback: (value: FormFieldValue) => void): (() => void) => {
+                return this.onChangeField(fieldId, callback);
+            },
+
+            getValidationState: (): FieldValidationState => {
+                // Legacy Dojo editor has its own validation system; we surface a neutral state
+                // so consumers using the bridge API don't crash. Dojo-specific styling
+                // continues to be handled by the legacy editor itself.
+                return {
+                    valid: true,
+                    invalid: false,
+                    touched: false,
+                    dirty: false,
+                    errors: null
+                };
+            },
+
+            onValidationChange: (
+                _callback: (state: FieldValidationState) => void
+            ): (() => void) => {
+                // Legacy Dojo editor does not expose validation state changes through this bridge.
+                // eslint-disable-next-line @typescript-eslint/no-empty-function
+                return () => {};
+            },
+
+            enable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = false;
+                        element.removeAttribute('disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error enabling field:', error);
+                }
+            },
+
+            disable: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    if (
+                        element instanceof HTMLInputElement ||
+                        element instanceof HTMLTextAreaElement
+                    ) {
+                        element.disabled = true;
+                        element.setAttribute('disabled', 'disabled');
+                    }
+                } catch (error) {
+                    console.warn('Error disabling field:', error);
+                }
+            },
+
+            show: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
+                        container.style.display = '';
+                    }
+                } catch (error) {
+                    console.warn('Error showing field:', error);
+                }
+            },
+
+            hide: (): void => {
+                try {
+                    const element = document.getElementById(fieldId);
+                    const container = element?.closest('.field');
+                    if (container instanceof HTMLElement) {
+                        container.style.display = 'none';
+                    }
+                } catch (error) {
+                    console.warn('Error hiding field:', error);
+                }
+            }
+        };
+    }
+
+    /**
      * Executes callback when bridge is ready, handling iframe load.
      *
      * @param callback - The callback function to execute when the bridge is ready.
@@ -206,5 +311,26 @@ export class DojoFormBridge implements FormBridge {
         };
 
         window.addEventListener('load', this.loadHandler);
+    }
+
+    /**
+     * Not supported in the legacy Dojo editor — resolves `null` without opening anything.
+     *
+     * The dialog has never existed on this page. What changed is that it now says so: a stub that
+     * silently resolved `null` was indistinguishable from the user pressing Cancel, leaving a
+     * template author with nothing to go on. Giving the old editor a working browser is a separate
+     * piece of work.
+     *
+     * @returns A controller whose `close()` is a no-op; `onClose` is called once with `null`.
+     */
+    openBrowserModal(options: DotBrowserOptions = {}): DotBrowserController {
+        console.warn(
+            'DotCustomFieldApi.openBrowserModal is not available in the legacy edit contentlet — ' +
+                'no picker will open. It is supported only in the new Edit Content.'
+        );
+
+        options.onClose?.(null);
+
+        return { close: () => undefined };
     }
 }

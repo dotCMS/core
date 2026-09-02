@@ -755,7 +755,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "Events.day", "2023-10-27T00:00:00.000",
                     "Events.totalSessions", "2",
                     "Events.targetVisitedAfterSuccesses", "1",
-                    "Events.targetVisitedAfterConvertionRate", "50"
+                    "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                     "Events.variant", "DEFAULT",
@@ -763,7 +763,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "Events.day", "2023-10-27T00:00:00.000",
                     "Events.totalSessions", "1",
                     "Events.targetVisitedAfterSuccesses", "0",
-                    "Events.targetVisitedAfterConvertionRate", "0"
+                    "Events.targetVisitedAfterConversionRate", "0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -771,7 +771,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-28T00:00:00.000",
                         "Events.totalSessions", "3",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.targetVisitedAfterConversionRate", "33"
                 ),
                 Map.of(
                         "Events.variant", experimentNoDefaultVariantName,
@@ -779,7 +779,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-29T00:00:00.000",
                         "Events.totalSessions", "4",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "25"
+                        "Events.targetVisitedAfterConversionRate", "25"
                 )
         );
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  Map.of("data", cubeJsQueryData);
@@ -799,13 +799,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", experimentNoDefaultVariantName,
                         "Events.totalSessions", "4",
                         "Events.targetVisitedAfterSuccesses", "2",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "3",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.targetVisitedAfterConversionRate", "33"
                 )
         );
 
@@ -932,7 +932,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-27T00:00:00.000",
                         "Events.totalSessions", "2",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -940,7 +940,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-27T00:00:00.000",
                         "Events.totalSessions", "1",
                         "Events.targetVisitedAfterSuccesses", "0",
-                        "Events.targetVisitedAfterConvertionRate", "0"
+                        "Events.targetVisitedAfterConversionRate", "0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -948,7 +948,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-28T00:00:00.000",
                         "Events.totalSessions", "3",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.targetVisitedAfterConversionRate", "33"
                 ),
                 Map.of(
                         "Events.variant", experimentNoDefaultVariantName,
@@ -956,7 +956,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-29T00:00:00.000",
                         "Events.totalSessions", "4",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "25"
+                        "Events.targetVisitedAfterConversionRate", "25"
                 )
         );
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  Map.of("data", cubeJsQueryData);
@@ -976,13 +976,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", experimentNoDefaultVariantName,
                         "Events.totalSessions", "4",
                         "Events.targetVisitedAfterSuccesses", "2",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "3",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.targetVisitedAfterConversionRate", "33"
                 )
         );
 
@@ -1109,7 +1109,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-27T00:00:00.000",
                         "Events.totalSessions", "2",
                         "Events.bounceRateSuccesses", "1",
-                        "Events.bounceRateConvertionRate", "50"
+                        "Events.bounceRateConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -1117,7 +1117,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-27T00:00:00.000",
                         "Events.totalSessions", "1",
                         "Events.bounceRateSuccesses", "0",
-                        "Events.bounceRateConvertionRate", "0"
+                        "Events.bounceRateConversionRate", "0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -1125,7 +1125,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-28T00:00:00.000",
                         "Events.totalSessions", "3",
                         "Events.bounceRateSuccesses", "1",
-                        "Events.bounceRateConvertionRate", "33"
+                        "Events.bounceRateConversionRate", "33"
                 ),
                 Map.of(
                         "Events.variant", experimentNoDefaultVariantName,
@@ -1133,7 +1133,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", "2023-10-29T00:00:00.000",
                         "Events.totalSessions", "4",
                         "Events.bounceRateSuccesses", "1",
-                        "Events.bounceRateConvertionRate", "25"
+                        "Events.bounceRateConversionRate", "25"
                 )
         );
         final Map<String, List<Map<String, String>>> cubeJsQueryResult =  Map.of("data", cubeJsQueryData);
@@ -1153,13 +1153,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", experimentNoDefaultVariantName,
                         "Events.totalSessions", "4",
                         "Events.targetVisitedAfterSuccesses", "2",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "3",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "33"
+                        "Events.targetVisitedAfterConversionRate", "33"
                 )
         );
 
@@ -1561,7 +1561,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "\"measures\": [" +
                         "\"Events.totalSessions\"," +
                         "\"Events.bounceRateSuccesses\"," +
-                        "\"Events.bounceRateConvertionRate\"" +
+                        "\"Events.bounceRateConversionRate\"" +
                     "]," +
                     "\"dimensions\": [" +
                         "\"Events.variant\"" +
@@ -1608,7 +1608,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "\"measures\": [" +
                         "\"Events.totalSessions\"," +
                         "\"Events.exitRateSuccesses\"," +
-                        "\"Events.exitRateConvertionRate\"" +
+                        "\"Events.exitRateConversionRate\"" +
                     "]," +
                     "\"dimensions\": [" +
                         "\"Events.variant\"" +
@@ -1654,7 +1654,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "\"measures\": [" +
                         "\"Events.totalSessions\"," +
                         "\"Events.bounceRateSuccesses\"," +
-                        "\"Events.bounceRateConvertionRate\"" +
+                        "\"Events.bounceRateConversionRate\"" +
                     "]," +
                     "\"dimensions\": [" +
                         "\"Events.variant\"" +
@@ -1694,7 +1694,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                 "\"measures\": [" +
                     "\"Events.totalSessions\"," +
                     "\"Events.targetVisitedAfterSuccesses\"," +
-                    "\"Events.targetVisitedAfterConvertionRate\"" +
+                    "\"Events.targetVisitedAfterConversionRate\"" +
                 "]," +
                 "\"dimensions\": [" +
                     "\"Events.variant\"" +
@@ -1740,7 +1740,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "\"measures\": [" +
                             "\"Events.totalSessions\"," +
                             "\"Events.targetVisitedAfterSuccesses\"," +
-                            "\"Events.targetVisitedAfterConvertionRate\"" +
+                            "\"Events.targetVisitedAfterConversionRate\"" +
                         "]," +
                         "\"dimensions\": [" +
                             "\"Events.variant\"" +
@@ -1780,7 +1780,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                     "\"measures\": [" +
                         "\"Events.totalSessions\"," +
                         "\"Events.exitRateSuccesses\"," +
-                        "\"Events.exitRateConvertionRate\"" +
+                        "\"Events.exitRateConversionRate\"" +
                     "]," +
                     "\"dimensions\": [" +
                         "\"Events.variant\"" +
@@ -1965,7 +1965,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "50",
-                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                        "Events.targetVisitedAfterConversionRate", "83.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -1973,7 +1973,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "16",
-                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                        "Events.targetVisitedAfterConversionRate", "26.66"
                 )
         );
 
@@ -1987,13 +1987,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", variantName,
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "50",
-                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                        "Events.targetVisitedAfterConversionRate", "83.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "16",
-                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                        "Events.targetVisitedAfterConversionRate", "26.66"
                 )
         );
 
@@ -2065,7 +2065,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "2",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "50"
+                        "Events.targetVisitedAfterConversionRate", "50"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -2073,7 +2073,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "1",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "100"
+                        "Events.targetVisitedAfterConversionRate", "100"
                 )
         );
 
@@ -2087,13 +2087,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", variantName,
                         "Events.totalSessions", "2",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "50.0"
+                        "Events.targetVisitedAfterConversionRate", "50.0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "1",
                         "Events.targetVisitedAfterSuccesses", "1",
-                        "Events.targetVisitedAfterConvertionRate", "100"
+                        "Events.targetVisitedAfterConversionRate", "100"
                 )
         );
 
@@ -2159,7 +2159,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "35",
-                        "Events.targetVisitedAfterConvertionRate", "58.33"
+                        "Events.targetVisitedAfterConversionRate", "58.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -2167,7 +2167,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "45",
-                        "Events.targetVisitedAfterConvertionRate", "75"
+                        "Events.targetVisitedAfterConversionRate", "75"
                 )
         );
 
@@ -2180,13 +2180,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", variantName,
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "35",
-                        "Events.targetVisitedAfterConvertionRate", "0.0"
+                        "Events.targetVisitedAfterConversionRate", "0.0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "45",
-                        "Events.targetVisitedAfterConvertionRate", "75"
+                        "Events.targetVisitedAfterConversionRate", "75"
                 )
         );
 
@@ -2253,7 +2253,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "35",
-                        "Events.targetVisitedAfterConvertionRate", "58.33"
+                        "Events.targetVisitedAfterConversionRate", "58.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -2261,7 +2261,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "45",
-                        "Events.targetVisitedAfterConvertionRate", "75"
+                        "Events.targetVisitedAfterConversionRate", "75"
                 )
         );
 
@@ -2274,13 +2274,13 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", variantName,
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "35",
-                        "Events.targetVisitedAfterConvertionRate", "0.0"
+                        "Events.targetVisitedAfterConversionRate", "0.0"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "45",
-                        "Events.targetVisitedAfterConvertionRate", "75"
+                        "Events.targetVisitedAfterConversionRate", "75"
                 )
         );
 
@@ -2355,7 +2355,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "50",
-                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                        "Events.targetVisitedAfterConversionRate", "83.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
@@ -2363,7 +2363,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "16",
-                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                        "Events.targetVisitedAfterConversionRate", "26.66"
                 ),
                 Map.of(
                         "Events.variant", variantCName,
@@ -2371,7 +2371,7 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.day", EVENTS_FORMATTER.format(Instant.now()),
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "55",
-                        "Events.targetVisitedAfterConvertionRate", "91.66"
+                        "Events.targetVisitedAfterConversionRate", "91.66"
                 )
         );
 
@@ -2385,19 +2385,19 @@ public class ExperimentAPIImpIntegrationTest extends IntegrationTestBase {
                         "Events.variant", variantBName,
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "16",
-                        "Events.targetVisitedAfterConvertionRate", "83.33"
+                        "Events.targetVisitedAfterConversionRate", "83.33"
                 ),
                 Map.of(
                         "Events.variant", "DEFAULT",
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "16",
-                        "Events.targetVisitedAfterConvertionRate", "26.66"
+                        "Events.targetVisitedAfterConversionRate", "26.66"
                 ),
                 Map.of(
                         "Events.variant", variantCName,
                         "Events.totalSessions", "60",
                         "Events.targetVisitedAfterSuccesses", "55",
-                        "Events.targetVisitedAfterConvertionRate", "91.66"
+                        "Events.targetVisitedAfterConversionRate", "91.66"
                 )
         );
 

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import { FormControl, NG_VALUE_ACCESSOR, ReactiveFormsModule } from '@angular/forms';
 
-import { CalendarModule } from 'primeng/calendar';
+import { DatePickerModule } from 'primeng/datepicker';
 
 import {
     DotCMSContentType,
@@ -55,7 +55,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
  */
 @Component({
     selector: 'dot-calendar-field',
-    imports: [CalendarModule, ReactiveFormsModule, DotMessagePipe],
+    imports: [DatePickerModule, ReactiveFormsModule, DotMessagePipe],
     templateUrl: 'calendar-field.component.html',
     styleUrls: ['./calendar-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -194,8 +194,8 @@ export class DotCalendarFieldComponent extends BaseControlValueAccessor<number |
         // Update internal display value (what user sees)
         this.internalFormControl.setValue(displayValue);
 
-        // Send the correct moment to form control
-        this.onChange(formValue);
+        // Send numeric timestamp to the parent form control for consistent storage
+        this.onChange(formValue.getTime());
         this.onTouched();
     }
 

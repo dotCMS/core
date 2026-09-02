@@ -25,7 +25,7 @@ import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/
     standalone: false,
     template: `
         <form [formGroup]="group">
-            <dot-layout-property-sidebar formControlName="sidebar"></dot-layout-property-sidebar>
+            <dot-layout-property-sidebar formControlName="sidebar" />
         </form>
     `
 })

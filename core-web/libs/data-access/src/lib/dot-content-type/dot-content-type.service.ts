@@ -1,9 +1,11 @@
+// TODO: (migration) this needs refactoring there are two method doing the same, there should not be an exclusive method for pagination.
+
 import { Observable } from 'rxjs';
 
 import { HttpClient, HttpHeaders, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { defaultIfEmpty, filter, flatMap, map, pluck, take, toArray } from 'rxjs/operators';
+import { defaultIfEmpty, filter, mergeMap, map, take, toArray } from 'rxjs/operators';
 
 import {
     DotCMSContentType,
@@ -46,7 +48,34 @@ export class DotContentTypeService {
     getContentType(idOrVar: string): Observable<DotCMSContentType> {
         return this.#httpClient
             .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${idOrVar}`)
-            .pipe(take(1), pluck('entity'));
+            .pipe(
+                take(1),
+                map((data) => data.entity)
+            );
+    }
+
+    /**
+     * Get a content type by id or variable name with render mode.
+     * When an inode is provided, contentlet-specific Velocity variables
+     * ($inode, $identifier, $lang, etc.) will be resolved in custom fields.
+     * @param idOrVar content type's id or variable name
+     * @param inode optional contentlet inode for Velocity variable resolution
+     * @returns Content Type
+     */
+    getContentTypeWithRender(idOrVar: string, inode?: string): Observable<DotCMSContentType> {
+        let params = new HttpParams();
+        if (inode) {
+            params = params.set('inode', inode);
+        }
+
+        return this.#httpClient
+            .get<{ entity: DotCMSContentType }>(`/api/v1/contenttype/render/id/${idOrVar}`, {
+                params
+            })
+            .pipe(
+                take(1),
+                map((data) => data.entity)
+            );
     }
 
     /**
@@ -61,7 +90,12 @@ export class DotContentTypeService {
         // Default parameters
         params = params.set('orderby', 'name');
         params = params.set('direction', 'ASC');
-        params = params.set('per_page', (options.page ?? 40).toString());
+        params = params.set('per_page', (options.per_page ?? 40).toString());
+
+        // Add page parameter if provided (defaults to 1 if not specified)
+        if (options.page !== undefined && options.page !== null) {
+            params = params.set('page', options.page.toString());
+        }
 
         // Add optional parameters if they have meaningful values
         if (hasValidValue(options.filter)) {
@@ -93,7 +127,7 @@ export class DotContentTypeService {
             .get<{
                 entity: DotCMSContentType[];
             }>('/api/v1/contenttype', { params: this.getContentTypePaginationParams(options) })
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 
     /**
@@ -124,7 +158,7 @@ export class DotContentTypeService {
     getAllContentTypes(): Observable<StructureTypeView[]> {
         return this.getBaseTypes()
             .pipe(
-                flatMap((structures: StructureTypeView[]) => structures),
+                mergeMap((structures: StructureTypeView[]) => structures),
                 filter((structure: StructureTypeView) => !this.isRecentContentType(structure))
             )
             .pipe(toArray());
@@ -157,7 +191,7 @@ export class DotContentTypeService {
                 },
                 { headers }
             )
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 
     /**
@@ -169,14 +203,14 @@ export class DotContentTypeService {
      */
     getUrlById(id: string): Observable<string> {
         return this.getBaseTypes().pipe(
-            flatMap((structures: StructureTypeView[]) => structures),
-            pluck('types'),
-            flatMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
+            mergeMap((structures: StructureTypeView[]) => structures),
+            map((x) => x?.types),
+            mergeMap((contentTypeViews: ContentTypeView[]) => contentTypeViews),
             filter(
                 (contentTypeView: ContentTypeView) =>
                     contentTypeView.variable.toLocaleLowerCase() === id
             ),
-            pluck('action')
+            map((x) => x?.action)
         );
     }
 
@@ -213,7 +247,7 @@ export class DotContentTypeService {
             .post<{
                 entity: DotCMSContentType;
             }>(`/api/v1/contenttype/${variable}/_copy`, copyFormFields, { headers })
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 
     /**
@@ -230,7 +264,7 @@ export class DotContentTypeService {
 
         return this.#httpClient
             .get<{ entity: DotCMSContentType[] }>('/api/v1/contenttype', { params })
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 
     /**
@@ -247,7 +281,7 @@ export class DotContentTypeService {
     updateContentType(id: string, payload: unknown): Observable<DotCMSContentType> {
         return this.#httpClient
             .put<{ entity: DotCMSContentType }>(`/api/v1/contenttype/id/${id}`, payload)
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 
     private isRecentContentType(type: StructureTypeView): boolean {
@@ -257,6 +291,6 @@ export class DotContentTypeService {
     private getBaseTypes(): Observable<StructureTypeView[]> {
         return this.#httpClient
             .get<{ entity: StructureTypeView[] }>('/api/v1/contenttype/basetypes')
-            .pipe(pluck('entity'));
+            .pipe(map((data) => data.entity));
     }
 }

@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -15,7 +13,7 @@ import {
     DotIframeService
 } from '@dotcms/data-access';
 import { DotContentCompareEvent } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 import { cleanUpDialog, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentCompareDialogComponent } from './dot-content-compare-dialog.component';
@@ -33,7 +31,7 @@ describe('DotContentCompareDialogComponent', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [DotContentCompareDialogComponent, DotDialogComponent, DotMessagePipe],
+            imports: [DotContentCompareDialogComponent, DotMessagePipe],
             providers: [
                 { provide: DotMessageService, useValue: messageServiceMock },
                 DotEventsService,
@@ -64,17 +62,8 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should hide dialog on close', () => {
-        const closeBtn = fixture.debugElement.query(By.css('.dialog__header p-button'));
-        closeBtn.triggerEventHandler('click', {
-            preventDefault: () => {
-                //
-            }
-        });
-        fixture.detectChanges();
-        const dotDialog: DotDialogComponent = fixture.debugElement.query(
-            By.css('dot-dialog')
-        ).componentInstance;
-        expect(dotDialog.visible).toEqual(false);
+        component.close();
+        expect(component.show).toEqual(false);
     });
 
     it('should hide dialog on close event from DotConentCompare', () => {
@@ -88,9 +77,9 @@ describe('DotContentCompareDialogComponent', () => {
     });
 
     it('should have the correct header', () => {
-        expect(
-            fixture.debugElement.query(By.css('dot-dialog .dialog__title')).nativeElement.innerHTML
-        ).toEqual('Compare');
+        const pDialog = fixture.debugElement.query(By.css('p-dialog'));
+        expect(pDialog).toBeTruthy();
+        expect(pDialog.componentInstance.header).toEqual('Compare');
     });
 
     afterEach(() => {

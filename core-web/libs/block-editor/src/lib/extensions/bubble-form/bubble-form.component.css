@@ -1,0 +1,38 @@
+@reference 'tailwindcss';
+@reference 'tailwindcss-primeui';
+
+:host {
+    @apply flex flex-col bg-white rounded-sm shadow-md p-4;
+}
+
+form {
+    @apply flex flex-col w-[400px] gap-4;
+}
+
+form.dotTableForm {
+    @apply w-[200px];
+}
+
+form.dotTableForm .p-button-outlined {
+    @apply hidden;
+}
+
+.form-row {
+    @apply flex flex-col gap-1;
+}
+
+.form-row label {
+    @apply text-xs;
+}
+
+.form-row.checkbox {
+    @apply flex-row items-center;
+}
+
+.form-action {
+    @apply flex justify-end pt-4 w-full gap-2.5;
+}
+
+.error-message {
+    @apply text-red-600 text-sm text-left;
+}

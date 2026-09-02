@@ -1,114 +1,44 @@
-/* eslint-disable @typescript-eslint/no-empty-function */
-
-import { createComponentFactory, mockProvider, Spectator } from '@ngneat/spectator/jest';
-import { Observable, of } from 'rxjs';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { Component, forwardRef, Injectable, Input } from '@angular/core';
-import { AbstractControl, ControlValueAccessor, NG_VALUE_ACCESSOR } from '@angular/forms';
-import { provideAnimations } from '@angular/platform-browser/animations';
+import { ApplicationRef } from '@angular/core';
+import { AbstractControl } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 
-import { ConfirmationService } from 'primeng/api';
-
 import {
-    DotAlertConfirmService,
-    DotContentTypesInfoService,
-    DotEventsService,
     DotHttpErrorManagerService,
     DotLicenseService,
-    DotMessageDisplayService,
     DotMessageService,
-    DotSystemConfigService,
-    DotWorkflowService,
+    DotSiteService,
     DotWorkflowsActionsService,
-    PaginatorService
+    DotWorkflowService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService, SiteService } from '@dotcms/dotcms-js';
 import {
     DotCMSClazzes,
     DotCMSContentTypeLayoutRow,
     DotCMSSystemActionType,
     FeaturedFlags
 } from '@dotcms/dotcms-models';
+import { DotSiteComponent } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     dotcmsContentTypeBasicMock,
     dotcmsContentTypeFieldBasicMock,
-    DotMessageDisplayServiceMock,
     DotWorkflowServiceMock,
-    LoginServiceMock,
-    MockDotMessageService,
     mockWorkflows,
-    mockWorkflowsActions,
-    SiteServiceMock
+    mockWorkflowsActions
 } from '@dotcms/utils-testing';
 
 import { ContentTypesFormComponent } from './content-types-form.component';
+import {
+    createContentTypesFormMessageServiceMock,
+    MockDotLicenseService
+} from './content-types-form.testing';
 
-import { MockDotSystemConfigService } from '../../../../../test/dot-test-bed';
 import { DotWorkflowsActionsSelectorFieldService } from '../../../../../view/components/_common/dot-workflows-actions-selector-field/services/dot-workflows-actions-selector-field.service';
 
-@Component({
-    selector: 'dot-site-selector-field',
-    template: '',
-    providers: [
-        {
-            multi: true,
-            provide: NG_VALUE_ACCESSOR,
-            useExisting: forwardRef(() => DotSiteSelectorComponent)
-        }
-    ],
-    standalone: false
-})
-class DotSiteSelectorComponent implements ControlValueAccessor {
-    @Input() system;
-
-    writeValue() {}
-
-    registerOnChange() {}
-
-    registerOnTouched() {}
-}
-
-@Injectable()
-class MockDotLicenseService {
-    isEnterprise(): Observable<boolean> {
-        return of(false);
-    }
-}
-
-const messageServiceMock = new MockDotMessageService({
-    'contenttypes.form.field.detail.page': 'Detail Page',
-    'contenttypes.form.field.expire.date.field': 'Expire Date Field',
-    'contenttypes.form.field.host_folder.label': 'Host or Folder',
-    'contenttypes.form.identifier': 'Identifier',
-    'contenttypes.form.label.publish.date.field': 'Publish Date Field',
-    'contenttypes.hint.URL.map.pattern.hint1': 'Hello World',
-    'contenttypes.form.label.URL.pattern': 'URL Pattern',
-    'contenttypes.content.variable': 'Variable',
-    'contenttypes.form.label.workflow': 'Workflow',
-    'contenttypes.action.cancel': 'Cancel',
-    'contenttypes.form.label.description': 'Description',
-    'contenttypes.form.name': 'Name',
-    'contenttypes.action.save': 'Save',
-    'contenttypes.action.update': 'Update',
-    'contenttypes.action.create': 'Create',
-    'contenttypes.action.edit': 'Edit',
-    'contenttypes.action.delete': 'Delete',
-    'contenttypes.form.name.error.required': 'Error is wrong',
-    'contenttypes.action.form.cancel': 'Cancel',
-    'contenttypes.content.contenttype': 'content type',
-    'contenttypes.content.fileasset': 'fileasset',
-    'contenttypes.content.content': 'Content',
-    'contenttypes.content.form': 'Form',
-    'contenttypes.content.persona': 'Persona',
-    'contenttypes.content.widget': 'Widget',
-    'contenttypes.content.htmlpage': 'Page',
-    'contenttypes.content.key_value': 'Key Value',
-    'contenttypes.content.vanity_url:': 'Vanity Url'
-});
+const messageServiceMock = createContentTypesFormMessageServiceMock();
 
 const mockActivatedRoute = {
     snapshot: {
@@ -162,27 +92,41 @@ describe('ContentTypesFormComponent', () => {
 
     const createComponent = createComponentFactory({
         component: ContentTypesFormComponent,
-        componentProviders: [DotSiteSelectorComponent],
+        componentProviders: [DotSiteComponent],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
-            provideAnimations(),
-            { provide: DotMessageDisplayService, useClass: DotMessageDisplayServiceMock },
-            { provide: LoginService, useClass: LoginServiceMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            { provide: SiteService, useClass: SiteServiceMock },
+            {
+                provide: DotSiteService,
+                useValue: {
+                    getSites: jest.fn().mockReturnValue(
+                        of({
+                            sites: [
+                                {
+                                    hostname: 'demo.dotcms.com',
+                                    identifier: '123-xyz-567-xxl',
+                                    archived: false,
+                                    aliases: null
+                                }
+                            ],
+                            pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                        })
+                    ),
+                    getSiteById: jest.fn().mockReturnValue(
+                        of({
+                            hostname: 'demo.dotcms.com',
+                            identifier: '123-xyz-567-xxl',
+                            archived: false,
+                            aliases: null
+                        })
+                    )
+                }
+            },
             { provide: DotWorkflowService, useClass: DotWorkflowServiceMock },
             { provide: DotLicenseService, useClass: MockDotLicenseService },
-            { provide: CoreWebService, useClass: CoreWebServiceMock },
-            { provide: DotSystemConfigService, useClass: MockDotSystemConfigService },
             { provide: ActivatedRoute, useValue: mockActivatedRoute },
-            DotcmsConfigService,
-            DotContentTypesInfoService,
-            DotEventsService,
-            PaginatorService,
             mockProvider(DotHttpErrorManagerService),
-            mockProvider(DotAlertConfirmService),
-            mockProvider(ConfirmationService),
             mockProvider(DotWorkflowsActionsService),
             {
                 provide: DotWorkflowsActionsSelectorFieldService,
@@ -202,7 +146,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should be invalid by default', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -211,7 +155,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should be valid when name field have value', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -222,16 +166,32 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should have name focus by default on create mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
         spectator.detectChanges();
-        expect(spectator.component.name.nativeElement).toBe(document.activeElement);
+        // The focus runs in an afterNextRender hook, which fires on the application tick.
+        spectator.inject(ApplicationRef).tick();
+
+        expect(spectator.component.$inputName().nativeElement).toBe(document.activeElement);
+    });
+
+    it('should not focus the name on edit mode', () => {
+        spectator.setInput('contentType', {
+            ...dotcmsContentTypeBasicMock,
+            baseType: 'CONTENT',
+            id: '1234-5678-edit'
+        });
+        spectator.detectChanges();
+        spectator.inject(ApplicationRef).tick();
+
+        // Editing an existing content type must not steal focus into the already-filled Name field.
+        expect(document.activeElement).not.toBe(spectator.component.$inputName().nativeElement);
     });
 
     it('should have canSave property false by default (form is invalid)', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -241,7 +201,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set canSave property true form is valid', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             name: 'hello',
             baseType: 'CONTENT'
@@ -256,7 +216,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set canSave property false when form is invalid in edit mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
@@ -271,7 +231,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set canSave property true when form is valid and model updated in edit mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
@@ -286,7 +246,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set canSave property false when form is invalid and model updated in edit mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
@@ -303,7 +263,7 @@ describe('ContentTypesFormComponent', () => {
 
     // tslint:disable-next-line:max-line-length
     it('should set canSave property false when the form value is updated and then gets back to the original content (no community license)', async () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
@@ -325,9 +285,8 @@ describe('ContentTypesFormComponent', () => {
         expect(spectator.component.canSave).toBe(false); // revert the change button disabled set it to false
     });
 
-    // eslint-disable-next-line max-len
     it('should set canSave property false when the form value is updated and then gets back to the original content (community license)', async () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
@@ -350,25 +309,22 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should set canSave property false when edit a content with fields', async () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123',
             name: 'Hello World',
-            host: '123-xyz-567-xxl' // Match the mock site
+            host: '123-xyz-567-xxl', // Match the mock site
+            layout: layout
         });
         spectator.detectChanges();
         await spectator.fixture.whenStable();
-
-        // Need to set layout after component initialization
-        spectator.setInput('layout', layout);
-        spectator.detectChanges();
 
         expect(spectator.component.canSave).toBe(false); // by default is false
     });
 
     it('should set canSave property false on edit mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
@@ -379,7 +335,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should have basic form controls for non-content base types', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'WIDGET'
         });
@@ -407,7 +363,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should render basic fields for non-content base types', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'WIDGET'
         });
@@ -429,7 +385,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should have basic form controls for content base type', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -474,23 +430,23 @@ describe('ContentTypesFormComponent', () => {
         };
 
         // Need to create a new spectator with enterprise license before initialization
-        const enterpriseSpectator = createComponent();
-        enterpriseSpectator.setInput('data', {
+        // Use fixture.componentRef.setInput before detectChanges for Angular 21 required signal inputs
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             ...base,
             baseType: 'CONTENT',
             expireDateVar: 'expireDateVar',
-            publishDateVar: 'publishDateVar'
+            publishDateVar: 'publishDateVar',
+            layout: layout
         });
-        enterpriseSpectator.setInput('layout', layout);
-        enterpriseSpectator.detectChanges();
-        await enterpriseSpectator.fixture.whenStable();
+        spectator.detectChanges();
+        await spectator.fixture.whenStable();
 
         // Manually call setDateVarFieldsState since ngOnChanges doesn't exist
-        enterpriseSpectator.component['setDateVarFieldsState']();
-        enterpriseSpectator.detectChanges();
+        spectator.component['setDateVarFieldsState']();
+        spectator.detectChanges();
 
-        expect(enterpriseSpectator.component.form.value).toEqual({
+        expect(spectator.component.form.value).toEqual({
             ...base,
             expireDateVar: 'expireDateVar',
             publishDateVar: 'publishDateVar',
@@ -514,7 +470,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should set value to the form with systemActionMappings', () => {
-            spectator.setInput('data', {
+            spectator.setInput('contentType', {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT',
                 systemActionMappings: {
@@ -545,7 +501,7 @@ describe('ContentTypesFormComponent', () => {
         });
 
         it('should set value to the form with systemActionMappings with empty object', () => {
-            spectator.setInput('data', {
+            spectator.setInput('contentType', {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT',
                 systemActionMappings: {}
@@ -560,7 +516,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should render extra fields for content types', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -583,7 +539,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should render disabled dates fields and hint when date fields are not passed', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
@@ -598,7 +554,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should render the new content banner when the feature flag is enabled', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
@@ -622,16 +578,16 @@ describe('ContentTypesFormComponent', () => {
             FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
         ] = false;
 
-        // Create a new component instance with the updated flag
-        const newSpectator = createComponent();
-        newSpectator.setInput('data', {
+        // Use main spectator but update the input value directly
+        // Set input using fixture's componentRef before any detectChanges
+        spectator.fixture.componentRef.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             id: '123'
         });
-        newSpectator.detectChanges();
+        spectator.detectChanges();
 
-        const newContentBanner = newSpectator.query(
+        const newContentBanner = spectator.query(
             '[data-test-id="content-type__new-content-banner"]'
         );
         expect(newContentBanner).toBeNull();
@@ -644,11 +600,11 @@ describe('ContentTypesFormComponent', () => {
 
     describe('fields dates enabled', () => {
         beforeEach(async () => {
-            spectator.setInput('data', {
+            spectator.setInput('contentType', {
                 ...dotcmsContentTypeBasicMock,
-                baseType: 'CONTENT'
+                baseType: 'CONTENT',
+                layout: layout
             });
-            spectator.setInput('layout', layout);
             spectator.detectChanges();
             await spectator.fixture.whenStable();
 
@@ -683,7 +639,7 @@ describe('ContentTypesFormComponent', () => {
     });
 
     it('should not submit form with invalid form', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT'
         });
@@ -692,30 +648,30 @@ describe('ContentTypesFormComponent', () => {
         let data = null;
         jest.spyOn(spectator.component, 'submitForm');
 
-        spectator.component.send.subscribe((res) => (data = res));
+        spectator.component.$send.subscribe((res) => (data = res));
         spectator.component.submitForm();
 
         expect(data).toBeNull();
     });
 
     it('should not submit a valid form without changes and in Edit mode', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
-            id: '123'
+            id: '123',
+            layout: layout
         });
-        spectator.setInput('layout', layout);
         spectator.detectChanges();
         jest.spyOn(spectator.component, 'submitForm');
-        jest.spyOn(spectator.component.send, 'emit');
+        jest.spyOn(spectator.component.$send, 'emit');
 
         spectator.component.submitForm();
 
-        expect(spectator.component.send.emit).not.toHaveBeenCalled();
+        expect(spectator.component.$send.emit).not.toHaveBeenCalled();
     });
 
     it('should have dot-page-selector component and right attrs', () => {
-        spectator.setInput('data', {
+        spectator.setInput('contentType', {
             ...dotcmsContentTypeBasicMock,
             baseType: 'CONTENT',
             host: '123'
@@ -731,15 +687,17 @@ describe('ContentTypesFormComponent', () => {
 
         beforeEach(() => {
             jest.spyOn(dotLicenseService, 'isEnterprise').mockReturnValue(of(true));
-            spectator.setInput('data', {
+            spectator.setInput('contentType', {
                 ...dotcmsContentTypeBasicMock,
                 baseType: 'CONTENT'
             });
             spectator.detectChanges();
             data = null;
             jest.spyOn(spectator.component, 'submitForm');
-            spectator.component.send.subscribe((res) => (data = res));
+            spectator.component.$send.subscribe((res) => (data = res));
             spectator.component.form.controls.name.setValue('A content type name');
+            // Set host to match SiteServiceMock currentSite identifier
+            spectator.component.form.controls.host.setValue('123-xyz-567-xxl');
             spectator.detectChanges();
         });
 
@@ -783,7 +741,7 @@ describe('ContentTypesFormComponent', () => {
     describe('workflow field', () => {
         describe('create', () => {
             beforeEach(() => {
-                spectator.setInput('data', {
+                spectator.setInput('contentType', {
                     ...dotcmsContentTypeBasicMock,
                     baseType: 'CONTENT'
                 });
@@ -814,7 +772,7 @@ describe('ContentTypesFormComponent', () => {
 
                     // Create new component with enterprise license
                     const enterpriseSpectator = createComponent();
-                    enterpriseSpectator.setInput('data', {
+                    enterpriseSpectator.setInput('contentType', {
                         ...dotcmsContentTypeBasicMock,
                         baseType: 'CONTENT'
                     });
@@ -836,7 +794,7 @@ describe('ContentTypesFormComponent', () => {
 
         describe('edit', () => {
             it('should set values from the server', () => {
-                spectator.setInput('data', {
+                spectator.setInput('contentType', {
                     ...dotcmsContentTypeBasicMock,
                     baseType: 'CONTENT',
                     id: '123',
@@ -870,7 +828,7 @@ describe('ContentTypesFormComponent', () => {
             });
 
             it('should set empty value', () => {
-                spectator.setInput('data', {
+                spectator.setInput('contentType', {
                     ...dotcmsContentTypeBasicMock,
                     baseType: 'CONTENT',
                     id: '123'
@@ -880,7 +838,7 @@ describe('ContentTypesFormComponent', () => {
                 expect(spectator.component.form.get('workflows').value).toEqual([]);
             });
             it('should initialize workflowsSelected$ with the value from workflows field', async () => {
-                spectator.setInput('data', {
+                spectator.setInput('contentType', {
                     ...dotcmsContentTypeBasicMock,
                     baseType: 'CONTENT',
                     id: '123',

@@ -140,7 +140,7 @@ public class ASTMethod extends SimpleNode
          *  at execution time.  There can be no in-node caching,
          *  but if we are careful, we can do it in the context.
          */
-        Object [] params = new Object[paramCount];
+        Object [] params = paramCount > 0 ? new Object[paramCount] : ArrayUtils.EMPTY_OBJECT_ARRAY;
 
           /*
            * sadly, we do need recalc the values of the args, as this can

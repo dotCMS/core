@@ -1,0 +1,28 @@
+@let action = $action();
+
+<div class="min-w-16 w-16"></div>
+<p-select
+    (onChange)="onTypeChange($event.value)"
+    [ngModel]="action.type?.key"
+    [options]="typeDropdownOptions$ | async"
+    [style]="{ width: '100%' }"
+    [placeholder]="$actionTypePlaceholder()"
+    [filter]="true"
+    class="min-w-48 max-w-48"
+    appendTo="body" />
+<dot-serverside-condition
+    (parameterValueChange)="onParameterValueChange($event)"
+    [componentInstance]="action"
+    class="flex-1" />
+<div class="shrink-0">
+    <button
+        (click)="onDeleteRuleActionClicked()"
+        [disabled]="!action.isPersisted()"
+        [rounded]="true"
+        [text]="true"
+        pButton
+        type="button"
+        severity="danger"
+        icon="pi pi-trash"
+        ariaLabel="Delete Action"></button>
+</div>

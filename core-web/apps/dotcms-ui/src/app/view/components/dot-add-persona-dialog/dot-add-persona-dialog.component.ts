@@ -1,4 +1,16 @@
-import { Component, EventEmitter, Input, OnInit, Output, ViewChild, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    Input,
+    OnInit,
+    Output,
+    ViewChild,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
+
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
 
 import { take } from 'rxjs/operators';
 
@@ -8,17 +20,18 @@ import {
     DotWorkflowActionsFireService
 } from '@dotcms/data-access';
 import { DotDialogActions, DotPersona } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotCreatePersonaFormComponent } from './dot-create-persona-form/dot-create-persona-form.component';
 
 const PERSONA_CONTENT_TYPE = 'persona';
 
 @Component({
+    changeDetection: ChangeDetectionStrategy.Eager,
     selector: 'dot-add-persona-dialog',
     templateUrl: './dot-add-persona-dialog.component.html',
     styleUrls: ['./dot-add-persona-dialog.component.scss'],
-    imports: [DotDialogComponent, DotCreatePersonaFormComponent, DotMessagePipe]
+    imports: [DialogModule, ButtonModule, DotCreatePersonaFormComponent, DotMessagePipe]
 })
 export class DotAddPersonaDialogComponent implements OnInit {
     private dotMessageService = inject(DotMessageService);

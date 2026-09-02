@@ -3,11 +3,7 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "libs/dotcms-models/src",
     "projectType": "library",
-    "targets": {
-        "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
-        }
-    },
-    "tags": ["skip:test", "skip:lint"]
+    "tags": ["skip:test", "skip:lint"],
+    "// targets": "to see all targets run: nx show project dotcms-models --web",
+    "targets": {}
 }

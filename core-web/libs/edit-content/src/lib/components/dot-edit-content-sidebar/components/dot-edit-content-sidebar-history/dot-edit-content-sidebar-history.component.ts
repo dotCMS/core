@@ -1,27 +1,23 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, inject, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { MenuModule } from 'primeng/menu';
-import { ScrollerModule, ScrollerLazyLoadEvent } from 'primeng/scroller';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TooltipModule } from 'primeng/tooltip';
 
 import { ComponentStatus, DotCMSContentletVersion, DotPagination } from '@dotcms/dotcms-models';
-import {
-    DotEmptyContainerComponent,
-    DotMessagePipe,
-    DotSidebarAccordionComponent,
-    DotSidebarAccordionTabComponent
-} from '@dotcms/ui';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotHistoryTimelineItemComponent } from './components/dot-history-timeline-item/dot-history-timeline-item.component';
+import { DotHistoryTimelineListComponent } from './components/dot-history-timeline-list/dot-history-timeline-list.component';
 import { DotPushpublishTimelineItemComponent } from './components/dot-pushpublish-timeline-item/dot-pushpublish-timeline-item.component';
 
 import {
     DotHistoryTimelineItemAction,
     DotPushPublishHistoryItem
 } from '../../../../models/dot-edit-content.model';
+import { DotEditContentSidebarSectionComponent } from '../dot-edit-content-sidebar-section/dot-edit-content-sidebar-section.component';
 
 /**
  * Component that displays content version history in the sidebar.
@@ -30,22 +26,22 @@ import {
 @Component({
     selector: 'dot-edit-content-sidebar-history',
     imports: [
-        ScrollerModule,
         SkeletonModule,
         TooltipModule,
         ButtonModule,
         MenuModule,
-        DotEmptyContainerComponent,
         DotMessagePipe,
-        DotSidebarAccordionComponent,
-        DotSidebarAccordionTabComponent,
+        DotEditContentSidebarSectionComponent,
         DotHistoryTimelineItemComponent,
+        DotHistoryTimelineListComponent,
         DotPushpublishTimelineItemComponent
     ],
     providers: [DatePipe, DotMessagePipe],
     templateUrl: './dot-edit-content-sidebar-history.component.html',
-    styleUrls: ['./dot-edit-content-sidebar-history.component.scss'],
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    host: {
+        class: 'flex flex-col h-full min-h-0'
+    }
 })
 export class DotEditContentSidebarHistoryComponent {
     private readonly dotMessagePipe = inject(DotMessagePipe);
@@ -62,6 +58,15 @@ export class DotEditContentSidebarHistoryComponent {
      * @readonly
      */
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
+
+    /**
+     * Current status of the push publish history, independent from the
+     * versions status so reloading versions never flashes this section
+     * @readonly
+     */
+    $pushPublishStatus = input<ComponentStatus>(ComponentStatus.LOADING, {
+        alias: 'pushPublishStatus'
+    });
 
     /**
      * Current content identifier
@@ -88,6 +93,13 @@ export class DotEditContentSidebarHistoryComponent {
      * @readonly
      */
     $historicalVersionInode = input<string | null>(null, { alias: 'historicalVersionInode' });
+
+    /**
+     * Inode of the version currently being fetched after a view/compare click,
+     * used to show inline loading feedback on the corresponding timeline item
+     * @readonly
+     */
+    $loadingVersionInode = input<string | null>(null, { alias: 'loadingVersionInode' });
 
     /**
      * List of push publish history items to display (accumulated items from store)
@@ -123,12 +135,23 @@ export class DotEditContentSidebarHistoryComponent {
     readonly $isLoading = computed(() => this.$status() === ComponentStatus.LOADING);
 
     /**
+     * Determines if the push publish history is in a loading state
+     */
+    readonly $isPushPublishLoading = computed(
+        () => this.$pushPublishStatus() === ComponentStatus.LOADING
+    );
+
+    /**
      * Determines if there are history items to display
      */
     readonly $hasHistoryItems = computed(() => this.$historyItems().length > 0);
 
     /**
-     * Determines if there are more items to load for infinite scroll
+     * Determines if there are more items to load for infinite scroll.
+     * Assumes `currentPage` is 1-based (API contract): page 1 covers the first
+     * `perPage` items, so `currentPage * perPage` is the count loaded so far. A
+     * 0-based `currentPage` would make this always true and loop — guard upstream
+     * if the contract ever changes.
      */
     readonly $hasMoreItems = computed(() => {
         const pagination = this.$historypagination();
@@ -149,46 +172,6 @@ export class DotEditContentSidebarHistoryComponent {
         const pagination = this.$pushPublishHistoryPagination();
         return pagination && pagination.currentPage * pagination.perPage < pagination.totalEntries;
     });
-
-    /**
-     * Handle infinite scroll when user scrolls near the end
-     */
-    onScrollIndexChange(event: ScrollerLazyLoadEvent): void {
-        if (this.shouldLoadMore(event) && !this.$isLoading()) {
-            this.loadNextPage();
-        }
-    }
-
-    /**
-     * Handle infinite scroll for push publish history when user scrolls near the end
-     */
-    onPushPublishScrollIndexChange(event: ScrollerLazyLoadEvent): void {
-        if (this.shouldLoadMorePushPublish(event) && !this.$isLoading()) {
-            this.loadNextPushPublishPage();
-        }
-    }
-
-    /**
-     * Determine if we should load more items based on scroll position
-     */
-    private shouldLoadMore(event: ScrollerLazyLoadEvent): boolean {
-        const { last } = event;
-        const totalItems = this.$historyItems().length;
-        const threshold = 5; // Load when 5 items remaining
-
-        return totalItems - last <= threshold && this.$hasMoreItems();
-    }
-
-    /**
-     * Determine if we should load more push publish items based on scroll position
-     */
-    private shouldLoadMorePushPublish(event: ScrollerLazyLoadEvent): boolean {
-        const { last } = event;
-        const totalItems = this.$pushPublishHistoryItems().length;
-        const threshold = 5; // Load when 5 items remaining
-
-        return totalItems - last <= threshold && this.$hasMorePushPublishItems();
-    }
 
     /**
      * Load the next page of history items
@@ -212,10 +195,40 @@ export class DotEditContentSidebarHistoryComponent {
 
     /**
      * Get the real index of an item in the history array
-     * This is needed because p-scroller's template index is virtual
      */
     getRealIndex(item: DotCMSContentletVersion): number {
         return this.$historyItems().indexOf(item);
+    }
+
+    /**
+     * Get the index of a push publish item in the list.
+     */
+    getPushPublishIndex(item: DotPushPublishHistoryItem): number {
+        return this.$pushPublishHistoryItems().indexOf(item);
+    }
+
+    getMarkerClass(item: DotCMSContentletVersion): string {
+        if (item.live) return 'border-green-500!';
+        if (item.working) return 'border-yellow-500!';
+        return 'border-gray-400!';
+    }
+
+    /**
+     * Load more version items when the Versions timeline reaches its end.
+     */
+    onTimelineReachedEnd(): void {
+        if (this.$hasMoreItems() && !this.$isLoading()) {
+            this.loadNextPage();
+        }
+    }
+
+    /**
+     * Load more push publish items when the Push Publish timeline reaches its end.
+     */
+    onPushPublishTimelineReachedEnd(): void {
+        if (this.$hasMorePushPublishItems() && !this.$isPushPublishLoading()) {
+            this.loadNextPushPublishPage();
+        }
     }
 
     /**
@@ -230,11 +243,4 @@ export class DotEditContentSidebarHistoryComponent {
             command: () => this.deletePushPublishHistory.emit()
         }
     ]);
-
-    /**
-     * Handle accordion tab change
-     */
-    onAccordionTabChange(_activeTab: string | null): void {
-        // TODO: Here you can add additional logic if needed
-    }
 }

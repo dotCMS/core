@@ -20,6 +20,7 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
     private Integer width;
     private String styleClass;
     private int leftOffset = -1;
+    private Map<String, Object> metadata;
 
     private static final Map<Integer, Integer> mapWithWidthPercent = ImmutableMap.<Integer, Integer>builder().put(12,100).put(11,91).put(10,83).put(9,75).put(8,66).put(7,58).put(6,50).put(5,41).put(4,33).put(3,25).put(2,16).put(1,8).build();
     private static final Map<Integer, Integer> mapWidthPercentWith = Map.of(100, 12, 75, 9, 66, 8, 50,6, 33, 4, 25,3);
@@ -28,18 +29,20 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
     public TemplateLayoutColumn(@JsonProperty("containers") List<ContainerUUID> containers,
                                 @JsonProperty("widthPercent") final int widthPercent,
                                 @JsonProperty("leftOffset") final int leftIndex,
-                                @JsonProperty("styleClass") final String styleClass) {
+                                @JsonProperty("styleClass") final String styleClass,
+                                @JsonProperty("metadata") final Map<String, Object> metadata) {
         super(containers);
 
         this.widthPercent = widthPercent;
         this.leftOffset = leftIndex;
         this.styleClass = styleClass;
+        this.metadata = metadata;
     }
 
     public TemplateLayoutColumn(final List<ContainerUUID> containers,
                                 final int widthPercent,
                                 final int leftIndex) {
-        this(containers, widthPercent, leftIndex, null);
+        this(containers, widthPercent, leftIndex, null, null);
     }
 
     public Integer getWidthPercent () {
@@ -81,5 +84,13 @@ public class TemplateLayoutColumn extends ContainerHolder implements Serializabl
 
     public String getStyleClass() {
         return styleClass;
+    }
+
+    public Map<String, Object> getMetadata() {
+        return metadata;
+    }
+
+    public void setMetadata(final Map<String, Object> metadata) {
+        this.metadata = metadata;
     }
 }

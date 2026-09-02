@@ -1,142 +1,133 @@
-import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { By } from '@angular/platform-browser';
 
-import { MultiSelect, MultiSelectChangeEvent } from 'primeng/multiselect';
-
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import { DotLanguageFilterComponent } from '@dotcms/ui';
 import { createFakeLanguage, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveLanguageFieldComponent } from './dot-content-drive-language-field.component';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
-const MOCK_LANGUAGES: DotLanguage[] = [
-    createFakeLanguage({
-        id: 1,
-        languageCode: 'en',
-        countryCode: 'US',
-        language: 'English',
-        country: 'United States',
-        isoCode: 'en-US'
-    }),
-    createFakeLanguage({
-        id: 2,
-        languageCode: 'es',
-        countryCode: 'ES',
-        language: 'Spanish',
-        country: 'Spain',
-        isoCode: 'es-ES'
-    }),
-    createFakeLanguage({
-        id: 3,
-        languageCode: 'fr',
-        countryCode: 'FR',
-        language: 'French',
-        country: 'France',
-        isoCode: 'fr-FR'
-    })
-];
-
 describe('DotContentDriveLanguageFieldComponent', () => {
     let spectator: Spectator<DotContentDriveLanguageFieldComponent>;
-    let component: DotContentDriveLanguageFieldComponent;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
-    let languagesService: SpyObject<DotLanguagesService>;
 
     const createComponent = createComponentFactory({
         component: DotContentDriveLanguageFieldComponent,
         providers: [
             mockProvider(DotContentDriveStore, {
+                defaultLanguageId: jest.fn().mockReturnValue(1),
+                getFilterValue: jest.fn().mockReturnValue(undefined),
                 patchFilters: jest.fn(),
-                removeFilter: jest.fn(),
-                getFilterValue: jest.fn()
+                removeFilter: jest.fn()
             }),
             mockProvider(DotLanguagesService, {
-                get: jest.fn().mockReturnValue(of(MOCK_LANGUAGES))
+                get: jest.fn().mockReturnValue(of([createFakeLanguage({ id: 1 })]))
             }),
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
-                    'content-drive.language-selector.placeholder': 'Language'
+                    'content-drive.language-selector.placeholder': 'Language',
+                    search: 'Search'
                 })
             }
         ],
         detectChanges: false
     });
 
+    const languageFilter = () =>
+        spectator.fixture.debugElement.query(By.directive(DotLanguageFilterComponent));
+
     beforeEach(() => {
         spectator = createComponent();
-        component = spectator.component;
         store = spectator.inject(DotContentDriveStore, true);
-        languagesService = spectator.inject(DotLanguagesService);
-        store.getFilterValue.mockReturnValue([]);
+        store.getFilterValue.mockReset().mockReturnValue(undefined);
     });
 
-    it('should fetch languages and populate state', () => {
+    afterEach(() => jest.clearAllMocks());
+
+    it('should render the shared language filter', () => {
         spectator.detectChanges();
 
-        expect(languagesService.get).toHaveBeenCalled();
-        expect(component.$state().languages).toEqual(MOCK_LANGUAGES);
+        expect(languageFilter()).toBeTruthy();
     });
 
-    it('should set selectedLanguages when store has languageId filter', () => {
+    it('should bind the store languageId filter as numbers', () => {
         store.getFilterValue.mockReturnValue(['1', '2']);
-
         spectator.detectChanges();
 
+        expect(languageFilter().componentInstance.$selectedLanguageIds()).toEqual([1, 2]);
         expect(store.getFilterValue).toHaveBeenCalledWith('languageId');
-        expect(component.$selectedLanguages()).toEqual([1, 2]);
     });
 
-    it('should patch filters with string values when selectedLanguages has values', () => {
+    it('should bind an empty selection when no languageId filter is set', () => {
         spectator.detectChanges();
 
-        const multiSelectDebugElement = spectator.fixture.debugElement.query(
-            By.directive(MultiSelect)
-        );
-
-        spectator.triggerEventHandler(multiSelectDebugElement, 'ngModelChange', [1, 2]);
-
-        expect(component.$selectedLanguages()).toEqual([1, 2]);
-
-        spectator.triggerEventHandler(MultiSelect, 'onChange', {} as MultiSelectChangeEvent);
-
-        expect(store.patchFilters).toHaveBeenCalledWith({
-            languageId: ['1', '2']
-        });
+        expect(languageFilter().componentInstance.$selectedLanguageIds()).toEqual([]);
     });
 
-    it('should remove filter when selectedLanguages is empty', () => {
-        component.$selectedLanguages.set([]);
+    it('should patch the store with string ids when a selection is emitted', () => {
+        spectator.detectChanges();
 
-        const multiSelectDebugElement = spectator.fixture.debugElement.query(
-            By.directive(MultiSelect)
-        );
+        spectator.triggerEventHandler(languageFilter(), 'selectionChange', [1, 2]);
 
-        spectator.triggerEventHandler(multiSelectDebugElement, 'ngModelChange', []);
-
-        spectator.triggerEventHandler(MultiSelect, 'onChange', {} as MultiSelectChangeEvent);
-
-        expect(store.removeFilter).toHaveBeenCalledWith('languageId');
+        expect(store.patchFilters).toHaveBeenCalledWith({ languageId: ['1', '2'] });
     });
 
-    describe('MultiSelect', () => {
-        it('should have correct properties configured', () => {
+    describe('removable', () => {
+        // The shared filter's spec pins that the input suppresses the chip's X. These pin the wiring:
+        // that this adapter computes it from the store's default and passes it down. Bug 5's
+        // affordance was lost once already, when the component this logic lived in was deleted by a
+        // refactor upstream, so both halves are guarded separately.
+        it('should not offer removal while the only selection is the environment default', () => {
+            // Clearing it would re-seed the very same value, so the X would do nothing visible.
+            store.getFilterValue.mockReturnValue(['1']);
             spectator.detectChanges();
 
-            const multiSelectDebugElement = spectator.fixture.debugElement.query(
-                By.directive(MultiSelect)
-            );
-            const multiSelectComponent = multiSelectDebugElement.componentInstance;
-
-            expect(multiSelectComponent.scrollHeight).toBe('25rem');
-            expect(multiSelectComponent.resetFilterOnHide).toBe(true);
-            expect(multiSelectComponent.showToggleAll).toBe(true);
-
-            expect(multiSelectComponent.placeholder()).toBe('Language');
+            expect(languageFilter().componentInstance.$removable()).toBe(false);
         });
+
+        it('should offer removal once a non-default language is selected', () => {
+            store.getFilterValue.mockReturnValue(['2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should offer removal when the default is selected alongside another', () => {
+            // Two selections means clearing genuinely changes what is filtered.
+            store.getFilterValue.mockReturnValue(['1', '2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should offer removal when nothing is selected yet', () => {
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(true);
+        });
+
+        it('should track the environment default rather than hardcoding an id', () => {
+            // A different default must move the behaviour with it.
+            store.defaultLanguageId.mockReturnValue(2);
+            store.getFilterValue.mockReturnValue(['2']);
+            spectator.detectChanges();
+
+            expect(languageFilter().componentInstance.$removable()).toBe(false);
+        });
+    });
+
+    it('should remove the filter when an empty selection is emitted', () => {
+        store.getFilterValue.mockReturnValue(['1']);
+        spectator.detectChanges();
+
+        spectator.triggerEventHandler(languageFilter(), 'selectionChange', []);
+
+        expect(store.removeFilter).toHaveBeenCalledWith('languageId');
+        expect(store.patchFilters).not.toHaveBeenCalled();
     });
 });

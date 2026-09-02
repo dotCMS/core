@@ -1,4 +1,4 @@
-import { createServiceFactory, SpectatorService } from '@ngneat/spectator/jest';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpClient } from '@angular/common/http';
@@ -44,11 +44,15 @@ describe('DotActionUrlService', () => {
         );
     });
 
-    it('should return EMPTY when the request fails', () => {
-        httpClientMock.get.mockReturnValue(throwError(() => new Error('Error')));
+    it('should propagate the error when the request fails', (done) => {
+        const error = new Error('Not Found');
+        httpClientMock.get.mockReturnValue(throwError(() => error));
 
-        spectator.service.getCreateContentletUrl('testType').subscribe((result) => {
-            expect(result).toEqual([]);
+        spectator.service.getCreateContentletUrl('unknownType').subscribe({
+            error: (e) => {
+                expect(e).toBe(error);
+                done();
+            }
         });
     });
 });

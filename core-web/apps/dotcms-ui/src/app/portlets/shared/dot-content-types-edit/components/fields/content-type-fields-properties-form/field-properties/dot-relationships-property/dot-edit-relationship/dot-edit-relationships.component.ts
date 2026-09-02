@@ -1,9 +1,16 @@
 import { Observable, of as observableOf } from 'rxjs';
 
 import { AsyncPipe } from '@angular/common';
-import { Component, EventEmitter, OnInit, Output, inject } from '@angular/core';
+import {
+    Component,
+    EventEmitter,
+    OnInit,
+    Output,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 
-import { flatMap, map, switchMap, toArray } from 'rxjs/operators';
+import { mergeMap, map, switchMap, toArray } from 'rxjs/operators';
 
 import { PaginatorService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -36,6 +43,7 @@ interface CardinalitySorted {
     selector: 'dot-edit-relationships',
     templateUrl: './dot-edit-relationships.component.html',
     imports: [SearchableDropdownComponent, AsyncPipe, DotMessagePipe],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [PaginatorService]
 })
 export class DotEditRelationshipsComponent implements OnInit {
@@ -81,7 +89,7 @@ export class DotEditRelationshipsComponent implements OnInit {
      * @memberof DotEditRelationshipsComponent
      */
     triggerChanged(relationship: DotRelationship): void {
-        this.switch.next({
+        this.switch.emit({
             velocityVar: relationship.relationTypeValue,
             cardinality: relationship.cardinality
         });
@@ -115,7 +123,7 @@ export class DotEditRelationshipsComponent implements OnInit {
         this.currentPage = this.getCardinalities().pipe(
             switchMap((cardinalities: CardinalitySorted) => {
                 return this.dotPaginatorService.getWithOffset(offset).pipe(
-                    flatMap((relationships: DotRelationship[]) => relationships),
+                    mergeMap((relationships: DotRelationship[]) => relationships),
                     map((relationship: DotRelationship) => {
                         return {
                             label: `${relationship.relationTypeValue}.${

@@ -20,6 +20,7 @@ package org.apache.velocity.runtime;
  */
 
 import com.dotcms.rendering.velocity.services.DotResourceLoader;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
 import java.io.StringReader;
 import java.util.ArrayList;
@@ -172,6 +173,15 @@ public class VelocimacroFactory
                      macroLibVec.add(libfiles);
                  }
 
+                 // Feature flag: when true, engine init throws VelocityException if any
+                 // configured velocimacro.library file fails to load. Default is false to
+                 // preserve historical behavior; operators opt in once they've verified
+                 // their library files load cleanly (see issue #35601).
+                 final boolean failOnMissing = Config.getBooleanProperty(
+                         "VELOCITY_LIBRARY_FAIL_ON_MISSING", false);
+                 final List<String> loadedLibraries = new ArrayList<>();
+                 final List<String> failedLibraries = new ArrayList<>();
+
                  for(int i = 0, is = macroLibVec.size(); i < is; i++)
                  {
                      String lib = (String) macroLibVec.get(i);
@@ -205,9 +215,16 @@ public class VelocimacroFactory
                              twonk.template = template;
                              twonk.modificationTime = template.getLastModified();
                              libModMap.put(lib, twonk);
+                             loadedLibraries.add(lib);
                          }
                          catch(ResourceNotFoundException rnse){
-                        	 Logger.warn(this.getClass(),rnse.getMessage());
+                             // Surfaces the failed library by name so operators can grep startup logs.
+                             // See dotCMS issue #35601 — previously this was a generic WARN that
+                             // produced silent macro-rendering failures after pod restarts.
+                             Logger.error(this,
+                                     "Velocimacro : VM library not found : " + lib
+                                             + " : " + rnse.getMessage());
+                             failedLibraries.add(lib);
                          }
                          catch (Exception e)
                          {
@@ -220,6 +237,24 @@ public class VelocimacroFactory
 
                          vmManager.setRegisterFromLib(false);
                      }
+                 }
+
+                 Logger.info(this,
+                         "Velocimacro libraries loaded: " + loadedLibraries
+                                 + " ; failed: " + failedLibraries);
+
+                 if (failOnMissing && !failedLibraries.isEmpty())
+                 {
+                     // Terminal: this throw short-circuits the remainder of initVelocimacro()
+                     // (permission setup, namespace usage, autoreload). The factory ends up in
+                     // a partial state and MUST be discarded — do not catch this and reuse the
+                     // instance. The documented call path is VelocityUtil.getEngine() →
+                     // DotRuntimeException → InitServlet aborts → pod never becomes ready.
+                     throw new VelocityException(
+                             "Velocimacro : required VM libraries failed to load: "
+                                     + failedLibraries
+                                     + ". Set VELOCITY_LIBRARY_FAIL_ON_MISSING=false (or unset)"
+                                     + " to allow startup with missing libraries.");
                  }
              }
 

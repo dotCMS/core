@@ -60,6 +60,7 @@ describe('DojoFormBridge', () => {
             );
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -102,6 +103,7 @@ describe('DojoFormBridge', () => {
             );
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -183,6 +185,7 @@ describe('DojoFormBridge', () => {
             expect(consoleSpy).toHaveBeenCalledWith('Error watching field:', expect.any(Error));
 
             getSpy.mockRestore();
+            consoleSpy.mockRestore();
         });
     });
 
@@ -247,6 +250,112 @@ describe('DojoFormBridge', () => {
         });
     });
 
+    describe('getField show/hide', () => {
+        let fieldContainer: HTMLDivElement;
+        let fieldInput: HTMLInputElement;
+
+        beforeEach(() => {
+            fieldContainer = document.createElement('div');
+            fieldContainer.classList.add('field');
+            fieldInput = document.createElement('input');
+            fieldInput.id = 'visibilityField';
+            fieldContainer.appendChild(fieldInput);
+            document.body.appendChild(fieldContainer);
+        });
+
+        afterEach(() => {
+            document.body.removeChild(fieldContainer);
+        });
+
+        it('should hide the .field container when hide is called', () => {
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+            expect(fieldContainer.style.display).toBe('none');
+        });
+
+        it('should show the .field container when show is called after hide', () => {
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+            expect(fieldContainer.style.display).toBe('none');
+
+            fieldAPI.show();
+            expect(fieldContainer.style.display).toBe('');
+        });
+
+        it('should not throw when show is called on non-existent element', () => {
+            const fieldAPI = bridge.getField('nonExistentField');
+            expect(() => fieldAPI.show()).not.toThrow();
+        });
+
+        it('should not throw when hide is called on non-existent element', () => {
+            const fieldAPI = bridge.getField('nonExistentField');
+            expect(() => fieldAPI.hide()).not.toThrow();
+        });
+
+        it('should not throw when element has no .field ancestor', () => {
+            const orphanInput = document.createElement('input');
+            orphanInput.id = 'orphanField';
+            document.body.appendChild(orphanInput);
+
+            const fieldAPI = bridge.getField('orphanField');
+            expect(() => fieldAPI.hide()).not.toThrow();
+            expect(() => fieldAPI.show()).not.toThrow();
+
+            document.body.removeChild(orphanInput);
+        });
+
+        it('should handle errors gracefully in hide', () => {
+            const consoleSpy = jest.spyOn(console, 'warn');
+            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.hide();
+
+            expect(consoleSpy).toHaveBeenCalledWith('Error hiding field:', expect.any(Error));
+
+            getSpy.mockRestore();
+            consoleSpy.mockRestore();
+        });
+
+        it('should handle errors gracefully in show', () => {
+            const consoleSpy = jest.spyOn(console, 'warn');
+            const getSpy = jest.spyOn(document, 'getElementById').mockImplementation(() => {
+                throw new Error('Test error');
+            });
+
+            const fieldAPI = bridge.getField('visibilityField');
+            fieldAPI.show();
+
+            expect(consoleSpy).toHaveBeenCalledWith('Error showing field:', expect.any(Error));
+
+            getSpy.mockRestore();
+            consoleSpy.mockRestore();
+        });
+    });
+
+    describe('getField validation state', () => {
+        it('should return a neutral validation state', () => {
+            const state = bridge.getField('anyField').getValidationState();
+
+            expect(state).toEqual({
+                valid: true,
+                invalid: false,
+                touched: false,
+                dirty: false,
+                errors: null
+            });
+        });
+
+        it('should return a no-op unsubscribe from onValidationChange', () => {
+            const unsubscribe = bridge.getField('anyField').onValidationChange(jest.fn());
+
+            expect(typeof unsubscribe).toBe('function');
+            expect(() => unsubscribe()).not.toThrow();
+        });
+    });
+
     describe('ready', () => {
         it('should execute callback when loaded', (done) => {
             bridge.ready((api) => {
@@ -265,6 +374,54 @@ describe('DojoFormBridge', () => {
             window.dispatchEvent(new Event('load'));
 
             expect(callback).not.toHaveBeenCalled();
+        });
+    });
+
+    /**
+     * The legacy Dojo editor has never had a browse modal — the method has always been a stub.
+     * That stays true; what changes is that it says so. A stub that silently resolves `null` is
+     * indistinguishable from the user pressing Cancel, so a template author debugging "why does
+     * nothing happen" has nothing to go on.
+     */
+    describe('openBrowserModal', () => {
+        let warn: jest.SpyInstance;
+
+        beforeEach(() => {
+            warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        });
+
+        afterEach(() => warn.mockRestore());
+
+        it('should return a controller', () => {
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(typeof controller.close).toBe('function');
+        });
+
+        it('should report null because it opens nothing', () => {
+            const onClose = jest.fn();
+
+            bridge.openBrowserModal({ kinds: ['file'], onClose });
+
+            expect(onClose).toHaveBeenCalledWith(null);
+        });
+
+        it('should warn that the legacy editor does not support it', () => {
+            bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(warn).toHaveBeenCalled();
+        });
+
+        it('should tolerate close() being called', () => {
+            // Nothing is open, so this must be a no-op rather than a throw — a caller cannot know
+            // which host it landed in.
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(() => controller.close()).not.toThrow();
+        });
+
+        it('should work with no options at all', () => {
+            expect(() => bridge.openBrowserModal()).not.toThrow();
         });
     });
 });

@@ -3,7 +3,7 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
-import { pluck } from 'rxjs/operators';
+import { map } from 'rxjs/operators';
 
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
@@ -21,6 +21,7 @@ export interface EsQueryParamsSearch {
     limit?: number;
     sort?: string;
     sortOrder?: ESOrderDirectionSearch;
+    depth?: number;
 }
 export interface DotContentSearchParams {
     globalSearch?: string;
@@ -53,16 +54,18 @@ export class DotContentSearchService {
         query,
         limit = 0,
         offset = 0,
-        sort = 'score,modDate desc'
+        sort = 'score,modDate desc',
+        depth
     }: EsQueryParamsSearch): Observable<T> {
+        const body: Record<string, unknown> = { query, sort, limit, offset };
+
+        if (depth != null) {
+            body['depth'] = depth;
+        }
+
         return this.#http
-            .post('/api/content/_search', {
-                query,
-                sort,
-                limit,
-                offset
-            })
-            .pipe(pluck('entity'));
+            .post<{ entity: T }>('/api/content/_search', body)
+            .pipe(map((x) => x?.entity));
     }
 
     /**
@@ -95,6 +98,6 @@ export class DotContentSearchService {
 
         return this.#http
             .post<DotContentSearchResponse>('/api/v1/content/search', payload)
-            .pipe(pluck('entity'));
+            .pipe(map((x) => x?.entity));
     }
 }

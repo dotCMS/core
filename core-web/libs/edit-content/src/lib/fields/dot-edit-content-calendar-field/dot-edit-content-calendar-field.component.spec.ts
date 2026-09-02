@@ -1,10 +1,10 @@
 import { describe } from '@jest/globals';
-import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@ngneat/spectator/jest';
+import { SpectatorHost, byTestId, createHostFactory, mockProvider } from '@openng/spectator/jest';
 
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
-import { Calendar } from 'primeng/calendar';
+import { DatePicker } from 'primeng/datepicker';
 import { Tooltip, TooltipModule } from 'primeng/tooltip';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -16,6 +16,7 @@ import {
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet } from '@dotcms/utils-testing';
 
+import { DotCalendarFieldComponent } from './components/calendar-field/calendar-field.component';
 import * as calendarUtils from './components/calendar-field/calendar-field.util';
 import { DotEditContentCalendarFieldComponent } from './dot-edit-content-calendar-field.component';
 
@@ -258,7 +259,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showClear).toBe(true);
 
             expect(calendar.placeholder).toBe('Never expires');
@@ -285,7 +286,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showClear).toBe(false);
             expect(calendar.placeholder).toBe('');
         });
@@ -313,13 +314,15 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const component = spectator.hostComponent.formGroup;
-            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            const formGroup = spectator.hostComponent.formGroup;
+            const control = formGroup.get(DATE_FIELD_MOCK.variable) as FormControl;
             control.disable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
-            expect(calendar.disabled).toBe(true);
+            // Calendar-field uses internalFormControl; PrimeNG DatePicker binds to it.
+            // Assert on the calendar-field's internalFormControl since DatePicker.disabled may be a signal.
+            const calendarField = spectator.query(DotCalendarFieldComponent);
+            expect(calendarField?.internalFormControl.disabled).toBe(true);
         });
 
         it('should enable calendar when setDisabledState is called with false', () => {
@@ -343,13 +346,13 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const component = spectator.hostComponent.formGroup;
-            const control = component.get(DATE_FIELD_MOCK.variable) as FormControl;
+            const formGroup = spectator.hostComponent.formGroup;
+            const control = formGroup.get(DATE_FIELD_MOCK.variable) as FormControl;
             control.enable();
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
-            expect(calendar.disabled).toBe(false);
+            const calendarField = spectator.query(DotCalendarFieldComponent);
+            expect(calendarField?.internalFormControl.disabled).toBe(false);
         });
     });
 
@@ -376,7 +379,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -404,7 +407,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(false);
             expect(calendar.timeOnly).toBe(false);
             expect(calendar.icon).toBe('pi pi-calendar');
@@ -432,11 +435,66 @@ describe('DotEditContentCalendarFieldComponent', () => {
             );
             spectator.detectChanges();
 
-            const calendar = spectator.query(Calendar);
+            const calendar = spectator.query(DatePicker);
             expect(calendar.showTime).toBe(true);
             expect(calendar.timeOnly).toBe(true);
             expect(calendar.icon).toBe('pi pi-clock');
         });
+    });
+
+    describe('Picker presentation (issue #36156)', () => {
+        const buildHost = (fieldType: FIELD_TYPES) => {
+            const field = { ...DATE_FIELD_MOCK, fieldType };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [field.variable]: new FormControl()
+                        }),
+                        field,
+                        utcTimezone: null,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: null
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+        };
+
+        const FIELD_TYPES_UNDER_TEST = [
+            ['Date', FIELD_TYPES.DATE],
+            ['Date/Time', FIELD_TYPES.DATE_AND_TIME],
+            ['Time', FIELD_TYPES.TIME]
+        ] as const;
+
+        it.each(FIELD_TYPES_UNDER_TEST)(
+            'should keep the %s picker open on selection (closes only on click-outside)',
+            (_label, fieldType) => {
+                buildHost(fieldType);
+
+                const calendar = spectator.query(DatePicker);
+                expect(calendar.hideOnDateTimeSelect).toBe(false);
+            }
+        );
+
+        it.each(FIELD_TYPES_UNDER_TEST)(
+            'should render the %s picker at PrimeNG default width, not full width',
+            (_label, fieldType) => {
+                buildHost(fieldType);
+
+                // No full-width override is applied; PrimeNG default sizing is used.
+                const calendar = spectator.query(DatePicker);
+                expect(calendar.inputStyleClass).toBeFalsy();
+
+                const datepickerEl = spectator.query('p-datepicker');
+                expect(datepickerEl?.classList.contains('w-full')).toBe(false);
+            }
+        );
     });
 
     describe('Default value handling', () => {
@@ -653,7 +711,7 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.createUtcDateAtMidnight).toHaveBeenCalledWith(2024, 0, 15);
@@ -682,10 +740,91 @@ describe('DotEditContentCalendarFieldComponent', () => {
             spectator.detectChanges();
 
             const selectedDate = new Date('2024-01-15T10:30:00');
-            spectator.triggerEventHandler(Calendar, 'onSelect', selectedDate);
+            spectator.triggerEventHandler(DatePicker, 'onSelect', selectedDate);
 
             expect(calendarUtils.extractDateComponents).toHaveBeenCalledWith(selectedDate);
             expect(calendarUtils.convertServerTimeToUtc).toHaveBeenCalled();
+        });
+    });
+
+    describe('Clearing the field', () => {
+        // Seeded timestamp representing an existing, persisted value.
+        const EXISTING_TIMESTAMP = 1701380400000;
+
+        // Base field mock WITHOUT a defaultValue so clearing does not re-push a value
+        // through handleChangeValue when the control transitions to null.
+        const fieldWithoutDefault = { ...DATE_FIELD_MOCK, defaultValue: undefined };
+
+        const buildSeededHost = (field: DotCMSContentTypeField) =>
+            createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [field.variable]: new FormControl(EXISTING_TIMESTAMP)
+                        }),
+                        field,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITHOUT_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: EXISTING_TIMESTAMP
+                        })
+                    }
+                }
+            );
+
+        it.each([
+            ['DATE', FIELD_TYPES.DATE],
+            ['DATE_AND_TIME', FIELD_TYPES.DATE_AND_TIME],
+            ['TIME', FIELD_TYPES.TIME]
+        ])(
+            'should clear the parent form value via onClearClick for %s field',
+            (_label, fieldType) => {
+                const field = { ...fieldWithoutDefault, fieldType };
+                spectator = buildSeededHost(field);
+                spectator.detectChanges();
+
+                const formGroup = spectator.hostComponent.formGroup;
+                expect(formGroup.get(field.variable)?.value).toBe(EXISTING_TIMESTAMP);
+
+                spectator.triggerEventHandler(DatePicker, 'onClearClick', {});
+                spectator.detectChanges();
+
+                expect(formGroup.get(field.variable)?.value).toBeNull();
+            }
+        );
+
+        it('should clear the parent form value via onClear (X icon path) for an expire date field', () => {
+            const field = { ...fieldWithoutDefault, fieldType: FIELD_TYPES.DATE_AND_TIME };
+            spectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-calendar-field [field]="field" [contentlet]="contentlet" [utcTimezone]="utcTimezone" [contentType]="contentType" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [field.variable]: new FormControl(EXISTING_TIMESTAMP)
+                        }),
+                        field,
+                        utcTimezone: MOCK_TIMEZONE,
+                        contentType: CONTENT_TYPE_WITH_EXPIRE,
+                        contentlet: createFakeContentlet({
+                            [field.variable]: EXISTING_TIMESTAMP
+                        })
+                    }
+                }
+            );
+            spectator.detectChanges();
+
+            const formGroup = spectator.hostComponent.formGroup;
+            expect(formGroup.get(field.variable)?.value).toBe(EXISTING_TIMESTAMP);
+
+            spectator.triggerEventHandler(DatePicker, 'onClear', {});
+            spectator.detectChanges();
+
+            expect(formGroup.get(field.variable)?.value).toBeNull();
         });
     });
 

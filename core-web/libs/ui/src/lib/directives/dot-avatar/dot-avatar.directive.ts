@@ -19,7 +19,7 @@ export class DotAvatarDirective implements OnInit {
         this.avatar.label = this.avatar.image ? undefined : this.text[0]?.toUpperCase();
     }
 
-    @HostListener('onImageError', ['$event'])
+    @HostListener('onImageError')
     onImageError() {
         this.avatar.label = this.text[0]?.toUpperCase();
         this.avatar.image = null;

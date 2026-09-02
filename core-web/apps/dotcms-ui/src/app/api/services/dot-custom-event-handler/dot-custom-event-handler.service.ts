@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Params, Router } from '@angular/router';
 
 import { take } from 'rxjs/operators';
 
@@ -54,37 +54,36 @@ export class DotCustomEventHandlerService {
     private handlers: Record<string, ($event: CustomEvent) => void>;
 
     constructor() {
+        // Register handlers synchronously so iframe events (e.g. push-publish) are never
+        // dropped while waiting for feature-flag resolution.
+        this.handlers = {
+            'edit-page': this.goToEditPage.bind(this),
+            'edit-contentlet': this.editContentletLegacy.bind(this),
+            'edit-task': this.editTaskLegacy.bind(this),
+            'create-contentlet': this.createContentletLegacy.bind(this),
+            'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
+            'company-info-updated': this.setPersonalization.bind(this),
+            'push-publish': this.pushPublishDialog.bind(this),
+            'download-bundle': this.downloadBundleDialog.bind(this),
+            'workflow-wizard': this.executeWorkflowWizard.bind(this),
+            'generate-secure-password': this.generateSecurePassword.bind(this),
+            'compare-contentlet': this.openCompareDialog.bind(this),
+            'license-changed': this.updateLicense.bind(this),
+            'edit-host': this.editContentletLegacy.bind(this),
+            'create-host': this.createContentletLegacy.bind(this)
+        };
+
         this.dotPropertiesService
             .getKeys([FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED])
             .subscribe((response) => {
-                const contentEditorFeatureFlag =
-                    response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED] === 'true';
+                // Accept native boolean true (current backend) or the legacy string 'true'
+                // (N-1 backend during a rollback window).
+                const val = response[FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED];
+                const contentEditorFeatureFlag = val === true || val === 'true';
 
-                if (!this.handlers) {
-                    this.handlers = {
-                        'edit-page': this.goToEditPage.bind(this),
-                        'edit-contentlet': contentEditorFeatureFlag
-                            ? this.editContentlet.bind(this)
-                            : this.editContentletLegacy.bind(this),
-                        'edit-task': contentEditorFeatureFlag
-                            ? this.editTask.bind(this)
-                            : this.editTaskLegacy.bind(this),
-                        'create-contentlet': contentEditorFeatureFlag
-                            ? this.createContentlet.bind(this)
-                            : this.createContentletLegacy.bind(this),
-                        'create-contentlet-from-edit-page': this.createContentletLegacy.bind(this),
-                        'company-info-updated': this.setPersonalization.bind(this),
-                        'push-publish': this.pushPublishDialog.bind(this),
-                        'download-bundle': this.downloadBundleDialog.bind(this),
-                        'workflow-wizard': this.executeWorkflowWizard.bind(this),
-                        'generate-secure-password': this.generateSecurePassword.bind(this),
-                        'compare-contentlet': this.openCompareDialog.bind(this),
-                        'license-changed': this.updateLicense.bind(this),
-
-                        // THIS NEEDS TESTING
-                        'edit-host': this.editContentletLegacy.bind(this),
-                        'create-host': this.createContentletLegacy.bind(this)
-                    };
+                if (contentEditorFeatureFlag) {
+                    this.handlers['edit-contentlet'] = this.editContentlet.bind(this);
+                    this.handlers['create-contentlet'] = this.createContentlet.bind(this);
                 }
             });
     }
@@ -122,7 +121,14 @@ export class DotCustomEventHandlerService {
                     return this.createContentletLegacy($event);
                 }
 
-                this.router.navigate([`content/new/${$event.detail.data.contentType}`]);
+                const queryParams: Params = {};
+                if ($event.detail.data.folderPath) {
+                    queryParams['folderPath'] = $event.detail.data.folderPath;
+                }
+
+                this.router.navigate([`content/new/${$event.detail.data.contentType}`], {
+                    queryParams
+                });
             });
     }
 
@@ -154,19 +160,6 @@ export class DotCustomEventHandlerService {
 
     private editTaskLegacy($event: CustomEvent): void {
         this.dotRouterService.goToEditTask($event.detail.data.inode);
-    }
-
-    private editTask($event: CustomEvent): void {
-        this.dotContentTypeService
-            .getContentType($event.detail.data.contentType)
-            .pipe(take(1))
-            .subscribe((contentType) => {
-                if (this.shouldRedirectToOldContentEditor(contentType)) {
-                    return this.editTaskLegacy($event);
-                }
-
-                this.router.navigate([`content/${$event.detail.data.inode}`]);
-            });
     }
 
     private setPersonalization($event: CustomEvent): void {

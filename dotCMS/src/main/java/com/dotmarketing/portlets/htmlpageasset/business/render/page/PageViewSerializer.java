@@ -136,6 +136,10 @@ public class PageViewSerializer extends JsonSerializer<PageView> {
             pageMap.remove("liveInode");
         }
 
+        if (!pageView.getStyleEditorSchemas().isEmpty()) {
+            pageMap.put("styleEditorSchemas", pageView.getStyleEditorSchemas());
+        }
+
         return pageMap;
     }
 

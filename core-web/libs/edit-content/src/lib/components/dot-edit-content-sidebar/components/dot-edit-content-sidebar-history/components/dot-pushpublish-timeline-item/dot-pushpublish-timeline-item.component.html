@@ -1,88 +1,33 @@
 @let item = $item();
-<div class="dot-pushpublish-timeline-item" data-testid="pushpublish-item">
-    <!-- Timeline Marker Column -->
-    <div class="dot-pushpublish-timeline-item__marker-column">
-        <!-- Top connector line -->
-        <div
-            class="dot-pushpublish-timeline-item__connector dot-pushpublish-timeline-item__connector--top"></div>
-
-        <!-- Marker -->
-        <div class="dot-pushpublish-timeline-item__marker" data-testid="timeline-marker"></div>
-
-        <!-- Bottom connector line (fills remaining space) -->
-        <div
-            class="dot-pushpublish-timeline-item__connector dot-pushpublish-timeline-item__connector--bottom"></div>
-    </div>
-
-    <!-- Timeline Item Content Wrapper -->
+<div data-testid="pushpublish-item" class="block w-full pb-3">
     <div
-        class="dot-pushpublish-timeline-item__content-wrapper"
         data-testid="content-wrapper"
-        [pTooltip]="tooltipContent"
-        tooltipPosition="bottom"
-        [tooltipOptions]="{
-            showDelay: 100,
-            hideDelay: 100,
-            tooltipStyleClass: 'dot-pushpublish-timeline-item__tooltip',
-            escape: false,
-            positionStyle: 'absolute',
-            appendTo: 'body'
-        }">
-        <!-- Tooltip Content Template -->
-        <ng-template #tooltipContent>
-            <div class="dot-pushpublish-timeline-item__overlay-content">
-                <ul class="dot-pushpublish-timeline-item__overlay-list">
-                    <li>
-                        {{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}
-                    </li>
-                    <li>
-                        {{ 'edit.content.sidebar.pushpublish.environment' | dm }}:
-                        {{ item.environment }}
-                    </li>
-                    <li>
-                        {{ 'edit.content.sidebar.pushpublish.bundle' | dm }}: {{ item.bundleId }}
-                    </li>
-                </ul>
-            </div>
-        </ng-template>
-
-        <!-- Timeline Item Content -->
-        <div class="dot-pushpublish-timeline-item__content">
-            <!-- Timeline Item Header -->
-            <div class="dot-pushpublish-timeline-item__header">
+        class="flex min-w-0 items-center justify-between gap-2 rounded-md border border-gray-200 bg-white py-2.5 pr-2.5 pl-3">
+        <div class="flex w-full min-w-0 flex-1 flex-col gap-2">
+            <div class="flex flex-wrap items-center justify-between gap-2">
                 <span
-                    class="dot-pushpublish-timeline-item__time-relative"
-                    data-testid="time-display">
-                    {{ item.pushDate | dotRelativeDate }}
+                    data-testid="time-display"
+                    class="text-sm leading-tight font-bold text-gray-900">
+                    {{ item.pushDate | date: 'MMM d, yyyy - h:mm a' }}
                 </span>
-
-                <!-- Bundle ID Section -->
-                <div
-                    class="dot-pushpublish-timeline-item__bundle-id-section"
-                    data-testid="bundle-id-section">
-                    <span
-                        class="dot-pushpublish-timeline-item__bundle-id-text"
-                        data-testid="bundle-id-text">
-                        {{ $truncatedBundleId() }}
-                    </span>
-                    <dot-copy-button
-                        [copy]="item.bundleId"
-                        [tooltipText]="'Copy Bundle ID'"
-                        customClass="dot-pushpublish-timeline-item__copy-button"
-                        data-testid="copy-bundle-id"></dot-copy-button>
-                </div>
+                <dot-copy-button
+                    [copy]="item.bundleId"
+                    [label]="'edit.content.sidebar.pushpublish.bundle.id.label' | dm"
+                    [tooltipText]="'edit.content.sidebar.pushpublish.copy.bundle.id' | dm"
+                    customClass="p-0! [&_.p-button-label]:text-xs [&_.p-button-label]:normal-case"
+                    data-testid="copy-bundle-id" />
             </div>
 
-            <!-- User Information Section -->
-            <div class="dot-pushpublish-timeline-item__user-section">
-                <p-avatar
-                    dotGravatar
-                    [label]="item.pushedBy.charAt(0).toUpperCase()"
-                    styleClass="dot-pushpublish-timeline-item__avatar"
-                    data-testid="user-avatar"></p-avatar>
-                <span
-                    class="dot-pushpublish-timeline-item__user-name"
-                    data-testid="pushpublish-user">
+            <div class="flex items-center gap-2">
+                <div
+                    class="size-6 shrink-0 overflow-hidden rounded-full [&_img]:size-full [&_img]:object-cover">
+                    <p-avatar
+                        dotGravatar
+                        [label]="item.pushedBy.charAt(0).toUpperCase()"
+                        styleClass="w-6! h-6! text-[11px]! leading-none! [&_.p-avatar-text]:leading-none!"
+                        data-testid="user-avatar" />
+                </div>
+                <span data-testid="pushpublish-user" class="min-w-0 truncate text-xs text-gray-700">
                     {{ item.pushedBy }}
                 </span>
             </div>

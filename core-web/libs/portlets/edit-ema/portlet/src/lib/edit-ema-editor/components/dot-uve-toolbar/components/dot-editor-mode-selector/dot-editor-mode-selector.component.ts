@@ -1,34 +1,37 @@
-import { NgClass } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
     computed,
     effect,
     inject,
+    model,
+    OnInit,
     untracked
 } from '@angular/core';
+import { FormsModule } from '@angular/forms';
 
-import { ButtonModule } from 'primeng/button';
-import { MenuModule } from 'primeng/menu';
-import { TooltipModule } from 'primeng/tooltip';
+import { SelectModule } from 'primeng/select';
 
-import { DotAnalyticsTrackerService } from '@dotcms/data-access';
+import { DotMessageService } from '@dotcms/data-access';
 import { UVE_MODE } from '@dotcms/types';
-import { DotMessagePipe } from '@dotcms/ui';
 
 import { UVEStore } from '../../../../../store/dot-uve.store';
 
+interface EditorModeOption {
+    label: string;
+    description: string;
+    id: UVE_MODE;
+}
+
 @Component({
     selector: 'dot-editor-mode-selector',
-    imports: [TooltipModule, MenuModule, ButtonModule, DotMessagePipe, NgClass],
+    imports: [SelectModule, FormsModule],
     templateUrl: './dot-editor-mode-selector.component.html',
-    styleUrl: './dot-editor-mode-selector.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditorModeSelectorComponent {
+export class DotEditorModeSelectorComponent implements OnInit {
     readonly #store = inject(UVEStore);
-    readonly #analyticsTracker = inject(DotAnalyticsTrackerService);
-
+    readonly #dotMessageService = inject(DotMessageService);
     /**
      * Determines whether to show the "Draft" mode option in the mode selector.
      *
@@ -36,7 +39,7 @@ export class DotEditorModeSelectorComponent {
      * Without feature flag: Only show if user can edit the page
      */
     readonly $shouldShowDraftMode = computed(() => {
-        const isLockFeatureEnabled = this.#store.$isLockFeatureEnabled();
+        const isLockFeatureEnabled = this.#store.$lockFeatureEnabled();
 
         // With new lock feature, draft mode is always available
         // Users can toggle lock to edit when ready
@@ -45,29 +48,29 @@ export class DotEditorModeSelectorComponent {
         }
 
         // Legacy behavior: only show if user can edit
-        return this.#store.canEditPage();
+        return this.#store.editorHasAccessToEditMode();
     });
 
     readonly $menuItems = computed(() => {
-        const menu = [];
+        const menu: EditorModeOption[] = [];
 
         if (this.$shouldShowDraftMode()) {
             menu.push({
-                label: 'uve.editor.mode.draft',
-                description: 'uve.editor.mode.draft.description',
+                label: this.#dotMessageService.get('uve.editor.mode.draft'),
+                description: this.#dotMessageService.get('uve.editor.mode.draft.description'),
                 id: UVE_MODE.EDIT
             });
         }
 
         menu.push({
-            label: 'uve.editor.mode.preview',
-            description: 'uve.editor.mode.preview.description',
+            label: this.#dotMessageService.get('uve.editor.mode.preview'),
+            description: this.#dotMessageService.get('uve.editor.mode.preview.description'),
             id: UVE_MODE.PREVIEW
         });
 
         menu.push({
-            label: 'uve.editor.mode.published',
-            description: 'uve.editor.mode.published.description',
+            label: this.#dotMessageService.get('uve.editor.mode.published'),
+            description: this.#dotMessageService.get('uve.editor.mode.published.description'),
             id: UVE_MODE.LIVE
         });
 
@@ -75,12 +78,12 @@ export class DotEditorModeSelectorComponent {
     });
 
     readonly $currentMode = computed(() => this.#store.pageParams().mode);
-
-    readonly $currentModeLabel = computed(() => {
-        return this.$menuItems().find((item) => item.id === this.$currentMode())?.label;
-    });
+    readonly selectedModeModel = model<EditorModeOption | null>(null);
 
     /**
+     * TODO: This should be in the shell or in the store
+     * A main effect should not be hidden in a component
+     *
      * Effect that guards against unauthorized edit mode access.
      *
      * If the lock feature is disabled (legacy behavior):
@@ -92,25 +95,40 @@ export class DotEditorModeSelectorComponent {
      */
     readonly $modeGuardEffect = effect(() => {
         const currentMode = untracked(() => this.$currentMode());
-        const canEditPage = this.#store.canEditPage();
-
-        const isToggleUnlockEnabled = this.#store.$isLockFeatureEnabled();
+        const hasAccessToEditMode = this.#store.editorHasAccessToEditMode();
+        const isToggleUnlockEnabled = this.#store.$lockFeatureEnabled();
 
         if (isToggleUnlockEnabled) {
             return;
         }
 
         // If the user is in edit mode and does not have edit permission, change to preview mode
-        if (currentMode === UVE_MODE.EDIT && !canEditPage) {
+        if (currentMode === UVE_MODE.EDIT && !hasAccessToEditMode) {
             this.onModeChange(UVE_MODE.PREVIEW);
         }
     });
+
+    /**
+     * Style for the dropdown icon
+     * This is used to style the dropdown icon to match the primary color
+     */
+    protected readonly dropdownIconStyle = {
+        dropdownIcon: {
+            class: 'text-primary-500'
+        }
+    };
+
+    ngOnInit() {
+        const currentMode = this.$currentMode();
+        const match = this.$menuItems().find((item) => item.id === currentMode);
+        this.selectedModeModel.set(match ?? null);
+    }
 
     onModeChange(mode: UVE_MODE) {
         if (mode === this.$currentMode()) return;
 
         if (mode === UVE_MODE.EDIT) {
-            this.#store.clearDeviceAndSocialMedia();
+            this.#store.viewClearDeviceAndSocialMedia();
         }
 
         this.#store.trackUVEModeChange({
@@ -119,6 +137,11 @@ export class DotEditorModeSelectorComponent {
         });
 
         /* More info here: https://github.com/dotCMS/core/issues/31719 */
-        this.#store.loadPageAsset({ mode: mode, publishDate: undefined });
+        this.#store.pageLoad({ mode: mode, publishDate: undefined });
+    }
+
+    onModeOptionChange(option: EditorModeOption | null) {
+        if (!option) return;
+        this.onModeChange(option.id);
     }
 }

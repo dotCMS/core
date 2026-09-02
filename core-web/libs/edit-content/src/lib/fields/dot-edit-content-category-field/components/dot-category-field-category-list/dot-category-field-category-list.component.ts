@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -21,9 +20,9 @@ import { TreeModule } from 'primeng/tree';
 import { DotMessageService } from '@dotcms/data-access';
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
+    DotCollapseBreadcrumbComponent,
     DotEmptyContainerComponent,
-    PrincipalConfiguration,
-    DotCollapseBreadcrumbComponent
+    PrincipalConfiguration
 } from '@dotcms/ui';
 
 import { CATEGORY_FIELD_EMPTY_MESSAGES } from '../../../../models/dot-edit-content-field.constant';
@@ -45,7 +44,6 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
 @Component({
     selector: 'dot-category-field-category-list',
     imports: [
-        CommonModule,
         TreeModule,
         CheckboxModule,
         ButtonModule,
@@ -55,10 +53,9 @@ const MINIMUM_CATEGORY_WITHOUT_SCROLLING = 3;
         DotEmptyContainerComponent
     ],
     templateUrl: './dot-category-field-category-list.component.html',
-    styleUrl: './dot-category-field-category-list.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
-        class: 'category-list__wrapper'
+        class: 'overflow-auto h-full flex flex-col rounded-md'
     }
 })
 export class DotCategoryFieldCategoryListComponent {
@@ -106,9 +103,13 @@ export class DotCategoryFieldCategoryListComponent {
     stateList = ComponentStatus;
 
     $showMainSkeleton = computed(() => {
-        const isInitialLoadingState = [ComponentStatus.INIT, ComponentStatus.LOADING].includes(
-            this.$state()
-        );
+        // Annotated: with `as const` the literal array would infer as `('INIT' | 'LOADING')[]`,
+        // which cannot take the wider ComponentStatus that `$state()` returns.
+        const initialLoadingStates: ComponentStatus[] = [
+            ComponentStatus.INIT,
+            ComponentStatus.LOADING
+        ];
+        const isInitialLoadingState = initialLoadingStates.includes(this.$state());
         const categoriesEmpty = this.$categories().length === 0;
 
         return isInitialLoadingState && categoriesEmpty;

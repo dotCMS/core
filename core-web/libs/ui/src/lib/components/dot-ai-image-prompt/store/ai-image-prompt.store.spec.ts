@@ -1,11 +1,11 @@
-import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
+import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
 import { DotAiService } from '@dotcms/data-access';
-import { ComponentStatus, DotAIImageOrientation, PromptType } from '@dotcms/dotcms-models';
+import { ComponentStatus, PromptType } from '@dotcms/dotcms-models';
 
 import { DotAiImagePromptStore } from './ai-image-prompt.store';
 
@@ -38,7 +38,7 @@ describe('DotAiImagePromptStore', () => {
             expect(store.formValue()).toEqual({
                 text: '',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1024x1024'
             });
         });
     });
@@ -80,7 +80,7 @@ describe('DotAiImagePromptStore', () => {
             const formValue = {
                 text: 'new text',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.VERTICAL
+                size: '1024x1792'
             };
             store.setFormValue(formValue);
             expect(store.formValue()).toEqual(formValue);
@@ -92,31 +92,31 @@ describe('DotAiImagePromptStore', () => {
             store.setFormValue({
                 text: 'prompt',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1792x1024'
             });
             store.generateImage();
 
             expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
                 'prompt',
-                DotAIImageOrientation.HORIZONTAL
+                '1792x1024'
             );
             expect(store.status()).toBe(ComponentStatus.IDLE);
             expect(store.images().length).toBe(1);
         });
 
         it('should handle generateImage correctly on error', () => {
-            dotAiService.generateAndPublishImage.mockReturnValue(throwError('error'));
+            dotAiService.generateAndPublishImage.mockReturnValue(throwError(() => 'error'));
 
             store.setFormValue({
                 text: 'prompt',
                 type: PromptType.INPUT,
-                size: DotAIImageOrientation.HORIZONTAL
+                size: '1792x1024'
             });
             store.generateImage();
 
             expect(dotAiService.generateAndPublishImage).toHaveBeenCalledWith(
                 'prompt',
-                DotAIImageOrientation.HORIZONTAL
+                '1792x1024'
             );
             expect(store.status()).toBe(ComponentStatus.ERROR);
             expect(store.error()).toBe('error');

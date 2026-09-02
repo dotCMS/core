@@ -7,12 +7,16 @@ import { DotCMSPage } from "@/views/DotCMSPage";
 
 const params = Astro.params;
 
-const pageResponse = await getDotCMSPage(
-  params?.slug ?? ""
-);
+const pageResponse = await getDotCMSPage(params?.slug ?? "");
 
-const pageAsset = pageResponse?.pageAsset;
-const errors = pageResponse?.error;
+if ("error" in pageResponse) {
+  const { error } = pageResponse;
+  if (error.status === 404) {
+    return Astro.redirect("/404", 404);
+  }
+}
+
+const pageAsset = "pageAsset" in pageResponse ? pageResponse.pageAsset : undefined;
 const { vanityUrl } = pageAsset ?? {};
 
 if (vanityUrl && (vanityUrl.temporaryRedirect || vanityUrl.permanentRedirect)) {
@@ -25,13 +29,10 @@ const title = pageAsset ? pageAsset.page.title : "Error";
 {
   (
     <Layout title={title}>
-      {errors ? (
-        <Error error={errors} />
+      {"error" in pageResponse ? (
+        <Error error={pageResponse.error} />
       ) : (
-        <DotCMSPage
-          client:only="react"
-          pageResponse={pageResponse}
-        />
+        <DotCMSPage client:only="react" pageResponse={pageResponse} />
       )}
     </Layout>
   )

@@ -15,7 +15,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
-import com.dotcms.repackage.com.google.common.primitives.Ints;
+import com.google.common.primitives.Ints;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Identifier;
@@ -69,8 +69,10 @@ import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -79,10 +81,7 @@ import java.util.Set;
 import java.util.function.Supplier;
 
 import org.apache.commons.logging.Log;
-import org.elasticsearch.action.bulk.BulkRequest;
-import org.elasticsearch.client.RequestOptions;
 import java.util.stream.Collectors;
-import org.elasticsearch.common.unit.TimeValue;
 
 
 /**
@@ -1723,7 +1722,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
     final Permissionable finalNewReference = parentPerms._1;
     permissionList = parentPerms._2;
 	Logger.debug(this.getClass(), "loadPermissions - Permissionable:" + permissionable + " found parent permissionable:" + finalNewReference + " with permissions:" + permissionList);
-    permissionCache.addToPermissionCache(permissionKey, permissionList);
+    // Skip caching empty results — a failed walk-up must be retried, not persisted as a permanent 401.
+    if (!permissionList.isEmpty()) {
+        permissionCache.addToPermissionCache(permissionKey, permissionList);
+    }
     /*
      * Step 4. Upsert into the permission_reference table 
      * We have found our "parent permissionable", now
@@ -2537,17 +2539,10 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
                 throw new RuntimeException(e);
             }
 
-			BulkRequest bulkRequest=indexAPI.createBulkRequest();
-			bulkRequest.timeout(TimeValue.timeValueMillis(INDEX_OPERATIONS_TIMEOUT_IN_MS));
-
 			for(Contentlet cont : contentlets) {
 			    permissionCache.remove(cont.getPermissionId());
 			    cont.setIndexPolicy(IndexPolicy.DEFER);
 			    indexAPI.addContentToIndex(cont, false);
-			}
-			if(bulkRequest.numberOfActions()>0) {
-				Sneaky.sneak(()-> RestHighLevelClientProvider.getInstance().getClient()
-						.bulk(bulkRequest, RequestOptions.DEFAULT));
 			}
 
 			offset=offset+limit;
@@ -2726,6 +2721,62 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 			permIdCount++;
 		}
 		return permsToReturn;
+	}
+
+	@Override
+	Set<String> getPermittedIds(final Collection<String> inodeIds,
+			final int permission, final List<String> roleIds) throws DotDataException {
+
+		if (inodeIds.isEmpty() || roleIds.isEmpty()) {
+			return Set.of();
+		}
+
+		final String rolePlaceholders  = roleIds.stream().map(r -> "?").collect(Collectors.joining(", "));
+		final String refBitAnd = DbConnectionFactory.isOracle()
+				? "bitand(permission.permission, ?) > 0"
+				: "(permission.permission & ?) > 0";
+		final String indBitAnd = DbConnectionFactory.isOracle()
+				? "bitand(permission, ?) > 0"
+				: "(permission & ?) > 0";
+
+		final Set<String> permitted = new HashSet<>();
+		final List<String> idList = new ArrayList<>(inodeIds);
+		for (int i = 0; i < idList.size(); i += 500) {
+			final List<String> chunk = idList.subList(i, Math.min(i + 500, idList.size()));
+			final String inodePlaceholders = chunk.stream().map(id -> "?").collect(Collectors.joining(", "));
+
+			final String sql =
+					"SELECT permission_reference.asset_id AS permitted_id " +
+					"FROM permission_reference, permission " +
+					"WHERE permission_reference.reference_id = permission.inode_id " +
+					"  AND permission.permission_type = permission_reference.permission_type " +
+					"  AND permission.roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + refBitAnd +
+					"  AND permission_reference.asset_id IN (" + inodePlaceholders + ") " +
+					"UNION " +
+					"SELECT inode_id AS permitted_id " +
+					"FROM permission " +
+					"WHERE permission_type = 'individual' " +
+					"  AND roleid IN (" + rolePlaceholders + ") " +
+					"  AND " + indBitAnd +
+					"  AND inode_id IN (" + inodePlaceholders + ")";
+
+			final DotConnect dc = new DotConnect().setSQL(sql);
+			// Parameters for the first SELECT (permission_reference join):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+			// Parameters for the second SELECT (individual permission):
+			roleIds.forEach(dc::addParam);
+			dc.addParam(permission);
+			chunk.forEach(dc::addParam);
+
+			dc.loadObjectResults().stream()
+					.map(row -> (String) row.get("permitted_id"))
+					.filter(java.util.Objects::nonNull)
+					.forEach(permitted::add);
+		}
+		return permitted;
 	}
 
 	@Override

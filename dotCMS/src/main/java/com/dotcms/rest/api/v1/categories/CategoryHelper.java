@@ -1,8 +1,5 @@
 package com.dotcms.rest.api.v1.categories;
 
-import com.dotcms.rest.ResponseEntityView;
-import com.dotcms.rest.api.BulkResultView;
-import com.dotcms.util.pagination.OrderDirection;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.exception.DotDataException;
@@ -19,7 +16,6 @@ import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
 import io.vavr.control.Try;
 
-import javax.ws.rs.core.Response;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.function.Supplier;
@@ -87,21 +83,25 @@ public class CategoryHelper {
                 .build();
     }
 
-    public void addOrUpdateCategory(final User user, final String contextInode,
+    public long addOrUpdateCategory(final User user, final String contextInode,
             final BufferedReader bufferedReader, final Boolean merge)
-            throws IOException, Exception {
+            throws IOException, DotDataException, DotSecurityException {
 
+        long successCount = 0;
         for (final CategoryDTO categoryDTO : CategoryImporter.from(bufferedReader)) {
-            addOrUpdateCategory(user, true, contextInode, categoryDTO.getCategoryName(),
+            if (addOrUpdateCategory(user, true, contextInode, categoryDTO.getCategoryName(),
                     categoryDTO.getCategoryVelocityVarName(), categoryDTO.getKey(), null, categoryDTO.getSortOrder(),
-                    merge);
+                    merge)) {
+                successCount++;
+            }
         }
+        return successCount;
     }
 
-    private void addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
+    private boolean addOrUpdateCategory(final User user, final Boolean isSave, final String inode,
             final String name, final String var, final String key, final String keywords,
             final String sort, final boolean isMerge)
-            throws Exception {
+            throws DotDataException, DotSecurityException {
 
         Category parent = null;
         Category category = new Category();
@@ -155,9 +155,11 @@ public class CategoryHelper {
 
         try {
             categoryAPI.save(parent, category, user, false);
-        } catch (DotSecurityException e) {
+            return true;
+        } catch (DotSecurityException | DotDataException e) {
             Logger.error(this,
                     "Error trying to save/update the category " + category.getInode(), e);
+            return false;
         }
     }
 

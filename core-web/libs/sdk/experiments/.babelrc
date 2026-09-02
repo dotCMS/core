@@ -1,12 +1,12 @@
 {
     "presets": [
-      [
-        "@nx/react/babel",
-        {
-          "runtime": "automatic",
-          "useBuiltIns": "usage"
-        }
-      ]
+        [
+            "@nx/react/babel",
+            {
+                "runtime": "automatic",
+                "useBuiltIns": "usage"
+            }
+        ]
     ],
     "plugins": []
-  }
+}

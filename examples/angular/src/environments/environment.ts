@@ -1,6 +1,6 @@
 export const environment = {
-  dotcmsUrl: 'https://dotcms-qa-master.dotcms.site',
+  dotcmsUrl: 'https://staging-latest.dotcms.cloud/',
   authToken:
-    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGljYWEyMDU1NS1iNjIzLTQzZGEtYTNmNS1iMDRkYmQzMDM3MDUiLCJ4bW9kIjoxNzE4ODIzNDUyMDAwLCJuYmYiOjE3MTg4MjM0NTIsImlzcyI6ImRvdGNtcy1xYS1tYXN0ZXIiLCJsYWJlbCI6InJlYWRPbmx5IiwiZXhwIjoxODEzMzgxMjAwLCJpYXQiOjE3MTg4MjM0NTIsImp0aSI6IjkzYWZmZjRkLTdlZTItNDBiYi05NGY5LTc4ZTBhMGU0YTE0NSJ9.YUsIgKsxYpJhNogLzmz-YoRwYgpYYHxbSWi_dajp-Uk',
-  siteId: '48190c8c-42c4-46af-8d1a-0cd5db894797',
+    'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhcGk5Nzk0OTIwYi04NzJkLTQ0MTYtOWM1Yi00MzhkYWE2YmZiNWQiLCJ4bW9kIjoxNzY4NTg0NTE1MDAwLCJuYmYiOjE3Njg1ODQ1MTUsImlzcyI6InN0YWdpbmctbGF0ZXN0IiwibGFiZWwiOiJIZWFkbGVzcyBFeGFtcGxlcyBSZWFkLU9ubHkgVG9rZW4iLCJleHAiOjE4NjMyMzA0MDAsImlhdCI6MTc2ODU4NDUxNSwianRpIjoiMTNhZWNiMTYtZDUxMi00MmQ4LWFhYmYtMWJlMjQ4MTE2ODM3In0.eD93wAaKSCbaQA2RYoxM66z0uCPXesDBCiuj06ArNug',
+  siteId: 'demo.dotcms.com',
 };

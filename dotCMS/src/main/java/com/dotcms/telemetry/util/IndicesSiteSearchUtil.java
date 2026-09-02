@@ -1,6 +1,6 @@
 package com.dotcms.telemetry.util;
 
-import com.dotcms.content.elasticsearch.business.IndexStats;
+import com.dotcms.content.index.domain.IndexStats;
 import com.dotcms.content.elasticsearch.business.IndexType;
 import com.dotmarketing.business.APILocator;
 
@@ -23,7 +23,7 @@ public enum IndicesSiteSearchUtil {
     public Collection<IndexStats> getESIndices() {
         return APILocator.getESIndexAPI().getIndicesStats().entrySet().stream()
                 .map(Map.Entry::getValue)
-                .filter(index -> IndexType.SITE_SEARCH.is(index.getIndexName()))
+                .filter(index -> IndexType.SITE_SEARCH.is(index.indexName()))
                 .collect(Collectors.toList());
     }
 

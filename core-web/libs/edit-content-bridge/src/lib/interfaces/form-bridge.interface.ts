@@ -1,4 +1,5 @@
-import { Subscription } from 'rxjs';
+import { DotBrowserController, DotBrowserOptions } from './asset-browser.interface';
+import { FormFieldAPI, FormFieldValue } from './form-field.interface';
 
 /**
  * Interface for bridging form functionality between different frameworks.
@@ -29,6 +30,14 @@ export interface FormBridge {
     onChangeField(fieldId: string, callback: (value: FormFieldValue) => void): () => void;
 
     /**
+     * Gets a field API object for a specific field, providing a convenient interface
+     * to interact with the field (get/set value, onChange, enable/disable, show/hide).
+     * @param fieldId - The unique identifier of the form field
+     * @returns A FormFieldAPI object for the specified field
+     */
+    getField(fieldId: string): FormFieldAPI;
+
+    /**
      * Optional method to handle bridge initialization.
      * @param callback - Function to execute when the bridge is ready
      */
@@ -38,30 +47,30 @@ export interface FormBridge {
      * Cleans up resources and event listeners when the bridge is destroyed.
      */
     destroy(): void;
+
+    /**
+     * Opens the asset browser so the user can pick content — an asset, a page, a folder or a menu
+     * link.
+     *
+     * Only the Angular host opens anything: the legacy Dojo editor has never had this dialog, and
+     * its bridge resolves `null` with a warning rather than pretending.
+     *
+     * @param options What to browse, and what to do with the result. Every field is optional; the
+     * defaults browse assets only.
+     * @returns A controller for closing the dialog programmatically.
+     *
+     * @example
+     * bridge.openBrowserModal({
+     *   kinds: ['page', 'link'],
+     *   status: 'live',
+     *   onClose: (selection) => {
+     *     if (selection) field.setValue(selection.url);
+     *   }
+     * });
+     */
+    openBrowserModal(options?: DotBrowserOptions): DotBrowserController;
 }
 
-/**
- * Valid types for form field values.
- */
-export type FormFieldValue = string | number | boolean | null;
-
-/**
- * A callback function that is executed when the value of a form field changes.
- *
- * @param {FormFieldValue} value - The new value of the field.
- */
-export interface FieldCallback {
-    id: symbol;
-    callback: (value: FormFieldValue) => void;
-}
-
-/**
- * A subscription to a form field.
- *
- * @param {Subscription} subscription - The subscription to the field.
- * @param {FieldCallback[]} callbacks - The callbacks to execute when the field value changes.
- */
-export interface FieldSubscription {
-    subscription: Subscription;
-    callbacks: FieldCallback[];
-}
+// Re-export all interfaces for backwards compatibility
+export * from './asset-browser.interface';
+export * from './form-field.interface';

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -6,7 +6,16 @@ import { SkeletonModule } from 'primeng/skeleton';
     selector: 'dot-edit-content-sidebar-activities-skeleton',
     imports: [SkeletonModule],
     templateUrl: './dot-edit-content-sidebar-activities-skeleton.component.html',
-    styleUrls: ['./dot-edit-content-sidebar-activities-skeleton.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotEditContentSidebarActivitiesSkeletonComponent {}
+export class DotEditContentSidebarActivitiesSkeletonComponent {
+    /**
+     * Number of skeleton items to display
+     */
+    items = input<number>(3);
+
+    /**
+     * Array of skeleton items for rendering
+     */
+    $skeletonItems = computed(() => Array.from({ length: this.items() }));
+}

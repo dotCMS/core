@@ -1,12 +1,7 @@
 package com.dotcms.rest.api.v1.drive;
 
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
 import com.dotcms.DataProviderWeldRunner;
 import com.dotcms.IntegrationTestBase;
-import com.dotcms.api.web.HttpServletRequestThreadLocal;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
 import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -27,15 +22,23 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UUIDGenerator;
 import com.liferay.portal.model.User;
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+
+import javax.enterprise.context.ApplicationScoped;
+import java.io.File;
+import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.stream.Collectors;
-import javax.enterprise.context.ApplicationScoped;
-import org.junit.BeforeClass;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * Integration test to compare results between ContentDriveHelper#driveSearch and ContentletAPI#search.
@@ -151,6 +154,16 @@ public class ContentDriveHelperContentletAPIComparisonTest extends IntegrationTe
         FileAsset specialFile = APILocator.getFileAssetAPI()
                 .fromContentlet(FileAssetDataGen.createFileAsset(testFolder, "special-drive-document_" + contentId, ".txt"));
         testFileAssets.add(specialFile);
+
+        // Create Image file asset with specific name for filtering
+        final URL url = ContentDriveHelperContentletAPIComparisonTest.class.getResource("/images/test.jpg");
+        if (null == url) {
+            fail("Failed to create test Image File Asset for 'ContentDriveHelperContentletAPIComparisonTest' Integration Test");
+        }
+        final File testImage = new File(url.getFile());
+        Contentlet imageFileContentlet = ContentletDataGen.publish(FileAssetDataGen.createImageFileAssetDataGen(testImage).folder(testFolder).nextPersisted());
+        final FileAsset imageFile = APILocator.getFileAssetAPI().fromContentlet(imageFileContentlet);
+        testFileAssets.add(imageFile);
     }
 
     /**
@@ -502,6 +515,90 @@ public class ContentDriveHelperContentletAPIComparisonTest extends IntegrationTe
         } else {
             Logger.warn(this.getClass(), "Neither API found file assets with baseType filter");
         }
+    }
+
+    /**
+     * Test single MIME Type filtering comparison.
+     * <ul>
+     *     <li><b>Given:</b> Mixed content including contentlets (BaseContentType.CONTENT) and
+     *     file assets (BaseContentType.FILEASSET).</li>
+     *     <li><b>When:</b> ContentDriveHelper uses the mimeTypes filter for retrieving file
+     *     assets from the database, matching the specified type.</li>
+     *     <li><b>Then:</b> The API should return at least 4 contents of the specified MIME Type
+     *     .</li>
+     * </ul>
+     */
+    @Test
+    public void testMimeTypeFilterComparison() throws DotDataException, DotSecurityException {
+        Logger.info(this.getClass(), "=== Testing Drive MIME Type Filter Comparison ===");
+
+        // ContentDriveHelper query for text/plain MIME Type
+        final DriveRequestForm driveRequest = DriveRequestForm.builder()
+                .assetPath(testAssetPath)
+                .showFolders(false)
+                .live(false) // Show working content
+                .archived(false)
+                .addMimeTypes("text/plain")
+                .offset(0)
+                .maxResults(50)
+                .build();
+
+        final PaginatedContents driveResults = contentDriveHelper.driveSearch(driveRequest, systemUser);
+
+        // Extract inodes
+        final Set<String> driveInodes = driveResults.list.stream()
+                .map(item -> (String) item.get("inode"))
+                .collect(Collectors.toSet());
+
+        // Log results
+        Logger.info(this.getClass(), "MIME type (text/plain) filter results:");
+        Logger.info(this.getClass(), "Drive API: " + driveInodes.size() + " file assets");
+        Logger.info(this.getClass(), "Drive inodes: " + driveInodes);
+
+        assertTrue("Drive API should return at least four file asset with MIME type filtering",
+                driveInodes.size() >= 4);
+    }
+
+    /**
+     * Test multiple MIME Type filtering comparison.
+     * <ul>
+     *     <li><b>Given:</b> Mixed content including contentlets (BaseContentType.CONTENT) and
+     *     file assets (BaseContentType.FILEASSET).</li>
+     *     <li><b>When:</b> ContentDriveHelper uses the mimeTypes filter for retrieving file
+     *     assets from the database, matching the specified types.</li>
+     *     <li><b>Then:</b> The API should return at least 5 contents of the specified MIME Types
+     *     .</li>
+     * </ul>
+     */
+    @Test
+    public void testMultipleMimeTypesFilterComparison() throws DotDataException, DotSecurityException {
+        Logger.info(this.getClass(), "=== Testing Drive MIME Type Filter Comparison ===");
+
+        // ContentDriveHelper query for text/plain MIME Type
+        final DriveRequestForm driveRequest = DriveRequestForm.builder()
+                .assetPath(testAssetPath)
+                .showFolders(false)
+                .live(false) // Show working content
+                .archived(false)
+                .addMimeTypes("text/plain", "image/jpeg")
+                .offset(0)
+                .maxResults(50)
+                .build();
+
+        final PaginatedContents driveResults = contentDriveHelper.driveSearch(driveRequest, systemUser);
+
+        // Extract inodes
+        final Set<String> driveInodes = driveResults.list.stream()
+                .map(item -> (String) item.get("inode"))
+                .collect(Collectors.toSet());
+
+        // Log results
+        Logger.info(this.getClass(), "MIME type (text/plain) filter results:");
+        Logger.info(this.getClass(), "Drive API: " + driveInodes.size() + " file assets");
+        Logger.info(this.getClass(), "Drive inodes: " + driveInodes);
+
+        assertTrue("Drive API should return at least 5 file asset with MIME type filtering",
+                driveInodes.size() >= 5);
     }
 
     /**

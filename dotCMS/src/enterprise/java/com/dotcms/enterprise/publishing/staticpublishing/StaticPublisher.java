@@ -39,6 +39,8 @@ import com.dotcms.publishing.PublisherConfiguration;
 import org.apache.commons.io.FileUtils;
 import org.apache.logging.log4j.ThreadContext;
 import com.dotcms.system.event.local.business.LocalSystemEventsAPI;
+import com.dotcms.system.event.local.type.pushpublish.EndpointFailureDetail;
+import com.dotcms.system.event.local.type.pushpublish.FailureCategory;
 import com.dotcms.system.event.local.type.staticpublish.AllStaticPublishEndpointsFailureEvent;
 import com.dotcms.system.event.local.type.staticpublish.AllStaticPublishEndpointsSuccessEvent;
 import com.dotcms.system.event.local.type.staticpublish.SingleStaticPublishEndpointFailureEvent;
@@ -145,11 +147,12 @@ public class StaticPublisher extends Publisher {
             currentStatusHistory = startStatusHistory();
 
             int failedEnvironmentCounter = 0;
+            final List<EndpointFailureDetail> allFailureDetails = new ArrayList<>();
 
             List<Environment> environments = environmentAPI.findEnvironmentsByBundleId(configId);
             for (Environment environment : environments) {
 
-                if (handleEnvironment(environment, currentStatusHistory)) {
+                if (handleEnvironment(environment, currentStatusHistory, allFailureDetails)) {
                     failedEnvironmentCounter++;
                 }
             }
@@ -170,14 +173,14 @@ public class StaticPublisher extends Publisher {
                         currentStatusHistory);
 
                     //Triggering static event listener when all endpoints failed during the process.
-                    localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsFailureEvent(config.getAssets()));
+                    localSystemEventsAPI.asyncNotify(new AllStaticPublishEndpointsFailureEvent(config.getAssets(), allFailureDetails));
                 } else {
                     this.publishAuditAPI.updatePublishAuditStatus(config.getId(),
                         PublishAuditStatus.Status.FAILED_TO_SEND_TO_SOME_GROUPS,
                         currentStatusHistory);
 
                     //Triggering static event listener when at least one endpoint is successfully sent but others failed.
-                    localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointFailureEvent(config.getAssets()));
+                    localSystemEventsAPI.asyncNotify(new SingleStaticPublishEndpointFailureEvent(config.getAssets(), allFailureDetails));
                 }
             }
 
@@ -205,7 +208,8 @@ public class StaticPublisher extends Publisher {
      * detail of the audit. If success, updates the audit with Success code.
      */
     private boolean handleEnvironment(Environment environment,
-                                      PublishAuditHistory currentStatusHistory)
+                                      PublishAuditHistory currentStatusHistory,
+                                      List<EndpointFailureDetail> allFailureDetails)
         throws DotDataException{
 
         EndpointDetail detail = new EndpointDetail();
@@ -213,6 +217,7 @@ public class StaticPublisher extends Publisher {
         boolean isHistoryEmpty = currentStatusHistory.getEndpointsMap().isEmpty();
 
         for (PublishingEndPoint endpoint : getStaticEndpointsByEnviroment(environment)) {
+            EndpointFailureDetail endpointFailureDetail = null;
             try {
                 handleEndpoint(endpoint);
             } catch (DotDataException | DotPublishingException e) {
@@ -226,6 +231,8 @@ public class StaticPublisher extends Publisher {
                         + endpoint.getAddress() + ".  Error: " + e.getMessage();
                 detail.setInfo(error);
                 hasEnvironmentFailed = true;
+                endpointFailureDetail = buildStaticFailureDetail(environment, endpoint, detail, FailureCategory.FILESYSTEM_ERROR, e);
+                allFailureDetails.add(endpointFailureDetail);
 
                 Logger.error(this.getClass(), error, e);
                 PushPublishLogger.log(this.getClass(), "Status Update: Failed to publish bundle");
@@ -251,7 +258,10 @@ public class StaticPublisher extends Publisher {
                         .asyncNotify(new SingleStaticPublishEndpointSuccessEvent(config, endpoint));
             }else{
                 localSystemEventsAPI
-                        .asyncNotify(new SingleStaticPublishEndpointFailureEvent(config.getAssets()));
+                        .asyncNotify(new SingleStaticPublishEndpointFailureEvent(config.getAssets(),
+                                endpointFailureDetail != null
+                                        ? Collections.singletonList(endpointFailureDetail)
+                                        : Collections.emptyList()));
             }
         }
 

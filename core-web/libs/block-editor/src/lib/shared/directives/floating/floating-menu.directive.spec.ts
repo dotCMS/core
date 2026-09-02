@@ -11,7 +11,7 @@ import { EditorDirective } from '../editor/editor.directive';
 
 @Component({
     template: `
-        <tiptap-editor [editor]="editor"></tiptap-editor>
+        <tiptap-editor [editor]="editor" />
         <tiptap-floating-menu [editor]="editor">Floater</tiptap-floating-menu>
     `
 })

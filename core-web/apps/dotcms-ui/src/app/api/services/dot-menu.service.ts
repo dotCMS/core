@@ -3,19 +3,9 @@ import { Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import {
-    defaultIfEmpty,
-    filter,
-    find,
-    map,
-    mergeMap,
-    pluck,
-    publishLast,
-    refCount
-} from 'rxjs/operators';
+import { defaultIfEmpty, filter, find, map, mergeMap, shareReplay } from 'rxjs/operators';
 
-import { DotCMSResponse } from '@dotcms/dotcms-js';
-import { DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
+import { DotCMSResponse, DotMenu, DotMenuItem } from '@dotcms/dotcms-models';
 
 @Injectable()
 export class DotMenuService {
@@ -34,7 +24,7 @@ export class DotMenuService {
     getUrlById(id: string): Observable<string> {
         return this.getMenuItems().pipe(
             filter((res: DotMenuItem) => !res.angular && res.id === id),
-            pluck('url'),
+            map((res) => res?.url),
             defaultIfEmpty('')
         );
     }
@@ -70,9 +60,10 @@ export class DotMenuService {
      */
     loadMenu(force = false): Observable<DotMenu[]> {
         if (!this.menu$ || force) {
-            this.menu$ = this.http
-                .get<DotCMSResponse<DotMenu>>(this.urlMenus)
-                .pipe(publishLast(), refCount(), pluck('entity'));
+            this.menu$ = this.http.get<DotCMSResponse<DotMenu[]>>(this.urlMenus).pipe(
+                shareReplay({ bufferSize: 1, refCount: true }),
+                map((x) => x.entity)
+            );
         }
 
         return this.menu$;

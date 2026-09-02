@@ -1,3 +1,4 @@
+<router-outlet />
 @if (isEditMode()) {
     <dot-content-type-layout
         (openEditDialog)="startFormDialog()"
@@ -9,25 +10,45 @@
                 (removeFields)="removeFields($event)"
                 (editField)="editField($event)"
                 [layout]="layout"
-                [loading]="loadingFields"
+                [loading]="loadingFields()"
                 [contentType]="data"
-                #fieldsDropZone></dot-content-type-fields-drop-zone>
+                #fieldsDropZone />
         }
     </dot-content-type-layout>
 }
 
-<dot-dialog
-    (hide)="onDialogHide()"
-    [(visible)]="show"
-    [actions]="dialogActions"
-    [closeable]="dialogCloseable"
-    [header]="templateInfo.header">
-    @if (show) {
+<p-dialog
+    [visible]="show()"
+    [header]="templateInfo.header"
+    [modal]="true"
+    [closable]="dialogCloseable"
+    [focusOnShow]="dialogFocusOnShow"
+    [style]="{ width: '50rem' }"
+    (visibleChange)="show.set($event)"
+    (onHide)="onDialogHide()">
+    @if ($renderForm()) {
         <dot-content-types-form
-            (valid)="setDialogOkButtonState($event)"
-            (send)="handleFormSubmit($event)"
-            [layout]="layout"
-            [data]="data"
-            #form></dot-content-types-form>
+            ($valid)="setDialogOkButtonState($event)"
+            ($send)="handleFormSubmit($event)"
+            [contentType]="data"
+            #form />
     }
-</dot-dialog>
+    <ng-template pTemplate="footer">
+        @if (dialogActions?.cancel) {
+            <p-button
+                [label]="dialogActions.cancel.label"
+                [disabled]="dialogActions.cancel.disabled"
+                severity="secondary"
+                (click)="dialogActions.cancel.action?.()"
+                data-testId="dotDialogCancelAction" />
+        }
+        @if (dialogActions?.accept) {
+            <p-button
+                [label]="dialogActions.accept.label"
+                [disabled]="dialogActions.accept.disabled || savingContentType()"
+                [loading]="savingContentType()"
+                (click)="dialogActions.accept.action?.()"
+                data-testId="dotDialogAcceptAction" />
+        }
+    </ng-template>
+</p-dialog>

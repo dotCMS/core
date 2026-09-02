@@ -1,54 +1,29 @@
 /**
  * API entity types for analytics responses
+ * TODO: Move dashboard specific types here (e.g. Engagement types)
  */
 
 /**
- * Total page views entity response
+ * Total page views entity response from the new analytics event API.
  */
 export interface TotalPageViewsEntity {
-    'request.totalRequest': string;
+    totalEvents: number;
 }
 
 /**
- * Unique visitors entity response
+ * Unique visitors entity response from the new analytics event API.
  */
 export interface UniqueVisitorsEntity {
-    'request.totalUsers': string;
+    uniqueVisitors: number;
 }
 
 /**
- * Top page performance entity response
+ * Top page performance entity response from the new analytics event API.
  */
 export interface TopPagePerformanceEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
-}
-
-/**
- * Top performance table entity response
- */
-export interface TopPerformaceTableEntity {
-    'request.totalRequest': string;
-    'request.pageTitle': string;
-    'request.path': string;
-}
-
-/**
- * Page view timeline entity response
- */
-export interface PageViewTimeLineEntity {
-    'request.totalRequest': string;
-    'request.createdAt': string;
-    'request.createdAt.day': string;
-}
-
-/**
- * Page view device browsers entity response
- */
-export interface PageViewDeviceBrowsersEntity {
-    'request.totalRequest': string;
-    'request.userAgent': string;
+    identifier: string;
+    title: string;
+    totalEvents: number;
 }
 
 /**
@@ -57,6 +32,14 @@ export interface PageViewDeviceBrowsersEntity {
 export interface BrowserEntity {
     'request.userAgent': string;
     'request.totalRequest': string;
+}
+
+/**
+ * Aggregate unique visitor counts split by traffic (pageview) vs converting sessions (conversion event).
+ */
+export interface ConvertingVisitorsEntity {
+    uniqueVisitors: number;
+    uniqueConvertingVisitors: number;
 }
 
 /**
@@ -93,14 +76,17 @@ export type ApiDimensionField = (typeof ApiDimensionField)[keyof typeof ApiDimen
  * Defines the structure for chart datasets used in analytics components.
  */
 export interface ChartDataset {
+    type?: 'bar' | 'line';
     label: string;
     data: number[];
     borderColor?: string;
     backgroundColor?: string | string[];
     borderWidth?: number;
+    borderRadius?: number;
     fill?: boolean;
     tension?: number;
     cubicInterpolationMode?: 'default' | 'monotone';
+    order?: number;
 }
 
 /**

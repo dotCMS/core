@@ -5,7 +5,7 @@ import static com.dotmarketing.util.Constants.CONFIG_DISPLAY_NOT_EXISTING_USER_A
 import com.dotcms.api.system.user.UserService;
 import com.dotcms.api.system.user.UserServiceFactory;
 import com.dotcms.company.CompanyAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.Produces;

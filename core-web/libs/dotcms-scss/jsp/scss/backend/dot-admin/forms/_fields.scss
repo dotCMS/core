@@ -32,6 +32,7 @@ Styles for commons fields along the backend
         width: 100%;
     }
 
+    input[type="file"]::file-selector-button,
     input[type="file"]::-webkit-file-upload-button {
         background-color: $color-palette-primary;
         height: 36px;
@@ -39,10 +40,11 @@ Styles for commons fields along the backend
         color: $white;
         cursor: pointer;
         padding: 0 1rem;
+    }
 
-        &:hover {
-            background-color: $color-palette-primary-400;
-        }
+    input[type="file"]::file-selector-button:hover,
+    input[type="file"]::-webkit-file-upload-button:hover {
+        background-color: $color-palette-primary-400;
     }
 
     &Actions div {

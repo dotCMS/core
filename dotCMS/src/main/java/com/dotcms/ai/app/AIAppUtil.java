@@ -6,7 +6,6 @@ import com.dotmarketing.util.UtilMethods;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.commons.collections4.CollectionUtils;
 
 import java.util.Arrays;
 import java.util.List;
@@ -32,72 +31,6 @@ public class AIAppUtil {
 
     public static AIAppUtil get() {
         return INSTANCE.get();
-    }
-
-    /**
-     * Creates a text model instance based on the provided secrets.
-     *
-     * @param secrets the map of secrets
-     * @return the created text model instance
-     */
-    public AIModel createTextModel(final Map<String, Secret> secrets) {
-        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.TEXT_MODEL_NAMES);
-        if (CollectionUtils.isEmpty(modelNames)) {
-            return AIModel.NOOP_MODEL;
-        }
-
-        return AIModel.builder()
-                .withType(AIModelType.TEXT)
-                .withModelNames(modelNames)
-                .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_TOKENS_PER_MINUTE))
-                .withApiPerMinute(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_API_PER_MINUTE))
-                .withMaxTokens(discoverIntSecret(secrets, AppKeys.TEXT_MODEL_MAX_TOKENS))
-                .withIsCompletion(discoverBooleanSecret(secrets, AppKeys.TEXT_MODEL_COMPLETION))
-                .build();
-    }
-
-    /**
-     * Creates an image model instance based on the provided secrets.
-     *
-     * @param secrets the map of secrets
-     * @return the created image model instance
-     */
-    public AIModel createImageModel(final Map<String, Secret> secrets) {
-        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.IMAGE_MODEL_NAMES);
-        if (CollectionUtils.isEmpty(modelNames)) {
-            return AIModel.NOOP_MODEL;
-        }
-
-        return AIModel.builder()
-                .withType(AIModelType.IMAGE)
-                .withModelNames(modelNames)
-                .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_TOKENS_PER_MINUTE))
-                .withApiPerMinute(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_API_PER_MINUTE))
-                .withMaxTokens(discoverIntSecret(secrets, AppKeys.IMAGE_MODEL_MAX_TOKENS))
-                .withIsCompletion(discoverBooleanSecret(secrets, AppKeys.IMAGE_MODEL_COMPLETION))
-                .build();
-    }
-
-    /**
-     * Creates an embeddings model instance based on the provided secrets.
-     *
-     * @param secrets the map of secrets
-     * @return the created embeddings model instance
-     */
-    public AIModel createEmbeddingsModel(final Map<String, Secret> secrets) {
-        final List<String> modelNames = splitDiscoveredSecret(secrets, AppKeys.EMBEDDINGS_MODEL_NAMES);
-        if (CollectionUtils.isEmpty(modelNames)) {
-            return AIModel.NOOP_MODEL;
-        }
-
-        return AIModel.builder()
-                .withType(AIModelType.EMBEDDINGS)
-                .withModelNames(modelNames)
-                .withTokensPerMinute(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_TOKENS_PER_MINUTE))
-                .withApiPerMinute(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_API_PER_MINUTE))
-                .withMaxTokens(discoverIntSecret(secrets, AppKeys.EMBEDDINGS_MODEL_MAX_TOKENS))
-                .withIsCompletion(discoverBooleanSecret(secrets, AppKeys.EMBEDDINGS_MODEL_COMPLETION))
-                .build();
     }
 
     /**

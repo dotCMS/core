@@ -3,7 +3,7 @@ package com.dotmarketing.portlets.rules.business;
 import java.util.*;
 import java.util.stream.Collectors;
 
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheAdministrator;
 import com.dotmarketing.business.DotCacheException;
@@ -11,7 +11,7 @@ import com.dotmarketing.business.Ruleable;
 import com.dotmarketing.portlets.rules.model.*;
 import com.dotmarketing.util.Logger;
 
-import static com.dotcms.repackage.com.google.common.base.Preconditions.checkNotNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 /**
  * Implements the Rule Engine caching functionality. The structures that make up

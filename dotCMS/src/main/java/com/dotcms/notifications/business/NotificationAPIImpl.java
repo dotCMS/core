@@ -15,7 +15,7 @@ import com.dotcms.notifications.bean.NotificationData;
 import com.dotcms.notifications.bean.NotificationLevel;
 import com.dotcms.notifications.bean.NotificationType;
 import com.dotcms.notifications.dto.NotificationDTO;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.util.ConversionUtils;
 import com.dotcms.util.I18NMessage;
 import com.dotcms.util.marshal.MarshalFactory;

@@ -1,10 +1,10 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitch, InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -28,7 +28,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
         imports: [
             FormsModule,
             ReactiveFormsModule,
-            InputSwitchModule,
+            ToggleSwitchModule,
             InputTextModule,
             ButtonModule
         ],
@@ -77,7 +77,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.keyControl.hasError('required')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Key is required');
+            expect(spectator.query('small.text-red-500')).toHaveText('Key is required');
         });
 
         it('should invalidate form when key is forbidden', () => {
@@ -87,7 +87,22 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Key already exists');
+            expect(spectator.query('small.text-red-500')).toHaveText('Key already exists');
+        });
+
+        it('should clear duplicate key error when the conflicting key is removed from forbiddenkeys', () => {
+            spectator.component.keyControl.setValue('name');
+            spectator.component.keyControl.markAsDirty();
+            spectator.detectChanges();
+
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeTruthy();
+
+            spectator.setInput('forbiddenkeys', {});
+            spectator.flushEffects();
+            spectator.detectChanges();
+
+            expect(spectator.component.keyControl.hasError('duplicatedKey')).toBeFalsy();
+            expect(spectator.component.keyControl.errors).toBeNull();
         });
 
         it('should invalidate form when value is empty', () => {
@@ -97,7 +112,8 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spectator.component.form.valid).toBeFalsy();
             expect(spectator.component.valueControl.hasError('required')).toBeTruthy();
-            expect(spectator.query('.error-message')).toHaveText('Value is required');
+            const valueErrorSmall = spectator.queryAll('small.text-red-500')[1];
+            expect(valueErrorSmall).toHaveText('Value is required');
         });
     });
 
@@ -210,7 +226,7 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
         it('should load the component with switch button', () => {
             spectator.detectChanges();
-            const switchInput = spectator.query(InputSwitch);
+            const switchInput = spectator.query(ToggleSwitch);
             expect(switchInput).toBeTruthy();
         });
 

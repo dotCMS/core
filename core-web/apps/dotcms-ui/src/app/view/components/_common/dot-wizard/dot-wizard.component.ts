@@ -1,4 +1,3 @@
-import { CommonModule } from '@angular/common';
 import {
     AfterViewInit,
     Component,
@@ -10,7 +9,8 @@ import {
     signal,
     Type,
     ViewChild,
-    ViewChildren
+    ViewChildren,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
@@ -37,7 +37,8 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
     selector: 'dot-wizard',
     templateUrl: './dot-wizard.component.html',
     styleUrls: ['./dot-wizard.component.scss'],
-    imports: [CommonModule, DialogModule, ButtonModule, DotContainerReferenceDirective]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [DialogModule, ButtonModule, DotContainerReferenceDirective]
 })
 export class DotWizardComponent implements AfterViewInit {
     #wizardData: { [key: string]: string };
@@ -98,10 +99,16 @@ export class DotWizardComponent implements AfterViewInit {
      * @memberof DotWizardComponent
      */
     close(): void {
+        const wasOpen = !!this.$data();
         this.$data.set(null);
         this.#currentStep = 0;
         this.updateTransform();
         this.$stepsVisible.set(false);
+        if (wasOpen) {
+            // Idempotent on the submit path: sendValue() nullifies currentOutput
+            // before calling close(), so cancel() becomes a no-op there.
+            this.#dotWizardService.cancel();
+        }
     }
 
     /**
@@ -209,8 +216,11 @@ export class DotWizardComponent implements AfterViewInit {
 
     private setValid(valid: boolean, step: number): void {
         this.#stepsValidation[step] = valid;
-        if (this.#currentStep === step) {
-            this.$dialogActions().accept.disabled = !valid;
+        if (this.#currentStep === step && this.$dialogActions()) {
+            this.$dialogActions.set({
+                ...this.$dialogActions(),
+                accept: { ...this.$dialogActions().accept, disabled: !valid }
+            });
         }
     }
 

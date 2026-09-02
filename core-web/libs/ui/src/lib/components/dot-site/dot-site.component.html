@@ -1,0 +1,70 @@
+<p-select
+    #select
+    (onChange)="onSiteChange($event.value)"
+    (onHide)="onSelectHide()"
+    (onLazyLoad)="onLazyLoad($event)"
+    (onShow)="onShow.emit()"
+    [appendTo]="'body'"
+    [class]="class()"
+    [disabled]="$disabled()"
+    [filter]="true"
+    [inputId]="id()"
+    [lazy]="true"
+    [loading]="$state.loading()"
+    [ngModel]="$state.pinnedOption()"
+    [options]="$options()"
+    [placeholder]="placeholder()"
+    [panelStyleClass]="panelStyleClass()"
+    [scrollHeight]="'300px'"
+    [virtualScroll]="true"
+    [virtualScrollOptions]="{
+        itemSize: 34,
+        step: 40,
+        autoSize: false,
+        style: {
+            height: '300px',
+            minHeight: '300px'
+        }
+    }"
+    dataKey="identifier"
+    optionLabel="hostname">
+    <ng-template pTemplate="filter">
+        <p-iconfield>
+            <input
+                pInputText
+                class="w-full"
+                type="text"
+                role="searchbox"
+                autocomplete="off"
+                [value]="$state.filterValue() || ''"
+                [placeholder]="'Search sites...'"
+                (input)="onFilterChange($any($event.target).value)"
+                (click)="$event.stopPropagation()" />
+            <p-inputicon class="pi pi-search" />
+        </p-iconfield>
+    </ng-template>
+
+    <!-- Declared unconditionally, with the icon conditional *inside* it. Wrapping the template in
+         an `@if` puts it in an embedded view, where PrimeNG's content query cannot find it — the
+         template is simply never applied. With no icon this renders `optionLabel`'s value and
+         nothing else, which is what the default rendering does, so existing consumers see no
+         change. -->
+    <ng-template let-site #selectedItem>
+        <span class="flex min-w-0 items-center gap-2">
+            @if (icon(); as iconClass) {
+                <!-- Concatenated, not two attributes: `[class]` REPLACES the class attribute, so
+                     a static `class="…"` beside it is silently dropped at runtime. -->
+                <i
+                    [class]="'flex-none text-surface-500 ' + iconClass"
+                    data-testid="dot-site-icon"></i>
+            }
+            <span class="min-w-0 truncate">{{ site.hostname }}</span>
+        </span>
+    </ng-template>
+
+    <ng-template let-site #item>
+        <span [class.font-bold]="$state.pinnedOption()?.identifier === site.identifier">
+            {{ site.hostname }}
+        </span>
+    </ng-template>
+</p-select>

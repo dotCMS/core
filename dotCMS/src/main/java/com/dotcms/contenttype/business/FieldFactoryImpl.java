@@ -23,7 +23,7 @@ import com.dotcms.contenttype.transform.field.DbFieldTransformer;
 import com.dotcms.contenttype.transform.field.DbFieldVariableTransformer;
 import com.dotcms.graphql.business.ContentAPIGraphQLTypesProvider;
 import com.dotcms.rendering.velocity.services.FieldLoader;
-import com.dotcms.repackage.com.google.common.collect.ImmutableSet;
+import com.google.common.collect.ImmutableSet;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.exception.DotDataException;
@@ -337,8 +337,11 @@ public class FieldFactoryImpl implements FieldFactory {
 
             // assign an inode and db column if needed
             if (throwAwayField.id() == null) {
+                // normalize before seeding so the id reflects the actual persisted dataType
+                // (e.g. SYSTEM for TagField, BinaryField, ConstantField, RowField, etc.)
+                final Field normalizedForSeed = normalizeData(builder.build());
                 builder.id(APILocator.getDeterministicIdentifierAPI()
-                        .generateDeterministicIdBestEffort(throwAwayField, () -> tryVar));
+                        .generateDeterministicIdBestEffort(normalizedForSeed, () -> tryVar));
             }
         }
 

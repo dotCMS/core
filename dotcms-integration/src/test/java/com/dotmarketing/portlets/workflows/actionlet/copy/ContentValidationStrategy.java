@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.workflows.actionlet.copy;
 
 import static org.junit.Assert.assertEquals;
 
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import java.util.Map;
 

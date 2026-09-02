@@ -463,18 +463,6 @@ public class OpenAIVisionAPIImplTest {
                 Secret.builder()
                         .withType(Type.STRING)
                         .withValue(AiTest.API_KEY.toCharArray())
-                        .build(),
-
-                AppKeys.TEXT_MODEL_NAMES.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(AiTest.MODEL.toCharArray())
-                        .build(),
-
-                AppKeys.IMAGE_MODEL_NAMES.key,
-                Secret.builder()
-                        .withType(Type.STRING)
-                        .withValue(AiTest.IMAGE_MODEL.toCharArray())
                         .build()
         );
 

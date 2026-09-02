@@ -2,9 +2,9 @@
     [innerHTML]="'contenttypes.field.properties.wysiwyg.info.content' | dm"
     data-testId="infoContent"></span>
 
-@if (currentField?.id) {
+@if ($currentField()?.id) {
     <button
-        (click)="action.emit($event)"
+        (click)="$action.emit($event)"
         [label]="'contenttypes.field.properties.wysiwyg.info.button' | dm"
         class="p-button-outlined p-button-sm"
         pButton

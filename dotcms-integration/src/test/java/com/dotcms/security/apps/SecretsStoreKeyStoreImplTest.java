@@ -4,12 +4,18 @@ import static com.dotcms.security.apps.SecretsKeyStoreHelper.SECRETS_KEYSTORE_PA
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.fail;
 import static org.junit.Assert.assertTrue;
 
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.util.Config;
+import com.google.common.collect.ImmutableList;
 import com.dotmarketing.util.UUIDGenerator;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Optional;
 import org.apache.commons.lang.RandomStringUtils;
@@ -216,30 +222,102 @@ public class SecretsStoreKeyStoreImplTest {
     }
 
     /**
-     * Given scenario: We ensure there's a storage file out there created on top of a password. Then
-     * we set a new password to simulate a conflict loading the existing file
-     * Expected Result: After changing password we should still be able to interact with the store
-     * without getting the UnrecoverableKeyException.
-     * But as the previous file just got wiped-out no secret previously stored will be available now.
+     * Given scenario: a store is created under one password, then read with a different one — the
+     * cluster-salt rotation / per-node override drift from issue #36724.
+     * Expected Result: the load fails and the store is PRESERVED.
+     *
+     * This method previously asserted the opposite: that the store was silently wiped and
+     * reading simply returned nothing ("as the previous file just got wiped-out no secret
+     * previously stored will be available now"). That behaviour was the data loss reported in
+     * #36724 — the wiped file held every App credential, and the backup it left behind was
+     * encrypted with the password that had just failed, so it could not be restored either.
+     * Recreating the store is now opt-in; see
+     * {@link #Test_Recovery_On_Load_Failure_When_Auto_Recreate_Enabled()}.
+     *
+     * Deliberately isolated to its own temp file and its own password supplier rather than
+     * mutating the shared SECRETS_KEYSTORE_PASSWORD_KEY and the SecretsStore singleton. The old
+     * version left a random password in Config -- restoring it did nothing, because the property is
+     * normally unset and so the "original value" it saved was null -- and relied on the auto-wipe to
+     * rebuild a usable store for whatever test ran next.
      */
     @Test
-    public void Test_Recovery_On_Load_Failure() {
-        final String password = Config.getStringProperty(SECRETS_KEYSTORE_PASSWORD_KEY);
+    public void Test_Recovery_On_Load_Failure() throws Exception {
+        final Path tmpDir = Files.createTempDirectory("secrets-load-failure-");
+        final Path storePath = tmpDir.resolve("dotSecretsStore.p12");
+        final String priorPath = Config
+                .getStringProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY, null);
+        Config.setProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY,
+                storePath.toString());
         try {
-            final SecretCachedKeyStoreImpl secretsStore = (SecretCachedKeyStoreImpl) SecretsStore.INSTANCE.get();
+            final SecretsKeyStoreHelper nodeA = new SecretsKeyStoreHelper(
+                    () -> "password-one".toCharArray(), ImmutableList.of());
             final String anyKey = "anyKey-" + System.currentTimeMillis();
-            final String anyValue = "anyValue";
-            // Save something to ensure there's a file in use.
-            secretsStore.saveValue(anyKey, anyValue.toCharArray());
-            //Now we change the password.
-            Config.setProperty(SECRETS_KEYSTORE_PASSWORD_KEY,
-                    RandomStringUtils.randomAlphanumeric(10));
-            secretsStore.flushCache();
-            //it's a brand new store so do not expect the old key to be there.
-            final Optional<char[]> valueInStore = secretsStore.getValue(anyKey);
-            assertFalse(valueInStore.isPresent());
+            nodeA.saveValue(anyKey, "anyValue".toCharArray());
+            final long lengthBefore = Files.size(storePath);
+
+            final SecretsKeyStoreHelper nodeB = new SecretsKeyStoreHelper(
+                    () -> RandomStringUtils.randomAlphanumeric(10).toCharArray(),
+                    ImmutableList.of());
+            try {
+                nodeB.getValue(anyKey);
+                fail("a store that cannot be decrypted must raise rather than be replaced");
+            } catch (DotRuntimeException expected) {
+                // correct: this password cannot open the store
+            }
+
+            assertTrue("the store must not be deleted", Files.exists(storePath));
+            assertEquals("the store must be left untouched", lengthBefore, Files.size(storePath));
+            assertEquals("the secret must still be readable with the correct password", "anyValue",
+                    new String(nodeA.decrypt(nodeA.getValue(anyKey))));
         } finally {
-            Config.setProperty(SECRETS_KEYSTORE_PASSWORD_KEY, password);
+            Config.setProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY,
+                    priorPath == null ? "" : priorPath);
+            try (java.util.stream.Stream<Path> paths = Files.walk(tmpDir)) {
+                paths.sorted(java.util.Comparator.reverseOrder()).map(Path::toFile)
+                        .forEach(java.io.File::delete);
+            }
+        }
+    }
+
+    /**
+     * Given scenario: the same password mismatch, but with SECRETS_STORE_AUTO_RECREATE enabled —
+     * an operator explicitly accepting the loss of the secrets to get a working store back.
+     * Expected Result: the pre-#36724 behaviour, i.e. the store is backed up, replaced with an empty
+     * one, and the read returns nothing instead of raising. Pins the escape hatch.
+     */
+    @Test
+    public void Test_Recovery_On_Load_Failure_When_Auto_Recreate_Enabled() throws Exception {
+        final Path tmpDir = Files.createTempDirectory("secrets-auto-recreate-");
+        final Path storePath = tmpDir.resolve("dotSecretsStore.p12");
+        final String priorPath = Config
+                .getStringProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY, null);
+        final String priorAutoRecreate = Config
+                .getStringProperty(SecretsKeyStoreHelper.SECRETS_STORE_AUTO_RECREATE, null);
+        Config.setProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY,
+                storePath.toString());
+        try {
+            final SecretsKeyStoreHelper nodeA = new SecretsKeyStoreHelper(
+                    () -> "password-one".toCharArray(), ImmutableList.of());
+            final String anyKey = "anyKey-" + System.currentTimeMillis();
+            nodeA.saveValue(anyKey, "anyValue".toCharArray());
+
+            Config.setProperty(SecretsKeyStoreHelper.SECRETS_STORE_AUTO_RECREATE, "true");
+
+            final SecretsKeyStoreHelper nodeB = new SecretsKeyStoreHelper(
+                    () -> "a-different-password".toCharArray(), ImmutableList.of());
+
+            assertTrue("the recreated store is empty, so the old secret is gone",
+                    Arrays.equals(AppsCache.CACHE_404, nodeB.getValue(anyKey)));
+            assertTrue("a fresh store must exist", Files.exists(storePath));
+        } finally {
+            Config.setProperty(SecretsKeyStoreHelper.SECRETS_STORE_AUTO_RECREATE,
+                    priorAutoRecreate == null ? "false" : priorAutoRecreate);
+            Config.setProperty(SecretsKeyStoreHelper.SECRETS_KEYSTORE_FILE_PATH_KEY,
+                    priorPath == null ? "" : priorPath);
+            try (java.util.stream.Stream<Path> paths = Files.walk(tmpDir)) {
+                paths.sorted(java.util.Comparator.reverseOrder()).map(Path::toFile)
+                        .forEach(java.io.File::delete);
+            }
         }
     }
 

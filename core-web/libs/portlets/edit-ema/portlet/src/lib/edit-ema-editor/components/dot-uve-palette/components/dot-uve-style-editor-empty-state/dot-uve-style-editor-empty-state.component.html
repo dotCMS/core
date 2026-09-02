@@ -1,0 +1,22 @@
+<span
+    class="material-symbols-outlined text-[5rem]! text-gray-300"
+    data-testid="uve-style-editor-empty-state-icon">
+    tune
+</span>
+<div class="font-bold text-gray-900" data-testid="uve-style-editor-empty-state-title">
+    {{ 'uve.palette.style-editor.empty-state.title' | dm }}
+</div>
+
+<p
+    class="m-0 self-stretch text-sm text-gray-800 [&_a]:cursor-pointer [&_a]:font-semibold [&_a]:text-primary-500 [&_a]:underline hover:[&_a]:text-primary-600"
+    data-testid="uve-style-editor-empty-state-message"
+    [innerHTML]="'uve.palette.style-editor.empty-state.message' | dm"></p>
+
+@if ($showStyleEditorCta()) {
+    <p-button
+        [attr.data-testid]="'uve-style-editor-empty-state-cta'"
+        [label]="'uve.palette.style-editor.empty-state.cta' | dm"
+        variant="outlined"
+        [rounded]="true"
+        (onClick)="navigateToStyleEditor()" />
+}

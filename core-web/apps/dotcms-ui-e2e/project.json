@@ -6,27 +6,48 @@
     "implicitDependencies": ["dotcms-ui"],
     "targets": {
         "e2e": {
-            "executor": "@nx/playwright:playwright",
             "outputs": ["{workspaceRoot}/dist/.playwright/apps/dotcms-ui-e2e"],
-            "options": {
-                "config": "apps/dotcms-ui-e2e/playwright.config.ts"
-            },
             "configurations": {
-                "ci": {
-                    "headed": false,
-                    "ui": false
-                },
-                "headless": {
-                    "headed": false
-                },
+                "ci": {},
+                "dev": {},
+                "local": {},
+                "headless": {},
                 "ui": {
-                    "ui": true
+                    "args": "--ui"
                 }
             }
         },
         "lint": {
-            "executor": "@nx/eslint:lint",
-            "outputs": ["{options.outputFile}"]
+            "options": {
+                "args": ["src/**/*.ts", "playwright.config.ts"]
+            }
+        },
+        "e2e:dev:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=dev HEADLESS=false nx e2e dotcms-ui-e2e --configuration=dev --ui"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
+            }
+        },
+        "e2e:ci:full": {
+            "executor": "nx:run-commands",
+            "options": {
+                "commands": [
+                    "cd .. && ./mvnw -pl :dotcms-core package -DskipTests -Ddocker.skip=false -Ddocker.skip.push=true",
+                    "cd .. && ./mvnw docker:stop docker:start -pl :dotcms-ui-e2e -De2e.test.skip=false",
+                    "npx wait-on http://localhost:8080/dotAdmin --timeout 120000 --interval 2000",
+                    "CURRENT_ENV=ci HEADLESS=true nx e2e dotcms-ui-e2e --configuration=ci",
+                    "cd .. && ./mvnw docker:stop -pl :dotcms-ui-e2e -De2e.test.skip=false"
+                ],
+                "parallel": false,
+                "cwd": "{workspaceRoot}"
+            }
         }
     }
 }

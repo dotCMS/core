@@ -1,0 +1,14 @@
+{
+    "extends": "./tsconfig.json",
+    "compilerOptions": {
+        "outDir": "../../../dist/out-tsc",
+        "declaration": false,
+        "types": ["node"],
+        "allowSyntheticDefaultImports": true,
+        "allowJs": true,
+        "module": "es2020",
+        "moduleResolution": "bundler"
+    },
+    "include": ["src/**/*.ts"],
+    "exclude": ["jest.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+}

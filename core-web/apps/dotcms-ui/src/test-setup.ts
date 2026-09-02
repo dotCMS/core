@@ -13,6 +13,25 @@ setupZoneTestEnv();
 // Setup global mocks
 setupResizeObserverMock();
 
+// Add crypto.randomUUID polyfill for Jest/JSDOM environment
+if (
+    typeof globalThis.crypto === 'undefined' ||
+    typeof globalThis.crypto.randomUUID !== 'function'
+) {
+    let counter = 0;
+    Object.defineProperty(globalThis, 'crypto', {
+        value: {
+            ...globalThis.crypto,
+            randomUUID: () => {
+                counter += 1;
+                return `00000000-0000-4000-8000-${String(counter).padStart(12, '0')}`;
+            }
+        },
+        configurable: true,
+        writable: true
+    });
+}
+
 // Add structuredClone polyfill for Jest environment
 if (!global.structuredClone) {
     global.structuredClone = (obj: any) => {
@@ -66,6 +85,17 @@ console.error = (...args: unknown[]) => {
     ) {
         return;
     }
+    // Skip JSDOM "Not implemented: navigation" (e.g. location.reload in iframe/contentWindow)
+    const errMsg =
+        args[0] && typeof (args[0] as { message?: string }).message === 'string'
+            ? (args[0] as Error).message
+            : '';
+    if (
+        firstArg.includes('Not implemented: navigation') ||
+        errMsg.includes('Not implemented: navigation')
+    ) {
+        return;
+    }
 
     originalConsoleError(...args);
 };
@@ -94,6 +124,19 @@ console.debug = (...args: unknown[]) => {
     }
 
     originalConsoleDebug(...args);
+};
+
+// Suppress feature flag warnings from DotShowHideFeatureDirective in tests
+const originalConsoleWarn = console.warn;
+console.warn = (...args: unknown[]) => {
+    const firstArg = typeof args[0] === 'string' ? args[0] : '';
+
+    // Skip feature flag warnings from DotShowHideFeatureDirective
+    if (firstArg.includes("doesn't exist or is disabled and no alternate template was provided")) {
+        return;
+    }
+
+    originalConsoleWarn(...args);
 };
 
 // Mock sessionStorage for JSDOM

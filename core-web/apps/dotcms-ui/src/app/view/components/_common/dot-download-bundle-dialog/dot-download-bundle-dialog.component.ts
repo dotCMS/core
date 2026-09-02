@@ -1,6 +1,13 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { Component, OnDestroy, OnInit, inject } from '@angular/core';
+import {
+    ChangeDetectorRef,
+    Component,
+    OnDestroy,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -10,7 +17,9 @@ import {
 } from '@angular/forms';
 
 import { SelectItem } from 'primeng/api';
-import { DropdownModule } from 'primeng/dropdown';
+import { ButtonModule } from 'primeng/button';
+import { DialogModule } from 'primeng/dialog';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, map, take, takeUntil } from 'rxjs/operators';
@@ -21,7 +30,7 @@ import {
     DotPushPublishFiltersService
 } from '@dotcms/data-access';
 import { DotDialogActions } from '@dotcms/dotcms-models';
-import { DotDialogComponent, DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
+import { DotFieldRequiredDirective, DotMessagePipe } from '@dotcms/ui';
 import { getDownloadLink } from '@dotcms/utils';
 
 import { DotDownloadBundleDialogService } from '../../../../api/services/dot-download-bundle-dialog/dot-download-bundle-dialog.service';
@@ -40,12 +49,14 @@ const DOWNLOAD_URL = '/api/bundle/_generate';
     imports: [
         FormsModule,
         ReactiveFormsModule,
-        DropdownModule,
+        DialogModule,
+        ButtonModule,
+        SelectModule,
         SelectButtonModule,
-        DotDialogComponent,
         DotFieldRequiredDirective,
         DotMessagePipe
     ],
+    changeDetection: ChangeDetectionStrategy.Eager,
     providers: [DotPushPublishFiltersService]
 })
 export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
@@ -53,6 +64,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishFiltersService = inject(DotPushPublishFiltersService);
     private dotDownloadBundleDialogService = inject(DotDownloadBundleDialogService);
+    private cdr = inject(ChangeDetectorRef);
 
     downloadOptions: SelectItem[];
     filterOptions: SelectItem[];
@@ -94,6 +106,17 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
      */
     close(): void {
         this.showDialog = false;
+    }
+
+    /**
+     * Sync dialog visibility from PrimeNG; only tear down when closing.
+     * @param {boolean} visible
+     * @memberof DotDownloadBundleDialogComponent
+     */
+    onVisibleChange(visible: boolean): void {
+        if (!visible) {
+            this.close();
+        }
     }
 
     /**
@@ -143,6 +166,7 @@ export class DotDownloadBundleDialogComponent implements OnInit, OnDestroy {
         });
         this.listenForChanges();
         this.showDialog = true;
+        this.cdr.detectChanges();
     }
 
     private loadFilters(): Observable<SelectItem[]> {

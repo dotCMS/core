@@ -1,4 +1,33 @@
-name: Build/Push dotCMS docker image
+#
+# ⚠️ DEPRECATED WORKFLOW ⚠️
+#
+# This workflow is deprecated and will be removed in a future release.
+#
+# Migration Path:
+# → Use: .github/workflows/cicd_8-manual-deploy.yml
+#
+# The new workflow provides:
+# - Same functionality (deploy from any branch/tag)
+# - Better integration with modular CI/CD phases
+# - Java version override support
+# - Consistent with modern pipeline architecture
+# - More flexible environment and tag naming
+#
+# Usage comparison:
+#   Old: Trigger this workflow, select branch from GitHub UI
+#   New: Trigger cicd_8-manual-deploy.yml with inputs:
+#        - ref: your-branch-or-tag
+#        - environment: your-environment-name
+#        - custom_tag: (optional) your-custom-tag
+#
+# Deprecation Timeline:
+# - Deprecated: February 2026
+# - Removal: After 2-week validation period (March 2026)
+#
+# Last known usage: February 16, 2026 (actively used for feature branch testing)
+#
+
+name: Build/Push dotCMS docker image [DEPRECATED]
 on:
   workflow_dispatch:
     inputs:

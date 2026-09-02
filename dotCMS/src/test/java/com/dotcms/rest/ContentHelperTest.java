@@ -62,4 +62,5 @@ public class ContentHelperTest extends UnitTestBase {
         assertEquals(urlExpected, url);
     }
 
+
 }

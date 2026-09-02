@@ -1,8 +1,8 @@
 # dotCMS UVE SDK
 
-The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It provides low-level tools that power our framework-specific SDKs, such as [`@dotcms/react`](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md) and [`@dotcms/angular`](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/angular/README.md).
+The `@dotcms/uve` SDK adds live editing to your JavaScript app using the dotCMS Universal Visual Editor (UVE). It provides low-level tools that power our framework-specific SDKs, such as [@dotcms/react](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/react/README.md) and [@dotcms/angular](https://github.com/dotCMS/core/blob/main/core-web/libs/sdk/angular/README.md).
 
-> ⚠️ We **do not recommend using this SDK directly** for most use cases, you should use a [framework SDK that handles setup](#Getting Started: Recommended Examples), rendering, and event wiring for you.
+> ⚠️ We **do not recommend using this SDK directly** for most use cases; you should use a [framework SDK that handles setup](#getting-started-recommended-examples), rendering, and event wiring for you.
 
 With `@dotcms/uve`, framework SDKs are able to:
 - Make pages and contentlets editable
@@ -17,11 +17,11 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [🚩 Custom Setup: Manual Rendering (Not Recommended)](#-custom-setup-manual-rendering-not-recommended)
 -   [Prerequisites & Setup](#prerequisites--setup)
     -   [Get a dotCMS Environment](#get-a-dotcms-environment)
-    -   [Create a dotCMS API Key](#create-a-dotcms-api-key)
+    -   [Configure The Universal Visual Editor App](#configure-the-universal-visual-editor-app)
     -   [Installation](#installation)
     -   [Using the SDK with TypeScript](#using-the-sdk-with-typescript)
 -   [SDK Reference](#sdk-reference)
-    -   [`initUVE()`](#inituveconfig-dotcmsuveconfig)
+    -   [`initUVE()`](#inituveconfig-dotcmspageresponse)
     -   [`getUVEState()`](#getuvestate)
     -   [`createUVESubscription()`](#createuvesubscriptioneventtype-callback)
     -   [`editContentlet()`](#editcontentletcontentlet)
@@ -30,6 +30,10 @@ With `@dotcms/uve`, framework SDKs are able to:
     -   [`updateNavigation()`](#updatenavigationpathname)
     -   [`reorderMenu()`](#reordermenuconfig)
     -   [`sendMessageToUVE()`](#sendmessagetouvemessage)
+-   [Style Editor](#style-editor)
+    -   [What is the Style Editor?](#what-is-the-style-editor)
+    -   [Accessing Style Values](#accessing-style-values)
+    -   [Current Capabilities and Limitations](#current-capabilities-and-limitations)
 -   [Troubleshooting](#troubleshooting)
     -   [Common Issues & Solutions](#common-issues--solutions)
     -   [Debugging Tips](#debugging-tips)
@@ -45,7 +49,7 @@ With `@dotcms/uve`, framework SDKs are able to:
 We strongly recommend using one of our official framework SDKs, which are designed to handle UVE integration, routing, rendering, and more—out of the box. These examples are the best way to get started:
 
 -   [dotCMS Angular SDK: Angular Example](https://github.com/dotCMS/core/tree/main/examples/angular) – Ideal for Angular apps 🅰️
--   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/react) – Ideal for NextJS projects ⚛️
+-   [dotCMS React SDK: NextJS Example](https://github.com/dotCMS/core/tree/main/examples/nextjs) – Ideal for NextJS projects ⚛️
 -   [dotCMS React SDK: Astro Example](https://github.com/dotCMS/core/tree/main/examples/astro) – Ideal for Astro projects 🌌
 
 These examples handle UVE integration, routing, rendering, and more—out of the box. **If you're building a headless dotCMS front-end, start there.**
@@ -62,7 +66,7 @@ You can use `@dotcms/uve` directly, but **it’s not recommended or supported** 
 
 Here's a minimal setup using `@dotcms/client` and `@dotcms/uve`:
 
-1. Initializa the Client and get the page response:
+1. Initialize the Client and get the page response:
 
 ```ts
 // getPage.ts
@@ -90,12 +94,13 @@ const getPage = async () => {
 
 ```ts
 import { initUVE, createUVESubscription } from '@dotcms/uve';
+import { UVEEventType } from '@dotcms/types';
 import { getPage } from './getPage';
 
 const pageResponse = await getPage();
 
 initUVE(pageResponse);
-createUVESubscription('changes', (newPageResponse) => {
+createUVESubscription(UVEEventType.CONTENT_CHANGES, (newPageResponse) => {
     // Handle page updates (e.g. re-render)
 });
 ```
@@ -114,7 +119,7 @@ createUVESubscription('changes', (newPageResponse) => {
 #### 🔄 How to Render a dotCMS Page
 
 > 📚 For a complete guide, here is a full tutorial:
-> 👉 [dotCMS Page Rendering Architecture]( https://dev.dotcms.com/docs/dotcms-page-rendering-architecture)
+> 👉 [dotCMS Page Rendering Architecture](https://dev.dotcms.com/docs/dotcms-page-rendering-architecture)
 
 dotCMS pages are structured as nested layout objects:
 
@@ -164,11 +169,33 @@ To make the layout editable, be sure to apply all required `data-dot-*` attribut
 
 ### Get a dotCMS Environment
 
-#### Version Compatibility
+#### Which SDK Version Should I Use?
 
--   **Recommended**: dotCMS Evergreen
--   **Minimum**: dotCMS v25.05
--   **Best Experience**: Latest Evergreen release
+dotCMS SDKs are published in lockstep with dotCMS itself: every `@dotcms/*` package ships
+at the **exact same version number** as the dotCMS release it was built for (e.g. dotCMS
+`26.7.14-1` → `@dotcms/client@26.7.14-1`, `@dotcms/react@26.7.14-1`, and so on).
+
+**Simple rule of thumb: use the SDK version that matches your dotCMS instance's version.**
+
+You don't have to upgrade the SDK every time dotCMS releases a new version (or vice versa).
+Most releases don't change anything the SDKs rely on, so an older SDK usually keeps working
+fine against a newer dotCMS instance. Occasionally, though, a release does include a real
+breaking change — and if your SDK is older than that point, it will stop working correctly.
+
+You don't need to track this yourself: your dotCMS instance always knows the oldest SDK
+version it still supports, and the SDK checks itself against it automatically. If you're
+using an SDK that's too old, you'll see a clear warning in your console telling you to
+upgrade.
+
+**Recommendation:** pin your SDKs to the same version as your dotCMS instance, and only bump
+them when you upgrade dotCMS — or when the console tells you to.
+
+> **On an LTS release?** LTS releases don't currently get their own matching SDK version.
+> Until that's addressed, use the SDK version published for the closest regular release at
+> or before your LTS version.
+>
+> Want more background on how dotCMS releases and support windows work? See
+> [Release & Support Lifecycle](https://dev.dotcms.com/docs/release-support-lifecycle).
 
 #### Environment Setup
 
@@ -212,9 +239,8 @@ The SDK uses several key types from `@dotcms/types`:
 
 ```typescript
 import {
-    DotCMSContentlet,
+    DotCMSBasicContentlet,
     DotCMSPageResponse,
-    DotCMSUVEConfig,
     DotCMSInlineEditingType,
     UVEEventType,
     UVEState
@@ -225,7 +251,7 @@ For a complete reference of all available types and interfaces, please refer to 
 
 ## SDK Reference
 
-### `initUVE(config?: DotCMSUVEConfig)`
+### `initUVE(config?: DotCMSPageResponse)`
 
 `initUVE` is a function that initializes the Universal Visual Editor (UVE). It sets up the necessary communication between your app and the editor, enabling seamless integration and interaction.
 
@@ -239,7 +265,7 @@ For a complete reference of all available types and interfaces, please refer to 
 const { destroyUVESubscriptions } = initUVE(pageResponse);
 ```
 
-> ⚠️ If you don't provide a `pageResponse`, we can't assure that the UVE will be initialized correctly.
+> ⚠️ If you don't provide a `pageResponse`, we cannot guarantee that the UVE will be initialized correctly.
 
 ### `getUVEState()`
 
@@ -299,14 +325,16 @@ sub.unsubscribe();
 
 -   `UVEEventType.CONTENT_CHANGES`: Triggered when the content of the page changes.
 -   `UVEEventType.PAGE_RELOAD`: Triggered when the page is reloaded.
--   `UVEEventType.REQUEST_BOUNDS`: Triggered when the editor requests the bounds of the page.
--   `UVEEventType.IFRAME_SCROLL`: Triggered when the iframe is scrolled.
--   `UVEEventType.IFRAME_SCROLL_END`: Triggered when the iframe has stopped scrolling.
+-   `UVEEventType.IFRAME_SCROLL`: Triggered when scroll action is needed inside the iframe (`'up'` or `'down'`).
 -   `UVEEventType.CONTENTLET_HOVERED`: Triggered when a contentlet is hovered.
+-   `UVEEventType.CONTENTLET_CLICKED`: Triggered when a contentlet is clicked.
+-   `UVEEventType.AUTO_BOUNDS`: Triggered when the SDK syncs page bounds after layout changes (internal SDK use).
+-   `UVEEventType.SCROLL_TO_SECTION`: Triggered when the editor requests a scroll to a specific page section (internal).
+-   `UVEEventType.SELECTION_CLEARED`: Triggered when the editor clears its selection (internal).
 
 ### `editContentlet(contentlet)`
 
-`editContentlet` is a function that opens the dotCMS modal editor for any contentlet in or out of page area.
+`editContentlet` is a function that opens the dotCMS modal editor for any contentlet in or out of the page area.
 
 | Input        | Type               | Required | Description                      |
 | ------------ | ------------------ | -------- | -------------------------------- |
@@ -336,7 +364,7 @@ const myEditButton = ({ contentlet }) => {
 | Input       | Type                         | Required | Description                                                                    |
 | ----------- | ---------------------------- | -------- | ------------------------------------------------------------------------------ |
 | `type`      | `DotCMSInlineEditingType`    | ✅       | `'BLOCK_EDITOR'` or `'WYSIWYG'`                                                |
-| `fieldData` | `DotCMSInlineEditingPayload` | ✅       | [Field content required to enable inline editing](#dotcmsinlineeditingpayload) |
+| `data`      | `DotCMSInlineEditingPayload` | ✅       | [Field content required to enable inline editing](#dotcmsinlineeditingpayload) |
 
 #### Usage
 
@@ -445,7 +473,7 @@ reorderMenu({ startLevel: 2, depth: 3 });
 
 | Input     | Type                                       | Required | Description                  |
 | --------- | ------------------------------------------ | -------- | ---------------------------- |
-| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessage) | ✅       | Object with action + payload |
+| `message` | [`DotCMSUVEMessage<T>`](#dotcmsuvemessaget) | ✅       | Object with action + payload |
 
 #### Usage
 
@@ -459,11 +487,11 @@ sendMessageToUVE({
 #### DotCMSUVEMessage<T>
 
 | Event (DotCMSUVEAction)            | Payload (T)                                                   |
-| ---------------------------------- | ------------------------------------------------------------- | ------- |
+| ---------------------------------- | ------------------------------------------------------------- |
 | `NAVIGATION_UPDATE`                | `{ url: string }`                                             |
 | `SET_BOUNDS`                       | `DotCMSContainerBound[]`                                      |
 | `SET_CONTENTLET`                   | `DotCMSBasicContentlet`                                       |
-| `IFRAME_SCROLL`                    | `'up'                                                         | 'down'` |
+| `IFRAME_SCROLL`                    | `'up' \| 'down'`                                              |
 | `IFRAME_SCROLL_END`                | ---                                                           |
 | `REORDER_MENU`                     | `DotCMSReorderMenuConfig`                                     |
 | `INIT_INLINE_EDITING`              | `DotCMSInlineEditingPayload`                                  |
@@ -472,6 +500,158 @@ sendMessageToUVE({
 | `GET_PAGE_DATA`                    | ---                                                           |
 | `CLIENT_READY`                     | ---                                                           |
 | `EDIT_CONTENTLET`                  | `DotCMSBasicContentlet`                                       |
+
+## Style Editor
+
+### What is the Style Editor?
+
+The Style Editor is a powerful feature that enables content authors to customize component appearance, layout, typography, colors, and other configurable aspects in real time within the Universal Visual Editor (UVE), without requiring code changes or page reloads.
+
+Style editor schemas are configured in the DotCMS admin UI under **Content Types** (in the content type metadata). The SDK fetches schemas automatically — no schema definition code is required in your application.
+
+**Key Benefits:**
+
+-   **Real-Time Visual Editing**: Modify component styles and see changes instantly in the editor
+-   **Content-Specific Customization**: Different content types can have unique style schemas, and the same contentlet could have different styles depending on whether it is located in a different container or page
+-   **Admin-Managed**: Style schemas are defined in the DotCMS admin UI under Content Types and fetched automatically by the SDK
+
+**Use Cases:**
+
+-   Adjust typography (font size, family, weight)
+-   Configure layouts (grid columns, alignment, spacing)
+-   Customize colors and themes
+-   Toggle component features (borders, shadows, decorations)
+-   Control responsive behavior
+-   Modify animation settings
+
+### Accessing Style Values
+
+Style Editor values are managed internally by UVE and passed to your components through the `dotStyleProperties` attribute. This attribute is available in your contentlet component props.
+
+#### In React Components
+
+When rendering contentlets, style properties are accessed through the `dotStyleProperties` prop:
+
+```typescript
+import { DotCMSBasicContentlet } from '@dotcms/types';
+
+interface ActivityProps {
+    contentlet: DotCMSBasicContentlet;
+    dotStyleProperties?: Record<string, any>;
+}
+
+function Activity(props: ActivityProps) {
+    const { title, description, dotStyleProperties } = props; // Contentlet information
+
+    // Access style values using dot notation or bracket notation
+    const fontSize = dotStyleProperties?.['font-size'];
+    const textAlign = dotStyleProperties?.text;
+    const layout = dotStyleProperties?.layout;
+
+    return (
+        <div style={{ fontSize, textAlign }}>
+            <h1>{title}</h1>
+            <p>{description}</p>
+        </div>
+    );
+}
+```
+
+#### Value Types by Field Type
+
+**Input Field:**
+
+```typescript
+// Returns: string (text) or number (number input)
+const fontSize: string = '16px';
+const padding: number = 24;
+```
+
+**Dropdown Field:**
+
+```typescript
+// Returns: string (the selected value)
+const theme: string = 'light';
+const fontFamily: string = 'Arial';
+```
+
+**Radio Field:**
+
+```typescript
+// Returns: string (the selected value)
+const layout: string = 'left';
+const alignment: string = 'center';
+```
+
+**Checkbox Group:**
+
+```typescript
+// Returns: Record<string, boolean> (object with key-value pairs)
+const textStyles: Record<string, boolean> = {
+    bold: true,
+    italic: false,
+    underline: true,
+    strikethrough: false
+};
+
+// Access individual values
+if (textStyles.bold) {
+    // Apply bold styling
+}
+```
+
+#### Applying Style Values
+
+Use the style values to conditionally render styles, classes, or component variants:
+
+```typescript
+function BlogPost(props) {
+    const { title, body, dotStyleProperties } = props;
+
+    // Example: Apply dynamic font size
+    const fontSize = dotStyleProperties?.['font-size'] || '16px';
+
+    // Example: Apply layout classes
+    const layout = dotStyleProperties?.layout || 'default';
+    const layoutClass = `layout-${layout}`;
+
+    // Example: Apply checkbox group values
+    const textStyles = dotStyleProperties?.['text-style'] || {};
+    const textStyleClasses = [
+        textStyles.bold ? 'font-bold' : '',
+        textStyles.italic ? 'font-italic' : '',
+        textStyles.underline ? 'text-underline' : ''
+    ]
+        .filter(Boolean)
+        .join(' ');
+
+    return (
+        <div className={`${layoutClass} ${textStyleClasses}`} style={{ fontSize }}>
+            <h1>{title}</h1>
+            <p>{body}</p>
+        </div>
+    );
+}
+```
+
+**💡 Note:** The `dotStyleProperties` prop is automatically passed to your contentlet components by the framework SDK when UVE is active.
+
+### Current Capabilities and Limitations:
+
+When **defining styles** for a contentlet within a page using **Style Editor**, the following behaviors might occur:
+
+| Scenario                                          | Behavior                                                                          | Result                                      |
+|---------------------------------------------------|-----------------------------------------------------------------------------------|---------------------------------------------|
+| Same Contentlet, Different Containers, Same Page  | Page A: { Container_1: contentlet_1, Container_2: contentlet_1 }                  | 🎨 Styles are different                     |
+| Same Contentlet, Same Container, Different Pages  | Page A: { Container_1: contentlet_1 }, Page B: { Container_1: contentlet_1 }      | 🎨 Styles are different                     |
+| Copying a Page with Styled Content                | Creating Page B as a copy of Page A, where Page A includes styled content         | ✅ Styles preserved, 🎨 Styles are different |
+| Moving Styled Content to Same Container Type      | system-container → system-container                                               | ✅ Styles preserved                          |
+| Moving Styled Content to Different Container Type | system-container → custom-container                                               | ⚠️ Styles lost                              |
+| Adding, Deleting, or Moving Unstyled Content      | Performing any structural change on the page that does not involve styled content | if any: ✅ Styles preserved                  |
+
+> **NOTE:** (🎨 Styles are different) means the capability to define distinct styles, even when utilizing the identical Contentlet.
+
+The only known limitation is that moving a contentlet with defined styles between different container types (5th scenario) results in the loss of those styles. A fix for this scenario is on our roadmap.
 
 ## Troubleshooting
 
@@ -557,7 +737,7 @@ We offer multiple channels to get help with the dotCMS UVE SDK:
 -   **GitHub Issues**: For bug reports and feature requests, please [open an issue](https://github.com/dotCMS/core/issues/new/choose) in the GitHub repository
 -   **Community Forum**: Join our [community discussions](https://community.dotcms.com/) to ask questions and share solutions
 -   **Stack Overflow**: Use the tag `dotcms-uve` when posting questions
--   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://helpdesk.dotcms.com/support/)
+-   **Enterprise Support**: Enterprise customers can access premium support through the [dotCMS Support Portal](https://www.dotcms.com/support)
 
 When reporting issues, please include:
 
@@ -580,8 +760,8 @@ Please ensure your code follows the existing style and includes appropriate test
 
 ## Licensing
 
-dotCMS comes in multiple editions and as such is dual-licensed. The dotCMS Community Edition is licensed under the GPL 3.0 and is freely available for download, customization, and deployment for use within organizations of all stripes. dotCMS Enterprise Editions (EE) adds several enterprise features and is available via a supported, indemnified commercial license from dotCMS. For the differences between the editions, see [the feature page](http://www.dotcms.com/cms-platform/features).
+dotCMS is available under either the [Business Source License 1.1 (BSL)](https://www.dotcms.com/bsl) or a commercial license.
 
-This SDK is part of dotCMS's dual-licensed platform (GPL 3.0 for Community, commercial license for Enterprise).
+Under the BSL, dotCMS can be used at no cost by individual developers, small businesses or agencies under $5M in total finances, and by larger organizations in non-production environments. Every BSL release automatically converts to GPL v3 four years after its release date. For full terms and FAQs, visit [dotcms.com/bsl](https://www.dotcms.com/bsl) and [dotcms.com/bsl-faq](https://www.dotcms.com/bsl-faq).
 
-[Learn more ](https://www.dotcms.com)at [dotcms.com](https://www.dotcms.com).
+Production use in larger organizations, along with access to managed cloud, SLAs, support, and enterprise capabilities, is available under a commercial license from dotCMS. For details on commercial plans, features, and support options, see [dotcms.com/pricing](https://www.dotcms.com/pricing).

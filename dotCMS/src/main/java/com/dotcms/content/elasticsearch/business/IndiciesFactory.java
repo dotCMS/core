@@ -17,6 +17,11 @@ import com.dotmarketing.util.Logger;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.PropertyUtils;
 
+/**
+ * IMPORTANT: This Is marked Deprecated and will be removed once we complete migration to OpenSearch 3.x
+ * @deprecated Use {@link com.dotcms.content.index.VersionedIndicesAPI} instead.
+ */
+@Deprecated(forRemoval = true)
 public class IndiciesFactory {
 
 
@@ -40,7 +45,7 @@ public class IndiciesFactory {
                 if (info == null) {
                     final IndiciesInfo.Builder builder = new IndiciesInfo.Builder();
                     final DotConnect dc = new DotConnect();
-                    dc.setSQL("SELECT index_name,index_type FROM indicies");
+                    dc.setSQL("SELECT index_name,index_type FROM indicies WHERE index_version IS NULL");
                     final List<Map<String, Object>> results = dc.loadResults(conn);
                     for (Map<String, Object> rr : results) {
                         String name = (String) rr.get("index_name");
@@ -81,7 +86,12 @@ public class IndiciesFactory {
         }
         DotConnect dc = new DotConnect();
         final String insertSQL = "INSERT INTO indicies VALUES(?,?)";
-        final String deleteSQL = "DELETE from indicies where index_type=? or index_name=?";
+        // Scoped to index_version IS NULL: this legacy store only owns the ES rows (the same
+        // rows loadIndicies reads). The OS migration rows carry a non-NULL index_version in the
+        // shared table and are managed by VersionedIndicesAPI — an unscoped delete-by-type wipes
+        // them on every ES switchover, which in Phase 0 orphans the OS index store (#36471).
+        final String deleteSQL =
+                "DELETE from indicies where (index_type=? or index_name=?) and index_version is null";
         for (IndexType type : IndexType.values()) {
             final String indexType = type.toString().toLowerCase();
             final String newValue = Try.of(() -> (String) PropertyUtils

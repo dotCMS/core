@@ -1,4 +1,4 @@
-import { HttpRequest, HttpErrorResponse, HttpResponse } from '@angular/common/http';
+import type { HttpRequest, HttpErrorResponse, HttpResponse } from '@angular/common/http';
 
 import { HttpCode } from './http-code';
 

@@ -1,7 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
-import { pluck, take } from 'rxjs/operators';
+import { CardModule } from 'primeng/card';
+
+import { map, take } from 'rxjs/operators';
 
 import { DotLoginUserSystemInformation } from '@dotcms/dotcms-models';
 
@@ -11,7 +13,8 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-login-page-component',
     styleUrls: ['./dot-login-page.component.scss'],
     templateUrl: 'dot-login-page.component.html',
-    imports: [RouterOutlet]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    imports: [RouterOutlet, CardModule]
 })
 /**
  * The login component allows set the background image and background color.
@@ -22,7 +25,10 @@ export class DotLoginPageComponent implements OnInit {
     ngOnInit(): void {
         this.loginPageStateService
             .get()
-            .pipe(take(1), pluck('entity'))
+            .pipe(
+                take(1),
+                map((x) => x?.entity)
+            )
             .subscribe((dotLoginUserSystemInformation: DotLoginUserSystemInformation) => {
                 document.body.style.backgroundColor =
                     dotLoginUserSystemInformation.backgroundColor || '';
@@ -30,6 +36,9 @@ export class DotLoginPageComponent implements OnInit {
                     dotLoginUserSystemInformation.backgroundPicture
                         ? `url('${dotLoginUserSystemInformation.backgroundPicture}')`
                         : '';
+                document.body.style.backgroundPosition = 'top center';
+                document.body.style.backgroundRepeat = 'no-repeat';
+                document.body.style.backgroundSize = 'cover';
             });
     }
 }

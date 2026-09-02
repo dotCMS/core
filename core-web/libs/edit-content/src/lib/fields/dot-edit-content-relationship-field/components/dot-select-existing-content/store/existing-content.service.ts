@@ -16,6 +16,8 @@ import { DotCMSContentlet, DotCMSContentTypeField, DotLanguage } from '@dotcms/d
 
 import { Column } from '../../../models/column.model';
 
+const CONSTRAINED_QUERY_LIMIT = 5000;
+
 type LanguagesMap = Record<number, DotLanguage>;
 
 const EXCLUDED_COLUMNS = ['title', 'language', 'modDate'];
@@ -120,11 +122,15 @@ export class ExistingContentService {
      * @returns Observable of [Column[], RelationshipFieldItem[]]
      */
     getColumnsAndContent(
-        contentTypeId: string
+        contentTypeId: string,
+        systemSearchableFields?: Record<string, unknown>
     ): Observable<[Column[], RelationshipFieldSearchResponse] | null> {
+        // TODO: search() already calls #getLanguages() and #prepareContent() internally,
+        // causing duplicate language HTTP calls and double-processing of contentlets.
+        // Refactor to fetch languages once and pass them through.
         return forkJoin([
             this.getColumns(contentTypeId),
-            this.search({ contentTypeId }),
+            this.search({ contentTypeId, systemSearchableFields }),
             this.#getLanguages()
         ]).pipe(
             map(([columns, searchResponse, languages]) => [
@@ -186,6 +192,75 @@ export class ExistingContentService {
                 field: column.variable,
                 header: column.name
             }));
+    }
+
+    /**
+     * Fetches identifiers of contentlets that are already related to OTHER parents
+     * through the given relationship, excluding children of the current contentlet.
+     *
+     * Uses the ES search API to find parent contentlets and extract their related child identifiers.
+     *
+     * @param params.parentContentTypeId - The ID (inode) of the parent content type
+     * @param params.fieldVariable - The relationship field variable (e.g., "relation")
+     * @param params.currentContentIdentifier - The identifier of the contentlet being edited (to exclude its own children)
+     * @returns Observable<Set<string>> - Set of child identifiers that are already "taken" by other parents
+     */
+    getConstrainedIdentifiers(params: {
+        parentContentTypeId: string;
+        fieldVariable: string;
+        currentContentIdentifier: string | null;
+    }): Observable<Set<string>> {
+        const { parentContentTypeId, fieldVariable } = params;
+
+        if (!parentContentTypeId || !fieldVariable) {
+            return of(new Set<string>());
+        }
+
+        return this.#contentSearchService
+            .get<{ jsonObjectView: { contentlets: DotCMSContentlet[] } }>({
+                query: `+structureInode:${parentContentTypeId} +working:true +deleted:false`,
+                sort: 'modDate desc',
+                limit: CONSTRAINED_QUERY_LIMIT,
+                offset: 0,
+                depth: 0
+            })
+            .pipe(
+                map(({ jsonObjectView: { contentlets } }) => {
+                    const constrainedIds = new Set<string>();
+
+                    for (const parent of contentlets) {
+                        if (parent.identifier === params.currentContentIdentifier) {
+                            continue;
+                        }
+
+                        const relatedChildren = parent[fieldVariable] as unknown;
+
+                        // ONE_TO_ONE returns a single value; ONE_TO_MANY returns an array
+                        const children = Array.isArray(relatedChildren)
+                            ? relatedChildren
+                            : relatedChildren != null
+                              ? [relatedChildren]
+                              : [];
+
+                        for (const child of children as unknown[]) {
+                            const childId =
+                                typeof child === 'string'
+                                    ? child
+                                    : child != null &&
+                                        typeof child === 'object' &&
+                                        'identifier' in child
+                                      ? (child as { identifier: string }).identifier
+                                      : null;
+                            if (childId) {
+                                constrainedIds.add(childId);
+                            }
+                        }
+                    }
+
+                    return constrainedIds;
+                }),
+                catchError(() => of(new Set<string>()))
+            );
     }
 
     /**

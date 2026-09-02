@@ -1,23 +1,34 @@
-<div class="flex align-items-center h-1rem" [class]="$styleClass()">
+<div class="flex h-6 items-center" [class]="$styleClass()">
     @if ($isCollapsed()) {
-        <div class="flex align-items-center">
+        <div class="flex items-center">
             <div>
                 <p-menu #menu [model]="$itemsToHide()" [popup]="true" appendTo="body" />
                 <p-button
                     (click)="menu.toggle($event)"
+                    [text]="true"
+                    size="small"
+                    [rounded]="true"
                     icon="pi pi-ellipsis-h"
                     type="button"
-                    data-testid="btn-collapse"
-                    styleClass="p-button-rounded p-button-text p-button-sm outline-none" />
+                    data-testid="btn-collapse" />
             </div>
             <div class="mx-2">
-                <ChevronRightIcon />
+                <span
+                    class="material-symbols-outlined align-middle text-xl! leading-none text-gray-700">
+                    chevron_right
+                </span>
             </div>
         </div>
     }
-    <p-breadcrumb [model]="$itemsToShow()" (onItemClick)="onItemClick.emit($event)">
+    <p-breadcrumb
+        [dt]="{ background: 'transparent', padding: '0' }"
+        [model]="$itemsToShow()"
+        (onItemClick)="onItemClick.emit($event)">
         <ng-template pTemplate="separator">
-            <i class="pi pi-angle-right text-gray-700"></i>
+            <span
+                class="material-symbols-outlined overflow-hidden align-middle text-xl! leading-none text-gray-700">
+                chevron_right
+            </span>
         </ng-template>
     </p-breadcrumb>
 </div>

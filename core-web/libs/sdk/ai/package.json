@@ -1,0 +1,69 @@
+{
+    "name": "@dotcms/ai",
+    "version": "1.5.6",
+    "description": "The dotCMS agentic runtime — run model-written or human-written code safely against a dotCMS instance, with auth and policy owned in one place.",
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/dotCMS/core.git#main",
+        "directory": "core-web/libs/sdk/ai"
+    },
+    "dependencies": {
+        "tslib": "^2.3.0",
+        "zod": "^4.1.9"
+    },
+    "engines": {
+        "node": ">=20.0.0"
+    },
+    "exports": {
+        "./package.json": "./package.json",
+        "./runtime": {
+            "module": "./runtime.esm.js",
+            "types": "./runtime.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./sandbox": {
+            "module": "./runtime.esm.js",
+            "types": "./src/sandbox/index.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./adapter": {
+            "module": "./runtime.esm.js",
+            "types": "./src/adapter/index.d.ts",
+            "import": "./runtime.cjs.mjs",
+            "default": "./runtime.cjs.js"
+        },
+        "./spec": {
+            "module": "./spec.esm.js",
+            "types": "./src/spec/index.d.ts",
+            "import": "./spec.cjs.js",
+            "default": "./spec.cjs.js"
+        }
+    },
+    "typesVersions": {
+        "*": {
+            "runtime": ["./runtime.d.ts"],
+            "sandbox": ["./src/sandbox/index.d.ts"],
+            "adapter": ["./src/adapter/index.d.ts"],
+            "spec": ["./src/spec/index.d.ts"]
+        }
+    },
+    "keywords": [
+        "dotCMS",
+        "CMS",
+        "AI",
+        "agent",
+        "agentic",
+        "runtime",
+        "sandbox",
+        "MCP",
+        "model-context-protocol"
+    ],
+    "author": "dotcms <dev@dotcms.com>",
+    "license": "MIT",
+    "bugs": {
+        "url": "https://github.com/dotCMS/core/issues"
+    },
+    "homepage": "https://github.com/dotCMS/core/tree/main/core-web/libs/sdk/ai/README.md"
+}

@@ -201,7 +201,7 @@ public class OpenAIImageAPIImplTest {
                                     final User user) {
         return new OpenAIImageAPIImpl(config, user, hostApi, tempFileApi) {
             @Override
-            public String doRequest(final String urlIn, final JSONObject json) {
+            public String doRequest(final JSONObject json) {
                 return response;
             }
 

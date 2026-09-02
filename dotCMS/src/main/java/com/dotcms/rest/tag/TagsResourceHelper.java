@@ -7,6 +7,7 @@ import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v2.tags.TagValidationHelper;
 import com.dotcms.rest.exception.BadRequestException;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
@@ -61,11 +62,13 @@ public class TagsResourceHelper {
     public static class TagImportResult {
         public final int totalRows;
         public final int successCount;
+        public final int duplicateCount;
         public final List<ErrorEntity> errors;
-        
-        public TagImportResult(int totalRows, int successCount, List<ErrorEntity> errors) {
+
+        public TagImportResult(int totalRows, int successCount, int duplicateCount, List<ErrorEntity> errors) {
             this.totalRows = totalRows;
             this.successCount = successCount;
+            this.duplicateCount = duplicateCount;
             this.errors = errors;
         }
     }
@@ -261,6 +264,7 @@ public class TagsResourceHelper {
             throws IOException, DotDataException, DotSecurityException {
         int lineNumber = 0;
         int successCount = 0;
+        int duplicateCount = 0;
         final List<ErrorEntity> errors = new ArrayList<>();
         
         final byte[] bytes = Files.readAllBytes(inputFile.toPath());
@@ -303,13 +307,20 @@ public class TagsResourceHelper {
                     }
                     continue;
                 }
-                // Create the tag
+                // Create the tag (check for duplicates first)
                 try {
                     final String validateSite = getValidateSite(siteId, user, request);
+                    final String tagStorageHostId = resolveTagStorageHost(validateSite);
+                    final Tag existing = tagAPI.getTagByNameAndHost(
+                            tagName.toLowerCase(), tagStorageHostId);
+                    if (existing != null && UtilMethods.isSet(existing.getTagId())) {
+                        duplicateCount++;
+                        continue;
+                    }
                     final Tag tag = tagAPI
                             .getTagAndCreate(tagName, StringPool.BLANK, validateSite);
-                    if(null != tag){
-                       successCount++;
+                    if (null != tag) {
+                        successCount++;
                     }
                 } catch (final GenericTagException e) {
                     errors.add(new ErrorEntity(
@@ -324,11 +335,11 @@ public class TagsResourceHelper {
             }
         }
         
-        Logger.debug(TagsResourceHelper.class, 
-            String.format("Tag import finished. Total: %d, Success: %d, Errors: %d",
-                lineNumber, successCount, errors.size()));
-        
-        return new TagImportResult(lineNumber, successCount, errors);
+        Logger.debug(TagsResourceHelper.class,
+            String.format("Tag import finished. Total: %d, Success: %d, Duplicates: %d, Errors: %d",
+                lineNumber, successCount, duplicateCount, errors.size()));
+
+        return new TagImportResult(lineNumber, successCount, duplicateCount, errors);
     }
 
     /**
@@ -340,6 +351,27 @@ public class TagsResourceHelper {
     private boolean isHeaderLine(String tagName, String siteId) {
         return tagName.toLowerCase().contains("tag name") && siteId.toLowerCase()
                 .contains("host id");
+    }
+
+    /**
+     * Resolves the tag storage host for a given site ID. Tags created for a site
+     * are stored under the site's configured tagStorage host (which may differ from
+     * the site itself). This method resolves that target host so duplicate detection
+     * checks the correct location.
+     *
+     * @param siteId The validated site ID to resolve tag storage for
+     * @return The host ID where tags are actually stored
+     */
+    public String resolveTagStorageHost(final String siteId) {
+        if (!UtilMethods.isSet(siteId) || Host.SYSTEM_HOST.equals(siteId)) {
+            return Host.SYSTEM_HOST;
+        }
+        final Host host = Try.of(
+                () -> hostAPI.find(siteId, APILocator.systemUser(), false)).getOrNull();
+        if (host != null && UtilMethods.isSet(host.getIdentifier())) {
+            return host.getTagStorage();
+        }
+        return Host.SYSTEM_HOST;
     }
 
     /**

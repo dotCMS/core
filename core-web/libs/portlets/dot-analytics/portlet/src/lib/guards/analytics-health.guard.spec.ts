@@ -1,55 +1,52 @@
 import { of } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
-import { ActivatedRoute, Route, Router } from '@angular/router';
+import { ActivatedRouteSnapshot, Router, RouterStateSnapshot } from '@angular/router';
 
-import { DotExperimentsService } from '@dotcms/data-access';
 import { HealthStatusTypes } from '@dotcms/dotcms-models';
+import { DotAnalyticsService } from '@dotcms/portlets/dot-analytics/data-access';
 
-import { analyticsHealthGuard, clearAnalyticsHealthCache } from './analytics-health.guard';
+import { analyticsHealthGuard } from './analytics-health.guard';
 
 describe('analyticsHealthGuard', () => {
     let mockRouter: Router;
-    let mockActivatedRoute: ActivatedRoute;
-    let mockDotExperimentsService: DotExperimentsService;
+    let mockRouteSnapshot: ActivatedRouteSnapshot;
+    let mockAnalyticsService: DotAnalyticsService;
 
-    const mockRoute = {} as Route;
-    const mockSegments = [];
+    const mockStateSnapshot = {} as RouterStateSnapshot;
 
     beforeEach(() => {
-        // Clear cache before each test to ensure isolation
-        clearAnalyticsHealthCache();
-
         mockRouter = {
-            navigate: jest.fn()
+            navigate: jest.fn(),
+            // Echoes back its args so tests can assert the guard's return value directly.
+            createUrlTree: jest.fn((commands, extras) => ({ commands, extras }))
         } as unknown as Router;
 
-        mockActivatedRoute = {
-            snapshot: {
-                data: { isEnterprise: true }
-            }
-        } as unknown as ActivatedRoute;
+        // isEnterprise is resolved on the parent 'analytics' route and merges down into this
+        // snapshot's `data` — the guard reads it from here, not from an injected ActivatedRoute.
+        mockRouteSnapshot = {
+            data: { isEnterprise: true }
+        } as unknown as ActivatedRouteSnapshot;
 
-        mockDotExperimentsService = {
+        mockAnalyticsService = {
             healthCheck: jest.fn()
-        } as unknown as DotExperimentsService;
+        } as unknown as DotAnalyticsService;
 
         TestBed.configureTestingModule({
             providers: [
                 { provide: Router, useValue: mockRouter },
-                { provide: ActivatedRoute, useValue: mockActivatedRoute },
-                { provide: DotExperimentsService, useValue: mockDotExperimentsService }
+                { provide: DotAnalyticsService, useValue: mockAnalyticsService }
             ]
         });
     });
 
-    it('should allow access when health status is OK', (done) => {
-        (mockDotExperimentsService.healthCheck as jest.Mock).mockReturnValue(
-            of(HealthStatusTypes.OK)
+    it('should allow access when health status is AVAILABLE', (done) => {
+        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+            of(HealthStatusTypes.AVAILABLE)
         );
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
@@ -61,46 +58,32 @@ describe('analyticsHealthGuard', () => {
         });
     });
 
-    it('should redirect to error page when health status is NOT_CONFIGURED', (done) => {
-        (mockDotExperimentsService.healthCheck as jest.Mock).mockReturnValue(
-            of(HealthStatusTypes.NOT_CONFIGURED)
+    it('should return a UrlTree to the error page when health status is NOT_AVAILABLE', (done) => {
+        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+            of(HealthStatusTypes.NOT_AVAILABLE)
         );
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
-                            status: HealthStatusTypes.NOT_CONFIGURED,
+                            status: HealthStatusTypes.NOT_AVAILABLE,
                             isEnterprise: true
                         }
                     });
-                    done();
-                });
-            }
-        });
-    });
-
-    it('should redirect to error page when health status is CONFIGURATION_ERROR', (done) => {
-        (mockDotExperimentsService.healthCheck as jest.Mock).mockReturnValue(
-            of(HealthStatusTypes.CONFIGURATION_ERROR)
-        );
-
-        TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
-
-            if (result && typeof result === 'object' && 'subscribe' in result) {
-                result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
-                        queryParams: {
-                            status: HealthStatusTypes.CONFIGURATION_ERROR,
-                            isEnterprise: true
+                    expect(canActivate).toEqual({
+                        commands: ['/analytics/error'],
+                        extras: {
+                            queryParams: {
+                                status: HealthStatusTypes.NOT_AVAILABLE,
+                                isEnterprise: true
+                            }
                         }
                     });
+                    expect(mockRouter.navigate).not.toHaveBeenCalled();
                     done();
                 });
             }
@@ -108,23 +91,23 @@ describe('analyticsHealthGuard', () => {
     });
 
     it('should handle missing isEnterprise data by defaulting to true', (done) => {
-        (mockDotExperimentsService.healthCheck as jest.Mock).mockReturnValue(
-            of(HealthStatusTypes.NOT_CONFIGURED)
+        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+            of(HealthStatusTypes.NOT_AVAILABLE)
         );
-        mockActivatedRoute.snapshot.data = {}; // No isEnterprise data
+        mockRouteSnapshot.data = {};
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
-                            status: HealthStatusTypes.NOT_CONFIGURED,
-                            isEnterprise: true // Should default to true
+                            status: HealthStatusTypes.NOT_AVAILABLE,
+                            isEnterprise: true
                         }
                     });
+                    expect(canActivate).toBeTruthy();
                     done();
                 });
             }
@@ -132,23 +115,23 @@ describe('analyticsHealthGuard', () => {
     });
 
     it('should pass isEnterprise false when it is set to false', (done) => {
-        (mockDotExperimentsService.healthCheck as jest.Mock).mockReturnValue(
-            of(HealthStatusTypes.NOT_CONFIGURED)
+        (mockAnalyticsService.healthCheck as jest.Mock).mockReturnValue(
+            of(HealthStatusTypes.NOT_AVAILABLE)
         );
-        mockActivatedRoute.snapshot.data = { isEnterprise: false };
+        mockRouteSnapshot.data = { isEnterprise: false };
 
         TestBed.runInInjectionContext(() => {
-            const result = analyticsHealthGuard(mockRoute, mockSegments);
+            const result = analyticsHealthGuard(mockRouteSnapshot, mockStateSnapshot);
 
             if (result && typeof result === 'object' && 'subscribe' in result) {
                 result.subscribe((canActivate) => {
-                    expect(canActivate).toBe(false);
-                    expect(mockRouter.navigate).toHaveBeenCalledWith(['/analytics/error'], {
+                    expect(mockRouter.createUrlTree).toHaveBeenCalledWith(['/analytics/error'], {
                         queryParams: {
-                            status: HealthStatusTypes.NOT_CONFIGURED,
+                            status: HealthStatusTypes.NOT_AVAILABLE,
                             isEnterprise: false
                         }
                     });
+                    expect(canActivate).toBeTruthy();
                     done();
                 });
             }

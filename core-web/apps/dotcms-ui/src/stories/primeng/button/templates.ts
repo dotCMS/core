@@ -1,126 +1,159 @@
 export const MainTemplate = `
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-lg" pButton label="Button"></button>
-        <button class="p-button-lg" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-lg" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-lg" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-lg" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
+        <button pButton disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
+    </div>
+    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
+        <button class="p-button-sm" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-sm" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
-            class="p-button-lg"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-lg" pButton label="Button" disabled="true"></button>
-    </div>
-    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button pButton label="Button"></button>
-        <button pButton label="Button" icon="pi pi-home"></button>
-        <button pButton label="Button" icon="pi pi-home" iconPos="right"></button>
-        <button pButton label="Button" icon="pi pi-home" disabled="true"></button>
-        <button pButton label="Button" disabled="true"></button>
-    </div>
-    <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm" pButton label="Button"></button>
-        <button class="p-button-sm" pButton label="Button" icon="pi pi-home"></button>
+            class="p-button-sm"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-sm" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-sm" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-lg p-button-secondary" pButton label="Button"></button>
+        <button class="p-button-lg p-button-secondary" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-secondary"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-lg p-button-secondary"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-secondary" pButton label="Button"></button>
-        <button class="p-button-secondary" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-secondary" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-secondary" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-secondary"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-secondary"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-secondary" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-secondary" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm p-button-secondary" pButton label="Button"></button>
+        <button class="p-button-sm p-button-secondary" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-sm p-button-secondary"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
 </div>
 
@@ -128,176 +161,183 @@ export const MainTemplate = `
 
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-lg p-button-outlined" pButton label="Button"></button>
+        <button class="p-button-lg p-button-outlined" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-outlined"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-lg p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-lg p-button-outlined"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-outlined" pButton label="Button"></button>
-        <button class="p-button-outlined" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-outlined" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-outlined" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-outlined" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-outlined" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm p-button-outlined" pButton label="Button"></button>
+        <button class="p-button-sm p-button-outlined" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-outlined"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-sm p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-sm p-button-outlined"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-lg p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-        ></button>
+            pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary p-button-outlined"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-lg p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-secondary p-button-outlined" pButton label="Button"></button>
+        <button class="p-button-secondary p-button-outlined" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-secondary p-button-outlined"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-secondary p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-        ></button>
+            pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary p-button-outlined"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary p-button-outlined"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-outlined"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary p-button-outlined"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
 </div>
 
@@ -305,243 +345,263 @@ export const MainTemplate = `
 
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-lg p-button-text" pButton label="Button"></button>
-        <button class="p-button-lg p-button-text" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-lg p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-lg p-button-text" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-lg p-button-text" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-lg p-button-text" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-text" pButton label="Button"></button>
-        <button class="p-button-text" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-text" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-text" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-text" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm p-button-text" pButton label="Button"></button>
-        <button class="p-button-sm p-button-text" pButton label="Button" icon="pi pi-home"></button>
+        <button class="p-button-sm p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-sm p-button-text" pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button class="p-button-sm p-button-text" pButton label="Button" disabled="true"></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button class="p-button-sm p-button-text" pButton disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-lg p-button-secondary p-button-text"
-            pButton
-            label="Button"
-        ></button>
+            pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-secondary p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-lg p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-lg p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-secondary p-button-text" pButton label="Button"></button>
+        <button class="p-button-secondary p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-secondary p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-secondary p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-secondary p-button-text"
-            pButton
-            label="Button"
-        ></button>
+            pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-secondary p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-sm p-button-secondary p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-lg p-button-danger p-button-text" pButton label="Button"></button>
+        <button class="p-button-lg p-button-danger p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-danger p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-lg p-button-danger p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-lg p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-lg p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-lg p-button-danger p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-lg p-button-danger p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-danger p-button-text" pButton label="Button"></button>
+        <button class="p-button-danger p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-danger p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-danger p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-danger p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-danger p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm p-button-danger p-button-text" pButton label="Button"></button>
+        <button class="p-button-sm p-button-danger p-button-text" pButton>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-danger p-button-text"
+            pButton>
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
+        <button
+            class="p-button-sm p-button-danger p-button-text"
+            pButton>
+            <span pButtonLabel>Button</span>
+            <i class="pi pi-home" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-        ></button>
+            disabled="true">
+            <i class="pi pi-home" pButtonIcon></i>
+            <span pButtonLabel>Button</span>
+        </button>
         <button
             class="p-button-sm p-button-danger p-button-text"
             pButton
-            label="Button"
-            icon="pi pi-home"
-            iconPos="right"
-        ></button>
-        <button
-            class="p-button-sm p-button-danger p-button-text"
-            pButton
-            label="Button"
-            icon="pi pi-home"
-            disabled="true"
-        ></button>
-        <button
-            class="p-button-sm p-button-danger p-button-text"
-            pButton
-            label="Button"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <span pButtonLabel>Button</span>
+        </button>
     </div>
 </div>
 `;
@@ -549,43 +609,49 @@ export const MainTemplate = `
 export const IconOnlyTemplate = `
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
-        <button class="p-button-rounded" pButton icon="pi pi-ellipsis-v" disabled="true"></button>
+        <button class="p-button-rounded" pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
+        <button class="p-button-rounded" pButton disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-sm p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+        <button class="p-button-sm p-button-rounded" pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-secondary p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-secondary p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
 </div>
 
@@ -593,52 +659,54 @@ export const IconOnlyTemplate = `
 
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-outlined p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+        <button class="p-button-outlined p-button-rounded" pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-outlined p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-outlined p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-outlined p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-secondary p-button-outlined p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary p-button-outlined p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-outlined p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
 </div>
 
@@ -646,79 +714,81 @@ export const IconOnlyTemplate = `
 
 <div style="display: flex; gap: 24px; flex-direction: column; align-items: center">
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
-        <button class="p-button-text p-button-rounded" pButton icon="pi pi-ellipsis-v"></button>
+        <button class="p-button-text p-button-rounded" pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-text p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-secondary p-button-text p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-secondary p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
 
         <button
             class="p-button-sm p-button-secondary p-button-text p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-secondary p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-danger p-button-text p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-danger p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
     <div style="display: flex; gap: 8px; justify-content: center; width: fit-content">
         <button
             class="p-button-sm p-button-danger p-button-text p-button-rounded"
-            pButton
-            icon="pi pi-ellipsis-v"
-        ></button>
+            pButton>
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
         <button
             class="p-button-sm p-button-danger p-button-text p-button-rounded"
             pButton
-            icon="pi pi-ellipsis-v"
-            disabled="true"
-        ></button>
+            disabled="true">
+            <i class="pi pi-ellipsis-v" pButtonIcon></i>
+        </button>
     </div>
 </div>
 `;

@@ -1,5 +1,6 @@
 package com.dotcms.telemetry.collectors.ai;
 
+import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.telemetry.MetricCategory;
 import com.dotcms.telemetry.MetricFeature;
 import com.dotcms.telemetry.MetricType;
@@ -8,7 +9,12 @@ import com.dotmarketing.util.UtilMethods;
 
 import java.util.Map;
 import java.util.Optional;
+import javax.enterprise.context.ApplicationScoped;
+import com.dotcms.telemetry.MetricsProfile;
+import com.dotcms.telemetry.ProfileType;
 
+@MetricsProfile(ProfileType.FULL)
+@ApplicationScoped
 public class TotalEmbeddingsIndexesMetricType implements MetricType {
 
     @Override
@@ -31,9 +37,11 @@ public class TotalEmbeddingsIndexesMetricType implements MetricType {
         return MetricFeature.AI;
     }
 
+    @CloseDBIfOpened
     @Override
     public Optional<Object> getValue() {
-        final Map<String, Map<String, Object>> indexCountData = APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
+        final Map<String, Map<String, Object>> indexCountData =
+                APILocator.getDotAIAPI().getEmbeddingsAPI().countEmbeddingsByIndex();
         return Optional.of(UtilMethods.isSet(indexCountData) ? indexCountData.size() : 0);
     }
 }

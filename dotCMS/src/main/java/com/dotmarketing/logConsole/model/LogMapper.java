@@ -2,7 +2,7 @@ package com.dotmarketing.logConsole.model;
 
 import java.util.List;
 
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotmarketing.business.CacheLocator;
 import com.dotmarketing.business.DotCacheException;
 import com.dotmarketing.exception.DotDataException;

@@ -14,14 +14,14 @@ import {
     DotTemplateLayoutProperties
 } from '../models/models';
 import {
-    getIndexRowInItems,
+    createDotGridStackWidgetFromNode,
     createDotGridStackWidgets,
     getColumnByID,
-    removeColumnByID,
-    createDotGridStackWidgetFromNode,
+    getIndexRowInItems,
+    getRemainingSpaceForBox,
     parseMovedNodeToWidget,
-    willBoxFitInRow,
-    getRemainingSpaceForBox
+    removeColumnByID,
+    willBoxFitInRow
 } from '../utils/gridstack-utils';
 
 /**
@@ -55,6 +55,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
         const { rows, defaultContainer } = state;
         const identifier = defaultContainer?.path ?? defaultContainer?.identifier;
         const containers = identifier ? [{ identifier }] : [];
+        const newRowId = uuid();
 
         return {
             ...state,
@@ -66,7 +67,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                     h: 1,
                     w: 12,
                     x: 0,
-                    id: uuid(),
+                    id: newRowId,
                     subGridOpts: {
                         children: [
                             {
@@ -76,8 +77,8 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
                                 x: 0,
                                 y: 0,
                                 containers,
-                                parentId: newRow.id,
-                                styleClass: null
+                                parentId: newRowId,
+                                styleClass: undefined
                             }
                         ]
                     }
@@ -87,7 +88,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
     });
 
     /**
-     * @description This Method updates the position of the rows
+     * @description This Method updates the position ofme sigue the rows
      *
      * @memberof DotTemplateBuilderStore
      */
@@ -422,7 +423,7 @@ export class DotTemplateBuilderStore extends ComponentStore<DotTemplateBuilderSt
 
                                   return {
                                       ...newChild, // We want the data from the backend
-                                      id: oldChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
+                                      id: oldChild?.id ?? newChild.id, // But We do not want to lose the id, because this is the way GridStack knows that nothing changed
                                       containers: newChild.containers
                                   };
                               })

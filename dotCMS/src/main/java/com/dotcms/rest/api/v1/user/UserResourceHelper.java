@@ -6,7 +6,7 @@ import com.dotcms.api.system.event.message.SystemMessageEventUtil;
 import com.dotcms.api.system.event.message.builder.SystemMessage;
 import com.dotcms.api.system.event.message.builder.SystemMessageBuilder;
 import com.dotcms.cms.login.LoginServiceAPI;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
 import com.dotcms.rest.ResponseEntityView;
 import com.dotcms.rest.api.DotRestInstanceProvider;
 import com.dotcms.rest.api.v1.authentication.IncorrectPasswordException;
@@ -446,10 +446,19 @@ public class UserResourceHelper implements Serializable {
 	}
 
     /**
-     * Remove the roles associated to the user
+     * Removes ALL of the user's role memberships, with no {@code editUsers} gate: this includes
+     * system-managed memberships such as the user's individual role (the anchor for
+     * individually-granted permissions and workflow task assignment), which the system only
+     * re-links lazily on the next {@code RoleAPI#getUserRole} call.
+     *
      * @param user User
+     * @deprecated no longer used by the user endpoints — {@code UserResource#processRoles}
+     * reconciles memberships and never touches non-user-assignable roles ({@code editUsers =
+     * false}). Kept only for binary compatibility with external callers of this OSGi-exported
+     * package; use {@link com.dotmarketing.business.RoleAPI} membership methods instead.
      */
-    public void removeRoles(User user) throws DotDataException {
+    @Deprecated
+    public void removeRoles(final User user) throws DotDataException {
 
         Logger.debug(this, ()-> "removing the roles for the user:" + user.getUserId());
         APILocator.getRoleAPI().removeAllRolesFromUser(user);

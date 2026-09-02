@@ -1,0 +1,13 @@
+// The dialog sizes this host; `dot-dialog` inside resolves its own `h-full` against it.
+:host {
+    display: block;
+    height: 100%;
+}
+
+// Respect the user's motion preference: disable the scale/fade entrance. Needs `!important` to beat
+// the animation Angular applies inline, which is why this rule can't move to a Tailwind host class.
+@media (prefers-reduced-motion: reduce) {
+    :host {
+        animation: none !important;
+    }
+}

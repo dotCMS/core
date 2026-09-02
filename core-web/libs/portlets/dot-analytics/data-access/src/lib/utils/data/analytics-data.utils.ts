@@ -1,29 +1,45 @@
 import {
     addDays,
     addHours,
+    addMonths,
+    differenceInDays,
     endOfDay,
     format,
     isSameDay,
-    isSameMonth,
     parse,
     startOfDay,
     subDays
 } from 'date-fns';
 
-import { TIME_RANGE_OPTIONS } from '../../constants';
+import { ComponentStatus } from '@dotcms/dotcms-models';
+
 import {
+    AnalyticsChartColors,
+    BAR_CHART_STYLE,
+    TIME_RANGE_API_MAPPING,
+    TIME_RANGE_CUBEJS_MAPPING,
+    TIME_RANGE_OPTIONS
+} from '../../constants';
+import {
+    ApiGranularity,
+    ApiRangeParams,
+    BrowserBreakdownData,
     ChartData,
+    ChartDataset,
+    ContentAttributionData,
+    DeviceBreakdownData,
     Granularity,
-    PageViewDeviceBrowsersEntity,
-    PageViewTimeLineEntity,
+    PieChartEntry,
+    RequestState,
     TablePageData,
+    TimeRangeCubeJS,
     TimeRangeInput,
+    TopContentData,
     TopPagePerformanceEntity,
-    TopPerformaceTableEntity,
+    TotalEventsByDayData,
     TotalPageViewsEntity,
     UniqueVisitorsEntity
 } from '../../types';
-import { parseUserAgent } from '../browser/userAgentParser';
 
 /**
  * Time formats for different chart types
@@ -34,112 +50,119 @@ const TIME_FORMATS = {
 };
 
 /**
- * Helper functions to extract numeric values from analytics entities
+ * Parses API calendar day strings (`yyyy-MM-dd` with no timezone).
+ * `new Date("yyyy-MM-dd")` is parsed as UTC midnight and shifts chart labels in local TZ; {@link parse} uses the local calendar.
  */
+function parseApiDateOnly(day: string): Date {
+    return parse(day, 'yyyy-MM-dd', new Date());
+}
 
 /**
- * Determines the appropriate granularity for analytics queries based on the time range.
+ * Creates a typed initial request state.
+ * Use this function when you need type-safe initialization of RequestState.
  *
- * This utility centralizes the logic for selecting granularity levels to ensure
- * optimal data visualization and performance across different time periods.
- *
- * @param timeRange - The time range for the analytics query
- * @returns The appropriate granularity level for the given time range
+ * @returns A new RequestState object with INIT status and null data/error
  */
-export function determineGranularityForTimeRange(timeRange: TimeRangeInput): Granularity {
+export function createInitialRequestState<T>(): RequestState<T> {
+    return {
+        status: ComponentStatus.INIT,
+        data: null,
+        error: null
+    };
+}
+
+/**
+ * Converts TimeRangeInput to TimeRangeCubeJS format for CubeJS queries.
+ *
+ * @param timeRange - The time range input (predefined option or custom date array)
+ * @returns The CubeJS-compatible time range value
+ */
+export function toTimeRangeCubeJS(timeRange: TimeRangeInput): TimeRangeCubeJS {
     if (Array.isArray(timeRange)) {
-        const [fromDate, toDate] = timeRange.map((date) => parse(date, 'yyyy-MM-dd', new Date()));
-
-        if (isSameDay(fromDate, toDate)) {
-            return 'hour';
-        } else if (isSameMonth(fromDate, toDate)) {
-            return 'day';
-        } else {
-            return 'month';
-        }
+        return timeRange;
     }
 
-    switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
+    return (
+        TIME_RANGE_CUBEJS_MAPPING[timeRange as keyof typeof TIME_RANGE_CUBEJS_MAPPING] ||
+        TIME_RANGE_CUBEJS_MAPPING.last7days
+    );
+}
 
-        // falls through
-        case TIME_RANGE_OPTIONS.yesterday:
-            // For today/yesterday, use hourly granularity for detailed intraday analysis
-            return 'hour';
-
-        case TIME_RANGE_OPTIONS.last7days:
-            // For last 7 days, use daily granularity
-            return 'day';
-
-        case TIME_RANGE_OPTIONS.last30days:
-            // For last 30 days, use daily granularity
-            return 'day';
-
-        default: {
-            // For custom ranges or other periods, extract days and decide
-            const daysMatch = timeRange.match(/from (\d+) days ago to now/);
-            if (daysMatch) {
-                const numDays = parseInt(daysMatch[1], 10);
-                if (numDays > 90) {
-                    return 'month';
-                } else if (numDays > 30) {
-                    return 'week';
-                } else {
-                    return 'day';
-                }
-            } else {
-                // For custom date ranges, default to day
-                return 'day';
-            }
-        }
+/**
+ * Converts TimeRangeInput to the new analytics event API query params.
+ * For predefined ranges returns `{ range: 'last_7_days' }`.
+ * For custom date arrays returns `{ from: '2026-03-30', to: '2026-04-29' }`.
+ *
+ * @param timeRange - The time range input (predefined option or custom date array)
+ * @returns Object with either `range` or `from`+`to` params
+ */
+export function toApiRangeParams(timeRange: TimeRangeInput): ApiRangeParams {
+    if (Array.isArray(timeRange)) {
+        return { from: timeRange[0], to: timeRange[1] };
     }
+
+    return {
+        range:
+            TIME_RANGE_API_MAPPING[timeRange as keyof typeof TIME_RANGE_API_MAPPING] ||
+            TIME_RANGE_API_MAPPING[TIME_RANGE_OPTIONS.last7days]
+    };
 }
 
 /**
  * Extracts page views count from TotalPageViewsEntity
  */
-export const extractPageViews = (data: TotalPageViewsEntity | null): number =>
-    data ? Number(data['request.totalRequest'] ?? 0) : 0;
+export const extractPageViews = (data: TotalPageViewsEntity | null): number | null => {
+    if (!data) return null;
+    const value = data.totalEvents ?? 0;
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts unique sessions from UniqueVisitorsEntity
  */
-export const extractSessions = (data: UniqueVisitorsEntity | null): number =>
-    data ? Number(data['request.totalUsers']) : 0;
+export const extractSessions = (data: UniqueVisitorsEntity | null): number | null => {
+    if (!data) return null;
+    const value = data.uniqueVisitors ?? 0;
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts top page performance value from TopPagePerformanceEntity
  */
-export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number =>
-    data ? Number(data['request.totalRequest']) : 0;
+export const extractTopPageValue = (data: TopPagePerformanceEntity | null): number | null => {
+    if (!data) return null;
+    const value = data.totalEvents ?? 0;
+
+    return value === 0 ? null : value;
+};
 
 /**
  * Extracts page title from TopPagePerformanceEntity
  */
 export const extractPageTitle = (data: TopPagePerformanceEntity | null): string =>
-    data?.['request.pageTitle'] || 'analytics.metrics.pageTitle.not-available';
+    data?.title || 'analytics.metrics.pageTitle.not-available';
 
 /**
- * Transforms TopPerformaceTableEntity array to table-friendly format
+ * Transforms TopContentData array to table-friendly format
  */
-export const transformTopPagesTableData = (
-    data: TopPerformaceTableEntity[] | null
-): TablePageData[] => {
+export const transformTopPagesTableData = (data: TopContentData[] | null): TablePageData[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     return data.map((item) => ({
-        pageTitle: item['request.pageTitle'] || 'analytics.table.data.not-available',
-        path: item['request.path'] || 'analytics.table.data.not-available',
-        views: Number(item['request.totalRequest']) || 0
+        pageTitle: item.title || 'analytics.table.data.not-available',
+        path: item.identifier || 'analytics.table.data.not-available',
+        views: item.totalEvents
     }));
 };
 
 /**
- * Transforms PageViewTimeLineEntity array to Chart.js compatible format
+ * Transforms TotalEventsByDayData array to Chart.js compatible format
  */
-export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | null): ChartData => {
+export const transformPageViewTimeLineData = (data: TotalEventsByDayData[] | null): ChartData => {
     if (!data || !Array.isArray(data)) {
         return {
             labels: [],
@@ -147,8 +170,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
                 {
                     label: 'analytics.charts.pageviews-timeline.dataset-label',
                     data: [],
-                    borderColor: '#3B82F6',
-                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderColor: AnalyticsChartColors.primary.line,
+                    backgroundColor: AnalyticsChartColors.primary.fill,
                     borderWidth: 2,
                     fill: true,
                     tension: 0.4
@@ -159,8 +182,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
 
     const transformedData = data
         .map((item) => ({
-            date: new Date(item['request.createdAt']),
-            value: extractPageViews(item)
+            date: parseApiDateOnly(item.day),
+            value: item.totalEvents
         }))
         .sort((a, b) => a.date.getTime() - b.date.getTime());
 
@@ -185,8 +208,8 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
             {
                 label: 'analytics.charts.pageviews-timeline.dataset-label',
                 data: chartData,
-                borderColor: '#3B82F6',
-                backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                borderColor: AnalyticsChartColors.primary.line,
+                backgroundColor: AnalyticsChartColors.primary.fill,
                 borderWidth: 2,
                 fill: true,
                 tension: 0.4,
@@ -196,137 +219,441 @@ export const transformPageViewTimeLineData = (data: PageViewTimeLineEntity[] | n
     };
 };
 
+/** One-day row for Traffic vs Conversions combo chart (merged unique visitors series). */
+export interface TrafficVsConversionsDayData {
+    day: string;
+    uniqueVisitors: number;
+    uniqueConvertingVisitors: number;
+}
+
 /**
- * Transforms PageViewDeviceBrowsersEntity array to pie chart ChartData format
+ * Extended ChartDataset type for Conversion Trend chart with Chart.js specific properties
+ * to make zero values visible in the chart.
  */
-export const transformDeviceBrowsersData = (
-    data: PageViewDeviceBrowsersEntity[] | null
-): ChartData => {
-    if (!data || data.length === 0) {
+export interface ConversionTrendChartDataset extends ChartDataset {
+    spanGaps?: boolean;
+    pointRadius?: number | number[];
+    pointHoverRadius?: number | number[];
+    pointBackgroundColor?: string | string[];
+    pointBorderColor?: string | string[];
+}
+
+/**
+ * Transforms conversion trend time series ({@link TotalEventsByDayData}) to Chart.js format.
+ */
+export const transformConversionTrendData = (data: TotalEventsByDayData[] | null): ChartData => {
+    if (!data || !Array.isArray(data)) {
         return {
             labels: [],
             datasets: [
                 {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
+                    label: 'analytics.charts.conversion-trend.dataset-label',
                     data: [],
-                    backgroundColor: []
+                    borderColor: AnalyticsChartColors.secondary.line,
+                    backgroundColor: AnalyticsChartColors.secondary.fill,
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.4
                 }
             ]
         };
     }
 
-    // Group data by browser + device type combination
-    const browserDeviceGroups = new Map<string, number>();
+    const transformedData = data
+        .map((item) => ({
+            date: parseApiDateOnly(item.day),
+            value: item.totalEvents ?? 0
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
 
-    data.forEach((item) => {
-        const userAgent = item['request.userAgent'];
-        const totalRequests = parseInt(item['request.totalRequest'] || '0', 10);
+    // Check if all data points are from the same day
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
 
-        if (userAgent && totalRequests > 0) {
-            const parsed = parseUserAgent(userAgent);
-            const browserName = parsed.browser.name;
-            const deviceType = parsed.device.type;
-
-            // Create combined label: "Chrome (Mobile)", "Safari (Desktop)", etc.
-            // Note: Device labels are hardcoded as they go directly to chart library
-            const deviceLabel =
-                deviceType === 'mobile' ? 'Mobile' : deviceType === 'tablet' ? 'Tablet' : 'Desktop';
-            const combinedLabel = `${browserName} (${deviceLabel})`;
-
-            const currentTotal = browserDeviceGroups.get(combinedLabel) || 0;
-            browserDeviceGroups.set(combinedLabel, currentTotal + totalRequests);
-        }
+        return isSameDay(arr[0].date, item.date);
     });
 
-    // Convert map to arrays and sort by usage
-    const sortedBrowserDevices = Array.from(browserDeviceGroups.entries())
-        .sort(([, a], [, b]) => b - a)
-        .slice(0, 10); // Increase limit to 10 for more device combinations
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
 
-    if (sortedBrowserDevices.length === 0) {
-        return {
-            labels: ['No Data'],
-            datasets: [
-                {
-                    label: 'analytics.charts.device-breakdown.dataset-label',
-                    data: [1],
-                    backgroundColor: ['#E5E7EB']
-                }
-            ]
-        };
-    }
-
-    const labels = sortedBrowserDevices.map(([browserDevice]) => browserDevice);
-    const chartData = sortedBrowserDevices.map(([, count]) => count);
-
-    // Enhanced color palette for browser + device combinations
-    const colorPalette = [
-        '#3B82F6', // Chrome Desktop - Blue
-        '#1E40AF', // Chrome Mobile - Dark Blue
-        '#60A5FA', // Chrome Tablet - Light Blue
-        '#8B5CF6', // Safari Desktop - Purple
-        '#6D28D9', // Safari Mobile - Dark Purple
-        '#A78BFA', // Safari Tablet - Light Purple
-        '#10B981', // Firefox Desktop - Green
-        '#047857', // Firefox Mobile - Dark Green
-        '#34D399', // Firefox Tablet - Light Green
-        '#F59E0B', // Edge Desktop - Orange
-        '#D97706', // Edge Mobile - Dark Orange
-        '#FBBF24', // Edge Tablet - Light Orange
-        '#EF4444', // Others Desktop - Red
-        '#DC2626', // Others Mobile - Dark Red
-        '#F87171' // Others Tablet - Light Red
-    ];
+    const chartData = transformedData.map((item) => item.value);
 
     return {
         labels,
         datasets: [
             {
-                label: 'analytics.charts.device-breakdown.dataset-label',
+                label: 'analytics.charts.conversion-trend.dataset-label',
                 data: chartData,
-                backgroundColor: colorPalette.slice(0, labels.length)
+                borderColor: AnalyticsChartColors.secondary.line,
+                backgroundColor: AnalyticsChartColors.secondary.fill,
+                borderWidth: 2,
+                fill: true,
+                tension: 0.4,
+                cubicInterpolationMode: 'monotone',
+                // Use type assertion to allow Chart.js specific properties
+                spanGaps: false,
+                pointRadius: chartData.map((value) => (value === 0 ? 4 : 0)),
+                pointHoverRadius: chartData.map((value) => (value === 0 ? 6 : 4)),
+                pointBackgroundColor: chartData.map((value) =>
+                    value === 0
+                        ? AnalyticsChartColors.secondary.line
+                        : AnalyticsChartColors.secondary.fill
+                ),
+                pointBorderColor: AnalyticsChartColors.secondary.line
+            } as ConversionTrendChartDataset
+        ]
+    };
+};
+
+/**
+ * Transforms TrafficVsConversionsDayData array to Chart.js compatible format.
+ * Creates a combo chart with bars (uniqueVisitors) and line (unique converting visitors).
+ */
+export const transformTrafficVsConversionsData = (
+    data: TrafficVsConversionsDayData[] | null
+): ChartData => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return {
+            labels: [],
+            datasets: [
+                {
+                    type: 'bar',
+                    label: 'analytics.charts.unique-visitors',
+                    data: [],
+                    ...BAR_CHART_STYLE,
+                    backgroundColor: AnalyticsChartColors.primary.line,
+                    order: 2
+                },
+                {
+                    type: 'line',
+                    label: 'analytics.charts.conversions',
+                    data: [],
+                    borderColor: AnalyticsChartColors.secondary.line,
+                    borderWidth: 2,
+                    fill: false,
+                    tension: 0.4,
+                    order: 1
+                }
+            ]
+        };
+    }
+
+    const transformedData = data
+        .map((item) => ({
+            date: parseApiDateOnly(item.day),
+            uniqueVisitors: item.uniqueVisitors ?? 0,
+            uniqueConvertingVisitors: item.uniqueConvertingVisitors ?? 0
+        }))
+        .sort((a, b) => a.date.getTime() - b.date.getTime());
+
+    // Check if all data points are from the same day
+    const allDatesAreSameDay = transformedData.every((item, _, arr) => {
+        if (arr.length < 2) return true;
+
+        return isSameDay(arr[0].date, item.date);
+    });
+
+    const labels = transformedData.map((item) =>
+        format(item.date, allDatesAreSameDay ? TIME_FORMATS.hour : TIME_FORMATS.day)
+    );
+
+    const visitorsData = transformedData.map((item) => item.uniqueVisitors);
+
+    const conversionsData = transformedData.map((item) => item.uniqueConvertingVisitors);
+
+    return {
+        labels,
+        datasets: [
+            {
+                type: 'bar',
+                label: 'analytics.charts.unique-visitors',
+                data: visitorsData,
+                ...BAR_CHART_STYLE,
+                backgroundColor: AnalyticsChartColors.primary.line,
+                order: 2
+            },
+            {
+                type: 'line',
+                label: 'analytics.charts.conversions',
+                data: conversionsData,
+                borderColor: AnalyticsChartColors.secondary.line,
+                borderWidth: 2,
+                fill: false,
+                tension: 0.4,
+                order: 1
             }
         ]
     };
 };
 
 /**
- * Fills missing dates in the data array based on the granularity
- * @param data - The data array to fill missing dates
- * @param granularity - The granularity of the data
- * @returns The data array with missing dates filled
+ * Transformed content conversion row for table display.
  */
-export const fillMissingDates = (
-    data: PageViewTimeLineEntity[],
+export interface ContentConversionRow {
+    eventType: string;
+    identifier: string;
+    title: string;
+    events: number;
+    conversions: number;
+    conversionRate: number;
+}
+
+/**
+ * Transforms ContentAttributionData rows to table-friendly format.
+ */
+export const transformContentConversionsData = (
+    data: ContentAttributionData[] | null
+): ContentConversionRow[] => {
+    if (!data || !Array.isArray(data) || data.length === 0) {
+        return [];
+    }
+
+    return data.map((item) => {
+        const events = item.events ?? 0;
+        const conversions = item.attributionCount ?? 0;
+        const conversionRate =
+            events > 0
+                ? Math.round((conversions / events) * 10000) / 100
+                : (item.attributionRate ?? 0);
+
+        return {
+            eventType: item.eventType || '',
+            identifier: item.identifier || '',
+            title: item.title || item.identifier || '',
+            events,
+            conversions,
+            conversionRate
+        };
+    });
+};
+
+/**
+ * Default maximum pie slices when {@link PieSliceAggregationOptions.maxSlices} is omitted.
+ */
+const DEFAULT_PIE_SLICES_CAP = 10;
+
+/**
+ * Options for capping pie slices and aggregating the remainder into an "Other" slice.
+ */
+export interface PieSliceAggregationOptions {
+    /**
+     * Maximum number of slices (default {@link DEFAULT_PIE_SLICES_CAP}).
+     */
+    maxSlices?: number;
+    /**
+     * When non-empty and categories exceed the cap, the remainder is summed into one slice with this label.
+     * When omitted or blank, overflow categories are omitted after the cap (legacy truncation).
+     */
+    otherLabel?: string;
+}
+
+/**
+ * Maps sorted name→total pairs into {@link PieChartEntry}, applying optional cap and "Other" aggregation.
+ *
+ * @param sortedDescending - `[name, total]` pairs sorted by total descending.
+ * @param options - Slice cap and optional remainder label.
+ * @returns Rows for the pie chart.
+ */
+function mapSortedTotalsToPieChartEntries(
+    sortedDescending: [string, number][],
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] {
+    const maxSlices = options?.maxSlices ?? DEFAULT_PIE_SLICES_CAP;
+    const remainderLabel = options?.otherLabel?.trim();
+
+    if (sortedDescending.length <= maxSlices) {
+        return sortedDescending.map(([name, value]) => ({ name, value }));
+    }
+
+    if (remainderLabel) {
+        const head = sortedDescending.slice(0, maxSlices - 1);
+        const tail = sortedDescending.slice(maxSlices - 1);
+        const otherValue = tail.reduce((sum, [, v]) => sum + v, 0);
+        return [
+            ...head.map(([name, value]) => ({ name, value })),
+            { name: remainderLabel, value: otherValue }
+        ];
+    }
+
+    return sortedDescending.slice(0, maxSlices).map(([name, value]) => ({ name, value }));
+}
+
+/**
+ * Maps backend `groupBy=device` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
+ */
+export const transformDeviceBreakdownToPieChartEntries = (
+    data: DeviceBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] => {
+    if (!data?.length) {
+        return [];
+    }
+
+    const sorted = [...data]
+        .map((row): [string, number] => [row.device, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
+};
+
+/**
+ * Maps backend `groupBy=browser` rows into {@link PieChartEntry} slices (sort, cap, optional "Other").
+ */
+export const transformBrowserBreakdownToPieChartEntries = (
+    data: BrowserBreakdownData[] | null,
+    options?: PieSliceAggregationOptions
+): PieChartEntry[] => {
+    if (!data?.length) {
+        return [];
+    }
+
+    const sorted = [...data]
+        .map((row): [string, number] => [row.browser, row.total])
+        .sort(([, a], [, b]) => b - a);
+    return mapSortedTotalsToPieChartEntries(sorted, options);
+};
+
+/**
+ * Type for entities that have EventSummary.day and EventSummary.totalEvents fields
+ */
+/**
+ * Base type for timeline entities that have a day dimension (legacy Cube row shape).
+ */
+type TimelineEntity = {
+    'EventSummary.day': string;
+    'EventSummary.day.day'?: string;
+};
+
+/**
+ * Cube-shaped conversion trend row — retained for {@link fillMissingDates} unit tests.
+ */
+export type ConversionTrendEntity = TimelineEntity & {
+    'EventSummary.totalEvents': string;
+};
+
+/**
+ * Factory function type for creating empty entities
+ */
+type EmptyEntityFactory<T> = (date: Date, dateKey: string) => T;
+
+/**
+ * Generic factory for TimelineEntity types.
+ * Used for PageViewTimeLineEntity and ConversionTrendEntity which share the same structure.
+ */
+export const createEmptyAnalyticsEntity = <
+    T extends TimelineEntity & { 'EventSummary.totalEvents': string }
+>(
+    date: Date,
+    dateKey: string
+): T =>
+    ({
+        'EventSummary.day': dateKey,
+        'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+        'EventSummary.totalEvents': '0'
+    }) as T;
+
+/**
+ * Factory for TrafficVsConversionsEntity
+ */
+export const createEmptyTrafficVsConversionsEntity = (
+    date: Date,
+    dateKey: string
+): TimelineEntity & {
+    'EventSummary.uniqueVisitors': string;
+    'EventSummary.uniqueConvertingVisitors': string;
+} => ({
+    'EventSummary.day': dateKey,
+    'EventSummary.day.day': format(date, 'yyyy-MM-dd'),
+    'EventSummary.uniqueVisitors': '0',
+    'EventSummary.uniqueConvertingVisitors': '0'
+});
+
+/**
+ * Fills missing dates in the data array based on the granularity
+ * Works with any timeline entity type by using a factory function
+ * @param data - The data array to fill missing dates
+ * @param timeRange - The time range for the query
+ * @param granularity - The granularity of the data
+ * @param createEmptyEntity - Factory function to create empty entities for missing dates
+ * @returns The data array with missing dates filled with zero values
+ */
+export const fillMissingDates = <T extends TimelineEntity>(
+    data: T[],
     timeRange: TimeRangeInput,
-    granularity: Granularity
-): PageViewTimeLineEntity[] => {
+    granularity: Granularity,
+    createEmptyEntity: EmptyEntityFactory<T>
+): T[] => {
     if (!data || !Array.isArray(data)) {
         return [];
     }
 
     const [startDate, endDate] = getDateRange(timeRange);
 
-    const dataMap = new Map();
+    const dataMap = new Map<string, T>();
     data.forEach((item) => {
-        const dateKey = new Date(item['request.createdAt']).toISOString();
+        const dateKey = new Date(item['EventSummary.day']).toISOString();
         dataMap.set(dateKey, item);
     });
 
-    const filledData = [];
+    const filledData: T[] = [];
     let currentDate = startDate;
     while (currentDate <= endDate) {
         const currentDateKey = currentDate.toISOString();
 
         if (dataMap.has(currentDateKey)) {
-            filledData.push(dataMap.get(currentDateKey));
+            const existingItem = dataMap.get(currentDateKey);
+            if (existingItem) {
+                filledData.push(existingItem);
+            }
         } else {
-            filledData.push({
-                'request.createdAt': currentDateKey,
-                'request.totalRequest': '0'
-            });
+            filledData.push(createEmptyEntity(currentDate, currentDateKey));
         }
-        currentDate = granularity === 'hour' ? addHours(currentDate, 1) : addDays(currentDate, 1);
+        currentDate =
+            granularity === Granularity.HOUR ? addHours(currentDate, 1) : addDays(currentDate, 1);
+    }
+
+    return filledData;
+};
+
+/** Base type for new API timeline entities */
+type ApiTimelineEntity = { day: string };
+
+/**
+ * Fills missing dates for new API timeline data (shape: { day: string, ... }).
+ * The API returns sparse data (only days with events), this fills gaps with zeros.
+ *
+ * Stepping follows {@link ApiGranularity}: **`day`** advances one calendar day per bucket;
+ * **`month`** advances one calendar month per bucket (`day` keys are typically month starts).
+ */
+export const fillMissingApiDates = <T extends ApiTimelineEntity>(
+    data: T[],
+    timeRange: TimeRangeInput,
+    granularity: ApiGranularity,
+    createEmptyEntity: (date: Date) => T
+): T[] => {
+    if (!data || !Array.isArray(data)) {
+        return [];
+    }
+
+    const [startDate, endDate] = getDateRange(timeRange);
+
+    const dataMap = new Map<string, T>();
+    data.forEach((item) => {
+        dataMap.set(item.day, item);
+    });
+
+    const filledData: T[] = [];
+    let currentDate = startDate;
+    while (currentDate <= endDate) {
+        const currentDateKey = format(currentDate, 'yyyy-MM-dd');
+
+        const existing = dataMap.get(currentDateKey);
+        if (existing) {
+            filledData.push(existing);
+        } else {
+            filledData.push(createEmptyEntity(currentDate));
+        }
+        currentDate = granularity === 'month' ? addMonths(currentDate, 1) : addDays(currentDate, 1);
     }
 
     return filledData;
@@ -347,28 +674,36 @@ export const getDateRange = (timeRange: TimeRangeInput): [Date, Date] => {
         return [startDate, endDate];
     }
 
+    // Relative ranges resolve to whole, completed days ending YESTERDAY — today is still in
+    // progress and is excluded. Mirrors the upstream `last_7_days` / `last_30_days` semantics
+    // used by toApiRangeParams, so the client-side fill window lines up exactly with the data
+    // the API returns (otherwise chart labels drift +1 day and today shows as an empty bucket).
+    const yesterday = endOfDay(subDays(today, 1));
+
     switch (timeRange) {
-        case TIME_RANGE_OPTIONS.today:
-            return [startOfDay(today), endOfDay(today)];
-        case TIME_RANGE_OPTIONS.yesterday: {
-            const yesterday = subDays(today, 1);
+        case TIME_RANGE_OPTIONS.last7days:
+            return [startOfDay(subDays(today, 7)), yesterday];
 
-            return [startOfDay(yesterday), endOfDay(yesterday)];
-        }
-
-        case TIME_RANGE_OPTIONS.last7days: {
-            const sevenDaysAgo = subDays(today, 6);
-
-            return [startOfDay(sevenDaysAgo), endOfDay(today)];
-        }
-
-        case TIME_RANGE_OPTIONS.last30days: {
-            const thirtyDaysAgo = subDays(today, 29);
-
-            return [startOfDay(thirtyDaysAgo), endOfDay(today)];
-        }
+        case TIME_RANGE_OPTIONS.last30days:
+            return [startOfDay(subDays(today, 30)), yesterday];
 
         default:
             return [startOfDay(today), endOfDay(today)];
     }
+};
+
+/**
+ * Get the previous period of the same length as the given time range, ending the day before the current range starts.
+ * Used for engagement trend comparison (current vs previous period).
+ *
+ * @param timeRange - The current time range (predefined or custom [from, to])
+ * @returns The previous period as [from, to] date strings (yyyy-MM-dd) for Cube queries
+ */
+export const getPreviousPeriod = (timeRange: TimeRangeInput): [string, string] => {
+    const [startDate, endDate] = getDateRange(timeRange);
+    const days = differenceInDays(endDate, startDate) + 1;
+    const previousEnd = subDays(startDate, 1);
+    const previousStart = subDays(previousEnd, days - 1);
+
+    return [format(previousStart, 'yyyy-MM-dd'), format(previousEnd, 'yyyy-MM-dd')];
 };

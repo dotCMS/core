@@ -12,10 +12,12 @@ import com.dotcms.jitsu.validators.AnalyticsValidatorUtil;
 import com.dotcms.jitsu.validators.SiteAuthValidator;
 import com.dotcms.security.apps.AppSecrets;
 import com.dotcms.security.apps.Secret;
+import com.dotcms.security.apps.SecretsStoreUnreadableException;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.web.WebAPILocator;
 import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotRuntimeException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.util.*;
@@ -50,6 +52,9 @@ public class ContentAnalyticsUtil {
     private static final EventLogSubmitter SUBMITTER  = new EventLogSubmitter();
 
     public static final String CONTENT_ANALYTICS_APP_KEY = "dotContentAnalytics-config";
+
+    /** App-secret key under which the HMAC bearer token minted by the save flow is stored. */
+    public static final String BEARER_TOKEN_KEY = "bearerToken";
 
     /**
      * Persists a user-defined event to the Content Analytics system. Several validation criteria
@@ -249,6 +254,53 @@ public class ContentAnalyticsUtil {
     }
 
     /**
+     * Retrieves all app secrets for the Content Analytics app for the given site.
+     *
+     * @param currentSite The site to retrieve secrets for
+     * @return Map of secret keys to Secret objects, or an empty map if not found
+     */
+    public static Map<String, Secret> getAppSecrets(final Host currentSite) {
+        try {
+            return APILocator.getAppsAPI()
+                    .getSecrets(CONTENT_ANALYTICS_APP_KEY, true, currentSite, APILocator.systemUser())
+                    .map(AppSecrets::getSecrets)
+                    .orElse(Collections.emptyMap());
+        } catch (final DotDataException | DotSecurityException e) {
+            Logger.error(ContentAnalyticsUtil.class,
+                    "Error retrieving app secrets for site: " + currentSite.getIdentifier(), e);
+            return Collections.emptyMap();
+        } catch (final DotRuntimeException e) {
+            // An unreadable App secrets store raises since issue #36724, where it previously wiped
+            // itself and returned nothing. This method must keep degrading: it feeds
+            // EventAnalyticsProxyHelper.buildAuthHeader(), which is called outside proxy()'s try
+            // block, so propagating here turns every analytics proxy/ingest request into a 500.
+            // The exception arrives wrapped as a plain DotRuntimeException -- SecretCachedKeyStoreImpl
+            // and friends re-wrap it -- so recognise it through the cause chain, and let every other
+            // runtime failure (DB, cache) keep propagating rather than masquerading as "no secrets".
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "App secrets store is unreadable; treating Content Analytics as unconfigured for site '%s'",
+                    currentSite.getIdentifier()));
+            return Collections.emptyMap();
+        }
+    }
+
+    /**
+     * Retrieves the bearer token from Content Analytics app secrets for the given site.
+     *
+     * @param site the site to retrieve the bearer token for
+     * @return the bearer token if configured, empty otherwise
+     */
+    public static Optional<String> getBearerTokenFromAppSecrets(final Host site) {
+        final Secret tokenSecret = getAppSecrets(site).get(BEARER_TOKEN_KEY);
+        return (tokenSecret != null && UtilMethods.isSet(tokenSecret.getString()))
+                ? Optional.of(tokenSecret.getString())
+                : Optional.empty();
+    }
+
+    /**
      * Retrieves the site key from Content Analytics app secrets for the given site.
      * This method looks up the app secrets and extracts the 'siteKey' value.
      *
@@ -272,7 +324,53 @@ public class ContentAnalyticsUtil {
             Logger.error(ContentAnalyticsUtil.class,
                     "Error retrieving site key from app secrets for site: " + currentSite.getIdentifier(), e);
             return Optional.empty();
+        } catch (final DotRuntimeException e) {
+            // Same reasoning as getAppSecrets() above: degrade on an unreadable store (see #36724),
+            // propagate anything else.
+            if (!ExceptionUtil.causedBy(e, SecretsStoreUnreadableException.class)) {
+                throw e;
+            }
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "App secrets store is unreadable; no Content Analytics site key available for site '%s'",
+                    currentSite.getIdentifier()));
+            return Optional.empty();
         }
+    }
+
+    /**
+     * Returns true when the Content Analytics app is configured for the given site and at least one
+     * of {@code contentImpression} or {@code contentClick} tracking is enabled.
+     *
+     * @param currentSite The site to check
+     * @return true if analytics content tracking is active for the site
+     */
+    public static boolean isContentTrackingEnabled(final Host currentSite) {
+        final String siteId = null != currentSite ? currentSite.getIdentifier() : "null";
+        final Map<String, Secret> secrets = getAppSecrets(currentSite);
+        if (secrets.isEmpty()) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': Content Analytics app has no secrets configured",
+                    siteId));
+            return false;
+        }
+        final Secret siteAuth = secrets.get("siteAuth");
+        if (siteAuth == null || !UtilMethods.isSet(siteAuth.getString())) {
+            Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                    "Content tracking disabled for site '%s': 'siteAuth' is missing or blank (fromEnv=%s)",
+                    siteId, null != siteAuth && siteAuth.isFromEnv()));
+            return false;
+        }
+        final Secret contentImpression = secrets.get("contentImpression");
+        final Secret contentClick = secrets.get("contentClick");
+        final boolean impressionEnabled =
+                contentImpression != null && Boolean.parseBoolean(contentImpression.getString());
+        final boolean clickEnabled =
+                contentClick != null && Boolean.parseBoolean(contentClick.getString());
+        final boolean enabled = impressionEnabled || clickEnabled;
+        Logger.debug(ContentAnalyticsUtil.class, () -> String.format(
+                "Content tracking for site '%s': enabled=%s (contentImpression=%s, contentClick=%s)",
+                siteId, enabled, impressionEnabled, clickEnabled));
+        return enabled;
     }
 
     /**

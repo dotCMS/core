@@ -1,7 +1,7 @@
 import { Observable, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { Component, inject, OnDestroy, OnInit } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import { Component, inject, OnDestroy, OnInit, ChangeDetectionStrategy } from '@angular/core';
 import {
     UntypedFormBuilder,
     UntypedFormGroup,
@@ -11,12 +11,10 @@ import {
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
-import { DynamicDialogRef } from 'primeng/dynamicdialog/dynamicdialog-ref';
 
 import { takeUntil, tap } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { SiteService } from '@dotcms/dotcms-js';
 import { DotLayout, DotTemplate } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { DotApiLinkComponent, DotMessagePipe } from '@dotcms/ui';
@@ -27,30 +25,30 @@ import { DotTemplateItem, DotTemplateStore, VM } from './store/dot-template.stor
 
 import { DotTemplatesService } from '../../../api/services/dot-templates/dot-templates.service';
 import { DotPortletToolbarComponent } from '../../../view/components/dot-portlet-base/components/dot-portlet-toolbar/dot-portlet-toolbar.component';
-import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-base/dot-portlet-base.component';
 
 @Component({
     selector: 'dot-template-create-edit',
     templateUrl: './dot-template-create-edit.component.html',
-    styleUrls: ['./dot-template-create-edit.component.scss'],
     providers: [DotTemplateStore, DotTemplatesService, DialogService],
+    host: {
+        class: 'flex flex-col h-full'
+    },
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         ButtonModule,
-        CommonModule,
         DotApiLinkComponent,
-        DotPortletBaseComponent,
         DotPortletToolbarComponent,
         DynamicDialogModule,
         DotMessagePipe,
         DotTemplateBuilderComponent,
-        ReactiveFormsModule
+        ReactiveFormsModule,
+        AsyncPipe
     ]
 })
 export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     private fb = inject(UntypedFormBuilder);
     private dialogService = inject(DialogService);
     private dotMessageService = inject(DotMessageService);
-    private dotSiteService = inject(SiteService);
 
     readonly #store = inject(DotTemplateStore);
     readonly #globalStore = inject(GlobalStore);
@@ -181,7 +179,7 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private createTemplate(): void {
-        const ref: DynamicDialogRef = this.dialogService.open(DotTemplatePropsComponent, {
+        const ref = this.dialogService.open(DotTemplatePropsComponent, {
             header: this.dotMessageService.get('templates.create.title'),
             width: '40rem',
             closable: false,
@@ -247,9 +245,12 @@ export class DotTemplateCreateEditComponent implements OnInit, OnDestroy {
     }
 
     private setSwitchSiteListener(): void {
-        this.dotSiteService.switchSite$.pipe(takeUntil(this.destroy$)).subscribe(() => {
-            this.#store.goToTemplateList();
-        });
+        this.#globalStore
+            .switchSiteEvent$()
+            .pipe(takeUntil(this.destroy$))
+            .subscribe(() => {
+                this.#store.goToTemplateList();
+            });
     }
 
     private formatTemplateItem({ layout, body, themeId }: DotTemplate): DotTemplateItem {

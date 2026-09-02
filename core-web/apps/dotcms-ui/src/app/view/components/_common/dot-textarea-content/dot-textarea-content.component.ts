@@ -1,6 +1,6 @@
 import { MonacoEditorModule, MonacoEditorConstructionOptions } from '@materia-ui/ngx-monaco-editor';
 
-import { CommonModule } from '@angular/common';
+import { NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,7 +30,7 @@ import { SelectButtonModule } from 'primeng/selectbutton';
         }
     ],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    imports: [CommonModule, FormsModule, SelectButtonModule, MonacoEditorModule]
+    imports: [FormsModule, SelectButtonModule, MonacoEditorModule, NgStyle]
 })
 export class DotTextareaContentComponent implements OnInit, ControlValueAccessor {
     private sanitizer = inject(DomSanitizer);
@@ -168,9 +168,7 @@ export class DotTextareaContentComponent implements OnInit, ControlValueAccessor
      * @memberof DotTextareaContentComponent
      */
     writeValue(value: string): void {
-        if (value) {
-            this.value = value || '';
-        }
+        this.value = value ?? '';
     }
 
     /**

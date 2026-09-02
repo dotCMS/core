@@ -2,13 +2,12 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 import { DotActionBulkResult, DotTemplate } from '@dotcms/dotcms-models';
-import { CoreWebServiceMock } from '@dotcms/utils-testing';
 
 import { DotTemplatesService, TEMPLATE_API_URL } from './dot-templates.service';
 
@@ -52,12 +51,9 @@ describe('DotTemplatesService', () => {
                         }
                     }
                 },
-                {
-                    provide: CoreWebService,
-                    useClass: CoreWebServiceMock
-                }
-            ],
-            imports: [HttpClientTestingModule]
+                provideHttpClient(),
+                provideHttpClientTesting()
+            ]
         });
         service = TestBed.inject(DotTemplatesService);
 
@@ -109,16 +105,19 @@ describe('DotTemplatesService', () => {
     });
 
     it('should get a templates by filter', () => {
-        service.getFiltered('123').subscribe((template) => {
-            expect(template as any).toEqual([
+        service.getFiltered({ filter: '123' }).subscribe((response) => {
+            expect(response.templates as any).toEqual([
                 {
                     identifier: '123',
                     name: 'Theme name'
                 }
             ]);
+            expect(response.totalRecords).toBe(1);
         });
 
-        const req = httpMock.expectOne(`${TEMPLATE_API_URL}?filter=123`);
+        const req = httpMock.expectOne((request) => {
+            return request.url === TEMPLATE_API_URL && request.params.get('filter') === '123';
+        });
 
         expect(req.request.method).toBe('GET');
 
@@ -128,7 +127,10 @@ describe('DotTemplatesService', () => {
                     identifier: '123',
                     name: 'Theme name'
                 }
-            ]
+            ],
+            pagination: {
+                totalEntries: 1
+            }
         });
     });
 

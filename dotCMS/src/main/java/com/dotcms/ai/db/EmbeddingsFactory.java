@@ -88,7 +88,12 @@ public class EmbeddingsFactory {
     }
 
     void runSQL(final String sql) {
-        try (final Connection db = getPGVectorConnection()) {
+        // Use a plain connection (without PGvector.addVectorType) for DDL operations.
+        // addVectorType queries pg_type and caches the OID for "vector"; if called before
+        // the pgvector extension is created, it caches OID=0 (UNSPECIFIED) and that stale
+        // value persists for the connection's lifetime, causing "Unknown type vector" errors
+        // on subsequent queries that pass PGvector parameters.
+        try (final Connection db = PgVectorDataSource.datasource.get().getConnection()) {
             new DotConnect().setSQL(sql).loadResult(db);
         } catch (SQLException | DotDataException e) {
             throw new DotRuntimeException(e);
@@ -178,6 +183,16 @@ public class EmbeddingsFactory {
      * @param extractedText the text to check
      * @return true if embeddings exist, false otherwise
      */
+    public boolean indexExists(final String indexName) {
+        try (final Connection conn = getPGVectorConnection();
+             final PreparedStatement statement = conn.prepareStatement(EmbeddingsSQL.INDEX_EXISTS)) {
+            statement.setObject(1, indexName);
+            return statement.executeQuery().next();
+        } catch (SQLException e) {
+            throw new DotRuntimeException(e);
+        }
+    }
+
     public boolean embeddingExists(final String inode, final String indexName, final String extractedText) {
         try (final Connection conn = getPGVectorConnection();
              final PreparedStatement statement =

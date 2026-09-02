@@ -6,6 +6,7 @@ import com.dotcms.util.DotPreconditions;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.common.db.DotConnect;
+import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
@@ -24,7 +25,10 @@ public class ExperimentsFactoryImpl implements
             + "creation_date, created_by, last_modified_by, goals, lookback_window, running_ids) "
             + "VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?, ?)";
 
-    public static final String UPDATE_EXPERIMENT = "UPDATE experiment set name=?, description=?, status=?, " +
+    // page_id is updatable: an Experiment may be repointed at another Page while it is a DRAFT
+    // whose only Variant is the control (see ExperimentsResource#applyPageId). It was absent here,
+    // so the column was written once by the INSERT and never again.
+    public static final String UPDATE_EXPERIMENT = "UPDATE experiment set page_id=?, name=?, description=?, status=?, " +
             "traffic_proportion=?, traffic_allocation=?, mod_date=?, scheduling=?, "
             + " creation_date=?, created_by=?, last_modified_by=?, goals=?, lookback_window=?, running_ids=?"
             + " WHERE id=?";
@@ -159,6 +163,7 @@ public class ExperimentsFactoryImpl implements
 
         DotConnect dc = new DotConnect();
         dc.setSQL(UPDATE_EXPERIMENT);
+        dc.addParam(experiment.pageId());
         dc.addParam(experiment.name());
         dc.addParam(experiment.description().orElse(""));
         dc.addParam(experiment.status().name());
@@ -185,13 +190,15 @@ public class ExperimentsFactoryImpl implements
      */
     @Override
     public final Collection<Experiment> listActive(final String pageIdentifier) throws DotDataException {
-        final List<Map<String, Object>> results = new DotConnect()
-                .setSQL(ACTIVE_EXPERIMENTS_BY_PAGE)
-                .addParam(AbstractExperiment.Status.ENDED.toString())
-                .addParam(AbstractExperiment.Status.ARCHIVED.toString())
-                .addParam(pageIdentifier)
-                .loadObjectResults();
+        return DbConnectionFactory.wrapConnection(() -> {
+            final List<Map<String, Object>> results = new DotConnect()
+                    .setSQL(ACTIVE_EXPERIMENTS_BY_PAGE)
+                    .addParam(AbstractExperiment.Status.ENDED.toString())
+                    .addParam(AbstractExperiment.Status.ARCHIVED.toString())
+                    .addParam(pageIdentifier)
+                    .loadObjectResults();
 
-        return TransformerLocator.createExperimentTransformer(results).list;
+            return TransformerLocator.createExperimentTransformer(results).list;
+        });
     }
 }

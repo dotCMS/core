@@ -1,4 +1,4 @@
-import { byTestId, createHostFactory, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, SpectatorHost } from '@openng/spectator/jest';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -96,7 +96,9 @@ describe('DotEditContentTextAreaComponent', () => {
         });
 
         it('should have min height as 9.375rem and resize as vertical', () => {
-            expect(textArea.getAttribute('style')).toBe('min-height: 9.375rem; resize: vertical;');
+            expect(textArea).toHaveClass('min-h-37.5');
+            expect(textArea).toHaveClass('resize-y');
+            expect(textArea).toHaveClass('w-full');
         });
 
         it('should have editor selector dropdown', () => {

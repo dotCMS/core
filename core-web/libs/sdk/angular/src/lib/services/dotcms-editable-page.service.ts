@@ -11,6 +11,7 @@ import {
     DotCMSExtendedPageResponse
 } from '@dotcms/types';
 import { createUVESubscription, getUVEState, initUVE, updateNavigation } from '@dotcms/uve';
+import { registerStyleEditorSchemas } from '@dotcms/uve/internal';
 
 @Injectable({
     providedIn: 'root'
@@ -80,6 +81,10 @@ export class DotCMSEditablePageService {
         // And wait for the UVE to resolve the page
         if (pageURI) {
             updateNavigation(pageURI);
+        }
+
+        if (response?.styleEditorSchemas?.length) {
+            registerStyleEditorSchemas(response.styleEditorSchemas);
         }
 
         const unsubscribeUVEChanges = this.#listenUVEChanges();

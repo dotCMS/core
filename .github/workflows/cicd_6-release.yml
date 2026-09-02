@@ -1,0 +1,656 @@
+#
+# Release Workflow
+#
+# This workflow handles the complete release process for dotCMS following the established
+# phase pattern: initialize -> build -> deployment -> finalize
+#
+# Key features:
+# - Release preparation (branch creation, version setting)
+# - Standard build phase for artifact generation
+# - Release-specific deployment (Artifactory, Javadocs, plugins)
+# - Docker image deployment via standard deployment phase
+# - SBOM generation
+# - GitHub label management
+# - Release notifications
+#
+# This workflow follows the modular phase pattern established in the CICD architecture
+# and replaces the legacy-release_maven-release-process.yml workflow
+#
+
+name: '-6 Release Process'
+run-name: "Release ${{ inputs.release_version }}${{ inputs.java-version && format(' [{0}]', inputs.java-version) || '' }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_version:
+        description: 'Release Version (yy.mm.dd-## or yy.mm.dd_lts_v##] ##: counter)'
+        required: true
+      release_commit:
+        description: 'Commit Hash (default to latest commit)'
+        required: false
+      deploy_artifact:
+        description: 'Deploy Artifact to Artifactory'
+        type: boolean
+        default: true
+        required: false
+      update_plugins:
+        description: 'Update Plugins'
+        type: boolean
+        default: true
+        required: false
+      upload_javadocs:
+        description: 'Upload Javadocs to S3'
+        type: boolean
+        default: true
+        required: false
+      update_github_labels:
+        description: 'Update GitHub labels'
+        type: boolean
+        default: true
+        required: false
+      skip_latest:
+        description: 'Leave BLANK to update the "latest" Docker tag (default). To skip moving latest, type exactly: DO NOT UPDATE LATEST. Any other value fails the run.'
+        type: string
+        default: ''
+        required: false
+      notify_slack:
+        description: 'Notify Slack'
+        type: boolean
+        default: true
+        required: false
+      bump_min_sdk_version:
+        description: 'Does this release include a change that breaks SDK compatibility? If true, opens a post-release PR bumping MinSdkVersion.VALUE and notifies Slack for human review. Ignored for LTS releases.'
+        type: boolean
+        default: false
+        required: false
+      java-version:
+        description: 'Override Java version (SDKMAN format, e.g., 25.0.1-open). Compiler release auto-defaults to Java major version.'
+        type: string
+        required: false
+        default: ''
+      artifact-suffix:
+        description: 'Artifact suffix without leading separator (e.g., java25, java25-ms). Separators added automatically: dash (-) for Maven artifacts, underscore (_) for Docker tags. If not set, derived from java-version major (e.g., java25).'
+        type: string
+        required: false
+        default: ''
+
+# No concurrency control - releases should complete without interruption
+concurrency:
+  group: release-${{ github.event.inputs.release_version }}
+  cancel-in-progress: false
+
+jobs:
+  # Enforce that releases are only ever cut from main. The workflow_dispatch
+  # branch selector cannot be hidden, so we fail fast on any non-main ref.
+  verify-branch:
+    name: Verify Branch
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - name: Fail if not triggered from main
+        if: github.ref_name != 'main'
+        run: |
+          echo "::error::The Release workflow must be run from the 'main' branch. Selected: ${{ github.ref_name }}"
+          exit 1
+      # Reject typos in skip_latest. Only blank (update latest) or the exact
+      # phrase (skip latest) are valid — anything else fails the release so the
+      # operator must re-run with a deliberate value, rather than silently
+      # falling through to "update latest" on a near-miss like "do not update latest".
+      - name: Validate skip_latest input
+        env:
+          SKIP_LATEST: ${{ github.event.inputs.skip_latest }}
+        run: |
+          if [ -n "${SKIP_LATEST}" ] && [ "${SKIP_LATEST}" != "DO NOT UPDATE LATEST" ]; then
+            echo "::error::skip_latest must be blank (update the latest tag) or exactly 'DO NOT UPDATE LATEST' (skip it). Got: '${SKIP_LATEST}'. Re-run with a valid value."
+            exit 1
+          fi
+
+      # Closes the "forgot to check" gap for MinSdkVersion (see #36698): if a PR merged since
+      # the last standard release carries an SDK-breaking-change label but this run left
+      # bump_min_sdk_version false, fail loudly here rather than silently under-reporting the
+      # compatibility floor after the release ships. Read-only (no mutation), so it's safe to
+      # run before release-prepare even exists — deliberately plain `gh`/bash, not the
+      # release-qa-status TS tool, since we only need a label check, not QA-verdict aggregation.
+      - name: Validate bump_min_sdk_version against merged PR labels
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          REPO: ${{ github.repository }}
+          RELEASE_VERSION: ${{ github.event.inputs.release_version }}
+          BUMP_MIN_SDK_VERSION: ${{ github.event.inputs.bump_min_sdk_version }}
+        run: |
+          set -euo pipefail
+
+          # Only standard (non-LTS) releases carry the -## suffix; LTS patch releases don't
+          # participate in the @latest SDK contract, so skip entirely.
+          if [[ ! "${RELEASE_VERSION}" =~ ^[0-9]{2}\.[0-9]{2}\.[0-9]{2}-[0-9]{1,2}$ ]]; then
+            echo "Non-standard release version '${RELEASE_VERSION}' (LTS or custom) — skipping SDK breaking-change validation."
+            exit 0
+          fi
+
+          THIS_TAG="v${RELEASE_VERSION}"
+
+          # Resolve the previous standard release tag the same way release-qa-status does
+          # (same STANDARD_RELEASE_PATTERN, kept in sync on purpose).
+          PREV_TAG=$(gh api "repos/${REPO}/releases?per_page=100" --paginate \
+            --jq '[.[] | select(.tag_name | test("^v[0-9]{2}\\.[0-9]{2}\\.[0-9]{2}-[0-9]{1,2}$"))] | .[].tag_name' \
+            | grep -v -F -- "${THIS_TAG}" | sort -V | tail -1 || true)
+
+          if [ -z "${PREV_TAG}" ]; then
+            echo "::warning::No previous standard release tag found — skipping SDK breaking-change validation (nothing to compare against)."
+            exit 0
+          fi
+
+          echo "Comparing ${PREV_TAG}...main for merged PRs since the last release."
+
+          # release-prepare hasn't created this release's tag yet at this point in the
+          # pipeline — main is the correct proxy for "what's about to ship" (release_commit
+          # defaults to main's tip the same way).
+          # Resolve each commit to its merged PR via GitHub's commits→PRs association API
+          # rather than parsing the commit subject for a trailing "(#N)". That regex only
+          # matched squash-merge subjects; merge-commit subjects ("Merge pull request #N
+          # from …") don't end in "(#N)", so once squash merges were disabled on this repo
+          # (dotCMS/private-issues#673) the regex silently found zero PRs and this gate
+          # always passed. The API resolves off git's actual PR-merge metadata, not the
+          # subject's text shape, so it stays correct under squash, merge, or rebase.
+          COMMIT_SHAS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...main" --paginate \
+            --jq '.commits[].sha' || true)
+
+          # Fix for PR #37219 review feedback (sfreudenthaler + Claude bot, High): a bare
+          # `2>/dev/null || true` here would make a genuine API failure (rate limit,
+          # transient 5xx, network blip) indistinguishable from "this commit has no PR" —
+          # silently dropping that commit's PR from the count re-introduces the same
+          # silent-pass failure this gate exists to prevent. So each lookup is checked
+          # explicitly: a real failure fails the step loudly and by name, instead of being
+          # swallowed like a normal empty result.
+          PR_NUMBERS_FILE=$(mktemp)
+          for sha in ${COMMIT_SHAS}; do
+            if ! gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[].number' >> "${PR_NUMBERS_FILE}"; then
+              echo "::error::Failed to look up the PR(s) associated with commit ${sha} (repos/${REPO}/commits/${sha}/pulls) — likely a transient GitHub API error or rate limit, not the absence of a PR. Re-run the release; if this keeps failing, check GitHub API status/rate limits before assuming this commit has no associated PR."
+              exit 1
+            fi
+          done
+          PR_NUMBERS=$(sort -un "${PR_NUMBERS_FILE}")
+          rm -f "${PR_NUMBERS_FILE}"
+
+          BREAKING_PRS=()
+          for pr in ${PR_NUMBERS}; do
+            LABELS=$(gh pr view "${pr}" --repo "${REPO}" --json labels --jq '.labels[].name' 2>/dev/null || true)
+            if echo "${LABELS}" | grep -qxF 'SDK Breaking Change'; then
+              BREAKING_PRS+=("#${pr}")
+            fi
+          done
+
+          if [ "${#BREAKING_PRS[@]}" -gt 0 ] && [ "${BUMP_MIN_SDK_VERSION}" != "true" ]; then
+            echo "::error::This release (${THIS_TAG}) includes PR(s) labeled 'SDK Breaking Change' (${BREAKING_PRS[*]}) since ${PREV_TAG}, but 'bump_min_sdk_version' was left false. Re-run with bump_min_sdk_version=true, or remove the label from those PRs first if none of them actually break SDK compatibility."
+            exit 1
+          fi
+
+          if [ "${#BREAKING_PRS[@]}" -eq 0 ] && [ "${BUMP_MIN_SDK_VERSION}" = "true" ]; then
+            echo "::warning::bump_min_sdk_version=true but no merged PR since ${PREV_TAG} carries an SDK-breaking label. Proceeding, since a human explicitly opted in — but double-check this is intentional."
+          fi
+
+          # Non-fatal nudge: a stale, unmerged bump PR from a previous release won't be caught
+          # by this run's own dedupe (different branch name, keyed on this release's version).
+          # `gh pr list --head` only matches an exact branch name, not a prefix, so this has
+          # to go through the REST API directly and filter on head.ref with startswith().
+          STALE_PR=$(gh api "repos/${REPO}/pulls?state=open&base=main" --paginate \
+            --jq '.[] | select(.head.ref | startswith("sdk/bump-min-sdk-version-")) | .html_url' | head -1 || true)
+          if [ -n "${STALE_PR}" ]; then
+            echo "::warning::An unmerged MinSdkVersion bump PR from a previous release is still open: ${STALE_PR}. Consider merging it before this release ships another one."
+          fi
+
+          echo "SDK breaking-change validation passed (${#BREAKING_PRS[@]} breaking PR(s) found, bump_min_sdk_version=${BUMP_MIN_SDK_VERSION})."
+
+  # Initialize - standard initialization phase (always first)
+  initialize:
+    name: Initialize
+    needs: [ verify-branch ]
+    uses: ./.github/workflows/cicd_comp_initialize-phase.yml
+    # Release builds everything - no change detection needed
+    with:
+      change-detection: 'disabled'
+
+  # Release Prepare - validates version, creates release branch, sets version
+  release-prepare:
+    name: Release Prepare
+    needs: [ verify-branch, initialize ]
+    uses: ./.github/workflows/cicd_comp_release-prepare-phase.yml
+    with:
+      release_version: ${{ github.event.inputs.release_version }}
+      release_commit: ${{ github.event.inputs.release_commit }}
+      bump_min_sdk_version: ${{ github.event.inputs.bump_min_sdk_version == 'true' }}
+    secrets:
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER }}
+
+  # Build - standard build phase for artifact generation
+  build:
+    name: Build
+    needs: [ release-prepare, initialize ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_build-phase.yml
+    with:
+      core-build: true
+      run-pr-checks: false
+      ref: ${{ needs.release-prepare.outputs.release_tag }}
+      validate: false
+      version: ${{ needs.release-prepare.outputs.release_version }}
+      generate-docker: true
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    permissions:
+      contents: read
+      packages: write
+
+  # Deployment - standard deployment phase for Docker images and NPM
+  deployment:
+    name: Deployment
+    needs: [ release-prepare, initialize, build ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_deployment-phase.yml
+    with:
+      environment: 'release'
+      tag-identifier: ${{ needs.release-prepare.outputs.release_version }}
+      omit-environment-prefix: true
+      artifact-run-id: ${{ github.run_id }}
+      # `latest` is no longer moved here. evergreen-tracks is the single controller
+      # of the floating latest/standard/trailing tags; the promote-latest job below
+      # repoints `latest` on-demand once the release images are published.
+      latest: false
+      deploy-cli: true
+      deploy-dev-image: true
+      publish-npm-cli: false
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    secrets:
+      DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+      DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      DEV_REQUEST_TOKEN: ${{ secrets.DEV_REQUEST_TOKEN }}
+
+  # Promote latest - move the floating `latest` Docker tag to this GA release.
+  #
+  # evergreen-tracks (.github/actions/core-cicd/evergreen-tracks) is the single controller of the
+  # latest/standard/trailing tags. standard/trailing move only on a manual
+  # evergreen-tracks-promote dispatch, but `latest` must move the instant a GA
+  # ships — so the release pipeline invokes the same engine on-demand, scoped to
+  # the latest track only (--tracks latest).
+  # This replaces the old deploy-docker `latest: true` path (now `latest: false`).
+  #
+  # Runs for every GA release from main on dotcms/core by default — moving latest
+  # is not optional via an easy-to-miss checkbox. To intentionally skip it, the
+  # operator must type the exact phrase "DO NOT UPDATE LATEST" in the skip_latest
+  # input; blank moves latest, and any other value is rejected up front by the
+  # verify-branch "Validate skip_latest input" step (no silent fall-through).
+  # Back-patches of older lines need no opt-out: the engine is forward-only, so
+  # promoting latest on an older release is a no-op. For a runtime freeze, use the
+  # admin workflow's `hold latest` action.
+  promote-latest:
+    name: Promote latest tag
+    # Default success() gate: only runs when release-prepare AND deployment both
+    # succeeded, so the release images are guaranteed to exist before we repoint.
+    needs: [ release-prepare, deployment ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.ref_name == 'main'
+      && github.repository == 'dotcms/core'
+      && github.event.inputs.skip_latest != 'DO NOT UPDATE LATEST'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: read
+    # Share the registry-mutation lock with the promote/admin workflows so this
+    # on-demand promote can never race a manual promote apply or an admin run.
+    # The promote workflow holds this lock only in its post-approval apply job,
+    # so a promotion pending human approval never queues this job.
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Move latest to ${{ needs.release-prepare.outputs.release_version }}
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          # The engine reads the Hub tag list before it moves anything, and Hub
+          # refuses anonymous pagination past offset 1000 (these repos are well
+          # past it). docker/login-action above does not cover the Hub API.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          for repo in dotcms/dotcms dotcms/dotcms-dev; do
+            echo "--- promoting latest on ${repo} ---"
+            uv run evergreen-tracks promote --repo "${repo}" --tracks latest --apply
+          done
+
+  # Bump MinSdkVersion.java on main — only after a full green release, and only when the
+  # operator explicitly flagged this release as SDK-compatibility-breaking (see #36698).
+  # Never a direct push to main: opens a PR and asks a human to merge it (main has no
+  # auto-merge and requires a PR for any change, confirmed via the retired
+  # cicd_manual-release-sdks.yml's identical "Open post-release PR" precedent).
+  #
+  # A sibling job here (not a step in the generic, reusable cicd_comp_release-phase.yml)
+  # so this dotCMS-core-specific concern doesn't leak into a phase other callers reuse.
+  bump-min-sdk-version:
+    name: Bump MinSdkVersion.java
+    needs: [ release-prepare, build, deployment ]
+    # Strict success() gate (not the always()-based idiom used by build/deployment/release):
+    # a release that fails after release-prepare must NEVER cause main to advertise a
+    # stricter MIN_SDK_VERSION for a dotCMS version that was never actually shipped.
+    if: >-
+      success()
+      && github.event.inputs.bump_min_sdk_version == 'true'
+      && github.ref_name == 'main'
+      && needs.release-prepare.outputs.is_lts != 'true'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          # Shallow checkout: this job only needs HEAD of main (it does its own
+          # `git fetch origin main` before checkout -B). fetch-depth: 0 pulled
+          # every branch ref (~2k+ branches, ~1.1 GB pack) at ~19-20 min.
+          fetch-depth: 1
+          token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+
+      - name: Bump MinSdkVersion.VALUE and open PR
+        id: bump
+        # Notify-but-don't-fail: cicd_comp_finalize-phase.yml scans every job in the run via
+        # the GitHub API (not just finalize's own `needs`), so without this a transient
+        # git/gh error here — after the release has already fully shipped — would mark the
+        # whole release run red over a best-effort housekeeping PR. The failure Slack step
+        # below still fires (it checks the step's own outcome, not the job-level
+        # failure()/success() context functions, which continue-on-error would otherwise
+        # mask) — same pattern already applied to the SDK next-tag publish job in
+        # cicd_3-trunk.yml.
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          CI_MACHINE_USER: ${{ secrets.CI_MACHINE_USER || 'github-actions[bot]' }}
+          RELEASE_VERSION: ${{ needs.release-prepare.outputs.release_version }}
+        run: |
+          set -euo pipefail
+          git config user.name "${CI_MACHINE_USER}"
+          git config user.email "${CI_MACHINE_USER}@users.noreply.github.com"
+
+          FILE="dotCMS/src/main/java/com/dotcms/rest/config/MinSdkVersion.java"
+          PR_BRANCH="sdk/bump-min-sdk-version-${RELEASE_VERSION}"
+
+          # Idempotency (a): main is already at this version — nothing to do. Covers both a
+          # true no-op release and a retried workflow whose bump PR already merged.
+          CURRENT=$(grep -oP '(?<=VALUE = ")[^"]+' "${FILE}")
+          if [ "${CURRENT}" = "${RELEASE_VERSION}" ]; then
+            echo "MinSdkVersion.VALUE is already ${RELEASE_VERSION} on main — nothing to bump."
+            echo "skipped=true" >> "${GITHUB_OUTPUT}"
+            exit 0
+          fi
+
+          # Monotonicity guard: MinSdkVersion.VALUE is a compatibility floor that must only
+          # move forward. Without this, re-running/backfilling an older release with
+          # bump_min_sdk_version=true would silently LOWER an already-higher floor on main
+          # (the equality check above only short-circuits the exact-match case).
+          HIGHEST=$(printf '%s\n%s\n' "${CURRENT}" "${RELEASE_VERSION}" | sort -V | tail -1)
+          if [ "${HIGHEST}" != "${RELEASE_VERSION}" ]; then
+            echo "::error::Refusing to bump MinSdkVersion.VALUE backward: main is already at '${CURRENT}', which is newer than this release's version '${RELEASE_VERSION}'. This would loosen the SDK compatibility floor. If this is an intentional backfill of an older release, this automated job only ever moves the floor forward — handle it manually instead."
+            exit 1
+          fi
+
+          git fetch origin main
+          git checkout -B "${PR_BRANCH}" origin/main
+
+          sed -i "s/VALUE = \"[^\"]*\"/VALUE = \"${RELEASE_VERSION}\"/" "${FILE}"
+
+          # Verify the substitution actually landed. If the file's VALUE = "..." literal
+          # ever gets reformatted (different spacing, wrapped differently, etc.), sed
+          # silently matches nothing instead of erroring — without this check we'd fall
+          # through to "nothing to commit" and still push/open an empty, misleading PR.
+          NEW_VALUE=$(grep -oP '(?<=VALUE = ")[^"]+' "${FILE}")
+          if [ "${NEW_VALUE}" != "${RELEASE_VERSION}" ]; then
+            echo "::error::Failed to bump MinSdkVersion.VALUE — expected '${RELEASE_VERSION}' after the edit but found '${NEW_VALUE}'. The VALUE = \"...\" literal in ${FILE} may have been reformatted; update the sed pattern above to match its current shape."
+            exit 1
+          fi
+
+          git add "${FILE}"
+
+          if git diff --cached --quiet; then
+            echo "No diff after edit — nothing to commit."
+          else
+            git commit -m "chore(sdk): bump MinSdkVersion.VALUE to ${RELEASE_VERSION}"
+          fi
+
+          git push --force origin "${PR_BRANCH}"
+
+          # Idempotency (b): reuse an already-open PR for this exact version/branch instead
+          # of opening a duplicate on a retried run.
+          EXISTING_PR=$(gh pr list --repo "${GITHUB_REPOSITORY}" --head "${PR_BRANCH}" --base main --json url --jq '.[0].url' 2>/dev/null || true)
+          if [ -n "${EXISTING_PR}" ]; then
+            echo "PR already exists: ${EXISTING_PR}"
+            PR_URL="${EXISTING_PR}"
+          else
+            PR_URL=$(gh pr create \
+              --repo "${GITHUB_REPOSITORY}" \
+              --title "chore(sdk): bump MinSdkVersion.VALUE to ${RELEASE_VERSION}" \
+              --body "Automated post-release bump. Release \`${RELEASE_VERSION}\` was flagged (via \`bump_min_sdk_version\`) as containing an SDK-breaking change. This raises the compatibility floor advertised via the \`X-DotCMS-Min-SDK\` header to \`${RELEASE_VERSION}\`. Please review and merge — this does not auto-merge." \
+              --base main \
+              --head "${PR_BRANCH}")
+          fi
+          echo "pr_url=${PR_URL}" >> "${GITHUB_OUTPUT}"
+          echo "skipped=false" >> "${GITHUB_OUTPUT}"
+
+      - name: Slack Notification (bump PR ready for review)
+        if: success() && steps.bump.outputs.skipped == 'false'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :large_orange_circle: *Attention dotters:* dotCMS `${{ needs.release-prepare.outputs.release_version }}` was released with an SDK-breaking change.
+            >
+            > A PR bumping `MinSdkVersion.VALUE` to `${{ needs.release-prepare.outputs.release_version }}` is open on `main`.
+            > *Please review and merge the post-release PR ASAP:* <${{ steps.bump.outputs.pr_url }}|View PR>
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+      - name: Slack Notification (bump PR failure)
+        # Checks the bump step's own outcome directly rather than the job-level
+        # failure()/success() context functions — those reflect conclusion (which
+        # continue-on-error masks to "success"), not outcome, so failure() would never
+        # fire here once that step has continue-on-error: true.
+        if: steps.bump.outcome == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: "log-sdk-libs"
+          payload: |
+            > :red_circle: *MinSdkVersion bump FAILED!*
+            >
+            > Release `${{ needs.release-prepare.outputs.release_version }}` succeeded, but opening the post-release PR to bump `MinSdkVersion.VALUE` failed.
+            > *Triggered by:* `${{ github.actor }}`
+            > <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View workflow run — check logs for details>
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+
+  # Release - release-specific operations (Artifactory, Javadocs, Plugins, SBOM, Labels)
+  # Waits for deployment to complete to safely update labels only if both succeed
+  release:
+    name: Release
+    needs: [ release-prepare, initialize, build, deployment ]
+    if: always() && !failure() && !cancelled()
+    uses: ./.github/workflows/cicd_comp_release-phase.yml
+    with:
+      release_version: ${{ needs.release-prepare.outputs.release_version }}
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      artifact_run_id: ${{ github.run_id }}
+      deploy_artifact: ${{ github.event.inputs.deploy_artifact == 'true' }}
+      upload_javadocs: ${{ github.event.inputs.upload_javadocs == 'true' }}
+      update_plugins: ${{ github.event.inputs.update_plugins == 'true' }}
+      update_github_labels: ${{ github.event.inputs.update_github_labels == 'true' && github.ref_name == 'main' }}
+      java-version: ${{ github.event.inputs.java-version }}
+      artifact-suffix: ${{ github.event.inputs.artifact-suffix }}
+    secrets:
+      EE_REPO_USERNAME: ${{ secrets.EE_REPO_USERNAME }}
+      EE_REPO_PASSWORD: ${{ secrets.EE_REPO_PASSWORD }}
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Release Notes - AI-generated changelog for the GitHub release description
+  # Runs after the release job succeeds; non-blocking for finalize/report
+  release-notes:
+    name: Release Notes
+    needs: [ release-prepare, release ]
+    if: success()
+    uses: ./.github/workflows/cicd_comp_ai-release-notes-phase.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      allow_failure: true
+    secrets:
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Changelog Site Publish - deliver the changelog entry to dev.dotcms.com/docs/changelogs.
+  # Runs after release-notes, current-track GA only (reusing release-prepare's is_latest —
+  # the same deliberate CLI/LTS exclusion the promote-latest job uses, not reinvented here).
+  # Non-blocking (allow_failure: true) so a changelog publish failure never fails the
+  # software release (FR-008). Additive: existing phases are untouched.
+  changelog-site-publish:
+    name: Changelog Site Publish
+    needs: [ release-prepare, deployment, release-notes ]
+    if: >-
+      needs.release-prepare.outputs.is_latest == 'true'
+      && github.repository == 'dotcms/core'
+    uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
+    with:
+      release_tag: ${{ needs.release-prepare.outputs.release_tag }}
+      release_version: ${{ needs.release-prepare.outputs.release_version }}
+      docker_tags: ${{ needs.deployment.outputs.docker_tags }}
+      allow_failure: true
+    secrets:
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # Finalize - standard finalization phase (required for phase pattern)
+  finalize:
+    name: Finalize
+    if: always()
+    needs: [ initialize, build, deployment, release, bump-min-sdk-version ]
+    uses: ./.github/workflows/cicd_comp_finalize-phase.yml
+    with:
+      artifact-run-id: ${{ github.run_id }}
+      needsData: ${{ toJson(needs) }}
+
+  # Report - send release notification to Slack
+  report:
+    name: Report
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    needs: [ release-prepare, deployment, release, finalize ]
+    if: always()
+    steps:
+      - name: Checkout core
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+
+      - uses: ./.github/actions/core-cicd/cleanup-runner
+
+      # Compute QA-coverage warning for the Slack message. Every step here is
+      # best-effort (continue-on-error: true) so a transient failure cannot
+      # block the release announcement; the Slack step renders the
+      # announcement with no QA section if `qa_warning` is empty.
+      #
+      # Skips non-standard releases (LTS / CLI / non-v-prefixed) to match the
+      # behavior of the AI release-notes phase. These releases don't have a
+      # reliable previous-tag for comparison.
+      - name: Setup Node.js
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: '22'
+
+      - name: Install QA-status script dependencies
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        run: npm ci
+
+      - name: Compute QA-coverage warning
+        id: qa
+        if: >-
+          github.event.inputs.notify_slack == 'true'
+          && !contains(needs.release-prepare.outputs.release_tag, 'dotcms-cli-')
+          && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
+          && startsWith(needs.release-prepare.outputs.release_tag, 'v')
+        continue-on-error: true
+        working-directory: .github/scripts/release-qa-status
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ needs.release-prepare.outputs.release_tag }}
+          # Full markdown report lands on the workflow run summary; the
+          # Slack counts link here.
+          DETAIL_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          MAPPINGS_PATH: ${{ github.workspace }}/.github/data/slack-mappings.json
+        run: |
+          set +e
+          # 1) Full markdown report → workflow run summary
+          npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format markdown 2>>/tmp/qa-stderr.log >> "${GITHUB_STEP_SUMMARY}"
+          rc_md=$?
+          if [ $rc_md -ne 0 ]; then
+            echo "::warning::release-qa-status (markdown) exited with ${rc_md}; report summary may be incomplete"
+          fi
+
+          # 2) Compact Slack snippet → step output for the next step
+          output=$(npx ts-node src/index.ts \
+            --repo "${GITHUB_REPOSITORY}" \
+            --to-tag "${RELEASE_TAG}" \
+            --format slack \
+            --mappings "${MAPPINGS_PATH}" \
+            --detail-url "${DETAIL_URL}" 2>>/tmp/qa-stderr.log)
+          rc_slack=$?
+          if [ $rc_slack -ne 0 ]; then
+            echo "::warning::release-qa-status (slack) exited with ${rc_slack}; omitting QA section from Slack message"
+            cat /tmp/qa-stderr.log || true
+            output=""
+          fi
+          {
+            echo 'qa_warning<<__RELEASE_QA_WARNING_EOF__'
+            if [ -n "${output}" ]; then
+              printf '%s\n' "${output}"
+            fi
+            echo '__RELEASE_QA_WARNING_EOF__'
+          } >> "${GITHUB_OUTPUT}"
+
+      - name: Slack Notification
+        uses: rtCamp/action-slack-notify@v2
+        env:
+          SLACK_WEBHOOK: ${{ secrets.RELEASE_SLACK_WEBHOOK }}
+          SLACK_USERNAME: dotBot
+          SLACK_TITLE: "Important news!"
+          SLACK_MSG_AUTHOR: " "
+          MSG_MINIMAL: true
+          SLACK_FOOTER: ""
+          SLACK_ICON: https://avatars.slack-edge.com/temp/2021-12-08/2830145934625_e4e464d502865ff576e4.png
+          SLACK_MESSAGE: "<!channel> This automated script is excited to announce the release of a new version of dotCMS `${{ needs.release-prepare.outputs.release_version }}` :rocket:\n:docker: Produced images: [${{ needs.deployment.outputs.formatted_tags || needs.deployment.outputs.docker_tags }}]${{ steps.qa.outputs.qa_warning }}"
+        if: success() && github.event.inputs.notify_slack == 'true'

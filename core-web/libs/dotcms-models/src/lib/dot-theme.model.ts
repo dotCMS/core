@@ -1,20 +1,15 @@
+/**
+ * The primary theme model to be used in components and stores.
+ *
+ * This interface defines the minimal, normalized theme entity used across all
+ * UI components, data-access services, and global store state.
+ */
 export interface DotTheme {
     identifier: string;
-    name: string;
-    title: string;
     inode: string;
-    themeThumbnail: string;
+    path: string;
+    title: string;
+    themeThumbnail: string | null;
+    name: string;
     hostId: string;
-    host: {
-        hostName: string;
-        inode: string;
-        identifier: string;
-    };
-    defaultFileType?: string;
-    filesMasks?: string;
-    modDate?: number;
-    path?: string;
-    sortOrder?: number;
-    showOnMenu?: boolean;
-    type?: string;
 }

@@ -1,9 +1,11 @@
+'use client';
+
 import { useContext, useMemo, useRef } from 'react';
 
 import { DotCMSBasicContentlet } from '@dotcms/types';
 import {
     CUSTOM_NO_COMPONENT,
-    getDotAnalyticsAttributes,
+    getAnalyticsContentletAttributes,
     getDotContentletAttributes
 } from '@dotcms/uve/internal';
 
@@ -12,6 +14,11 @@ import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
 import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 import { useIsDevMode } from '../../hooks/useIsDevMode';
 import { FallbackComponent } from '../FallbackComponent/FallbackComponent';
+
+/**
+ * CSS class name for contentlet elements
+ */
+export const CONTENTLET_CLASS = 'dotcms-contentlet';
 
 /**
  * @internal
@@ -63,38 +70,26 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
         [isDevMode, haveContent]
     );
 
-    // UVE attributes - only when in development/editor mode
-    const dotAttributes = useMemo(
-        () => (isDevMode ? getDotContentletAttributes(contentlet, container) : {}),
-        [isDevMode, contentlet, container]
-    );
-
-    // Analytics attributes - only when analytics is active AND NOT in UVE editor
-    const analyticsAttributes = useMemo(
-        () => (isAnalyticsActive && !isDevMode ? getDotAnalyticsAttributes(contentlet) : {}),
-        [isAnalyticsActive, isDevMode, contentlet]
-    );
-
-    // Build container class name
-    const containerClassName = useMemo(() => {
-        const classes: string[] = [];
-
-        // Add analytics class if active
-        if (isAnalyticsActive && !isDevMode) {
-            classes.push('dotcms-analytics-contentlet');
+    // In edit mode we emit the full set of editor metadata. In live mode we
+    // strip it to avoid leaking internal identifiers, keeping only the minimal
+    // set Analytics needs (and only while Analytics is active).
+    const dotAttributes = useMemo(() => {
+        if (isDevMode) {
+            return {
+                ...getDotContentletAttributes(contentlet, container),
+                'data-dot-object': 'contentlet'
+            };
         }
 
-        return classes.length > 0 ? classes.join(' ') : undefined;
-    }, [isAnalyticsActive, isDevMode]);
+        if (isAnalyticsActive) {
+            return getAnalyticsContentletAttributes(contentlet);
+        }
+
+        return {};
+    }, [isDevMode, isAnalyticsActive, contentlet, container]);
 
     return (
-        <div
-            {...dotAttributes}
-            {...analyticsAttributes}
-            data-dot-object="contentlet"
-            className={containerClassName}
-            ref={ref}
-            style={style}>
+        <div {...dotAttributes} className={CONTENTLET_CLASS} ref={ref} style={style}>
             <CustomComponent contentlet={contentlet} />
         </div>
     );
@@ -111,7 +106,14 @@ export function Contentlet({ contentlet, container }: DotCMSContentletRendererPr
  * @internal
  */
 function CustomComponent({ contentlet }: CustomComponentProps) {
-    const { userComponents } = useContext(DotCMSPageContext);
+    const { userComponents, slots } = useContext(DotCMSPageContext);
+
+    const slotNode = contentlet?.identifier ? slots?.[contentlet.identifier] : undefined;
+
+    if (slotNode !== undefined) {
+        return <>{slotNode}</>;
+    }
+
     const UserComponent = userComponents[contentlet?.contentType];
 
     if (UserComponent) {

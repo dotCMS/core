@@ -108,7 +108,12 @@ public class MultiPartUtils {
 
         final List<File> binaries = new ArrayList<>();
 
-        for (final FormDataBodyPart part : multipart.getFields(FILE)) {
+        final List<FormDataBodyPart> fileParts = multipart.getFields(FILE);
+        if (fileParts == null) {
+            return binaries;
+        }
+
+        for (final FormDataBodyPart part : fileParts) {
 
             final File tmpFolder = new File(
                     this.fileAssetAPI.getRealAssetPathTmpBinary() + UUIDUtil.uuid());

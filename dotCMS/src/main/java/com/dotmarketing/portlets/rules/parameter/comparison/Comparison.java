@@ -2,7 +2,7 @@ package com.dotmarketing.portlets.rules.parameter.comparison;
 
 import static com.dotmarketing.portlets.rules.parameter.display.DropdownInput.Option;
 
-import com.dotcms.repackage.com.google.common.base.Objects;
+import com.google.common.base.MoreObjects;
 import com.dotmarketing.portlets.rules.conditionlet.Location;
 import java.util.Collection;
 import org.apache.commons.lang.NotImplementedException;
@@ -92,7 +92,7 @@ public class Comparison<T> {
 
     @Override
     public String toString() {
-        return Objects.toStringHelper(this)
+        return MoreObjects.toStringHelper(this)
             .add("id", id)
             .toString();
     }

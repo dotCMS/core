@@ -75,6 +75,7 @@ export function provideDotCMSClient(options: DotCMSAngularProviderConfig): Envir
                     dotcmsUrl: options.dotcmsUrl,
                     authToken: options.authToken,
                     siteId: options.siteId,
+                    logLevel: options.logLevel,
                     httpClient: httpClient
                 });
 

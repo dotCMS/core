@@ -5,6 +5,20 @@ All notable changes to the DotCMS Angular SDK will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## v1.5.4
+
+### Added
+
+#### Accessible Block Editor Renderer (`DotCMSBlockEditorRendererNativeComponent`)
+
+- **Added**: `DotCMSBlockEditorRendererNativeComponent` (`<dotcms-block-editor-renderer-native>`), a semantic-DOM renderer for Block Editor content.
+  - Emits clean semantic HTML (`<ul><li><p>…</p></li></ul>`) with no custom wrapper elements between semantic tags, preserving the `list → listitem` relationship required by the HTML spec and assistive technology.
+  - Exposes the **identical** public input API (`blocks`, `customRenderers`, `class`, `style`) and the same `customRenderers` contract as the original renderer — migration is a one-line swap of the tag and import.
+
+### Deprecated
+
+- **Deprecated**: `DotCMSBlockEditorRendererComponent` (`<dotcms-block-editor-renderer>`). Its DOM output is unchanged for backward compatibility, but it wraps semantic tags in custom elements that break list accessibility. Use `DotCMSBlockEditorRendererNativeComponent` instead. It will be removed in a future major version.
+
 ## v1.2.0
 
 ### Fixed

@@ -608,8 +608,6 @@ public final class WebKeys {
 
     public static class Relationship
     {
-        public static final String RELATIONSHIP_EDIT = "com.dotmarketing.relationships.edit_relationship";
-        public static final String RELATIONSHIP_REQUIRED = "com.dotmarketing.relationships.required";
     	public enum RELATIONSHIP_CARDINALITY {
             ONE_TO_MANY ,
             MANY_TO_MANY,

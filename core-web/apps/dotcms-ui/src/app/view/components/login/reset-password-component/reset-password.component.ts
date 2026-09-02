@@ -1,7 +1,14 @@
 import { Observable } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
-import { AfterViewChecked, ChangeDetectorRef, Component, OnInit, inject } from '@angular/core';
+import { AsyncPipe } from '@angular/common';
+import {
+    AfterViewChecked,
+    ChangeDetectorRef,
+    Component,
+    OnInit,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import {
     FormsModule,
     ReactiveFormsModule,
@@ -32,8 +39,8 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
     selector: 'dot-reset-password-component',
     styleUrls: ['./reset-password.component.scss'],
     templateUrl: 'reset-password.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        CommonModule,
         FormsModule,
         ReactiveFormsModule,
         RouterModule,
@@ -41,7 +48,8 @@ import { DotLoginPageStateService } from '../shared/services/dot-login-page-stat
         InputTextModule,
         DotFieldValidationMessageComponent,
         DotAutofocusDirective,
-        DotFieldRequiredDirective
+        DotFieldRequiredDirective,
+        AsyncPipe
     ]
 })
 export class ResetPasswordComponent implements OnInit, AfterViewChecked {
@@ -122,7 +130,8 @@ export class ResetPasswordComponent implements OnInit, AfterViewChecked {
                         });
                     },
                     (response) => {
-                        this.message = response.error?.errors[0]?.message;
+                        this.message =
+                            response.error?.errors?.[0]?.message ?? response.error?.message ?? '';
                     }
                 );
         } else {

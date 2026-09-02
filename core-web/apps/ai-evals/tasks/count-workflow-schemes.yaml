@@ -1,0 +1,16 @@
+id: count-workflow-schemes
+category: discovery
+description: Count workflow schemes - tests multi-step (discover endpoint, call it)
+difficulty: easy
+runs: 5
+
+prompt: |
+    How many workflow schemes exist in this dotCMS instance?
+
+assertions:
+    - type: custom
+      name: response-has-number
+      script: |
+          return /\b\d+\b/.test(trace.text);
+
+tags: [discovery, workflow, read-only]

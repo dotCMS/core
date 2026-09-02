@@ -1,6 +1,6 @@
 package com.dotmarketing.util;
 
-import com.dotcms.repackage.com.google.common.collect.Sets;
+import com.google.common.collect.Sets;
 import com.dotcms.visitor.domain.Visitor;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.tag.model.Tag;

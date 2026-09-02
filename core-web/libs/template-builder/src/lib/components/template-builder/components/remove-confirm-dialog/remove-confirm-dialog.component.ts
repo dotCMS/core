@@ -17,7 +17,6 @@ import { DotMessagePipe } from '@dotcms/ui';
 @Component({
     selector: 'dotcms-remove-confirm-dialog',
     templateUrl: './remove-confirm-dialog.component.html',
-    styleUrls: ['./remove-confirm-dialog.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [ConfirmPopupModule, ButtonModule],
     providers: [ConfirmationService, DotMessagePipe]
@@ -31,7 +30,7 @@ export class RemoveConfirmDialogComponent {
     @Output() deleteRejected: EventEmitter<void> = new EventEmitter();
     private currentPopup: ConfirmationService;
 
-    @HostListener('document:keydown.escape', ['$event'])
+    @HostListener('document:keydown.escape')
     onEscapePress() {
         if (this.currentPopup) {
             this.currentPopup.close();

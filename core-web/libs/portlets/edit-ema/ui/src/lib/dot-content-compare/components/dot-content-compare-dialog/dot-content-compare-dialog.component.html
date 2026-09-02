@@ -1,3 +1,12 @@
-<dot-dialog (hide)="close()" [visible]="show" [header]="'compare' | dm" width="90vw" height="90vh">
+<p-dialog
+    [visible]="show"
+    [header]="'compare' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [style]="{ width: '90vw', height: '90vh' }"
+    appendTo="body"
+    (visibleChange)="onVisibleChange($event)">
     <dot-content-compare (shutdown)="close()" [data]="data$ | async" />
-</dot-dialog>
+</p-dialog>

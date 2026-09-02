@@ -1,0 +1,17 @@
+<h5 class="mt-2 mb-4 text-center font-semibold">{{ 'experiments.configure.coming.soon' | dm }}</h5>
+
+<!-- Tailwind is used for layout + applying Lara CSS variables inline. -->
+<div class="flex w-full flex-wrap gap-4">
+    @for (card of cards; track card.titleKey) {
+        <p-card class="h-full min-h-60 flex-1 basis-[16rem]">
+            <ng-template pTemplate="header">
+                <div class="flex min-h-20 items-center justify-center rounded-t-md bg-primary-100">
+                    <i class="{{ card.icon }} text-primary-500 text-2xl!" aria-hidden="true"></i>
+                </div>
+            </ng-template>
+
+            <h6 class="mt-0 mb-4 font-semibold">{{ card.titleKey | dm }}</h6>
+            <p class="m-0 leading-6">{{ card.descriptionKey | dm }}</p>
+        </p-card>
+    }
+</div>

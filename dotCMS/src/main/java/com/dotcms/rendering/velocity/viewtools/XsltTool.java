@@ -1,5 +1,7 @@
 package com.dotcms.rendering.velocity.viewtools;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import com.dotcms.rendering.velocity.viewtools.bean.XSLTranformationDoc;
 import com.dotcms.rendering.velocity.viewtools.cache.XSLTransformationCache;
 import com.dotmarketing.beans.Host;
@@ -114,6 +116,7 @@ public class XsltTool implements ViewTool {
 	 * @throws SystemException 
 	 * @throws PortalException 
 	 */
+    @RequestCost(Price.XSLT_PARSE)
 	public XSLTranformationDoc xslTransform(String xmlPath, String xslPath, long ttl)
 			throws DotDataException, DotSecurityException, SystemException, PortalException, IOException, TransformerConfigurationException {
 
@@ -152,6 +155,7 @@ public class XsltTool implements ViewTool {
 
 	}
 
+    @RequestCost(Price.XSLT_FETCH_AND_PARSE)
 	private XSLTranformationDoc getXslTransformationDoc(final String xmlPath, final String xslPath, final long ttl,
 			final Identifier xslId, final File binFile, final Source xmlSource)
 			throws IOException, TransformerConfigurationException {

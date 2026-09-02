@@ -3,8 +3,11 @@ package com.dotcms.health.providers;
 import com.dotcms.health.api.HealthCheck;
 import com.dotcms.health.api.HealthCheckProvider;
 import com.dotcms.health.checks.cdi.CacheHealthCheck;
+import com.dotcms.health.checks.cdi.CacheTransportHealthCheck;
 import com.dotcms.health.checks.cdi.DatabaseHealthCheck;
 import com.dotcms.health.checks.cdi.ElasticsearchHealthCheck;
+import com.dotcms.health.checks.cdi.ReindexMappingHealthCheck;
+import com.dotcms.health.checks.cdi.VelocityHealthCheck;
 import java.util.Arrays;
 import java.util.List;
 import javax.enterprise.context.ApplicationScoped;
@@ -24,7 +27,10 @@ public class CoreHealthCheckProvider implements HealthCheckProvider {
         return Arrays.asList(
             new DatabaseHealthCheck(),
             new CacheHealthCheck(),
-            new ElasticsearchHealthCheck()
+            new CacheTransportHealthCheck(),
+            new ElasticsearchHealthCheck(),
+            new ReindexMappingHealthCheck(),
+            new VelocityHealthCheck()
             // Additional dependency health checks can be added here
         );
     }

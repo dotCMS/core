@@ -2,6 +2,7 @@ package com.dotcms.util;
 
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
+import com.dotcms.content.index.IndexConfigHelper.MigrationPhase;
 import com.dotcms.repackage.org.apache.struts.Globals;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfig;
 import com.dotcms.repackage.org.apache.struts.config.ModuleConfigFactory;
@@ -81,6 +82,16 @@ public class IntegrationTestInitService {
                 DotInitializationService.getInstance().initialize();
 
                 APILocator.getDotAIAPI().getEmbeddingsAPI().initEmbeddingsTable();
+
+                // Phase-aware OpenSearch bootstrap. When a migration phase that involves OpenSearch
+                // is configured for the run (phases 1-3, via FEATURE_FLAG_OPEN_SEARCH_PHASE), create
+                // and register the OS index set so the whole indexing flow routes into OpenSearch,
+                // and fail fast — with a clear message — if the OS service is unreachable. Phase 0
+                // (the default) is a no-op, so existing single-store runs are unaffected.
+                if (!MigrationPhase.current().isMigrationNotStarted()) {
+                    MigrationPhaseStoreBootstrap.ensureStoresForCurrentPhase();
+                }
+
                 Logger.info(this, "Integration Test Init Service initialized");
             }
         } catch (Exception e) {

@@ -1,6 +1,6 @@
 package com.dotmarketing.common.reindex;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import java.io.Serializable;
 import java.util.Hashtable;
 import java.util.Map;
@@ -15,7 +15,7 @@ import com.dotmarketing.exception.DotDataException;
 public class ReIndexerStatus implements Serializable {
     private final ContentletIndexAPIImpl indexAPI;
     private final ReindexQueueAPI queueAPI;
-    final ESIndexAPI esIndexAPI = APILocator.getESIndexAPI();
+    final IndexAPI esIndexAPI = APILocator.getESIndexAPI();
 
     private ReIndexerStatus(final ContentletIndexAPIImpl indexAPI, final ReindexQueueAPI queueAPI) {
         this.indexAPI = indexAPI;

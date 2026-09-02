@@ -1,0 +1,29 @@
+/* PrimeNG/Lara + Tailwind handle styling for this component. */
+
+// Angular's animation DSL (`trigger`, `transition`, etc.) is deprecated in Angular 21.
+// We use a small CSS transition for the expand/collapse content instead.
+.dot-option-content {
+    display: grid;
+    transition:
+        grid-template-rows 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        opacity 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98),
+        visibility 200ms cubic-bezier(0.37, 1.04, 0.68, 0.98);
+    will-change: grid-template-rows, opacity;
+}
+
+.dot-option-content__inner {
+    min-height: 0;
+    overflow: hidden;
+}
+
+.dot-option-content--expanded {
+    grid-template-rows: 1fr;
+    opacity: 1;
+    visibility: visible;
+}
+
+.dot-option-content--collapsed {
+    grid-template-rows: 0fr;
+    opacity: 0;
+    visibility: hidden;
+}

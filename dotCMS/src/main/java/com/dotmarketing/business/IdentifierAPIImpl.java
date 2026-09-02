@@ -15,7 +15,6 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
-
 import java.util.List;
 
 public class IdentifierAPIImpl implements IdentifierAPI {
@@ -144,7 +143,8 @@ public class IdentifierAPIImpl implements IdentifierAPI {
 		return createNew(folder, parent,null);
 	}
 
-	@WrapInTransaction
+
+    @WrapInTransaction
 	@Override
 	public Identifier createNew(final Folder folder, final Treeable parent,
 			final String existingId) throws DotDataException {

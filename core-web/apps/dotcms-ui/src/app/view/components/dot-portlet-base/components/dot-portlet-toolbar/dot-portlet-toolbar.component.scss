@@ -1,24 +1,27 @@
+@use "../../../../../../../../../libs/dotcms-scss/shared/fonts";
+@use "../../../../../../../../../libs/dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 :host ::ng-deep .p-button {
     // TODO: move this to an extend
-    font-size: $font-size-sm;
-    padding: $spacing-1 $spacing-2;
+    font-size: fonts.$font-size-sm;
+    padding: spacing.$spacing-1 spacing.$spacing-2;
 }
 
 h3 {
-    margin: 0 $spacing-2 0 0;
-    font-size: $font-size-xl;
+    margin: 0 spacing.$spacing-2 0 0;
+    font-size: fonts.$font-size-xl;
     line-height: 1.6; // Default 39px height
 }
 
 .dot-portlet-toolbar__actions {
     display: flex;
-    margin-left: $spacing-1;
+    margin-left: spacing.$spacing-1;
     align-items: center;
 
     & > * {
-        margin-left: $spacing-1;
+        margin-left: spacing.$spacing-1;
     }
 }
 
@@ -30,7 +33,7 @@ h3 {
 
 .dot-portlet-toolbar__extra-left ::ng-deep {
     & > * {
-        margin-right: $spacing-3;
+        margin-right: spacing.$spacing-3;
 
         &:last-child {
             margin-right: 0;
@@ -39,7 +42,7 @@ h3 {
 }
 .dot-portlet-toolbar__extra-right ::ng-deep {
     & > * {
-        margin-left: $spacing-3;
+        margin-left: spacing.$spacing-3;
 
         &:first-child {
             margin-left: 0;

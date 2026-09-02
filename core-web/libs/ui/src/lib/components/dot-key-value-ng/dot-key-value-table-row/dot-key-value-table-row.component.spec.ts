@@ -1,14 +1,14 @@
-import { byTestId, createComponentFactory, Spectator } from '@ngneat/spectator/jest';
+import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
 import { fakeAsync, tick } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NoopAnimationsModule } from '@angular/platform-browser/animations';
 
 import { ButtonModule } from 'primeng/button';
-import { InputSwitchModule } from 'primeng/inputswitch';
 import { InputTextModule } from 'primeng/inputtext';
-import { InputTextareaModule } from 'primeng/inputtextarea';
-import { Table, TableModule, TableService } from 'primeng/table';
+import { TableModule } from 'primeng/table';
+import { TextareaModule } from 'primeng/textarea';
+import { ToggleSwitchModule, ToggleSwitch } from 'primeng/toggleswitch';
 
 import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -24,6 +24,65 @@ const mockVariable: DotKeyValue = {
     value: 'John'
 };
 
+/**
+ * Test template without pReorderableRow / pReorderableRowHandle so we don't need PrimeNG Table in the test injector.
+ * Same structure and behavior, only the drag directives are omitted.
+ */
+const TEST_TEMPLATE = `
+@let variable = $variable();
+@let showHiddenField = $showHiddenField();
+@let isHiddenField = $isHiddenField();
+<tr class="dot-key-value-table-row">
+    @if ($dragAndDrop()) {
+        <td class="p-2 align-middle">
+            <span class="pi pi-bars text-gray-500"></span>
+        </td>
+    }
+    <td class="p-2 align-middle" data-testId="dot-key-value-key">
+        <span>{{ variable.key }}</span>
+    </td>
+    @if (isHiddenField) {
+        <td class="p-2 align-middle" data-testId="dot-key-value-label">
+            <span>
+                <i class="pi pi-lock inline-block mr-1"></i>
+                {{ 'keyValue.value_hidden' | dm }}
+            </span>
+        </td>
+    } @else {
+        <td class="p-2 align-middle" data-testId="dot-key-value-editable-column">
+            <input
+                (keydown.enter)="onPressEnter($event)"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                [type]="inputType"
+                [formControl]="valueControl"
+                class="w-full"
+                autocomplete="false"
+                data-testId="dot-key-value-input"
+                pInputText
+                pSize="small" />
+        </td>
+    }
+    @if (showHiddenField) {
+        <td class="p-2 align-middle">
+            @if (valueControl.value !== passwordPlaceholder && !variable.hidden) {
+                <p-toggleSwitch
+                    [formControl]="hiddenControl"
+                    data-testId="dot-key-value-hidden-switch" />
+            }
+        </td>
+    }
+    <td class="p-2 align-middle">
+        <p-button
+            (click)="delete.emit()"
+            data-testId="dot-key-value-delete-button"
+            icon="pi pi-times"
+            severity="secondary"
+            size="small"
+            [text]="true" />
+    </td>
+</tr>
+`;
+
 describe('DotKeyValueTableRowComponent', () => {
     let spectator: Spectator<DotKeyValueTableRowComponent>;
     const createComponent = createComponentFactory({
@@ -31,10 +90,10 @@ describe('DotKeyValueTableRowComponent', () => {
         imports: [
             FormsModule,
             ReactiveFormsModule,
-            InputSwitchModule,
+            ToggleSwitchModule,
             InputTextModule,
             ButtonModule,
-            InputTextareaModule,
+            TextareaModule,
             TableModule,
             DotMessagePipe,
             NoopAnimationsModule
@@ -47,10 +106,9 @@ describe('DotKeyValueTableRowComponent', () => {
                     'keyValue.value_input.placeholder': 'Enter Value',
                     'keyValue.value_hidden': 'Value hidden'
                 })
-            },
-            Table,
-            TableService
-        ]
+            }
+        ],
+        overrideComponents: [[DotKeyValueTableRowComponent, { set: { template: TEST_TEMPLATE } }]]
     });
 
     beforeEach(() => {
@@ -156,7 +214,7 @@ describe('DotKeyValueTableRowComponent', () => {
 
                 expect(spectator.component.form).toBeTruthy();
 
-                const inputSwitch = spectator.query(byTestId('dot-key-value-hidden-switch'));
+                const inputSwitch = spectator.query(ToggleSwitch);
 
                 expect(inputSwitch).toBeFalsy();
                 expect(spectator.component.$isHiddenField()).toBe(true);
@@ -179,6 +237,30 @@ describe('DotKeyValueTableRowComponent', () => {
                 spectator.detectChanges();
 
                 expect(spectator.component.inputType).toBe('password');
+            });
+        });
+
+        describe('Null value displayed as "null" string (imported data)', () => {
+            beforeEach(() => {
+                spectator = createComponent({
+                    props: {
+                        showHiddenField: false,
+                        variable: { key: 'imported-key', hidden: false, value: 'null' },
+                        index: 0,
+                        dragAndDrop: false
+                    } as unknown
+                });
+                spectator.detectChanges();
+            });
+
+            it('should render the row and show "null" as value', () => {
+                const keyElement = spectator.query(byTestId('dot-key-value-key'));
+                const valueInput = spectator.query<HTMLInputElement>(
+                    byTestId('dot-key-value-input')
+                );
+                expect(keyElement.textContent).toContain('imported-key');
+                expect(valueInput).toBeTruthy();
+                expect(valueInput.value).toBe('null');
             });
         });
 

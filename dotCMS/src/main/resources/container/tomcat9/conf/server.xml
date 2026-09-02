@@ -2,6 +2,28 @@
 
 <Server port="${CMS_SERVER_PORT:-8005}" shutdown="${CMS_SERVER_SHUTDOWN:-SHUTDOWN}">
   <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <!--
+    APR (Apache Portable Runtime) SSL Engine Configuration
+    =======================================================
+    The APR SSL Engine uses Tomcat Native library (libtcnative-1) with native OpenSSL
+    for improved SSL/TLS performance compared to Java JSSE.
+
+    FIPS Mode Auto-Detection:
+    - The container automatically detects FIPS-enabled environments at startup
+    - If FIPS mode is detected, CMS_SSL_ENGINE is automatically set to 'off'
+    - This prevents JVM crashes with OpenSSL 3.x in FIPS environments
+
+    Configuration Options:
+    1. CMS_SSL_ENGINE=on (default): Uses native APR SSL for best performance
+    2. CMS_SSL_ENGINE=off: Uses Java JSSE (required for FIPS/OpenSSL 3.x compatibility)
+    3. CMS_DISABLE_APR_SSL=true: Alternative way to disable APR SSL Engine
+
+    Performance Impact:
+    - APR SSL enabled: Better performance with native OpenSSL
+    - APR SSL disabled: Comparable performance with Java JSSE, better compatibility
+
+    If APR SSL is disabled, Tomcat automatically falls back to Java JSSE.
+  -->
   <Listener className="org.apache.catalina.core.AprLifecycleListener" SSLEngine="${CMS_SSL_ENGINE:-on}" />
   <Listener className="org.apache.catalina.mbeans.GlobalResourcesLifecycleListener" />
   <Service name="Catalina">
@@ -31,6 +53,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- HTTP Connector from upstream proxy
@@ -53,6 +76,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- HTTPS (SSL) Connector from upstream proxy
@@ -76,6 +100,7 @@
         compressionMinSize="${CMS_COMPRESSION_MIN_SIZE:-128}"
         useSendfile="${CMS_USE_SENDFILE:-false}"
         maxHttpHeaderSize="${CMS_MAX_HTTP_HEADER_SIZE:-16384}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
 
@@ -106,6 +131,7 @@
         SSLCertificateFile="${CMS_SSL_CERTIFICATE_FILE:-/data/shared/assets/certs/local.dotcms.site.pem}"
         SSLCertificateKeyFile="${CMS_SSL_CERTIFICATE_KEY_FILE:-/data/shared/assets/certs/local.dotcms.site-key.pem}"
         keystorePass="${CMS_KEYSTORE_PASS:-dotcms}"
+        relaxedQueryChars="${CMS_RELAXED_QUERY_CHARS:-}"
     />
 
     <!-- Management Connector for metrics, monitoring, and infrastructure health checks
@@ -137,12 +163,13 @@
       <!-- The remote IP valve picks up the X-FORWARDED-FOR header (by default) and uses it as the source ip
            remoteIpHeader and internalProxies may need to change when behind some WAF or proxy servers
            Also handles port forwarding for Docker scenarios via X-Forwarded-Port
+           internalProxies regex uses \d\d?\d? instead of \d{1,3} — bare braces clash with IntrospectionUtils ${...} resolver
       -->
         <Valve
             className="org.apache.catalina.valves.RemoteIpValve"
             remoteIpHeader="${CMS_REMOTEIP_REMOTEIPHEADER:-x-forwarded-for}"
             remoteIpPortHeader="${CMS_REMOTEIP_PORTHEADER:-x-forwarded-port}"
-            internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-10\.\d{1,3}\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}\.\d{1,3}|169\.254\.\d{1,3}\.\d{1,3}|127\.\d{1,3}\.\d{1,3}\.\d{1,3}|172\.1[6-9]{1}\.\d{1,3}\.\d{1,3}|172\.2[0-9]{1}\.\d{1,3}\.\d{1,3}|172\.3[0-1]{1}\.\d{1,3}\.\d{1,3}|0:0:0:0:0:0:0:1}"
+            internalProxies="${CMS_REMOTEIP_INTERNALPROXIES:-(10|127)\.\d\d?\d?\.\d\d?\d?\.\d\d?\d?|192\.168\.\d\d?\d?\.\d\d?\d?|169\.254\.\d\d?\d?\.\d\d?\d?|172\.(1[6-9]|2\d|3[01])\.\d\d?\d?\.\d\d?\d?|100\.(6[4-9]|[7-9]\d|1[01]\d|12[0-7])\.\d\d?\d?\.\d\d?\d?|0:0:0:0:0:0:0:1|::1}"
         />
 
         <!-- Do not show server details up on BadRequest -->

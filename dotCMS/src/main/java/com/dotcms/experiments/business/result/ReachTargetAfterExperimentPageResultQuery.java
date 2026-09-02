@@ -38,7 +38,7 @@ public class ReachTargetAfterExperimentPageResultQuery implements MetricExperime
     public CubeJSQuery getCubeJSQuery(final Experiment experiment) {
 
         return new CubeJSQuery.Builder()
-                .measures("Events.totalSessions", "Events.targetVisitedAfterSuccesses", "Events.targetVisitedAfterConvertionRate")
+                .measures("Events.totalSessions", "Events.targetVisitedAfterSuccesses", "Events.targetVisitedAfterConversionRate")
                 .build();
     }
 }

@@ -36,7 +36,7 @@ public class PermissionCacheImpl extends PermissionCache {
 	static final Lazy<Integer> EMPTY_PERMISSIONS_TTL =
 			Lazy.of(() -> Config.getIntProperty("EMPTY_PERMISSIONS_TTL", 300)); // 5 minutes default
 
-	private DotCacheAdministrator cache;
+	private final DotCacheAdministrator cache;
 
 	private final String primaryGroup = "PermissionCache";
 	private final String shortLivedGroup = "PermissionShortLived";
@@ -44,7 +44,11 @@ public class PermissionCacheImpl extends PermissionCache {
     private final String[] groupNames = {primaryGroup,shortLivedGroup};
 
 	protected PermissionCacheImpl() {
-        cache = CacheLocator.getCacheAdministrator();
+		this(CacheLocator.getCacheAdministrator());
+	}
+
+	PermissionCacheImpl(final DotCacheAdministrator cacheAdministrator) {
+		this.cache = cacheAdministrator;
 	}
 
 	/* (non-Javadoc)
@@ -92,8 +96,11 @@ public class PermissionCacheImpl extends PermissionCache {
 	 * @see com.dotmarketing.business.PermissionCache#clearCache()
 	 */
     public void clearCache() {
-        // clear the cache
+        // Both groups must be flushed. shortLivedGroup caches boolean
+        // doesUserHavePermission() decisions; leaving it here means role
+        // revocations do not propagate until a full Flush All.
         cache.flushGroup(primaryGroup);
+        cache.flushGroup(shortLivedGroup);
     }
 
     /* (non-Javadoc)

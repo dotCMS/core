@@ -1,6 +1,7 @@
 package com.dotcms;
 
 import com.dotcms.ai.workflow.OpenAIAutoTagActionletTest;
+import com.dotcms.business.interceptor.InterceptorHandlerTest;
 import com.dotcms.content.elasticsearch.util.ESMappingUtilHelperTest;
 import com.dotcms.contenttype.business.DotAssetBaseTypeToContentTypeStrategyImplTest;
 import com.dotcms.contenttype.test.DotAssetAPITest;
@@ -19,6 +20,7 @@ import com.dotcms.rendering.velocity.servlet.VelocityServletIntegrationTest;
 import com.dotcms.rest.BundleResourceTest;
 import com.dotcms.rest.api.v1.apps.AppsResourceTest;
 import com.dotcms.rest.api.v1.folder.FolderResourceTest;
+import com.dotcms.rest.api.v1.maintenance.MaintenanceResourceIntegrationTest;
 import com.dotcms.rest.api.v1.pushpublish.PushPublishFilterResourceTest;
 import com.dotcms.rest.api.v1.user.UserResourceIntegrationTest;
 import com.dotcms.saml.IdentityProviderConfigurationFactoryTest;
@@ -57,12 +59,22 @@ import org.junit.runners.Suite.SuiteClasses;
  */
 @RunWith(MainBaseSuite.class)
 @SuiteClasses({
+
+        // Data-scanning tests run FIRST on purpose.
+        // Integration tests accumulate content and never clean up, so anything
+        // that walks the whole dataset (findAllContent) costs O(all content
+        // created so far). Scheduled late these pay for every preceding test's
+        // leftovers. Keep new full-scan tests in this block.
+        com.dotmarketing.factories.MultiTreeAPITest.class,
+
         com.dotcms.rest.api.v1.workflow.WorkflowResourceResponseCodeIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceIntegrationTest.class,
+        com.dotcms.rest.api.v1.workflow.WorkflowResourceLockUnlockIntegrationTest.class,
         com.dotcms.rest.api.v1.workflow.WorkflowResourceLicenseIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.ResetPasswordResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.authentication.CreateJsonWebTokenResourceIntegrationTest.class,
         com.dotcms.rest.api.v1.relationships.RelationshipsResourceTest.class,
+        com.dotcms.rest.api.v1.contenttype.ContentTypeResourceUpdateMetadataTest.class,
         com.dotcms.rest.api.v2.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.FieldResourceTest.class,
         com.dotcms.rest.api.v3.contenttype.MoveFieldFormTest.class,
@@ -100,9 +112,12 @@ import org.junit.runners.Suite.SuiteClasses;
         com.dotmarketing.portlets.personas.business.DeleteMultiTreeUsedPersonaTagJobTest.class,
         com.dotmarketing.portlets.links.business.MenuLinkAPITest.class,
         com.dotmarketing.portlets.links.factories.LinkFactoryTest.class,
-        com.dotmarketing.factories.MultiTreeAPITest.class,
         com.dotmarketing.portlets.categories.business.CategoryAPITest.class,
-        com.dotmarketing.filters.FiltersTest.class
+        com.dotmarketing.filters.FiltersTest.class,
+        InterceptorHandlerTest.class,
+        com.dotcms.graphql.datafetcher.page.NumberContentsDataFetcherTest.class,
+        com.dotcms.rest.AuditPublishingResourceTest.class,
+        MaintenanceResourceIntegrationTest.class
 })
 public class MainSuite2a {
 

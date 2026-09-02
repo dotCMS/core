@@ -16,12 +16,24 @@ import {
 
 import { computed, effect, inject } from '@angular/core';
 
+import { MenuItem } from 'primeng/api';
+
 import { DotLocalstorageService } from '@dotcms/data-access';
 import { DotMenu, MenuGroup, MenuItemEntity } from '@dotcms/dotcms-models';
 
 import { initialMenuSlice, menuConfig } from './menu.slice';
 
 const DOTCMS_MENU_STATUS = 'dotcms.menu.status';
+
+/**
+ * Parameters for setting the active menu item.
+ */
+export interface SetActiveMenuParams {
+    portletId: string;
+    shortParentMenuId?: string;
+    bookmark?: boolean;
+    breadcrumbs?: MenuItem[];
+}
 
 /**
  * Custom Store Feature for managing menu state using Entity Management.
@@ -68,7 +80,7 @@ export function withMenu() {
                 }, {});
 
                 // Transform grouped object into array of MenuGroup
-                return Object.entries(grouped).map(([parentMenuId, menuItems]) => {
+                const groups = Object.entries(grouped).map(([parentMenuId, menuItems]) => {
                     const firstItem = menuItems[0];
                     return {
                         id: parentMenuId,
@@ -78,6 +90,7 @@ export function withMenu() {
                         isOpen: parentMenuId === currentOpenParentMenuId
                     };
                 });
+                return groups;
             });
 
             /**
@@ -96,6 +109,20 @@ export function withMenu() {
              * @returns Record of menu items keyed by ID
              */
             const entityMap = computed(() => menuItemsEntityMap());
+
+            /**
+             * Computed signal that returns a label-to-menuItem lookup map.
+             * Enables O(1) lookups by label instead of O(n) iteration.
+             *
+             * @returns Record mapping menu item labels to their entities
+             */
+            const menuItemsByLabel = computed(() => {
+                const items = menuItemsEntities();
+                return items.reduce<Record<string, MenuItemEntity>>((acc, item) => {
+                    acc[item.label] = item;
+                    return acc;
+                }, {});
+            });
 
             /**
              * Computed signal that returns entity keys for debugging.
@@ -127,6 +154,7 @@ export function withMenu() {
                 menuGroup,
                 activeMenuItem,
                 entityMap,
+                menuItemsByLabel,
                 entityKeys,
                 firstMenuItem,
                 isGroupActive
@@ -230,21 +258,9 @@ export function withMenu() {
              * Toggles the navigation menu collapsed/expanded state.
              */
             const toggleNavigation = () => {
-                const isCollapsed = store.isNavigationCollapsed();
-                patchState(store, {
-                    isNavigationCollapsed: !isCollapsed
-                });
-
-                // When collapsing, close all parent menu groups
-                if (!isCollapsed) {
-                    patchState(store, { openParentMenuId: null });
-                } else {
-                    // When expanding, open the parent menu group of the active item if there is one
-                    const activeItem = store.activeMenuItem();
-                    if (activeItem) {
-                        patchState(store, { openParentMenuId: activeItem.parentMenuId });
-                    }
-                }
+                patchState(store, (state) => ({
+                    isNavigationCollapsed: !state.isNavigationCollapsed
+                }));
             };
 
             /**
@@ -253,8 +269,7 @@ export function withMenu() {
              */
             const collapseNavigation = () => {
                 patchState(store, {
-                    isNavigationCollapsed: true,
-                    openParentMenuId: null
+                    isNavigationCollapsed: true
                 });
             };
 
@@ -274,34 +289,67 @@ export function withMenu() {
                 }
             };
             /**
-             * Loads menu and sets active item based on current URL.
-             * Uses entity map to find the matching menu item without iterating keys.
+             * Activates menu item using multi-strategy fallback approach.
+             * 1. Composite key lookup (portletId + shortParentMenuId)
+             * 2. Breadcrumb label matching (if bookmark flag enabled)
+             * 3. ID fallback (iterate entityMap) - Last resort
              *
-             * @param portletId - The ID of the menu item (portlet) to activate
-             * @param shortParentMenuId - The first 4 characters of the parent menu ID
+             * @param params - Navigation parameters with portletId, shortParentMenuId, bookmark flag, and breadcrumbs
              */
-            const setActiveMenu = (portletId: string, shortParentMenuId: string) => {
+            const setActiveMenu = ({
+                portletId,
+                shortParentMenuId,
+                bookmark,
+                breadcrumbs
+            }: SetActiveMenuParams) => {
                 if (!portletId) {
                     return;
                 }
 
-                // Direct lookup using the composite key
                 const entityMap = store.entityMap();
-                let compositeKey = `${portletId}__${shortParentMenuId}`;
+
+                // Direct lookup using the composite key (fastest path)
+                const compositeKey = `${portletId}__${shortParentMenuId}`;
                 const item = entityMap[compositeKey];
 
+                if (item) {
+                    activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                    return;
+                }
+
                 // Fallback for missing shortParentMenuId cases like old bookmarks
-                if (!portletId || !shortParentMenuId) {
-                    const item = Object.values(entityMap).find((item) => item.id === portletId);
-                    if (item) {
-                        compositeKey = `${item.id}__${item.parentMenuId?.substring(0, 4)}`;
-                        activateMenuItemWithParent(compositeKey, item.parentMenuId);
+                // or portlets without `mId`
+                if (!bookmark) {
+                    return;
+                }
+
+                // sync with the first breadcrumb that has a URL
+                if (breadcrumbs) {
+                    const firstBreadcrumbWithUrl = breadcrumbs.find((bc) => bc.url);
+
+                    if (firstBreadcrumbWithUrl) {
+                        // O(1) lookup by label
+                        const menuItemsByLabelMap = store.menuItemsByLabel();
+
+                        const foundMenuItem =
+                            menuItemsByLabelMap[firstBreadcrumbWithUrl.label ?? ''];
+
+                        if (foundMenuItem) {
+                            const key = `${foundMenuItem.id}__${foundMenuItem.parentMenuId?.substring(0, 4)}`;
+                            activateMenuItemWithParent(key, foundMenuItem.parentMenuId);
+                            return;
+                        }
                     }
                 }
 
-                if (item) {
-                    const collapsed = store.isNavigationCollapsed();
-                    activateMenuItemWithParent(compositeKey, collapsed ? null : item.parentMenuId);
+                // Fallback to ID matching for old bookmarks without mId
+                const foundItem = Object.values(entityMap).find(
+                    (item) => item.id === portletId || item.id === portletId
+                );
+
+                if (foundItem) {
+                    const key = `${foundItem.id}__${foundItem.parentMenuId?.substring(0, 4)}`;
+                    activateMenuItemWithParent(key, foundItem.parentMenuId);
                 }
             };
 

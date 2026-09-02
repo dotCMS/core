@@ -61,6 +61,7 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
     private String owner;
     private Date createDate;
     private String assetSubType;
+    private Integer baseType;
     
     /**
      * @deprecated As of 2016-05-16, replaced by {@link #getId()}
@@ -296,6 +297,14 @@ public class Identifier implements UUIDable,Serializable,Permissionable,Categori
 
     public void setAssetSubType(String assetSubType) {
         this.assetSubType = assetSubType;
+    }
+
+    public Integer getBaseType() {
+        return baseType;
+    }
+
+    public void setBaseType(final Integer baseType) {
+        this.baseType = baseType;
     }
 
     @Override

@@ -29,10 +29,16 @@ export enum BlockEditorDefaultBlocks {
     DOT_IMAGE = 'dotImage',
     /** Represents a DotCMS video block */
     DOT_VIDEO = 'dotVideo',
+    /** Represents a DotCMS audio block */
+    DOT_AUDIO = 'dotAudio',
     /** Represents a table block */
     TABLE = 'table',
     /** Represents a DotCMS content block */
-    DOT_CONTENT = 'dotContent'
+    DOT_CONTENT = 'dotContent',
+    /** Represents a grid block with columns */
+    GRID_BLOCK = 'gridBlock',
+    /** Represents a column inside a grid block */
+    GRID_COLUMN = 'gridColumn'
 }
 
 /**

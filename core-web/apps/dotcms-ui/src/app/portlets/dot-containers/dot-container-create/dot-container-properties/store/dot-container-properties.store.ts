@@ -5,7 +5,7 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { catchError, filter, pluck, switchMap, take, tap } from 'rxjs/operators';
+import { catchError, filter, map, switchMap, take, tap } from 'rxjs/operators';
 
 import {
     DotContentTypeService,
@@ -61,7 +61,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         });
         this.activatedRoute.data
             .pipe(
-                pluck('container'),
+                map((x) => x?.container),
                 take(1),
                 filter((containerEntity) => !!containerEntity)
             )
@@ -161,7 +161,8 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
         (state: DotContainerPropertiesState, originalForm: DotContainerPayload) => {
             return {
                 ...state,
-                originalForm: originalForm
+                originalForm: originalForm,
+                invalidForm: true // form matches original, no unsaved changes
             };
         }
     );
@@ -217,7 +218,7 @@ export class DotContainerPropertiesStore extends ComponentStore<DotContainerProp
     readonly loadContentTypesAndUpdateVisibility = this.effect<void>(
         pipe(
             switchMap(() => {
-                return this.dotContentTypeService.getContentTypes({ page: 999 });
+                return this.dotContentTypeService.getContentTypes({ per_page: 999 });
             }),
             tap((contentTypes: DotCMSContentType[]) => {
                 this.updateContentTypes(contentTypes);

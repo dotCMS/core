@@ -1,6 +1,7 @@
 package com.dotcms.contenttype.transform.contenttype;
 
 import com.dotcms.api.web.HttpServletRequestThreadLocal;
+import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.rest.api.v1.contenttype.ContentTypeHelper;
 import com.dotmarketing.beans.Host;
@@ -20,7 +21,6 @@ import java.util.Optional;
 
 public class DetailPageTransformerImpl implements DetailPageTransformer {
 
-    private static final String PAGE_SUBTYPE = "htmlpageasset";
 
     private final ContentType contentType;
     private final User user;
@@ -123,25 +123,26 @@ public class DetailPageTransformerImpl implements DetailPageTransformer {
      * @throws IllegalArgumentException if the identifier is invalid.
      */
     private Optional<String> validateIdentifier(
-            String detailPage, Identifier foundDetailPageIdentifier) {
+            String detailPage, Identifier foundDetailPageIdentifier)
+            throws DotDataException, DotSecurityException {
 
-        if (null != foundDetailPageIdentifier &&
-                foundDetailPageIdentifier.exists() &&
-                foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-            return Optional.of(foundDetailPageIdentifier.getId());
-        } else {
-            if (null != foundDetailPageIdentifier &&
-                    foundDetailPageIdentifier.exists() &&
-                    !foundDetailPageIdentifier.getAssetSubType().equals(PAGE_SUBTYPE)) {
-                throw new IllegalArgumentException(
-                        String.format("[%s] in Content Type [%s] is not a valid detail page.",
-                                detailPage, contentType.name()));
+        if (null != foundDetailPageIdentifier && foundDetailPageIdentifier.exists()) {
+            final String assetSubType = foundDetailPageIdentifier.getAssetSubType();
+            if (UtilMethods.isSet(assetSubType)) {
+                final ContentType detailPageType = APILocator.getContentTypeAPI(
+                        APILocator.getUserAPI().getSystemUser()).find(assetSubType);
+                if (null != detailPageType && BaseContentType.HTMLPAGE == detailPageType.baseType()) {
+                    return Optional.of(foundDetailPageIdentifier.getId());
+                }
             }
-
             throw new IllegalArgumentException(
-                    String.format("Detail page [%s] in Content Type [%s] does not exist.",
+                    String.format("[%s] in Content Type [%s] is not a valid detail page.",
                             detailPage, contentType.name()));
         }
+
+        throw new IllegalArgumentException(
+                String.format("Detail page [%s] in Content Type [%s] does not exist.",
+                        detailPage, contentType.name()));
     }
 
 }

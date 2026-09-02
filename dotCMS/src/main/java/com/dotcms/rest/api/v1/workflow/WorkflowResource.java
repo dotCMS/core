@@ -12,11 +12,13 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.field.LegacyFieldTransformer;
 import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.mock.response.MockHttpResponse;
-import com.dotcms.repackage.com.google.common.annotations.VisibleForTesting;
+import com.google.common.annotations.VisibleForTesting;
+import com.dotcms.variant.model.Variant;
 import javax.validation.constraints.NotNull;
 import com.dotcms.rest.*;
 import com.dotcms.rest.annotation.IncludePermissions;
 import com.dotcms.rest.annotation.NoCache;
+import com.dotcms.rest.annotation.SwaggerCompliant;
 import com.dotcms.rest.api.MultiPartUtils;
 import com.dotcms.rest.api.v1.DotObjectMapperProvider;
 import com.dotcms.rest.api.v1.authentication.RequestUtil;
@@ -68,6 +70,7 @@ import com.dotmarketing.portlets.contentlet.model.IndexPolicyProvider;
 import com.dotmarketing.portlets.contentlet.transform.DotTransformerBuilder;
 import com.dotmarketing.portlets.structure.model.ContentletRelationships;
 import com.dotmarketing.portlets.workflows.actionlet.WorkFlowActionlet;
+import com.dotmarketing.portlets.workflows.business.DotWorkflowException;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI;
 import com.dotmarketing.portlets.workflows.business.WorkflowAPI.SystemAction;
 import com.dotmarketing.portlets.workflows.model.SystemActionWorkflowActionMapping;
@@ -106,7 +109,6 @@ import io.swagger.v3.oas.annotations.responses.ApiResponse;
 import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import io.swagger.v3.oas.annotations.Parameter;
-import io.swagger.v3.oas.annotations.ExternalDocumentation;
 import io.vavr.Tuple2;
 import io.vavr.control.Try;
 import org.apache.commons.beanutils.BeanUtils;
@@ -146,6 +148,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
@@ -160,6 +163,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.rest.ResponseEntityView.OK;
 import static com.dotcms.util.DotLambdas.not;
@@ -183,12 +187,9 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
  * @author jsanca
  * @since Dec 6th, 2017
  */
+@SwaggerCompliant(value = "Content management and workflow APIs", batch = 2)
 @Path("/v1/workflow")
-@Tag(name = "Workflow",
-        description = "Endpoints that perform operations related to workflows.",
-        externalDocs = @ExternalDocumentation(description = "Additional Workflow API information",
-                url = "https://www.dotcms.com/docs/latest/workflow-rest-api")
-)
+@Tag(name = "Workflow")
 @ApiResponses(
         value = { // error codes only!
                 @ApiResponse(responseCode = "401", description = "Invalid User"), // not logged in
@@ -201,6 +202,7 @@ import static com.dotmarketing.portlets.workflows.business.WorkflowAPI.SUCCESS_A
 public class WorkflowResource {
 
     public  final static String VERSION       = "1.0";
+    private static final int    MAX_CONTENT_TYPE_IDS = 100;
     private static final String LISTING       = "listing";
     private static final String EDITING       = "editing";
     private static final String ASSIGN        = "assign";
@@ -217,6 +219,68 @@ public class WorkflowResource {
     private static final int CONTENTLETS_LIMIT = 100000;
     private static final String WORKFLOW_SUBMITTER = "workflow_submitter";
     public static final String INCLUDE_SEPARATOR = "includeSeparator";
+
+    private static final String INDEX_POLICY_CHAINING_NOTE =
+            "**When chaining workflow actions or reading state back immediately after firing, " +
+            "pass `indexPolicy=WAIT_FOR` on each call.** " +
+            "The default `DEFER` is asynchronous and can return stale index reads for several seconds, " +
+            "which can mimic server-side state bugs. For isolated one-off fires where nothing reads the result, " +
+            "leave the default.";
+
+    /**
+     * OpenAPI note describing how Story Block fields accept Markdown/HTML — including the
+     * {@code dotcms-*} rich-node vocabulary (#36658 fences, #36659 elements). Public so every
+     * endpoint that funnels through the same populator seam (e.g.
+     * {@code ContentResource#saveDraft}) documents the identical contract from one source.
+     */
+    public static final String BLOCK_EDITOR_FIELD_NOTE =
+            "\n\n**Block Editor (Story Block) fields:** send the value as a **Markdown or HTML** string — " +
+            "you do not need to hand-author the underlying ProseMirror/JSON document. dotCMS converts it " +
+            "to the Block Editor (ProseMirror JSON) structure automatically on save, so the field reads " +
+            "back as structured content with no editor round-trip required. A value that is already a " +
+            "valid Tiptap/ProseMirror JSON document is detected and stored unchanged. " +
+            "Example: `\"body\": \"## Intro\\n\\nHello **world**.\"`." +
+            "\n\n**Rich blocks in Markdown:** blocks that plain Markdown cannot express are written as " +
+            "fenced code blocks whose info string is a `dotcms-*` label and whose body is a small JSON " +
+            "object. Example — embed a contentlet:" +
+            "\n\n```dotcms-content\\n{\"identifier\": \"<contentlet-id>\", \"languageId\": 1}\\n```" +
+            "\n\nSupported labels and payload fields (**bold** = required):" +
+            "\n- `dotcms-content` → embedded contentlet: **`identifier`**, `languageId` (default 1). " +
+            "The server rebuilds the full embed data from the identifier on every read." +
+            "\n- `dotcms-image` → dotCMS-bound or decorated image: **`identifier` or `src`**; optional " +
+            "`alt`, `title`, `href`, `target`, `textWrap`, `textAlign`, `languageId`. Plain external " +
+            "images need no fence — standard `![alt](url \"title\")` works." +
+            "\n- `dotcms-video` → video: **`identifier` or `src`**; optional `mimeType`, `width`, " +
+            "`height`, `languageId`." +
+            "\n- `dotcms-youtube` → YouTube embed: **`src`**; optional `start` (seconds), `width`, `height`." +
+            "\n- `dotcms-grid` → layout grid: the verbatim `gridBlock` node JSON " +
+            "(`{\"type\":\"gridBlock\",\"attrs\":{\"columns\":[n,n]},\"content\":[…two gridColumn nodes…]}`)." +
+            "\n- `dotcms-node` → any other node type verbatim (`{\"type\": \"<nodeType>\", …}`) — the " +
+            "fallback for custom blocks." +
+            "\n\n**Rich blocks in HTML:** the same labels are namespaced custom elements. Scalar " +
+            "payloads ride as attributes with **hyphenated names** (HTML lowercases attribute names, " +
+            "so `languageId` is spelled `language-id`, `mimeType` is `mime-type`): " +
+            "`<dotcms-content identifier=\"<contentlet-id>\" language-id=\"1\"></dotcms-content>`. " +
+            "`dotcms-ai`, `dotcms-grid` and `dotcms-node` take the same JSON object as the element's " +
+            "text body instead (HTML-escape `<` and `&` inside JSON string values). Always write an " +
+            "explicit closing tag — HTML parsing ignores the `/` in `<dotcms-video … />` and would " +
+            "swallow the content after it. Both carriers produce identical stored documents." +
+            "\n\nBlock styling (e.g. text alignment) is set by an HTML comment on its own line " +
+            "immediately before the block it decorates, in Markdown and HTML alike: " +
+            "`<!-- dotcms:attrs {\"textAlign\":\"center\"} -->`." +
+            "\n\nA Markdown/HTML write **fully replaces** the stored document; when stored rich blocks " +
+            "are not carried over in the submitted value, the save still succeeds and an advisory warning " +
+            "listing the replaced blocks is returned in the response `messages` field — carry the blocks " +
+            "over as fences or elements to preserve them. An invalid payload degrades to an ordinary " +
+            "code block (or is dropped when it carries no text to keep), never an error.";
+
+    private static final String BULK_FIRE_CONTRACT_NOTES =
+            "⚠️ **Important contract notes:**\n\n" +
+            "- `contentletIds` despite its name expects **inodes**, not identifiers. Passing identifiers " +
+            "results in a silent no-op with no error.\n" +
+            "- `additionalParams` must be present, even when empty (`{}`). Omitting it returns a `500` NPE.\n" +
+            "- The endpoint is **not step-aware**: if the action is not valid in a contentlet's current step, " +
+            "the input is dropped silently (no `fails[]` entry). Verify post-fire state via `POST /api/content/_search`.";
 
 
     private final WorkflowHelper   workflowHelper;
@@ -287,7 +351,7 @@ public class WorkflowResource {
     @Path("/schemes")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowSchemes", summary = "Find workflow schemes",
             description = "Returns workflow schemes. Can be filtered by content type and/or live status " +
                           "through optional query parameters.",
@@ -345,7 +409,7 @@ public class WorkflowResource {
     @Path("/actionlets")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionlets", summary = "Find all workflow actionlets",
             description = "Returns a list of all workflow actionlets — a.k.a. [workflow sub-actions]" +
                             "(https://www.dotcms.com/docs/latest/workflow-sub-actions). " +
@@ -387,7 +451,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}/actionlets")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionletsByActionId", summary = "Find workflow actionlets by workflow action",
             description = "Returns a list of the workflow actionlets — a.k.a. [workflow sub-actions](https://www.dotcms." +
                             "com/docs/latest/workflow-sub-actions) — associated with a specified workflow action.",
@@ -471,7 +535,7 @@ public class WorkflowResource {
     @Path("/schemes/schemescontenttypes/{contentTypeId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowSchemesByContentTypeId", summary = "Find workflow schemes by content type id",
             description = "Fetches [workflow schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
                     " associated with a content type by its identifier. Returns an entity containing two properties:\n\n" +
@@ -510,7 +574,7 @@ public class WorkflowResource {
             final List<WorkflowScheme> schemes = this.workflowHelper.findSchemes();
             final List<WorkflowScheme> contentTypeSchemes = this.workflowHelper.findSchemesByContentType(contentTypeId, initDataObject.getUser());
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     new SchemesAndSchemesContentTypeView(schemes, contentTypeSchemes)))
                     .build(); // 200
         } catch (Exception e) {
@@ -524,6 +588,139 @@ public class WorkflowResource {
     } // findAllSchemesAndSchemesByContentType.
 
     /**
+     * Returns workflow schemes grouped by content type for a list of content type identifiers.
+     * Unknown identifiers are reported in the {@code errors} array of the response body with
+     * {@code errorCode = CONTENT_TYPE_NOT_FOUND}. Identifiers for which scheme retrieval fails
+     * are reported with {@code errorCode = SCHEMES_FETCH_FAILED}.
+     * An empty or all-blank {@code contentTypeIds} parameter returns 400.
+     * At most {@value #MAX_CONTENT_TYPE_IDS} distinct IDs may be requested in a single call;
+     * exceeding this limit also returns 400.
+     * Returns 401 if the user does not have the required backend permissions.
+     *
+     * @param request        {@link HttpServletRequest}
+     * @param response       {@link HttpServletResponse}
+     * @param contentTypeIds content type identifiers — repeat the parameter
+     *                       ({@code ?contentTypeIds=a&contentTypeIds=b}) or comma-separate values
+     *                       ({@code ?contentTypeIds=a,b}); both formats are supported and may be mixed
+     * @return {@link Response} containing a list of {@link ContentTypeWorkflowSchemesView},
+     *         one entry per resolved content type
+     */
+    @GET
+    @Path("/contenttypes/schemes")
+    @JSONP
+    @NoCache
+    @Produces(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "getWorkflowSchemesByContentTypeList",
+            summary = "Find workflow schemes for multiple content types",
+            description = "Returns workflow [schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) " +
+                    "grouped by content type for a list of content type identifiers. " +
+                    "Each entry in the response maps a resolved content type to its associated schemes. " +
+                    "Unknown or unresolvable identifiers are reported in the `errors` array of the response body " +
+                    "(field `fieldName` contains the original input token; `errorCode` is `CONTENT_TYPE_NOT_FOUND`). " +
+                    "At least one non-blank identifier is required; an empty or missing `contentTypeIds` parameter returns 400. " +
+                    "Maximum " + MAX_CONTENT_TYPE_IDS + " tokens per request (checked before deduplication).",
+            tags = {"Workflow"},
+            responses = {
+                    @ApiResponse(responseCode = "200", description = "Schemes returned successfully",
+                            content = @Content(mediaType = "application/json",
+                                    schema = @Schema(implementation = ResponseEntityContentTypeWorkflowSchemesView.class)
+                            )
+                    ),
+                    @ApiResponse(responseCode = "400", description = "contentTypeIds is empty or all tokens are blank; or more than " + MAX_CONTENT_TYPE_IDS + " tokens supplied"),
+                    @ApiResponse(responseCode = "401", description = "User does not have permission")
+            }
+    )
+    public final Response findAllSchemesByContentTypeList(
+            @Context final HttpServletRequest request,
+            @Context final HttpServletResponse response,
+            @QueryParam("contentTypeIds") @Parameter(
+                    description = "Content type identifiers. Repeat the parameter " +
+                            "(?contentTypeIds=a&contentTypeIds=b) or comma-separate values " +
+                            "(?contentTypeIds=a,b). Both formats may be mixed. Max " +
+                            MAX_CONTENT_TYPE_IDS + " distinct IDs."
+            ) final List<String> contentTypeIds) {
+
+        final User user = new WebResource.InitBuilder(webResource)
+                .requiredBackendUser(true)
+                .requiredFrontendUser(false)
+                .requestAndResponse(request, response)
+                .rejectWhenNoUser(true)
+                .init()
+                .getUser();
+
+        try {
+
+            Logger.debug(this, "Getting the workflow schemes by content type list");
+
+            final String rawIds = String.join(",",
+                    contentTypeIds == null ? Collections.emptyList() : contentTypeIds);
+
+            final String[] rawTokens = rawIds.split(",");
+
+            if (rawTokens.length > MAX_CONTENT_TYPE_IDS) {
+                throw new IllegalArgumentException(
+                        "contentTypeIds exceeds the maximum allowed size of " + MAX_CONTENT_TYPE_IDS);
+            }
+
+            final List<String> ids = Arrays.stream(rawTokens)
+                    .map(String::trim)
+                    .filter(UtilMethods::isSet)
+                    .distinct()
+                    .toList();
+
+            if (ids.isEmpty()) {
+                throw new IllegalArgumentException("contentTypeIds must not be empty");
+            }
+
+            // Resolve each token to a ContentType; deduplicate by UUID; report unknowns
+            final ContentTypeAPI contentTypeAPI = APILocator.getContentTypeAPI(user);
+            final LinkedHashMap<String, ContentType> resolvedTypes = new LinkedHashMap<>();
+            final List<ErrorEntity> errors = new ArrayList<>();
+
+            for (final String token : ids) {
+                try {
+                    final ContentType ct = contentTypeAPI.find(token);
+                    resolvedTypes.putIfAbsent(ct.id(), ct);
+                } catch (NotFoundInDbException e) {
+                    errors.add(new ErrorEntity("CONTENT_TYPE_NOT_FOUND", "Content type not found", token));
+                } catch (DotDataException | DotSecurityException e) {
+                    throw new DotWorkflowException(e.getMessage(), e);
+                }
+            }
+
+            final List<ContentTypeWorkflowSchemesView> result = new ArrayList<>();
+            for (final ContentType ct : resolvedTypes.values()) {
+                try {
+                    result.add(ContentTypeWorkflowSchemesView.builder()
+                            .contentTypeId(ct.id())
+                            .contentTypeVariable(ct.variable())
+                            .schemes(this.workflowAPI.findSchemesForContentType(ct))
+                            .build());
+                } catch (DotDataException e) {
+                    Logger.warn(this, "Failed to retrieve schemes for content type '" +
+                            ct.id() + "': " + e.getMessage(), e);
+                    errors.add(new ErrorEntity("SCHEMES_FETCH_FAILED",
+                            "Failed to retrieve schemes for content type", ct.id()));
+                }
+            }
+
+            if (!errors.isEmpty()) {
+                Logger.warn(this, "Completed with " + errors.size() + " error(s): " +
+                        errors.stream().map(ErrorEntity::getFieldName).toList());
+            }
+
+            return Response.ok(new ResponseEntityContentTypeWorkflowSchemesView(errors, result)).build();
+
+        } catch (Exception e) {
+
+            Logger.error(this.getClass(),
+                    "Exception on findAllSchemesByContentTypeList: " + e.getMessage(), e);
+            return ResponseUtil.mapExceptionResponse(e);
+
+        }
+    } // findAllSchemesByContentTypeList.
+
+    /**
      * Return Steps associated to the scheme, 404 if does not exists. 401 if the user does not have permission.
      * @param request  HttpServletRequest
      * @param schemeId String
@@ -533,7 +730,7 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}/steps")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowStepsBySchemeId", summary = "Find steps by workflow scheme ID",
             description = "Returns a list of [steps](https://www.dotcms.com/docs/latest/managing-workflows#Steps) " +
                     "associated with a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).",
@@ -591,10 +788,16 @@ public class WorkflowResource {
     @Path("/contentlet/{inode}/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionsByContentletInode", summary = "Finds workflow actions by content inode",
             description = "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets) specified by inode.",
+                    "associated with a [contentlet](https://www.dotcms.com/docs/latest/content#Contentlets) specified by inode.\n\n" +
+                    "Returns `[]` when the contentlet is in a terminal/resolved step with no available actions. " +
+                    "An empty list does not distinguish 'no actions because terminal step' from 'no actions because permissions' — " +
+                    "call `GET /api/v1/workflow/status/{inode}` to inspect the current step (`stepResolved: true` indicates terminal).\n\n" +
+                    "Each action item includes an `actionInputs[]` array advertising the body keys the action expects. " +
+                    "For some actions (e.g. Move, Copy) this list is currently empty even though the action requires body input; " +
+                    "consult `PUT /api/v1/workflow/actions/{actionId}/fire` for documented body shapes.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Scheme(s) returned successfully",
@@ -734,8 +937,8 @@ public class WorkflowResource {
     @Path("/contentlet/actions/bulk")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postBulkActions", summary = "Finds available bulk workflow actions for content",
             description = "Returns a list of bulk actions available for " +
                     "[contentlets](https://www.dotcms.com/docs/latest/content#Contentlets) either by identifiers " +
@@ -757,7 +960,7 @@ public class WorkflowResource {
                                                  description = "Body consists of a JSON object with either of the following properties:\n\n" +
                                                                "| Property | Type | Description |\n" +
                                                                "|-|-|-|\n" +
-                                                               "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
+                                                               "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
                                                                "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
                                                                                     "uses all matching contentlets. |\n\n" +
                                                                "If both properties are present, the operation will use the list of identifiers and disregard " +
@@ -800,40 +1003,47 @@ public class WorkflowResource {
     @Path("/contentlet/actions/bulk/fire")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putBulkActionsFire", summary = "Perform workflow actions on bulk content",
-            description = "This operation allows you to specify a multiple content items (either by query or a list of " +
-                          "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                          "to perform on them, and additional parameters as needed by the selected action.",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) "
+                    + "on multiple contentlets identified either by a Lucene 'query' or an explicit "
+                    + "'contentletIds' list. If both are supplied, 'query' wins and 'contentletIds' is ignored.\n\n"
+                    + "**Scheme association is enforced.** Contentlets whose workflow scheme does not own the "
+                    + "supplied 'workflowActionId' are skipped — they are not processed and are counted in "
+                    + "'skippedCount' on the response, with a 'skipReason' explaining the mismatch. When *every* "
+                    + "input contentlet is skipped, the endpoint returns 422. To bypass scheme association checks "
+                    + "(e.g. for System Workflow actions like Move on content from a custom scheme), use "
+                    + "PUT /api/v1/workflow/actions/{actionId}/fire instead.\n\n"
+                    + BULK_FIRE_CONTRACT_NOTES + "\n"
+                    + "- `PUT /api/v1/workflow/contentlet/actions/bulk/fire` and "
+                    + "`POST /api/v1/workflow/contentlet/actions/_bulkfire` behave identically; `_bulkfire` streams via SSE.\n"
+                    + "- For batches larger than a few contentlets, the synchronous response can exceed common client "
+                    + "timeouts (e.g. ~15 s for the MCP sandbox). The server-side work typically completes; verify with `_search`.",
             tags = {"Workflow"},
             responses = {
-                    @ApiResponse(responseCode = "200", description = "Success",
+                    @ApiResponse(responseCode = "200", description = "Success — at least one contentlet processed.",
                             content = @Content(mediaType = "application/json",
                                     schema = @Schema(implementation = ResponseEntityBulkActionsResultView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"),
-                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
+                    @ApiResponse(responseCode = "415", description = "Unsupported Media Type"),
+                    @ApiResponse(responseCode = "422", description = "Whole batch skipped — none of the input "
+                            + "contentlets are on a workflow scheme that owns the supplied 'workflowActionId'.")
             }
     )
     public final void fireBulkActions(@Context final HttpServletRequest request,
                                       @Suspended final AsyncResponse asyncResponse,
                                       @RequestBody(
-                                              description = "Body consists of a JSON object with the following possible properties:\n\n" +
-                                                      "| Property | Type | Description |\n" +
-                                                      "|-|-|-|\n" +
-                                                      "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
-                                                      "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
-                                                                                        "uses all matching contentlets. |\n" +
-                                                      "| `workflowActionId` | String | The identifier of the workflow action to be performed on the " +
-                                                                                        "selected content. |\n" +
-                                                      "| `additionalParams` | Object | Further parameters and properties are conveyed here, depending " +
-                                                                                        "on the particulars of the selected action.<br><br>For a " +
-                                                                                        "complete list of possible parameters, refer to the various " +
-                                                                                        "keys listed in `GET /workflow/actionlets`. |\n\n" +
-                                                      "If both `contentletIds` and `query` properties are present, the operation will use the query and " +
-                                                      "disregard the identifier list.",
+                                              description = "See FireBulkActionsForm for full field-level docs. "
+                                                      + "Either 'query' OR 'contentletIds' is required (not both); "
+                                                      + "'contentletIds' is a list of contentlet **inodes** (not identifiers, "
+                                                      + "despite the property name). "
+                                                      + "'workflowActionId' must be a workflow action UUID — discover via "
+                                                      + "GET /api/v1/workflow/schemes/{schemeId}/actions or "
+                                                      + "GET /api/v1/workflow/contentlet/{inode}/actions. To pass a target "
+                                                      + "path to a Move actionlet, set 'additionalParams.additionalParamsMap._path_to_move'.",
                                               required = true,
                                               content = @Content(schema = @Schema(implementation = FireBulkActionsForm.class))
                                       ) final FireBulkActionsForm fireBulkActionsForm) {
@@ -847,7 +1057,14 @@ public class WorkflowResource {
                 try {
                     final BulkActionsResultView view = workflowHelper
                             .fireBulkActions(fireBulkActionsForm, initDataObject.getUser());
-                    return Response.ok( new ResponseEntityView(view)).build();
+                    // Whole-batch scheme mismatch: every input contentlet was skipped because its
+                    // workflow scheme does not own the supplied action. Today this returns 200 with
+                    // successCount: 0; surface it as 422 so the caller learns the request was wrong.
+                    if (isWholeBatchSkipped(view)) {
+                        return Response.status(Response.Status.fromStatusCode(422))
+                                .entity(new ResponseEntityView<>(view)).build();
+                    }
+                    return Response.ok( new ResponseEntityView<>(view)).build();
                 } catch (Exception e) {
                     asyncResponse.resume(ResponseUtil.mapExceptionResponse(e));
                 }
@@ -860,15 +1077,32 @@ public class WorkflowResource {
         }
     }
 
+    /**
+     * True when the bulk-fire result indicates none of the input contentlets were eligible
+     * (zero successes, zero processing failures, but at least one skipped). The cause is
+     * almost always a scheme-mismatch — the supplied workflow action does not own any of the
+     * workflow steps that the input contentlets are currently in.
+     */
+    private boolean isWholeBatchSkipped(final BulkActionsResultView view) {
+        return view != null
+                && view.getSuccessCount() != null && view.getSuccessCount() == 0L
+                && view.getSkippedCount() != null && view.getSkippedCount() > 0L
+                && (view.getFails() == null || view.getFails().isEmpty());
+    }
+
     @POST
     @Path("/contentlet/actions/_bulkfire")
     @JSONP
     @Produces(SseFeature.SERVER_SENT_EVENTS)
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postBulkActionsFire", summary = "Perform workflow actions on bulk content",
             description = "This operation allows you to specify a multiple content items (either by query or a list of " +
                     "identifiers), a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "to perform on them, and additional parameters as needed by the selected action.",
+                    "to perform on them, and additional parameters as needed by the selected action. " +
+                    "Responses are streamed as Server-Sent Events.\n\n" +
+                    BULK_FIRE_CONTRACT_NOTES + "\n" +
+                    "- This endpoint behaves identically to `PUT /api/v1/workflow/contentlet/actions/bulk/fire`; " +
+                    "only the response transport differs (SSE here vs JSON there).",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Success",
@@ -885,7 +1119,7 @@ public class WorkflowResource {
                                                description = "Body consists of a JSON object with the following possible properties:\n\n" +
                                                        "| Property | Type | Description |\n" +
                                                        "|-|-|-|\n" +
-                                                       "| `contentletIds` | List of Strings | A list of individual contentlet identifiers. |\n" +
+                                                       "| `contentletIds` | List of Strings | A list of contentlet **inodes** (not identifiers, despite the property name). |\n" +
                                                        "| `query` | String | [Lucene query](https://www.dotcms.com/docs/latest/content-search-syntax#Lucene); " +
                                                                                         "uses all matching contentlets. |\n" +
                                                        "| `workflowActionId` | String | The identifier of the workflow action to be performed on the " +
@@ -963,7 +1197,7 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @IncludePermissions
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionByActionId", summary = "Find action by ID",
             description = "Returns a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) object.",
             tags = {"Workflow"},
@@ -991,7 +1225,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(this.toWorkflowActionView(action))).build(); // 200
+            return Response.ok(new ResponseEntityView<>(this.toWorkflowActionView(action))).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
@@ -1012,7 +1246,7 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @IncludePermissions
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowConditionByActionId", summary = "Find condition by action ID",
             description = "Returns a string representing the \"condition\" on the selected action.\n\n" +
                     "More specifically: if the workflow action has anything in its [Custom Code]" +
@@ -1045,7 +1279,7 @@ public class WorkflowResource {
             Logger.debug(this, ()->"Finding the workflow action " + actionId);
 
             final String evaluated = workflowHelper.evaluateActionCondition(actionId, initDataObject.getUser(), request, response);
-            return Response.ok(new ResponseEntityView(evaluated)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(evaluated)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on evaluateActionCondition, actionId: " + actionId +
@@ -1065,7 +1299,7 @@ public class WorkflowResource {
     @Path("/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionByStepActionId", summary = "Find a workflow action within a step",
             description = "Returns a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "if it exists within a specific [step](https://www.dotcms.com/docs/latest/managing-workflows#Steps).",
@@ -1101,7 +1335,7 @@ public class WorkflowResource {
         try {
             Logger.debug(this, "Getting the workflow action " + actionId + " for the step: " + stepId);
             final WorkflowAction action = this.workflowHelper.findAction(actionId, stepId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(action)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(action)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findAction, actionId: " + actionId +
@@ -1122,7 +1356,7 @@ public class WorkflowResource {
     @Path("/steps/{stepId}/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionsByStepId", summary = "Find all actions in a workflow step",
             description = "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing" +
                     "-workflows#Actions) associated with a specified [workflow step](https://www.dotcms.com/" +
@@ -1172,7 +1406,7 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getWorkflowActionsBySchemeId", summary = "Find all actions in a workflow scheme",
             description = "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#Actions) associated with a specified [workflow scheme](https://www.dotcms.com/" +
@@ -1222,8 +1456,8 @@ public class WorkflowResource {
     @Path("/schemes/actions/{systemAction}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postFindActionsBySchemesAndSystemAction", summary = "Finds workflow actions by schemes and system action",
             description = "Returns a list of [workflow actions](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "associated with [workflow schemes](https://www.dotcms.com/docs/latest/managing-workflows#Schemes), further " +
@@ -1301,7 +1535,7 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}/system/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getSystemActionMappingsBySchemeId", summary = "Find default system actions mapped to a workflow scheme",
             description = "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#DefaultActions) associated with a specified [workflow scheme](https://www.dotcms.com" +
@@ -1352,11 +1586,17 @@ public class WorkflowResource {
     @Path("/contenttypes/{contentTypeVarOrId}/system/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getSystemActionMappingsByContentType", summary = "Find default system actions mapped to a content type",
             description = "Returns a list of [default system actions](https://www.dotcms.com/docs/latest/managing-" +
                     "workflows#DefaultActions) associated with a specified [content type](https://www.dotcms.com" +
-                    "/docs/latest/content-types).",
+                    "/docs/latest/content-types).\n\n" +
+                    "An empty list means only that no *default system-action mappings* (e.g. NEW, PUBLISH) are " +
+                    "configured for this content type — it does **not** mean the content type lacks a workflow or " +
+                    "that publishing will fail. You can still fire actions on its content by ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire`, or fire a default system action via " +
+                    "`PUT /api/v1/workflow/actions/default/fire/{systemAction}` (which resolves the action from " +
+                    "the scheme attached to the content type). Do not treat an empty response as a blocker.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully from content type",
@@ -1405,7 +1645,7 @@ public class WorkflowResource {
     @Path("/system/actions/{workflowActionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "getSystemActionsByActionId", summary = "Find default system actions by workflow action id",
             description = "Returns a list of [default system actions]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) associated with a " +
@@ -1461,8 +1701,8 @@ public class WorkflowResource {
     @Path("/system/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putSaveSystemActions", summary = "Save a default system action mapping",
             description = "This operation allows you to save a [default system action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) mapping. This requires:\n\n" +
@@ -1517,7 +1757,7 @@ public class WorkflowResource {
                                             "scheme: " + workflowSystemActionForm.getSchemeId():
                                             "var: "    + workflowSystemActionForm.getContentTypeVariable()));
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     this.workflowHelper.mapSystemActionToWorkflowAction(workflowSystemActionForm, initDataObject.getUser())))
                     .build(); // 200
         }  catch (final Exception e) {
@@ -1542,7 +1782,7 @@ public class WorkflowResource {
     @Path("/system/actions/{identifier}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "deleteSystemActionByActionId", summary = "Delete default system action binding by action id",
             description = "Deletes a [default system action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) binding.\n\n" +
@@ -1580,7 +1820,7 @@ public class WorkflowResource {
 
             Logger.debug(this, ()-> "Deleting system action: " + identifier);
 
-            return Response.ok(new ResponseEntityView(
+            return Response.ok(new ResponseEntityView<>(
                     this.workflowHelper.deleteSystemAction(identifier, initDataObject.getUser())))
                     .build(); // 200
         }  catch (final Exception e) {
@@ -1602,11 +1842,18 @@ public class WorkflowResource {
     @Path("/actions")
     @JSONP
     @NoCache
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postActionsByWorkflowActionForm", summary = "Creates/saves a workflow action",
             description = "Creates or updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
-                    "from the properties specified in the payload. Returns the created workflow action.",
+                    "from the properties specified in the payload. Returns the created workflow action.\n\n" +
+                    "**Tip:** Passing a `stepId` in the body also **attaches the new action to that step** as a side-effect. " +
+                    "The separate `POST /api/v1/workflow/steps/{stepId}/actions` endpoint is only needed when attaching " +
+                    "an action that already exists; for new actions created via this endpoint, `stepId` performs both " +
+                    "the create and the attach in a single call.\n\n" +
+                    "**Anyone / public role:** there is no magic `\"anyone\"` constant for `whoCanUse` or `actionNextAssign`. " +
+                    "Use the CMS Anonymous role id (`654b0931-1027-41f7-ad4d-173115ed8ec1`) on most installs, or look up " +
+                    "the actual id by inspecting an existing System Workflow action.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Workflow action created successfully",
@@ -1670,7 +1917,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Saving new workflow action: " + workflowActionForm.getActionName());
             newAction = this.workflowHelper.saveAction(workflowActionForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(newAction)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(newAction)).build(); // 200
 
         }  catch (final Exception e) {
 
@@ -1693,8 +1940,8 @@ public class WorkflowResource {
     @Path("/actions/separator")
     @JSONP
     @NoCache
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "addSeparatorAction", summary = "Creates workflow action separator",
             description = "Creates a [workflow action] separator(https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "from the properties specified in the payload. Returns the created workflow action.",
@@ -1750,8 +1997,8 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putSaveActionsByWorkflowActionForm", summary = "Update an existing workflow action",
             description = "Updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "based on the payload properties.\n\nReturns updated workflow action.\n\n",
@@ -1817,7 +2064,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowActionForm,"Expected Request body was empty.");
             Logger.debug(this, "Updating action with id: " + actionId);
             final WorkflowAction workflowAction = this.workflowHelper.updateAction(actionId, workflowActionForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(workflowAction)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(workflowAction)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on updateAction, actionId: " +actionId+", workflowActionForm: " + workflowActionForm +
@@ -1837,8 +2084,8 @@ public class WorkflowResource {
     @Path("/steps/{stepId}/actions")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postActionToStepById", summary = "Adds a workflow action to a workflow step",
             description = "Assigns a single [workflow action](https://www.dotcms.com/docs/latest" +
                     "/managing-workflows#Actions) to a [workflow step](https://www.dotcms.com/docs" +
@@ -1919,7 +2166,7 @@ public class WorkflowResource {
                     + " in to a step: " + stepId);
             this.workflowHelper.saveActionToStep(new WorkflowActionStepBean.Builder().stepId(stepId)
                     .actionId(workflowActionStepForm.getActionId()).build(), initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionToStep, stepId: "+stepId+", saveActionToStep: " + workflowActionStepForm +
@@ -1939,8 +2186,8 @@ public class WorkflowResource {
     @Path("/actions/{actionId}/actionlets")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces(MediaType.APPLICATION_JSON)
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postAddActionletToActionById", summary = "Adds an actionlet to a workflow action",
             description = "Adds an actionlet — a.k.a. a [workflow sub-action]" +
                     "(https://www.dotcms.com/docs/latest/workflow-sub-actions) — to a [workflow action]" +
@@ -2025,7 +2272,7 @@ public class WorkflowResource {
                             .order(workflowActionletActionForm.getOrder())
                             .parameters(workflowActionletActionForm.getParameters()).build()
                     , initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on saveActionletToAction, actionId: "+actionId+", saveActionletToAction: " + workflowActionletActionForm +
@@ -2045,7 +2292,7 @@ public class WorkflowResource {
     @Path("/steps/{stepId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "deleteWorkflowStepById", summary = "Delete a workflow step",
             description = "Deletes a [step](https://www.dotcms.com/docs/latest/managing-workflows#Steps) from a " +
                     "[workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n" +
@@ -2092,7 +2339,7 @@ public class WorkflowResource {
     @Path("/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces(MediaType.APPLICATION_JSON)
     @Operation(operationId = "deleteWorkflowActionFromStepByActionId", summary = "Remove a workflow action from a step",
             description = "Deletes an [action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) from a " +
                     "single [workflow step](https://www.dotcms.com/docs/latest/managing-workflows#Steps).\n\n" +
@@ -2128,7 +2375,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId + " for the step: " + stepId);
             this.workflowHelper.deleteAction(actionId, stepId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, actionId: "+actionId+", stepId: " + stepId +
@@ -2148,7 +2395,7 @@ public class WorkflowResource {
     @Path("/actions/{actionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "deleteWorkflowActionByActionId", summary = "Delete a workflow action",
             description = "Deletes a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions) " +
                     "from all [steps](https://www.dotcms.com/docs/latest/managing-workflows#Steps) in which it appears.\n\n" +
@@ -2178,7 +2425,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Deleting the action: " + actionId);
             this.workflowHelper.deleteAction(actionId, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteAction, action: " + actionId +
@@ -2198,7 +2445,7 @@ public class WorkflowResource {
     @Path("/actionlets/{actionletId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "deleteWorkflowActionletFromAction", summary = "Remove an actionlet from a workflow action",
             description = "Removes an [actionlet](https://www.dotcms.com/docs/latest/workflow-sub-actions), or sub-action, " +
                     "from a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions). This deletes " +
@@ -2240,7 +2487,7 @@ public class WorkflowResource {
                     DoesNotExistException.class);
 
             this.workflowAPI.deleteActionClass(actionClass, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on deleteActionlet, actionletId: " + actionletId +
@@ -2261,8 +2508,7 @@ public class WorkflowResource {
     @Path("/reorder/step/{stepId}/order/{order}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "putReorderWorkflowStepsInScheme", summary = "Change the order of steps within a scheme",
             description = "Updates a [workflow step](https://www.dotcms.com/docs/latest/managing-workflows#Steps)'s " +
                     "order within a [scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes) by " +
@@ -2299,7 +2545,7 @@ public class WorkflowResource {
 
             Logger.debug(this, "Doing reordering of step: " + stepId + ", order: " + order);
             this.workflowHelper.reorderStep(stepId, order, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on reorderStep, stepId: " + stepId +
@@ -2320,8 +2566,8 @@ public class WorkflowResource {
     @Path("/steps/{stepId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putUpdateWorkflowStepById", summary = "Update an existing workflow step",
             description = "Updates a [workflow step](https://www.dotcms.com/docs/latest/managing-workflows#Steps).\n\n" +
                     "Returns an object representing the updated step.",
@@ -2370,7 +2616,7 @@ public class WorkflowResource {
         try {
             DotPreconditions.notNull(stepForm,"Expected Request body was empty.");
             final WorkflowStep step = this.workflowHelper.updateStep(stepId, stepForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "WorkflowPortletAccessException on updateStep, stepId: " + stepId +
@@ -2389,8 +2635,8 @@ public class WorkflowResource {
     @Path("/steps")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postAddWorkflowStep", summary = "Add a new workflow step",
             description = "Creates a [workflow step](https://www.dotcms.com/docs/latest/managing-workflows#Steps).\n\n" +
                     "Returns an object representing the step.",
@@ -2418,7 +2664,9 @@ public class WorkflowResource {
                                                   "| `enableEscalation` | Boolean | Determines whether a step is capable of automatic escalation " +
                                                                             "to the next step. (Read more about [schedule-enabled workflows]" +
                                                                             "(https://www.dotcms.com/docs/latest/schedule-enabled-workflow).) |\n" +
-                                                  "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. |\n" +
+                                                  "| `escalationAction` | String | The identifier of the workflow action to execute on automatic escalation. " +
+                                                                            "**Must be an empty string (`\"\"`) when `enableEscalation: false`** — `null` or omitting the key " +
+                                                                            "returns `400 \"may not be null\"`. |\n" +
                                                   "| `escalationTime` | String | The time, in seconds, before the workflow automatically escalates. |\n" +
                                                   "| `stepResolved` | Boolean | If true, any content which enters this workflow step will be considered resolved.\n" +
                                                                             "Content in a resolved step will not appear in the workflow queues of any users.\n |\n\n",
@@ -2434,7 +2682,7 @@ public class WorkflowResource {
             final InitDataObject initDataObject = this.webResource.init(null, request, response, true, null);
             Logger.debug(this, "updating step for scheme with schemeId: " + schemeId);
             final WorkflowStep step = this.workflowHelper.addStep(newStepForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (final Exception e) {
             Logger.error(this.getClass(),
                     "Exception on addStep, schemeId: " + schemeId +
@@ -2454,7 +2702,7 @@ public class WorkflowResource {
     @Path("/steps/{stepId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getFindWorkflowStepById", summary = "Retrieves a workflow step",
             description = "Returns a [workflow step](https://www.dotcms.com/docs/latest/managing-workflows#Steps) by identifier.",
             tags = {"Workflow"},
@@ -2480,7 +2728,7 @@ public class WorkflowResource {
         Logger.debug(this, "finding step by id stepId: " + stepId);
         try {
             final WorkflowStep step = this.workflowHelper.findStepById(stepId);
-            return Response.ok(new ResponseEntityView(step)).build();
+            return Response.ok(new ResponseEntityView<>(step)).build();
         } catch (Exception e) {
             Logger.error(this.getClass(),
                     "Exception on findStepById, stepId: " + stepId +
@@ -2501,20 +2749,20 @@ public class WorkflowResource {
     @Path("/actions/firemultipart")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+    @Operation(operationId = "putFireActionByNameMultipart", summary = "Fire action by name (multipart form)",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by name, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2559,13 +2807,14 @@ public class WorkflowResource {
                                                             description = "Language version of target content.",
                                                             schema = @Schema(type = "string")
                                                     ) final String language,
-                                                    @RequestBody(
-                                                            description = "Multipart form. More details to follow.",
-                                                         required = true,
-                                                         content = @Content(
-                                                                 schema = @Schema(implementation = FormDataMultiPart.class)
-                                                         )
-                                                 ) final FormDataMultiPart multipart) {
+                                                     @RequestBody(
+                                                             description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
+                                                          required = true,
+                                                          content = @Content(
+                                                                  mediaType = MediaType.MULTIPART_FORM_DATA,
+                                                                  schema = @Schema(implementation = WorkflowActionMultipartSchema.class)
+                                                          )
+                                                  ) final FormDataMultiPart multipart) {
         return fireActionByNameMultipart(request, response, inode, identifier, indexPolicy, language, multipart);
     }
 
@@ -2583,7 +2832,7 @@ public class WorkflowResource {
     @Path("/actions/fire")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Hidden
     public final Response fireActionByNameMultipart(@Context final HttpServletRequest request,
@@ -2646,18 +2895,19 @@ public class WorkflowResource {
     @Path("/actions/fire")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putFireActionByName", summary = "Fire workflow action by name",
             description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                             "specified by name, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                             "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                            "services that handle automatically assigning workflow schemes to content with none.",
+                            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                            INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -2826,6 +3076,8 @@ public class WorkflowResource {
             throw new DoesNotExistException("contentlet-was-not-found");
         }
 
+        final Set<String> ignoredSystemFields = validateFireActionForm(fireActionForm, actionId);
+
         final PageMode pageMode = PageMode.get(request);
         final IndexPolicy indexPolicy = contentlet.getIndexPolicy()!=null
                 ? contentlet.getIndexPolicy()
@@ -2873,9 +3125,127 @@ public class WorkflowResource {
         if (Objects.nonNull(basicContentlet) && Objects.nonNull(basicContentlet.getVariantId())) {
             hydratedContentlet.setVariantId(basicContentlet.getVariantId());
         }
+        // Advisory warnings only — the save itself succeeded with 200. Story Block conversion
+        // warnings (e.g. rich blocks replaced by a Markdown write, see #36658) are popped off
+        // the contentlets BEFORE the entity map is built so the transient key never leaks.
+        final List<MessageEntity> messages = mergeMessages(
+                ignoredSystemFieldsMessages(ignoredSystemFields),
+                MapToContentletPopulator.popStoryBlockConversionMessages(
+                        contentlet, basicContentlet, hydratedContentlet));
+        final Map<String, Object> entity = this.workflowHelper.contentletToMap(hydratedContentlet);
         return Response.ok(
-                new ResponseEntityView<>(this.workflowHelper.contentletToMap(hydratedContentlet))
+                null != messages
+                        ? new ResponseEntityView<>(entity, messages)
+                        : new ResponseEntityView<>(entity)
         ).build(); // 200
+    }
+
+    /** Null-tolerant concat: returns {@code null} when both lists are null/empty. */
+    private static List<MessageEntity> mergeMessages(final List<MessageEntity> first,
+                                                     final List<MessageEntity> second) {
+        if (null == first || first.isEmpty()) {
+            return (null == second || second.isEmpty()) ? null : second;
+        }
+        if (null == second || second.isEmpty()) {
+            return first;
+        }
+        final List<MessageEntity> merged = new ArrayList<>(first.size() + second.size());
+        merged.addAll(first);
+        merged.addAll(second);
+        return merged;
+    }
+
+    /**
+     * Validates fields on the {@link FireActionForm} that the workflow engine would otherwise
+     * silently ignore.
+     *
+     * <ul>
+     *   <li>{@code pathToMove} is meaningful only when the resolved workflow action wires a
+     *       Move actionlet. Without it, the value is set on the contentlet's
+     *       {@link Contentlet#PATH_TO_MOVE} property but never read, so we reject it as a
+     *       {@link BadRequestException} to surface the misconfiguration.</li>
+     *   <li>{@code host} / {@code hostId} / {@code hostname} / {@code folder} keys in the
+     *       {@code contentlet} body are not applied by this endpoint. {@code MapToContentletPopulator}
+     *       silently ignores any key that is not a content-type field, so payloads carrying these
+     *       keys have always saved fine for content types without a matching Site-or-Folder field.
+     *       We preserve that long-standing contract by logging a warning instead of rejecting; the
+     *       only path that relocates a contentlet is a workflow action wired with the Move actionlet
+     *       (see {@code pathToMove}).</li>
+     * </ul>
+     */
+    private Set<String> validateFireActionForm(final FireActionForm fireActionForm,
+                                        final String actionId) throws DotDataException, DotSecurityException {
+
+        if (null == fireActionForm) {
+            return Set.of();
+        }
+
+        if (UtilMethods.isSet(fireActionForm.getPathToMove())) {
+
+            final WorkflowAction resolvedAction = null != actionId
+                    ? this.workflowAPI.findAction(actionId, APILocator.systemUser())
+                    : null;
+
+            if (null != resolvedAction && !resolvedAction.hasMoveActionletActionlet()) {
+
+                throw new BadRequestException(String.format(
+                        "Workflow action '%s' (%s) does not include the Move actionlet. "
+                                + "The 'pathToMove' field cannot be applied. Use a workflow action that has "
+                                + "the Move actionlet wired, or fire by explicit Move action ID via "
+                                + "PUT /api/v1/workflow/actions/{actionId}/fire.",
+                        resolvedAction.getName(), resolvedAction.getId()));
+            }
+        }
+
+        final Map<String, Object> contentletMap = fireActionForm.getContentletFormData();
+        if (null != contentletMap) {
+
+            final Set<String> protectedFields = Stream.of("host", "hostId", "hostname", "folder")
+                    .filter(contentletMap::containsKey)
+                    .collect(Collectors.toSet());
+
+            if (!protectedFields.isEmpty()) {
+
+                // These system keys are not applied by this endpoint. Historically
+                // MapToContentletPopulator silently ignores any key that does not map to a
+                // content-type field, so payloads carrying these keys saved fine for content
+                // types without a matching Site-or-Folder field. We preserve that contract by
+                // warning instead of rejecting; the returned set is surfaced back to the caller
+                // (e.g. an MCP agent) so it learns its location intent was ignored. To actually
+                // relocate a contentlet, fire a workflow action wired with the Move actionlet
+                // (see 'pathToMove').
+                Logger.warn(this, String.format(
+                        "Fire action payload contains system field(s) %s; these are ignored by "
+                                + "this endpoint. Did you mean 'contentHost' (host id) or 'hostFolder' "
+                                + "(folder id)? To change a contentlet's location, fire a workflow "
+                                + "action that includes the Move actionlet (see 'pathToMove').",
+                        protectedFields));
+
+                return protectedFields;
+            }
+        }
+
+        return Set.of();
+    }
+
+    /**
+     * Builds a single advisory {@link MessageEntity} explaining that the given system fields were
+     * ignored by the fire endpoint, so callers (notably MCP agents) do not silently assume the
+     * contentlet was relocated. Returns {@code null} when there is nothing to report.
+     */
+    private List<MessageEntity> ignoredSystemFieldsMessages(final Set<String> ignoredFields) {
+
+        if (null == ignoredFields || ignoredFields.isEmpty()) {
+            return null;
+        }
+
+        return List.of(new MessageEntity(String.format(
+                "System field(s) %s were ignored: this endpoint does not set a contentlet's "
+                        + "location. Did you mean 'contentHost' (host id) or 'hostFolder' (folder "
+                        + "id)? The content was saved at its existing/default location. To place or "
+                        + "move content, fire a workflow action that includes the Move actionlet and "
+                        + "pass 'pathToMove'.",
+                ignoredFields)));
     }
 
     private void processPermissions(final FireActionForm fireActionForm,
@@ -2921,21 +3291,97 @@ public class WorkflowResource {
     @Path("/actions/default/fire/{systemAction}")
     @JSONP
     @NoCache
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "putFireDefaultSystemAction", summary = "Fire system action by name",
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use `PUT` for a single contentlet.** This path also accepts `POST`, but that is a " +
+                    "**different** operation that fires over *multiple* contentlets and returns a different envelope " +
+                    "(`entity.results[]`, a list). Sending a single-contentlet body via `POST` will not return the " +
+                    "created contentlet's `identifier` where you expect it, even though the record may still be " +
+                    "(half-)created by the content type's default workflow — a common silent trap. For one item, " +
+                    "always use `PUT`.\n\n" +
+                    "**Request body** — wrap field values in a `contentlet` key:\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"contentlet\": {\n" +
+                    "    \"contentType\": \"<variable-or-inode>\",\n" +
+                    "    \"title\": \"My New Item\",\n" +
+                    "    \"...\": \"other field values\"\n" +
+                    "  }\n" +
+                    "}\n" +
+                    "```\n" +
+                    "Field keys inside `contentlet` are the content type's field `variable` names " +
+                    "(e.g., `title`, `body`, `image`). Unknown field names are silently dropped " +
+                    "(a typo like `titel` will be ignored and may surface as a misleading 'title is required' error). " +
+                    "Radio/Select/Checkbox values are not validated against the field's `values` list — out-of-range " +
+                    "values are accepted as-is. Always verify spelling against `fields[].variable` from " +
+                    "`GET /api/v1/contenttype/id/{idOrVar}`.\n\n" +
+                    "**Validation error response shape:**\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"entity\": \"\",\n" +
+                    "  \"errors\": [{ \"errorCode\": \"required\", \"fieldName\": \"image\", \"message\": \"The field Image is required.\" }],\n" +
+                    "  \"i18nMessagesMap\": {}, \"messages\": [], \"pagination\": null, \"permissions\": []\n" +
+                    "}\n" +
+                    "```\n" +
+                    "`errorCode` values: `required`, `unknown`. `fieldName` is the field `variable` for field-specific errors, " +
+                    "or `null` for content-level errors. Note: when the content type is not found, `message` returns " +
+                    "the raw translation key `Workflow-does-not-exists-content-type` instead of translated text.\n\n" +
+                    "**Binary and image fields** — These fields cannot receive raw file data or asset paths in the JSON body. " +
+                    "Use one of the patterns below.\n\n" +
+                    "**Pattern A — single-use file (works for all binary/image fields):**\n\n" +
+                    "1. `POST /api/v1/temp` (multipart `file` part) OR `POST /api/v1/temp/byUrl` " +
+                    "(JSON `{\"remoteUrl\":\"https://...\"}`) → use `tempFiles[0].id` (e.g. `\"temp_5311313004\"`) as the field value.\n" +
+                    "2. Pass that ID in the contentlet body: " +
+                    "`{\"contentlet\": {\"contentType\": \"ResortActivities\", \"image\": \"temp_5311313004\", ...}}`.\n\n" +
+                    "**Pattern B — reusable shared asset (`ImmutableImageField` only):**\n\n" +
+                    "1. Upload via `/temp`, create a dotAsset contentlet: " +
+                    "`PUT .../fire/PUBLISH` with `{\"contentlet\": {\"contentType\": \"dotAsset\", \"asset\": \"temp_<id>\"}}`.\n" +
+                    "2. Use the returned dotAsset `identifier` as the field value on any `ImmutableImageField`.\n\n" +
+                    "| Field `clazz` | `temp_<id>` | dotAsset `identifier` |\n" +
+                    "|---|---|---|\n" +
+                    "| `ImmutableBinaryField` | ✅ | ❌ (returns 400 \\\"field is required\\\") |\n" +
+                    "| `ImmutableImageField` | ✅ | ✅ |\n\n" +
+                    "Find a field's `clazz` by calling `GET /api/v1/contenttype/id/{idOrVar}` and reading `fields[].clazz`.\n\n" +
+                    "⚠️ **Known issue:** Firing `PUBLISH` on an archived contentlet (`archived: true`) does not validate " +
+                    "the archived state and can produce an inconsistent `live: true, archived: true` tri-state. " +
+                    "Always fire `UNARCHIVE` before `PUBLISH` on archived content.\n\n" +
+                    "⚠️ **Multi-scheme content types:** When a content type has multiple workflow schemes attached, " +
+                    "firing a system action only initializes the contentlet into the scheme whose `systemActionMappings` " +
+                    "entry resolved the fire. Other attached schemes will not have a task for that contentlet, and firing " +
+                    "their actions later will fail with 'Workflow Action is not available in the Workflow Step the content " +
+                    "is currently in.' To exercise actions in those other schemes, fire by action ID via " +
+                    "`PUT /api/v1/workflow/actions/{actionId}/fire` using an action mapped to the desired scheme.\n\n" +
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
-                    @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
+                    @ApiResponse(responseCode = "400",
+                            description = "Validation error. `errors[].errorCode` values: " +
+                                    "`required` (a required field is missing), `unknown` (unknown content type — " +
+                                    "`message` returns the raw translation key `Workflow-does-not-exists-content-type`). " +
+                                    "`fieldName` is the field `variable` for field-specific errors, or `null` otherwise.",
+                            content = @Content(mediaType = "application/json",
+                                    examples = @ExampleObject(
+                                            name = "Required field missing",
+                                            value = "{\n" +
+                                                    "  \"entity\": \"\",\n" +
+                                                    "  \"errors\": [\n" +
+                                                    "    { \"errorCode\": \"required\", \"fieldName\": \"image\", \"message\": \"The field Image is required.\" }\n" +
+                                                    "  ],\n" +
+                                                    "  \"i18nMessagesMap\": {},\n" +
+                                                    "  \"messages\": [],\n" +
+                                                    "  \"pagination\": null,\n" +
+                                                    "  \"permissions\": []\n" +
+                                                    "}"))),
                     @ApiResponse(responseCode = "404", description = "Content not found"),
                     @ApiResponse(responseCode = "415", description = "Unsupported Media Type")
             }
@@ -2988,7 +3434,8 @@ public class WorkflowResource {
                                                       allowableValues = {
                                                               "NEW", "EDIT", "PUBLISH",
                                                               "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                              "DELETE", "DESTROY"
+                                                              "DELETE", "DESTROY",
+                                                              "LOCK", "UNLOCK"
                                                       }
                                               ),
                                               description = "Default system action."
@@ -3064,7 +3511,7 @@ public class WorkflowResource {
           .requestAndResponse(request, response)
           .requiredAnonAccess(AnonymousAccess.WRITE)
           .init();
-      
+
         try {
 
             Logger.debug(this, ()-> "On Fire Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -3141,19 +3588,21 @@ public class WorkflowResource {
     @Path("/actions/default/fire/{systemAction}")
     @JSONP
     @NoCache
-    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.APPLICATION_JSON)
-    @Produces("application/octet-stream")
     @Operation(operationId = "postFireSystemActionByNameMulti", summary = "Fire system action by name over multiple contentlets",
             description = "Fire a [default system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "by name on multiple target contentlets.\n\nReturns a list of resultant contentlet maps, each with an additional  " +
             "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-            "services that handle automatically assigning workflow schemes to content with none.",
+            "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+            "This is the **multi-contentlet** variant and returns a list envelope (`entity.results[]`). " +
+            "To fire on a **single** contentlet, use `PUT` on this same path instead — it returns the single " +
+            "resultant contentlet map (with its `identifier`) directly.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3221,7 +3670,8 @@ public class WorkflowResource {
                                                                     allowableValues = {
                                                                             "NEW", "EDIT", "PUBLISH",
                                                                             "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                                                            "DELETE", "DESTROY"
+                                                                            "DELETE", "DESTROY",
+                                                                            "LOCK", "UNLOCK"
                                                                     }
                                                             ),
                                                             description = "Default system action."
@@ -3431,9 +3881,8 @@ public class WorkflowResource {
     @Path("/actions/default/fire/{systemAction}")
     @JSONP
     @NoCache
-    //@Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Produces("application/octet-stream")
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_OCTET_STREAM})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "patchFireMergeSystemAction", summary = "Modify specific fields on multiple contentlets",
             description = "Assigns values to the specified fields across multiple [contentlets](https://www.dotcms.com" +
                     "/docs/latest/content#Contentlets) simultaneously.\n\n" +
@@ -3441,12 +3890,17 @@ public class WorkflowResource {
                     "body to select all resulting content items.\n\n" +
                     "Returns a list of resultant contentlet maps, each with an additional  " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**`LOCK` and `UNLOCK` are not supported by this endpoint** and are rejected with a " +
+                    "`400`. Locking is per-user state on the contentlet's version info rather than a " +
+                    "content change, so there is nothing for a merge to apply — accepting the call would " +
+                    "lock the contentlet and silently discard the submitted field values. Use " +
+                    "`POST` or `PUT /v1/workflow/actions/default/fire/{systemAction}` for those two.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Contentlet(s) modified successfully",
-                            content = @Content(mediaType = "application/octet-stream",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                            content = @Content(mediaType = MediaType.APPLICATION_JSON,
+                                    schema = @Schema(implementation = ResponseEntityMapView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"results\": [\n" +
@@ -3610,6 +4064,25 @@ public class WorkflowResource {
 
         final InitDataObject initDataObject = new WebResource.InitBuilder()
                 .requestAndResponse(request, response).requiredAnonAccess(AnonymousAccess.WRITE).init();
+
+        // LOCK/UNLOCK are fireable everywhere else, but not here. This endpoint's contract is
+        // "assign these field values, then run the action", and the lock commands deliberately
+        // ignore `needSave` — a lock is per-user state on the version info, so there is nothing to
+        // check in. Accepting the call would lock the contentlet and silently drop the submitted
+        // field values, so it is refused rather than half-honoured. Rejecting here also keeps the
+        // behaviour in step with this path's published `allowableValues`, which omit both.
+        if (SystemAction.LOCK == systemAction || SystemAction.UNLOCK == systemAction) {
+
+            throw new IllegalArgumentException("The system action: " + systemAction +
+                    " is not supported by the merge endpoint; it carries no field changes to apply. " +
+                    "Use POST/PUT /v1/workflow/actions/default/fire/" + systemAction + " instead.");
+        }
+
+        // host/folder in the contentlet body are not applied by this endpoint (they are system
+        // fields, not content-type fields). We warn rather than reject so long-standing callers are
+        // not broken; this streaming merge path cannot carry a per-response message, so the warning
+        // is logged only. pathToMove misconfiguration is still rejected per-contentlet downstream.
+        validateFireActionForm(fireActionForm, null);
 
         final String query = null != fireActionForm? fireActionForm.getQuery():StringPool.BLANK;
         Logger.debug(this, ()-> "On Fire Merge Action: systemAction = " + systemAction + ", inode = " + inode +
@@ -3856,7 +4329,7 @@ public class WorkflowResource {
     /**
      * Check preconditions.
      * If contentlet can not be found, 404
-     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY
+     * if contentlet is not can not be a default action: UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK
      * @param contentlet
      * @param systemAction
      * @throws NotFoundInDbException
@@ -3871,12 +4344,17 @@ public class WorkflowResource {
 
         if (contentlet.isNew()) {
 
+            // LOCK/UNLOCK act on the version info of an existing contentlet. On a new one there is
+            // nothing to lock, and `lock` would otherwise fail deeper with a blank-inode state
+            // exception rather than a clear bad request.
             if (    systemAction == SystemAction.UNPUBLISH ||
                     systemAction == SystemAction.UNARCHIVE ||
                     systemAction == SystemAction.DELETE    ||
-                    systemAction == SystemAction.DESTROY) {
+                    systemAction == SystemAction.DESTROY   ||
+                    systemAction == SystemAction.LOCK      ||
+                    systemAction == SystemAction.UNLOCK) {
 
-                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY]");
+                throw new IllegalArgumentException("A new Contentlet can not fire any of these actions: [EDIT, UNPUBLISH, UNARCHIVE, DELETE, DESTROY, LOCK, UNLOCK]");
             }
         }
     }
@@ -3895,19 +4373,19 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form)",
+            description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -3960,12 +4438,13 @@ public class WorkflowResource {
                     schema = @Schema(type = "string")
             ) final String language,
             @RequestBody(
-                    description = "Multipart form. More details to follow.",
-                    required = true,
-                    content = @Content(
-                            schema = @Schema(implementation = FormDataMultiPart.class)
-                    )
-            ) final FormDataMultiPart multipart) {
+                    description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
+                 required = true,
+                 content = @Content(
+                         mediaType = MediaType.MULTIPART_FORM_DATA,
+                         schema = @Schema(implementation = WorkflowActionMultipartSchema.class)
+                 )
+         ) final FormDataMultiPart multipart) {
         return fireActionMultipart(request, response, actionId, inode, identifier, indexPolicy,
                 language, multipart);
     }
@@ -3985,7 +4464,7 @@ public class WorkflowResource {
     @JSONP
     @NoCache
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Hidden
     public final Response fireActionMultipart(@Context               final HttpServletRequest request,
             @Context final HttpServletResponse response,
@@ -4042,20 +4521,20 @@ public class WorkflowResource {
     @Path("/actions/default/firemultipart/{systemAction}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
-    @Operation(operationId = "putFireActionByIdMultipart", summary = "Fire action by ID (multipart form) \uD83D\uDEA7",
-            description = "(**Construction notice:** Still needs request body documentation. Coming soon!)\n\n" +
-                    "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
+    @Operation(operationId = "putFireDefaultActionMultipart", summary = "Fire default action (multipart form)",
+            description = "Fires a default [system action](https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) " +
                     "on target contentlet. Uses a multipart form to transmit its data.\n\n" +
                     "Returns a map of the resultant contentlet, with an additional " +
                     "`AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4108,12 +4587,20 @@ public class WorkflowResource {
                             allowableValues = {
                                     "NEW", "EDIT", "PUBLISH",
                                     "UNPUBLISH", "ARCHIVE", "UNARCHIVE",
-                                    "DELETE", "DESTROY"
+                                    "DELETE", "DESTROY",
+                                    "LOCK", "UNLOCK"
                             }
                     ),
                     description = "Default system action."
             ) final WorkflowAPI.SystemAction systemAction,
-            final FormDataMultiPart multipart) {
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(
+                    description = "Multipart form containing a JSON 'contentlet' body and optional binary field parts.",
+                    required = true,
+                    content = @Content(
+                            mediaType = MediaType.MULTIPART_FORM_DATA,
+                            schema = @Schema(implementation = WorkflowActionMultipartSchema.class)
+                    )
+            ) final FormDataMultiPart multipart) {
         return fireActionDefaultMultipart(request, response, inode, identifier, indexPolicy, language,
                 systemAction, multipart);
     }
@@ -4131,7 +4618,7 @@ public class WorkflowResource {
     @Path("/actions/default/fire/{systemAction}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Consumes(MediaType.MULTIPART_FORM_DATA)
     @Hidden
     public final Response fireActionDefaultMultipart(
@@ -4221,18 +4708,39 @@ public class WorkflowResource {
     @Path("/actions/{actionId}/fire")
     @JSONP
     @NoCache
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "putFireActionById", summary = "Fire action by ID",
             description = "Fires a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions), " +
                     "specified by identifier, on a target contentlet.\n\nReturns a map of the resultant contentlet, " +
                     "with an additional `AUTO_ASSIGN_WORKFLOW` property, which can be referenced by delegate " +
-                    "services that handle automatically assigning workflow schemes to content with none.",
+                    "services that handle automatically assigning workflow schemes to content with none.\n\n" +
+                    "**Use this endpoint to fire actions that are not represented as `SystemAction` tokens** " +
+                    "(`NEW`, `EDIT`, `PUBLISH`, etc.). The two most common are `Move` and `Copy` on the System Workflow scheme.\n\n" +
+                    "**Move action** — relocates a contentlet to a new folder/host. " +
+                    "Request body shape (note: `pathToMove` is a sibling of `contentlet`, **not** nested inside it):\n\n" +
+                    "```json\n" +
+                    "{\n" +
+                    "  \"contentlet\": { \"identifier\": \"<contentlet-identifier>\" },\n" +
+                    "  \"pathToMove\": \"//<siteHost>/<folderPath>\"\n" +
+                    "}\n" +
+                    "```\n" +
+                    "Alternative shapes (`contentlet.host`+`contentlet.folder`, `contentlet.hostFolder`, " +
+                    "`path` instead of `pathToMove`) all return `400 \"The host path is not valid: null\"`.\n\n" +
+                    "**Copy action** — clones a contentlet. Fire with `?identifier=<source-id>` and an empty body " +
+                    "(or `{\"contentlet\": {\"identifier\": \"<source-id>\"}}`). The Copy action id on the default " +
+                    "System Workflow scheme is `963f6a04-5320-42e7-ab74-6d876d199946`; retrieve it for other " +
+                    "environments via `GET /api/v1/workflow/schemes/{schemeId}/actions`. ⚠️ The response `entity` " +
+                    "returns the **source** contentlet, not the newly-created copy — locate the copy via a " +
+                    "follow-up `POST /api/content/_search` ordered by `modDate DESC`. The copy lands in " +
+                    "`SYSTEM_HOST` / `SYSTEM_FOLDER`; destination hints (`pathToMove`, `host`, `folder`, `hostFolder`) " +
+                    "are silently ignored. Fire the Move action afterwards to relocate.\n\n" +
+                    INDEX_POLICY_CHAINING_NOTE + BLOCK_EDITOR_FIELD_NOTE,
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Fired action successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class)
+                                    schema = @Schema(implementation = ResponseEntityMapView.class)
                             )
                     ),
                     @ApiResponse(responseCode = "400", description = "Bad request"), // invalid param string like `\`
@@ -4580,23 +5088,25 @@ public class WorkflowResource {
                                      final PageMode pageMode,
                                      final String variantName) throws DotDataException, DotSecurityException {
 
-        Contentlet contentlet = null;
+        Contentlet contentlet;
         PageMode mode = pageMode;
-        final String finalInode      = UtilMethods.isSet(inode)? inode:
+        final String finalInode = UtilMethods.isSet(inode) ? inode :
                 (String)Try.of(()->fireActionForm.getContentletFormData().get("inode")).getOrNull();
-        final String finalIdentifier = UtilMethods.isSet(identifier)? identifier:
+        final String finalIdentifier = UtilMethods.isSet(identifier) ? identifier :
                 (String)Try.of(()->fireActionForm.getContentletFormData().get("identifier")).getOrNull();
 
         if(UtilMethods.isSet(finalInode)) {
 
-            Logger.debug(this, ()-> "Fire Action, looking for content by inode: " + finalInode);
+            Logger.debug(this, () -> "Fire Action, looking for content by inode: " + finalInode);
 
             final Contentlet currentContentlet = this.contentletAPI.find
                     (finalInode, initDataObject.getUser(), mode.respectAnonPerms);
 
             DotPreconditions.notNull(currentContentlet, ()-> "contentlet-was-not-found", DoesNotExistException.class);
 
-            contentlet = createContentlet(fireActionForm, initDataObject, currentContentlet,mode);
+            final Contentlet contentletByVariant = resolveContentletByVariant(currentContentlet, variantName);
+
+            contentlet = createContentlet(fireActionForm, initDataObject, contentletByVariant, mode);
         } else if (UtilMethods.isSet(finalIdentifier)) {
 
             Logger.debug(this, ()-> "Fire Action, looking for content by identifier: " + finalIdentifier
@@ -4625,6 +5135,57 @@ public class WorkflowResource {
     }
 
 
+
+    /**
+     * Ensures the correct contentlet is used when firing a workflow action in the context of an
+     * experiment variant. When an editor saves content inside the UVE, the frontend always sends
+     * the inode of the DEFAULT contentlet (no variant-specific copy exists yet). Without this
+     * check the save would overwrite the DEFAULT, affecting every variant and the original page.
+     *
+     * <p>Resolution rules:
+     * <ul>
+     *   <li>If {@code variantName} is blank or not found in the database, falls back to
+     *       {@code DEFAULT}.</li>
+     *   <li>If the resolved variant matches the contentlet's current variant, the contentlet is
+     *       returned unchanged (normal save).</li>
+     *   <li>If there is a mismatch, a sibling contentlet is returned: same identifier and field
+     *       values as {@code currentContentlet}, but with a {@code null} inode and the resolved
+     *       variant name. Passing a {@code null} inode signals the persistence layer to create a
+     *       new contentlet row instead of updating the existing DEFAULT one.</li>
+     * </ul>
+     *
+     * @param currentContentlet the contentlet retrieved by inode from the request.
+     * @param variantName       the variant name sent by the caller; may be {@code null}, empty, or
+     *                          point to a variant that no longer exists
+     * @return {@code currentContentlet} when no variant copy is needed, or a newly constructed
+     *         sibling prepared for the requested variant
+     * @throws DotDataException if the {@link com.dotcms.variant.VariantAPI} cannot be queried
+     */
+    Contentlet resolveContentletByVariant(final Contentlet currentContentlet,
+            final String variantName) throws DotDataException {
+
+        final String resolvedVariant = UtilMethods.isSet(variantName)
+                // Avoids the usage of an invalid variant (non-existing).
+                ? APILocator.getVariantAPI().get(variantName)
+                        .map(Variant::name)
+                        .orElse(VariantAPI.DEFAULT_VARIANT.name())
+                : VariantAPI.DEFAULT_VARIANT.name();
+
+        if (resolvedVariant.equals(currentContentlet.getVariantId())) {
+            return currentContentlet;
+        }
+
+        Logger.debug(this, () -> String.format(
+                "Fire Action, variant mismatch: contentlet variant=%s, requested variant=%s. " +
+                "Creating new variant copy for inode: %s",
+                currentContentlet.getVariantId(), resolvedVariant, currentContentlet.getInode()));
+
+        final Contentlet variantSibling = new Contentlet();
+        variantSibling.getMap().putAll(currentContentlet.getMap());
+        variantSibling.setInode(StringPool.BLANK);
+        variantSibling.setVariantId(resolvedVariant);
+        return variantSibling;
+    }
 
     private Contentlet createContentlet(final FireActionForm fireActionForm,
                                         final InitDataObject initDataObject,
@@ -4724,7 +5285,7 @@ public class WorkflowResource {
           if(constant instanceof ConstantField)
             contentlet.getMap().put(constant.variable(), constant.values());
         }
-        
+
         return contentlet;
     } // populateContentlet.
 
@@ -4738,8 +5299,8 @@ public class WorkflowResource {
     @Path("/reorder/steps/{stepId}/actions/{actionId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putReorderWorkflowActionsInStep", summary = "Change the order of actions within a workflow step",
             description = "Updates a [workflow action](https://www.dotcms.com/docs/latest/managing-workflows#Actions)'s " +
                     "order within a [step](https://www.dotcms.com/docs/latest/managing-workflows#Steps) by assigning it " +
@@ -4785,7 +5346,7 @@ public class WorkflowResource {
                     new WorkflowReorderBean.Builder().stepId(stepId).actionId(actionId)
                             .order(workflowReorderActionStepForm.getOrder()).build(),
                     initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(OK)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(OK)).build(); // 200
         } catch (Exception e) {
 
             Logger.error(this.getClass(),
@@ -4806,8 +5367,8 @@ public class WorkflowResource {
     @Path("/schemes/import")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postImportScheme", summary = "Import a workflow scheme",
             description = "Import a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n" +
                     "Returns \"OK\" on success.",
@@ -4864,7 +5425,7 @@ public class WorkflowResource {
                     exportObject,
                     workflowSchemeImportForm.getPermissions(),
                     initDataObject.getUser());
-            response     = Response.ok(new ResponseEntityView("OK")).build(); // 200
+            response     = Response.ok(new ResponseEntityView<>("OK")).build(); // 200
         } catch (Exception e){
 
             Logger.error(this.getClass(),
@@ -4887,7 +5448,7 @@ public class WorkflowResource {
     @Path("/schemes/{schemeIdOrVariable}/export")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getExportScheme", summary = "Export a workflow scheme",
             description = "Export a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n" +
                     "Returns the full workflow scheme, along with steps, actions, permissions, etc., on success.",
@@ -4895,7 +5456,7 @@ public class WorkflowResource {
             responses = {
                     @ApiResponse(responseCode = "200", description = "Exported workflow scheme successfully",
                             content = @Content(mediaType = "application/json",
-                                    schema = @Schema(implementation = ResponseEntityView.class),
+                                    schema = @Schema(implementation = ResponseEntityWorkflowSchemeView.class),
                                     examples = @ExampleObject(value = "{\n" +
                                             "  \"entity\": {\n" +
                                             "    \"permissions\": [\n" +
@@ -5073,7 +5634,7 @@ public class WorkflowResource {
             scheme = this.workflowAPI.findScheme(schemeIdOrVariable);
             exportObject = this.workflowImportExportUtil.buildExportObject(Arrays.asList(scheme));
             permissions  = this.workflowHelper.getActionsPermissions(exportObject.getActions());
-            response     = Response.ok(new ResponseEntityView(
+            response     = Response.ok(new ResponseEntityView<>(
                     Map.of("workflowObject", new WorkflowSchemeImportExportObjectView(VERSION, exportObject),
                             "permissions", permissions))).build(); // 200
         } catch (Exception e){
@@ -5098,8 +5659,8 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}/copy")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postCopyScheme", summary = "Copy a workflow scheme",
             description = "Copy a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n " +
                     "A name for the new scheme may be provided either by parameter or by POST body property; if no name " +
@@ -5157,7 +5718,7 @@ public class WorkflowResource {
             );
 
             Logger.debug(this, "Copying the workflow scheme: " + schemeId);
-            response     = Response.ok(new ResponseEntityView(
+            response     = Response.ok(new ResponseEntityView<>(
                     this.workflowAPI.deepCopyWorkflowScheme(
                             this.workflowAPI.findScheme(schemeId),
                             initDataObject.getUser(), workflowName))
@@ -5181,7 +5742,7 @@ public class WorkflowResource {
     @Path("/defaultactions/contenttype/{contentTypeId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getDefaultActionsByContentTypeId", summary = "Find possible default actions by content type",
             description = "Returns a list of actions that may be used as a [default action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) for a " +
@@ -5226,7 +5787,7 @@ public class WorkflowResource {
     @Path("/defaultactions/schemes")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getDefaultActionsBySchemeIds", summary = "Find possible default actions by scheme(s)",
             description = "Returns a list of actions that are eligible to be used as a [default action]" +
                     "(https://www.dotcms.com/docs/latest/managing-workflows#DefaultActions) for one or " +
@@ -5280,7 +5841,7 @@ public class WorkflowResource {
         @Path("/initialactions/contenttype/{contentTypeId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getInitialActionsByContentTypeId", summary = "Find initial actions by content type",
             description = "Returns a list of available actions of the initial/first step(s) of the workflow scheme(s) " +
                     "associated with a [content type](https://www.dotcms.com/docs/latest/content-types).",
@@ -5337,8 +5898,8 @@ public class WorkflowResource {
     @Path("/schemes")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "postSaveScheme", summary = "Create a workflow scheme",
             description = "Create a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n " +
                     "Returns created workflow scheme on success.",
@@ -5363,6 +5924,7 @@ public class WorkflowResource {
                                                      "| `schemeDescription` | String | A description of the scheme. |\n" +
                                                      "| `schemeArchived` | Boolean | If `true`, the scheme will be created " +
                                                                                     "in an archived state. |\n",
+                                             required = true,
                                              content = @Content(
                                                      schema = @Schema(implementation = WorkflowSchemeForm.class)
                                              )
@@ -5372,7 +5934,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
             Logger.debug(this, ()->"Saving scheme named: " + workflowSchemeForm.getSchemeName());
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(null, workflowSchemeForm, initDataObject.getUser());
-            return Response.ok(new ResponseEntityView(scheme)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(scheme)).build(); // 200
         } catch (Exception e) {
             final String schemeName = workflowSchemeForm == null ? "" : workflowSchemeForm.getSchemeName();
             Logger.error(this.getClass(), "Exception on save, schema named: " + schemeName + ", exception message: " + e.getMessage(), e);
@@ -5391,8 +5953,8 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
     @Operation(operationId = "putUpdateWorkflowScheme", summary = "Update a workflow scheme",
             description = "Updates a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes).\n\n" +
                     "Returns updated scheme on success.",
@@ -5434,7 +5996,7 @@ public class WorkflowResource {
             DotPreconditions.notNull(workflowSchemeForm,"Expected Request body was empty.");
             final User           user   = initDataObject.getUser();
             final WorkflowScheme scheme = this.workflowHelper.saveOrUpdate(schemeId, workflowSchemeForm, user);
-            return Response.ok(new ResponseEntityView(scheme)).build(); // 200
+            return Response.ok(new ResponseEntityView<>(scheme)).build(); // 200
         }  catch (Exception e) {
             Logger.error(this.getClass(), "Exception attempting to update schema identified by : " +schemeId + ", exception message: " + e.getMessage(), e);
             return ResponseUtil.mapExceptionResponse(e);
@@ -5450,7 +6012,7 @@ public class WorkflowResource {
     @Path("/schemes/{schemeId}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "deleteWorkflowSchemeById", summary = "Delete a workflow scheme",
             description = "Deletes a [workflow scheme](https://www.dotcms.com/docs/latest/managing-workflows#Schemes)\n\n" +
                     "Scheme must already be in an archived state.\n\n" +
@@ -5516,7 +6078,7 @@ public class WorkflowResource {
     @Path("/status/{contentletInode}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getContentWorkflowStatusByInode", summary = "Find workflow status of content",
             description = "Checks the current workflow status of a contentlet by its [inode]" +
                     "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
@@ -5586,10 +6148,10 @@ public class WorkflowResource {
     @Path("/tasks")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on the filter parameters on the request body",
-            description = "Retrieve the workflow tasks that matched" +
-                    "https://www2.dotcms.com/docs/latest/workflow-tasks, [workflow task]",
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces({MediaType.APPLICATION_JSON})
+    @Operation(operationId = "getWorkflowTasks", summary = "Find workflow tasks based on filter parameters",
+            description = "Retrieve the [workflow tasks](https://dev.dotcms.com/docs/workflow-tasks) that match the parameters included in the request body.",
             tags = {"Workflow"},
             responses = {
                     @ApiResponse(responseCode = "200", description = "Action(s) returned successfully",
@@ -5602,7 +6164,28 @@ public class WorkflowResource {
     )
     public final ResponseEntityWorkflowTasksView getWorkflowTasks(@Context final HttpServletRequest request,
                                                                             @Context final HttpServletResponse response,
-                                                                            final WorkflowSearcherForm workflowSearcherForm)
+                                                                            @RequestBody(
+                                                                                    description = "Body consists of a JSON object containing workflow task search parameters:\n\n" +
+                                                                                            "| Property | Type | Description |\n" +
+                                                                                            "|-|-|-|\n" +
+                                                                                            "| `keywords` | string | Search keywords to filter tasks by content |\n" +
+                                                                                            "| `assignedTo` | string | User ID to filter tasks assigned to specific user |\n" +
+                                                                                            "| `daysOld` | integer | Filter tasks by age in days (-1 for no limit, default: -1) |\n" +
+                                                                                            "| `schemeId` | string | Workflow scheme identifier to filter tasks |\n" +
+                                                                                            "| `stepId` | string | Workflow step identifier to filter tasks |\n" +
+                                                                                            "| `open` | boolean | Include open tasks in results (default: false) |\n" +
+                                                                                            "| `closed` | boolean | Include closed tasks in results (default: false) |\n" +
+                                                                                            "| `createdBy` | string | User ID who created the content to filter tasks |\n" +
+                                                                                            "| `show4all` | boolean | Show tasks for all users (admin privilege required, default: false) |\n" +
+                                                                                            "| `orderBy` | string | Field to order results by (e.g., 'created_date', 'title') |\n" +
+                                                                                            "| `count` | integer | Number of results per page (default: 20) |\n" +
+                                                                                            "| `page` | integer | Page number for pagination (default: 0) |",
+                                                                                    required = true,
+                                                                                    content = @Content(
+                                                                                            mediaType = "application/json",
+                                                                                            schema = @Schema(implementation = WorkflowSearcherForm.class)
+                                                                                    )
+                                                                            ) final WorkflowSearcherForm workflowSearcherForm)
             throws DotDataException, DotSecurityException, InvocationTargetException, IllegalAccessException {
 
         if (null == workflowSearcherForm) {
@@ -5655,7 +6238,7 @@ public class WorkflowResource {
     @Path("/tasks/history/comments/{contentletIdentifier}")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
+    @Produces({MediaType.APPLICATION_JSON})
     @Operation(operationId = "getWorkflowTasksHistoryComments", summary = "Find workflow tasks history and comments of content",
             description = "Retrieve the workflow tasks comments of a contentlet by its [id]" +
                     "(https://www.dotcms.com/docs/latest/content-versions#IdentifiersInodes).\n\n" +
@@ -5753,9 +6336,9 @@ public class WorkflowResource {
     @Path("/{contentletId}/comments")
     @JSONP
     @NoCache
-    @Produces({MediaType.APPLICATION_JSON, "application/javascript"})
-    @Consumes({MediaType.APPLICATION_JSON})
-    @Operation(operationId = "postSaveScheme", summary = "Create a workflow comment",
+    @Produces({MediaType.APPLICATION_JSON})
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(operationId = "postSaveComment", summary = "Create a workflow comment",
             description = "Create a [workflow comment].\n\n " +
                     "Returns created workflow comment on success.",
             tags = {"Workflow"},

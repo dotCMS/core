@@ -1,16 +1,36 @@
-<div#if($item.attrs.textAlign) style="text-align: $item.attrs.textAlign;"#end>
+#set($allowedAligns = ["left", "center", "right", "justify"])
 
-    #if ($!item.attrs.href != "null")
-    <a href="$!item.attrs.href">
+## Link href/target set on the dotImage node. Both are checked against "null"
+## and "": an unset attribute reaches this template as the literal string
+## "null", while "" is a state the Block Editor holds transiently and other
+## write paths (REST, imports) can persist. Empty means "no link", so it must
+## not produce an anchor — this matches the four SDK renderers, which guard
+## the same two forms.
+#set($imageHref = "$!item.attrs.href")
+#set($imageTarget = "$!item.attrs.target")
+
+#if($item.attrs.textWrap == "left")
+    #set($figureStyle = "float: left; width: 50%; margin: 0 1rem 1rem 0;")
+#elseif($item.attrs.textWrap == "right")
+    #set($figureStyle = "float: right; width: 50%; margin: 0 0 1rem 1rem;")
+#elseif($allowedAligns.contains($item.attrs.textAlign))
+    #set($figureStyle = "text-align: $item.attrs.textAlign;")
+#end
+
+<figure#if($figureStyle) style="$figureStyle"#end>
+
+    #if ($imageHref != "null" && $imageHref != "")
+    <a href="$imageHref"#if($imageTarget != "null" && $imageTarget != "") target="$imageTarget"#end#if($imageTarget == "_blank") rel="noopener noreferrer"#end>
     #end
-        <img
-            src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
-            alt="#if($!item.attrs.alt && $!item.attrs.alt != "null")$!item.attrs.alt#{else}$!item.attrs.data.title#end"
-            title="#if($!item.attrs.title && $!item.attrs.title != "null")$!item.attrs.title#{else}$!item.attrs.data.title#end"
-        />
-    #if ($!item.attrs.href != "null")
+
+    <img
+        src="#if($!item.attrs.src && $!item.attrs.src != "null")$!item.attrs.src#{else}$!item.attrs.data.asset#end"
+        alt="#if($!item.attrs.alt && $!item.attrs.alt != "null")$!item.attrs.alt#{else}$!item.attrs.data.title#end"
+        title="#if($!item.attrs.title && $!item.attrs.title != "null")$!item.attrs.title#{else}$!item.attrs.data.title#end"
+    />
+
+    #if ($imageHref != "null" && $imageHref != "")
     </a>
     #end
 
-</div>
-
+</figure>

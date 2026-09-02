@@ -1,6 +1,10 @@
 /// <reference types="jest" />
 
-import { sanitizeQueryForContentType, shouldAddSiteIdConstraint } from './utils';
+import {
+    buildConhostWithSystemHost,
+    sanitizeQueryForContentType,
+    shouldAddSiteIdConstraint
+} from './utils';
 
 describe('Utils', () => {
     describe('sanitizeQueryForContentType', () => {
@@ -88,6 +92,32 @@ describe('Utils', () => {
             // The regex will still match dotted fields and prefix them again
             // This is the current behavior of the function
             expect(result).toBe('+Blog.Blog.title:hello +Blog.author:john');
+        });
+
+        it('should not prefix Lucene grouping operators with parentheses', () => {
+            const query =
+                '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false)';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe(
+                '+contentType:draftContent +languageId:1 +(live:false AND working:true AND deleted:false)'
+            );
+        });
+
+        it('should handle complex queries with both fields and grouping operators', () => {
+            const query = '+title:hello +(live:false AND working:true) +author:john';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe(
+                '+Blog.title:hello +(live:false AND working:true) +Blog.author:john'
+            );
+        });
+
+        it('should not prefix grouped OR conditions', () => {
+            const query = '+(contentType:Blog OR contentType:News) +title:hello';
+            const result = sanitizeQueryForContentType(query, contentType);
+
+            expect(result).toBe('+(contentType:Blog OR contentType:News) +Blog.title:hello');
         });
     });
 
@@ -244,5 +274,59 @@ describe('Utils', () => {
                 expect(result).toBe(true);
             });
         });
+    });
+});
+
+describe('buildConhostWithSystemHost', () => {
+    it('should group a single auto-injected siteId with SYSTEM_HOST', () => {
+        const query = '+contentType:Blog +languageId:1 +live:true +conhost:site-123';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe(
+            '+contentType:Blog +languageId:1 +live:true +(conhost:site-123 conhost:SYSTEM_HOST)'
+        );
+    });
+
+    it('should add +conhost:SYSTEM_HOST alone when no conhost is present', () => {
+        const query = '+contentType:Blog +languageId:1 +live:true';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe('+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST');
+    });
+
+    it('should group multiple conhosts (multisite) with SYSTEM_HOST', () => {
+        const query = '+contentType:Blog +languageId:1 +live:true +conhost:site-a +conhost:site-b';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe(
+            '+contentType:Blog +languageId:1 +live:true +(conhost:site-a conhost:site-b conhost:SYSTEM_HOST)'
+        );
+    });
+
+    it('should be idempotent when SYSTEM_HOST is already present as standalone', () => {
+        const query = '+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe('+contentType:Blog +languageId:1 +live:true +conhost:SYSTEM_HOST');
+    });
+
+    it('should not touch negative conhost exclusions', () => {
+        const query =
+            '+contentType:Blog +languageId:1 +live:true +conhost:site-123 -conhost:excluded-site';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe(
+            '+contentType:Blog +languageId:1 +live:true -conhost:excluded-site +(conhost:site-123 conhost:SYSTEM_HOST)'
+        );
+    });
+
+    it('should deduplicate conhost values when the same host appears multiple times', () => {
+        const query =
+            '+contentType:Blog +languageId:1 +live:true +conhost:site-123 +conhost:site-123';
+        const result = buildConhostWithSystemHost(query);
+
+        expect(result).toBe(
+            '+contentType:Blog +languageId:1 +live:true +(conhost:site-123 conhost:SYSTEM_HOST)'
+        );
     });
 });

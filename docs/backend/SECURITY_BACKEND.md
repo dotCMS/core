@@ -5,7 +5,7 @@
 ### Parameter Validation Pattern
 ```java
 import com.dotmarketing.util.UtilMethods;
-import com.dotcms.rest.ResponseUtil;
+import com.dotcms.rest.api.v1.authentication.ResponseUtil;
 
 public class MyResource {
     
@@ -135,7 +135,7 @@ public class MySecureService {
         
         // Check read permission
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.READ)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_READ, user)) {
             throw new DotSecurityException("Read permission denied for entity: " + entityId);
         }
         
@@ -149,7 +149,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT, user)) {
             throw new DotSecurityException("Edit permission denied for entity: " + entityId);
         }
         
@@ -168,7 +168,7 @@ public class MySecureService {
         MyEntity entity = findById(entityId);
         PermissionAPI permissionAPI = APILocator.getPermissionAPI();
         
-        if (!permissionAPI.hasPermission(user, entity, PermissionLevel.EDIT_PERMISSIONS)) {
+        if (!permissionAPI.doesUserHavePermission(entity, PermissionAPI.PERMISSION_EDIT_PERMISSIONS, user)) {
             throw new DotSecurityException("Delete permission denied for entity: " + entityId);
         }
         
@@ -252,7 +252,7 @@ public List<MyEntity> unsafeFind(String name) throws DotDataException {
 
 ### Output Encoding Pattern
 ```java
-import org.springframework.web.util.HtmlUtils;
+import com.liferay.util.Xss;
 
 public class MyResponseBuilder {
     
@@ -260,8 +260,8 @@ public class MyResponseBuilder {
         Map<String, Object> response = new HashMap<>();
         
         // Encode HTML content for safe display
-        response.put("name", HtmlUtils.htmlEscape(entity.getName()));
-        response.put("description", HtmlUtils.htmlEscape(entity.getDescription()));
+        response.put("name", Xss.encodeForHTML(entity.getName()));
+        response.put("description", Xss.encodeForHTML(entity.getDescription()));
         
         // Safe content (already validated)
         response.put("id", entity.getId());

@@ -1,56 +1,55 @@
-@use "variables" as *;
-@import "mixins";
-@import "dotcms-theme/utils/theme-variables";
+// @use "variables" as *;
+// @import "mixins";
+// @import "dotcms-theme/utils/theme-variables";
 
 :host {
-    @include login-container;
 }
 
-.login__header {
-    display: flex;
-    flex-wrap: wrap;
-    justify-content: space-between;
-}
+// .login__header {
+//     display: flex;
+//     flex-wrap: wrap;
+//     justify-content: space-between;
+// }
 
-.login__logo {
-    margin: $spacing-1 0 $spacing-1;
+// .login__logo {
+//     margin: $spacing-1 0 $spacing-1;
 
-    img {
-        width: 102px;
-    }
-}
+//     img {
+//         width: 102px;
+//     }
+// }
 
-.login__title {
-    margin: 4rem 0 $spacing-4 0;
-}
+// .login__title {
+//     margin: 4rem 0 $spacing-4 0;
+// }
 
-.login__password-settings {
-    display: flex;
+// .login__password-settings {
+//     display: flex;
 
-    p-checkbox {
-        flex-grow: 1;
-    }
+//     p-checkbox {
+//         flex-grow: 1;
+//     }
 
-    a {
-        align-self: center;
-    }
+//     a {
+//         align-self: center;
+//     }
 
-    .password-settings__forgot-password {
-        font-size: $font-size-sm;
-    }
-}
+//     .password-settings__forgot-password {
+//         font-size: $font-size-sm;
+//     }
+// }
 
-.login__footer {
-    color: $color-palette-gray-500;
-    text-align: center;
-    text-transform: uppercase;
-    font-size: $font-size-sm;
-}
+// .login__footer {
+//     color: $color-palette-gray-500;
+//     text-align: center;
+//     text-transform: uppercase;
+//     font-size: $font-size-sm;
+// }
 
-.login__button {
-    margin-right: $spacing-1;
-}
+// .login__button {
+//     margin-right: $spacing-1;
+// }
 
-.login__message.success {
-    color: $color-palette-primary;
-}
+// .login__message.success {
+//     color: $color-palette-primary;
+// }

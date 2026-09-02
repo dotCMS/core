@@ -1,4 +1,4 @@
-import { SpyObject, mockProvider } from '@ngneat/spectator/jest';
+import { SpyObject, mockProvider } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
@@ -70,7 +70,9 @@ describe('FormImportUrlStore', () => {
 
         it('should handle upload file by URL error', () => {
             const fileUrl = 'http://example.com/file.png';
-            uploadService.uploadFile.mockReturnValue(throwError(new Error('Invalid file type')));
+            uploadService.uploadFile.mockReturnValue(
+                throwError(() => new Error('Invalid file type'))
+            );
 
             const abortController = new AbortController();
 

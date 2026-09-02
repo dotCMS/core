@@ -1,7 +1,7 @@
 package com.dotmarketing.portlets.rules.model;
 
-import com.dotcms.repackage.com.google.common.collect.Lists;
-import com.dotcms.repackage.com.google.common.collect.Maps;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.rules.RuleComponentInstance;
 import com.dotmarketing.portlets.rules.RuleComponentModel;

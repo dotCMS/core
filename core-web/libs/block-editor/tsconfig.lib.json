@@ -7,20 +7,13 @@
         "declarationMap": true,
         "inlineSources": true,
         "types": [],
-        "lib": ["dom", "es2018", "es2020"]
+        "lib": ["dom", "es2022"]
     },
     "angularCompilerOptions": {
         "skipTemplateCodegen": true,
         "strictMetadataEmit": true,
         "enableResourceInlining": true
     },
-    "exclude": [
-        "src/test-setup.ts",
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/*.stories.ts",
-        "**/*.stories.js",
-        "jest.config.ts"
-    ],
+    "exclude": ["src/test-setup.ts", "**/*.spec.ts", "**/*.test.ts", "jest.config.ts"],
     "include": ["**/*.ts"]
 }

@@ -18,7 +18,11 @@ export const FLATTENED_FIELD_TYPES = [
     FIELD_TYPES.TAG
 ];
 
-export const UNCASTED_FIELD_TYPES = [FIELD_TYPES.BLOCK_EDITOR, FIELD_TYPES.KEY_VALUE];
+export const UNCASTED_FIELD_TYPES = [
+    FIELD_TYPES.BLOCK_EDITOR,
+    FIELD_TYPES.KEY_VALUE,
+    FIELD_TYPES.CATEGORY
+];
 
 export const TAB_FIELD_CLAZZ = 'com.dotcms.contenttype.model.field.ImmutableTabDividerField';
 
@@ -80,7 +84,9 @@ export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
  * Represent the able messages to use in the component DotEmptyContainerComponent
  */
 export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
-    ComponentStatus.ERROR | 'empty' | 'noResults',
+    // `typeof` because ComponentStatus is an `as const` object, not an enum: its members are
+    // values, so the member's type is reached through `typeof` rather than directly.
+    typeof ComponentStatus.ERROR | 'empty' | 'noResults',
     PrincipalConfiguration
 > = {
     empty: {
@@ -128,7 +134,6 @@ export const DEFAULT_CUSTOM_FIELD_CONFIG: CustomFieldConfig = {
 };
 
 /**
- * Key name for the custom field options in field variables.
- * This is the key that should be used when storing JSON configuration in field variables.
+ * @deprecated Import from '@dotcms/dotcms-models' instead.
  */
-export const CUSTOM_FIELD_OPTIONS_KEY = 'customFieldOptions';
+export { CUSTOM_FIELD_OPTIONS_KEY } from '@dotcms/dotcms-models';

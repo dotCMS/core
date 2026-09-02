@@ -43,10 +43,13 @@ test_types:
     defaults:
       needs_license: false
       needs_docker: false
-      needs_node: false
+      needs_node: true
     suites:
       - name: "Frontend Unit Tests"
-        maven_args: "test -pl :dotcms-core-web"
+        # -Pvalidate runs eslint + prettier (generate-resources). They used to run inside the
+        # Initial Artifact Build on PRs only, which kept core-web out of the build cache.
+        # This job already builds the whole workspace, so they cost almost nothing here.
+        maven_args: "test -pl :dotcms-core-web -Pvalidate"
         stage_name: "Frontend Tests"
 
   # === MULTI-SUITE TESTS ===
@@ -59,7 +62,7 @@ test_types:
       needs_node: false
       # Base command for all integration tests
       base_maven_args: >-
-        verify -Dit.test.forkcount=1 -pl :dotcms-integration 
+        verify -Dit.test.forkcount=1 -pl :dotcms-integration
         -Dcoreit.test.skip=false
     suites:
       - name: "Integration Tests - MainSuite 1a"
@@ -80,6 +83,16 @@ test_types:
       - name: "Integration Tests - Junit5 Suite 1"
         test_class: "Junit5Suite1"
         stage_name: "IT Tests Junit5Suite1"
+      - name: "Integration Tests - OpenSearch Upgrade Suite"
+        test_class: "OpenSearchUpgradeSuite"
+        stage_name: "IT Tests OpenSearch Upgrade Suite"
+        # Override base_maven_args to activate the opensearch-upgrade Maven profile,
+        # which starts the opensearch-upgrade Docker container and restricts Failsafe
+        # to only run OpenSearchUpgradeSuite (see dotcms-integration/pom.xml:opensearch-upgrade)
+        base_maven_args: >-
+          verify -Dit.test.forkcount=1 -pl :dotcms-integration
+          -Dcoreit.test.skip=false
+          -Dopensearch.upgrade.test=true
 
   postman:
     condition_input: postman
@@ -146,11 +159,12 @@ test_types:
       needs_node: true
       base_maven_args: "verify -De2e.test.skip=false"
     suites:
-      - name: "E2E Tests - JVM Suite"
-        maven_args: >-
-          -Dci=true -Dit.test=E2eTestSuite 
-          -De2e.test.forkCount=1 -pl :dotcms-e2e-java
-        stage_name: "E2E JVM E2E Suite"
-      - name: "E2E Tests - Node Suite"
-        maven_args: "-De2e.test.env=ci -pl :dotcms-e2e-node"
-        stage_name: "E2E Node E2E Suite" 
+      - name: "E2E Tests - Nx Playwright 1 of 3"
+        maven_args: "-De2e.test.env=ci -De2e.playwright.args=--shard=1/3 -pl :dotcms-ui-e2e"
+        stage_name: "E2E Nx Playwright 1 of 3"
+      - name: "E2E Tests - Nx Playwright 2 of 3"
+        maven_args: "-De2e.test.env=ci -De2e.playwright.args=--shard=2/3 -pl :dotcms-ui-e2e"
+        stage_name: "E2E Nx Playwright 2 of 3"
+      - name: "E2E Tests - Nx Playwright 3 of 3"
+        maven_args: "-De2e.test.env=ci -De2e.playwright.args=--shard=3/3 -pl :dotcms-ui-e2e"
+        stage_name: "E2E Nx Playwright 3 of 3"

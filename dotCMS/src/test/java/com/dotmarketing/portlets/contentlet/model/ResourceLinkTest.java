@@ -2,8 +2,8 @@ package com.dotmarketing.portlets.contentlet.model;
 
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.model.type.FileAssetContentType;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap;
-import com.dotcms.repackage.com.google.common.collect.ImmutableMap.Builder;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.collect.ImmutableMap.Builder;
 import com.dotcms.rest.api.v1.temp.TempFileAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;

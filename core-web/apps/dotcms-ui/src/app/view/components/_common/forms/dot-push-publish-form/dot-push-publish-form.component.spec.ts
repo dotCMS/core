@@ -2,7 +2,8 @@
 
 import { of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component, DebugElement, Input } from '@angular/core';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
@@ -10,8 +11,8 @@ import { By } from '@angular/platform-browser';
 
 import { ConfirmationService, SelectItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
-import { CalendarModule } from 'primeng/calendar';
-import { Dropdown, DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { Select, SelectModule } from 'primeng/select';
 import { SelectButton, SelectButtonModule } from 'primeng/selectbutton';
 
 import {
@@ -23,7 +24,7 @@ import {
     DotRouterService,
     PushPublishService
 } from '@dotcms/data-access';
-import { CoreWebService, DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
+import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import {
     DotDialogModule,
@@ -32,7 +33,6 @@ import {
     DotSafeHtmlPipe
 } from '@dotcms/ui';
 import {
-    CoreWebServiceMock,
     DotcmsConfigServiceMock,
     LoginServiceMock,
     MockDotMessageService,
@@ -43,7 +43,6 @@ import {
 import { DotPushPublishFormComponent } from './dot-push-publish-form.component';
 
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
-import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 import { PushPublishServiceMock } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component.spec';
 
 const messageServiceMock = new MockDotMessageService({
@@ -126,9 +125,10 @@ xdescribe('DotPushPublishFormComponent', () => {
         TestBed.configureTestingModule({
             declarations: [TestHostComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 { provide: PushPublishService, useValue: pushPublishServiceMock },
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: LoginService, useClass: LoginServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotcmsConfigService, useClass: DotcmsConfigServiceMock },
@@ -142,16 +142,15 @@ xdescribe('DotPushPublishFormComponent', () => {
                 DotPushPublishFormComponent,
                 AutoFocusModule,
                 FormsModule,
-                CalendarModule,
+                DatePickerModule,
                 DotDialogModule,
                 PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
-                DropdownModule,
+                SelectModule,
                 DotFieldValidationMessageComponent,
                 SelectButtonModule,
                 DotSafeHtmlPipe,
-                DotMessagePipe,
-                HttpClientTestingModule
+                DotMessagePipe
             ]
         }).compileComponents();
     });
@@ -181,7 +180,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should load filters on load', () => {
-        const filterDropDown = fixture.debugElement.query(By.css('p-dropdown'));
+        const filterDropDown = fixture.debugElement.query(By.css('p-select'));
 
         expect(filterDropDown.attributes['ng-reflect-autofocus']).toBe('true');
         expect(filterDropDown.componentInstance.options).toEqual(optionsLabels);
@@ -200,7 +199,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         const timezoneDropDownContainer = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelectContainer"]')
         );
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timeZoneLabel = fixture.debugElement.query(
@@ -219,7 +218,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         ).nativeElement;
         changeTZLink.click();
         fixture.detectChanges();
-        const timezoneDropDown: Dropdown = fixture.debugElement.query(
+        const timezoneDropDown: Select = fixture.debugElement.query(
             By.css('[data-testid="timeZoneSelect"]')
         ).componentInstance;
         const timezoneDropDownContainer = fixture.debugElement.query(

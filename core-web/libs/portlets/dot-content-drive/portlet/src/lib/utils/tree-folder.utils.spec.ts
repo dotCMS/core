@@ -1,36 +1,46 @@
 import { DotFolder } from '@dotcms/dotcms-models';
-import { ALL_FOLDER, DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import { createFakeSite } from '@dotcms/utils-testing';
 
-import { buildTreeFolderNodes, createTreeNode, generateAllParentPaths } from './tree-folder.utils';
+import {
+    buildTreeFolderNodes,
+    createSiteNode,
+    createTreeNode,
+    generateAllParentPaths
+} from './tree-folder.utils';
 
 describe('Sidebar Utils', () => {
-    describe('ALL_FOLDER constant', () => {
-        it('should have correct structure', () => {
-            expect(ALL_FOLDER).toEqual({
-                key: 'ALL_FOLDER',
-                label: 'content-drive.all-folder.label',
-                loading: false,
-                data: {
-                    type: 'folder',
-                    path: '',
-                    hostname: '',
-                    id: ''
-                },
-                leaf: false,
-                expanded: true
-            });
+    /** The row that stands for the site, used as the tree's root and as the fallback selection. */
+    const SITE_NODE: DotFolderTreeNodeItem = createSiteNode(
+        createFakeSite({ identifier: 'site-1', hostname: 'demo.dotcms.com' })
+    );
+
+    describe('createSiteNode', () => {
+        const SITE = createFakeSite({ identifier: 'site-123', hostname: 'demo.dotcms.com' });
+
+        it('should name the row after the site and key it by the site identifier', () => {
+            const node = createSiteNode(SITE);
+
+            expect(node.label).toBe('demo.dotcms.com');
+            expect(node.key).toBe('site-123');
+            expect(node.data.id).toBe('site-123');
+            expect(node.data.hostname).toBe('demo.dotcms.com');
         });
 
-        it('should be a folder type', () => {
-            expect(ALL_FOLDER.data.type).toBe('folder');
+        it('should carry no folder path, which is what tells it apart from a folder', () => {
+            expect(createSiteNode(SITE).data.path).toBe('');
         });
 
-        it('should be expanded by default', () => {
-            expect(ALL_FOLDER.expanded).toBe(true);
+        it('should be an expandable, expanded folder row, since the site opens showing its folders', () => {
+            const node = createSiteNode(SITE);
+
+            expect(node.data.type).toBe('folder');
+            expect(node.leaf).toBe(false);
+            expect(node.expanded).toBe(true);
         });
 
-        it('should not be a leaf node', () => {
-            expect(ALL_FOLDER.leaf).toBe(false);
+        it('should use a globe, because the row stands for a site rather than a folder', () => {
+            expect(createSiteNode(SITE).icon).toBe('pi pi-globe');
         });
     });
 
@@ -83,12 +93,13 @@ describe('Sidebar Utils', () => {
     describe('createTreeNode', () => {
         const mockFolder: DotFolder = {
             id: 'folder-123',
+            inode: 'folder-inode-123',
             path: '/documents/',
             hostName: 'demo.dotcms.com',
             addChildrenAllowed: true
         };
 
-        it('should create a tree node without parent', () => {
+        it('should create a tree node without parent, carrying the folder inode', () => {
             const result = createTreeNode(mockFolder);
 
             expect(result).toEqual({
@@ -96,6 +107,7 @@ describe('Sidebar Utils', () => {
                 label: '/documents/',
                 data: {
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     hostname: 'demo.dotcms.com',
                     path: '/documents/',
                     type: 'folder'
@@ -125,6 +137,7 @@ describe('Sidebar Utils', () => {
                 label: '/documents/',
                 data: {
                     id: 'folder-123',
+                    inode: 'folder-inode-123',
                     hostname: 'demo.dotcms.com',
                     path: '/documents/',
                     type: 'folder'
@@ -133,14 +146,29 @@ describe('Sidebar Utils', () => {
             });
         });
 
-        it('should always set leaf to false', () => {
+        it('should leave the node expandable (leaf false) when hasChildren is undefined', () => {
             const result = createTreeNode(mockFolder);
             expect(result.leaf).toBe(false);
+        });
+
+        it('should keep the node expandable (leaf false) when the folder has children', () => {
+            const result = createTreeNode({ ...mockFolder, hasChildren: true });
+            expect(result.leaf).toBe(false);
+        });
+
+        it('should mark the node as a leaf (no chevron) when the folder has no children', () => {
+            const result = createTreeNode({ ...mockFolder, hasChildren: false });
+            expect(result.leaf).toBe(true);
         });
 
         it('should use folder id as key', () => {
             const result = createTreeNode(mockFolder);
             expect(result.key).toBe(mockFolder.id);
+        });
+
+        it('should carry the folder defaultBaseType onto the node data', () => {
+            const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
+            expect(result.data.defaultBaseType).toBe('FILEASSET');
         });
 
         it('should use folder path as label', () => {
@@ -153,6 +181,7 @@ describe('Sidebar Utils', () => {
 
             expect(result.data).toEqual({
                 id: mockFolder.id,
+                inode: mockFolder.inode,
                 hostname: mockFolder.hostName,
                 path: mockFolder.path,
                 type: 'folder'
@@ -203,15 +232,10 @@ describe('Sidebar Utils', () => {
     });
 
     describe('buildTreeFolderNodes', () => {
-        // Mock data based on real example data
+        // Each level holds the direct children of that level (the search endpoint does not return
+        // the parent folder itself).
         const mockFolderHierarchy: DotFolder[][] = [
             [
-                {
-                    addChildrenAllowed: true,
-                    hostName: 'demo.dotcms.com',
-                    id: 'SYSTEM_FOLDER',
-                    path: '/'
-                },
                 {
                     addChildrenAllowed: true,
                     hostName: 'demo.dotcms.com',
@@ -241,12 +265,6 @@ describe('Sidebar Utils', () => {
                 {
                     addChildrenAllowed: true,
                     hostName: 'demo.dotcms.com',
-                    id: '83bb5752-4264-43c4-84c8-28176603431a',
-                    path: '/application/'
-                },
-                {
-                    addChildrenAllowed: true,
-                    hostName: 'demo.dotcms.com',
                     id: 'd4ab08ba-6ae6-4937-9fb4-b67d801ace72',
                     path: '/application/apivtl/'
                 },
@@ -271,26 +289,79 @@ describe('Sidebar Utils', () => {
             ]
         ];
 
+        // The tree is rebuilt from scratch after a folder is created, so the parent it was created
+        // in has to come back expandable. Marking it a leaf while attaching its children hides
+        // PrimeNG's toggler, and the new folder is in the model but unreachable — which reads as
+        // "the tree did not reload".
+        it('should keep an on-path folder expandable when its children were fetched', () => {
+            const levels: DotFolder[][] = [
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog',
+                        path: '/blog/'
+                    }
+                ],
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog-child',
+                        path: '/blog/just-created/'
+                    }
+                ]
+            ];
+
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: levels,
+                targetPath: '/blog/',
+                rootNode: SITE_NODE
+            });
+
+            const blog = result.rootNodes[0];
+
+            expect(blog.children).toHaveLength(1);
+            expect(blog.leaf).toBe(false);
+        });
+
+        // The other half of the same rule: nothing below it, so the toggler would open on nothing.
+        it('should mark an on-path folder a leaf when no children came back', () => {
+            const levels: DotFolder[][] = [
+                [
+                    {
+                        addChildrenAllowed: true,
+                        hostName: 'demo.dotcms.com',
+                        id: 'blog',
+                        path: '/blog/'
+                    }
+                ],
+                []
+            ];
+
+            const result = buildTreeFolderNodes({
+                folderHierarchyLevels: levels,
+                targetPath: '/blog/',
+                rootNode: SITE_NODE
+            });
+
+            expect(result.rootNodes[0].leaf).toBe(true);
+        });
+
         it('should handle empty folder hierarchy', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: [],
                 targetPath: '/test/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toEqual([]);
-            expect(result.selectedNode).toEqual(ALL_FOLDER);
+            expect(result.selectedNode).toEqual(SITE_NODE);
         });
 
         it('should build tree structure for single level hierarchy', () => {
             const singleLevel: DotFolder[][] = [
                 [
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
-                        id: 'SYSTEM_FOLDER',
-                        path: '/'
-                    },
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
@@ -309,7 +380,7 @@ describe('Sidebar Utils', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: singleLevel,
                 targetPath: '/test/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toHaveLength(2);
@@ -337,17 +408,17 @@ describe('Sidebar Utils', () => {
                 },
                 leaf: false
             });
-            expect(result.selectedNode?.key).toBe('ALL_FOLDER');
+            expect(result.selectedNode?.key).toBe(SITE_NODE.key);
         });
 
         it('should build complex tree structure with nested hierarchy', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: mockFolderHierarchy,
                 targetPath: '/application/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
-            // Should have 4 root nodes (excluding the SYSTEM_FOLDER placeholder)
+            // Should have 4 root nodes
             expect(result.rootNodes).toHaveLength(4);
 
             // Check root nodes structure
@@ -382,12 +453,6 @@ describe('Sidebar Utils', () => {
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
-                        id: 'SYSTEM_FOLDER',
-                        path: '/'
-                    },
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
                         id: 'level1-folder',
                         path: '/level1/'
                     }
@@ -396,23 +461,11 @@ describe('Sidebar Utils', () => {
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
-                        id: 'level1-folder',
-                        path: '/level1/'
-                    },
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
                         id: 'level2-folder',
                         path: '/level1/level2/'
                     }
                 ],
                 [
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
-                        id: 'level2-folder',
-                        path: '/level1/level2/'
-                    },
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
@@ -425,7 +478,7 @@ describe('Sidebar Utils', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: deepHierarchy,
                 targetPath: '/level1/level2/level3/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             // Should have 1 root node
@@ -450,26 +503,20 @@ describe('Sidebar Utils', () => {
             expect(result.selectedNode?.key).toBe('level2-folder');
         });
 
-        it('should return ALL_FOLDER as selected when target path does not match any folder', () => {
+        it('should return the root node as selected when the target path matches no folder', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: mockFolderHierarchy,
                 targetPath: '/nonexistent/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toHaveLength(4);
-            expect(result.selectedNode).toEqual(ALL_FOLDER);
+            expect(result.selectedNode).toEqual(SITE_NODE);
         });
 
         it('should handle root path selection', () => {
             const rootHierarchy: DotFolder[][] = [
                 [
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
-                        id: 'SYSTEM_FOLDER',
-                        path: '/'
-                    },
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
@@ -482,18 +529,18 @@ describe('Sidebar Utils', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: rootHierarchy,
                 targetPath: '/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toHaveLength(1);
-            expect(result.selectedNode).toEqual(ALL_FOLDER);
+            expect(result.selectedNode).toEqual(SITE_NODE);
         });
 
         it('should properly handle folder nodes that are not on target path', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: mockFolderHierarchy,
                 targetPath: '/application/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             // Other root nodes should not be expanded
@@ -519,18 +566,18 @@ describe('Sidebar Utils', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: mockFolderHierarchy,
                 targetPath: '',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toHaveLength(4);
-            expect(result.selectedNode).toEqual(ALL_FOLDER);
+            expect(result.selectedNode).toEqual(SITE_NODE);
         });
 
         it('should correctly identify nodes on target path using generateAllParentPaths', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: mockFolderHierarchy,
                 targetPath: '/application/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             // Verify that the correct node is identified as being on the target path
@@ -558,12 +605,6 @@ describe('Sidebar Utils', () => {
                     {
                         addChildrenAllowed: true,
                         hostName: 'demo.dotcms.com',
-                        id: 'SYSTEM_FOLDER',
-                        path: '/'
-                    },
-                    {
-                        addChildrenAllowed: true,
-                        hostName: 'demo.dotcms.com',
                         id: 'folder-1',
                         path: '/test/'
                     }
@@ -574,23 +615,18 @@ describe('Sidebar Utils', () => {
             const result = buildTreeFolderNodes({
                 folderHierarchyLevels: incompleteHierarchy,
                 targetPath: '/test/deep/',
-                rootNode: ALL_FOLDER
+                rootNode: SITE_NODE
             });
 
             expect(result.rootNodes).toHaveLength(1);
             expect(result.rootNodes[0].key).toBe('folder-1');
             expect(result.rootNodes[0].expanded).toBe(true);
             expect(result.rootNodes[0].leaf).toBe(true);
-            expect(result.selectedNode?.key).toBe('ALL_FOLDER');
+            expect(result.selectedNode?.key).toBe(SITE_NODE.key);
         });
 
         describe('rootNode as selectedNode - Code Path Coverage', () => {
             it('should set rootNode as selectedNode when folderHierarchyLevels is empty (early return path)', () => {
-                // This test explicitly covers the code path at line 79:
-                // if (folderHierarchyLevels.length === 0) {
-                //     return { rootNodes: [], selectedNode: rootNode };
-                // }
-
                 const customRootNode: DotFolderTreeNodeItem = {
                     key: 'custom-root',
                     label: 'Custom Root',
@@ -617,11 +653,6 @@ describe('Sidebar Utils', () => {
             });
 
             it('should set rootNode as selectedNode when no folder matches the target path (fallback path)', () => {
-                // This test explicitly covers the code path at line 126:
-                // const selectedNode = activeParents[folderHierarchyLevels.length - 1] || rootNode;
-                // When activeParents[folderHierarchyLevels.length - 1] is undefined,
-                // the || operator returns rootNode
-
                 const customRootNode: DotFolderTreeNodeItem = {
                     key: 'fallback-root',
                     label: 'Fallback Root',
@@ -638,12 +669,6 @@ describe('Sidebar Utils', () => {
 
                 const hierarchyWithNoMatch: DotFolder[][] = [
                     [
-                        {
-                            addChildrenAllowed: true,
-                            hostName: 'demo.dotcms.com',
-                            id: 'SYSTEM_FOLDER',
-                            path: '/'
-                        },
                         {
                             addChildrenAllowed: true,
                             hostName: 'demo.dotcms.com',
@@ -680,10 +705,6 @@ describe('Sidebar Utils', () => {
             });
 
             it('should set rootNode as selectedNode when target path is empty string (fallback path)', () => {
-                // Another case for the fallback path at line 126
-                // Empty target path means generateAllParentPaths returns [],
-                // so no folder will ever be on the target path
-
                 const customRootNode: DotFolderTreeNodeItem = {
                     key: 'empty-path-root',
                     label: 'Empty Path Root',
@@ -699,12 +720,6 @@ describe('Sidebar Utils', () => {
 
                 const hierarchy: DotFolder[][] = [
                     [
-                        {
-                            addChildrenAllowed: true,
-                            hostName: 'demo.dotcms.com',
-                            id: 'SYSTEM_FOLDER',
-                            path: '/'
-                        },
                         {
                             addChildrenAllowed: true,
                             hostName: 'demo.dotcms.com',

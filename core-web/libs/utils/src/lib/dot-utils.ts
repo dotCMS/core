@@ -18,6 +18,41 @@ export function getDownloadLink(blob: Blob, fileName: string): HTMLAnchorElement
     return anchor;
 }
 
+export interface ApiSnippetParams {
+    url: string;
+    body: unknown;
+}
+
+/**
+ * Build a curl POST snippet for a JSON API call.
+ * Escapes single quotes in the body using POSIX shell quoting.
+ */
+export function buildCurlSnippet({ url, body }: ApiSnippetParams): string {
+    const safeBody = JSON.stringify(body).replace(/'/g, `'\\''`);
+    return [
+        `curl -X POST "${url}" \\`,
+        `  -H "Content-Type: application/json" \\`,
+        `  -H "Authorization: Bearer <your-api-token>" \\`,
+        `  -d '${safeBody}'`
+    ].join('\n');
+}
+
+/**
+ * Build a browser fetch() POST snippet for a JSON API call.
+ */
+export function buildFetchSnippet({ url, body }: ApiSnippetParams): string {
+    const formatted = JSON.stringify(body, null, 2);
+    return [
+        `const response = await fetch('${url}', {`,
+        `  method: 'POST',`,
+        `  credentials: 'include',`,
+        `  headers: { 'Content-Type': 'application/json' },`,
+        `  body: JSON.stringify(${formatted})`,
+        `});`,
+        `const data = await response.json();`
+    ].join('\n');
+}
+
 // Replace {n} in the string with the strings in the args array
 export function formatMessage(message: string, args: string[]): string {
     return message.replace(/{(\d+)}/g, (match, number) => {
@@ -183,4 +218,50 @@ export function mapParamsFromEditContentlet(cdParams: URLSearchParams): Record<s
             },
             {} as Record<string, string>
         );
+}
+
+/**
+ * Whether a URL is a relative path that stays on the current origin, and is therefore safe to
+ * load into an iframe.
+ *
+ * Resolution is delegated to the URL parser rather than checked with string comparisons, because
+ * browsers normalize backslashes into the authority position and strip tab, newline, and carriage
+ * return before parsing. That makes `/\evil.com`, `/\/evil.com`, and `/<tab>/evil.com` all resolve
+ * cross-origin even though none of them starts with `//`. Comparing the resolved origin catches
+ * every such form; a hand-rolled prefix check does not.
+ *
+ * Narrows to `string` so callers holding an optional url can use the value directly once it
+ * passes.
+ *
+ * @param url - The URL to check
+ * @returns True when `url` is a relative path resolving to the current origin
+ */
+export function isSameOriginRelativeUrl(url: string | null | undefined): url is string {
+    // Absolute URLs are rejected outright, even same-origin ones: callers are expected to pass
+    // relative paths, so anything carrying its own scheme or authority is not what we asked for.
+    if (!url || !url.startsWith('/')) {
+        return false;
+    }
+
+    try {
+        return new URL(url, window.location.href).origin === window.location.origin;
+    } catch {
+        return false;
+    }
+}
+
+/** A dotCMS identifier is a 36-character UUID. */
+const IDENTIFIER_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+/**
+ * Whether a value is shaped like a dotCMS identifier.
+ *
+ * Meant for values that reach a Lucene query: the search endpoints take a query *string*, so an
+ * identifier that arrives from a URL or any other caller-supplied source is concatenated into it.
+ * A value carrying spaces or Lucene operators would widen the query rather than match an id, so
+ * callers check the shape first and treat anything else as "no such identifier" — which is the
+ * honest answer, since nothing outside this shape can be one.
+ */
+export function isDotIdentifier(value: string | null | undefined): boolean {
+    return !!value && IDENTIFIER_PATTERN.test(value.trim());
 }

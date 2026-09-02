@@ -1,4 +1,10 @@
-import { Component, OnInit, ViewEncapsulation, inject } from '@angular/core';
+import {
+    Component,
+    OnInit,
+    ViewEncapsulation,
+    inject,
+    ChangeDetectionStrategy
+} from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 
 import { DotContentCompareDialogComponent } from '@dotcms/portlets/dot-ema/ui';
@@ -19,8 +25,8 @@ import { DotToolbarComponent } from '../dot-toolbar/dot-toolbar.component';
 @Component({
     encapsulation: ViewEncapsulation.None,
     selector: 'dot-main-component',
-    styleUrls: ['./main-legacy.component.scss'],
     templateUrl: './main-legacy.component.html',
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         RouterOutlet,
         DotCreateContentletComponent,
@@ -42,6 +48,9 @@ export class MainComponentLegacyComponent implements OnInit {
     ngOnInit(): void {
         document.body.style.backgroundColor = '';
         document.body.style.backgroundImage = '';
+        document.body.style.backgroundPosition = '';
+        document.body.style.backgroundRepeat = '';
+        document.body.style.backgroundSize = '';
     }
 
     /**

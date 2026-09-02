@@ -323,6 +323,13 @@ public class DotTemplateTool implements ViewTool {
     /**
      * Method that will create a map of required data for the Layout template, basically paths
      * where the different elements of the theme can be found.
+     * <p>
+     * The returned map includes {@code templatePathIsFileAsset}: {@code true} when the theme provides
+     * its own {@code template.vtl} file asset (so {@code PageLoader} includes it with version-aware
+     * {@code #dotParse}), {@code false} for the bundled static-fallback templates (included with
+     * {@code #parse}). For file-asset themes {@code templatePath} is host-qualified
+     * ({@code //<themeHost>/...}) so {@code #dotParse} resolves it against the theme's own host
+     * regardless of which host renders the page, since the cache is keyed by theme identifier only.
      *
      * @param themeFolder
      * @param hostId
@@ -353,27 +360,46 @@ public class DotTemplateTool implements ViewTool {
 
         //Getting the theme path
         String themePath;
+        final Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
+        // Use the Host.SYSTEM_HOST sentinel for the System Host: its stored hostname is not reliably
+        // resolved by HostAPIImpl.resolveHostName, but "SYSTEM_HOST" has a guaranteed fast-path.
+        final String themeHostname = themeHost.isSystemHost() ? Host.SYSTEM_HOST : themeHost.getHostname();
         if ( themeFolder.getHostId().equals( hostId ) ) {
             themePath = Template.THEMES_PATH + themeFolder.getName() + "/";
         } else {
-            Host themeHost = APILocator.getHostAPI().find( themeFolder.getHostId(), APILocator.getUserAPI().getSystemUser(), false );
-            themePath = "//" + themeHost.getHostname() + Template.THEMES_PATH + themeFolder.getName() + "/";
+            // Host-qualified ("//<themeHost>/...") theme path so a shared theme rendered by another
+            // host still resolves against its own host (the themeMap cache is keyed by theme
+            // identifier only).
+            themePath = "//" + themeHostname + Template.THEMES_PATH + themeFolder.getName() + "/";
         }
 
         //Getting the template.vtl file path
         String themeTemplatePath;
+        boolean themeTemplateIsFileAsset;
         if ( UtilMethods.isSet( themeTemplate ) && InodeUtils.isSet( themeTemplate.getInode() ) ) {
-            themeTemplatePath = themeTemplate.getFileAsset().getPath();
+            // Logical, host-qualified file-asset path (NOT the physical working-inode disk path) so the
+            // page render can include it with #dotParse and resolve live vs working from the PageMode.
+            // Built from the asset's own parent path (which is not guaranteed to be directly under
+            // /application/themes/<name>/) and host-qualified so #dotParse resolves it against the
+            // theme's host, not the rendering page's.
+            themeTemplatePath = "//" + themeHostname
+                    + themeTemplate.getPath() + Template.THEME_TEMPLATE; // parent path already ends with "/"
+            themeTemplateIsFileAsset = true;
         } else if(themeFolder.getIdentifier().equals(Theme.SYSTEM_THEME)){
             themeTemplatePath = "static/system_theme/" + Template.THEME_TEMPLATE;
+            themeTemplateIsFileAsset = false;
         } else {//If the theme doesn't provide a template.vtl file lest use ours
             themeTemplatePath = "static/template/" + Template.THEME_TEMPLATE;
+            themeTemplateIsFileAsset = false;
         }
 
         //Setting required theme data for the Layout template
-        
+
         themeMap.put( "path", themePath );
         themeMap.put( "templatePath", themeTemplatePath );
+        // Tells PageLoader which Velocity directive to use: #dotParse (version-aware) for real
+        // file-asset themes, #parse (filesystem) for the bundled static fallback templates.
+        themeMap.put( "templatePathIsFileAsset", themeTemplateIsFileAsset );
         themeMap.put( "htmlHead", haveHtmlHead );
         themeMap.put( "title", themeFolder.getName());
         cache.put(key, themeMap);

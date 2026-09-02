@@ -193,6 +193,7 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		new ShortyIdCache().remove(id.getId());
 	}
 	
+	@Override
 	public void removeFromCacheByIdentifier(String ident) {
 		
 		Identifier id = getIdentifier(ident);
@@ -207,7 +208,8 @@ public class IdentifierCacheImpl extends IdentifierCache {
 	
 
 
-	protected void removeFromCacheByURI(String hostId,String URI) {
+	@Override
+	public void removeFromCacheByURI(String hostId,String URI) {
 		Identifier id = getIdentifier(hostId,URI);
 		if(id==null) {
     		String key = getPrimaryGroup() + hostId + "-" + URI;
@@ -218,6 +220,27 @@ public class IdentifierCacheImpl extends IdentifierCache {
 		    removeFromCacheByIdentifier(id);
 		}
 
+	}
+
+	@Override
+	public void removeFromCacheDirect(final String id, final String hostId, final String uri) {
+		// Evict UUID-keyed entry
+		if (UtilMethods.isSet(id)) {
+			final String uuidKey = getPrimaryGroup() + id;
+			cache.remove(uuidKey, getPrimaryGroup());
+			cache.remove(uuidKey, get404Group());
+			cache.remove(allInfosKey(id), getVersionInfoGroup());
+			new ShortyIdCache().remove(id);
+		}
+		// Evict URI-keyed entry
+		if (UtilMethods.isSet(hostId) && UtilMethods.isSet(uri)) {
+			final String uriKey = getPrimaryGroup() + hostId + "-" + uri;
+			cache.remove(uriKey, getPrimaryGroup());
+			cache.remove(uriKey, get404Group());
+		}
+		// Intentionally does NOT call findByParentPath / recursive child eviction.
+		// Callers that use this method are responsible for evicting all descendants
+		// themselves (e.g. via a pre-loaded flat snapshot).
 	}
 
 	 public void removeFromCacheByVersionable(Versionable versionable) {

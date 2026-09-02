@@ -2,7 +2,7 @@
     <div class="dot-device-selector-mask" data-testId="selector-mask"></div>
 }
 
-<p-overlayPanel
+<p-popover
     (onHide)="onHideDeviceSelector()"
     #deviceSelector
     data-testId="p-overlaypanel-selector"
@@ -13,14 +13,12 @@
                 <h3 class="dot-device-selector__header-title">
                     {{ 'editpage.device.selector.title' | dm }}
                 </h3>
-                @if (isCMSAdmin$ | async) {
+                @if (isCMSAdmin) {
                     <a
                         [routerLink]="linkToAddDevice"
                         [queryParams]="linkToEditDeviceQueryParams"
                         data-testId="dot-device-link-add">
-                        <p-button
-                            icon="pi pi-pencil"
-                            styleClass="p-button-rounded p-button-text"></p-button>
+                        <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" />
                     </a>
                 }
             </div>
@@ -41,7 +39,7 @@
                         </li>
                     }
                 </ul>
-                <p-divider [align]="'center'" layout="vertical"></p-divider>
+                <p-divider [align]="'center'" layout="vertical" />
                 <ul class="device-list">
                     @for (option of options$ | async; track $index) {
                         <li class="device-list-item" data-testId="device-selector-option">
@@ -131,4 +129,4 @@
             </div>
         </div>
     }
-</p-overlayPanel>
+</p-popover>

@@ -1,0 +1,71 @@
+@if (vm$ | async; as vm) {
+    <p-drawer
+        (onHide)="closeSidebar()"
+        [(visible)]="vm.sidebar.isOpen"
+        [blockScroll]="true"
+        [pt]="{ root: { style: { width: '40rem' } } }"
+        [closable]="false"
+        dotSidebar
+        position="right">
+        <ng-template #header>
+            <dot-sidebar-header
+                [actionButtonTpl]="actionHeaderBtnTpl"
+                dotTitle="{{ 'experiments.create.form.sidebar.header' | dm }}" />
+        </ng-template>
+        <div class="py-8">
+            <form
+                [formGroup]="form"
+                class="flex flex-col gap-6"
+                id="new-experiment-form"
+                #myForm="ngForm"
+                data-testId="new-experiment-form"
+                novalidate>
+                <div class="flex flex-col gap-2">
+                    <label dotFieldRequired for="name" class="text-sm font-medium text-gray-900">
+                        {{ 'experiments.create.form.name.label' | dm }}
+                    </label>
+                    <input
+                        [maxlength]="this.maxNameLength + 1"
+                        [tabindex]="1"
+                        id="name"
+                        data-testId="add-experiment-name-input"
+                        dotAutofocus
+                        dotTrimInput
+                        formControlName="name"
+                        name="name"
+                        pInputText
+                        class="w-full"
+                        placeholder="{{ 'experiments.create.form.name.placeholder' | dm }}"
+                        required
+                        type="text" />
+                    <dot-field-validation-message [field]="form.controls.name" />
+                </div>
+                <div class="flex flex-col gap-2">
+                    <label for="description" class="text-sm font-medium text-gray-900">
+                        {{ 'experiments.create.form.description.label' | dm }}
+                    </label>
+                    <textarea
+                        [tabindex]="2"
+                        id="description"
+                        data-testId="add-experiment-description-textarea"
+                        formControlName="description"
+                        name="description"
+                        pInputTextarea
+                        placeholder="{{ 'experiments.create.form.description.placeholder' | dm }}"
+                        class="w-full resize-none"
+                        rows="4"></textarea>
+                    <dot-field-validation-message [field]="form.controls.description" />
+                </div>
+            </form>
+        </div>
+    </p-drawer>
+    <ng-template #actionHeaderBtnTpl>
+        <p-button
+            (click)="handleSubmit(vm.pageId)"
+            [disabled]="!form.valid"
+            [loading]="vm.isSaving"
+            data-testId="add-experiment-button"
+            label="{{ 'experiments.action.add' | dm }}"
+            type="button" />
+    </ng-template>
+}

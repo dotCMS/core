@@ -20,7 +20,7 @@ class AddToBundleServiceMock {
 
 @Component({
     selector: 'dot-test-host-component',
-    template: '<dot-add-to-bundle [assetIdentifier]="addToBundleIdentifier"></dot-add-to-bundle>'
+    template: '<dot-add-to-bundle [assetIdentifier]="addToBundleIdentifier" />'
 })
 class TestHostComponent {
     addToBundleIdentifier: string;

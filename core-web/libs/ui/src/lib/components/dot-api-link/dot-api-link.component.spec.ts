@@ -12,7 +12,7 @@ import { DotLinkComponent } from '../dot-link/dot-link.component';
 @Component({
     standalone: false,
     template: `
-        <dot-api-link [href]="href"></dot-api-link>
+        <dot-api-link [href]="href" />
     `
 })
 class TestHostComponent {
@@ -46,14 +46,14 @@ describe('DotApiLinkComponent', () => {
     });
 
     it('should show label', () => {
-        expect(link.componentInstance.label).toBe('API');
+        expect(link.componentInstance.label()).toBe('API');
     });
 
     it('should has the right href', () => {
-        expect(link.componentInstance.link).toBe('/api/v1/123');
+        expect(link.componentInstance.link()).toBe('/api/v1/123');
     });
 
     it('should has the right icon', () => {
-        expect(link.componentInstance.classNames).toBe('pi pi-link');
+        expect(link.componentInstance.classNames()).toBe('pi pi-link');
     });
 });

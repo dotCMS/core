@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { ControlContainer, ReactiveFormsModule } from '@angular/forms';
 
-import { DropdownModule } from 'primeng/dropdown';
+import { SelectModule } from 'primeng/select';
 
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
@@ -16,7 +16,7 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
 @Component({
     selector: 'dot-edit-content-select-field',
     imports: [
-        DropdownModule,
+        SelectModule,
         ReactiveFormsModule,
         DotCardFieldComponent,
         DotCardFieldContentComponent,

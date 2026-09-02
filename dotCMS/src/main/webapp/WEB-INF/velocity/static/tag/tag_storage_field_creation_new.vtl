@@ -1,0 +1,78 @@
+#set($isCopyingHost = false)
+#set($tagStorageFromURL = "")
+#set($currentUrl = $request.getAttribute("CURRENT_URL"))
+
+#if($currentUrl && $currentUrl.contains("copy_tag_storage"))
+	#set($isCopyingHost = true)
+	#set($tempURL = $currentUrl)
+	#set($beginning = $math.add($tempURL.indexOf("copy_tag_storage"), 19))
+	#set($tagStorageFromURL = $tempURL.substring($beginning,$math.add($beginning, 36)))
+#end
+
+## Safe host list for dropdown (guard against missing $dotcontent in some contexts)
+#if($dotcontent)
+	#set($tagStorageHostList = $dotcontent.pull('+structureName:Host +deleted:false', 0, 'host.hostName asc'))
+#else
+	#set($tagStorageHostList = [])
+#end
+
+<div class="custom-field-wrapper w-full">
+  <select
+    class="select w-full"
+    id="tagStorageSelect"
+    aria-label="Select tag storage host"
+    #if($isCopyingHost && $UtilMethods.isSet($tagStorageFromURL)) disabled #end
+  >
+    #set($hasSelection = $UtilMethods.isSet($tagStorage) || $UtilMethods.isSet($tagStorageFromURL))
+    <option value="" #if(!$hasSelection) selected #end>
+      #if($text && $UtilMethods.isSet($text.get("tag-select-host")))$esc.html($text.get("tag-select-host"))#{else}Select host#end
+    </option>
+    #foreach($c in $tagStorageHostList)
+      #if($c.isSystemHost)
+        #set($optionLabel = "")
+        #if($text)#set($optionLabel = $text.get("tag-system-host"))#end
+        #if(!$UtilMethods.isSet($optionLabel))#set($optionLabel = "System Host")#end
+      #else
+        #set($optionLabel = $c.hostName)
+      #end
+      #set($isSelected = ($UtilMethods.isSet($tagStorage) && $c.identifier.equals($tagStorage)) || ($UtilMethods.isSet($tagStorageFromURL) && $tagStorageFromURL.equals($c.identifier)))
+      <option
+        value="$esc.html($c.identifier)"
+        #if($isSelected) selected #end
+      >$esc.html($optionLabel)</option>
+    #end
+  </select>
+</div>
+
+<script type="application/javascript">
+  (function() {
+    function initTagStorageField() {
+      let field;
+      try {
+        field = DotCustomFieldApi.getField("tagStorage");
+      } catch (e) {
+        return;
+      }
+      const select = document.getElementById("tagStorageSelect");
+      if (!select) return;
+
+      const currentValue = field ? (field.getValue() || "") : "";
+
+      if (currentValue) {
+        select.value = currentValue;
+        if (select.value !== currentValue) {
+          select.value = "";
+          field.setValue("");
+        }
+      } else {
+        select.value = "";
+      }
+
+      select.addEventListener("change", function () {
+        if (field) field.setValue(select.value || "");
+      });
+    }
+
+    DotCustomFieldApi.ready(initTagStorageField);
+  })();
+</script>

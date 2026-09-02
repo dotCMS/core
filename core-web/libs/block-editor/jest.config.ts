@@ -4,15 +4,6 @@ export default {
     preset: '../../jest.preset.js',
     setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     globals: {},
-    coverageReporters: [['lcovonly', { file: 'TEST-block-editor.lcov' }]],
-    reporters: [
-        'default',
-        ['github-actions', { silent: false }],
-        [
-            'jest-junit',
-            { outputDirectory: '../target/core-web-reports', outputName: 'TEST-block-editor.xml' }
-        ]
-    ],
     snapshotSerializers: [
         'jest-preset-angular/build/serializers/no-ng-attributes',
         'jest-preset-angular/build/serializers/ng-snapshot',
@@ -28,5 +19,10 @@ export default {
             }
         ]
     },
-    transformIgnorePatterns: ['node_modules/(?!.*.mjs$)']
+    // These deps ship ESM-only entry points that Jest cannot parse untransformed.
+    // `y-protocols` is reached via @tiptap/extension-drag-handle → extension-collaboration
+    // and made this whole suite fail to run. Mirrors the new-block-editor config.
+    transformIgnorePatterns: [
+        'node_modules/(?!.*\\.mjs$|.*(y-protocols|lib0|y-prosemirror|@tiptap|marked|lowlight|devlop))'
+    ]
 };

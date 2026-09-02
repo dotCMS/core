@@ -12,6 +12,7 @@ import java.util.Map;
 import static com.dotmarketing.business.IdentifierFactory.ASSET_NAME;
 import static com.dotmarketing.business.IdentifierFactory.ASSET_SUBTYPE;
 import static com.dotmarketing.business.IdentifierFactory.ASSET_TYPE;
+import static com.dotmarketing.business.IdentifierFactory.BASE_TYPE;
 import static com.dotmarketing.business.IdentifierFactory.CREATE_DATE;
 import static com.dotmarketing.business.IdentifierFactory.HOST_INODE;
 import static com.dotmarketing.business.IdentifierFactory.ID;
@@ -60,6 +61,10 @@ public class IdentifierTransformer implements DBTransformer<Identifier> {
         identifier.setOwner((String) map.get(OWNER));
         identifier.setCreateDate((Date) map.get(CREATE_DATE));
         identifier.setAssetSubType((String) map.get(ASSET_SUBTYPE));
+        final Object baseTypeObj = map.get(BASE_TYPE);
+        if (baseTypeObj != null) {
+            identifier.setBaseType(((Number) baseTypeObj).intValue());
+        }
         return identifier;
     }
 

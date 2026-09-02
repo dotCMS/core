@@ -1,11 +1,13 @@
+@use "../../../../../../dotcms-scss/shared/colors";
+
 @use "variables" as *;
 
 ::ng-deep {
     del {
-        background-color: $deleted-content-color;
+        background-color: colors.$deleted-content-color;
     }
 
     ins {
-        background-color: $new-content-color;
+        background-color: colors.$new-content-color;
     }
 }

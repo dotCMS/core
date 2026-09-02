@@ -8,7 +8,6 @@ import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
 
 import { DotLicenseService, DotMessageService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
 
 import { DotFormBuilderComponent } from './dot-form-builder.component';
 
@@ -43,13 +42,6 @@ describe('DotFormBuilderComponent', () => {
                     provide: DotMessageService,
                     useValue: {
                         get: () => ''
-                    }
-                },
-                {
-                    provide: CoreWebService,
-                    useValue: {
-                        requestView: () => of({}),
-                        request: () => of({})
                     }
                 }
             ],

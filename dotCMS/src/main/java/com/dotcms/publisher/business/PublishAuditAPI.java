@@ -211,4 +211,31 @@ public abstract class PublishAuditAPI {
 	public abstract List<String> getBundleIdByStatusFilterByOwner(final List<Status> statusList, final int limit, final int offset, final String userId)
 			throws DotDataException;
 
+	/**
+	 * Get {@link PublishAuditStatus} paginated with combined text and status filtering.
+	 * The text filter searches both bundle_id and bundle name (via JOIN with publishing_bundle table).
+	 *
+	 * @param limit       limit of rows for retrieved page
+	 * @param offset      offset of rows for retrieved page
+	 * @param limitAssets max limit of assets to retrieve for each {@link PublishAuditStatus}
+	 * @param filter      case-insensitive partial match filter on bundle_id and bundle name, or null for no text filter
+	 * @param statusList  list of statuses to filter by, or empty/null for all statuses
+	 * @return List of {@link PublishAuditStatus}
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract List<PublishAuditStatus> getPublishAuditStatus(
+			int limit, int offset, int limitAssets, String filter, List<Status> statusList) throws DotPublisherException;
+
+	/**
+	 * Count {@link PublishAuditStatus} matching combined text and status filters.
+	 * The text filter searches both bundle_id and bundle name (via JOIN with publishing_bundle table).
+	 *
+	 * @param filter     case-insensitive partial match filter on bundle_id and bundle name, or null for no text filter
+	 * @param statusList list of statuses to filter by, or empty/null for all statuses
+	 * @return number of rows that match the filters
+	 * @throws DotPublisherException if any error occurs
+	 */
+	public abstract Integer countPublishAuditStatus(
+			String filter, List<Status> statusList) throws DotPublisherException;
+
 }

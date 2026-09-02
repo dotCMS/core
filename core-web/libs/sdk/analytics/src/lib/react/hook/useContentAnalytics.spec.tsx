@@ -22,6 +22,7 @@ const mockGetUVEState = jest.mocked(getUVEState);
 const mockInitializeAnalytics = jest.mocked(initializeAnalytics);
 const mockTrack = jest.fn();
 const mockPageView = jest.fn();
+const mockConversion = jest.fn();
 
 const mockConfig = {
     server: 'https://example.com',
@@ -34,7 +35,8 @@ describe('useContentAnalytics', () => {
         jest.clearAllMocks();
         mockInitializeAnalytics.mockReturnValue({
             track: mockTrack,
-            pageView: mockPageView
+            pageView: mockPageView,
+            conversion: mockConversion
         });
         mockGetUVEState.mockReturnValue(undefined);
     });
@@ -55,7 +57,9 @@ describe('useContentAnalytics', () => {
         expect(mockTrack).toHaveBeenCalledWith('test-event', {});
     });
 
-    it('does not track when inside editor', () => {
+    it('returns no-op functions and warns when inside UVE editor', () => {
+        const consoleSpy = jest.spyOn(console, 'warn').mockImplementation();
+        mockInitializeAnalytics.mockReturnValue(null);
         mockGetUVEState.mockReturnValue({
             mode: UVE_MODE.EDIT,
             persona: null,
@@ -67,22 +71,37 @@ describe('useContentAnalytics', () => {
         });
 
         const { result } = renderHook(() => useContentAnalytics(mockConfig));
-        result.current.track('test-event', { data: 'test' });
 
+        // Should not throw, returns no-op functions
+        expect(() => result.current.track('test-event', { data: 'test' })).not.toThrow();
+        expect(() => result.current.pageView()).not.toThrow();
+        expect(() => result.current.conversion('purchase')).not.toThrow();
+
+        // Should warn about UVE
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('inside the UVE editor'));
+
+        // No tracking calls should be made
         expect(mockTrack).not.toHaveBeenCalled();
+        expect(mockPageView).not.toHaveBeenCalled();
+        expect(mockConversion).not.toHaveBeenCalled();
+
+        consoleSpy.mockRestore();
     });
 
-    it('throws error when analytics fails to initialize', () => {
-        const originalError = console.error;
-        console.error = jest.fn();
-
+    it('logs error when analytics fails to initialize outside UVE', () => {
+        const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
         mockInitializeAnalytics.mockReturnValue(null);
+        mockGetUVEState.mockReturnValue(undefined);
 
-        expect(() => {
-            renderHook(() => useContentAnalytics(mockConfig));
-        }).toThrow('DotCMS Analytics: Failed to initialize');
+        const { result } = renderHook(() => useContentAnalytics(mockConfig));
 
-        console.error = originalError;
+        // Should not throw, returns no-op functions
+        expect(() => result.current.track('test-event')).not.toThrow();
+
+        // Should log config error
+        expect(consoleSpy).toHaveBeenCalledWith(expect.stringContaining('Failed to initialize'));
+
+        consoleSpy.mockRestore();
     });
 
     it('memoizes instance when config does not change', () => {
@@ -130,5 +149,24 @@ describe('useContentAnalytics', () => {
         // Change debug (should not trigger re-initialization in useMemo)
         rerender({ ...mockConfig, debug: true });
         expect(mockInitializeAnalytics).toHaveBeenCalledTimes(1);
+    });
+
+    describe('conversion', () => {
+        it('tracks conversion with options when outside editor', () => {
+            const { result } = renderHook(() => useContentAnalytics(mockConfig));
+            result.current.conversion('purchase', { productId: '123', price: 99.99 });
+
+            expect(mockConversion).toHaveBeenCalledWith('purchase', {
+                productId: '123',
+                price: 99.99
+            });
+        });
+
+        it('tracks conversion without options when outside editor', () => {
+            const { result } = renderHook(() => useContentAnalytics(mockConfig));
+            result.current.conversion('signup');
+
+            expect(mockConversion).toHaveBeenCalledWith('signup', {});
+        });
     });
 });

@@ -2,17 +2,17 @@
 
 import { AnalyticsInstance } from 'analytics';
 
-import { dotAnalyticsImpressionPlugin } from './dot-analytics.impression.plugin';
-
-import { IMPRESSION_EVENT_TYPE } from '../../shared/constants';
 import {
     DotCMSImpressionTracker,
     ImpressionSubscription
-} from '../../shared/dot-content-analytics.impression-tracker';
+} from './dot-analytics.impression-tracker';
+import { dotAnalyticsImpressionPlugin } from './dot-analytics.impression.plugin';
+
+import { IMPRESSION_EVENT_TYPE } from '../../shared/constants/dot-analytics.constants';
 import { DotCMSAnalyticsConfig } from '../../shared/models';
 
 // Mock the tracker
-jest.mock('../../shared/dot-content-analytics.impression-tracker');
+jest.mock('./dot-analytics.impression-tracker');
 
 describe('dotAnalyticsImpressionPlugin', () => {
     let mockConfig: DotCMSAnalyticsConfig;
@@ -156,22 +156,23 @@ describe('dotAnalyticsImpressionPlugin', () => {
         });
 
         it('should log debug message when impressions enabled in debug mode', async () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
 
             await plugin.initialize({ instance: mockAnalyticsInstance });
 
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Impression tracking plugin initialized'
+            expect(consoleInfoSpy).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Impression] [INFO]',
+                'Impression tracking plugin initialized'
             );
 
-            consoleWarnSpy.mockRestore();
+            consoleInfoSpy.mockRestore();
         });
 
         it('should log debug message when impressions disabled in debug mode', async () => {
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
             mockConfig.impressions = false;
 
@@ -179,11 +180,12 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
             await plugin.initialize({ instance: mockAnalyticsInstance });
 
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Impression tracking disabled (config.impressions not set)'
+            expect(consoleInfoSpy).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Impression] [INFO]',
+                'Impression tracking disabled (config.impressions not set)'
             );
 
-            consoleWarnSpy.mockRestore();
+            consoleInfoSpy.mockRestore();
         });
 
         it('should return resolved promise', async () => {
@@ -263,7 +265,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
 
             // Simulate page unload
             expect(unloadCallback).toBeDefined();
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
 
             // Verify cleanup
@@ -309,7 +311,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
                     }
                 });
 
-            const consoleWarnSpy = jest.spyOn(console, 'warn').mockImplementation();
+            const consoleInfoSpy = jest.spyOn(console, 'info').mockImplementation();
             mockConfig.debug = true;
 
             const plugin = dotAnalyticsImpressionPlugin(mockConfig);
@@ -318,15 +320,16 @@ describe('dotAnalyticsImpressionPlugin', () => {
             plugin.loaded();
 
             // Simulate page unload
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
 
-            expect(consoleWarnSpy).toHaveBeenCalledWith(
-                'DotCMS Analytics: Impression tracking cleaned up on page unload'
+            expect(consoleInfoSpy).toHaveBeenCalledWith(
+                '[DotCMS Analytics | Impression] [INFO]',
+                'Impression tracking cleaned up on page unload'
             );
 
             addEventListenerSpy.mockRestore();
-            consoleWarnSpy.mockRestore();
+            consoleInfoSpy.mockRestore();
         });
 
         it('should register cleanup handlers for both beforeunload and pagehide events', async () => {
@@ -404,7 +407,7 @@ describe('dotAnalyticsImpressionPlugin', () => {
             expect(mockAnalyticsInstance.track).toHaveBeenCalled();
 
             // Step 4: Cleanup
-            // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+
             unloadCallback!();
             expect(mockSubscription.unsubscribe).toHaveBeenCalled();
             expect(mockTracker.cleanup).toHaveBeenCalled();

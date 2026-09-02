@@ -898,4 +898,104 @@ public class IdentifierFactoryTest {
         db.loadResult();
     }
 
+    /**
+     * Method to test: {@link IdentifierFactoryImpl#saveIdentifier(com.dotmarketing.beans.Identifier)}
+     * When: A new contentlet identifier is saved via createNewIdentifier
+     * Should: Persist base_type and read it back correctly via loadFromDb
+     */
+    @Test
+    public void test_saveIdentifier_persistsBaseType() throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), defaultHost);
+
+        final String identifierId = contentlet.getIdentifier();
+        final com.dotmarketing.beans.Identifier identifier = factory.find(identifierId);
+
+        assertNotNull("Identifier should not be null", identifier);
+        assertNotNull("base_type should be set when creating a contentlet identifier",
+                identifier.getBaseType());
+        assertEquals("base_type should match CONTENT base type",
+                com.dotcms.contenttype.model.type.BaseContentType.CONTENT.getType(),
+                (int) identifier.getBaseType());
+    }
+
+    /**
+     * Method to test: {@link IdentifierFactoryImpl#saveIdentifier(com.dotmarketing.beans.Identifier)}
+     * When: A file asset contentlet identifier is created
+     * Should: Persist the FILEASSET base_type value
+     */
+    @Test
+    public void test_saveIdentifier_persistsFileAssetBaseType() throws DotDataException, DotSecurityException {
+        final Contentlet fileAsset = TestDataUtils.getFileAssetContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId());
+
+        final com.dotmarketing.beans.Identifier identifier = factory.find(fileAsset.getIdentifier());
+
+        assertNotNull("Identifier should not be null", identifier);
+        assertNotNull("base_type should be set for file asset identifiers", identifier.getBaseType());
+        assertEquals("base_type should match FILEASSET base type",
+                com.dotcms.contenttype.model.type.BaseContentType.FILEASSET.getType(),
+                (int) identifier.getBaseType());
+    }
+
+    /**
+     * Method to test: {@link IdentifierFactoryImpl#saveIdentifier(com.dotmarketing.beans.Identifier)}
+     * When: An identifier is updated (round-trip)
+     * Should: Preserve base_type through update
+     */
+    @Test
+    public void test_saveIdentifier_preservesBaseTypeOnUpdate() throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), defaultHost);
+
+        final com.dotmarketing.beans.Identifier identifier = factory.find(contentlet.getIdentifier());
+        assertNotNull(identifier.getBaseType());
+
+        // Mutate a non-base_type field and re-save
+        identifier.setOwner("test-owner-update");
+        factory.saveIdentifier(identifier);
+
+        ic.removeFromCacheByIdentifier(identifier.getId());
+        final com.dotmarketing.beans.Identifier reloaded = factory.loadFromDb(identifier.getId());
+
+        assertNotNull("base_type should survive a re-save", reloaded.getBaseType());
+        assertEquals("base_type should be unchanged after re-save",
+                identifier.getBaseType(), reloaded.getBaseType());
+    }
+
+    /**
+     * Method to test: {@link com.dotmarketing.beans.transform.IdentifierTransformer}
+     * When: An identifier row with base_type is loaded from the DB
+     * Should: Map base_type correctly into the Identifier bean
+     */
+    @Test
+    public void test_identifierTransformer_mapsBaseType() throws DotDataException, DotSecurityException {
+        final Contentlet contentlet = TestDataUtils.getGenericContentContent(true,
+                APILocator.getLanguageAPI().getDefaultLanguage().getId(), defaultHost);
+
+        // Force a direct DB read (bypass cache) to exercise the transformer
+        final com.dotmarketing.beans.Identifier identifier = factory.loadFromDb(contentlet.getIdentifier());
+
+        assertNotNull("Transformer should map base_type from DB row", identifier.getBaseType());
+        assertEquals("Transformer should map CONTENT base type correctly",
+                com.dotcms.contenttype.model.type.BaseContentType.CONTENT.getType(),
+                (int) identifier.getBaseType());
+    }
+
+    /**
+     * Method to test: folder identifier via {@link IdentifierFactoryImpl#createNewIdentifier}
+     * When: A folder identifier is created
+     * Should: Have a null base_type (folders have no structure mapping)
+     */
+    @Test
+    public void test_folderIdentifier_hasNullBaseType() throws DotDataException, DotSecurityException {
+        final com.dotmarketing.portlets.folders.model.Folder folder =
+                new com.dotcms.datagen.FolderDataGen().site(defaultHost).nextPersisted();
+
+        final com.dotmarketing.beans.Identifier identifier = factory.loadFromDb(folder.getIdentifier());
+
+        assertNotNull("Folder identifier should exist", identifier);
+        assertNull("Folder identifier should have null base_type", identifier.getBaseType());
+    }
+
 }

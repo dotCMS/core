@@ -2,12 +2,15 @@ import '@testing-library/jest-dom';
 
 import { render, screen } from '@testing-library/react';
 
-import { getDotAnalyticsAttributes, getDotContentletAttributes } from '@dotcms/uve/internal';
+import {
+    getAnalyticsContentletAttributes,
+    getDotContentletAttributes,
+    isDotAnalyticsActive
+} from '@dotcms/uve/internal';
 
-import { Contentlet } from '../../components/Contentlet/Contentlet';
+import { Contentlet, CONTENTLET_CLASS } from '../../components/Contentlet/Contentlet';
 import { DotCMSPageContext } from '../../contexts/DotCMSPageContext';
 import { useCheckVisibleContent } from '../../hooks/useCheckVisibleContent';
-import { useIsAnalyticsActive } from '../../hooks/useIsAnalyticsActive';
 
 jest.mock('../../components/FallbackComponent/FallbackComponent', () => ({
     FallbackComponent: ({ contentlet }: any) => (
@@ -20,13 +23,12 @@ jest.mock('../../hooks/useCheckVisibleContent', () => ({
     useCheckVisibleContent: jest.fn(() => false)
 }));
 
-jest.mock('../../hooks/useIsAnalyticsActive', () => ({
-    useIsAnalyticsActive: jest.fn(() => false)
-}));
-
 jest.mock('@dotcms/uve/internal', () => ({
-    getDotContentletAttributes: jest.fn(() => ({ 'data-custom': 'true' })),
-    getDotAnalyticsAttributes: jest.fn(() => ({ 'data-analytics-custom': 'true' })),
+    getDotContentletAttributes: jest.fn(() => ({ 'data-dot-identifier': 'editor-id' })),
+    getAnalyticsContentletAttributes: jest.fn(() => ({ 'data-dot-identifier': 'analytics-id' })),
+    isDotAnalyticsActive: jest.fn(() => false),
+    ANALYTICS_READY_EVENT: 'dotcms:analytics:ready',
+    CUSTOM_NO_COMPONENT: 'CustomNoComponent',
     DEVELOPMENT_MODE: 'development',
     PRODUCTION_MODE: 'production'
 }));
@@ -42,15 +44,15 @@ describe('Contentlet', () => {
     };
 
     const useCheckVisibleContentMock = useCheckVisibleContent as jest.Mock;
-    const useIsAnalyticsActiveMock = useIsAnalyticsActive as jest.Mock;
     const getDotContentletAttributesMock = getDotContentletAttributes as jest.Mock;
-    const getDotAnalyticsAttributesMock = getDotAnalyticsAttributes as jest.Mock;
+    const getAnalyticsContentletAttributesMock = getAnalyticsContentletAttributes as jest.Mock;
+    const isDotAnalyticsActiveMock = isDotAnalyticsActive as jest.Mock;
 
     beforeEach(() => {
         useCheckVisibleContentMock.mockReturnValue(false);
-        useIsAnalyticsActiveMock.mockReturnValue(false);
+        isDotAnalyticsActiveMock.mockReturnValue(false);
         getDotContentletAttributesMock.mockClear();
-        getDotAnalyticsAttributesMock.mockClear();
+        getAnalyticsContentletAttributesMock.mockClear();
     });
 
     test('should render fallback component when no custom component exists', () => {
@@ -64,6 +66,7 @@ describe('Contentlet', () => {
 
         const containerDiv = screen.getByTestId('fallback').parentElement;
         expect(containerDiv).toHaveAttribute('data-dot-object', 'contentlet');
+        expect(containerDiv).toHaveClass(CONTENTLET_CLASS);
 
         expect(containerDiv).toHaveStyle('min-height: 4rem');
         expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
@@ -87,25 +90,6 @@ describe('Contentlet', () => {
         );
     });
 
-    test('should apply empty style when isDevMode is false', () => {
-        const contextValue = {
-            mode: 'production',
-            userComponents: {}
-        };
-
-        const { container } = renderContentlet(contextValue, {
-            contentlet: dummyContentlet,
-            container: 'container-1'
-        });
-
-        expect(getDotContentletAttributes).not.toHaveBeenCalled();
-
-        const containerDiv = container.querySelector(
-            '[data-dot-object="contentlet"]'
-        ) as HTMLElement;
-        expect(containerDiv.className).toBe('');
-    });
-
     test('should not apply minHeight style if useCheckVisibleContent returns true', () => {
         useCheckVisibleContentMock.mockReturnValue(true);
 
@@ -116,53 +100,120 @@ describe('Contentlet', () => {
 
         renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
 
-        const containerDiv = document.querySelector('div[data-dot-object="contentlet"]');
+        const containerDiv = document.querySelector(`.${CONTENTLET_CLASS}`);
         expect(containerDiv).not.toHaveStyle('min-height: 4rem');
     });
 
-    test('should add analytics attributes when isAnalyticsActive is true in production', () => {
-        useIsAnalyticsActiveMock.mockReturnValue(true);
+    describe('edit mode (UVE)', () => {
+        const contextValue = { mode: 'development', userComponents: {} };
 
+        test('should emit the full editor attribute set and data-dot-object', () => {
+            const { container } = renderContentlet(contextValue, {
+                contentlet: dummyContentlet,
+                container: 'container-1'
+            });
+
+            const el = container.querySelector(`.${CONTENTLET_CLASS}`) as HTMLElement;
+
+            expect(getDotContentletAttributesMock).toHaveBeenCalledWith(
+                dummyContentlet,
+                'container-1'
+            );
+            expect(getAnalyticsContentletAttributesMock).not.toHaveBeenCalled();
+            expect(el).toHaveAttribute('data-dot-object', 'contentlet');
+            expect(el).toHaveAttribute('data-dot-identifier', 'editor-id');
+        });
+    });
+
+    describe('live mode without analytics', () => {
+        const contextValue = { mode: 'production', userComponents: {} };
+
+        test('should not emit any data-dot-* attributes but keep the class', () => {
+            const { container } = renderContentlet(contextValue, {
+                contentlet: dummyContentlet,
+                container: 'container-1'
+            });
+
+            const el = container.querySelector(`.${CONTENTLET_CLASS}`) as HTMLElement;
+
+            expect(el).toBeInTheDocument();
+            expect(el).toHaveClass(CONTENTLET_CLASS);
+            expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
+            expect(getAnalyticsContentletAttributesMock).not.toHaveBeenCalled();
+
+            const dotAttrs = el.getAttributeNames().filter((name) => name.startsWith('data-dot'));
+            expect(dotAttrs).toEqual([]);
+        });
+    });
+
+    describe('live mode with analytics active', () => {
+        const contextValue = { mode: 'production', userComponents: {} };
+
+        beforeEach(() => {
+            isDotAnalyticsActiveMock.mockReturnValue(true);
+        });
+
+        test('should emit only the minimal analytics attributes, not the editor set', () => {
+            const { container } = renderContentlet(contextValue, {
+                contentlet: dummyContentlet,
+                container: 'container-1'
+            });
+
+            const el = container.querySelector(`.${CONTENTLET_CLASS}`) as HTMLElement;
+
+            expect(getAnalyticsContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet);
+            expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
+            expect(el).toHaveAttribute('data-dot-identifier', 'analytics-id');
+            expect(el).not.toHaveAttribute('data-dot-object');
+        });
+    });
+
+    test('should render slot node when present for contentlet identifier', () => {
+        const slotNode = <div data-testid="slot-node">Server rendered slot</div>;
+        const contextValue = {
+            mode: 'production',
+            userComponents: {},
+            slots: { 'slot-id': slotNode }
+        };
+
+        renderContentlet(contextValue, {
+            contentlet: { ...dummyContentlet, identifier: 'slot-id' },
+            container: 'container-1'
+        });
+
+        expect(screen.getByTestId('slot-node')).toBeInTheDocument();
+        expect(screen.getByTestId('slot-node')).toHaveTextContent('Server rendered slot');
+    });
+
+    test('should fall back to userComponents when no slot exists for identifier', () => {
+        const CustomComponentMock = () => <div data-testid="custom">Custom</div>;
+        const contextValue = {
+            mode: 'production',
+            userComponents: { 'test-type': CustomComponentMock },
+            slots: { 'other-id': <div>Other slot</div> }
+        };
+
+        renderContentlet(contextValue, {
+            contentlet: { ...dummyContentlet, identifier: 'no-slot-id' },
+            container: 'container-1'
+        });
+
+        expect(screen.getByTestId('custom')).toBeInTheDocument();
+    });
+
+    test('should not crash when slots is omitted from context', () => {
         const contextValue = {
             mode: 'production',
             userComponents: {}
         };
 
-        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
+        expect(() =>
+            renderContentlet(contextValue, {
+                contentlet: { ...dummyContentlet, identifier: 'some-id' },
+                container: 'container-1'
+            })
+        ).not.toThrow();
 
-        // UVE attributes should NOT be called in production
-        expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
-        // Analytics attributes SHOULD be called when analytics is active
-        expect(getDotAnalyticsAttributesMock).toHaveBeenCalledWith(dummyContentlet);
-    });
-
-    test('should not add any data attributes when both isDevMode and isAnalyticsActive are false', () => {
-        useIsAnalyticsActiveMock.mockReturnValue(false);
-
-        const contextValue = {
-            mode: 'production',
-            userComponents: {}
-        };
-
-        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
-
-        expect(getDotContentletAttributesMock).not.toHaveBeenCalled();
-        expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
-    });
-
-    test('should NOT add analytics attributes when in development mode (UVE)', () => {
-        useIsAnalyticsActiveMock.mockReturnValue(true);
-
-        const contextValue = {
-            mode: 'development',
-            userComponents: {}
-        };
-
-        renderContentlet(contextValue, { contentlet: dummyContentlet, container: 'container-1' });
-
-        // UVE attributes should be called in development
-        expect(getDotContentletAttributesMock).toHaveBeenCalledWith(dummyContentlet, 'container-1');
-        // Analytics attributes should NOT be called in development mode (even if analytics is active)
-        expect(getDotAnalyticsAttributesMock).not.toHaveBeenCalled();
+        expect(screen.getByTestId('fallback')).toBeInTheDocument();
     });
 });

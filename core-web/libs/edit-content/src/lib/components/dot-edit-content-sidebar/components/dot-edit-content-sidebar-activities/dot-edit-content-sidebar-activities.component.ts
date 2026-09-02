@@ -8,16 +8,16 @@ import {
     input,
     output,
     viewChildren,
-    ChangeDetectorRef,
     signal
 } from '@angular/core';
 import { FormBuilder, FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
+import { CardModule } from 'primeng/card';
 import { DataViewModule } from 'primeng/dataview';
-import { InputTextareaModule } from 'primeng/inputtextarea';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TextareaModule } from 'primeng/textarea';
 
 import { ComponentStatus } from '@dotcms/dotcms-models';
 import {
@@ -42,8 +42,9 @@ const COMMENT_MAX_LENGTH = 500;
         ReactiveFormsModule,
         AvatarModule,
         ButtonModule,
+        CardModule,
         DataViewModule,
-        InputTextareaModule,
+        TextareaModule,
         DotMessagePipe,
         SkeletonModule,
         DotGravatarDirective,
@@ -53,6 +54,9 @@ const COMMENT_MAX_LENGTH = 500;
     ],
     templateUrl: './dot-edit-content-sidebar-activities.component.html',
     styleUrls: ['./dot-edit-content-sidebar-activities.component.scss'],
+    host: {
+        class: 'flex flex-col h-full relative'
+    },
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotEditContentSidebarActivitiesComponent {
@@ -102,19 +106,50 @@ export class DotEditContentSidebarActivitiesComponent {
     $status = input<ComponentStatus>(ComponentStatus.LOADING, { alias: 'status' });
 
     /**
-     * View children for the activity items
+     * Whether the activities tab is currently the active/visible tab.
+     * Needed to trigger the scroll-to-bottom effect when the user switches
+     * into this tab after activities were already rendered (otherwise the
+     * panel is display:none when `viewChildren` first emits and
+     * `scrollIntoView` is a no-op).
      */
-    activityItems = viewChildren<ElementRef>('activityItem');
+    $isActive = input<boolean>(false, { alias: 'isActive' });
 
     /**
-     * Effect to scroll to bottom when activities change
+     * View children for the activity items. We read `ElementRef` explicitly so
+     * that switching the underlying element to a PrimeNG component (e.g.
+     * `<p-card>`) still gives us a DOM element to scroll to.
      */
+    activityItems = viewChildren('activityItem', { read: ElementRef });
+
+    /**
+     * Effect to scroll to the last activity when the list changes or when the
+     * activities tab becomes the active one. Reacting to `$isActive` is needed
+     * because the effect first fires while the tab panel is still hidden
+     * (display:none) and any scroll on a 0-height element is a no-op.
+     */
+    // eslint-disable-next-line no-unused-private-class-members -- effect() runs for its side effects; the field only holds the EffectRef
     #scrollEffect = effect(() => {
         const items = this.activityItems();
-        if (items.length > 0) {
-            const lastItem = items[items.length - 1];
-            lastItem.nativeElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        const isActive = this.$isActive();
+
+        if (items.length === 0 || !isActive) {
+            return;
         }
+
+        const lastItem = items[items.length - 1].nativeElement;
+        // Defer one animation frame so PrimeNG can apply the tabpanel
+        // visibility change (display:none -> block) and the scroll container
+        // has its real dimensions before we scroll.
+        requestAnimationFrame(() => {
+            const scrollContainer = lastItem.closest('.overflow-y-auto') as HTMLElement | null;
+            if (scrollContainer) {
+                // Direct assignment is synchronous and cannot be interrupted by
+                // subsequent re-renders, unlike scrollIntoView({ behavior: 'smooth' }).
+                scrollContainer.scrollTop = scrollContainer.scrollHeight;
+            } else {
+                lastItem.scrollIntoView({ block: 'end' });
+            }
+        });
     });
 
     /**
@@ -155,8 +190,6 @@ export class DotEditContentSidebarActivitiesComponent {
     readonly commentLength = signal(0);
     readonly isAtMaxLength = signal(false);
 
-    #cdRef = inject(ChangeDetectorRef);
-
     constructor() {
         // Listen to comment control changes to update the character counter
         this.commentControl.valueChanges.subscribe((value: string) => {
@@ -193,9 +226,13 @@ export class DotEditContentSidebarActivitiesComponent {
 
         // Check for empty comment and mark as touched to trigger validation
         if (!comment) {
-            this.commentControl.setErrors({ required: true });
+            // Mark dirty/touched BEFORE setErrors: dot-field-validation-message
+            // recomputes its visibility synchronously off the setErrors()
+            // statusChanges emission, so dirty/touched must already be true by
+            // then or its `dirty` check fails and the message never renders.
             this.commentControl.markAsDirty();
             this.commentControl.markAsTouched();
+            this.commentControl.setErrors({ required: true });
 
             return;
         }
@@ -220,4 +257,23 @@ export class DotEditContentSidebarActivitiesComponent {
     protected get commentControl(): FormControl<string> {
         return this.form.get('comment') as FormControl<string>;
     }
+
+    /**
+     * DataView passthrough (pt) configuration for PrimeNG v21 styling.
+     */
+    readonly dataViewPt = {
+        root: { class: 'bg-transparent border-none' },
+        content: { class: 'p-0 border-none flex flex-col gap-4 bg-transparent' },
+        emptyMessage: { class: 'bg-transparent p-0' }
+    };
+
+    /**
+     * Avatar passthrough (pt) configuration for PrimeNG v21 styling.
+     */
+    readonly avatarPt = {
+        root: {
+            class: 'w-[21px] h-[21px] text-xs leading-[21px] flex items-center justify-center'
+        },
+        text: { class: 'text-xs leading-none' }
+    };
 }

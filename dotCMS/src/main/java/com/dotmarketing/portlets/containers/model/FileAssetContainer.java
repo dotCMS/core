@@ -172,9 +172,12 @@ public class FileAssetContainer extends Container {
         return host;
     }
 
+    @Override
     public String getHostId() {
         return host.getIdentifier();
     }
+
+    @Override
     public String getHostName() {
         return host.getHostname();
     }

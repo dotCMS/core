@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from 'next/navigation';
 
 import { useRouterTracker } from './useRouterTracker';
 
-import { DotCMSAnalytics } from '../../core/shared/dot-content-analytics.model';
+import { DotCMSAnalytics } from '../../core/shared/models';
 
 // Mock Next.js hooks
 jest.mock('next/navigation', () => ({
@@ -75,5 +75,41 @@ describe('useRouterTracker', () => {
         // Simulate path change after unmount
         mockUsePathname.mockReturnValue('/new-path');
         expect(mockAnalytics.pageView).toHaveBeenCalledTimes(1);
+    });
+
+    it('should not track when enabled is false, even after a route change', () => {
+        const { rerender } = renderHook(() => useRouterTracker(mockAnalytics, false, false));
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+
+        // Simulate path change
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+    });
+
+    it('should track on render and unique route changes when enabled is explicitly true', () => {
+        const { rerender } = renderHook(() => useRouterTracker(mockAnalytics, false, true));
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(1);
+
+        // Unique route change
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(2);
+
+        // Same route, no additional pageView
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+        expect(mockAnalytics.pageView).toHaveBeenCalledTimes(2);
+    });
+
+    it('should not crash and not track when enabled is false and analytics is null', () => {
+        const { rerender } = renderHook(() => useRouterTracker(null, false, false));
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
+
+        mockUsePathname.mockReturnValue('/new-path');
+        rerender();
+
+        expect(mockAnalytics.pageView).not.toHaveBeenCalled();
     });
 });

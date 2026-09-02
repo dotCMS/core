@@ -1,0 +1,58 @@
+import { KeyValuePipe, NgTemplateOutlet } from '@angular/common';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    ContentChild,
+    input,
+    TemplateRef
+} from '@angular/core';
+
+import { SkeletonModule } from 'primeng/skeleton';
+
+import {
+    ComponentStatus,
+    DotExperimentVariantDetail,
+    ReachPageGoalCondition,
+    UrlParameterGoalCondition
+} from '@dotcms/dotcms-models';
+import { DotMessagePipe, DotStringTemplateOutletDirective } from '@dotcms/ui';
+
+/**
+ *
+ * Component to display a table with a title and a list of data with its headers
+ * using the index of the object as headers.
+ * Can send the `headers` and `rows` as templates with content projection to
+ * replace the defaults templates.
+ *
+ * @export
+ * @class DotExperimentsDetailsTableComponent
+ */
+@Component({
+    selector: 'dot-experiments-details-table',
+    imports: [
+        NgTemplateOutlet,
+        KeyValuePipe,
+        SkeletonModule,
+        DotStringTemplateOutletDirective,
+        DotMessagePipe
+    ],
+    templateUrl: './dot-experiments-details-table.component.html',
+    changeDetection: ChangeDetectionStrategy.OnPush
+})
+export class DotExperimentsDetailsTableComponent {
+    $title = input<string | TemplateRef<unknown>>('', { alias: 'title' });
+
+    //** List of data to display, without templates, use the index of the objet as a header */
+    $data = input.required<
+        DotExperimentVariantDetail[] | Array<UrlParameterGoalCondition | ReachPageGoalCondition>
+    >({ alias: 'data' });
+
+    $isLoading = input(false, { alias: 'isLoading' });
+    $isEmpty = input(false, { alias: 'isEmpty' });
+
+    //** Template to display the headers */
+    @ContentChild('headers', { static: true }) headers!: TemplateRef<unknown>;
+    //** Template to display the rows */
+    @ContentChild('rows', { static: true }) rows!: TemplateRef<unknown>;
+    protected readonly states = ComponentStatus;
+}

@@ -1,58 +1,48 @@
 @let showSidebar = $store.isSidebarOpen();
 
-<div class="flex flex-column h-full">
+<div class="flex h-full min-w-0 flex-col overflow-auto">
     <div
-        class="dot-edit-content-actions flex align-items-center w-full"
-        data-testId="edit-content-actions"
-        [class.dot-edit-content-actions--sidebar-open]="showSidebar">
-        <!-- Left group for lock controls -->
+        class="flex min-h-[52px] w-full items-center border-b border-surface-200 px-8"
+        data-testId="edit-content-actions">
+        <div class="ml-auto flex items-center gap-4">
+            <span class="text-sm text-gray-500" data-testId="comparing-label">
+                {{ 'edit.content.sidebar.history.comparing' | dm }}
+                {{ $store.compareContentlet()?.modDate | dotRelativeDate }}
+            </span>
 
-        <!-- Right group for all other actions -->
-        <div class="dot-edit-content-actions__right flex align-items-center">
-            <button
-                pButton
-                (click)="$store.restoreCurrentHistoricalVersion()"
-                data-testId="restore-historical-version-button">
-                {{ 'edit.content.sidebar.history.restore' | dm }}
-            </button>
-
-            <!-- Sidebar toggle always visible -->
+            <!-- Sidebar toggle -->
             <div
-                class="dot-edit-content-actions__sidebar-toggle flex align-items-center"
-                data-testId="sidebar-toggle"
-                [class.dot-edit-content-actions__sidebar-toggle--hidden]="showSidebar">
-                <button
-                    class="dot-edit-content-actions__sidebar-btn p-button p-button-sm p-button-text p-button-rounded p-button-icon-only"
+                class="-mr-4 flex min-h-[52px] shrink-0 items-center justify-center"
+                data-testId="sidebar-toggle">
+                <p-button
+                    [rounded]="true"
+                    [text]="true"
                     (click)="$store.toggleSidebar()"
+                    size="small"
                     data-testId="sidebar-toggle-button">
-                    <svg
-                        width="20"
-                        height="20"
-                        viewBox="0 0 20 20"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg">
-                        <rect
-                            x="2.70588"
-                            y="3.17659"
-                            width="14.5882"
-                            height="13.6471"
-                            rx="1.17647"
-                            stroke="#426BF0"
-                            stroke-width="1.41176" />
-                        <line
-                            x1="12.3528"
-                            y1="16.1223"
-                            x2="12.3528"
-                            y2="3.87797"
-                            stroke="#426BF0"
-                            stroke-width="1.88235" />
-                    </svg>
-                </button>
+                    <img
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_open.svg"
+                        [alt]="'edit.content.sidebar.close' | dm"
+                        [class.hidden]="!showSidebar"
+                        class="-scale-x-100"
+                        draggable="false"
+                        data-testId="sidebar-open-icon" />
+                    <img
+                        src="/dotAdmin/assets/edit-uve-toolbar/left_panel_close.svg"
+                        [alt]="'edit.content.sidebar.open' | dm"
+                        [class.hidden]="showSidebar"
+                        class="-scale-x-100"
+                        draggable="false"
+                        data-testId="sidebar-close-icon" />
+                </p-button>
             </div>
         </div>
     </div>
 
-    <div class="flex-1 h-full overflow-y-auto p-4">
-        <dot-content-compare [showActions]="false" [data]="$store.compareData()" />
+    <div class="h-full flex-1 overflow-y-auto p-6">
+        <dot-content-compare
+            [showActions]="false"
+            [reverseColumns]="true"
+            [data]="$store.compareData()" />
     </div>
 </div>

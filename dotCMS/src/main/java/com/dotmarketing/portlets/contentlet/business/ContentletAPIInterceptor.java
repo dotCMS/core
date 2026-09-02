@@ -1,6 +1,9 @@
 package com.dotmarketing.portlets.contentlet.business;
 
 import com.dotcms.business.CloseDBIfOpened;
+import com.dotcms.content.index.IndexContentletScroll;
+import com.dotcms.content.index.domain.ContentSearchResponse;
+import com.dotcms.content.index.domain.ContentSearchResults;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
@@ -61,6 +64,8 @@ import java.util.Set;
  * @since 1.6.5c
  *
  */
+// ES-DECOMMISSION: Exposes org.elasticsearch.action.search.SearchResponse, ESSearchResults, and SearchCriteria.
+// Remove esSearch, esSearchRaw — migrate to ContentSearchResults<T>.
 public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 
 	private List<ContentletAPIPreHook> preHooks = new ArrayList<>();
@@ -782,7 +787,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		return c;
 	}
 
+	/**
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
+	 */
 	@Override
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException {
 		for(ContentletAPIPreHook pre : preHooks){
 			boolean preResult = pre.findAllContent(offset, limit);
@@ -1188,6 +1197,29 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 					excludingContentTypes, user, respectFrontendRoles);
 		}
 		return paginatedContentletsByHost;
+	}
+
+	@Override
+	public IndexContentletScroll createScrollQuery(
+			final String luceneQuery, final com.liferay.portal.model.User user,
+			final boolean respectFrontendRoles, final int batchSize, final String sortBy)
+			throws DotSecurityException, DotDataException {
+		for (ContentletAPIPreHook pre : preHooks) {
+			boolean preResult = pre.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+			if (!preResult) {
+				String errorMessage = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+				Logger.error(this, errorMessage);
+				throw new DotRuntimeException(errorMessage);
+			}
+		}
+
+		final IndexContentletScroll scrollQuery = conAPI.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy);
+
+		for (ContentletAPIPostHook post : postHooks) {
+			post.createScrollQuery(luceneQuery, user, respectFrontendRoles, batchSize, sortBy, scrollQuery);
+		}
+
+		return scrollQuery;
 	}
 
 
@@ -2171,6 +2203,11 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
 		for ( ContentletAPIPostHook post : postHooks ) {
 			post.addPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
 		}
+	}
+
+	@Override
+	public void addCategoryPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) {
+		conAPI.addCategoryPermissionsToQuery( buffy, user, roles, respectFrontendRoles );
 	}
 
 	@Override
@@ -3259,6 +3296,45 @@ public class ContentletAPIInterceptor implements ContentletAPI, Interceptor {
     	SearchResponse ret = conAPI.esSearchRaw(esQuery, live, user, respectFrontendRoles);
         for(ContentletAPIPostHook post : postHooks){
             post.esSearchRaw(esQuery, live, user, respectFrontendRoles);
+        }
+        return ret;
+    }
+
+    @Override
+    public ContentSearchResults<Contentlet> search(final String query, final boolean live,
+            final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        for (ContentletAPIPreHook pre : preHooks) {
+            if (!pre.search(query, live, user, respectFrontendRoles)) {
+                final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+                Logger.error(this, msg);
+                throw new DotRuntimeException(msg);
+            }
+        }
+        final ContentSearchResults<Contentlet> ret = conAPI.search(query, live, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.search(query, live, user, respectFrontendRoles);
+        }
+        return ret;
+    }
+
+    @Override
+    public ContentSearchResponse searchRaw(final String query, final boolean live,
+            final User user, final boolean respectFrontendRoles)
+            throws DotSecurityException, DotDataException {
+        if (LicenseManager.getInstance().isCommunity()) {
+            throw new DotStateException("Need an enterprise license to run this functionality.");
+        }
+        for (ContentletAPIPreHook pre : preHooks) {
+            if (!pre.searchRaw(query, live, user, respectFrontendRoles)) {
+                final String msg = String.format(PREHOOK_FAILED_MESSAGE, pre.getClass().getName());
+                Logger.error(this, msg);
+                throw new DotRuntimeException(msg);
+            }
+        }
+        final ContentSearchResponse ret = conAPI.searchRaw(query, live, user, respectFrontendRoles);
+        for (ContentletAPIPostHook post : postHooks) {
+            post.searchRaw(query, live, user, respectFrontendRoles);
         }
         return ret;
     }

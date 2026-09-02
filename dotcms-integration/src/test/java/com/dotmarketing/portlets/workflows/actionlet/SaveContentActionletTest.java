@@ -51,6 +51,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     private static List<ContentType> contentTypes = new ArrayList<>();
     private static WorkflowAction saveAction;
     private static WorkflowAction publishAction;
+    private static boolean initialized;
 
     private static class TestCase {
         private final boolean respectFrontendRoles;
@@ -75,7 +76,7 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
 
     @DataProvider
     public static Object[] usersAndContentTypeWithoutHostField() throws Exception {
-        IntegrationTestInitService.getInstance().init();
+        ensureInitialized();
 
         final Optional<WorkflowAction> optionalSaveAction = getWorkflowActionByName("Save");
         final Optional<WorkflowAction> optionalPublishAction = getWorkflowActionByName("Publish");;
@@ -150,9 +151,16 @@ public class SaveContentActionletTest extends BaseWorkflowIntegrationTest {
     public static void prepare() throws Exception {
         //Setting web app environment
 
-        IntegrationTestInitService.getInstance().init();
+        ensureInitialized();
 
         setDebugMode(false);
+    }
+
+    private static synchronized void ensureInitialized() throws Exception {
+        if (!initialized) {
+            IntegrationTestInitService.getInstance().init();
+            initialized = true;
+        }
     }
 
     private static ContentType createTestType()

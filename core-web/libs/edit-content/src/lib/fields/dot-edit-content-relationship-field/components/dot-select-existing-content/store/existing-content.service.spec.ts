@@ -3,7 +3,7 @@ import {
     mockProvider,
     SpectatorService,
     SpyObject
-} from '@ngneat/spectator/jest';
+} from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
@@ -601,6 +601,197 @@ describe('ExistingContentService', () => {
                 expect(dotHttpErrorManagerService.handle).toHaveBeenCalledWith(errorResponse);
                 expect(result).toBeNull();
             });
+        });
+    });
+
+    describe('getConstrainedIdentifiers', () => {
+        it('should return child identifiers from parent contentlets excluding current content', (done) => {
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: [{ identifier: 'author1' }, { identifier: 'author2' }]
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
+                    identifier: 'blog2',
+                    authors: [{ identifier: 'author3' }]
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
+                    identifier: 'currentBlog',
+                    authors: [{ identifier: 'author4' }]
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: 'currentBlog'
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2', 'author3']));
+                    expect(result.has('author4')).toBe(false);
+                    done();
+                });
+        });
+
+        it('should handle children as string identifiers', (done) => {
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: ['author1', 'author2']
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2']));
+                    done();
+                });
+        });
+
+        it('should handle ONE_TO_ONE single value (non-array) from API', (done) => {
+            // ONE_TO_ONE: backend returns a single identifier, not an array
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: 'author1'
+                } as Partial<DotCMSContentlet>),
+                createFakeContentlet({
+                    identifier: 'blog2',
+                    authors: 'author2'
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1', 'author2']));
+                    done();
+                });
+        });
+
+        it('should handle ONE_TO_ONE single object value from API', (done) => {
+            // ONE_TO_ONE with depth >= 1: backend returns a single object, not an array
+            const parentContentlets = [
+                createFakeContentlet({
+                    identifier: 'blog1',
+                    authors: { identifier: 'author1' }
+                } as Partial<DotCMSContentlet>)
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set(['author1']));
+                    done();
+                });
+        });
+
+        it('should return empty set when no parents have relationships', (done) => {
+            const parentContentlets = [
+                createFakeContentlet({ identifier: 'blog1' }),
+                createFakeContentlet({ identifier: 'blog2' })
+            ];
+
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: parentContentlets } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    done();
+                });
+        });
+
+        it('should return empty set for missing params', (done) => {
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: '',
+                    fieldVariable: '',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    expect(dotContentSearchService.get).not.toHaveBeenCalled();
+                    done();
+                });
+        });
+
+        it('should return empty set on error', (done) => {
+            dotContentSearchService.get.mockReturnValue(
+                throwError(() => new Error('Network error'))
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe((result) => {
+                    expect(result).toEqual(new Set());
+                    done();
+                });
+        });
+
+        it('should use correct Lucene query with depth 0, offset 0 and limit 5000', (done) => {
+            dotContentSearchService.get.mockReturnValue(
+                of({ jsonObjectView: { contentlets: [] } })
+            );
+
+            spectator.service
+                .getConstrainedIdentifiers({
+                    parentContentTypeId: 'blog-ct-id',
+                    fieldVariable: 'authors',
+                    currentContentIdentifier: null
+                })
+                .subscribe(() => {
+                    expect(dotContentSearchService.get).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            query: '+structureInode:blog-ct-id +working:true +deleted:false',
+                            sort: 'modDate desc',
+                            limit: 5000,
+                            offset: 0,
+                            depth: 0
+                        })
+                    );
+                    done();
+                });
         });
     });
 });

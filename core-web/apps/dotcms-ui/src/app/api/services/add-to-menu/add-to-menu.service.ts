@@ -1,14 +1,14 @@
 import { Observable, of } from 'rxjs';
 
-import { HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 
-import { catchError, map, pluck, take } from 'rxjs/operators';
+import { catchError, map, take } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService } from '@dotcms/data-access';
-import { CoreWebService } from '@dotcms/dotcms-js';
+import { DotCMSResponse } from '@dotcms/dotcms-models';
 
-const addToMenuUrl = `v1/portlet`;
+const addToMenuUrl = '/api/v1/portlet';
 
 export interface DotCreateCustomTool {
     contentTypes: string;
@@ -29,7 +29,7 @@ export interface DotCustomToolToLayout {
  */
 @Injectable()
 export class DotAddToMenuService {
-    private coreWebService = inject(CoreWebService);
+    private http = inject(HttpClient);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
     /**
@@ -51,17 +51,13 @@ export class DotAddToMenuService {
      * @memberof DotAddToMenuService
      */
     createCustomTool(params: DotCreateCustomTool): Observable<string> {
-        return this.coreWebService
-            .requestView({
-                body: {
-                    ...params,
-                    portletId: `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`
-                },
-                method: 'POST',
-                url: `${addToMenuUrl}/custom`
+        return this.http
+            .post<DotCMSResponse<string>>(`${addToMenuUrl}/custom`, {
+                ...params,
+                portletId: `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`
             })
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     if (error.status === 400) {
                         return of(null);
@@ -85,13 +81,12 @@ export class DotAddToMenuService {
     addToLayout(params: DotCustomToolToLayout): Observable<string> {
         const portletId = `${this.cleanUpPorletId(params.portletName)}_${params.dataViewMode}`;
 
-        return this.coreWebService
-            .requestView({
-                method: 'PUT',
-                url: `${addToMenuUrl}/custom/c_${portletId}/_addtolayout/${params.layoutId}`
-            })
+        return this.http
+            .put<
+                DotCMSResponse<string>
+            >(`${addToMenuUrl}/custom/c_${portletId}/_addtolayout/${params.layoutId}`, {})
             .pipe(
-                pluck('entity'),
+                map((response) => response.entity),
                 catchError((error: HttpErrorResponse) => {
                     return this.httpErrorManagerService.handle(error).pipe(
                         take(1),

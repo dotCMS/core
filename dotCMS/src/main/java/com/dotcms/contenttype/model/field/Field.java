@@ -5,7 +5,7 @@ import com.dotcms.content.model.FieldValueBuilder;
 import com.dotcms.contenttype.model.component.FieldFormRenderer;
 import com.dotcms.contenttype.model.component.FieldValueRenderer;
 import com.dotcms.contenttype.model.type.ContentType;
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.dotmarketing.util.Logger;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DatabindContext;
@@ -345,7 +345,16 @@ public abstract class Field implements FieldIf, Serializable {
     public JavaType typeFromId(final DatabindContext context, final String id) throws IOException {
       final String packageName = Field.class.getPackageName();
       if( !id.contains(".") && !id.startsWith(packageName)){
-        final String className = String.format("%s.Immutable%s",packageName,id);
+        // Accept ergonomic short forms for the `clazz` discriminator so callers (e.g. AI agents)
+        // don't have to know the fully-qualified Immutable* field class name:
+        //   - a field-type name or legacy value -> "TEXT"/"text", "STORY_BLOCK_FIELD",
+        //     "CHECKBOX", "SELECT", "KEY_VALUE", "CUSTOM_FIELD", ... (case-insensitive)
+        //   - the concrete simple class name    -> "TextField", "StoryBlockField", ...
+        // In every case we resolve to the generated Immutable* class Jackson expects.
+        final String simpleName = Optional.ofNullable(LegacyFieldTypes.implClassForName(id))
+                .map(Class::getSimpleName)
+                .orElse(id);
+        final String className = String.format("%s.Immutable%s", packageName, simpleName);
         return super.typeFromId(context, className);
       }
       return super.typeFromId(context, id);

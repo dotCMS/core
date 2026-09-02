@@ -1,54 +1,68 @@
 import { describe, expect, it } from '@jest/globals';
 
-import { DEFAULT_VARIANT_ID, DotCMSContentlet, DotCMSContentType } from '@dotcms/dotcms-models';
+import { MenuItemCommandEvent } from 'primeng/api';
 
 import {
+    DEFAULT_VARIANT_ID,
+    DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
+    DotCMSContentType
+} from '@dotcms/dotcms-models';
+import {
     buildContentletsQuery,
-    buildContentletsResponse,
     buildESContentParams,
-    filterAndBuildFavoriteResponse,
+    buildPaletteContent,
+    buildPaletteFavorite,
+    buildPaletteMenuItems,
+    DotPaletteListStatus,
     getPaletteState,
     getSortActiveClass
+} from '@dotcms/portlets/dot-ema/ui';
+
+import {
+    extractContentletPropertiesFromPageAsset,
+    filterFormValues,
+    updateContentletPropertiesInPageAsset
 } from './index';
 
-import { DotPaletteListStatus } from '../models';
+import { ActionPayload } from '../../../../shared/models';
 
 describe('Dot UVE Palette Utils', () => {
     describe('getSortActiveClass', () => {
-        it('should return "active-menu-item" when both orderby and direction match', () => {
+        it('should return true when both orderby and direction match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'name' as const, direction: 'ASC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('active-menu-item');
+            expect(result).toBe(true);
         });
 
-        it('should return empty string when orderby does not match', () => {
+        it('should return false when orderby does not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'usage' as const, direction: 'ASC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
 
-        it('should return empty string when direction does not match', () => {
+        it('should return false when direction does not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'name' as const, direction: 'DESC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
 
-        it('should return empty string when both orderby and direction do not match', () => {
+        it('should return false when both orderby and direction do not match', () => {
             const itemSort = { orderby: 'name' as const, direction: 'ASC' as const };
             const currentSort = { orderby: 'usage' as const, direction: 'DESC' as const };
 
             const result = getSortActiveClass(itemSort, currentSort);
 
-            expect(result).toBe('');
+            expect(result).toBe(false);
         });
     });
 
@@ -92,7 +106,141 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('filterAndBuildFavoriteResponse', () => {
+    describe('buildPaletteMenuItems', () => {
+        it('should return menu structure with sort and view sections', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+
+            expect(result).toHaveLength(2);
+            expect(result[0].label).toBe('uve.palette.menu.sort.title');
+            expect(result[1].label).toBe('uve.palette.menu.view.title');
+        });
+
+        it('should include three sort options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems).toHaveLength(3);
+            expect(sortItems[0].label).toBe('uve.palette.menu.sort.option.popular');
+            expect(sortItems[1].label).toBe('uve.palette.menu.sort.option.a-to-z');
+            expect(sortItems[2].label).toBe('uve.palette.menu.sort.option.z-to-a');
+        });
+
+        it('should include two view options with correct labels', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems).toHaveLength(2);
+            expect(viewItems[0].label).toBe('uve.palette.menu.view.option.grid');
+            expect(viewItems[1].label).toBe('uve.palette.menu.view.option.list');
+        });
+
+        it('should mark the current sort option as active', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems[0].isActive).toBe(false); // popular (usage DESC) not active
+            expect(sortItems[1].isActive).toBe(true); // name ASC is active
+            expect(sortItems[2].isActive).toBe(false); // name DESC not active
+        });
+
+        it('should mark the current view mode as active', () => {
+            const mockCallbacks = {
+                viewMode: 'list' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const viewItems = result[1].items;
+
+            expect(viewItems[0].isActive).toBe(false); // grid not active
+            expect(viewItems[1].isActive).toBe(true); // list is active
+        });
+
+        it('should call onSortSelect when sort command is executed', () => {
+            const onSortSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect,
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            sortItems[0].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onSortSelect).toHaveBeenCalledWith({ orderby: 'usage', direction: 'DESC' });
+        });
+
+        it('should mark popular option as active when currentSort is usage DESC', () => {
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'usage' as const, direction: 'DESC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect: jest.fn()
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            const sortItems = result[0].items;
+
+            expect(sortItems[0].isActive).toBe(true); // popular (usage DESC) is active
+            expect(sortItems[1].isActive).toBe(false); // name ASC not active
+            expect(sortItems[2].isActive).toBe(false); // name DESC not active
+        });
+
+        it('should call onViewSelect when view command is executed', () => {
+            const onViewSelect = jest.fn();
+            const mockCallbacks = {
+                viewMode: 'grid' as const,
+                currentSort: { orderby: 'name' as const, direction: 'ASC' as const },
+                onSortSelect: jest.fn(),
+                onViewSelect
+            };
+
+            const result = buildPaletteMenuItems(mockCallbacks);
+            if (!result[1].items) {
+                throw new Error('View items should be defined');
+            }
+            const viewItems = result[1].items;
+
+            viewItems[1].command({} as unknown as MenuItemCommandEvent);
+
+            expect(onViewSelect).toHaveBeenCalledWith('list');
+        });
+    });
+
+    describe('buildPaletteFavorite', () => {
         const mockContentTypes: DotCMSContentType[] = [
             { id: '1', name: 'Blog', variable: 'blog' } as DotCMSContentType,
             { id: '2', name: 'News', variable: 'news' } as DotCMSContentType,
@@ -102,7 +250,7 @@ describe('Dot UVE Palette Utils', () => {
         ];
 
         it('should return all content types sorted alphabetically when no filter is provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -112,10 +260,11 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.contenttypes[2].name).toBe('Blog');
             expect(result.contenttypes[3].name).toBe('News');
             expect(result.contenttypes[4].name).toBe('Product');
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should filter content types by name (case-insensitive)', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'blog'
             });
@@ -125,7 +274,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should filter content types by partial name match', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'an'
             });
@@ -135,7 +284,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return pagination metadata for first page', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 page: 1
             });
@@ -154,7 +303,7 @@ describe('Dot UVE Palette Utils', () => {
                 variable: `content${i}`
             })) as DotCMSContentType[];
 
-            const page1 = filterAndBuildFavoriteResponse({
+            const page1 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 1
             });
@@ -163,7 +312,7 @@ describe('Dot UVE Palette Utils', () => {
             expect(page1.pagination.totalEntries).toBe(50);
             expect(page1.pagination.currentPage).toBe(1);
 
-            const page2 = filterAndBuildFavoriteResponse({
+            const page2 = buildPaletteFavorite({
                 contentTypes: manyContentTypes,
                 page: 2
             });
@@ -173,7 +322,7 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should handle empty filter string as no filter', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: ''
             });
@@ -182,17 +331,105 @@ describe('Dot UVE Palette Utils', () => {
         });
 
         it('should return empty array when filter matches no content types', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes,
                 filter: 'nonexistent'
             });
 
             expect(result.contenttypes).toHaveLength(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is undefined', () => {
+            const result = buildPaletteFavorite({ contentTypes: mockContentTypes });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark all favorites as disabled when allowedContentTypes is empty', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: {}
+            });
+
+            expect(result.contenttypes).toHaveLength(5);
+            expect(result.contenttypes.every((ct) => ct.disabled === true)).toBe(true);
+        });
+
+        it('should mark only allowed variables as enabled when allowedContentTypes is provided', () => {
+            const result = buildPaletteFavorite({
+                contentTypes: mockContentTypes,
+                allowedContentTypes: { banner: true, blog: true }
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+
+            expect(byVariable.blog.disabled).toBeUndefined();
+            expect(byVariable.banner.disabled).toBeUndefined();
+            expect(byVariable.article.disabled).toBe(true);
+            expect(byVariable.news.disabled).toBe(true);
+            expect(byVariable.product.disabled).toBe(true);
+        });
+
+        it('should treat WIDGET baseType as allowed when allowedContentTypes is non-empty', () => {
+            const contentTypes = [
+                { id: '1', name: 'Alpha', variable: 'alpha' } as DotCMSContentType,
+                {
+                    id: '2',
+                    name: 'WidgetZ',
+                    variable: 'widgetZ',
+                    baseType: DotCMSBaseTypesContentTypes.WIDGET
+                } as DotCMSContentType,
+                { id: '3', name: 'Beta', variable: 'beta' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { alpha: true } // non-empty map is required
+            });
+
+            const byVariable = Object.fromEntries(
+                result.contenttypes.map((ct) => [ct.variable, ct])
+            );
+            expect(byVariable.alpha.disabled).toBeUndefined();
+            expect(byVariable.widgetZ.disabled).toBeUndefined(); // allowed because widget
+            expect(byVariable.beta.disabled).toBe(true);
+        });
+
+        it('should keep alphabetical order even when some favorites are disabled', () => {
+            const contentTypes = [
+                { id: '1', name: 'B', variable: 'b' } as DotCMSContentType,
+                { id: '2', name: 'A', variable: 'a' } as DotCMSContentType,
+                { id: '3', name: 'C', variable: 'c' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { b: true } // A and C will be disabled
+            });
+
+            expect(result.contenttypes.map((ct) => ct.name)).toEqual(['A', 'B', 'C']);
+        });
+
+        it('should not normalize variable matching (case-sensitive)', () => {
+            const contentTypes = [
+                { id: '1', name: 'Banner', variable: 'Banner' } as DotCMSContentType
+            ];
+
+            const result = buildPaletteFavorite({
+                contentTypes,
+                allowedContentTypes: { banner: true } // different casing
+            });
+
+            expect(result.contenttypes[0].disabled).toBe(true);
         });
 
         it('should use default page 1 when page is not provided', () => {
-            const result = filterAndBuildFavoriteResponse({
+            const result = buildPaletteFavorite({
                 contentTypes: mockContentTypes
             });
 
@@ -200,7 +437,7 @@ describe('Dot UVE Palette Utils', () => {
         });
     });
 
-    describe('buildContentletsResponse', () => {
+    describe('buildPaletteContent', () => {
         it('should transform ES response into normalized format', () => {
             const esResponse = {
                 contentTook: 10,
@@ -214,11 +451,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(2);
             expect(result.contentlets).toEqual(esResponse.jsonObjectView.contentlets);
             expect(result.pagination.totalEntries).toBe(100);
+            expect(result.status).toBe(DotPaletteListStatus.LOADED);
         });
 
         it('should calculate correct page number for offset 0', () => {
@@ -231,7 +469,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.currentPage).toBe(1);
         });
@@ -246,7 +484,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 50
             };
 
-            const result = buildContentletsResponse(esResponse, 30);
+            const result = buildPaletteContent(esResponse, 30);
 
             expect(result.pagination.currentPage).toBe(2);
         });
@@ -261,7 +499,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 100
             };
 
-            const result = buildContentletsResponse(esResponse, 60);
+            const result = buildPaletteContent(esResponse, 60);
 
             expect(result.pagination.currentPage).toBe(3);
         });
@@ -279,7 +517,7 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 25
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.pagination.perPage).toBe(25);
         });
@@ -294,11 +532,12 @@ describe('Dot UVE Palette Utils', () => {
                 resultsSize: 0
             };
 
-            const result = buildContentletsResponse(esResponse, 0);
+            const result = buildPaletteContent(esResponse, 0);
 
             expect(result.contentlets).toHaveLength(0);
             expect(result.pagination.perPage).toBe(0);
             expect(result.pagination.totalEntries).toBe(0);
+            expect(result.status).toBe(DotPaletteListStatus.EMPTY);
         });
     });
 
@@ -355,7 +594,9 @@ describe('Dot UVE Palette Utils', () => {
                 offset: '0',
                 itemsPerPage: 30,
                 lang: '1',
-                filter: 'news'
+                filter: 'news',
+                sortField: 'modDate',
+                sortOrder: 'DESC'
             });
         });
 
@@ -443,6 +684,21 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.itemsPerPage).toBe(30);
         });
 
+        it('should always sort by modDate DESC', () => {
+            const searchParams = {
+                selectedContentType: 'Banner',
+                variantId: '',
+                language: 1,
+                page: 1,
+                filter: ''
+            };
+
+            const result = buildESContentParams(searchParams);
+
+            expect(result.sortField).toBe('modDate');
+            expect(result.sortOrder).toBe('DESC');
+        });
+
         it('should handle complex filter strings', () => {
             const searchParams = {
                 selectedContentType: 'Article',
@@ -471,6 +727,397 @@ describe('Dot UVE Palette Utils', () => {
             expect(result.query).toBe(
                 `+contentType:Widget +deleted:false +variant:${DEFAULT_VARIANT_ID}`
             );
+        });
+    });
+
+    describe('filterNullAndUndefined', () => {
+        it('should filter out null values', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should filter out undefined values', () => {
+            const input = {
+                name: 'John',
+                age: undefined,
+                active: true
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: true
+            });
+            expect(result).not.toHaveProperty('age');
+        });
+
+        it('should keep false values as they are valid', () => {
+            const input = {
+                name: 'John',
+                active: false,
+                verified: false
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                active: false,
+                verified: false
+            });
+        });
+
+        it('should keep zero values as they are valid', () => {
+            const input = {
+                count: 0,
+                score: 0
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                count: 0,
+                score: 0
+            });
+        });
+
+        it('should keep empty strings as they are valid', () => {
+            const input = {
+                name: '',
+                description: ''
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: '',
+                description: ''
+            });
+        });
+
+        it('should recursively filter nested objects', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag2: null,
+                    tag3: false
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                tags: {
+                    tag1: true,
+                    tag3: false
+                }
+            });
+            expect(result.tags).not.toHaveProperty('tag2');
+        });
+
+        it('should filter out nested objects that become empty after filtering', () => {
+            const input = {
+                name: 'John',
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John'
+            });
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should keep arrays as they are', () => {
+            const input = {
+                items: [1, 2, 3],
+                tags: []
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                items: [1, 2, 3],
+                tags: []
+            });
+        });
+
+        it('should handle complex nested structures', () => {
+            const input = {
+                name: 'John',
+                age: null,
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        sms: null,
+                        push: false
+                    },
+                    preferences: null
+                },
+                tags: {
+                    tag1: null,
+                    tag2: undefined
+                }
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({
+                name: 'John',
+                settings: {
+                    theme: 'dark',
+                    notifications: {
+                        email: true,
+                        push: false
+                    }
+                }
+            });
+            expect(result).not.toHaveProperty('age');
+            expect(result.settings).not.toHaveProperty('preferences');
+            expect(result.settings.notifications).not.toHaveProperty('sms');
+            expect(result).not.toHaveProperty('tags');
+        });
+
+        it('should return empty object when all values are null or undefined', () => {
+            const input = {
+                name: null,
+                age: undefined,
+                active: null
+            };
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
+        });
+
+        it('should handle empty object', () => {
+            const input = {};
+
+            const result = filterFormValues(input);
+
+            expect(result).toEqual({});
+        });
+    });
+
+    describe('updateContentletPropertiesInPageAsset', () => {
+        const makePayload = (overrides: Partial<ActionPayload> = {}): ActionPayload =>
+            ({
+                container: {
+                    identifier: 'test-container',
+                    uuid: 'test-uuid',
+                    acceptTypes: 'any',
+                    maxContentlets: 1
+                },
+                contentlet: {
+                    identifier: 'test-contentlet-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'Blog'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'page-1',
+                ...overrides
+            }) as unknown as ActionPayload;
+
+        const makePageAsset = (extraProps: Record<string, unknown> = {}) =>
+            ({
+                page: { identifier: 'page-1', title: 'Test Page' },
+                containers: {
+                    'test-container': {
+                        contentlets: {
+                            'uuid-test-uuid': [
+                                {
+                                    identifier: 'test-contentlet-id',
+                                    inode: 'test-inode',
+                                    title: 'Test',
+                                    contentType: 'Blog',
+                                    ...extraProps
+                                }
+                            ]
+                        }
+                    }
+                }
+            }) as unknown as import('@dotcms/types').DotCMSPageAsset;
+
+        it('should update properties on the matching contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'red', size: 14 });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['color']).toBe('red');
+            expect(contentlet['size']).toBe(14);
+        });
+
+        it('should not modify contentlets that do not match the identifier', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload({
+                contentlet: {
+                    identifier: 'other-id',
+                    inode: 'other-inode',
+                    title: 'Other',
+                    contentType: 'Blog'
+                } as unknown as ActionPayload['contentlet']
+            });
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, { color: 'blue' });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['color']).toBeUndefined();
+        });
+
+        it('should mutate the pageAsset in place and return the same reference', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = updateContentletPropertiesInPageAsset(pageAsset, payload, {
+                foo: 'bar'
+            });
+
+            expect(result).toBe(pageAsset);
+        });
+
+        it('should overwrite existing properties', () => {
+            const pageAsset = makePageAsset({ dotStyleProperties: { 'font-size': 12 } });
+            const payload = makePayload();
+
+            updateContentletPropertiesInPageAsset(pageAsset, payload, {
+                dotStyleProperties: { 'font-size': 20 }
+            });
+
+            const contentlet =
+                pageAsset.containers['test-container'].contentlets['uuid-test-uuid'][0];
+            expect(contentlet['dotStyleProperties']).toEqual({ 'font-size': 20 });
+        });
+    });
+
+    describe('extractContentletPropertiesFromPageAsset', () => {
+        const makePayload = (): ActionPayload =>
+            ({
+                container: {
+                    identifier: 'test-container',
+                    uuid: 'test-uuid',
+                    acceptTypes: 'any',
+                    maxContentlets: 1
+                },
+                contentlet: {
+                    identifier: 'test-contentlet-id',
+                    inode: 'test-inode',
+                    title: 'Test',
+                    contentType: 'Blog'
+                },
+                language_id: '1',
+                pageContainers: [],
+                pageId: 'page-1'
+            }) as unknown as ActionPayload;
+
+        const makePageAsset = () =>
+            ({
+                page: { identifier: 'page-1', title: 'Test Page' },
+                containers: {
+                    'test-container': {
+                        contentlets: {
+                            'uuid-test-uuid': [
+                                {
+                                    identifier: 'test-contentlet-id',
+                                    inode: 'test-inode',
+                                    title: 'Test',
+                                    contentType: 'Blog',
+                                    dotStyleProperties: { 'font-size': 16, color: 'red' },
+                                    customProp: 'hello'
+                                }
+                            ]
+                        }
+                    }
+                }
+            }) as unknown as import('@dotcms/types').DotCMSPageAsset;
+
+        it('should extract the requested properties from the matching contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties'
+            ]);
+
+            expect(result).toEqual({ dotStyleProperties: { 'font-size': 16, color: 'red' } });
+        });
+
+        it('should extract multiple properties at once', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties',
+                'customProp'
+            ]);
+
+            expect(result).toEqual({
+                dotStyleProperties: { 'font-size': 16, color: 'red' },
+                customProp: 'hello'
+            });
+        });
+
+        it('should return undefined for properties that do not exist on the contentlet', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'nonExistentProp'
+            ]);
+
+            expect(result).toEqual({ nonExistentProp: undefined });
+        });
+
+        it('should return empty object when no properties are requested', () => {
+            const pageAsset = makePageAsset();
+            const payload = makePayload();
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, []);
+
+            expect(result).toEqual({});
+        });
+
+        it('should return object with undefined values when contentlet is not found', () => {
+            const pageAsset = makePageAsset();
+            const payload = {
+                ...makePayload(),
+                contentlet: {
+                    identifier: 'nonexistent-id',
+                    inode: 'x',
+                    title: 'X',
+                    contentType: 'Y'
+                }
+            } as unknown as ActionPayload;
+
+            const result = extractContentletPropertiesFromPageAsset(pageAsset, payload, [
+                'dotStyleProperties'
+            ]);
+
+            expect(result).toEqual({ dotStyleProperties: undefined });
         });
     });
 });

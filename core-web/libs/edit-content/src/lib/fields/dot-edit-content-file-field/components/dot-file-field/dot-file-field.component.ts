@@ -1,15 +1,18 @@
 import { signalMethod } from '@ngrx/signals';
 
+import { HttpClient } from '@angular/common/http';
 import {
+    AfterViewInit,
     ChangeDetectionStrategy,
     Component,
+    computed,
+    DestroyRef,
+    forwardRef,
     inject,
     input,
-    OnInit,
     OnDestroy,
-    DestroyRef,
-    computed,
-    forwardRef
+    OnInit,
+    output
 } from '@angular/core';
 import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { NG_VALUE_ACCESSOR } from '@angular/forms';
@@ -18,31 +21,53 @@ import { ButtonModule } from 'primeng/button';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { filter, map } from 'rxjs/operators';
+import { filter, map, take } from 'rxjs/operators';
 
-import { DotAiService, DotMessageService } from '@dotcms/data-access';
+import {
+    DotAiService,
+    DotMessageService,
+    DotSiteService,
+    DotWorkflowActionsFireService
+} from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
-    DotGeneratedAIImage
+    DotCMSTempFile,
+    DotFileMetadata,
+    DotGeneratedAIImage,
+    DotSite
 } from '@dotcms/dotcms-models';
+import { isImageFile } from '@dotcms/image-editor';
 import {
+    ASSET_PICKER_LAUNCHER,
+    ASSET_PICKER_TITLE_KEYS,
+    DotAIImagePromptComponent,
+    DotBrowserSelectorComponent,
     DotDropZoneComponent,
     DotMessagePipe,
-    DotAIImagePromptComponent,
     DotSpinnerComponent,
     DropZoneFileEvent,
     DropZoneFileValidity
 } from '@dotcms/ui';
+import { getFileMetadata } from '@dotcms/utils';
 
+import { DotEditContentStore } from './../../../../store/edit-content.store';
+import {
+    LegacyDialogImageEditorLauncher,
+    LegacyDojoImageEditorLauncher
+} from './../../services/image-editor';
 import { DotFileFieldUploadService } from './../../services/upload-file/upload-file.service';
 import { FileFieldStore } from './../../store/file-field.store';
+import {
+    focalPointFromContentlet,
+    focalPointFromMetadata,
+    parseFocalPoint
+} from './../../utils/focal-point.util';
 import { getUiMessage } from './../../utils/messages';
 import { DotFileFieldPreviewComponent } from './../dot-file-field-preview/dot-file-field-preview.component';
 import { DotFileFieldUiMessageComponent } from './../dot-file-field-ui-message/dot-file-field-ui-message.component';
 import { DotFormFileEditorComponent } from './../dot-form-file-editor/dot-form-file-editor.component';
 import { DotFormImportUrlComponent } from './../dot-form-import-url/dot-form-import-url.component';
-import { DotSelectExistingFileComponent } from './../dot-select-existing-file/dot-select-existing-file.component';
 
 import {
     INPUT_TYPE,
@@ -50,6 +75,10 @@ import {
     UploadedFile
 } from '../../../../models/dot-edit-content-file.model';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
+import { IMAGE_EDITOR_LAUNCHER } from '../../../shared/image-editor-launcher';
+
+/** SVGs route the edit action to the source-code editor instead of the raster image editor. */
+const SVG_MIME_TYPE = 'image/svg+xml';
 
 @Component({
     selector: 'dot-file-field',
@@ -60,13 +89,15 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         DotSpinnerComponent,
         DotFileFieldUiMessageComponent,
         DotFileFieldPreviewComponent,
-        TooltipModule,
-        DotMessagePipe
+        TooltipModule
     ],
     providers: [
         DotFileFieldUploadService,
         FileFieldStore,
         DialogService,
+        LegacyDialogImageEditorLauncher,
+        LegacyDojoImageEditorLauncher,
+        DotWorkflowActionsFireService,
         {
             multi: true,
             provide: NG_VALUE_ACCESSOR,
@@ -79,13 +110,32 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
 })
 export class DotFileFieldComponent
     extends BaseControlValueAccessor<string>
-    implements OnInit, OnDestroy
+    implements OnInit, AfterViewInit, OnDestroy
 {
     /**
      * A readonly instance of the FileFieldStore injected into the component.
      * This store is used to manage the state and actions related to the file field.
      */
     readonly store = inject(FileFieldStore);
+    /** Opens the legacy image editor JSP inside a PrimeNG dialog (new editor default). */
+    readonly #legacyDialogImageEditorLauncher = inject(LegacyDialogImageEditorLauncher);
+    /** Dispatches Dojo image-editor events (legacy web-component bridge only). */
+    readonly #legacyDojoImageEditorLauncher = inject(LegacyDojoImageEditorLauncher);
+    /**
+     * New Angular image editor launcher. Provided by the Angular edit-content shell
+     * ({@link EditContentShellComponent}); its `isAvailable()` is always true now that
+     * the new editor is GA in the new Edit Content. Injected as `{ optional: true }`:
+     * when absent (e.g. the legacy web-component host), `onEditImage()` falls back to
+     * the legacy launchers.
+     */
+    readonly #imageEditorLauncher = inject(IMAGE_EDITOR_LAUNCHER, { optional: true });
+    /**
+     * New AssetPicker launcher. Provided only by the Angular Edit Content hosts, which are the only
+     * ones the picker was built for. Injected as `{ optional: true }`: when absent — the field
+     * rendered as the legacy `dotcms-binary-field` custom element — "Select Existing File" opens
+     * {@link DotBrowserSelectorComponent} instead, exactly as it did before the picker existed.
+     */
+    readonly #assetPickerLauncher = inject(ASSET_PICKER_LAUNCHER, { optional: true });
     /**
      * A readonly private field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -108,11 +158,33 @@ export class DotFileFieldComponent
      */
     readonly #dotAiService = inject(DotAiService);
     /**
+     * Fetches the text content of files whose edit action opens the source-code
+     * editor (SVGs), mirroring the store's editableAsText hydration.
+     */
+    readonly #http = inject(HttpClient);
+    /** Site the AssetPicker browses. Root-provided, so always available. */
+    readonly #siteService = inject(DotSiteService);
+    /**
+     * Supplies the locale when there is no contentlet yet (creating). Injected as `{ optional: true }`
+     * because only the Angular edit-content layout provides it — the legacy web-component host
+     * ({@link DotBinaryFieldCeBridgeComponent}) builds this same component without it.
+     */
+    readonly #editContentStore = inject(DotEditContentStore, { optional: true });
+    /**
      * Reference to the dynamic dialog. It can be null if no dialog is currently open.
      *
      * @type {DynamicDialogRef | null}
      */
     #dialogRef: DynamicDialogRef | null = null;
+
+    /**
+     * True from the moment "Select Existing File" is clicked until the picker closes.
+     *
+     * `#dialogRef` cannot serve as this guard: it is shared with the other three dialogs this
+     * component opens and is never reset on close, so checking it would block the picker forever
+     * after any of them ran. See `showSelectExistingFileDialog`.
+     */
+    #assetPickerPending = false;
     /**
      * DotCMS Content Type Field
      *
@@ -132,6 +204,87 @@ export class DotFileFieldComponent
      * @default false
      */
     $hasError = input.required<boolean>({ alias: 'hasError' });
+    /**
+     * When true, forces the drop zone and action buttons to stack vertically.
+     * Use in narrow containers where side-by-side layout would clip the buttons.
+     */
+    $vertical = input<boolean>(false, { alias: 'vertical' });
+    /**
+     * When false, hides the "Edit image" action (e.g. EMA quick edit).
+     */
+    $enableImageEditor = input<boolean>(true, { alias: 'enableImageEditor' });
+    /**
+     * When true, routes image editing through Dojo DOM events instead of the
+     * dialog iframe. Only set by {@link DotBinaryFieldCeBridgeComponent}.
+     */
+    $useLegacyDojoImageEditor = input<boolean>(false, { alias: 'useLegacyDojoImageEditor' });
+
+    /**
+     * Emits when the field value changes due to a user action (upload, image edit,
+     * dialog import or remove). Mirrors the legacy binary field contract consumed
+     * by the legacy JSP editor and the FileAsset title/fileName auto-fill.
+     */
+    valueUpdated = output<{ value: string; fileName: string }>();
+
+    /**
+     * Current file name derived from the preview file, used in `valueUpdated`.
+     */
+    $currentFileName = computed<string>(() => {
+        const uploaded = this.store.uploadedFile();
+
+        if (!uploaded) {
+            return '';
+        }
+
+        if (uploaded.source === 'temp') {
+            return uploaded.file.fileName ?? uploaded.file.metadata?.name ?? '';
+        }
+
+        const file = uploaded.file;
+
+        return file.fileName ?? getFileMetadata(file)?.name ?? file.title ?? '';
+    });
+
+    /**
+     * Whether the "Edit image" action is available for the current file.
+     *
+     * Shown when image editing is enabled and the previewed file is an image
+     * (see {@link isImageFile}). Binary fields keep the binary inline and have a
+     * legacy fallback, so they work in any host. Image/File fields reference a
+     * separate dotAsset and are only supported in the new Angular Edit Content —
+     * where the image-editor launcher is provided — never in the legacy Dojo host.
+     */
+    $canEditImage = computed<boolean>(() => {
+        if (!this.$enableImageEditor()) {
+            return false;
+        }
+
+        // Binary keeps its original, strict gate: the authoritative isImage flag
+        // only. It works in any host via the legacy fallback.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
+            return !!this.#currentMetadata()?.isImage;
+        }
+
+        // Image/File resolve a separate dotAsset/FileAsset and are only supported
+        // in the new Angular Edit Content, where the image-editor launcher is
+        // provided — never in the legacy Dojo host.
+        return isImageFile(this.#currentMetadata()) && !!this.#imageEditorLauncher;
+    });
+
+    /**
+     * Metadata of the current preview file, resolved for both temp and contentlet sources.
+     */
+    #currentMetadata = computed<DotFileMetadata | null>(() => {
+        const uploaded = this.store.uploadedFile();
+
+        if (!uploaded) {
+            return null;
+        }
+
+        return uploaded.source === 'temp'
+            ? (uploaded.file.metadata ?? null)
+            : getFileMetadata(uploaded.file);
+    });
 
     /**
      * Signal indicating whether the AI plugin is installed.
@@ -163,10 +316,27 @@ export class DotFileFieldComponent
         return '';
     });
 
+    /**
+     * Locale the AssetPicker pre-selects.
+     *
+     * The contentlet's own language wins when editing. When creating there is no contentlet yet, so
+     * it falls back to the locale currently selected in the editor — without that fallback the
+     * picker would open unfiltered on every new contentlet.
+     *
+     * @returns {string | undefined} the language id as a string, or `undefined` when neither source has one
+     */
+    $pickerLanguageId = computed(() => {
+        const languageId =
+            this.$contentlet()?.languageId ?? this.#editContentStore?.currentLocale()?.id;
+
+        return languageId ? String(languageId) : undefined;
+    });
+
     constructor() {
         super();
         this.handleStoreValueChange(this.store.value);
         this.handleValueChange(this.$value);
+        this.emitValueUpdated(this.store.value);
     }
 
     /**
@@ -179,10 +349,238 @@ export class DotFileFieldComponent
     ngOnInit() {
         const field = this.$field();
 
+        // Parse the systemOptions field variable saved from the Settings tab.
+        // `allowCodeWrite` in settings maps to `allowCreateFile` in the store.
+        const systemOptionsVar = field.fieldVariables?.find((v) => v.key === 'systemOptions');
+        let systemOptionsOverrides: Parameters<
+            typeof this.store.initLoad
+        >[0]['systemOptionsOverrides'] = {};
+
+        if (systemOptionsVar?.value) {
+            try {
+                const parsed = JSON.parse(systemOptionsVar.value) as Record<string, boolean>;
+                systemOptionsOverrides = {
+                    ...(parsed['allowURLImport'] !== undefined && {
+                        allowURLImport: parsed['allowURLImport']
+                    }),
+                    ...(parsed['allowCodeWrite'] !== undefined && {
+                        allowCreateFile: parsed['allowCodeWrite']
+                    }),
+                    ...(parsed['allowGenerateImg'] !== undefined && {
+                        allowGenerateImg: parsed['allowGenerateImg']
+                    })
+                };
+            } catch {
+                // ignore malformed JSON — fall back to INPUT_CONFIG defaults
+            }
+        }
+
         this.store.initLoad({
             fieldVariable: field.variable,
-            inputType: field.fieldType as INPUT_TYPE
+            inputType: field.fieldType as INPUT_TYPE,
+            systemOptionsOverrides
         });
+    }
+
+    /**
+     * AfterViewInit lifecycle hook.
+     *
+     * Hydrates the preview from the contentlet for:
+     * - Binary fields, whose value is stored inline on the contentlet (so there
+     *   is no separate asset to fetch via {@link getAssetData}).
+     * - File/Image fields driven imperatively (legacy web component bridge) instead
+     *   of via a reactive form value.
+     */
+    ngAfterViewInit() {
+        const field = this.$field();
+        const contentlet = this.$contentlet();
+
+        // Guarantee value propagation even when `writeValue` is never called.
+        // Components rendered inside @defer blocks cannot reach the parent
+        // ControlContainer through the deferred view's injector, so formControlName
+        // never links and registerOnChange/writeValue are never invoked.
+        // Setting #hasHydrated here lets emitValueUpdated fire for every user-driven
+        // store change; the wrapper intercepts valueUpdated and patches the
+        // FormControl directly via onInnerValueUpdated.
+        this.#hasHydrated = true;
+
+        if (!field?.variable || !contentlet) {
+            return;
+        }
+
+        const isBinary = this.store.inputType() === INPUT_TYPES.Binary;
+
+        if (!isBinary) {
+            if (!this.$useLegacyDojoImageEditor()) {
+                return;
+            }
+
+            if (this.$value()) {
+                return;
+            }
+        }
+
+        const value = this.$value() || contentlet[field.variable] || field.defaultValue;
+
+        if (!value) {
+            return;
+        }
+
+        // Binary previews need the metadata stored on the contentlet; bail out
+        // when there is none (e.g. a freshly created, empty binary field).
+        if (isBinary && !this.#hasContentletMetadata(contentlet, field.variable)) {
+            return;
+        }
+
+        this.#originalValue = value;
+
+        this.store.setFileFromContentlet({
+            contentlet,
+            fieldVariable: field.variable,
+            value
+        });
+    }
+
+    /**
+     * Whether the contentlet carries file metadata for the given field, covering
+     * FileAsset (`metaData`), dotAsset (`assetMetaData`) and per-field shapes.
+     */
+    #hasContentletMetadata(contentlet: DotCMSContentlet, fieldVariable: string): boolean {
+        return !!(
+            contentlet['metaData'] ||
+            contentlet['assetMetaData'] ||
+            contentlet[`${fieldVariable}MetaData`]
+        );
+    }
+
+    /**
+     * Opens the source-code editor for an SVG with its text content loaded.
+     *
+     * SVG content is not hydrated by the store (only `editableAsText` files are),
+     * so it is fetched lazily here: from the version URL for saved contentlets,
+     * from the reference URL for temp files. Saving re-uploads the edited text,
+     * keeping the asset a vector.
+     *
+     * @param fieldVariable the binary field variable, used to resolve the version
+     * URL for SVGs stored in a custom field (beyond the built-in asset/fileAsset)
+     */
+    #openSvgSourceEditor(uploaded: UploadedFile | null, fieldVariable: string): void {
+        if (!uploaded) {
+            return;
+        }
+
+        const { file } = uploaded;
+
+        if (file.content) {
+            this.showFileEditorDialog(uploaded);
+
+            return;
+        }
+
+        const textUrl =
+            uploaded.source === 'temp'
+                ? file.referenceUrl
+                : file['assetVersion'] ||
+                  file['fileAssetVersion'] ||
+                  file[`${fieldVariable}Version`];
+
+        if (!textUrl) {
+            this.store.setUIMessage(getUiMessage('SERVER_ERROR'));
+
+            return;
+        }
+
+        this.#http
+            .get(textUrl, { responseType: 'text' })
+            .pipe(takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (content) =>
+                    this.showFileEditorDialog({
+                        ...uploaded,
+                        file: { ...file, content }
+                    } as UploadedFile),
+                error: () => this.store.setUIMessage(getUiMessage('SERVER_ERROR'))
+            });
+    }
+
+    /**
+     * Opens the image editor for the current asset and applies the edited result.
+     *
+     * @memberof DotFileFieldComponent
+     */
+    onEditImage() {
+        if (this.$isDisabled() || !this.$canEditImage()) {
+            return;
+        }
+
+        const variable = this.$field().variable;
+        const uploaded = this.store.uploadedFile();
+
+        // SVGs are vectors: the raster image editor would silently rasterize them on
+        // save, so the edit action routes to the source-code editor instead, with the
+        // file's text loaded.
+        if (this.#currentMetadata()?.contentType?.toLowerCase() === SVG_MIME_TYPE) {
+            this.#openSvgSourceEditor(uploaded, variable);
+
+            return;
+        }
+        const tempId = uploaded?.source === 'temp' ? uploaded.file.id : undefined;
+        // For an uploaded/AI-generated contentlet use its own inode; for an
+        // unsaved draft that has no uploaded file yet fall back to the parent.
+        const inode =
+            uploaded?.source === 'contentlet' ? uploaded.file.inode : this.$contentlet()?.inode;
+        // For a standalone contentlet (e.g. AI-generated image) the image lives in
+        // its own field (titleImage), not in the parent binary field variable.
+        // The JSP uses this as fieldName to load /contentAsset/image/{inode}/{field}/.
+        const editorVariable =
+            uploaded?.source === 'contentlet'
+                ? String(uploaded.file['titleImage'] ?? variable)
+                : variable;
+
+        // Prefer the new Angular image editor when its launcher is provided (Angular
+        // edit-content shell). Otherwise fall back to the legacy editor: Dojo DOM events
+        // for the web-component bridge, dialog iframe elsewhere.
+        const newLauncher = this.#imageEditorLauncher;
+
+        if (newLauncher?.isAvailable()) {
+            const metadata = this.#currentMetadata();
+            // Seed the editor with the asset's stored focal point so reopening restores
+            // the marker instead of resetting it to centre. A referenced dotAsset/FileAsset
+            // exposes it on assetMetaData/fileAssetMetaData; an inline binary temp on metaData.
+            const focalPoint = parseFocalPoint(
+                uploaded?.source === 'contentlet'
+                    ? focalPointFromContentlet(uploaded.file)
+                    : focalPointFromMetadata(metadata)
+            );
+
+            this.store.applyEditedImage(
+                newLauncher.open({
+                    inode,
+                    tempId,
+                    variable: editorVariable,
+                    fieldName: editorVariable,
+                    byInode: !!inode,
+                    fileName: this.$currentFileName() || undefined,
+                    mimeType: metadata?.contentType,
+                    focalPoint
+                })
+            );
+
+            return;
+        }
+
+        const legacyLauncher = this.$useLegacyDojoImageEditor()
+            ? this.#legacyDojoImageEditorLauncher
+            : this.#legacyDialogImageEditorLauncher;
+
+        this.store.applyEditedImage(
+            legacyLauncher.open({
+                inode,
+                tempId,
+                variable: editorVariable,
+                fieldName: editorVariable
+            })
+        );
     }
 
     /**
@@ -272,6 +670,8 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotFormImportUrlComponent, {
             header,
             appendTo: 'body',
+            closable: true,
+            closeAriaLabel: 'Close',
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -317,6 +717,7 @@ export class DotFileFieldComponent
         this.#dialogRef = this.#dialogService.open(DotAIImagePromptComponent, {
             header,
             appendTo: 'body',
+            closable: true,
             closeOnEscape: false,
             draggable: false,
             keepInViewport: false,
@@ -330,19 +731,51 @@ export class DotFileFieldComponent
         this.#dialogRef.onClose
             .pipe(
                 filter((selectedImage: DotGeneratedAIImage) => !!selectedImage),
-                map((selectedImage) => {
-                    const previewFile: UploadedFile = {
-                        source: 'contentlet',
-                        file: selectedImage.response.contentlet
-                    };
-
-                    return previewFile;
-                }),
+                map((selectedImage) => this.#mapAIImageToUploadedFile(selectedImage)),
                 takeUntilDestroyed(this.#destroyRef)
             )
             .subscribe((file) => {
                 this.store.setPreviewFile(file);
             });
+    }
+
+    /**
+     * Maps a generated AI image to the {@link UploadedFile} expected by the store,
+     * matching the value contract of the underlying upload type.
+     *
+     * Binary fields store a temp-file id inline on the contentlet (`uploadType: 'temp'`),
+     * so the AI image must be represented as a temp file — mirroring the choose-file/
+     * drag-drop upload path. Using the published dotAsset contentlet identifier instead
+     * would set a value the binary field backend cannot resolve, so the image is lost
+     * on save. File/Image fields reference the dotAsset directly, so the contentlet is
+     * used as-is.
+     *
+     * @param selectedImage the AI image returned by the prompt dialog
+     * @returns the uploaded file to preview and persist
+     */
+    #mapAIImageToUploadedFile(selectedImage: DotGeneratedAIImage): UploadedFile {
+        const { response } = selectedImage;
+        const contentlet = response.contentlet;
+
+        if (this.store.uploadType() !== 'temp') {
+            return { source: 'contentlet', file: contentlet };
+        }
+
+        const metadata = (contentlet['assetMetaData'] ?? {}) as DotFileMetadata;
+
+        const tempFile: DotCMSTempFile = {
+            id: response.response,
+            fileName: response.tempFileName,
+            folder: contentlet.folder,
+            image: true,
+            length: metadata.length,
+            mimeType: metadata.contentType,
+            referenceUrl: contentlet.asset,
+            thumbnailUrl: contentlet.asset,
+            metadata
+        };
+
+        return { source: 'temp', file: tempFile };
     }
 
     /**
@@ -356,7 +789,7 @@ export class DotFileFieldComponent
      * - Subscribes to the dialog's onClose event to handle the uploaded file and update the store with the preview file.
      *
      */
-    showFileEditorDialog() {
+    showFileEditorDialog(uploadedFile: UploadedFile | null = this.store.uploadedFile()) {
         if (this.$isDisabled()) {
             return;
         }
@@ -364,7 +797,10 @@ export class DotFileFieldComponent
         const header = this.#dotMessageService.get('dot.file.field.dialog.create.new.file.header');
 
         this.#dialogRef = this.#dialogService.open(DotFormFileEditorComponent, {
-            header,
+            // The editor renders its own header (title + full-screen toggle + close ✕),
+            // so hide PrimeNG's chrome header to avoid a duplicate and to host the
+            // full-screen control next to the close button.
+            showHeader: false,
             appendTo: 'body',
             closeOnEscape: false,
             draggable: false,
@@ -373,10 +809,16 @@ export class DotFileFieldComponent
             resizable: false,
             modal: true,
             width: '90%',
-            style: { 'max-width': '1040px' },
+            height: '90%',
+            // The editor owns its header/footer bars (with their own padding and
+            // dividers), so strip the dialog content padding and let it fill the height.
+            contentStyle: { height: '100%', overflow: 'hidden', padding: '0' },
             data: {
-                uploadedFile: this.store.uploadedFile(),
-                allowFileNameEdit: true
+                header,
+                uploadedFile,
+                allowFileNameEdit: true,
+                uploadType: this.store.uploadType(),
+                acceptedFiles: this.store.acceptedFiles()
             }
         });
 
@@ -390,55 +832,164 @@ export class DotFileFieldComponent
             });
     }
     /**
-     * Shows the select existing file dialog.
+     * Opens the AssetPicker to choose an asset that already exists in the system.
      *
-     * If the field is disabled, nothing happens.
-     * Opens the dialog with the `DotSelectExistingFileComponent` component
-     * and passes the field type and accepted files as data to the component.
+     * The picker is a compact Content Drive scoped to what this field can hold: an Image field
+     * narrows it to the dotAsset / File Asset base types and silently to images, a File field
+     * doesn't narrow it at all. It browses `api/v1/drive/search`, unlike the browser selector the
+     * block editor and custom fields still use.
      *
-     * When the dialog is closed, gets the uploaded file from the component
-     * and sets it as the preview file in the store.
+     * Nothing happens when the field is disabled, or when no site resolves — the picker would have
+     * nothing to browse.
+     *
+     * The site comes from `DotSiteService`, deliberately not from `GlobalStore`: this component also
+     * renders inside the legacy Dojo editor as the `dotcms-binary-field` custom element, which
+     * bootstraps without a router and without the app-shell providers. `GlobalStore` composes
+     * `withSystem`/`withBreadcrumbs`, so injecting it there threw NG0201 (`DotSystemConfigService`,
+     * then `Router`) and the whole Binary Field rendered blank. One HTTP call on an explicit click
+     * is a cheap price for a component that has to run in both hosts.
      *
      * @memberof DotEditContentFileFieldComponent
      */
     showSelectExistingFileDialog() {
-        if (this.$isDisabled()) {
+        if (this.$isDisabled() || this.#assetPickerPending) {
             return;
         }
 
-        const fieldType = this.$field().fieldType;
-        const title =
-            fieldType === INPUT_TYPES.Image
-                ? 'dot.file.field.dialog.select.existing.image.header'
-                : 'dot.file.field.dialog.select.existing.file.header';
-        const mimeTypes = fieldType === INPUT_TYPES.Image ? ['image'] : [];
+        // The site lookup is what makes opening asynchronous, so `#dialogRef` alone is not a
+        // sufficient guard — it is still null while the request is in flight, and a second click
+        // would sail past it and stack a second dialog whose `onClose` stays live but unreachable.
+        // It guards the legacy path too, which is synchronous but must not stack either.
+        this.#assetPickerPending = true;
 
-        const header = this.#dotMessageService.get(title);
+        // No launcher means a legacy host, which browses without a site — so it skips the lookup
+        // entirely rather than paying for a request it has no use for.
+        if (!this.#assetPickerLauncher) {
+            this.#releasePendingIfOpenThrows(() => this.#openLegacyBrowserSelector());
 
-        this.#dialogRef = this.#dialogService.open(DotSelectExistingFileComponent, {
-            header,
-            appendTo: 'body',
-            closeOnEscape: false,
-            draggable: false,
-            keepInViewport: false,
-            maskStyleClass: 'p-dialog-mask-dynamic',
-            resizable: false,
-            modal: true,
-            width: '90%',
-            style: { 'max-width': '1040px' },
-            data: {
-                mimeTypes
+            return;
+        }
+
+        this.#siteService
+            .getCurrentSite()
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe({
+                next: (site) => {
+                    // Opening a picker that can't browse anything is worse than not opening it.
+                    if (site) {
+                        // Stays set until the dialog closes, so the open picker blocks a re-entry too.
+                        this.#releasePendingIfOpenThrows(() => this.#openAssetPicker(site));
+
+                        return;
+                    }
+
+                    this.#assetPickerPending = false;
+                },
+                // Nothing to browse and nothing to say beyond that — the picker simply doesn't open.
+                error: () => {
+                    this.#assetPickerPending = false;
+                }
+            });
+    }
+
+    /**
+     * Runs an open, releasing {@link #assetPickerPending} if it throws.
+     *
+     * Nothing else can release it in that case: the guard is cleared by the picker's `onClose`, and
+     * an open that threw never got as far as wiring one — so "Select Existing File" would stay dead
+     * for the rest of the session, with no toast and no log. The error is deliberately rethrown
+     * rather than swallowed; a button that silently does nothing is harder to diagnose than one that
+     * leaves a stack trace.
+     */
+    #releasePendingIfOpenThrows(open: () => void) {
+        try {
+            open();
+        } catch (error) {
+            this.#assetPickerPending = false;
+
+            throw error;
+        }
+    }
+
+    /** Opens the picker for a resolved site. Split out so the site lookup above stays readable. */
+    #openAssetPicker(site: DotSite) {
+        const mode = this.$field().fieldType === INPUT_TYPES.Image ? 'image' : 'file';
+
+        this.#trackPicker(
+            this.#assetPickerLauncher.open(
+                // The launcher borrows this field's own `DialogService` so the picker stays scoped
+                // to it — see `ASSET_PICKER_LAUNCHER`.
+                this.#dialogService,
+                // No explicit path: the picker reopens on the globally remembered folder.
+                {
+                    mode,
+                    site,
+                    title: this.#dotMessageService.get(ASSET_PICKER_TITLE_KEYS[mode]),
+                    languageId: this.$pickerLanguageId()
+                }
+            )
+        );
+    }
+
+    /**
+     * Opens the pre-AssetPicker browser selector — what the legacy Dojo host has always shown for
+     * "Select Existing File". Synchronous, and it needs no `DotSite`.
+     */
+    #openLegacyBrowserSelector() {
+        const isImage = this.$field().fieldType === INPUT_TYPES.Image;
+
+        this.#trackPicker(
+            this.#dialogService.open(DotBrowserSelectorComponent, {
+                header: this.#dotMessageService.get(
+                    isImage
+                        ? 'dot.file.field.dialog.select.existing.image.header'
+                        : 'dot.file.field.dialog.select.existing.file.header'
+                ),
+                appendTo: 'body',
+                closeOnEscape: true,
+                closable: true,
+                dismissableMask: true,
+                draggable: false,
+                keepInViewport: false,
+                maskStyleClass: 'p-dialog-mask-dynamic',
+                resizable: false,
+                modal: true,
+                width: '90%',
+                style: { 'max-width': '1040px' },
+                contentStyle: { overflow: 'auto', 'min-height': '45rem' },
+                data: {
+                    // An Image field takes images only; a File field takes anything.
+                    mimeTypes: isImage ? ['image'] : [],
+                    showLinks: false,
+                    showDotAssets: true,
+                    showPages: false,
+                    showFiles: true,
+                    showFolders: false,
+                    showWorking: true,
+                    showArchived: false,
+                    sortByDesc: true
+                }
+            })
+        );
+    }
+
+    /**
+     * Holds the live ref and applies whatever the dialog closes with. Shared by both pickers: they
+     * close with the same hydrated contentlet, so everything downstream of here — preview,
+     * `fileName` auto-fill, the legacy binary-field contract — keeps working either way.
+     */
+    #trackPicker(ref: DynamicDialogRef) {
+        this.#dialogRef = ref;
+
+        // Not filtered on a truthy file: the guard has to be released on *every* close, cancel
+        // included, or the button is dead for the rest of the session.
+        ref.onClose.pipe(takeUntilDestroyed(this.#destroyRef)).subscribe((file) => {
+            this.#assetPickerPending = false;
+
+            if (file) {
+                this.store.setPreviewFile({ source: 'contentlet', file });
             }
         });
-
-        this.#dialogRef.onClose
-            .pipe(
-                filter((file) => !!file),
-                takeUntilDestroyed(this.#destroyRef)
-            )
-            .subscribe((file) => {
-                this.store.setPreviewFile({ source: 'contentlet', file });
-            });
     }
 
     /**
@@ -452,17 +1003,115 @@ export class DotFileFieldComponent
         this.#dialogRef?.close();
     }
 
-    readonly handleStoreValueChange = signalMethod<string>((value) => {
-        if (value === null || value === undefined || !this.onChange || !this.onTouched) {
+    /**
+     * Guards `handleStoreValueChange` and `emitValueUpdated` against
+     * mount-time chatter before the component is fully initialized.
+     *
+     * Set to `true` by whichever fires first:
+     * - `writeValue` — when the CVA contract is properly connected
+     *   (component rendered outside an @defer block).
+     * - `ngAfterViewInit` — fallback for the @defer case where
+     *   `formControlName` cannot resolve the parent ControlContainer
+     *   through the deferred view's injector, so `writeValue` is
+     *   never called.
+     */
+    #hasHydrated = false;
+
+    /**
+     * The value the field was loaded with (reactive form value or contentlet
+     * value). Used to distinguish hydration ticks from user-driven changes when
+     * emitting `valueUpdated`.
+     */
+    #originalValue: string | null = null;
+
+    /** Last value emitted through `valueUpdated`, to avoid duplicate emissions. */
+    #lastEmittedValue: string | null = null;
+
+    /**
+     * Last value propagated via `onChange`. The filter in `handleStoreValueChange`
+     * compares against this instead of `$value()` — reading `$value()` inside the
+     * signalMethod would make it a reactive dependency and cause spurious firings
+     * whenever `writeValue` updates `$value` before `store.setValue` runs.
+     */
+    #lastOnChangeValue: string | null = null;
+
+    override writeValue(value: string): void {
+        super.writeValue(value);
+        this.#originalValue = value ?? null;
+        this.#lastOnChangeValue = value ?? null;
+
+        if (value) {
+            // Non-empty form value: keep the store in sync so the imminent
+            // handleStoreValueChange tick (same value) is suppressed.
+            this.store.setValue(value);
+        }
+        // Empty/null: do NOT reset store.value — it may already hold a valid value
+        // from setFileFromContentlet or a prior upload.
+
+        this.#hasHydrated = true;
+    }
+
+    /**
+     * Emits `valueUpdated` whenever the store value changes to a user-driven
+     * value (upload, image edit, dialog import or remove), skipping the initial
+     * load/hydration value.
+     */
+    readonly emitValueUpdated = signalMethod<string>((value) => {
+        if (value === null || value === undefined) {
             return;
         }
 
+        if (!this.#hasHydrated) {
+            return;
+        }
+
+        if (value === this.#lastEmittedValue) {
+            return;
+        }
+
+        // Treat null and '' as equivalent for the original-value comparison,
+        // but only when nothing has been emitted yet. Once a real value has been
+        // emitted (e.g. after upload), a subsequent change back to '' (remove) must
+        // still propagate so the form control and touched state are updated.
+        if (!this.#lastEmittedValue && (value || null) === (this.#originalValue || null)) {
+            return;
+        }
+
+        this.#lastEmittedValue = value;
+        this.valueUpdated.emit({ value, fileName: this.$currentFileName() });
+    });
+
+    readonly handleStoreValueChange = signalMethod<string>((value) => {
+        if (value === null || value === undefined || !this.onChange) {
+            return;
+        }
+
+        if (!this.#hasHydrated) {
+            return;
+        }
+
+        // Only propagate when the store value diverges from what the form holds.
+        // Null and empty string are treated as equivalent.
+        // NOTE: intentionally does NOT read this.$value() — that would add $value
+        // as a reactive dependency and cause spurious firings when writeValue
+        // updates $value before store.setValue runs in the same tick.
+        if ((value || '') === (this.#lastOnChangeValue || '')) {
+            return;
+        }
+
+        this.#lastOnChangeValue = value;
         this.onChange(value);
-        this.onTouched();
     });
 
     readonly handleValueChange = signalMethod<string>((value) => {
         if (!value) {
+            return;
+        }
+
+        // Binary fields keep the asset inline on the contentlet, so they hydrate
+        // from contentlet metadata (ngAfterViewInit) rather than fetching a
+        // separate asset by identifier.
+        if (this.store.inputType() === INPUT_TYPES.Binary) {
             return;
         }
 

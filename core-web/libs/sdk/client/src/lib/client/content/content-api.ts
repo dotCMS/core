@@ -1,8 +1,9 @@
 import { DotRequestOptions, DotHttpClient, DotCMSClientConfig } from '@dotcms/types';
 
 import { CollectionBuilder } from './builders/collection/collection';
+import { RawQueryBuilder } from './builders/raw-query/raw-query.builder';
 
-import { BaseApiClient } from '../base/base-api';
+import { BaseApiClient } from '../base/api/base-api';
 
 /**
  * Creates a builder to filter and fetch a collection of content items.
@@ -135,11 +136,102 @@ export class Content extends BaseApiClient {
      *
      */
     getCollection<T = unknown>(contentType: string): CollectionBuilder<T> {
-        return new CollectionBuilder<T>(
-            this.requestOptions,
-            this.config,
+        return new CollectionBuilder<T>({
+            requestOptions: this.requestOptions,
+            config: this.config,
             contentType,
-            this.httpClient
-        );
+            httpClient: this.httpClient
+        });
+    }
+
+    /**
+     * Executes a raw Lucene query with optional pagination, sorting, and rendering options.
+     *
+     * This method provides direct access to Lucene query syntax, giving you full control
+     * over query construction while still benefiting from common features like pagination,
+     * sorting, and error handling.
+     *
+     * **Important Notes:**
+     * - The raw query is used as-is (minimal sanitization only)
+     * - NO automatic field prefixing (unlike `getCollection()`)
+     * - NO implicit/system constraints are added (language, live/draft, site, variant, etc.)
+     * - If you need constraints, include them in the raw query string (e.g. `+contentType:Blog +languageId:1 +live:true`)
+     *
+     * @template T - The type of the content items (defaults to unknown)
+     * @param {string} rawQuery - Raw Lucene query string
+     * @return {RawQueryBuilder<T>} A RawQueryBuilder instance for chaining options
+     * @memberof Content
+     *
+     * @example Simple query with pagination
+     * ```typescript
+     * const response = await client.content
+     *     .query('+contentType:Blog +title:"Hello World"')
+     *     .limit(10)
+     *     .page(1);
+     *
+     * console.log(response.contentlets);
+     * ```
+     *
+     * @example Complex query with all available options
+     * ```typescript
+     * const response = await client.content
+     *     .query('+(contentType:Blog OR contentType:News) +tags:"technology" +languageId:1 +(live:false AND working:true AND deleted:false) +variant:legends-forceSensitive')
+     *     .limit(20)
+     *     .page(2)
+     *     .sortBy([{ field: 'modDate', order: 'desc' }])
+     *     .render()
+     *     .depth(2);
+     *
+     * console.log(`Found ${response.total} items`);
+     * response.contentlets.forEach(item => console.log(item.title));
+     * ```
+     *
+     * @example Using TypeScript generics for type safety
+     * ```typescript
+     * interface BlogPost {
+     *     title: string;
+     *     author: string;
+     *     publishDate: string;
+     * }
+     *
+     * const response = await client.content
+     *     .query<BlogPost>('+contentType:Blog +author:"John Doe"')
+     *     .limit(10);
+     *
+     * // TypeScript knows the type of contentlets
+     * response.contentlets.forEach(post => {
+     *     console.log(post.title, post.author);
+     * });
+     * ```
+     *
+     * @example Error handling with helpful messages
+     * ```typescript
+     * try {
+     *     const response = await client.content
+     *         .query('+contentType:Blog +publishDate:[2024-01-01 TO 2024-12-31]');
+     * } catch (error) {
+     *     if (error instanceof DotErrorContent) {
+     *         console.error('Query failed:', error.message);
+     *         console.error('Failed query:', error.query);
+     *     }
+     * }
+     * ```
+     *
+     * @example Using Promise chain instead of async/await
+     * ```typescript
+     * client.content
+     *     .query('+contentType:Blog')
+     *     .limit(10)
+     *     .then(response => console.log(response.contentlets))
+     *     .catch(error => console.error(error));
+     * ```
+     */
+    query<T = unknown>(rawQuery: string): RawQueryBuilder<T> {
+        return new RawQueryBuilder<T>({
+            requestOptions: this.requestOptions,
+            config: this.config,
+            rawQuery,
+            httpClient: this.httpClient
+        });
     }
 }

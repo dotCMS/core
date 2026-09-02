@@ -3,6 +3,7 @@ package com.dotmarketing.portlets.contentlet.business;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.elasticsearch.business.ESSearchResults;
+import com.dotcms.content.index.IndexContentletScroll;
 import com.dotcms.content.elasticsearch.business.SearchCriteria;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.variant.model.Variant;
@@ -51,6 +52,8 @@ import java.util.Set;
  * @since Mar 22, 2012
  *
  */
+// ES-DECOMMISSION: Public interface exposes ESSearchResults and SearchCriteria in deprecated method
+// signatures. Remove esSearch, esSearchRaw after R7 dotEvergreen cutover (~Aug 18).
 public interface ContentletAPI {
 
 	/**
@@ -84,15 +87,21 @@ public interface ContentletAPI {
 	String dnsRegEx = "^(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\\-]*[a-zA-Z0-9])\\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\\-]*[A-Za-z0-9])$";
 
 	/**
-	 * Use to retrieve all version of all content in the database.  This is not a common method to use. 
-	 * Only use if you need to do maintenance tasks like search and replace something in every piece 
-	 * of content.  Doesn't respect permissions.
+	 * Retrieves contentlets from the database. Doesn't respect permissions.
+	 *
+	 * <p><strong>DO NOT USE THIS METHOD.</strong></p>
+	 *
+	 * <p>This method is deprecated and should not be used in production code as it may cause
+	 * severe performance issues. For test code, use {@code ContentletDataGen.findAllContent(offset, limit)}
+	 * from the test module instead, which provides the same functionality in a test-appropriate context.</p>
 	 *
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
-	 * @return List<Contentlet> list of contentlets
-	 * @throws DotDataException
+	 * @param limit can be 0 if no limit
+	 * @return List of contentlets
+	 * @throws DotDataException if a database error occurs
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public List<Contentlet> findAllContent(int offset, int limit) throws DotDataException;
 	
 	/**
@@ -279,7 +288,7 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 * @throws DotDataException
 	 */
-	public Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
+    Contentlet findContentletByIdentifierAnyLanguage(String identifier) throws DotDataException;
 
 	/**
 	 * Retrieves a contentlet from the database by its identifier, the working version and any {@link com.dotcms.variant.model.Variant}.
@@ -400,6 +409,39 @@ public interface ContentletAPI {
 	 * @throws DotSecurityException
 	 */
 	public PaginatedContentlets findContentletsPaginatedByHost(Host parentHost, List<Integer> includingContentTypes, List<Integer> excludingContentTypes, User user, boolean respectFrontendRoles) throws DotDataException, DotSecurityException;
+
+	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 * <p>
+	 * This method should be used instead of directly accessing the factory when you need
+	 * scroll functionality for large result sets. It ensures that permissions are properly
+	 * applied to the query before creating the scroll context.
+	 * </p>
+	 * <p>
+	 * <strong>IMPORTANT:</strong> Always use try-with-resources to ensure the scroll
+	 * context is properly cleaned up:
+	 * </p>
+	 * <pre>
+	 * try (ESContentletScroll scroll = contentletAPI.createScrollQuery(query, user, false, 100, "title asc")) {
+	 *     List&lt;ContentletSearch&gt; batch;
+	 *     while ((batch = scroll.nextBatch()) != null && !batch.isEmpty()) {
+	 *         // process batch
+	 *     }
+	 * }
+	 * </pre>
+	 *
+	 * @param luceneQuery The base lucene query (permissions will be added automatically)
+	 * @param user The user making the request (required if not respecting frontend roles)
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize Number of results to retrieve per batch
+	 * @param sortBy Sort criteria (e.g., "title asc", "moddate desc")
+	 * @return ESContentletScroll instance for iterating through results
+	 * @throws DotSecurityException If user is null and not respecting frontend roles
+	 * @throws DotDataException If there's an error creating the scroll query
+	 */
+	public IndexContentletScroll createScrollQuery(
+			String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy)
+			throws DotSecurityException, DotDataException;
 
 	/**
 	 *
@@ -681,6 +723,21 @@ public interface ContentletAPI {
 	 * @throws DotDataException
 	 */
 	public void addPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
+
+	/**
+	 * Adds the secondary category-permission query fragment (the {@code categoryperms:} clause) to
+	 * the given query based on the user's roles, so results are additionally narrowed by the
+	 * category read permissions of content types that declare a category field with
+	 * {@code secondaryPermissionCheck=true}. Self-guards on {@code PERMISSION_SECONDARY_CATEGORY_CHECK}
+	 * and on admin users. Must be applied alongside {@link #addPermissionsToQuery} by every search
+	 * backend (ES and OS) to keep permission filtering consistent across the migration phases.
+	 *
+	 * @param buffy the query buffer to append to
+	 * @param user the user performing the search
+	 * @param roles the user's roles
+	 * @param respectFrontendRoles whether to include the anonymous/frontend role
+	 */
+	public void addCategoryPermissionsToQuery ( StringBuffer buffy, User user, List<Role> roles, boolean respectFrontendRoles );
 
 	/**
 	 * The search here takes a lucene query and pulls LuceneHits for you.  You can pass sortBy as null if you do not 
@@ -2477,31 +2534,59 @@ public interface ContentletAPI {
 	void publishAssociated(Contentlet contentlet, boolean isNew, boolean isNewVersion) throws DotSecurityException, DotDataException, DotStateException;
 
 	/**
+	 * Executes a raw JSON search query and returns a vendor-neutral response without loading contentlets.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResponse}
+	 * @see #esSearchRaw(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResponse searchRaw(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.searchRaw(query, live, user, respectFrontendRoles);
+	}
+
+	/**
+	 * Executes a JSON search query, loads the matching contentlets from the DB and returns them.
+	 * Use this method (not the Lucene-based overloads) when the query is an ES/OS JSON query body.
+	 *
+	 * @param query the JSON search query
+	 * @param live {@code true} to query the live index
+	 * @param user the user performing the action
+	 * @param respectFrontendRoles whether front-end roles should be applied
+	 * @return vendor-neutral {@link com.dotcms.content.index.domain.ContentSearchResults}
+	 * @see #esSearch(String, boolean, User, boolean)
+	 */
+	default com.dotcms.content.index.domain.ContentSearchResults<com.dotmarketing.portlets.contentlet.model.Contentlet> search(
+			final String query, final boolean live, final User user,
+			final boolean respectFrontendRoles)
+			throws DotSecurityException, DotDataException {
+		return com.dotmarketing.business.APILocator.getSearchAPI()
+				.search(query, live, user, respectFrontendRoles);
+	}
+
+	/**
 	 * This will only return the list of inodes as hits, and does not load the contentlets from cache.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public org.elasticsearch.action.search.SearchResponse esSearchRaw ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**
 	 * Executes a given Elastic Search query.
 	 * <br><strong>NOTE: </strong> dotCMS Enterprise only feature.
 	 *
-	 * @param esQuery
-	 * @param live
-	 * @param user
-	 * @param respectFrontendRoles
-	 * @return
-	 * @throws DotSecurityException
-	 * @throws DotDataException
+	 * @deprecated Use {@link #search(String, boolean, User, boolean)} for vendor-neutral access.
 	 */
+	@Deprecated(forRemoval = true)
 	public ESSearchResults esSearch ( String esQuery, boolean live, User user, boolean respectFrontendRoles ) throws DotSecurityException, DotDataException;
 
 	/**

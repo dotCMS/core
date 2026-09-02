@@ -1,10 +1,10 @@
-import { createComponentFactory, mockProvider, Spectator, byTestId } from '@ngneat/spectator/jest';
 import { patchState } from '@ngrx/signals';
 import { unprotected } from '@ngrx/signals/testing';
+import { createComponentFactory, mockProvider, Spectator, byTestId } from '@openng/spectator/jest';
 
 import { MenuItem } from 'primeng/api';
 
-import { DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
+import { DotCurrentUserService, DotSiteService, DotSystemConfigService } from '@dotcms/data-access';
 import { GlobalStore } from '@dotcms/store';
 import { DotCollapseBreadcrumbComponent } from '@dotcms/ui';
 
@@ -17,7 +17,12 @@ describe('DotCrumbtrailComponent', () => {
     const createComponent = createComponentFactory({
         component: DotCrumbtrailComponent,
         imports: [DotCollapseBreadcrumbComponent],
-        providers: [mockProvider(DotSiteService), mockProvider(DotSystemConfigService)],
+        providers: [
+            GlobalStore,
+            mockProvider(DotSiteService),
+            mockProvider(DotSystemConfigService),
+            mockProvider(DotCurrentUserService)
+        ],
         detectChanges: false
     });
 

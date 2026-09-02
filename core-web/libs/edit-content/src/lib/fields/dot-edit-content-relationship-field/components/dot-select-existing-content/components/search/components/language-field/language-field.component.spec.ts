@@ -1,5 +1,4 @@
-import { createComponentFactory, Spectator } from '@ngneat/spectator';
-import { mockProvider } from '@ngneat/spectator/jest';
+import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { DotLanguagesService, DotMessageService } from '@dotcms/data-access';
@@ -74,13 +73,12 @@ describe('LanguageFieldComponent', () => {
             expect(spySetSelectedLanguage).toHaveBeenCalledWith(null);
         });
 
-        it('should handle non-existent language id in writeValue', () => {
-            const spySetSelectedLanguage = jest.spyOn(store, 'setSelectedLanguage');
+        it('should handle non-existent language id in writeValue by setting pending', () => {
+            const spySetPending = jest.spyOn(store, 'setPendingLanguageId');
             spectator.detectChanges();
             component.writeValue(999);
 
-            expect(component.languageControl.value).toBeNull();
-            expect(spySetSelectedLanguage).toHaveBeenCalledWith(null);
+            expect(spySetPending).toHaveBeenCalledWith(999);
         });
 
         it('should register onChange callback', () => {
@@ -157,6 +155,34 @@ describe('LanguageFieldComponent', () => {
             component.handleLanguageChange();
 
             expect(onChangeSpy).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('Pending Language Resolution', () => {
+        it('should resolve pendingLanguageId to languageControl once languages load', () => {
+            // writeValue called BEFORE detectChanges (languages not loaded yet)
+            component.writeValue(mockLocales[0].id);
+
+            // detectChanges triggers ngOnInit → loadLanguages → effect syncs control
+            spectator.detectChanges();
+
+            expect(component.languageControl.value).toEqual(mockLocales[0]);
+            expect(store.selectedLanguageId()).toBe(mockLocales[0].id);
+        });
+
+        it('should leave languageControl null when pending id does not match any language', () => {
+            component.writeValue(999);
+            spectator.detectChanges();
+
+            expect(component.languageControl.value).toBeNull();
+        });
+
+        it('should handle writeValue(-1) before languages load without setting pending', () => {
+            const spySetPending = jest.spyOn(store, 'setPendingLanguageId');
+            component.writeValue(-1);
+
+            expect(spySetPending).not.toHaveBeenCalled();
+            expect(component.languageControl.value).toBeNull();
         });
     });
 

@@ -1,9 +1,9 @@
-import { Component, OnInit, inject } from '@angular/core';
+import { Component, OnInit, inject, ChangeDetectionStrategy } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { TabViewModule } from 'primeng/tabview';
+import { TabsModule } from 'primeng/tabs';
 
-import { pluck, take } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
 import { DotRouterService } from '@dotcms/data-access';
 import { DotContainerEntity } from '@dotcms/dotcms-models';
@@ -19,10 +19,10 @@ import { DotPortletBaseComponent } from '../../../view/components/dot-portlet-ba
 @Component({
     selector: 'dot-container-create',
     templateUrl: './dot-container-create.component.html',
-    styleUrls: ['./dot-container-create.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
         DotPortletBaseComponent,
-        TabViewModule,
+        TabsModule,
         DotMessagePipe,
         DotContainerPropertiesComponent,
         DotContainerPermissionsComponent,
@@ -35,10 +35,14 @@ export class DotContainerCreateComponent implements OnInit {
     private dotRouterService = inject(DotRouterService);
 
     containerId = '';
+    activeTab = 0;
 
     ngOnInit() {
         this.activatedRoute.data
-            .pipe(pluck('container'), take(1))
+            .pipe(
+                map((x) => x?.container),
+                take(1)
+            )
             .subscribe((container: DotContainerEntity) => {
                 if (container?.container) this.containerId = container.container.identifier;
                 else this.dotRouterService.goToCreateContainer();

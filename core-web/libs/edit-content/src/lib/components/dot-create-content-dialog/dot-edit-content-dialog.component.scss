@@ -1,3 +1,8 @@
+@use "../../../../../dotcms-scss/shared/colors";
+@use "../../../../../dotcms-scss/shared/common";
+@use "../../../../../dotcms-scss/shared/fonts";
+@use "../../../../../dotcms-scss/shared/spacing";
+
 @use "variables" as *;
 
 .edit-content-dialog {
@@ -7,46 +12,46 @@
 
 // Loading state
 .edit-content-dialog__loading {
-    padding: $spacing-6;
+    padding: spacing.$spacing-6;
 
     i {
-        font-size: $font-size-xxl;
-        color: $color-palette-primary;
-        margin-bottom: $spacing-3;
+        font-size: fonts.$font-size-xxl;
+        color: colors.$color-palette-primary;
+        margin-bottom: spacing.$spacing-3;
     }
 
     p {
         margin: 0;
-        color: $color-palette-gray-600;
+        color: colors.$color-palette-gray-600;
     }
 }
 
 // Error state
 .edit-content-dialog__error {
-    padding: $spacing-6;
+    padding: spacing.$spacing-6;
 
     i {
-        font-size: $font-size-xxl;
-        color: $color-palette-secondary;
-        margin-bottom: $spacing-3;
+        font-size: fonts.$font-size-xxl;
+        color: colors.$color-palette-secondary;
+        margin-bottom: spacing.$spacing-3;
     }
 
     h3 {
-        margin: 0 0 $spacing-2 0;
-        color: $color-palette-gray-700;
+        margin: 0 0 spacing.$spacing-2 0;
+        color: colors.$color-palette-gray-700;
     }
 
     p {
-        margin: 0 0 $spacing-2 0;
-        color: $color-palette-gray-600;
+        margin: 0 0 spacing.$spacing-2 0;
+        color: colors.$color-palette-gray-600;
 
         &:last-child {
-            background: $color-palette-secondary-op-10;
-            border: 1px solid $color-palette-secondary-op-30;
-            border-radius: $border-radius-md;
-            padding: $spacing-2 $spacing-3;
-            color: $color-palette-secondary;
-            font-size: $font-size-sm;
+            background: colors.$color-palette-secondary-op-10;
+            border: 1px solid colors.$color-palette-secondary-op-30;
+            border-radius: common.$border-radius-md;
+            padding: spacing.$spacing-2 spacing.$spacing-3;
+            color: colors.$color-palette-secondary;
+            font-size: fonts.$font-size-sm;
             word-break: break-word;
         }
     }
@@ -78,6 +83,6 @@
 
     // Adjust sidebar in dialog context
     .edit-content-layout__sidebar {
-        border-left: 1px solid $color-palette-gray-300;
+        border-left: 1px solid colors.$color-palette-gray-300;
     }
 }

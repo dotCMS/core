@@ -20,6 +20,8 @@
 <%@ page import="com.dotmarketing.util.Logger" %>
 <%@ page import="java.util.HashMap" %>
 <%@ page import="java.util.Map" %>
+<%@ page import="com.fasterxml.jackson.databind.JsonNode" %>
+<%@ page import="com.fasterxml.jackson.databind.node.ObjectNode" %>
 
 <%@page import="com.dotmarketing.util.Config"%>
 <%
@@ -96,6 +98,14 @@
 <script type="text/javascript" src="/html/js/dojo/custom-build/dojo/dojo.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/html/js/dojo/custom-build/build/build.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 
+<!-- DWR Cookie Security Configuration -->
+<script type="text/javascript">
+	window.dwrCookieSecurityConfig = {
+		secure: <%= Config.getBooleanProperty("DWRSESSIONID_SECURE", false) %>,
+		sameSite: '<%= Config.getStringProperty("DWRSESSIONID_SAMESITE", "") %>'
+	};
+</script>
+<script type="text/javascript" src="/html/js/dwr-cookie-security.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/engine.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/util.js?b=<%= ReleaseInfo.getVersion() %>"></script>
 <script type="text/javascript" src="/dwr/interface/HostAjax.js?b=<%= ReleaseInfo.getVersion() %>"></script>
@@ -187,16 +197,15 @@
       --basic-speed: 150ms;
     }
 
-	/* fallback */
 	@font-face {
-	font-family: 'Material Icons';
+	font-family: 'Material Symbols Outlined';
 	font-style: normal;
-	font-weight: 400;
+	font-weight: 100 700;
 	font-display: swap;
-	src: url('/dotAdmin/assets/MaterialIcons-Regular.ttf') format('truetype');
+	src: url('/dotAdmin/assets/MaterialSymbolsOutlined-Regular.woff2') format('woff2');
 	}
-	.material-icons {
-	font-family: 'Material Icons';
+	.material-symbols-outlined {
+	font-family: 'Material Symbols Outlined';
 	font-weight: normal;
 	font-style: normal;
 	font-size: 24px;
@@ -207,6 +216,8 @@
 	white-space: nowrap;
 	word-wrap: normal;
 	direction: ltr;
+	font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+	font-feature-settings: 'liga';
 	-webkit-font-feature-settings: 'liga';
 	-webkit-font-smoothing: antialiased;
 	}
@@ -282,7 +293,27 @@
 
             Field field = contentType.fieldMap().get(fieldName);
 
-            String fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+            // Serialize fieldMap to JSON and remove 'values' attribute from each field
+            // to prevent JavaScript parsing errors from HTML/CSS/JS content in 'values'
+            String fieldJson;
+            try {
+                JsonNode fieldMapNode = mapper.valueToTree(contentType.fieldMap());
+                if (fieldMapNode.isObject()) {
+                    ObjectNode fieldMapObject = (ObjectNode) fieldMapNode;
+                    // Remove 'values' attribute from each field in the map
+                    fieldMapObject.fields().forEachRemaining(entry -> {
+                        JsonNode fieldNode = entry.getValue();
+                        if (fieldNode.isObject()) {
+                            ((ObjectNode) fieldNode).remove("values");
+                        }
+                    });
+                }
+                fieldJson = mapper.writeValueAsString(fieldMapNode);
+            } catch (Exception e) {
+                Logger.error("legacy-custom-field.jsp", "Error serializing fieldMap without 'values': " + e.getMessage(), e);
+                // Fallback to original serialization if something goes wrong
+                fieldJson = mapper.writeValueAsString(contentType.fieldMap());
+            }
 
 
             if (null != field) {
@@ -294,7 +325,14 @@
 
                 if(UtilMethods.isSet(textValue)){
                     org.apache.velocity.context.Context velocityContext =  com.dotmarketing.util.web.VelocityWebUtil.getVelocityContext(request,response);
-                    // Set velocity variable if not already set
+                    if (contentlet != null && UtilMethods.isSet(contentlet.getInode())) {
+                        velocityContext.put("inode", contentlet.getInode());
+                        velocityContext.put("identifier", contentlet.getIdentifier());
+                        velocityContext.put("lang", contentlet.getLanguageId());
+                        velocityContext.put("contentlet", contentlet);
+                        velocityContext.put("structure", contentType);
+                    }
+                    velocityContext.put("field", field);
                     if(!UtilMethods.isSet(velocityContext.get(field.variable()))){
                         if(UtilMethods.isSet(value)){
                             velocityContext.put(field.variable(), value);

@@ -2,6 +2,7 @@ package com.dotcms.publisher.assets.business;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.LicenseTestUtil;
+import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.publisher.assets.bean.PushedAsset;
 import com.dotcms.publisher.bundle.bean.Bundle;
 import com.dotcms.publisher.bundle.business.BundleAPI;
@@ -130,8 +131,7 @@ public class PushedAssetsAPITest extends IntegrationTestBase {
                                               final Bundle bundle1,
                                               final User adminUser) throws DotDataException {
         PushedAsset pushedAsset = null;
-        final List<Contentlet> contentlets = contentletAPI.findAllContent
-                ( 0, 30 ).stream().filter(Objects::nonNull).collect(Collectors.toList());
+        final List<Contentlet> contentlets = ContentletDataGen.findAllContent(0, 30);
         final List<PushedAsset> pushedAssets = new ArrayList<>();
         final Date pushDate = new Date();
         for (final Contentlet contentlet : contentlets) {

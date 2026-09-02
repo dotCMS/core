@@ -1,14 +1,15 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
+import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
     forwardRef,
+    inject,
     Input,
     Output,
     ViewChild,
-    inject
+    ChangeDetectionStrategy
 } from '@angular/core';
 import { ControlValueAccessor, FormsModule, NG_VALUE_ACCESSOR } from '@angular/forms';
 
@@ -52,7 +53,6 @@ enum SearchType {
 @Component({
     selector: 'dot-page-selector',
     templateUrl: './dot-page-selector.component.html',
-    styleUrls: ['./dot-page-selector.component.scss'],
     providers: [
         DotPageSelectorService,
         {
@@ -62,13 +62,17 @@ enum SearchType {
         }
     ],
     imports: [
-        CommonModule,
         FormsModule,
         AutoCompleteModule,
         DotDirectivesModule,
         DotFieldHelperComponent,
-        DotMessagePipe
-    ]
+        DotMessagePipe,
+        AsyncPipe
+    ],
+    changeDetection: ChangeDetectionStrategy.Eager,
+    host: {
+        class: 'relative'
+    }
 })
 export class DotPageSelectorComponent implements ControlValueAccessor {
     private dotPageSelectorService = inject(DotPageSelectorService);

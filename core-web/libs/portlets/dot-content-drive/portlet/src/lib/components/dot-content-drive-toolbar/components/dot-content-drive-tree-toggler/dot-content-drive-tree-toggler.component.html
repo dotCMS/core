@@ -1,7 +1,33 @@
-<svg
-    class="p-button-icon pi"
-    fill="currentColor"
-    viewBox="0 0 24 24"
-    data-testid="tree-toggle-icon">
-    <use href="./assets/dot-content-drive/tree-folder.svg#tree-folder"></use>
-</svg>
+<!-- A real p-button rather than button classes on the host: the host is a custom element, so it
+     could never take focus and the toggle was unreachable by keyboard. The accessible name has to
+     go through PrimeNG's `[ariaLabel]` input too — `[attr.aria-label]` would land on the
+     non-focusable `<p-button>` host, leaving the actual `<button>` unnamed. The name carries the
+     state, since the glyph is decorative and does not reflect it.
+
+     `p-button-icon-only` is applied through the pass-through API (`pt.root`) rather than the
+     deprecated `styleClass`. It is needed explicitly because PrimeNG only derives icon-button sizing
+     from its `icon` input, and the glyph is projected content here. -->
+
+<p-button
+    [text]="true"
+    [rounded]="true"
+    [pt]="{ root: { class: 'p-button-icon-only' } }"
+    [disabled]="$treeForceCollapsed()"
+    [ariaLabel]="
+        ($treeExpanded() ? 'content-drive.tree.collapse' : 'content-drive.tree.expand') | dm
+    "
+    (onClick)="toggleTree()"
+    data-testid="tree-toggler-button">
+    <!-- Deliberately ONE static glyph that does not react to the expanded state: the icon names
+         where the panel docks, not what the click will do, so swapping it mid-interaction made the
+         control read as two different things. `dock_to_right` is the convention for a panel on the
+         LEFT; the right-hand Edit Content sidebar uses `dock_to_left` for the same reason, and this
+         mirrors its markup so the two controls stay identical.
+
+         `aria-hidden` keeps screen readers off the ligature text — the state lives on the button's
+         accessible name above. Left unsized on purpose: the shared Material Symbols styles render at
+         24px, the size UVE's equivalent toggle uses. -->
+    <i class="material-symbols-outlined" aria-hidden="true" data-testid="tree-toggle-icon">
+        dock_to_right
+    </i>
+</p-button>

@@ -1,4 +1,5 @@
 import { DotCMSAISearchResponse, DotCMSBasicContentlet, DotErrorAISearch } from '@dotcms/types';
+import { ThenableCallback } from '@dotcms/types/internal';
 
 /**
  * Callback for a fulfilled promise.
@@ -6,23 +7,17 @@ import { DotCMSAISearchResponse, DotCMSBasicContentlet, DotErrorAISearch } from 
  * @template T - The type of the response.
  * @callback OnFullfilled
  * @param {DotCMSAISearchResponse} value - The response value.
- * @returns {DotCMSAISearchResponse | PromiseLike<DotCMSAISearchResponse>} The processed response or a promise.
+ * @returns {DotCMSAISearchResponse | PromiseLike<DotCMSAISearchResponse> | void} The processed response or a promise.
  */
-export type OnFullfilled<T extends DotCMSBasicContentlet> =
-    | ((
-          value: DotCMSAISearchResponse<T>
-      ) => DotCMSAISearchResponse<T> | PromiseLike<DotCMSAISearchResponse<T>>)
-    | undefined
-    | null;
+export type OnFullfilled<T extends DotCMSBasicContentlet> = ThenableCallback<
+    DotCMSAISearchResponse<T>
+>;
 
 /**
  * Callback for a rejected promise.
  *
  * @callback OnRejected
  * @param {DotErrorAISearch} error - The AI search error object.
- * @returns {DotErrorAISearch | PromiseLike<DotErrorAISearch>} The processed error or a promise.
+ * @returns {DotErrorAISearch | PromiseLike<DotErrorAISearch> | void} The processed error or a promise.
  */
-export type OnRejected =
-    | ((error: DotErrorAISearch) => DotErrorAISearch | PromiseLike<DotErrorAISearch>)
-    | undefined
-    | null;
+export type OnRejected = ThenableCallback<DotErrorAISearch>;

@@ -3,12 +3,12 @@ import {
     Component,
     ElementRef,
     HostListener,
+    inject,
     Input,
     OnInit,
     ViewChild,
-    inject
+    ChangeDetectionStrategy
 } from '@angular/core';
-import { SafeUrl } from '@angular/platform-browser';
 
 import { MenuItem } from 'primeng/api';
 
@@ -27,7 +27,7 @@ export interface SuggestionsCommandProps {
 }
 
 export interface DotMenuItem extends Omit<MenuItem, 'icon'> {
-    icon?: string | SafeUrl;
+    icon?: string;
     isActive?: () => boolean;
     attributes?: Record<string, unknown>;
     data?: Record<string, unknown>;
@@ -43,7 +43,8 @@ export enum ItemsType {
 @Component({
     selector: 'dot-suggestions',
     templateUrl: './suggestions.component.html',
-    styleUrls: ['./suggestions.component.scss'],
+    styleUrls: ['./suggestions.component.css'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     standalone: false
 })
 export class SuggestionsComponent implements OnInit {

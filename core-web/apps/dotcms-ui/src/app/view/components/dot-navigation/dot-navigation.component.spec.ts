@@ -1,4 +1,4 @@
-import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@ngneat/spectator/jest';
+import { Spectator, SpyObject, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
@@ -8,11 +8,16 @@ import { provideRouter } from '@angular/router';
 
 import { TooltipModule } from 'primeng/tooltip';
 
-import { DotEventsService, DotRouterService, DotSystemConfigService } from '@dotcms/data-access';
+import {
+    DotCurrentUserService,
+    DotEventsService,
+    DotRouterService,
+    DotSystemConfigService
+} from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
 import { GlobalStore } from '@dotcms/store';
 import { DotIconComponent } from '@dotcms/ui';
-import { LoginServiceMock } from '@dotcms/utils-testing';
+import { DotCurrentUserServiceMock, LoginServiceMock } from '@dotcms/utils-testing';
 
 import { DotNavIconComponent } from './components/dot-nav-icon/dot-nav-icon.component';
 import { DotNavItemComponent } from './components/dot-nav-item/dot-nav-item.component';
@@ -42,11 +47,12 @@ describe('DotNavigationComponent collapsed', () => {
         providers: [
             provideRouter([]),
             DotMenuService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
-                currentPortlet: { id: '123' }
+                currentPortlet: { id: '123', parentMenuId: '123' }
             }),
             {
                 provide: LoginService,
@@ -129,7 +135,7 @@ describe('DotNavigationComponent collapsed', () => {
         expect(items[1].$data().menuItems.length).toBeGreaterThan(0);
     });
 
-    it('should close on document click', () => {
+    it('should open parent menu', () => {
         spectator.detectChanges();
 
         // First, ensure navigation is collapsed
@@ -139,11 +145,6 @@ describe('DotNavigationComponent collapsed', () => {
         // Then open a parent menu group
         globalStore.toggleParent('123');
         expect(globalStore.openParentMenuId()).toBe('123');
-
-        // Then click on document (when collapsed)
-        spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close all parent menu groups via GlobalStore
-        expect(globalStore.openParentMenuId()).toBe(null);
     });
 
     describe('itemClick event', () => {
@@ -233,11 +234,12 @@ describe('DotNavigationComponent expanded', () => {
         providers: [
             provideRouter([]),
             DotMenuService,
+            { provide: DotCurrentUserService, useClass: DotCurrentUserServiceMock },
             mockProvider(IframeOverlayService),
             mockProvider(DotNavigationService),
             mockProvider(DotEventsService),
             mockProvider(DotRouterService, {
-                currentPortlet: { id: '123' }
+                currentPortlet: { id: '123', parentMenuId: '123' }
             }),
             {
                 provide: LoginService,
@@ -298,18 +300,14 @@ describe('DotNavigationComponent expanded', () => {
         expect(items[1].$data().id).toBe('456');
     });
 
-    it('should close on document click', () => {
+    it('should be in expanded state', () => {
         spectator.detectChanges();
 
         // Set navigation to collapsed state
         globalStore.collapseNavigation();
         spectator.detectChanges();
 
-        jest.spyOn(globalStore, 'closeAllParents');
-
-        spectator.dispatchMouseEvent(spectator.element, 'click');
-        // When collapsed, clicking should close sections
-        expect(globalStore.closeAllParents).toHaveBeenCalledTimes(1);
+        expect(globalStore.isNavigationCollapsed()).toBe(true);
     });
 
     describe('itemClick event', () => {

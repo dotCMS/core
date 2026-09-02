@@ -1,7 +1,6 @@
 {
   "request": {
     "method": "POST",
-    "url": "/c",
     "headers": {
       "Content-Type": {
         "equalTo": "application/json"
@@ -12,12 +11,35 @@
     },
     "bodyPatterns": [
       {
-        "matches": ".*\"content\":\".*How are emerging technologies like blockchain and the Internet of Things (IoT) shaping the future of smart cities.*"
+        "matches": ".*\"content\" : \".*How are emerging technologies like blockchain and the Internet of Things \\(IoT\\) shaping the future of smart cities.*"
       }
-    ]
+    ],
+    "urlPathPattern": "/chat/completions"
   },
   "response": {
     "status": 200,
-    "body": "data: {\"id\":\"chatcmpl-9eX3XcEpp42K4ekYmyG2QvaXHBlts\",\"object\":\"chat.completion.chunk\",\"created\":1719447215,\"model\":\"gpt-3.5-turbo-16k-0613\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"role\":\"assistant\",\"content\":\"\"},\"logprobs\":null,\"finish_reason\":null}]}\n\n      data: {\"id\":\"chatcmpl-9eX3XcEpp42K4ekYmyG2QvaXHBlts\",\"object\":\"chat.completion.chunk\",\"created\":1719447215,\"model\":\"gpt-3.5-turbo-16k-0613\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{\"content\":\"The\"},\"logprobs\":null,\"finish_reason\":null}]}\n\n      data: {\"id\":\"chatcmpl-9eX3XcEpp42K4ekYmyG2QvaXHBlts\",\"object\":\"chat.completion.chunk\",\"created\":1719447215,\"model\":\"gpt-3.5-turbo-16k-0613\",\"system_fingerprint\":null,\"choices\":[{\"index\":0,\"delta\":{},\"logprobs\":null,\"finish_reason\":\"length\"}]}\n\n      data: [DONE]"
+    "jsonBody": {
+      "id": "chatcmpl-9eX3XcEpp42K4ekYmyG2QvaXHBlts",
+      "object": "chat.completion",
+      "created": 1719447215,
+      "model": "gpt-3.5-turbo-16k-0613",
+      "choices": [
+        {
+          "index": 0,
+          "message": {
+            "role": "assistant",
+            "content": "The"
+          },
+          "logprobs": null,
+          "finish_reason": "length"
+        }
+      ],
+      "usage": {
+        "prompt_tokens": 116,
+        "completion_tokens": 1,
+        "total_tokens": 117
+      },
+      "system_fingerprint": null
+    }
   }
 }

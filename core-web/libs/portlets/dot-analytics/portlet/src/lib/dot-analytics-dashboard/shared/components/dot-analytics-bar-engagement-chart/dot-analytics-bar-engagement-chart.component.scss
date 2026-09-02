@@ -1,0 +1,58 @@
+/**
+ * Matches `dot-analytics-metric` / pie chart cards: flex chain fills grid cells reliably.
+ */
+.bar-engagement-chart-card.p-card {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+}
+
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-title {
+    flex: 0 0 auto;
+    margin-bottom: 0;
+}
+
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-subtitle {
+    flex: 0 0 auto;
+    margin-top: 0;
+    margin-bottom: 0;
+}
+
+/* `.p-card-content` holds chart rows; inner footer uses margin-top:auto. */
+:host ::ng-deep .bar-engagement-chart-card.p-card > .p-card-body > .p-card-content {
+    flex: 1;
+    width: 100%;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+    margin-top: 1rem;
+}
+
+/* "View details" p-button-link override scoped to this component. */
+:host ::ng-deep .bar-engagement-chart__view-details.p-button-link {
+    padding: 0;
+    font-weight: 600;
+
+    &:not(:disabled):hover .p-button-label {
+        text-decoration: underline;
+    }
+
+    .p-button-label {
+        text-decoration: underline;
+        text-underline-offset: 0.125rem;
+    }
+}

@@ -23,7 +23,6 @@ import {
     DotMessageService,
     DotPageTypesService,
     DotPageWorkflowsActionsService,
-    DotPropertiesService,
     DotRenderMode,
     DotRouterService,
     DotWorkflowActionsFireService,
@@ -45,14 +44,13 @@ import {
     DotLanguage,
     DotPermissionsType,
     ESContent,
-    FeaturedFlags,
     PermissionsType,
     UserPermissions
 } from '@dotcms/dotcms-models';
 import { DotFavoritePageComponent } from '@dotcms/portlets/dot-ema/ui';
 import { generateDotFavoritePageUrl } from '@dotcms/utils';
 
-import { DotPagesCreatePageDialogComponent } from '../dot-pages-create-page-dialog/dot-pages-create-page-dialog.component';
+import { DotCreatePageDialogComponent } from '../dot-create-page-dialog/dot-create-page-dialog.component';
 
 export interface DotPagesInfo {
     actionMenuDomId?: string;
@@ -154,7 +152,6 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     private siteService = inject(SiteService);
     private dotFavoritePageService = inject(DotFavoritePageService);
     private dotLocalstorageService = inject(DotLocalstorageService);
-    private dotPropertiesService = inject(DotPropertiesService);
 
     readonly getStatus$ = this.select((state) => state?.pages?.status || ComponentStatus.INIT);
 
@@ -359,14 +356,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
     readonly getPageTypes = this.effect<void>((trigger$) =>
         trigger$.pipe(
             switchMap(() => {
-                return this.dotPageTypesService.getPages().pipe(
+                return this.dotPageTypesService.getPageContentTypes().pipe(
                     take(1),
-                    tapResponse(
-                        (pageTypes: DotCMSContentType[]) => {
+                    tapResponse({
+                        next: (pageTypes: DotCMSContentType[]) => {
                             this.patchState({
                                 pageTypes
                             });
-                            this.dialogService.open(DotPagesCreatePageDialogComponent, {
+                            this.dialogService.open(DotCreatePageDialogComponent, {
                                 header: this.dotMessageService.get('create.page'),
                                 width: '58rem',
                                 data: {
@@ -374,10 +371,10 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                 }
                             });
                         },
-                        (error: HttpErrorResponse) => {
+                        error: (error: HttpErrorResponse) => {
                             return this.httpErrorManagerService.handle(error);
                         }
-                    )
+                    })
                 );
             })
         )
@@ -508,13 +505,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 .getEnvironments()
                 .pipe(map((environments: DotEnvironment[]) => !!environments.length)),
             this.getSessionStorageFilterParams(),
-            this.getLocalStorageFavoritePanelParams(),
-            this.dotPropertiesService.getFeatureFlag(
-                FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED
-            ),
-            this.dotPropertiesService
-                .getKey(FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_CONTENT_TYPE)
-                .pipe(map((contentTypes) => contentTypes.split(',')))
+            this.getLocalStorageFavoritePanelParams()
         ])
             .pipe(
                 take(1),
@@ -786,24 +777,22 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     const sortOrderValue = this.getSortOrderValue(sortField, sortOrder);
 
                     return this.getPagesData(offset, sortOrderValue, sortField).pipe(
-                        tapResponse(
-                            (items) => {
+                        tapResponse({
+                            next: (items) => {
                                 this.setPages({
                                     items: items.jsonObjectView.contentlets as DotCMSContentlet[],
                                     total: items.resultsSize
                                 });
                             },
-                            (error: HttpErrorResponse) => {
+                            error: (error: HttpErrorResponse) => {
                                 this.setPagesStatus(ComponentStatus.LOADED);
-
                                 // Set message to throw a custom Favorite Page error message
                                 error.error.message = this.dotMessageService.get(
                                     'favoritePage.error.fetching.data'
                                 );
-
                                 return this.httpErrorManagerService.handle(error, true);
                             }
-                        )
+                        })
                     );
                 })
             );
@@ -835,13 +824,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
         return itemsPerPage$.pipe(
             switchMap((itemsPerPage: number) =>
                 this.getFavoritePagesData({ limit: itemsPerPage }).pipe(
-                    tapResponse(
-                        (items) => {
+                    tapResponse({
+                        next: (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
                             this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.httpErrorManagerService.handle(error)
+                    })
                 )
             )
         );
@@ -858,13 +848,14 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
             switchMap(() => {
                 return this.getFavoritePagesData({ limit: FAVORITE_PAGE_LIMIT }).pipe(
                     take(1),
-                    tapResponse(
-                        (items) => {
+                    tapResponse({
+                        next: (items) => {
                             const favoritePages = this.getNewFavoritePages(items);
                             this.patchState({ favoritePages });
                         },
-                        (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                    )
+                        error: (error: HttpErrorResponse) =>
+                            this.httpErrorManagerService.handle(error)
+                    })
                 );
             }),
             catchError((error: HttpErrorResponse) => this.httpErrorManagerService.handle(error))
@@ -876,6 +867,7 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                 switchMap(({ item, actionMenuDomId }) => {
                     return forkJoin({
                         workflowsData: this.getWorflowActionsFn(item),
+                        // Check this
                         dotFavorite: this.getFavoritePagesData({
                             limit: 1,
                             url:
@@ -889,8 +881,8 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                         })
                     }).pipe(
                         take(1),
-                        tapResponse(
-                            ({ workflowsData, dotFavorite }) => {
+                        tapResponse({
+                            next: ({ workflowsData, dotFavorite }) => {
                                 if (workflowsData) {
                                     this.setMenuActions({
                                         actions: this.getSelectActions(
@@ -902,8 +894,9 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                                     });
                                 }
                             },
-                            (error: HttpErrorResponse) => this.httpErrorManagerService.handle(error)
-                        )
+                            error: (error: HttpErrorResponse) =>
+                                this.httpErrorManagerService.handle(error)
+                        })
                     );
                 })
             );
@@ -949,6 +942,12 @@ export class DotPageStore extends ComponentStore<DotPagesState> {
                     this.dialogService.open(DotFavoritePageComponent, {
                         header: this.dotMessageService.get('favoritePage.dialog.header'),
                         width: '80rem',
+                        contentStyle: {
+                            display: 'flex',
+                            flexDirection: 'column',
+                            minHeight: 0,
+                            overflow: 'hidden'
+                        },
                         data: {
                             page: {
                                 favoritePageUrl,

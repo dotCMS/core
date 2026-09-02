@@ -5,6 +5,13 @@ import { Component, h, Host, Prop, State } from '@stencil/core';
 
 import { DotContentletItem } from '../../models/dot-contentlet-item.model';
 
+/**
+ * @deprecated Angular code must use `DotContentThumbnailComponent`
+ * (`dot-content-thumbnail`) from `@dotcms/ui` instead — pass the contentlet
+ * via its `contentlet`/`options` inputs or a resolved model via `thumbnail`.
+ * This web component remains only for Stencil-internal use
+ * (`dot-card-contentlet`) and legacy JSP pages. See dotCMS/core#36295.
+ */
 @Component({
     tag: 'dot-contentlet-thumbnail',
     styleUrl: 'dot-contentlet-thumbnail.scss'
@@ -60,8 +67,6 @@ export class DotContentletThumbnail {
     render() {
         const backgroundImageURL =
             this.contentlet && this.backgroundImage ? `url(${this.getImageURL()})` : '';
-        const imgClass = this.backgroundImage ? 'background-image' : '';
-        const svgClass = this.isSVG ? ' svg-thumbnail' : '';
 
         return (
             <Host>
@@ -74,7 +79,7 @@ export class DotContentletThumbnail {
                     />
                 ) : this.renderImage ? (
                     <div
-                        class={`thumbnail ${imgClass}${svgClass}`}
+                        class={`thumbnail`}
                         style={{
                             'background-image': backgroundImageURL
                         }}>
@@ -140,12 +145,12 @@ export class DotContentletThumbnail {
             return '';
         }
 
-        const { baseType, __icon__, contentTypeIcon } = this.contentlet;
+        const { baseType, __icon__, contentTypeIcon, icon } = this.contentlet;
         const isFileAsset = baseType === 'FILEASSET';
 
         return isFileAsset
-            ? (__icon__ ?? contentTypeIcon ?? '')
-            : (contentTypeIcon ?? __icon__ ?? '');
+            ? (__icon__ ?? contentTypeIcon ?? icon ?? '')
+            : (contentTypeIcon ?? __icon__ ?? icon ?? '');
     }
 
     private shouldShowVideoThumbnail() {

@@ -1,0 +1,22 @@
+{
+  "version": "2.0.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Debug dotCMS (Docker)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "dotcms-core"
+    },
+    {
+      "type": "java",
+      "name": "Debug dotCMS (Suspended)",
+      "request": "attach",
+      "hostName": "localhost",
+      "port": 5005,
+      "projectName": "dotcms-core",
+      "timeout": 300000
+    }
+  ]
+}

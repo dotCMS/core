@@ -1,9 +1,9 @@
 package com.dotmarketing.business.cache.provider.guava;
 
 import com.dotcms.enterprise.cache.provider.CacheProviderAPI;
-import com.dotcms.repackage.com.google.common.cache.Cache;
-import com.dotcms.repackage.com.google.common.cache.CacheBuilder;
-import com.dotcms.repackage.com.google.common.cache.CacheLoader;
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.cache.CacheLoader;
 
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.cache.provider.CacheProvider;
@@ -195,7 +195,7 @@ public class GuavaCache extends CacheProvider {
 
           
           
-          com.dotcms.repackage.com.google.common.cache.CacheStats guavaStats = foundCache.stats();
+          com.google.common.cache.CacheStats guavaStats = foundCache.stats();
           
           NumberFormat nf = DecimalFormat.getInstance();
           DecimalFormat pf = new DecimalFormat("##.##%");

@@ -33,6 +33,7 @@ public class DotContentletValidationException extends DotContentletStateExceptio
     public static final String VALIDATION_FAILED_BADTYPE = "badType";
     public static final String VALIDATION_FAILED_REQUIRED = "required";
     public static final String VALIDATION_FAILED_PATTERN = "pattern";
+    public static final String VALIDATION_FAILED_CHAR_LIMIT = "charLimitExceeded";
 
     public static final String VALIDATION_FAILED_REQUIRED_REL = "reqRel";
     public static final String VALIDATION_FAILED_INVALID_REL_CONTENT = "badRelCon";
@@ -43,6 +44,8 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	private static final long serialVersionUID = 1L;
 	private final Map<String, List<Field>> notValidFields = new HashMap<>();
 	private final Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships = new HashMap<>();
+	/** Max character limit per field (key: field velocity var name) for CHAR_LIMIT validation errors */
+	private final Map<String, Integer> charLimitMaxByFieldVar = new HashMap<>();
 
 	private ImportLineError importLineError = null;
 
@@ -87,6 +90,22 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		this.importLineError = importLineError;
 		this.notValidFields.putAll(notValidFields);
 		this.notValidRelationships.putAll(notValidRelationships);
+	}
+
+	/**
+	 * Package-private constructor for setting ImportLineError, validation details, and char limit data from Builder
+	 */
+	protected DotContentletValidationException(String x, ImportLineError importLineError,
+			Map<String, List<Field>> notValidFields,
+			Map<String, Map<Relationship, List<Contentlet>>> notValidRelationships,
+			Map<String, Integer> charLimitMaxByFieldVar) {
+		super(x);
+		this.importLineError = importLineError;
+		this.notValidFields.putAll(notValidFields);
+		this.notValidRelationships.putAll(notValidRelationships);
+		if (charLimitMaxByFieldVar != null) {
+			this.charLimitMaxByFieldVar.putAll(charLimitMaxByFieldVar);
+		}
 	}
 
 
@@ -193,6 +212,21 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 	}
 
 	/**
+	 * Add a field that failed character limit validation (e.g. Story Block charLimit exceeded).
+	 * @param field the field that failed
+	 * @param maxLimit the configured character limit
+	 */
+	public void addCharLimitField(Field field, int maxLimit) {
+		List<Field> fields = notValidFields.get(VALIDATION_FAILED_CHAR_LIMIT);
+		if (fields == null) {
+			fields = new ArrayList<>();
+		}
+		fields.add(field);
+		notValidFields.put(VALIDATION_FAILED_CHAR_LIMIT, fields);
+		charLimitMaxByFieldVar.put(field.getVelocityVarName(), maxLimit);
+	}
+
+	/**
 	 * Use to add a field that failed unique field validation
 	 * @param field
 	 * @deprecated Use {@link Builder#addUniqueField(Field, String)} instead for better ImportLineError support
@@ -225,6 +259,18 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		if(fields == null || fields.isEmpty())
 			return false;
 		return true;
+	}
+
+	public boolean hasCharLimitErrors() {
+		List<Field> fields = notValidFields.get(VALIDATION_FAILED_CHAR_LIMIT);
+		return fields != null && !fields.isEmpty();
+	}
+
+	/**
+	 * Returns the max character limit per field for CHAR_LIMIT validation errors (key: field velocity var name).
+	 */
+	public Map<String, Integer> getCharLimitMaxByFieldVar() {
+		return new HashMap<>(charLimitMaxByFieldVar);
 	}
 
 	/**
@@ -423,6 +469,15 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 		}
 
 		/**
+		 * Add a character limit exceeded validation error (e.g. Story Block charLimit)
+		 */
+		public Builder<T> addCharLimitField(Field field, int maxLimit) {
+			exception.addCharLimitField(field, maxLimit);
+			captureFirstError(field, String.valueOf(maxLimit), ImportLineValidationCodes.CHAR_LIMIT_EXCEEDED.name(), null, null);
+			return this;
+		}
+
+		/**
 		 * Add a unique field validation error
 		 */
 		public Builder<T> addUniqueField(Field field, String value) {
@@ -551,10 +606,12 @@ public class DotContentletValidationException extends DotContentletStateExceptio
 				final T newException;
 				if (exception instanceof FileAssetValidationException) {
 					newException = (T) new FileAssetValidationException(exception.getMessage(), lineError,
-							exception.getNotValidFields(), exception.getNotValidRelationship());
+							exception.getNotValidFields(), exception.getNotValidRelationship(),
+							exception.getCharLimitMaxByFieldVar());
 				} else {
 					newException = (T) new DotContentletValidationException(exception.getMessage(), lineError,
-							exception.getNotValidFields(), exception.getNotValidRelationship());
+							exception.getNotValidFields(), exception.getNotValidRelationship(),
+							exception.getCharLimitMaxByFieldVar());
 				}
 				
 				return newException;

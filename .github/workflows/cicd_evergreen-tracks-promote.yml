@@ -1,0 +1,301 @@
+name: evergreen-tracks-promote
+# Advances the floating `standard` / `trailing` tags. `latest` is owned by the release
+# pipeline, which moves it on every GA cut (cicd_6-release.yml, --tracks latest), so the
+# daily cron deliberately leaves it alone.
+#
+# The `tracks` dispatch input can still aim this workflow at `latest` — the break-glass
+# path for when a release cut moved everything EXCEPT latest (e.g. the 2026-08-12 Hub
+# 403, #37025), where the alternative was cutting a throwaway release to repoint a tag.
+# It is dispatch-only and lands behind the same approval gate as any other manual move.
+#
+# Two triggers, one engine:
+#   * SCHEDULE (daily, 06:00 ET) — runs plan → apply unattended. No human in the loop.
+#   * MANUAL dispatch — runs plan → gate → apply, where `gate` waits on the
+#     `evergreen-tracks-apply` required-reviewer environment. This is the
+#     break-glass path: use it to review a plan before it lands, or to move tags
+#     off-cycle. (One-time repo setup: Settings > Environments >
+#     evergreen-tracks-apply > Required reviewers. Without reviewers configured the
+#     gate passes unattended — the gate is the protection rule, not the YAML.)
+#
+# Why unattended daily promotion is safe: moving a floating tag does not deploy
+# anything. Every customer manifest in dotCMS/infrastructure-as-code pins an
+# immutable <version>@sha256:<digest>, and the in-cluster evergreen-tracks
+# reconciler is the only thing that rewrites those pins — it resolves the track
+# tag at run time, inside its biweekly on-parity Wednesday maintenance window.
+# A tag moved on a Tuesday therefore has no effect until that window. Nothing in
+# the clusters watches the tags continuously (no Argo Image Updater / Keel, no
+# floating-tag references, no imagePullPolicy: Always on customer pods).
+#
+# Note that daily promotion does not mean daily tag movement: the planner is
+# forward-only and age-gated (standard >= 14d, trailing >= 28d), so a track moves
+# only on the day a release actually crosses its threshold.
+on:
+  schedule:
+    # 10:00 UTC = 06:00 EDT / 05:00 EST. GitHub cron is UTC-only with no DST
+    # handling, so this drifts an hour in winter. Harmless here — the reconciler's
+    # maintenance window, not this job's clock, governs when images actually roll.
+    - cron: '0 10 * * *'
+  workflow_dispatch:
+    inputs:
+      repo:
+        description: 'Docker repo to operate on'
+        required: true
+        default: 'dotcms/dotcms'
+      standard_days:
+        description: 'Min age (days) for the standard track'
+        required: false
+        default: '14'
+      trailing_days:
+        description: 'Min age (days) for the trailing track'
+        required: false
+        default: '28'
+      tracks:
+        description: 'Tracks to move (comma-separated: latest,standard,trailing)'
+        required: false
+        default: 'standard,trailing'
+
+permissions:
+  contents: read
+
+# The evergreen-tracks-registry concurrency lock lives at JOB level on `apply`
+# only (see below), NOT here. Workflow-level concurrency would hold the lock
+# for the whole run — including the minutes-to-days the approval gate sits
+# waiting — which would queue the release pipeline's latest-promote behind a
+# human. `latest` must move the instant a GA ships.
+
+jobs:
+  # Dry-run: read live registry state and print the tag moves. No creds needed to
+  # mutate anything here (point_tag only logs when --apply is absent), but we log
+  # into Hub so listing tags works the same as the apply job (private repos).
+  plan:
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      # The dry-run plan text, stashed so `apply` can confirm nothing changed
+      # since approval before it mutates anything.
+      plan: ${{ steps.plan.outputs.plan }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Plan track moves (dry-run)
+        id: plan
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          # Fallbacks are required: a `schedule` event carries no inputs at all,
+          # so github.event.inputs.* is empty on the cron path.
+          REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
+          TRACKS: ${{ github.event.inputs.tracks || 'standard,trailing' }}
+          # Hub refuses ANONYMOUS pagination past offset 1000, and dotcms/dotcms is
+          # ~79 pages, so even this read-only dry-run needs credentials.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          echo "repo=$REPO (dry-run plan; trigger=${{ github.event_name }})"
+          # Default scope is standard,trailing: the release pipeline owns `latest` and
+          # moves it unattended (possibly mid-approval), so leaving it out keeps the
+          # drift check below immune to `latest` churn. Dispatching with tracks=latest
+          # deliberately opts INTO that check — if a GA cut repoints latest while the
+          # approval sits, apply refuses rather than fighting the release pipeline.
+          # stderr goes to a file, not /dev/null: it must stay off stdout (that is
+          # the plan text, diffed in `apply`) but discarding it cost us a whole
+          # morning once — a Hub 403 surfaced as a bare "exit code 1".
+          if ! PLAN=$(uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --tracks "$TRACKS" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" 2>plan.err); then
+            echo "::error::evergreen-tracks promote (dry-run) failed:"
+            cat plan.err >&2
+            exit 1
+          fi
+          echo "$PLAN"
+          {
+            echo 'plan<<EVERGREEN_PLAN_EOF'
+            echo "$PLAN"
+            echo 'EVERGREEN_PLAN_EOF'
+          } >> "$GITHUB_OUTPUT"
+
+  # Approval gate — MANUAL DISPATCH ONLY (the break-glass path). Carries the
+  # evergreen-tracks-apply environment's required-reviewer rule and nothing else,
+  # pausing after `plan` until a human reviews the plan output and approves.
+  # Skipped entirely on the daily schedule, which is what makes the cron
+  # unattended; `apply` treats a skipped gate as "no approval required".
+  #
+  # Deliberately a separate job from `apply`: GitHub acquires a job's concurrency
+  # slot BEFORE evaluating its environment protection rules
+  # (github.com/orgs/community/discussions/17401), so putting the registry lock on
+  # this waiting job would block the release pipeline's latest-promote for as long
+  # as the approval sits pending.
+  gate:
+    needs: plan
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    environment: evergreen-tracks-apply
+    steps:
+      - run: echo "Plan approved — proceeding to apply"
+
+  # Apply: runs only after the gate is approved. Holds the registry-mutation
+  # lock (shared with cicd_6-release.yml's promote-latest and the admin
+  # workflow) only for the duration of the actual mutation — never during the
+  # human wait. Serializing matters because every mutator reads live registry
+  # state then applies tag moves; two concurrent runs could act on stale state.
+  # cancel-in-progress is false: queueing is safer than aborting mid-promote
+  # and leaving tags half-moved.
+  #
+  # `apply` re-derives the plan from live registry state at run time and FAILS if
+  # it differs from the plan job's (e.g. a hold/taint marker changed, or a release
+  # aged past a track threshold while a human sat on the gate), so it can never
+  # move tags nobody planned. The plan is scoped to standard,trailing, so an
+  # unattended `latest` move by the release pipeline does NOT trip it. Drift is
+  # rare — on the manual path, re-dispatch to review the new plan; on the daily
+  # cron the next morning's run simply re-plans and applies.
+  #
+  # The `if` accepts a SKIPPED gate: that is the scheduled path (gate is
+  # dispatch-only), and it must not also accept a failed or rejected gate — hence
+  # the explicit result checks rather than a bare always().
+  apply:
+    needs: [ plan, gate ]
+    if: >-
+      always()
+      && needs.plan.result == 'success'
+      && (needs.gate.result == 'success' || needs.gate.result == 'skipped')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    concurrency:
+      group: evergreen-tracks-registry
+      cancel-in-progress: false
+    outputs:
+      # Whether any tag actually moved, and a one-line summary — drives the
+      # Slack notice so quiet days stay quiet.
+      moved: ${{ steps.apply.outputs.moved }}
+      summary: ${{ steps.apply.outputs.summary }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@v5
+      - uses: docker/setup-buildx-action@v3
+      - name: Docker login
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_TOKEN }}
+      - name: Apply track moves
+        id: apply
+        working-directory: .github/actions/core-cicd/evergreen-tracks
+        env:
+          # Same fallbacks as the plan job — no inputs exist on the schedule path.
+          REPO: ${{ github.event.inputs.repo || 'dotcms/dotcms' }}
+          STANDARD_DAYS: ${{ github.event.inputs.standard_days || '14' }}
+          TRAILING_DAYS: ${{ github.event.inputs.trailing_days || '28' }}
+          APPROVED_PLAN: ${{ needs.plan.outputs.plan }}
+          # Must match the plan job exactly — `apply` diffs the two plans.
+          TRACKS: ${{ github.event.inputs.tracks || 'standard,trailing' }}
+          # Needed for the READ path too, not just the mutation — see the plan job.
+          DOCKER_USERNAME: ${{ secrets.DOCKER_USERNAME }}
+          DOCKER_TOKEN: ${{ secrets.DOCKER_TOKEN }}
+        run: |
+          # Re-derive the plan from CURRENT registry state and confirm it still
+          # matches the one the plan job produced. If a hold/taint changed in
+          # between, fail rather than move tags nobody planned.
+          if ! CURRENT_PLAN=$(uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --tracks "$TRACKS" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" 2>current.err); then
+            echo "::error::evergreen-tracks promote (re-plan) failed:"
+            cat current.err >&2
+            exit 1
+          fi
+          # A never-empty plan ("no track moves needed" at minimum) guards against
+          # a silent pass if plan capture ever breaks (e.g. logging leaves stdout).
+          if [ -z "$APPROVED_PLAN" ] || [ -z "$CURRENT_PLAN" ]; then
+            echo "::error::Empty plan (planned or current) — cannot verify the plan. Re-run."
+            exit 1
+          fi
+          # sort: the plan is order-insensitive (held-track lines come from a set).
+          if [ "$(printf '%s\n' "$APPROVED_PLAN" | sort)" != "$(printf '%s\n' "$CURRENT_PLAN" | sort)" ]; then
+            echo "::error::Registry state changed since the plan was computed — refusing to apply. Re-run to act on the new plan."
+            echo "--- planned ---"; printf '%s\n' "$APPROVED_PLAN"
+            echo "--- current ---"; printf '%s\n' "$CURRENT_PLAN"
+            exit 1
+          fi
+          echo "repo=$REPO — plan unchanged; applying"
+          uv run evergreen-tracks promote \
+            --repo "$REPO" \
+            --tracks "$TRACKS" \
+            --standard-days "$STANDARD_DAYS" \
+            --trailing-days "$TRAILING_DAYS" \
+            --apply
+
+          # Summarize what moved, for the Slack notice. Most days this is empty
+          # (the planner is age-gated), and an empty summary posts nothing.
+          # The optional `(held) ` matches the held-track reconcile line
+          # ("standard (held) -> reconcile to standard_hold"): the engine really
+          # does re-point that tag, so it must not be silently omitted here.
+          MOVES=$(printf '%s\n' "$CURRENT_PLAN" \
+            | grep -E '^(latest|standard|trailing) (\(held\) )?-> ' \
+            | sed 's/ (sha256:.*//' || true)
+          if [ -n "$MOVES" ]; then
+            echo "moved=true" >> "$GITHUB_OUTPUT"
+            # paste -d takes a cycling CHAR LIST, not a string — join on ';' then
+            # space it out, so two moves read "a -> x; b -> y".
+            echo "summary=$(printf '%s' "$MOVES" | paste -sd ';' - | sed 's/;/; /g')" >> "$GITHUB_OUTPUT"
+          else
+            echo "moved=false" >> "$GITHUB_OUTPUT"
+          fi
+
+  # Slack notice to #dot-releases. The cron is unattended, so a silent failure
+  # would mean tracks quietly stop advancing — this is the only thing that would
+  # tell anyone. Deliberately quiet on the common case:
+  #   * failure  -> post (plan or apply actually errored)
+  #   * moved    -> post (a track advanced; newsworthy in a releases channel)
+  #   * no moves -> post NOTHING (most days — the planner is age-gated)
+  # A rejected break-glass approval leaves `apply` SKIPPED, so a deliberate "no"
+  # never pages the channel.
+  #
+  # Deliberately NOT keyed on `needs.gate.result == 'failure'`: a reviewer
+  # rejection also reports the gate as `failure` (verified — rejecting marks gate
+  # failure, apply skipped, run failure), so it is indistinguishable from a gate
+  # infrastructure failure at the job-result level. Including it would page the
+  # channel on every intentional rejection. The only thing that would go
+  # unannounced is an infra failure of the gate job itself — which cannot happen
+  # on the unattended cron (gate is dispatch-only) and, on the manual path, leaves
+  # a red run in front of the operator who just triggered it.
+  notify:
+    needs: [ plan, gate, apply ]
+    if: always()
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - name: Notify failure
+        if: needs.plan.result == 'failure' || needs.apply.result == 'failure'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CE1TBQU00'  # #dot-releases
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :rotating_light: *Evergreen track promotion FAILED*
+            (`${{ github.event.inputs.repo || 'dotcms/dotcms' }}`, trigger `${{ github.event_name }}`).
+            Tags are applied one at a time, so one track may have moved before the failure —
+            check the run log for which actually applied.
+            Customer environments are unaffected until the next in-cluster reconciler window.
+            <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>
+
+      - name: Notify moves
+        if: needs.apply.result == 'success' && needs.apply.outputs.moved == 'true'
+        continue-on-error: true
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: 'CE1TBQU00'  # #dot-releases
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :evergreen_tree: *Evergreen track tags moved* on `${{ github.event.inputs.repo || 'dotcms/dotcms' }}`
+            — ${{ needs.apply.outputs.summary }}.
+            Environments on these tracks pick this up at their next reconciler maintenance window,
+            not immediately. <${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}|View run>

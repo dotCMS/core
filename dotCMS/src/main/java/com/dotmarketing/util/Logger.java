@@ -11,23 +11,20 @@ import com.dotcms.exception.ExceptionUtil;
 import com.dotcms.rest.api.v1.system.logger.ChangeLoggerLevelEvent;
 import com.github.benmanes.caffeine.cache.Cache;
 import com.github.benmanes.caffeine.cache.Caffeine;
-import com.github.benmanes.caffeine.cache.RemovalCause;
-import com.github.benmanes.caffeine.cache.RemovalListener;
 import com.google.common.base.Objects;
 import com.liferay.util.StringPool;
 import io.vavr.Lazy;
 import io.vavr.control.Try;
-import org.apache.logging.log4j.Level;
-import org.apache.logging.log4j.LogManager;
-import org.apache.velocity.servlet.VelocityServlet;
-import org.apache.velocity.tools.view.tools.ViewTool;
-
 import java.io.File;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import org.apache.logging.log4j.Level;
+import org.apache.logging.log4j.LogManager;
+import org.apache.velocity.servlet.VelocityServlet;
+import org.apache.velocity.tools.view.tools.ViewTool;
 
 /**
  * @author David Torres
@@ -41,12 +38,6 @@ public class Logger {
                     Caffeine.newBuilder()
                         .maximumSize(10000)
                         .expireAfterAccess(6,TimeUnit.HOURS)
-                        .removalListener(new RemovalListener<String, org.apache.logging.log4j.Logger>() {
-                            @Override
-                            public void onRemoval(String key, org.apache.logging.log4j.Logger value, RemovalCause cause) {
-                                System.out.println("removing Logger :" + key + " due to " + cause);
-                            }
-                        })
                         .build();
 
     public static void clearLoggers() {
@@ -77,15 +68,16 @@ public class Logger {
     }
 
     public static void info(Class clazz, final Supplier<String> message) {
-       
+        if (isInfoEnabled(clazz)) {
             info(clazz, message.get());
-        
+        }
     }
 
     public static void info(final Object ob, final Supplier<String> message) {
-
-            info(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isInfoEnabled(clazz)) {
+            info(clazz, message.get());
+        }
     }
 
     public static void info(Object ob, String message) {
@@ -100,23 +92,36 @@ public class Logger {
         loadLogger(cl).info(message);
     }
 
+    public static void info(Class cl, String message, Throwable ex) {
+        if (isVelocityMessage(cl)) {
+            velocityInfo(cl, message);
+            return;
+        }
+        loadLogger(cl).info(message, ex);
+    }
+
     public static void info(String cl, String message) {
         loadLogger(cl).info(message);
     }
 
     public static void debug(final Object ob, final Supplier<String> message) {
-        debug(ob.getClass(), message.get());
-        
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get());
+        }
     }
 
     public static void debug(final String className, final Supplier<String> message) {
-        debug(className, message.get());
-        
+        if (isDebugEnabled(className)) {
+            debug(className, message.get());
+        }
     }
 
     public static void debug(final Object ob, final Throwable throwable, final Supplier<String> message) {
-        debug(ob.getClass(), message.get(), throwable);
-
+        final Class<?> clazz = ob.getClass();
+        if (isDebugEnabled(clazz)) {
+            debug(clazz, message.get(), throwable);
+        }
     }
 
     public static void debug(Object ob, String message) {
@@ -212,11 +217,65 @@ public class Logger {
         warnEveryAndDebug(cl.getName(), message, ex, warnEveryMillis);
     }
 
+    /**
+     * this method will print the message at WARN level every millis set and print the message plus whole stack trace if
+     * at DEGUG level
+     *
+     * @param cl
+     * @param message
+     * @param warnEveryMillis
+     */
+    public static void warnEvery(final Class cl, final String messageKey, final String message,
+            final int warnEveryMillis) {
+
+        if (UtilMethods.isEmpty(messageKey)) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+        final Long hash = Long.valueOf(Objects.hashCode(messageKey.intern()));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + warnEveryMillis, true);
+            logger.warn(message + " (log every " + warnEveryMillis + "ms)");
+        }
+
+    }
+
+
+    /**
+     * this method will print the message at ERROR level at most once per millis set, keyed by
+     * {@code messageKey}: a repeating condition (e.g. every bulk batch being rejected for the same
+     * reason) is reported without flooding the log, while a <em>different</em> key is reported
+     * immediately. Mirrors {@link #warnEvery(Class, String, String, int)} at ERROR level.
+     *
+     * @param cl              the class to attribute the log entry to
+     * @param messageKey      identity of the condition; the same key is throttled together
+     * @param message         the message to print
+     * @param errorEveryMillis minimum millis between two entries for this key
+     */
+    public static void errorEvery(final Class cl, final String messageKey, final String message,
+            final int errorEveryMillis) {
+
+        if (UtilMethods.isEmpty(messageKey)) {
+            return;
+        }
+        final org.apache.logging.log4j.Logger logger = loadLogger(cl);
+
+        final Long hash = Long.valueOf(Objects.hashCode(messageKey.intern()));
+        final Long expireWhen = logMap.get().get(hash);
+
+        if (expireWhen == null || expireWhen < System.currentTimeMillis()) {
+            logMap.get().put(hash, System.currentTimeMillis() + errorEveryMillis, true);
+            logger.error(message + " (log every " + errorEveryMillis + "ms)");
+        }
+    }
 
     /**
      * this method will print the message at WARN level every millis set and print the message plus
      * whole stack trace if at DEGUG level
-     * 
+     *
      * @param cl
      * @param message
      * @param ex
@@ -504,21 +563,23 @@ public class Logger {
         return isVelocityMessage(obj.getClass());
     }
 
-    private static boolean isVelocityMessage(Class clazz) {
-        boolean ret = false;
-        if (clazz != null && clazz.getName() != null) {
-            String name = clazz.getName().toLowerCase();
-            ret = name.contains("velocity") || name.contains("viewtool");
-
-            if (!ret) {
-                ret = ViewTool.class.isAssignableFrom(clazz);
-            }
-            if (!ret) {
-                ret = VelocityServlet.class.isAssignableFrom(clazz);
-            }
+    /**
+     * Memoized per class: this runs on every Class-keyed log call, and the lowercased name
+     * allocation showed up in allocation profiles. ClassValue lookups are allocation-free and
+     * entries are released with their class, so OSGi classloaders aren't pinned.
+     */
+    private static final ClassValue<Boolean> velocityClassValue = new ClassValue<Boolean>() {
+        @Override
+        protected Boolean computeValue(final Class<?> type) {
+            final String name = type.getName().toLowerCase();
+            return name.contains("velocity") || name.contains("viewtool")
+                    || ViewTool.class.isAssignableFrom(type)
+                    || VelocityServlet.class.isAssignableFrom(type);
         }
-        return ret;
+    };
 
+    private static boolean isVelocityMessage(Class clazz) {
+        return clazz != null && velocityClassValue.get(clazz);
     }
 
     /**

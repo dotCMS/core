@@ -1,4 +1,6 @@
-import { createContext } from 'react';
+'use client';
+
+import { ReactNode, createContext } from 'react';
 
 import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '@dotcms/types';
 
@@ -10,11 +12,17 @@ import { DotCMSBasicContentlet, DotCMSPageAsset, DotCMSPageRendererMode } from '
  * @property {DotCMSPageAsset} pageAsset - The DotCMS page asset
  * @property {RendererMode} mode - The renderer mode
  * @property {Record<string, React.ComponentType<DotCMSContentlet>>} userComponents - The user components
+ * @property {Record<string, ReactNode>} [slots] - Pre-rendered server component nodes keyed by contentlet identifier
  */
 export interface DotCMSPageContextProps {
-    pageAsset: DotCMSPageAsset;
+    /**
+     * Can be `undefined` while `useEditableDotCMSPage` is still waiting on the UVE editor to
+     * resolve a draft/non-live page, or when permissions leave it unset outside the editor.
+     */
+    pageAsset: DotCMSPageAsset | undefined;
     mode: DotCMSPageRendererMode;
     userComponents: Record<string, React.ComponentType<DotCMSBasicContentlet>>;
+    slots?: Record<string, ReactNode>;
 }
 
 /**
@@ -23,7 +31,8 @@ export interface DotCMSPageContextProps {
  * @category Contexts
  */
 export const DotCMSPageContext = createContext<DotCMSPageContextProps>({
-    pageAsset: {} as DotCMSPageAsset,
+    pageAsset: undefined,
     mode: 'production',
-    userComponents: {}
+    userComponents: {},
+    slots: {}
 });

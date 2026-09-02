@@ -15,7 +15,22 @@ const FILE_MESSAGES_MOCK = {
     'dot.common.import': 'Import',
     'dot.common.remove': 'Remove',
     'dot.common.save': 'Save',
-    'error.form.validator.required': 'This field is required'
+    'error.form.validator.required': 'This field is required',
+    'dot.file.field.host.folder.trigger.placeholder': 'Select Host/Folder',
+    'dot.file.field.host.folder.sites.label': 'Sites',
+    'dot.file.field.host.folder.sites.search.placeholder': 'Search sites...',
+    'dot.file.field.host.folder.search.placeholder': 'Search folders in this site...',
+    'dot.file.field.host.folder.action.select': 'Select',
+    'dot.file.field.host.folder.action.load.more': 'Load {0} more',
+    'dot.file.field.host.folder.copy.tooltip': 'Copy path',
+    'dot.file.field.host.folder.empty.folders': 'No folders found',
+    'dot.file.field.host.folder.empty.folders.site': 'No folders in this site',
+    'dot.file.field.host.folder.empty.sites': 'No sites found',
+    'dot.file.field.host.folder.loading.sites': 'Loading sites...',
+    'dot.file.field.host.folder.loading.folders': 'Loading folders...',
+    'dot.file.field.host.folder.error.sites': 'Unable to load sites. Please try again.',
+    'dot.file.field.host.folder.error.folders': 'Unable to load folders. Please try again.',
+    'dot.file.field.host.folder.error.search': 'Unable to search folders. Please try again.'
 };
 
 export const MessageServiceMock = new MockDotMessageService(FILE_MESSAGES_MOCK);

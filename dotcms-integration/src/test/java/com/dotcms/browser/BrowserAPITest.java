@@ -1,5 +1,6 @@
 package com.dotcms.browser;
 
+import static org.awaitility.Awaitility.await;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -11,18 +12,28 @@ import com.dotcms.contenttype.business.ContentTypeAPI;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.DotAssetDataGen;
+import com.dotcms.datagen.FieldDataGen;
 import com.dotcms.datagen.FileAssetDataGen;
 import com.dotcms.datagen.FolderDataGen;
 import com.dotcms.datagen.HTMLPageDataGen;
 import com.dotcms.datagen.LanguageDataGen;
 import com.dotcms.datagen.LinkDataGen;
+import com.dotcms.rest.api.v1.content.search.handlers.FieldContext;
+import com.dotcms.rest.api.v1.content.search.strategies.GlobalSearchAttributeStrategy;
+import com.dotcms.datagen.RoleDataGen;
 import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.TemplateDataGen;
 import com.dotcms.datagen.TestDataUtils;
+import com.dotcms.datagen.TestUserUtils;
+import com.dotcms.datagen.UserDataGen;
 import com.dotcms.datagen.VariantDataGen;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotcms.variant.model.Variant;
 import com.dotmarketing.beans.Host;
+import com.dotmarketing.beans.Permission;
 import com.dotmarketing.business.APILocator;
+import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
 import com.dotmarketing.common.db.DotConnect;
@@ -41,6 +52,7 @@ import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.languagesmanager.model.Language;
 import com.dotmarketing.portlets.links.model.Link;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
 import com.google.common.collect.ImmutableSet;
@@ -52,6 +64,9 @@ import io.vavr.control.Try;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -61,6 +76,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
@@ -82,6 +98,14 @@ public class BrowserAPITest extends IntegrationTestBase {
     static FileAsset testFileAsset, testFileAsset2, testFileAsset3Archived, testFileAsset2MultiLingual;
 
     static Link testlink;
+
+    // Fixture for the MIME-type routing tests -- https://github.com/dotCMS/core/issues/36916
+    static final String DOTPAGE_MIME_TYPE = "application/dotpage";
+    static Host mimeHost;
+    static Folder mimeFolder, mimeSubFolder;
+    static HTMLPageAsset mimePage, mimePageAltLanguage, mimeSubFolderPage;
+    static FileAsset mimeJpgFile, mimePdfFile, mimeTxtFile, mimeSubFolderJpgFile;
+    static Link mimeLink;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -126,6 +150,92 @@ public class BrowserAPITest extends IntegrationTestBase {
         testPage = APILocator.getHTMLPageAssetAPI().fromContentlet(HTMLPageDataGen.checkin(page, IndexPolicy.FORCE));
 
         testlink = new LinkDataGen().hostId(testHost.getIdentifier()).title("testLink").parent(testFolder).target("https://google.com").linkType("EXTERNAL").nextPersisted();
+
+        seedMimeTypeFixture();
+    }
+
+    /**
+     * Seeds a dedicated Site and folder tree for the MIME-type routing tests of
+     * <a href="https://github.com/dotCMS/core/issues/36916">issue #36916</a>. It is kept apart from the
+     * fixture above so the assertions can be exact about which items a MIME-filtered browse returns.
+     * <pre>
+     * mimeFolder
+     *      |_ mimePage             HTMLPAGE,  default language
+     *      |_ mimePageAltLanguage  HTMLPAGE,  testLanguage
+     *      |_ mimeJpgFile          FILEASSET, image/jpeg
+     *      |_ mimePdfFile          FILEASSET, application/pdf
+     *      |_ mimeTxtFile          FILEASSET, text/plain
+     *      |_ mimeLink             LINK
+     *      |_ mimeSubFolder
+     *          |_ mimeSubFolderPage      HTMLPAGE,  default language
+     *          |_ mimeSubFolderJpgFile   FILEASSET, image/jpeg
+     * </pre>
+     */
+    private static void seedMimeTypeFixture() throws Exception {
+        mimeHost = new SiteDataGen().nextPersisted();
+        mimeFolder = new FolderDataGen().name("mimeFolder").site(mimeHost).nextPersisted();
+        mimeSubFolder = new FolderDataGen().name("mimeSubFolder").parent(mimeFolder).nextPersisted();
+
+        final Template template = new TemplateDataGen().host(mimeHost).nextPersisted();
+
+        mimePage = new HTMLPageDataGen(mimeFolder, template).title("mimePage").pageURL("mime-page")
+                .nextPersisted();
+        mimePageAltLanguage = new HTMLPageDataGen(mimeFolder, template).title("mimePageAltLanguage")
+                .pageURL("mime-page-alt-language").languageId(testLanguage.getId()).nextPersisted();
+        mimeSubFolderPage = new HTMLPageDataGen(mimeSubFolder, template).title("mimeSubFolderPage")
+                .pageURL("mime-sub-folder-page").nextPersisted();
+
+        mimeJpgFile = persistFileAsset(mimeFolder, copyTestResource("/images/test.jpg", "mimeJpgFile", ".jpg"));
+        mimePdfFile = persistFileAsset(mimeFolder, copyTestResource(
+                "/com/dotmarketing/portlets/contentlet/business/test_files/test.pdf", "mimePdfFile", ".pdf"));
+        mimeTxtFile = persistFileAsset(mimeFolder,
+                FileUtil.createTemporaryFile("mimeTxtFile", ".txt", "this is a test!"));
+        mimeSubFolderJpgFile = persistFileAsset(mimeSubFolder,
+                copyTestResource("/images/test.jpg", "mimeSubFolderJpgFile", ".jpg"));
+
+        mimeLink = new LinkDataGen().hostId(mimeHost.getIdentifier()).title("mimeLink").parent(mimeFolder)
+                .target("https://google.com").linkType("EXTERNAL").nextPersisted();
+    }
+
+    /**
+     * Copies a classpath test resource into a temporary file so that a File Asset can be generated from it. The
+     * file extension matters here: the asset metadata -- and therefore the {@code contentType} the SQL MIME
+     * predicate looks at -- is derived from the actual file contents on check-in.
+     */
+    private static File copyTestResource(final String resourcePath, final String prefix, final String suffix)
+            throws IOException {
+        final URL url = BrowserAPITest.class.getResource(resourcePath);
+        assertNotNull("Test resource must exist in the classpath: " + resourcePath, url);
+        final File tempFile = File.createTempFile(prefix, suffix);
+        FileUtils.copyFile(new File(url.getFile()), tempFile);
+        return tempFile;
+    }
+
+    private static FileAsset persistFileAsset(final Folder folder, final File file)
+            throws DotDataException, DotSecurityException {
+        return APILocator.getFileAssetAPI().fromContentlet(new FileAssetDataGen(file).folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted());
+    }
+
+    /**
+     * Runs a browse against the MIME-type fixture folder through {@link BrowserAPI#getFolderContentList(BrowserQuery)}
+     * and returns the Identifiers that came back. This entry point deliberately has <b>no</b> in-memory MIME filter
+     * (see research R2), so what it returns is what the SQL predicate itself selected.
+     */
+    private Set<String> browseIdentifiers(final Folder folder, final List<String> mimeTypes)
+            throws DotSecurityException, DotDataException {
+        return browserAPI.getFolderContentList(BrowserQuery.builder()
+                        .withUser(APILocator.systemUser())
+                        .withHostOrFolderId(folder.getIdentifier())
+                        .showPages(true)
+                        .showFiles(true)
+                        .showDotAssets(true)
+                        .showFolders(false)
+                        .showWorking(true)
+                        .showMimeTypes(mimeTypes)
+                        .build()).stream()
+                .map(Treeable::getIdentifier)
+                .collect(Collectors.toSet());
     }
 
     /**
@@ -138,10 +248,10 @@ public class BrowserAPITest extends IntegrationTestBase {
     @Test()
     public void Test_GetFolderContent_Multiple_Langs() throws DotDataException, DotSecurityException, IOException {
 
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("multilang-" + System.currentTimeMillis())
+                .nextPersisted();
 
         final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
 
@@ -155,7 +265,7 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         List<Long> languages = new ArrayList<>();
         languages.add(persisted.getLanguageId());
-        languages.add(new LanguageDataGen().nextPersisted().getId());
+        languages.add(testLanguage.getId());
         languages.add(new LanguageDataGen().nextPersisted().getId());
 
         for (Long lang:languages) {
@@ -202,10 +312,10 @@ public class BrowserAPITest extends IntegrationTestBase {
 
         // create a folder
         // create a 10 files
-        final SiteDataGen   siteDataGen   = new SiteDataGen();
-        final FolderDataGen folderDataGen = new FolderDataGen();
-        final Host          host          = siteDataGen.nextPersisted();
-        final Folder        folder        = folderDataGen.site(host).nextPersisted();
+        final Host host = testHost;
+        final Folder folder = new FolderDataGen().site(host)
+                .name("pagination-" + System.currentTimeMillis())
+                .nextPersisted();
 
         for (int i = 0; i < 10; ++i) {
 
@@ -1213,7 +1323,7 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertNotNull("Result should not be null", result);
         assertTrue("Should contain title search", result.contains("title:test*"));
         assertTrue("Should contain quoted title search", result.contains("title:'test'^15"));
-        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*^5"));
+        assertTrue("Should contain dotraw title search", result.contains("title_dotraw:*test*"));
         assertTrue("Should be wrapped with mandatory group", result.startsWith(" +(") && result.endsWith(")"));
         assertFalse("Should not contain metadata search", result.contains("metadata.name"));
 
@@ -1294,8 +1404,43 @@ public class BrowserAPITest extends IntegrationTestBase {
     /**
      * <ul>
      *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
-     *     <li><b>Given Scenario:</b> Test query structure and Lucene syntax compliance.</li>
-     *     <li><b>Expected Result:</b> Generated queries should follow proper Lucene query syntax.</li>
+     *     <li><b>Given Scenario:</b> A free-text filter is provided.</li>
+     *     <li><b>Expected Result:</b> The text clause is produced by the shared
+     *     {@link GlobalSearchAttributeStrategy} — the same one the Content Search portlet uses — and
+     *     no longer by a hand-rolled query string.</li>
+     * </ul>
+     */
+    @Test
+    public void test_buildBaseESQuery_delegatesToSharedGlobalSearchStrategy() {
+        final BrowserAPIImpl browserAPIImpl = new BrowserAPIImpl();
+        final String filter = "searchterm";
+
+        final String result = browserAPIImpl.buildBaseESQuery(
+                BrowserQuery.builder().withFilter(filter).build());
+
+        // The free-text clause must be byte-identical to what the Content Search portlet builds,
+        // so both surfaces always query the index the same way (issue #36688).
+        final String expectedTextGroup = new GlobalSearchAttributeStrategy().generateQuery(
+                new FieldContext.Builder()
+                        .withFieldName("title")
+                        .withFieldValue(filter)
+                        .build());
+        assertEquals("Text group must be exactly what the shared global-search strategy produces",
+                " +(" + expectedTextGroup + ")", result);
+
+        // Guards against regressing to the previous hand-rolled query, which used a broad,
+        // unscoped leading-wildcard catchall (slow, matched unrelated body text). Whether the
+        // strategy itself uses ' OR ' internally is its own concern — the assertEquals above
+        // already pins this method to whatever it produces.
+        assertFalse("Must not use a leading-wildcard catchall clause",
+                result.contains("catchall:*"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#buildBaseESQuery(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Verify the generated query complies with Lucene syntax.</li>
+     *     <li><b>Expected Result:</b> Query uses valid Lucene field:value syntax.</li>
      * </ul>
      */
     @Test
@@ -1386,6 +1531,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      */
     @Test
     public void test_SmartPaginationPage1_25Folders1Contentlet() throws Exception {
+        final User owner = new UserDataGen().nextPersisted();
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1396,12 +1542,13 @@ public class BrowserAPITest extends IntegrationTestBase {
             final Folder subFolder = new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
+                    .owner(owner)
                     .nextPersisted();
             subFolders.add(subFolder);
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 30 contentlets
+        for (int i = 0; i < 30; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1432,7 +1579,6 @@ public class BrowserAPITest extends IntegrationTestBase {
         assertEquals("Should return exactly 26 items (25 folders + 1 contentlet)", 26, list.size());
         assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
         assertEquals("Content count should be 1", 1, paginatedContents.contentCount);
-        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
 
         // Verify first 25 items are folders
         for (int i = 0; i < 25; i++) {
@@ -1440,6 +1586,8 @@ public class BrowserAPITest extends IntegrationTestBase {
             assertNotNull("Item should have name", item.get("name"));
             assertTrue("First 25 items should be folders",
                 item.get("name").toString().startsWith("folder_"));
+            assertEquals("Owner should be the same as parent folder",
+                owner.getFullName(), item.get("owner"));
         }
 
         // Verify the last item is a contentlet
@@ -1453,7 +1601,7 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 11 contentlets (all folders were shown on page 1)
      */
     @Test
-    public void test_SmartPaginationPage2_10Contentlets() throws Exception {
+    public void test_SmartPaginationPage2_15Contentlets() throws Exception {
         // Create test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
@@ -1466,7 +1614,7 @@ public class BrowserAPITest extends IntegrationTestBase {
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
+        // Create 25 contentlets
         for (int i = 0; i < 25; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
@@ -1482,7 +1630,8 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showFiles(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(11) // Second page
+                .folderCursor(10) // Second page
+                .contentCursor(10)
                 .maxResults(20)
                 .build();
 
@@ -1494,16 +1643,11 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 20 items (20 contentlets, no folders)", 20, list.size());
-        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
-        assertEquals("Content count should be 20", 20, paginatedContents.contentCount);
-        assertEquals("Content total count should be 25", 25, paginatedContents.contentTotalCount);
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 15 items (15 contentlets, no folders)", 15, list.size());
+        assertEquals("Folder count should be 0 the 10 folders where in the first page", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 15", 15, paginatedContents.contentCount);
+        assertFalse("Should indicate NO more content available", paginatedContents.hasMoreContent);
     }
 
     /**
@@ -1511,21 +1655,21 @@ public class BrowserAPITest extends IntegrationTestBase {
      * Expected: 26 more contentlets
      */
     @Test
-    public void test_SmartPaginationPage3_26MoreContentlets() throws Exception {
+    public void test_SmartPaginationPage3_16MoreContentlets() throws Exception {
         // Create a test environment
         final Host host = new SiteDataGen().nextPersisted();
         final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
 
-        // Create 25 folders
-        for (int i = 0; i < 25; i++) {
+        // Create 15 folders
+        for (int i = 0; i < 15; i++) {
             new FolderDataGen()
                     .name(String.format("folder_%02d", i))
                     .parent(parentFolder)
                     .nextPersisted();
         }
 
-        // Create 100 contentlets
-        for (int i = 0; i < 100; i++) {
+        // Create 50 contentlets
+        for (int i = 0; i < 50; i++) {
             new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
                     .host(host)
                     .folder(parentFolder)
@@ -1541,8 +1685,9 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .showDotAssets(true)
                 .showLinks(false)
                 .withHostOrFolderId(parentFolder.getIdentifier())
-                .offset(52) // Third page (26*2)
-                .maxResults(26)
+                .folderCursor(15)
+                .contentCursor(17)  // Third page (16*2) = 32 (15 folders and 17 contents)
+                .maxResults(16)
                 .build();
 
         final PaginatedContents paginatedContents = browserAPI.getPaginatedContents(browserQuery);
@@ -1553,16 +1698,11 @@ public class BrowserAPITest extends IntegrationTestBase {
         @SuppressWarnings("unchecked")
         final List<Map<String, Object>> list = paginatedContents.list;
 
-        assertEquals("Should return exactly 26 items (26 contentlets)", 26, list.size());
-        assertEquals("Folder count should be 25", 25, paginatedContents.folderCount);
-        assertEquals("Content count should be 26", 26, paginatedContents.contentCount);
-        assertEquals("Content total count should be 100", 100, paginatedContents.contentTotalCount);
-
-        // Verify all items are contentlets
-        for (Map<String, Object> item : list) {
-            assertNotNull("Item should have extension", item.get("extension"));
-            assertEquals("All items should be files", "txt", item.get("extension"));
-        }
+        assertEquals("Should return exactly 16 items (16 contentlets)", 16, list.size());
+        assertEquals("Folder count should be 0", 0, paginatedContents.folderCount);
+        assertFalse("Should indicate NO more folders available", paginatedContents.hasMoreFolders);
+        assertEquals("Content count should be 16", 16, paginatedContents.contentCount);
+        assertTrue("Should indicate more content available", paginatedContents.hasMoreContent);
     }
 
     /**
@@ -1603,7 +1743,8 @@ public class BrowserAPITest extends IntegrationTestBase {
         final List<Map<String, Object>> list = paginatedContents.list;
 
         assertEquals("Should return exactly 10 folders", 10, list.size());
-        assertEquals("Folder count should be 15", 15, paginatedContents.folderCount);
+        assertEquals("Folder count should be 10", 10, paginatedContents.folderCount);
+        assertTrue("Should indicate more folders available", paginatedContents.hasMoreFolders);
 
         // Verify all items are folders
         for (Map<String, Object> item : list) {
@@ -1613,4 +1754,781 @@ public class BrowserAPITest extends IntegrationTestBase {
         }
     }
 
+    /**
+     * Test Case: Text filtering with custom ContentType - contentTotalCount validation
+     *
+     * Tests that getBrowserAPI.getPaginatedContents() correctly returns contentTotalCount
+     * when using text search filters with a custom content type containing a title field.
+     *
+     * Expected behavior:
+     * - Creates 3 custom content instances with different titles
+     * - Filter matching one title returns contentTotalCount = 1
+     * - Filter matching multiple titles returns contentTotalCount = 2
+     */
+    @Test
+    public void test_getPaginatedContents_textFilter_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        // Create 3 contentlet instances with specific titles
+        final Contentlet contentlet1 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Alpha")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet2 = new ContentletDataGen(customContentType)
+                .setProperty("title", "SearchableItem Beta")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        final Contentlet contentlet3 = new ContentletDataGen(customContentType)
+                .setProperty("title", "DifferentContent Gamma")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Test Case 1: Filter matching one item - expect contentTotalCount = 1
+        final BrowserQuery queryMatchingOne = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Alpha")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(queryMatchingOne);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should return 1 content item", 1, resultsOne.contentCount);
+
+        // Verify the correct content was found
+        assertEquals("Should return exactly 1 item in list", 1, resultsOne.list.size());
+        final Map<String, Object> foundItem = resultsOne.list.get(0);
+        assertEquals("Found item should be contentlet1", contentlet1.getInode(), foundItem.get("inode"));
+
+        // Test Case 2: Filter matching multiple items - expect contentTotalCount = 2
+        final BrowserQuery queryMatchingTwo = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("SearchableItem")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsTwo = browserAPI.getPaginatedContents(queryMatchingTwo);
+
+        assertNotNull("Results should not be null", resultsTwo);
+        assertEquals("Should return 2 content items", 2, resultsTwo.contentCount);
+        assertEquals("Should return exactly 2 items in list", 2, resultsTwo.list.size());
+
+        // Verify the correct contents were found (contentlet1 and contentlet2)
+        final Set<String> foundInodes = resultsTwo.list.stream()
+                .map(content -> (String) content.get("inode"))
+                .collect(Collectors.toSet());
+
+        assertTrue("Should contain contentlet1", foundInodes.contains(contentlet1.getInode()));
+        assertTrue("Should contain contentlet2", foundInodes.contains(contentlet2.getInode()));
+        assertFalse("Should not contain contentlet3", foundInodes.contains(contentlet3.getInode()));
+
+        // Test Case 3: Filter with no matches - expect contentTotalCount = 0
+        final BrowserQuery queryNoMatches = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("NonExistentTerm")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        final PaginatedContents resultsNone = browserAPI.getPaginatedContents(queryNoMatches);
+
+        assertNotNull("Results should not be null", resultsNone);
+        assertEquals("Should return no content items", 0, resultsNone.contentCount);
+        assertEquals("Should return empty list", 0, resultsNone.list.size());
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: Here we test a similar situation as above, but we set limits in the pageSize
+     * to verify that the total count accurately reflects the total items in existence reflected in the contentTotalCount
+     * Expected result: We should expect 5 matches filling the first page and a universe of 10 items
+     * @throws Exception
+     */
+    @Test
+    public void test_getPaginatedContents_Fixed_Page_Size_Using_textFilter_Verify_contentTotalCount() throws Exception {
+        // Create a test environment
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create custom ContentType with title field
+        final var customContentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        for(int i=0; i<10; i++) {
+            new ContentletDataGen(customContentType)
+                    .setProperty("title", String.format("SearchableItem %s",i))
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getIdentifier())
+                .withFilter("Item")
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+
+        final PaginatedContents resultsOne = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Results should not be null", resultsOne);
+        assertEquals("Should return 5 matching item as we defined a pageSize of 5.", 5, resultsOne.contentCount);
+
+    }
+
+    /**
+     * Method to test <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     * Given scenario: We're creating content under a folder and giving read access to a user then we request such content
+     * Expected Results: We should get back the requested content
+     * @throws Exception
+     */
+    @Test
+    public void test_getContent_Using_LimitedUser_WithRead_Permissions() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        //Give him access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        //We need to assign Chris Publisher view permissions to the parent folder.
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ );
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        final File file = FileUtil.createTemporaryFile("content", ".txt", "content");
+        final Contentlet contentlet = new FileAssetDataGen(file)
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        assertNotNull(contentlet.getIdentifier());
+        assertFalse(contentlet.isLive());
+
+        final boolean hasReadPermission = permissionAPI.doesUserHavePermission(contentlet,
+                PermissionAPI.PERMISSION_READ, limitedUser, false);
+        assertTrue("This should have read Permissions", hasReadPermission);
+
+        final BrowserQuery query = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false) // <-- This is key for this test!
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .offset(0)
+                .maxResults(5)
+                .build();
+        final PaginatedContents results = browserAPI.getPaginatedContents(query);
+        assertEquals("Should return 1 content item", 1, results.contentCount);
+        assertEquals("Should return exactly 1 item in list", 1, results.list.size());
+        assertEquals("Contentlet inode should match", contentlet.getInode(), results.list.get(0).get("inode"));
+    }
+
+    /**
+     * Method to test exhaustive pagination with permission filtering using getContentUnderParentFromDB
+     * <li><b>Method to Test:</b> {@link BrowserAPIImpl#getContentUnderParentFromDB(BrowserQuery, int)}</li>
+     * Given scenario: Creating alternating content with and without read permissions in the same folder,
+     * then testing that pagination system exhaustively collects enough accessible content to complete
+     * the requested page size despite permission filtering reducing intermediate results.
+     * Expected Results: The pagination system should return the requested page size by iteratively
+     * searching for additional accessible content when permission filtering creates gaps.
+     * @throws Exception
+     */
+    @Test
+    public void test_exhaustive_pagination_with_permission_filtering() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted(true);
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
+        // Create a minimal backend user with no Publisher role (avoids broad READ from Publisher role).
+        // The Backend User role is required so the user can read non-live (working) contentlets.
+        final Role restrictedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(restrictedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
+        // A separate role (not assigned to limitedUser) used to break inheritance on odd contentlets
+        final Role noAccessRole = new RoleDataGen().nextPersisted();
+
+        // Give limited user access to the site and parent folder
+        final Permission siteReadPermissions = new Permission(host.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(siteReadPermissions, host, APILocator.systemUser(), false);
+
+        final Permission folderReadPermission = new Permission(folder.getPermissionId(),
+                APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+        permissionAPI.save(folderReadPermission, folder, APILocator.systemUser(), false);
+
+        // Create alternating content: accessible and non-accessible
+        // This ensures non-continuous distribution in the database
+        final List<Contentlet> accessibleContentlets = new ArrayList<>();
+
+        // Create 20 pieces of content, alternating permissions (10 accessible, 10 non-accessible)
+        for (int i = 0; i < 20; i++) {
+            final File file = FileUtil.createTemporaryFile("content(" + i + ")", ".txt", "content-" + i);
+            final Contentlet contentlet = new FileAssetDataGen(file)
+                    .host(host)
+                    .folder(folder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+
+            // Give read permission to every other contentlet (even indices: 0, 2, 4, 6, ...)
+            if (i % 2 == 0) {
+                final Permission contentletReadPermission = new Permission(contentlet.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(contentletReadPermission, contentlet, APILocator.systemUser(), false);
+                accessibleContentlets.add(contentlet);
+            } else {
+                // Odd: break the inheritance chain by setting explicit permissions for noAccessRole only.
+                // limitedUser does not have noAccessRole, so it cannot read these contentlets even
+                // though the parent folder grants READ (this explicit entry overrides inheritance).
+                final Permission noAccessPermission = new Permission(contentlet.getPermissionId(),
+                        noAccessRole.getId(), PermissionAPI.PERMISSION_READ);
+                permissionAPI.save(noAccessPermission, contentlet, APILocator.systemUser(), false);
+            }
+        }
+
+        // Wait for indexing to complete
+        await().atMost(Duration.ofSeconds(10)).until(() -> {
+            // Verify that all contentlets have been indexed and permissions are properly applied
+            return accessibleContentlets.stream().allMatch(contentlet -> {
+                try {
+                    return permissionAPI.doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_READ, limitedUser, false);
+                } catch (Exception e) {
+                    return false;
+                }
+            });
+        });
+
+        // Verify permission setup: should have 10 accessible contentlets
+        assertEquals("Should have created 10 accessible contentlets", 10, accessibleContentlets.size());
+
+        // Test Case 1: Request page size of 5 - should get exactly 5 accessible items
+        final BrowserQuery query1 = BrowserQuery.builder()
+                .withHostOrFolderId(folder.getInode())
+                .ignoreSiteForFolders(true)
+                .respectFrontEndRoles(false)
+                .withUser(limitedUser)
+                .forceSystemHost(false)
+                .showContent(true)
+                .contentCursor(0)
+                .showFiles(false)
+                .showFolders(false)
+                .showLinks(false)
+                .showDotAssets(false)
+                .showWorking(true)
+                .showArchived(false)
+                .build();
+
+        // Using reflection to access the package-private method for direct testing
+        final BrowserAPIImpl browserAPIImpl = (BrowserAPIImpl) browserAPI;
+
+        final var results1 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
+        assertEquals("Should return exactly 5 accessible contentlets", 5, results1.contentlets.size());
+        assertTrue("Should indicate more pages available", results1.hasMore);
+
+        // Test Case 2: Request page size of 8 - should get exactly 8 accessible items
+        final var results2 = browserAPIImpl.getContentUnderParentFromDB(query1, 8);
+        assertEquals("Should return exactly 8 accessible contentlets", 8, results2.contentlets.size());
+        assertTrue("Should indicate more pages available", results2.hasMore);
+
+        // Test Case 3: Request page size of 10 - should get all 10 accessible items
+        final var results3 = browserAPIImpl.getContentUnderParentFromDB(query1, 10);
+        assertEquals("Should return exactly 10 accessible contentlets", 10, results3.contentlets.size());
+        assertFalse("Should indicate no more pages available", results3.hasMore);
+
+        // Test Case 4: Request more than available - should get all 10 accessible items
+        final var results4 = browserAPIImpl.getContentUnderParentFromDB(query1, 15);
+        assertEquals("Should return all 10 accessible contentlets", 10, results4.contentlets.size());
+        assertFalse("Should indicate no more pages available", results4.hasMore);
+
+        // Test Case 5: Cursor-based pagination
+        // first page returns 5 items and a cursor,
+        // second page continues from that cursor and returns the remaining 5 items.
+        final var results5 = browserAPIImpl.getContentUnderParentFromDB(query1, 5);
+        assertEquals("Should return exactly 5 accessible contentlets on page 1", 5, results5.contentlets.size());
+        assertTrue("Should indicate more pages available after page 1", results5.hasMore);
+
+        // Build query2 from query1, advancing only the contentCursor
+        final BrowserQuery query2 = BrowserQuery.from(query1)
+                .contentCursor(results5.nextDbCursor)
+                .build();
+        final var results6 = browserAPIImpl.getContentUnderParentFromDB(query2, 8);
+        assertEquals("Should return remaining 5 accessible contentlets on page 2", 5, results6.contentlets.size());
+        assertFalse("Should indicate no more pages available after page 2", results6.hasMore);
+ }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder contains exactly N sub-folders and some contentlets.
+     *     When the client requests a page of size N, folders fill the page completely, leaving
+     *     {@code maxResults = 0} before the content block is reached.</li>
+     *     <li><b>Expected Result:</b> Even though no contentlets are added to the current page,
+     *     {@code hasMoreContent} must be {@code true} so the client knows a next page exists.
+     *     The {@code nextContentCursor} must remain at 0 since no content was consumed yet.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_foldersExactlyFillPage_hasMoreContentIsTrue()
+            throws Exception {
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder parentFolder = new FolderDataGen().site(host).nextPersisted();
+
+        // Create exactly 5 sub-folders
+        final int folderCount = 5;
+        for (int i = 0; i < folderCount; i++) {
+            new FolderDataGen()
+                    .name(String.format("folder_%02d", i))
+                    .parent(parentFolder)
+                    .nextPersisted();
+        }
+
+        // Create 3 contentlets — they must NOT appear in this page but must be detectable
+        for (int i = 0; i < 3; i++) {
+            new FileAssetDataGen(FileUtil.createTemporaryFile("content", ".txt", "content " + i))
+                    .host(host)
+                    .folder(parentFolder)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        // Request exactly as many results as there are folders — page is filled by folders alone
+        final BrowserQuery query = BrowserQuery.builder()
+                .showFolders(true)
+                .showContent(true)
+                .showFiles(true)
+                .showDotAssets(true)
+                .showLinks(false)
+                .withHostOrFolderId(parentFolder.getIdentifier())
+                .folderCursor(0)
+                .contentCursor(0)
+                .maxResults(folderCount)
+                .build();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+        assertNotNull("Result should not be null", result);
+        assertEquals("Page should contain only the folders", folderCount, result.list.size());
+        assertEquals("folderCount should equal the number of sub-folders", folderCount, result.folderCount);
+        assertEquals("contentCount should be 0 — no content added to this page", 0, result.contentCount);
+        assertFalse("hasMoreFolders should be false — all folders fit in this page", result.hasMoreFolders);
+        assertTrue("hasMoreContent must be true — content exists but was not yet shown", result.hasMoreContent);
+        assertEquals("nextContentCursor should stay at 0 — no content was consumed", 0, result.nextContentCursor);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPI#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A site contains 20 content items but
+     *     {@code BROWSER_DB_MAX_SCAN_ROWS} is intentionally set to 15, lower than the total row
+     *     count. The scan loop must stop as soon as the number of rows scanned exceeds the limit,
+     *     preventing runaway queries on large sites with heavily restricted users.</li>
+     *     <li><b>Expected Result:</b> The request completes without hanging or throwing an
+     *     exception. The result contains whatever items were accumulated before the limit was hit,
+     *     and {@code nextContentCursor} reflects how far the scan reached (&gt; 0).</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_scanLimitStopsLoop() throws Exception {
+        final int scanLimit = 15;
+        final int itemCount = 20;
+
+        Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY, scanLimit);
+        try {
+            final Host host = new SiteDataGen().nextPersisted();
+            final Folder folder = new FolderDataGen().site(host).nextPersisted();
+
+            for (int i = 0; i < itemCount; i++) {
+                final File file = FileUtil.createTemporaryFile("scan-limit-" + i, ".txt", "content " + i);
+                new FileAssetDataGen(file).folder(folder).host(host).nextPersisted();
+            }
+
+            // Query against the site root (no folder filter) so all 20 items are in scope
+            final BrowserQuery query = BrowserQuery.builder()
+                    .withUser(APILocator.systemUser())
+                    .withHostOrFolderId(host.getIdentifier())
+                    .skipFolder(true)
+                    .showFiles(true)
+                    .showWorking(true)
+                    .showFolders(false)
+                    .maxResults(100)
+                    .contentCursor(0)
+                    .build();
+
+            final PaginatedContents result = browserAPI.getPaginatedContents(query);
+
+            assertNotNull("Result must not be null when scan limit is reached", result);
+            // 20 items were accumulated before the scan limit fired (dbOffset 20 >= scanLimit 15)
+            assertTrue("Should have returned items accumulated before the scan limit",
+                    result.contentCount > 0);
+            // Cursor must reflect how far into the DB the scan reached
+            assertTrue("nextContentCursor should be > 0 since rows were scanned",
+                    result.nextContentCursor > 0);
+        } finally {
+            Config.setProperty(BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_KEY,
+                    BrowserAPIImpl.BROWSER_DB_MAX_SCAN_ROWS_DEFAULT);
+        }
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder holding Pages, File Assets and a Link is browsed filtering by the
+     *     synthetic {@code application/dotpage} MIME type -- the value the legacy redirect target picker sends.</li>
+     *     <li><b>Expected Result:</b> The Pages under the folder are returned and no File Asset is. The synthetic
+     *     MIME type is never persisted to {@code contentlet_as_json}, so it can only resolve by HTMLPAGE base
+     *     type.</li>
+     * </ul>
+     * Contract case C1 -- AC-001 and AC-006 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeType_returnsPages() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE));
+
+        assertTrue("Pages must be returned for an '" + DOTPAGE_MIME_TYPE + "' browse, but got: " + identifiers,
+                identifiers.containsAll(
+                        Set.of(mimePage.getIdentifier(), mimePageAltLanguage.getIdentifier())));
+        assertFalse("The JPG File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset must not be returned for an '" + DOTPAGE_MIME_TYPE + "' browse",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same folder is browsed filtering by a real MIME type, {@code image/jpeg},
+     *     with Pages enabled.</li>
+     *     <li><b>Expected Result:</b> Only the matching File Asset comes back. Pages must be dropped by the SQL
+     *     predicate itself, since two of the three consumers of the query have no in-memory MIME filter.</li>
+     * </ul>
+     * Contract case C2, invariant I2 -- AC-005 and AC-007 of
+     * <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_realMimeType_returnsMatchingFilesAndNoPages() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of("image/jpeg"));
+
+        assertTrue("The JPG File Asset must be returned for an 'image/jpeg' browse, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset must not match 'image/jpeg'",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset must not match 'image/jpeg'",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePage.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePageAltLanguage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed filtering by two real MIME types at once.</li>
+     *     <li><b>Expected Result:</b> Both matching File Assets come back and nothing else. This is the pure
+     *     regression guard for the MIME filtering added by PR #34217, and it must behave identically before and
+     *     after the fix.</li>
+     * </ul>
+     * Contract case C4, invariant I1 -- AC-005 of
+     * <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_multipleRealMimeTypes_areUnchanged() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of("image/jpeg", "application/pdf"));
+
+        assertTrue("The JPG File Asset must be returned, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertTrue("The PDF File Asset must be returned, but got: " + identifiers,
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset matches neither MIME type",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                identifiers.contains(mimePage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed with a MIME type that merely starts with the synthetic
+     *     one, {@code application/dotpage-foo}.</li>
+     *     <li><b>Expected Result:</b> No Page comes back. Only the exact string {@code application/dotpage} may be
+     *     routed to the base type branch; anything else goes through the asset metadata check.</li>
+     * </ul>
+     * Invariant I3 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeTypePrefix_isNotRoutedToBaseType() throws Exception {
+        final Set<String> identifiers = browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE + "-foo"));
+
+        assertFalse("Only the exact '" + DOTPAGE_MIME_TYPE + "' may resolve Pages by base type",
+                identifiers.contains(mimePage.getIdentifier()));
+        assertFalse("Only the exact '" + DOTPAGE_MIME_TYPE + "' may resolve Pages by base type",
+                identifiers.contains(mimePageAltLanguage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The folder is browsed asking for the synthetic Page MIME type and a real one
+     *     at the same time -- a folder holding a mix of Pages, File Assets and a Link.</li>
+     *     <li><b>Expected Result:</b> Both the Pages and the matching File Asset come back; the File Assets that
+     *     match neither requested MIME type do not.</li>
+     * </ul>
+     * Contract case C3 -- AC-004 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_mixedMimeTypes_returnsPagesAndMatchingFiles() throws Exception {
+        final Set<String> identifiers =
+                browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE, "image/jpeg"));
+
+        assertTrue("Pages must be returned for a mixed browse, but got: " + identifiers,
+                identifiers.containsAll(
+                        Set.of(mimePage.getIdentifier(), mimePageAltLanguage.getIdentifier())));
+        assertTrue("The JPG File Asset must be returned for a mixed browse, but got: " + identifiers,
+                identifiers.contains(mimeJpgFile.getIdentifier()));
+        assertFalse("The PDF File Asset matches neither requested MIME type",
+                identifiers.contains(mimePdfFile.getIdentifier()));
+        assertFalse("The TXT File Asset matches neither requested MIME type",
+                identifiers.contains(mimeTxtFile.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same mixed browse is requested twice with the MIME types in opposite
+     *     order.</li>
+     *     <li><b>Expected Result:</b> Both requests select exactly the same rows -- the requested MIME types are
+     *     an unordered set as far as the generated predicate is concerned.</li>
+     * </ul>
+     * Invariant I5 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_mimeTypeOrder_doesNotChangeResults() throws Exception {
+        final Set<String> pageFirst =
+                browseIdentifiers(mimeFolder, List.of(DOTPAGE_MIME_TYPE, "image/jpeg"));
+        final Set<String> imageFirst =
+                browseIdentifiers(mimeFolder, List.of("image/jpeg", DOTPAGE_MIME_TYPE));
+
+        assertEquals("The order of the requested MIME types must not change the result set", pageFirst,
+                imageFirst);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A sub-folder holding a Page and a JPG File Asset is browsed, first by the
+     *     synthetic Page MIME type and then by a real one.</li>
+     *     <li><b>Expected Result:</b> Each browse returns only its own kind, and neither returns items from the
+     *     parent folder. Folders themselves are listed separately by the Browser API and are out of scope here.</li>
+     * </ul>
+     * AC-004 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_subFolder_filtersEachTypeAsExpected() throws Exception {
+        final Set<String> pages = browseIdentifiers(mimeSubFolder, List.of(DOTPAGE_MIME_TYPE));
+
+        assertTrue("The sub-folder Page must be returned, but got: " + pages,
+                pages.contains(mimeSubFolderPage.getIdentifier()));
+        assertFalse("The sub-folder JPG File Asset must not match '" + DOTPAGE_MIME_TYPE + "'",
+                pages.contains(mimeSubFolderJpgFile.getIdentifier()));
+        assertFalse("A sub-folder browse must not return items from its parent folder",
+                pages.contains(mimePage.getIdentifier()));
+
+        final Set<String> images = browseIdentifiers(mimeSubFolder, List.of("image/jpeg"));
+
+        assertTrue("The sub-folder JPG File Asset must be returned, but got: " + images,
+                images.contains(mimeSubFolderJpgFile.getIdentifier()));
+        assertFalse("Pages must never leak into a real MIME type browse",
+                images.contains(mimeSubFolderPage.getIdentifier()));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContentList(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> Pages are browsed by the synthetic MIME type under a specific language, with
+     *     and without the default language fallback the legacy dialog turns on.</li>
+     *     <li><b>Expected Result:</b> With the fallback on, both the Page in the requested language and the one in
+     *     the default language come back; with it off, only the Page in the requested language does. Language
+     *     resolution is unchanged by the MIME routing.</li>
+     * </ul>
+     * AC-008 of <a href="https://github.com/dotCMS/core/issues/36916">#36916</a>.
+     */
+    @Test
+    public void test_getFolderContentList_dotPageMimeType_honorsLanguageFallback() throws Exception {
+        final Set<String> withFallback = browseIdentifiersByLanguage(testLanguage.getId(), true);
+
+        assertTrue("The Page in the requested language must be returned, but got: " + withFallback,
+                withFallback.contains(mimePageAltLanguage.getIdentifier()));
+        assertTrue("The default language Page must be returned when the fallback is on, but got: " + withFallback,
+                withFallback.contains(mimePage.getIdentifier()));
+
+        final Set<String> withoutFallback = browseIdentifiersByLanguage(testLanguage.getId(), false);
+
+        assertTrue("The Page in the requested language must be returned, but got: " + withoutFallback,
+                withoutFallback.contains(mimePageAltLanguage.getIdentifier()));
+        assertFalse("The default language Page must not be returned when the fallback is off",
+                withoutFallback.contains(mimePage.getIdentifier()));
+    }
+
+    /**
+     * Same browse as {@link #browseIdentifiers(Folder, List)} but scoped to a language, mirroring how the legacy
+     * dialog resolves content -- see {@code BrowserAjax.getFolderContentWithDotAssets}.
+     */
+    private Set<String> browseIdentifiersByLanguage(final long languageId, final boolean showDefaultLangItems)
+            throws DotSecurityException, DotDataException {
+        return browserAPI.getFolderContentList(BrowserQuery.builder()
+                        .withUser(APILocator.systemUser())
+                        .withHostOrFolderId(mimeFolder.getIdentifier())
+                        .showPages(true)
+                        .showFiles(true)
+                        .showFolders(false)
+                        .showWorking(true)
+                        .withLanguageId(languageId)
+                        .showDefaultLangItems(showDefaultLangItems)
+                        .showMimeTypes(List.of(DOTPAGE_MIME_TYPE))
+                        .build()).stream()
+                .map(Treeable::getIdentifier)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to test:</b> {@link BrowserAPI#getFolderContent(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> A folder tree holding File Assets -- including one whose name contains
+     *     dots and one nested in a sub-folder -- and an HTML Page is browsed the way the file browser dialog
+     *     does it.</li>
+     *     <li><b>Expected Result:</b> Every row already exposes the asset's <b>full</b> path in {@code path},
+     *     {@code url} and, for Pages, {@code pageURI}: the three agree with each other and each one ends with
+     *     the asset name exactly once. Consumers must therefore use one of them as-is and never append
+     *     {@code fileName} to them.</li>
+     * </ul>
+     * Regression guard for <a href="https://github.com/dotCMS/core/issues/37050">#37050</a>: the Vanity URL
+     * "Forward To" picker used to build its value as {@code path + fileName}, which duplicated the file name.
+     * It also pins the contract against the reverse change -- making {@code path} mean "parent path" in
+     * {@code WebAssetStrategy.addPath} would silently break every consumer of this payload.
+     */
+    @Test
+    public void test_getFolderContent_webAssetRows_carryTheFullPathExactlyOnce() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().name("pathFolder").site(host).nextPersisted();
+        final Folder subFolder = new FolderDataGen().name("pathSubFolder").parent(folder).nextPersisted();
+
+        final FileAsset plainFile = persistFileAsset(folder, fileNamed("pathPlainFile.txt"));
+        // Dots in the name are the interesting case: any extension-based trimming would mangle it
+        final FileAsset dottedFile = persistFileAsset(subFolder, fileNamed("my.report.v2.txt"));
+        final HTMLPageAsset page = new HTMLPageDataGen(folder,
+                new TemplateDataGen().host(host).nextPersisted()).title("pathPage").pageURL("path-page")
+                .nextPersisted();
+
+        assertWebAssetRow(folder, plainFile.getIdentifier(), "/pathFolder/pathPlainFile.txt",
+                plainFile.getFileName());
+        assertWebAssetRow(subFolder, dottedFile.getIdentifier(), "/pathFolder/pathSubFolder/my.report.v2.txt",
+                dottedFile.getFileName());
+        // Pages resolve through the 'pageURI' branch of the picker, which must keep agreeing with the rest
+        final Map<String, Object> pageRow = assertWebAssetRow(folder, page.getIdentifier(),
+                "/pathFolder/path-page", null);
+        assertEquals("A Page's 'pageURI' must agree with its 'url'", pageRow.get("url"),
+                pageRow.get("pageURI"));
+    }
+
+    /**
+     * Browses {@code folder} the way the file browser dialog does -- see
+     * {@code BrowserAjax.getFolderContentWithDotAssets} -- and asserts that the hydrated row for
+     * {@code identifier} exposes {@code expectedPath} in both {@code path} and {@code url}. When
+     * {@code fileName} is given, it also asserts the path ends with it exactly once.
+     */
+    private Map<String, Object> assertWebAssetRow(final Folder folder, final String identifier,
+            final String expectedPath, final String fileName) throws Exception {
+        final Map<String, Object> results = browserAPI.getFolderContent(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showPages(true)
+                .showFiles(true)
+                .showFolders(false)
+                .showWorking(true)
+                .build());
+        final Map<String, Object> row =
+                ((List<Map<String, Object>>) results.get("list")).stream()
+                        .filter(item -> identifier.equals(item.get("identifier")))
+                        .findFirst()
+                        .orElseThrow(() -> new AssertionError(
+                                "The browse of '" + folder.getName() + "' must return " + identifier));
+
+        final String actualPath = (String) row.get("path");
+        assertEquals("'path' must be the asset's full path", expectedPath, actualPath);
+        assertEquals("'url' must agree with 'path'", expectedPath, row.get("url"));
+        if (null != fileName) {
+            assertTrue("'path' must end with the file name: " + actualPath,
+                    actualPath.endsWith("/" + fileName));
+            assertEquals("The file name must appear exactly once in 'path': " + actualPath, 1,
+                    StringUtils.countMatches(actualPath, fileName));
+        }
+        return row;
+    }
+
+    /**
+     * Creates a temporary file with an <b>exact</b> name. {@code File.createTempFile} appends random digits,
+     * which would defeat the path assertions above.
+     */
+    private static File fileNamed(final String name) throws IOException {
+        final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
+        FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
+        return file;
+    }
 }

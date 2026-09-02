@@ -1,9 +1,10 @@
 package com.dotcms.ai.workflow;
 
-import com.dotcms.ai.app.AppKeys;
+import com.dotcms.ai.app.AppConfig;
 import com.dotcms.ai.app.ConfigService;
 import com.dotcms.ai.util.ContentToStringUtil;
 import com.dotcms.ai.util.VelocityContextFactory;
+import com.dotmarketing.beans.Host;
 import com.dotcms.api.system.event.Payload;
 import com.dotcms.api.system.event.SystemEventType;
 import com.dotcms.api.system.event.message.MessageSeverity;
@@ -52,8 +53,6 @@ public class OpenAIContentPromptRunner implements Runnable {
     final String prompt;
     final boolean overwriteField;
     final String fieldToWrite;
-    final String model;
-    final float temperature;
     final Contentlet contentlet;
 
     OpenAIContentPromptRunner(final WorkflowProcessor processor,
@@ -64,14 +63,7 @@ public class OpenAIContentPromptRunner implements Runnable {
                 processor.getUser(),
                 params.get(OpenAIParams.OPEN_AI_PROMPT.key).getValue(),
                 Boolean.parseBoolean(params.get(OpenAIParams.OVERWRITE_FIELDS.key).getValue()),
-                params.get(OpenAIParams.FIELD_TO_WRITE.key).getValue(),
-                params.get(OpenAIParams.MODEL.key).getValue(),
-                Try.of(() ->
-                                Float.parseFloat(
-                                        params
-                                                .get(OpenAIParams.TEMPERATURE.key)
-                                                .getValue()))
-                        .getOrElse(ConfigService.INSTANCE.config().getConfigFloat(AppKeys.COMPLETION_TEMPERATURE))
+                params.get(OpenAIParams.FIELD_TO_WRITE.key).getValue()
         );
     }
 
@@ -79,9 +71,7 @@ public class OpenAIContentPromptRunner implements Runnable {
                               final User user,
                               final String prompt,
                               final boolean overwriteField,
-                              final String fieldToWrite,
-                              final String model,
-                              final float temperature) {
+                              final String fieldToWrite) {
 
         if (UtilMethods.isEmpty(contentlet::getIdentifier)) {
             throw new IllegalArgumentException(
@@ -92,8 +82,6 @@ public class OpenAIContentPromptRunner implements Runnable {
         this.overwriteField = overwriteField;
         this.fieldToWrite = fieldToWrite;
         this.user = user;
-        this.model = model;
-        this.temperature = temperature;
     }
 
     @Override
@@ -145,9 +133,11 @@ public class OpenAIContentPromptRunner implements Runnable {
 
         final Context ctx = VelocityContextFactory.getMockContext(workingContentlet, user);
         final String parsedPrompt = VelocityUtil.eval(prompt, ctx);
+        final Host host = Try.of(() -> APILocator.getHostAPI().find(workingContentlet.getHost(), user, false)).getOrNull();
+        final AppConfig appConfig = ConfigService.INSTANCE.config(host);
         final JSONObject openAIResponse = APILocator.getDotAIAPI()
-                .getCompletionsAPI()
-                .raw(buildRequest(parsedPrompt, model, temperature), user.getUserId());
+                .getCompletionsAPI(appConfig)
+                .raw(buildRequest(parsedPrompt), user.getUserId());
 
         try {
             return openAIResponse
@@ -199,14 +189,12 @@ public class OpenAIContentPromptRunner implements Runnable {
         }
     }
 
-    private JSONObject buildRequest(final String prompt, final String model, final float temperature) {
+    private JSONObject buildRequest(final String prompt) {
         final JSONArray messages = new JSONArray();
         messages.add(Map.of("role", "user", "content", prompt));
 
         final JSONObject json = new JSONObject();
         json.put("messages", messages);
-        json.put("model", model);
-        json.put("temperature", temperature);
         json.put("stream", false);
         Logger.debug(this.getClass(), "Open AI Request:\n" + json.toString(2));
 

@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+
+    <!--
+        =====================================================================
+        Elasticsearch client JARs — server-side CVEs (false positives)
+        =====================================================================
+        dotCMS uses elasticsearch-rest-high-level-client as a CLIENT ONLY.
+        All CVEs below are vulnerabilities in the Elasticsearch SERVER PROCESS
+        (node memory management, ingest pipelines, audit logging, PKI realm,
+        etc.) and are not present in, or exploitable via, the client JARs
+        shipped with dotCMS.
+
+        Customers running their own Elasticsearch cluster should upgrade it
+        to 7.17.25+ independently of the dotCMS application.
+    -->
+
+    <!-- CVE-2021-22134: DLS/FLS doc-existence leak — server feature, requires Security subscription -->
+    <suppress>
+        <notes>Server-side DLS/FLS vulnerability. dotCMS ships only the REST client JAR, not the server process.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2021-22134</cve>
+    </suppress>
+
+    <!-- CVE-2021-22144: Grok parser DoS — server-side query engine -->
+    <suppress>
+        <notes>Server-side Grok parser vulnerability. Not present in client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2021-22144</cve>
+    </suppress>
+
+    <!-- CVE-2021-22145: Memory disclosure in server error paths -->
+    <suppress>
+        <notes>Server-side memory disclosure. Not present in client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2021-22145</cve>
+    </suppress>
+
+    <!-- CVE-2023-31417: Sensitive data in server audit logs via deprecated API -->
+    <suppress>
+        <notes>Server-side audit log exposure. Requires local access to the Elasticsearch host. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-31417</cve>
+    </suppress>
+
+    <!-- CVE-2023-31418: Unauthenticated OOM DoS of Elasticsearch node -->
+    <suppress>
+        <notes>Server-side unauthenticated DoS. Targets the Elasticsearch node process, not client code.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-31418</cve>
+    </suppress>
+
+    <!-- CVE-2023-31419: Stack overflow via crafted _search query on the server -->
+    <suppress>
+        <notes>Server-side stack overflow in search execution. Not present in client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-31419</cve>
+    </suppress>
+
+    <!-- CVE-2023-46673: Simulate Pipeline API DoS — server-side ingest pipeline -->
+    <suppress>
+        <notes>Server-side Simulate Pipeline API DoS. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-46673</cve>
+    </suppress>
+
+    <!-- CVE-2023-46674: Unsafe deserialization in elasticsearch-hadoop (Spark/Hadoop connector) -->
+    <suppress>
+        <notes>Affects the elasticsearch-hadoop Spark/Hadoop connector only. dotCMS does not use this connector.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-46674</cve>
+    </suppress>
+
+    <!-- CVE-2023-49921: Watcher search input logged at DEBUG — server-side feature -->
+    <suppress>
+        <notes>Server-side Watcher feature log disclosure. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2023-49921</cve>
+    </suppress>
+
+    <!-- CVE-2024-23444: Private key stored unencrypted on server node filesystem -->
+    <suppress>
+        <notes>Server-side private key storage issue. Requires filesystem access to the Elasticsearch node. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2024-23444</cve>
+    </suppress>
+
+    <!-- CVE-2024-23450: Deeply nested ingest pipeline DoS — server-side -->
+    <suppress>
+        <notes>Server-side ingest pipeline processing DoS. Not present in client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2024-23450</cve>
+    </suppress>
+
+    <!-- CVE-2024-52979: Mustache search template DoS — server-side template engine -->
+    <suppress>
+        <notes>Server-side Search Template/Mustache DoS. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2024-52979</cve>
+    </suppress>
+
+    <!-- CVE-2025-37727: Sensitive data in Reindex API server logs -->
+    <suppress>
+        <notes>Server-side Reindex API log disclosure. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2025-37727</cve>
+    </suppress>
+
+    <!-- CVE-2025-37731: PKI realm authentication bypass — server-side auth -->
+    <suppress>
+        <notes>Server-side PKI realm authentication bypass. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2025-37731</cve>
+    </suppress>
+
+    <!-- CVE-2025-68384: x-pack-security OOM via oversized user settings — server-side -->
+    <suppress>
+        <notes>Server-side x-pack-security OOM DoS. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2025-68384</cve>
+    </suppress>
+
+    <!-- CVE-2025-68390: Snapshot restore privilege OOM DoS — server-side -->
+    <suppress>
+        <notes>Server-side snapshot restore OOM DoS. Not applicable to client JARs.</notes>
+        <packageUrl regex="true">^pkg:maven/org\.elasticsearch.*@.*$</packageUrl>
+        <cve>CVE-2025-68390</cve>
+    </suppress>
+
+    <!--
+        =====================================================================
+        dot.struts-1.2.10_1.jar — Struts 2 false positives + non-applicable XStream CVEs
+        =====================================================================
+        dot.struts is a dotCMS-repackaged Struts 1.x library. Three of the
+        five flagged CVEs are Struts 2 vulnerabilities; Dependency Check
+        misattributes them due to JAR name pattern matching. Struts 1.x uses
+        a fundamentally different architecture with no OGNL parameter handling.
+
+        The two XStream CVEs relate to a bundled XStream dependency.
+        dotCMS uses Struts only for legacy JSP/Tiles rendering — XStream
+        deserialization is not used in this code path. CVE-2020-26259
+        additionally requires Java < 15; dotCMS runs Java 11+/17+.
+    -->
+
+    <!-- CVE-2012-0391: Struts 2 OGNL RCE — Struts 1.x has no OGNL parameter handling -->
+    <suppress>
+        <notes>Struts 2 OGNL RCE misattributed to Struts 1.x JAR. Struts 1.x does not use OGNL for parameter handling.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.dotcms\.lib/dot\.struts@.*$</packageUrl>
+        <cve>CVE-2012-0391</cve>
+    </suppress>
+
+    <!-- CVE-2023-34396: Struts 2 multipart DoS — not applicable to Struts 1.x -->
+    <suppress>
+        <notes>Struts 2 multipart DoS misattributed to Struts 1.x JAR.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.dotcms\.lib/dot\.struts@.*$</packageUrl>
+        <cve>CVE-2023-34396</cve>
+    </suppress>
+
+    <!-- CVE-2023-34149: Struts 2 DoS — not applicable to Struts 1.x -->
+    <suppress>
+        <notes>Struts 2 DoS misattributed to Struts 1.x JAR.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.dotcms\.lib/dot\.struts@.*$</packageUrl>
+        <cve>CVE-2023-34149</cve>
+    </suppress>
+
+    <!-- CVE-2020-26258: XStream SSRF — XStream deserialization not used in dotCMS Struts integration -->
+    <suppress>
+        <notes>XStream SSRF. dotCMS uses Struts 1.x for JSP/Tiles rendering only, not XStream deserialization. Not exploitable.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.dotcms\.lib/dot\.struts@.*$</packageUrl>
+        <cve>CVE-2020-26258</cve>
+    </suppress>
+
+    <!-- CVE-2020-26259: XStream arbitrary file deletion — requires Java < 15 and JAX-WS; dotCMS runs Java 11+/17+ -->
+    <suppress>
+        <notes>XStream file deletion. Requires Java &lt; 15 (dotCMS runs Java 11+/17+) and JAX-WS runtime. XStream deserialization not used in dotCMS Struts path. Not exploitable.</notes>
+        <packageUrl regex="true">^pkg:maven/com\.dotcms\.lib/dot\.struts@.*$</packageUrl>
+        <cve>CVE-2020-26259</cve>
+    </suppress>
+
+</suppressions>

@@ -1,9 +1,4 @@
-import { Component, input } from '@angular/core';
-
-import { CheckIcon } from 'primeng/icons/check';
-import { ExclamationTriangleIcon } from 'primeng/icons/exclamationtriangle';
-import { InfoCircleIcon } from 'primeng/icons/infocircle';
-import { TimesCircleIcon } from 'primeng/icons/timescircle';
+import { Component, input, ChangeDetectionStrategy } from '@angular/core';
 
 /**
  * Component that renders the appropriate icon based on message severity
@@ -14,7 +9,7 @@ import { TimesCircleIcon } from 'primeng/icons/timescircle';
  */
 @Component({
     selector: 'dot-severity-icon',
-    imports: [CheckIcon, InfoCircleIcon, TimesCircleIcon, ExclamationTriangleIcon],
+    changeDetection: ChangeDetectionStrategy.Eager,
     templateUrl: './dot-severity-icon.component.html'
 })
 export class DotSeverityIconComponent {

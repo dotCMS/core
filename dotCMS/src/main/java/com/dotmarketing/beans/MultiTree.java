@@ -7,6 +7,7 @@ import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.containers.model.Container;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import java.util.Map;
 import org.apache.commons.lang.builder.EqualsBuilder;
@@ -75,7 +76,7 @@ public class MultiTree implements Serializable {
         this.treeOrder    = Math.max(treeOrder, 0);
         this.personalization = personalization;
         this.variantId = variantId;
-        this.styleProperties = styleProperties;
+        this.styleProperties = UtilMethods.isSet(styleProperties) ? Map.copyOf(styleProperties) : null;
     }
 
     /** full constructor */
@@ -362,5 +363,21 @@ public class MultiTree implements Serializable {
         return this.setContainer(container.getIdentifier());
     }
 
+    /**
+     * Builds a composite string key that uniquely identifies a multi-tree entry by combining its
+     * five discriminating fields. Useful for in-memory duplicate detection and O(1) lookup without
+     * additional DB round-trips.
+     *
+     * @param relationType    The container instance UUID ({@code relation_type} column).
+     * @param personalization The personalization tag (e.g., persona key tag).
+     * @param container       The container identifier ({@code parent2} column).
+     * @param child           The contentlet identifier ({@code child} column).
+     * @param variantId       The variant identifier ({@code variant_id} column).
+     * @return A pipe-separated composite key.
+     */
+    public static String buildMultiTreeKey(final String relationType, final String personalization,
+            final String container, final String child, final String variantId) {
+        return relationType + "|" + personalization + "|" + container + "|" + child + "|" + variantId;
+    }
 
 }

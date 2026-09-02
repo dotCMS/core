@@ -1,4 +1,4 @@
-import { SpectatorDirective, createDirectiveFactory } from '@ngneat/spectator/jest';
+import { SpectatorDirective, createDirectiveFactory } from '@openng/spectator/jest';
 
 import { NgOptimizedImage, IMAGE_LOADER, ImageLoaderConfig } from '@angular/common';
 import { TestBed } from '@angular/core/testing';

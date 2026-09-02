@@ -34,12 +34,10 @@ import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.htmlpageasset.model.HTMLPageAsset;
 import com.dotmarketing.portlets.htmlpageasset.model.IHTMLPage;
 import com.dotmarketing.portlets.links.model.Link;
-import com.dotmarketing.portlets.templates.model.FileAssetTemplate;
 import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.InodeUtils;
 import com.dotmarketing.util.Logger;
 
-import io.vavr.API;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -402,10 +400,6 @@ public class PublishFactory {
         //writes the htmlpage to a live directory under velocity folder
         new PageLoader().invalidate(htmlPage);
         APILocator.getContentletAPI().publish( (HTMLPageAsset) htmlPage, user, false );
-
-
-        //Remove from block cache.
-        CacheLocator.getBlockPageCache().remove(htmlPage);
 
         if (!futureContentlets.isEmpty()) {
 			final String listContentlets = futureContentlets.stream()

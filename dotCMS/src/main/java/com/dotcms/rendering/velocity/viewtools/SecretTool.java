@@ -57,8 +57,7 @@ public class SecretTool implements ViewTool {
 
 		canUserEvaluate();
 
-		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
+		final Optional<DotVelocitySecretAppConfig> config = resolveConfig();
 		return config.isPresent()? config.get().getStringOrNull(key) : null;
 	}
 
@@ -90,9 +89,32 @@ public class SecretTool implements ViewTool {
 	public char[] getCharArray(final String key) {
 
 		canUserEvaluate();
-		final HttpServletRequest requestFromThreadLocal = HttpServletRequestThreadLocal.INSTANCE.getRequest();
-		final Optional<DotVelocitySecretAppConfig> config = DotVelocitySecretAppConfig.config(requestFromThreadLocal);
+		final Optional<DotVelocitySecretAppConfig> config = resolveConfig();
 		return config.isPresent()? config.get().getCharArrayOrNull(key) : null;
+	}
+
+	/**
+	 * Resolves the {@link DotVelocitySecretAppConfig} for the current execution context.
+	 * <p>
+	 * Uses {@code this.request}, which is snapshotted at {@link #init} time — before any VTL
+	 * executes — making it immune to {@code #set($host = ...)} mutations.
+	 * <ul>
+	 *   <li><b>Velocity page rendering:</b> {@code init(ViewContext)} sets {@code this.request}
+	 *       from the real HTTP request, so host resolution matches the browser's site.</li>
+	 *   <li><b>Workflow actionlet (HTTP or background):</b> the actionlet builds a mock request
+	 *       scoped to the contentlet's own site and passes it to {@code engine.eval()}, which
+	 *       propagates it here via {@code init(ViewContext)}. This ensures secrets resolve for
+	 *       the contentlet's site regardless of which site the triggering browser is on.</li>
+	 * </ul>
+	 *
+	 * @return the resolved config, or {@link java.util.Optional#empty()} if none is configured
+	 */
+	private Optional<DotVelocitySecretAppConfig> resolveConfig() {
+
+		if (null == this.request) {
+			return Optional.empty();
+		}
+		return DotVelocitySecretAppConfig.config(this.request);
 	}
 
 	public char[] getCharArraySystemSecret (final String key) {
@@ -132,7 +154,15 @@ public class SecretTool implements ViewTool {
 			final Role scripting = APILocator.getRoleAPI().loadRoleByKey(Role.SCRIPTING_DEVELOPER);
 			boolean hasScriptingRole = checkRoleFromLastModUser(scripting);
 			if (!hasScriptingRole) {
-				final User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+				User user = WebAPILocator.getUserWebAPI().getUser(this.request);
+
+				if (null == user || user.isAnonymousUser()) {
+					final User contextUser = (User) this.context.get("user");
+					if (null != contextUser) {
+						user = contextUser;
+					}
+				}
+
 				// try with the current user
 				if (null != user) {
 					hasScriptingRole = APILocator.getRoleAPI().doesUserHaveRole(user, scripting);

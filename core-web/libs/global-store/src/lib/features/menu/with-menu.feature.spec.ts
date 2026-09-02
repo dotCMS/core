@@ -16,6 +16,7 @@ describe('withMenu Feature', () => {
         {
             active: false,
             id: '1',
+            label: 'Home Menu',
             isOpen: false,
             menuItems: [
                 {
@@ -39,6 +40,7 @@ describe('withMenu Feature', () => {
             active: false,
             id: '2',
             isOpen: false,
+            label: 'About Menu',
             menuItems: [
                 {
                     active: false,
@@ -61,6 +63,7 @@ describe('withMenu Feature', () => {
             active: false,
             id: '3',
             isOpen: false,
+            label: 'Legacy Menu',
             menuItems: [
                 {
                     active: false,
@@ -143,6 +146,7 @@ describe('withMenu Feature', () => {
                     active: false,
                     id: '100',
                     isOpen: false,
+                    label: 'New Menu',
                     menuItems: [
                         {
                             active: false,
@@ -181,6 +185,7 @@ describe('withMenu Feature', () => {
                     active: false,
                     id: 'legacy',
                     isOpen: false,
+                    label: 'Legacy Menu',
                     menuItems: [
                         {
                             active: false,
@@ -332,16 +337,16 @@ describe('withMenu Feature', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all parent menus when collapsing', () => {
+        it('should not close parent menus when collapsing', () => {
             store.toggleParent('1');
-            store.toggleNavigation(); // Expand (should open active item's parent)
-            store.toggleNavigation(); // Collapse (should close all)
-            expect(store.openParentMenuId()).toBeNull();
+            store.expandNavigation(); // Expand (should open active item's parent)
+            store.collapseNavigation(); // Collapse (should NOT close all)
+            expect(store.openParentMenuId()).toBe('1');
         });
 
         it('should open active item parent menu when expanding', () => {
             store.activateMenuItem('1-1__1');
-            store.toggleNavigation(); // Expand
+            store.expandNavigation(); // Use expandNavigation instead of toggleNavigation
             expect(store.openParentMenuId()).toBe('1');
         });
     });
@@ -357,10 +362,10 @@ describe('withMenu Feature', () => {
             expect(store.isNavigationCollapsed()).toBe(true);
         });
 
-        it('should close all parent menu groups when collapsing', () => {
+        it('should not close parent menu groups when collapsing', () => {
             store.toggleParent('1');
             store.collapseNavigation();
-            expect(store.openParentMenuId()).toBeNull();
+            expect(store.openParentMenuId()).toBe('1');
         });
     });
 
@@ -394,23 +399,295 @@ describe('withMenu Feature', () => {
         it('should set active menu item by portletId and parentMenuId', () => {
             // Expand navigation first so parent menu can be opened
             store.expandNavigation();
-            store.setActiveMenu('1-1', '1');
+            store.setActiveMenu({ portletId: '1-1', shortParentMenuId: '1' });
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
             expect(store.openParentMenuId()).toBe('1');
         });
 
-        it('should not open parent menu when navigation is collapsed', () => {
+        it('should activate parent menu when navigation is collapsed', () => {
             store.collapseNavigation();
-            store.setActiveMenu('1-1', '1');
+            store.setActiveMenu({ portletId: '1-1', shortParentMenuId: '1' });
             const activeItem = store.activeMenuItem();
             expect(activeItem?.id).toBe('1-1');
-            expect(store.openParentMenuId()).toBeNull();
         });
 
         it('should not activate if portletId is empty', () => {
             const initialActive = store.activeMenuItem();
-            store.setActiveMenu('', '1');
+            store.setActiveMenu({ portletId: '', shortParentMenuId: '1' });
+            const finalActive = store.activeMenuItem();
+            expect(finalActive).toEqual(initialActive);
+        });
+
+        it('should resolve multi-segment portlet IDs correctly', () => {
+            // Add items that match the multi-segment portlets
+            const menuWithMultiSegmentPortlets: DotMenu[] = [
+                ...mockMenuItems,
+                {
+                    active: false,
+                    id: 'MARKETING',
+                    label: 'Marketing',
+                    isOpen: false,
+                    menuItems: [
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'analytics-dashboard',
+                            label: 'Analytics Dashboard',
+                            url: '/c/analytics-dashboard',
+                            menuLink: '/c/analytics-dashboard',
+                            parentMenuId: 'MARKETING'
+                        },
+                        {
+                            active: false,
+                            ajax: true,
+                            angular: true,
+                            id: 'analytics-search',
+                            label: 'Analytics Search',
+                            url: '/c/analytics-search',
+                            menuLink: '/c/analytics-search',
+                            parentMenuId: 'MARKETING'
+                        }
+                    ],
+                    name: 'Marketing',
+                    tabDescription: 'Marketing',
+                    tabIcon: 'pi pi-chart-bar',
+                    tabName: 'Marketing',
+                    url: '/marketing'
+                }
+            ];
+
+            store.loadMenu(menuWithMultiSegmentPortlets);
+
+            // Test analytics-dashboard ID works directly
+            // getPortletId() now resolves /analytics/dashboard → analytics-dashboard directly
+            store.setActiveMenu({ portletId: 'analytics-dashboard', shortParentMenuId: 'MARK' });
+            expect(store.activeMenuItem()?.id).toBe('analytics-dashboard');
+
+            // Test analytics-search ID works directly
+            store.setActiveMenu({ portletId: 'analytics-search', shortParentMenuId: 'MARK' });
+            expect(store.activeMenuItem()?.id).toBe('analytics-search');
+        });
+
+        it('should activate menu item using breadcrumbs when bookmark is true', () => {
+            const breadcrumbs = [
+                { label: 'Home', url: '/' },
+                { label: 'About', url: '/about' }
+            ];
+
+            store.setActiveMenu({
+                portletId: 'non-existent-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(activeItem?.label).toBe('Home');
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should use first breadcrumb with URL when matching menu items', () => {
+            const breadcrumbs = [
+                { label: 'No URL Item' }, // No URL
+                { label: 'About', url: '/about' }, // Should match this
+                { label: 'Home', url: '/' }
+            ];
+
+            store.setActiveMenu({
+                portletId: 'non-existent-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+            expect(activeItem?.label).toBe('About');
+        });
+
+        it('should fallback to ID matching when breadcrumbs do not match', () => {
+            const breadcrumbs = [{ label: 'Non-existent Label', url: '/non-existent' }];
+
+            store.setActiveMenu({
+                portletId: '2-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+            expect(store.openParentMenuId()).toBe('2');
+        });
+
+        it('should not activate if bookmark is false and shortParentMenuId is missing', () => {
+            const initialActive = store.activeMenuItem();
+
+            store.setActiveMenu({
+                portletId: 'some-id',
+                shortParentMenuId: '',
+                bookmark: false
+            });
+
+            const finalActive = store.activeMenuItem();
+            expect(finalActive).toEqual(initialActive);
+        });
+
+        it('should handle empty breadcrumbs array when bookmark is true', () => {
+            store.setActiveMenu({
+                portletId: '1-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs: []
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+        });
+
+        it('should handle breadcrumbs with no URLs when bookmark is true', () => {
+            const breadcrumbs = [
+                { label: 'Home' }, // No URL
+                { label: 'About' } // No URL
+            ];
+
+            store.setActiveMenu({
+                portletId: '2-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+        });
+
+        it('should not activate non-existent menu item even with breadcrumbs', () => {
+            const breadcrumbs = [{ label: 'Non-existent', url: '/non-existent' }];
+
+            const initialActive = store.activeMenuItem();
+
+            store.setActiveMenu({
+                portletId: 'non-existent-portlet-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const finalActive = store.activeMenuItem();
+            expect(finalActive).toEqual(initialActive);
+        });
+
+        it('should activate menu item using breadcrumbs when bookmark is true', () => {
+            const breadcrumbs = [
+                { label: 'Home', url: '/' },
+                { label: 'About', url: '/about' }
+            ];
+
+            store.setActiveMenu({
+                portletId: 'non-existent-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+            expect(activeItem?.label).toBe('Home');
+            expect(store.openParentMenuId()).toBe('1');
+        });
+
+        it('should use first breadcrumb with URL when matching menu items', () => {
+            const breadcrumbs = [
+                { label: 'No URL Item' }, // No URL
+                { label: 'About', url: '/about' }, // Should match this
+                { label: 'Home', url: '/' }
+            ];
+
+            store.setActiveMenu({
+                portletId: 'non-existent-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+            expect(activeItem?.label).toBe('About');
+        });
+
+        it('should fallback to ID matching when breadcrumbs do not match', () => {
+            const breadcrumbs = [{ label: 'Non-existent Label', url: '/non-existent' }];
+
+            store.setActiveMenu({
+                portletId: '2-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+            expect(store.openParentMenuId()).toBe('2');
+        });
+
+        it('should not activate if bookmark is false and shortParentMenuId is missing', () => {
+            const initialActive = store.activeMenuItem();
+
+            store.setActiveMenu({
+                portletId: 'some-id',
+                shortParentMenuId: '',
+                bookmark: false
+            });
+
+            const finalActive = store.activeMenuItem();
+            expect(finalActive).toEqual(initialActive);
+        });
+
+        it('should handle empty breadcrumbs array when bookmark is true', () => {
+            store.setActiveMenu({
+                portletId: '1-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs: []
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('1-1');
+        });
+
+        it('should handle breadcrumbs with no URLs when bookmark is true', () => {
+            const breadcrumbs = [
+                { label: 'Home' }, // No URL
+                { label: 'About' } // No URL
+            ];
+
+            store.setActiveMenu({
+                portletId: '2-1',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
+            const activeItem = store.activeMenuItem();
+            expect(activeItem?.id).toBe('2-1');
+        });
+
+        it('should not activate non-existent menu item even with breadcrumbs', () => {
+            const breadcrumbs = [{ label: 'Non-existent', url: '/non-existent' }];
+
+            const initialActive = store.activeMenuItem();
+
+            store.setActiveMenu({
+                portletId: 'non-existent-portlet-id',
+                shortParentMenuId: '',
+                bookmark: true,
+                breadcrumbs
+            });
+
             const finalActive = store.activeMenuItem();
             expect(finalActive).toEqual(initialActive);
         });
@@ -486,7 +763,7 @@ describe('withMenu Feature', () => {
 
             // Collapse navigation (should close all)
             store.collapseNavigation();
-            expect(store.openParentMenuId()).toBeNull();
+            expect(store.openParentMenuId()).toBe('1');
         });
 
         it('should maintain single active item constraint', () => {

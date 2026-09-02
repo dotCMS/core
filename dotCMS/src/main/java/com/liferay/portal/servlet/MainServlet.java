@@ -22,7 +22,7 @@ package com.liferay.portal.servlet;
 import com.dotcms.business.CloseDBIfOpened;
 import com.dotcms.business.bytebuddy.ByteBuddyFactory;
 import com.dotcms.config.DotInitializationService;
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
+import com.dotcms.content.index.IndexAPI;
 import com.dotcms.enterprise.license.LicenseManager;
 import com.dotcms.repackage.com.httpbridge.webproxy.http.TaskController;
 import com.dotcms.repackage.org.apache.struts.Globals;
@@ -109,8 +109,15 @@ public class MainServlet extends ActionServlet {
         Logger.debug(InitServlet.class, "IOException: " + e1.getMessage(), e1);
       }
       
-      // Make sure elasticseach is up
-      new ESIndexAPI().waitUtilIndexReady();
+      // Make sure the primary search store for the current migration phase is up before running
+      // the startup tasks (issue #36244). getESIndexAPI() returns the phase-aware router
+      // (IndexAPIImpl), so waitUtilIndexReady() waits on the primary store for the phase: ES in
+      // phases 0–1, OS in phases 2–3 — not ES-hardcoded. If OS was the primary and a shadow-phase
+      // (1/2) fallback to ES occurred, waitUtilIndexReady() returns false after halting the
+      // migration to Phase 0; wait again so the new primary (ES) is gated too.
+      if (!APILocator.getESIndexAPI().waitUtilIndexReady()) {
+        APILocator.getESIndexAPI().waitUtilIndexReady();
+      }
       
       
 

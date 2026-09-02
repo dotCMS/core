@@ -1,5 +1,5 @@
 @use "variables" as *;
-@import "mixins";
+@use "mixins";
 
 :host {
     display: inline-flex;
@@ -13,7 +13,7 @@
     }
 
     &[inverted] i {
-        @include dot_icon_inverted;
+        @include mixins.dot_icon_inverted;
     }
 
     i {

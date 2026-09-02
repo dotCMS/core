@@ -1,49 +1,44 @@
 @let loading = $loading();
 
 @if (!loading) {
-    <p-tree
-        [value]="$folders()"
-        [loading]="loading"
+    <dot-folder-tree
+        [folders]="$folders()"
+        [loading]="false"
+        [selectedNode]="$selectedNode()"
         selectionMode="multiple"
-        loadingMode="icon"
-        class="w-full h-full"
-        loadingMode="icon"
-        [styleClass]="treeStyleClasses()"
-        [selection]="$selectedNode()"
-        [scrollHeight]="'auto'"
         [metaKeySelection]="true"
+        scrollHeight="auto"
+        [pt]="treePt"
+        [showLoadMorePlusIcon]="true"
+        loadMoreTestId="tree-load-more"
+        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
         (onNodeSelect)="onNodeSelect.emit($event)"
         (onNodeExpand)="onNodeExpand.emit($event)"
-        (onNodeCollapse)="onNodeCollapse.emit($event)">
-        <ng-template let-node pTemplate="default">
+        (onNodeCollapse)="onNodeCollapse.emit($event)"
+        (loadMore)="onLoadMore($event)">
+        <ng-template #folderTreeNodeLabel let-node>
+            <!-- Every row renders the same way. A site row carries its hostname, which
+                 `dotFolderName` passes through untouched (there are no path segments to strip), and
+                 its icon comes from the node itself, which PrimeNG renders beside this label. Only
+                 the weight sets it apart, and it is told apart by having no folder path — a tree of
+                 plain folders simply has no such row. -->
             <span
                 data-testid="tree-node-label"
                 [attr.data-json-node]="node.data | json"
+                [attr.data-id]="node?.data?.id"
+                [attr.data-node-key]="node.key"
+                [class]="node.data?.path ? 'font-normal' : 'font-semibold'"
                 [class.active]="$activeDropNode()?.id === node?.data.id">
-                {{ node.key === ALL_FOLDER_KEY ? (node.label | dm) : (node.label | folderName) }}
+                {{ node.label | dotFolderName }}
             </span>
         </ng-template>
-        <!-- LOADING WONT WORK WITH CUSTOM TEMPLATE: https://github.com/primefaces/primeng/blob/v17/src/app/components/tree/tree.ts#L113 -->
-        <ng-template pTemplate="togglericon" let-expanded>
-            <span class="toggler-regular">
-                <i
-                    class="pi arrow-icon"
-                    [class]="expanded ? 'pi pi-chevron-down' : 'pi pi-chevron-right'"
-                    [style]="{ fontSize: '0.875rem' }"></i>
-            </span>
-            <span class="toggler-first">
-                <i
-                    class="pi folder-icon"
-                    [class]="expanded ? 'pi pi-folder-open' : 'pi pi-folder'"></i>
-            </span>
-        </ng-template>
-    </p-tree>
+    </dot-folder-tree>
 } @else {
     <div
-        class="loading-container flex flex-column align-items-center justify-content-center h-full w-full">
-        <div class="pulse-container">
-            <i class="pi pi-folder loading-icon"></i>
+        class="pointer-events-none flex size-full flex-col items-center justify-center gap-6 font-normal select-none">
+        <div class="pulse-container relative inline-block">
+            <i class="pi pi-folder z-1 text-[64px] text-(--gray-400)"></i>
         </div>
-        <span class="loading-text">{{ 'content.drive.loading.folders.title' | dm }}</span>
+        <span class="text-base">{{ 'content.drive.loading.folders.title' | dm }}</span>
     </div>
 }

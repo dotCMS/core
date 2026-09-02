@@ -1,10 +1,10 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
-import { CoreWebService } from '@dotcms/dotcms-js';
-import { CoreWebServiceMock, mockDotLayout } from '@dotcms/utils-testing';
+import { mockDotLayout } from '@dotcms/utils-testing';
 
 import { DotPageLayoutService } from './dot-page-layout.service';
 
@@ -16,9 +16,9 @@ describe('DotPageLayoutService', () => {
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            imports: [HttpClientTestingModule],
             providers: [
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotPageLayoutService,
                 DotSessionStorageService
             ]
@@ -45,7 +45,7 @@ describe('DotPageLayoutService', () => {
             });
 
         const req = httpMock.expectOne(
-            'v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
+            '/api/v1/page/test38923-82393842-23823/layout?variantName=DEFAULT'
         );
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockDotLayout());
@@ -72,7 +72,7 @@ describe('DotPageLayoutService', () => {
             });
 
         const req = httpMock.expectOne(
-            'v1/page/test38923-82393842-23823/layout?variantName=variantTesting'
+            '/api/v1/page/test38923-82393842-23823/layout?variantName=variantTesting'
         );
         expect(req.request.method).toBe('POST');
         expect(req.request.body).toEqual(mockDotLayout());

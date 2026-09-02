@@ -5,6 +5,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeFalse;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.doReturn;
@@ -12,18 +13,21 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 import com.dotcms.content.elasticsearch.util.RestHighLevelClientProvider;
+import com.dotcms.content.index.IndexAPI;
+import com.dotcms.content.index.IndexConfigHelper;
+import com.dotcms.content.index.IndexTag;
 import com.dotcms.util.IntegrationTestInitService;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.util.UtilMethods;
 import com.tngtech.java.junit.dataprovider.DataProvider;
 import com.tngtech.java.junit.dataprovider.DataProviderRunner;
 import com.tngtech.java.junit.dataprovider.UseDataProvider;
-import io.vavr.Lazy;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.Collectors;
 import java.util.Map;
 import java.util.UUID;
 import org.elasticsearch.action.admin.indices.settings.get.GetSettingsRequest;
@@ -33,11 +37,14 @@ import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import com.dotcms.content.index.domain.ClusterStats;
+import com.dotcms.content.index.domain.IndexStats;
+import com.dotcms.content.index.domain.NodeStats;
 
 @RunWith(DataProviderRunner.class)
 public class ESIndexAPITest {
 
-    private static ESIndexAPI esIndexAPI;
+    private static IndexAPI esIndexAPI;
 
     @BeforeClass
     public static void prepare() throws Exception {
@@ -48,6 +55,10 @@ public class ESIndexAPITest {
 
     @Test
     public void test_createIndex_newIndexShouldHaveProperReplicasSetting() throws IOException {
+        // ESIndexAPI + the raw ES client target the ES cluster, decommissioned under Phase 3
+        // (OS-only). Index creation / replica settings on OS are covered by the OSIndexAPIImpl ITs.
+        assumeFalse("ES index-management test skipped under Phase 3 (OS-only)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         final String newIndexName = "mynewindex" + UUID.randomUUID().toString().toLowerCase();
         try {
             esIndexAPI.createIndex(newIndexName);
@@ -58,7 +69,7 @@ public class ESIndexAPITest {
 
             String replicasSetting = getSettingsResponse.getSetting(fullNewIndexName, "index.auto_expand_replicas");
 
-            Assert.assertEquals("0-all", replicasSetting);
+            Assert.assertEquals("0-1", replicasSetting);
         } finally {
             esIndexAPI.delete(esIndexAPI.getNameWithClusterIDPrefix(newIndexName));
         }
@@ -116,8 +127,8 @@ public class ESIndexAPITest {
 
         final IndexStats stats = result.get("myDummyIndex");
         assertNotNull(stats);
-        assertEquals(5, stats.getDocumentCount());
-        assertEquals(2000, stats.getSizeRaw());
+        assertEquals(5, stats.documentCount());
+        assertEquals(2000, stats.sizeRaw());
     }
 
     @Test
@@ -149,10 +160,10 @@ public class ESIndexAPITest {
 
         assertEquals(1, result.size());
 
-        final IndexStats stats = result.get("myDummyIndex");
+        final com.dotcms.content.index.domain.IndexStats stats = result.get("myDummyIndex");
         assertNotNull(stats);
-        assertEquals(5, stats.getDocumentCount());
-        assertEquals(2000, stats.getSizeRaw());
+        assertEquals(5, stats.documentCount());
+        assertEquals(2000, stats.sizeRaw());
     }
 
     @Test
@@ -179,11 +190,11 @@ public class ESIndexAPITest {
         final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
-        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+        assertTrue(UtilMethods.isSet(result.nodeStats()));
 
-        final NodeStats nodeStats = result.getNodeStats().get(0);
-        assertEquals(5, nodeStats.getDocCount());
-        assertEquals(2000, nodeStats.getSizeRaw());
+        final NodeStats nodeStats = result.nodeStats().get(0);
+        assertEquals(5, nodeStats.docCount());
+        assertEquals(2000, nodeStats.sizeRaw());
     }
 
     @Test
@@ -211,11 +222,11 @@ public class ESIndexAPITest {
         final ClusterStats result = indexAPI.getClusterStats();
 
         assertNotNull(result);
-        assertTrue(UtilMethods.isSet(result.getNodeStats()));
+        assertTrue(UtilMethods.isSet(result.nodeStats()));
 
-        final NodeStats nodeStats = result.getNodeStats().get(0);
-        assertEquals(5, nodeStats.getDocCount());
-        assertEquals(2000, nodeStats.getSizeRaw());
+        final NodeStats nodeStats = result.nodeStats().get(0);
+        assertEquals(5, nodeStats.docCount());
+        assertEquals(2000, nodeStats.sizeRaw());
     }
 
 
@@ -231,7 +242,12 @@ public class ESIndexAPITest {
 
         for (final String clusterName : testClusterNames) {
 
-            final ESIndexAPI indexAPI = new ESIndexAPI(Lazy.of(() -> CLUSTER_PREFIX + clusterName + "."));
+            final ESIndexAPI indexAPI = new ESIndexAPI() {
+                @Override
+                public String getClusterPrefix() {
+                    return CLUSTER_PREFIX + clusterName + ".";
+                }
+            };
 
             final String testIndexName = indexAPI.getNameWithClusterIDPrefix(indexName);
 
@@ -266,6 +282,11 @@ public class ESIndexAPITest {
     @Test
     @UseDataProvider("testDeleteOldIndicesDP")
     public void testDeleteOldIndices(final int inactiveLiveWorkingSetsToKeep) throws DotIndexException, IOException, InterruptedException {
+        // ESIndexAPI retention (deleteInactiveLiveWorkingIndices /
+        // getLiveWorkingIndicesSortedByCreationDateDesc) operates on the ES cluster, decommissioned
+        // under Phase 3 (OS-only). OS index retention is covered by the OSIndexAPIImpl ITs.
+        assumeFalse("ES index-retention test skipped under Phase 3 (OS-only)",
+                IndexConfigHelper.MigrationPhase.current().isMigrationComplete());
         // get live and working active indices
         final IndiciesInfo info = Try.of(()->APILocator.getIndiciesAPI().loadIndicies())
                 .getOrNull();
@@ -293,7 +314,14 @@ public class ESIndexAPITest {
 
         esIndexAPI.deleteInactiveLiveWorkingIndices(inactiveLiveWorkingSetsToKeep);
 
-        List<String> indicesAfterDeletion = esIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc();
+        // Normalize to logical names: esIndexAPI is the phase router, so from Phase 2 (OpenSearch
+        // serves reads) this listing comes back .os-tagged, while every name this test holds is
+        // ES-flavored (built from IndiciesInfo). Comparing raw would miss each index and read as a
+        // deleted active index (issue #36360).
+        final List<String> indicesAfterDeletion =
+                esIndexAPI.getLiveWorkingIndicesSortedByCreationDateDesc().stream()
+                        .map(IndexTag::strip)
+                        .collect(Collectors.toList());
         // assert active live index wasn't removed
         assertTrue(indicesAfterDeletion.contains(esIndexAPI.removeClusterIdFromName(liveIndex)));
         // assert active working index wasn't removed

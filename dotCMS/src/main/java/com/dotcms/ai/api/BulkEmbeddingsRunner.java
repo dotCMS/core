@@ -2,6 +2,7 @@ package com.dotcms.ai.api;
 
 import com.dotcms.ai.rest.forms.EmbeddingsForm;
 import com.dotcms.contenttype.model.field.Field;
+import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.util.Logger;
@@ -23,6 +24,7 @@ public class BulkEmbeddingsRunner implements Runnable {
     private final User user;
     private final EmbeddingsForm embeddingsForm;
     private final List<String> inodes;
+    private final EmbeddingsAPI embeddingsAPI;
 
     public BulkEmbeddingsRunner(List<String> inodes, EmbeddingsForm embeddingsForm) {
         user = Try.of(() -> APILocator
@@ -31,6 +33,11 @@ public class BulkEmbeddingsRunner implements Runnable {
                 .getOrElse(APILocator.systemUser());
         this.embeddingsForm = embeddingsForm;
         this.inodes = inodes;
+        final Host requestHost = UtilMethods.isSet(embeddingsForm.requestHostId)
+                ? Try.of(() -> APILocator.getHostAPI().find(embeddingsForm.requestHostId, APILocator.systemUser(), false))
+                     .getOrElse(APILocator::systemHost)
+                : APILocator.systemHost();
+        this.embeddingsAPI = APILocator.getDotAIAPI().getEmbeddingsAPI(requestHost);
     }
 
     @Override
@@ -48,11 +55,11 @@ public class BulkEmbeddingsRunner implements Runnable {
                         .filter(f -> embeddingsForm.fieldsAsList().contains(f.variable().toLowerCase()))
                         .collect(Collectors.toList());
                 // if a velocity template is passed in, use it.  Otherwise, try the fields
-                if (!APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(
+                if (!embeddingsAPI.generateEmbeddingsForContent(
                         contentlet,
                         embeddingsForm.velocityTemplate,
                         embeddingsForm.indexName)) {
-                    APILocator.getDotAIAPI().getEmbeddingsAPI().generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
+                    embeddingsAPI.generateEmbeddingsForContent(contentlet, fields, embeddingsForm.indexName);
                 }
             } catch (Exception e) {
                 Logger.warn(this.getClass(), "unable to embed content:" + inode + " error:" + e.getMessage(), e);

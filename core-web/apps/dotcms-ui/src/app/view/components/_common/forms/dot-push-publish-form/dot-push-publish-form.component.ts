@@ -1,6 +1,5 @@
 import { Observable, of, Subject } from 'rxjs';
 
-import { CommonModule } from '@angular/common';
 import {
     Component,
     ElementRef,
@@ -10,7 +9,8 @@ import {
     OnDestroy,
     OnInit,
     Output,
-    ViewChild
+    ViewChild,
+    ChangeDetectionStrategy
 } from '@angular/core';
 import {
     FormsModule,
@@ -22,8 +22,8 @@ import {
 
 import { SelectItem } from 'primeng/api';
 import { AutoFocusModule } from 'primeng/autofocus';
-import { CalendarModule } from 'primeng/calendar';
-import { DropdownModule } from 'primeng/dropdown';
+import { DatePickerModule } from 'primeng/datepicker';
+import { SelectModule } from 'primeng/select';
 import { SelectButtonModule } from 'primeng/selectbutton';
 
 import { catchError, filter, map, take, takeUntil } from 'rxjs/operators';
@@ -39,25 +39,25 @@ import { DotPushPublishDialogData, DotPushPublishData } from '@dotcms/dotcms-mod
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    PushPublishEnvSelectorComponent
 } from '@dotcms/ui';
 
 import { DotParseHtmlService } from '../../../../../api/services/dot-parse-html/dot-parse-html.service';
 import { DotFormModel } from '../../../../../shared/models/dot-form/dot-form.model';
-import { PushPublishEnvSelectorComponent } from '../../dot-push-publish-env-selector/dot-push-publish-env-selector.component';
 
 @Component({
     selector: 'dot-push-publish-form',
     templateUrl: './dot-push-publish-form.component.html',
     styleUrls: ['./dot-push-publish-form.component.scss'],
+    changeDetection: ChangeDetectionStrategy.Eager,
     imports: [
-        CommonModule,
         AutoFocusModule,
         FormsModule,
-        CalendarModule,
+        DatePickerModule,
         PushPublishEnvSelectorComponent,
         ReactiveFormsModule,
-        DropdownModule,
+        SelectModule,
         DotFieldValidationMessageComponent,
         SelectButtonModule,
         DotFieldRequiredDirective,

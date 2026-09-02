@@ -28,6 +28,7 @@ export interface DotCurrentUser {
     roleId: string;
     surname: string;
     userId: string;
+    loginAs: boolean;
 }
 
 export interface DotPermissionsType {

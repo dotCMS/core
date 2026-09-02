@@ -86,7 +86,8 @@ export class RelationshipFieldService {
                     contentlet,
                     variable: field.variable
                 });
-                const selectionMode = getSelectionModeByCardinality(cardinality);
+                const isParentField = field?.relationships?.isParentField;
+                const selectionMode = getSelectionModeByCardinality(cardinality, isParentField);
                 const showFields = extractShowFields(field);
 
                 return of({ cardinality, contentTypeId, data, selectionMode, showFields });

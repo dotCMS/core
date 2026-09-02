@@ -1,13 +1,13 @@
 import { ChartDataset } from 'chart.js';
 
-import { MenuItem } from 'primeng/api';
+import type { MenuItem } from 'primeng/api';
 
 import {
     BayesianStatusResponse,
-    ComponentStatus,
     DotExperimentStatus,
     TrafficProportionTypes
-} from '@dotcms/dotcms-models';
+} from './dot-experiments-constants';
+import { ComponentStatus } from './shared-models';
 
 export interface DotExperiment {
     id: string;
@@ -26,6 +26,32 @@ export interface DotExperiment {
 }
 
 export type DotExperimentsWithActions = DotExperiment & { actionsItemsMenu: MenuItem[] };
+
+/**
+ * Body of `PATCH /api/v1/experiments/{id}`.
+ *
+ * Every key is optional and the endpoint applies all the ones that are present in a single atomic
+ * update, so several field changes can — and should — travel in one call.
+ *
+ * `targetingConditions` is deliberately absent: sending it would have the backend rebuild the
+ * experiment's Rule from it.
+ *
+ * `pageId` is accepted, but only under a rule the server enforces — DRAFT, and the control the
+ * only variant — because every other variant holds a copy of the current page's layout. A value
+ * equal to the stored one is always a no-op; a genuinely different one at an ineligible
+ * experiment is a 400. See `specs/37176-draft-experiment-page-change`.
+ */
+export interface DotExperimentPatchBody {
+    /** Only sendable while the experiment is a draft whose only variant is the control. */
+    pageId?: string;
+    name?: string;
+    description?: string;
+    goals?: Goals;
+    /** `null` clears the schedule, which is a change like any other. */
+    scheduling?: RangeOfDateAndTime | null;
+    trafficAllocation?: number;
+    trafficProportion?: TrafficProportion;
+}
 
 export interface DotExperimentResults {
     bayesianResult: DotResultBayesian;
@@ -118,12 +144,12 @@ export interface Goal {
 
 export type Goals = Record<GoalsLevels, Goal>;
 
-interface ReachPageGoalCondition {
+export interface ReachPageGoalCondition {
     parameter: GOAL_PARAMETERS | string;
     operator: GOAL_OPERATORS;
     value: string;
 }
-interface UrlParameterGoalCondition {
+export interface UrlParameterGoalCondition {
     parameter: GOAL_PARAMETERS;
     operator: GOAL_OPERATORS;
     value: {

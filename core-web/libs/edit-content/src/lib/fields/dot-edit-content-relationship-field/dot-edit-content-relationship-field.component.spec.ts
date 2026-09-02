@@ -1,10 +1,10 @@
-import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@ngneat/spectator/jest';
+import { byTestId, createHostFactory, mockProvider, SpectatorHost } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { Component } from '@angular/core';
-import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 
@@ -12,14 +12,15 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotHttpErrorManagerService,
-    DotMessageService
+    DotMessageService,
+    DotPropertiesService
 } from '@dotcms/data-access';
 import {
     DotCMSClazzes,
-    DotCMSContentType,
-    FeaturedFlags,
     DotCMSContentlet,
-    DotCMSContentTypeField
+    DotCMSContentType,
+    DotCMSContentTypeField,
+    FeaturedFlags
 } from '@dotcms/dotcms-models';
 import { createFakeContentlet, createFakeRelationshipField } from '@dotcms/utils-testing';
 
@@ -28,6 +29,9 @@ import { PaginationComponent } from './components/pagination/pagination.componen
 import { DotEditContentRelationshipFieldComponent } from './dot-edit-content-relationship-field.component';
 import { RelationshipFieldStore } from './store/relationship-field.store';
 
+import { DotEditContentService } from '../../services/dot-edit-content.service';
+import { EDIT_CONTENT_HOST } from '../../services/host/edit-content-host.model';
+import { DotEditContentStore } from '../../store/edit-content.store';
 import { DotCardFieldContentComponent } from '../dot-card-field/components/dot-card-field-content.component';
 import { DotCardFieldComponent } from '../dot-card-field/dot-card-field.component';
 
@@ -93,7 +97,7 @@ export class MockFormComponent {
     contentlet: DotCMSContentlet;
 }
 
-xdescribe('DotEditContentRelationshipFieldComponent', () => {
+describe('DotEditContentRelationshipFieldComponent', () => {
     let spectator: SpectatorHost<DotEditContentRelationshipFieldComponent, MockFormComponent>;
     let store: InstanceType<typeof RelationshipFieldStore>;
     let dialogService: DialogService;
@@ -105,11 +109,16 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
         detectChanges: false,
         componentMocks: [DotCardFieldComponent, DotCardFieldContentComponent, PaginationComponent],
         providers: [
-            RelationshipFieldStore,
             provideHttpClient(),
             provideHttpClientTesting(),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockReturnValue('Mock Message')
+                // The create-new title is now i18n: `get('contenttypes.content.create.contenttype', name)`.
+                // Resolve that key to keep the header assertion meaningful; other keys stay generic.
+                get: jest.fn((key: string, ...args: string[]) =>
+                    key === 'contenttypes.content.create.contenttype'
+                        ? `Create ${args[0] ?? ''}`
+                        : 'Mock Message'
+                )
             }),
             mockProvider(DotContentTypeService, {
                 getContentType: jest.fn().mockReturnValue(of(mockContentType))
@@ -118,7 +127,39 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                 handle: jest.fn()
             }),
             mockProvider(DotCurrentUserService),
-            DialogService
+            // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+            // must be mocked (not just `getFeatureFlag`) or the real store throws on construction.
+            // Side panel off by default → showCreateNewContentDialog uses the centered dialog.
+            mockProvider(DotPropertiesService, {
+                getFeatureFlags: jest
+                    .fn()
+                    .mockReturnValue(
+                        of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                    )
+            }),
+            mockProvider(DotEditContentStore, {
+                contentType: jest.fn().mockReturnValue(null),
+                currentLocale: jest.fn().mockReturnValue(null),
+                isCopyingLocale: jest.fn().mockReturnValue(false),
+                isDialogMode: jest.fn().mockReturnValue(false),
+                contentlet: jest.fn().mockReturnValue(null)
+            }),
+            mockProvider(DotEditContentService, {
+                getContentById: jest.fn().mockReturnValue(of({}))
+            }),
+            DialogService,
+            {
+                provide: EDIT_CONTENT_HOST,
+                useValue: {
+                    inPlaceNavigation: false,
+                    setContentTitle: jest.fn(),
+                    addBreadcrumb: jest.fn(),
+                    goToSavedContent: jest.fn(),
+                    goToRestoredVersion: jest.fn(),
+                    goToRelatedContent: jest.fn(),
+                    goToCrumb: jest.fn()
+                }
+            }
         ]
     });
 
@@ -189,14 +230,14 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should not reorder items when disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 spectator.hostComponent.formGroup.disable();
                 spectator.detectChanges();
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
 
             it('should not show existing content dialog when disabled', () => {
@@ -236,21 +277,21 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             });
 
             it('should reorder items when not disabled', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: 1 });
-                expect(setDataSpy).toHaveBeenCalledWith(store.data());
+                expect(reorderDataSpy).toHaveBeenCalledWith(store.data());
             });
 
             it('should not reorder items with invalid indices', () => {
-                const setDataSpy = jest.spyOn(store, 'setData');
+                const reorderDataSpy = jest.spyOn(store, 'reorderData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 fieldComponent.onRowReorder({ dragIndex: null, dropIndex: 1 });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
 
                 fieldComponent.onRowReorder({ dragIndex: 0, dropIndex: null });
-                expect(setDataSpy).not.toHaveBeenCalled();
+                expect(reorderDataSpy).not.toHaveBeenCalled();
             });
         });
 
@@ -366,13 +407,13 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                     .mockReturnValue(mockDialogRef as unknown as DynamicDialogRef);
             });
 
-            it('should open the new content dialog when the feature flag is enabled', () => {
+            it('should open the new content dialog when the feature flag is enabled', async () => {
                 // Check initial state
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
                 expect(fieldComponent.$isDisabled()).toBe(false);
                 expect(store.contentType()).toEqual(mockContentType);
 
-                fieldComponent.showCreateNewContentDialog();
+                await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 expect(openSpy).toHaveBeenCalledTimes(1);
@@ -417,12 +458,12 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
                 expect(openSpy).not.toHaveBeenCalled();
             });
 
-            it('should handle content creation callback', () => {
+            it('should handle content creation callback', async () => {
                 const newContentlet = createFakeContentlet({ title: 'New Content', inode: '3' });
                 const setDataSpy = jest.spyOn(store, 'setData');
 
                 const fieldComponent = spectator.query(DotRelationshipFieldComponent);
-                fieldComponent.showCreateNewContentDialog();
+                await fieldComponent.showCreateNewContentDialog();
                 spectator.flushEffects();
 
                 // Verify that the dialog was opened
@@ -517,8 +558,8 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             emptySpectator.detectChanges();
             emptySpectator.flushEffects();
 
-            const emptyStore = emptySpectator.inject(RelationshipFieldStore, true);
-            expect(emptyStore.data()).toEqual([]);
+            const fieldComponent = emptySpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toEqual([]);
         });
 
         it('should handle invalid field data gracefully', () => {
@@ -549,8 +590,8 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             invalidSpectator.detectChanges();
             invalidSpectator.flushEffects();
 
-            const invalidStore = invalidSpectator.inject(RelationshipFieldStore, true);
-            expect(invalidStore.data()).toBeDefined();
+            const fieldComponent = invalidSpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toBeDefined();
         });
 
         it('should handle null contentlet gracefully', () => {
@@ -572,8 +613,205 @@ xdescribe('DotEditContentRelationshipFieldComponent', () => {
             nullContentletSpectator.detectChanges();
             nullContentletSpectator.flushEffects();
 
-            const nullStore = nullContentletSpectator.inject(RelationshipFieldStore, true);
-            expect(nullStore.data()).toBeDefined();
+            const fieldComponent = nullContentletSpectator.query(DotRelationshipFieldComponent);
+            expect(fieldComponent.store.data()).toBeDefined();
+        });
+    });
+
+    // Shared by the two footer host factories below (hint + error), which are
+    // otherwise identical — keeps provider changes a single-point edit.
+    const FOOTER_PROVIDERS = [
+        provideHttpClient(),
+        provideHttpClientTesting(),
+        mockProvider(DotMessageService, {
+            get: jest.fn().mockReturnValue('Mock Message')
+        }),
+        mockProvider(DotContentTypeService, {
+            getContentType: jest.fn().mockReturnValue(of(mockContentType))
+        }),
+        mockProvider(DotHttpErrorManagerService, {
+            handle: jest.fn()
+        }),
+        mockProvider(DotCurrentUserService),
+        // RelationshipFieldStore composes `withFlags`, which calls `getFeatureFlags` on init —
+        // must be mocked or the real store throws on construction.
+        mockProvider(DotPropertiesService, {
+            getFeatureFlags: jest
+                .fn()
+                .mockReturnValue(
+                    of({ [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: false })
+                )
+        }),
+        mockProvider(DotEditContentStore, {
+            contentType: jest.fn().mockReturnValue(null),
+            currentLocale: jest.fn().mockReturnValue(null),
+            isCopyingLocale: jest.fn().mockReturnValue(false),
+            isDialogMode: jest.fn().mockReturnValue(false),
+            contentlet: jest.fn().mockReturnValue(null)
+        }),
+        mockProvider(DotEditContentService, {
+            getContentById: jest.fn().mockReturnValue(of({}))
+        }),
+        DialogService
+    ];
+
+    describe('Footer hint rendering', () => {
+        // Uses a dedicated host that does NOT mock the card-field components so
+        // their <ng-content> projects, allowing the footer hint to render for real.
+        const HINTED_FIELD_MOCK = createFakeRelationshipField({
+            relationships: {
+                cardinality: 0,
+                isParentField: true,
+                velocityVar: 'AllTypes'
+            },
+            variable: 'relationshipField',
+            hint: 'This is the relationship hint'
+        });
+
+        const createFooterHost = createHostFactory({
+            component: DotEditContentRelationshipFieldComponent,
+            host: MockFormComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            componentMocks: [PaginationComponent],
+            providers: FOOTER_PROVIDERS
+        });
+
+        let footerSpectator: SpectatorHost<
+            DotEditContentRelationshipFieldComponent,
+            MockFormComponent
+        >;
+
+        beforeEach(() => {
+            footerSpectator = createFooterHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [HINTED_FIELD_MOCK.variable]: new FormControl()
+                        }),
+                        field: HINTED_FIELD_MOCK,
+                        contentlet: mockContentlet
+                    }
+                }
+            );
+            footerSpectator.detectChanges();
+            footerSpectator.flushEffects();
+        });
+
+        it('should render the hint inside the card field footer, outside the table', () => {
+            const hintElement = footerSpectator.query(
+                byTestId(`hint-${HINTED_FIELD_MOCK.variable}`)
+            );
+            expect(hintElement).toBeTruthy();
+            expect(hintElement.textContent.trim()).toBe(HINTED_FIELD_MOCK.hint);
+        });
+
+        it('should not render the hint inside the relationship table', () => {
+            const table = footerSpectator.query(byTestId('relationship-field-table'));
+            const hintInsideTable = table?.querySelector(
+                `[data-testid="hint-${HINTED_FIELD_MOCK.variable}"]`
+            );
+            expect(hintInsideTable).toBeFalsy();
+        });
+    });
+
+    describe('Footer error rendering', () => {
+        // Dedicated host (own factory) so the required-error branch of the footer can be
+        // exercised: with a required field whose control is invalid AND touched, the
+        // @if(fieldHasError) branch wins and the mutually-exclusive hint branch is skipped.
+        const REQUIRED_HINTED_FIELD_MOCK = createFakeRelationshipField({
+            relationships: {
+                cardinality: 0,
+                isParentField: true,
+                velocityVar: 'AllTypes'
+            },
+            variable: 'requiredHintedField',
+            hint: 'This is the relationship hint',
+            required: true
+        });
+
+        const createErrorHost = createHostFactory({
+            component: DotEditContentRelationshipFieldComponent,
+            host: MockFormComponent,
+            imports: [ReactiveFormsModule],
+            detectChanges: false,
+            componentMocks: [PaginationComponent],
+            providers: FOOTER_PROVIDERS
+        });
+
+        it('should render the required error and hide the hint when invalid and touched', () => {
+            const control = new FormControl(null, Validators.required);
+            const errorSpectator = createErrorHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [REQUIRED_HINTED_FIELD_MOCK.variable]: control
+                        }),
+                        field: REQUIRED_HINTED_FIELD_MOCK,
+                        contentlet: mockContentlet
+                    }
+                }
+            );
+
+            control.markAsTouched();
+            control.updateValueAndValidity();
+            errorSpectator.detectChanges();
+            errorSpectator.flushEffects();
+            errorSpectator.detectChanges();
+
+            // Error branch is rendered...
+            expect(errorSpectator.query(byTestId('relationship-field-error'))).toBeTruthy();
+            // ...and the mutually-exclusive hint branch is not.
+            expect(
+                errorSpectator.query(byTestId(`hint-${REQUIRED_HINTED_FIELD_MOCK.variable}`))
+            ).toBeNull();
+        });
+    });
+
+    describe('Required-empty field touched state', () => {
+        // Regression: a required, empty relationship field must not mark its control
+        // touched on first render, otherwise the "mandatory" error shows before the
+        // user interacts with the field.
+        it('should not mark the control as touched on init', () => {
+            const requiredField = createFakeRelationshipField({
+                relationships: {
+                    cardinality: 0,
+                    isParentField: true,
+                    velocityVar: 'AllTypes'
+                },
+                variable: 'requiredRelationshipField',
+                required: true
+            });
+
+            const control = new FormControl(null, Validators.required);
+            const requiredSpectator = createHost(
+                `<form [formGroup]="formGroup">
+                    <dot-edit-content-relationship-field [field]="field" [contentlet]="contentlet" />
+                </form>`,
+                {
+                    hostProps: {
+                        formGroup: new FormGroup({
+                            [requiredField.variable]: control
+                        }),
+                        field: requiredField,
+                        contentlet: createFakeContentlet({ [requiredField.variable]: [] })
+                    }
+                }
+            );
+
+            requiredSpectator.detectChanges();
+            requiredSpectator.flushEffects();
+
+            // The control is invalid (required + empty) but must remain untouched,
+            // so BaseWrapperField.$hasError (invalid && touched) stays false on init.
+            expect(control.invalid).toBe(true);
+            expect(control.touched).toBe(false);
         });
     });
 });

@@ -68,7 +68,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
     it('should load the component with one empty row', () => {
         jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of([]));
         fixtureHost.detectChanges();
-        expect(comp.fieldVariables.length).toBe(0);
+        expect(comp.$fieldVariables().length).toBe(0);
     });
 
     it('should save a variable', () => {
@@ -84,7 +84,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             comp.field,
             mockFieldVariables[0]
         );
-        expect(comp.fieldVariables[0]).toEqual(mockFieldVariables[0]);
+        expect(comp.$fieldVariables()[0]).toEqual(mockFieldVariables[0]);
     });
 
     it('should update variable a variable', () => {
@@ -106,7 +106,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
         expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
 
-        expect(comp.fieldVariables[0]).toEqual(variable);
+        expect(comp.$fieldVariables()[0]).toEqual(variable);
     });
 
     it('should delete a variable from the server', () => {
@@ -127,13 +127,15 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
         expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
-        expect(comp.fieldVariables).toEqual(deletedCollection);
+        expect(comp.$fieldVariables()).toEqual(deletedCollection);
     });
 
     describe('Block Editor Field', () => {
         const BLOCK_EDITOR_FIELD: DotCMSContentTypeField = {
             ...EMPTY_FIELD,
-            clazz: DotCMSClazzes.BLOCK_EDITOR
+            clazz: DotCMSClazzes.BLOCK_EDITOR,
+            contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
+            id: mockFieldVariables[0].fieldId
         };
 
         beforeEach(() => {
@@ -141,15 +143,13 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         });
 
         it('should set variable correctly', () => {
-            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
-                of(mockFieldVariables)
-            );
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
             fixtureHost.detectChanges();
-            expect(comp.fieldVariables.length).toBe(mockFieldVariables.length);
+            expect(comp.$fieldVariables().length).toBe(mockFieldVariables.length);
         });
 
         it('should not set allowedBlocks variable', () => {
-            jest.spyOn<DotFieldVariablesService>(dotFieldVariableService, 'load').mockReturnValue(
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
                 of([
                     {
                         clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
@@ -161,7 +161,77 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 ])
             );
             fixtureHost.detectChanges();
-            expect(comp.fieldVariables.length).toBe(0);
+            expect(comp.$fieldVariables().length).toBe(0);
+        });
+    });
+
+    describe('Custom Field', () => {
+        const CUSTOM_FIELD: DotCMSContentTypeField = {
+            ...EMPTY_FIELD,
+            clazz: DotCMSClazzes.CUSTOM_FIELD,
+            contentTypeId: 'ddf29c1e-babd-40a8-bfed-920fc9b8c77',
+            id: mockFieldVariables[0].fieldId
+        };
+
+        beforeEach(() => {
+            fixtureHost.componentInstance.value = CUSTOM_FIELD;
+        });
+
+        it('should filter out customFieldOptions variable', () => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+                of([
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: mockFieldVariables[0].fieldId,
+                        id: 'options-id',
+                        key: 'customFieldOptions',
+                        value: '{"showAsModal":true}'
+                    }
+                ])
+            );
+            fixtureHost.detectChanges();
+            expect(comp.$fieldVariables().length).toBe(0);
+        });
+
+        it('should NOT filter out newRenderMode variable', () => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+                of([
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: mockFieldVariables[0].fieldId,
+                        id: 'render-mode-id',
+                        key: 'newRenderMode',
+                        value: 'IFRAME'
+                    }
+                ])
+            );
+            fixtureHost.detectChanges();
+            expect(comp.$fieldVariables().length).toBe(1);
+            expect(comp.$fieldVariables()[0].key).toBe('newRenderMode');
+        });
+
+        it('should display other variables while filtering customFieldOptions', () => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(
+                of([
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: mockFieldVariables[0].fieldId,
+                        id: 'other-id',
+                        key: 'someOtherKey',
+                        value: 'someValue'
+                    },
+                    {
+                        clazz: 'com.dotcms.contenttype.model.field.ImmutableFieldVariable',
+                        fieldId: mockFieldVariables[0].fieldId,
+                        id: 'options-id',
+                        key: 'customFieldOptions',
+                        value: '{}'
+                    }
+                ])
+            );
+            fixtureHost.detectChanges();
+            expect(comp.$fieldVariables().length).toBe(1);
+            expect(comp.$fieldVariables()[0].key).toBe('someOtherKey');
         });
     });
 });

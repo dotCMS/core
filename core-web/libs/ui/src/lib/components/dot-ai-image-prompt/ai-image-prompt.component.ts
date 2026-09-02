@@ -2,9 +2,8 @@ import { ChangeDetectionStrategy, Component, inject, OnInit } from '@angular/cor
 import { FormGroupDirective } from '@angular/forms';
 
 import { ConfirmationService } from 'primeng/api';
-import { ButtonModule } from 'primeng/button';
-import { ConfirmDialogModule } from 'primeng/confirmdialog';
-import { DialogModule } from 'primeng/dialog';
+import { Button } from 'primeng/button';
+import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -17,12 +16,10 @@ import { DotAiImagePromptStore } from './store/ai-image-prompt.store';
 @Component({
     selector: 'dot-ai-image-prompt',
     templateUrl: './ai-image-prompt.component.html',
-    styleUrls: ['./ai-image-prompt.component.scss'],
     imports: [
-        DialogModule,
         DotMessagePipe,
-        ButtonModule,
-        ConfirmDialogModule,
+        Button,
+        ConfirmDialog,
         AiImagePromptFormComponent,
         AiImagePromptGalleryComponent
     ],

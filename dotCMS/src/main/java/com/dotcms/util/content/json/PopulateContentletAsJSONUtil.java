@@ -3,7 +3,7 @@ package com.dotcms.util.content.json;
 import com.dotcms.business.WrapInTransaction;
 import com.dotcms.content.business.json.ContentletJsonAPI;
 import com.dotcms.content.business.json.ContentletJsonHelper;
-import com.dotcms.repackage.com.google.common.base.Strings;
+import com.google.common.base.Strings;
 import com.dotcms.util.LogTime;
 import com.dotcms.util.transform.TransformerLocator;
 import com.dotmarketing.business.APILocator;

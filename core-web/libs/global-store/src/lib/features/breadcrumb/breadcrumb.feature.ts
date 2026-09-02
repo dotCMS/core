@@ -17,6 +17,8 @@ import { filter, map } from 'rxjs/operators';
 
 import { MenuItemEntity } from '@dotcms/dotcms-models';
 
+import { processSpecialRoute, shouldReplaceLastCrumb } from './breadcrumb.utils';
+
 /**
  * State interface for the Breadcrumb feature.
  * Contains the breadcrumb navigation items.
@@ -101,7 +103,15 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
         }),
         withMethods((store) => {
             const setBreadcrumbs = (breadcrumbs: MenuItem[]) => {
-                patchState(store, { breadcrumbs });
+                patchState(store, {
+                    breadcrumbs: [
+                        {
+                            label: 'Home',
+                            disabled: true
+                        },
+                        ...breadcrumbs
+                    ]
+                });
             };
 
             const appendCrumb = (crumb: MenuItem) => {
@@ -120,31 +130,38 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             /**
-             * Normalizes a URL by removing the '/dotAdmin/#' prefix if present.
-             * Ensures consistent URL comparison regardless of format.
+             * Normalizes a URL for breadcrumb matching: no hash and empty hash (page.html#) both
+             * yield the path (e.g. page.html), so URLs compare consistently.
              *
              * @param url - The URL to normalize
              * @returns The normalized URL path
              */
             const normalizeUrl = (url: string | undefined): string => {
                 if (!url) return '';
-                return url.replace(/^.*#/, ''); // Remove everything up to and including the hash
+                const afterHash = url.replace(/^.*#/, '');
+                if (afterHash === '' && url.includes('#')) {
+                    return url.replace(/#$/, '');
+                }
+                return afterHash === '' ? url : afterHash;
             };
 
             const addNewBreadcrumb = (item: MenuItem) => {
-                const contentEditRegex = /\/content\/.+/;
                 const url = normalizeUrl(item?.url);
 
                 const lastBreadcrumb = store.lastBreadcrumb();
                 const lastBreadcrumbUrl = normalizeUrl(lastBreadcrumb?.url);
 
-                const isSameUrl = url === lastBreadcrumbUrl;
+                // Before checking if the url is the same, we need to check if the url exists in the breadcrumbs
+                const isSameUrl = url && lastBreadcrumbUrl && url === lastBreadcrumbUrl;
 
-                if (isSameUrl) {
+                // Before checking if the id is the same, we need to check if the id exists in the breadcrumbs
+                const isSameId = item?.id && lastBreadcrumb?.id && item.id === lastBreadcrumb.id;
+
+                if (isSameUrl || isSameId) {
                     return;
                 }
 
-                if (contentEditRegex.test(url) && contentEditRegex.test(lastBreadcrumbUrl)) {
+                if (lastBreadcrumb && shouldReplaceLastCrumb(item, lastBreadcrumb)) {
                     setLastBreadcrumb(item);
                 } else {
                     appendCrumb(item);
@@ -152,10 +169,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             };
 
             const loadBreadcrumbs = () => {
-                const breadcrumbs = JSON.parse(
-                    sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
-                );
-                patchState(store, { breadcrumbs });
+                try {
+                    const breadcrumbs = JSON.parse(
+                        sessionStorage.getItem(BREADCRUMBS_SESSION_KEY) || '[]'
+                    );
+                    patchState(store, { breadcrumbs });
+                } catch {
+                    patchState(store, { breadcrumbs: [] });
+                }
             };
 
             const clearBreadcrumbs = () => {
@@ -170,78 +191,66 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                     return;
                 }
 
-                const newUrl = `/dotAdmin/#${url}`;
                 const breadcrumbs = store.breadcrumbs();
-                const existingIndex = breadcrumbs.findIndex((crumb) => crumb.url === newUrl);
+                const [urlPath, queryString] = url.split('?');
+                const shortMenuId = new URLSearchParams(queryString || '').get('mId');
 
-                if (existingIndex > -1) {
-                    truncateBreadcrumbs(existingIndex);
+                const item = menu.find((item) => {
+                    const pathMatches = item.menuLink === urlPath;
+
+                    const hasQueryParams = queryString && queryString.length > 0;
+
+                    // If we have query params but no mId, it's likely an old bookmark - don't match
+                    if (hasQueryParams && !shortMenuId) {
+                        return false;
+                    }
+
+                    // If we have mId, validate both path and parent match
+                    if (shortMenuId) {
+                        return pathMatches && item.parentMenuId.startsWith(shortMenuId);
+                    }
+
+                    // Default: no query params, no mId - match by path only
+                    return pathMatches;
+                });
+
+                if (item) {
+                    const newUrl = `/dotAdmin/#${url}`;
+                    setBreadcrumbs([
+                        {
+                            label: item.parentMenuLabel,
+                            disabled: true
+                        },
+                        {
+                            label: item.label,
+                            target: '_self',
+                            url: newUrl
+                        }
+                    ]);
                 } else {
-                    const [urlPath, queryString] = url.split('?');
-                    const shortMenuId = new URLSearchParams(queryString || '').get('mId');
-
-                    const item = menu.find((item) => {
-                        const pathMatches = item.menuLink === urlPath;
-                        const parentMatches =
-                            !shortMenuId || item.parentMenuId.startsWith(shortMenuId);
-                        return pathMatches && parentMatches;
+                    const result = processSpecialRoute({
+                        url,
+                        menu,
+                        breadcrumbs
                     });
 
-                    if (item) {
-                        setBreadcrumbs([
-                            {
-                                label: 'Home',
-                                disabled: true
-                            },
-                            {
-                                label: item.parentMenuLabel,
-                                disabled: true
-                            },
-                            {
-                                label: item.label,
-                                target: '_self',
-                                url: newUrl
+                    if (result) {
+                        switch (result.type) {
+                            case 'set':
+                                setBreadcrumbs(result.breadcrumbs);
+
+                                break;
+                            case 'append': {
+                                const crumb = result.breadcrumbs[result.breadcrumbs.length - 1];
+                                appendCrumb(crumb);
+
+                                break;
                             }
-                        ]);
-                    } else {
-                        // Handle special case: /templates/edit/:id
-                        const templatesEditRegex = /^\/templates\/edit\/[a-zA-Z0-9-]+$/;
-                        if (templatesEditRegex.test(url)) {
-                            const templatesItem = menu.find(
-                                (item) => item.menuLink === '/templates'
-                            );
-
-                            if (templatesItem) {
-                                // Only build base breadcrumb if it doesn't exist yet
-                                const hasTemplatesBreadcrumb = breadcrumbs.some(
-                                    (crumb) => crumb.url === '/dotAdmin/#/templates'
-                                );
-
-                                if (!hasTemplatesBreadcrumb) {
-                                    setBreadcrumbs([
-                                        {
-                                            label: 'Home',
-                                            disabled: true
-                                        },
-                                        {
-                                            label: templatesItem.parentMenuLabel,
-                                            disabled: true
-                                        },
-                                        {
-                                            label: templatesItem.label,
-                                            target: '_self',
-                                            url: '/dotAdmin/#/templates'
-                                        }
-                                    ]);
+                            case 'truncate':
+                                if (result.index && result.index > -1) {
+                                    truncateBreadcrumbs(result.index);
                                 }
-                            }
-                        } else if (url.includes('/content?filter=')) {
-                            const filter = url.split('/content?filter=')[1];
-                            addNewBreadcrumb({
-                                label: filter,
-                                target: '_self',
-                                url: newUrl
-                            });
+                                break;
                         }
                     }
                 }
@@ -260,7 +269,6 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
             return {
                 setBreadcrumbs,
                 appendCrumb,
-                truncateBreadcrumbs,
                 setLastBreadcrumb,
                 addNewBreadcrumb,
                 loadBreadcrumbs,
@@ -280,7 +288,14 @@ export function withBreadcrumbs(menuItems: Signal<MenuItemEntity[]>) {
                 // Persist breadcrumbs to sessionStorage whenever they change
                 effect(() => {
                     const breadcrumbs = store.breadcrumbs();
-                    sessionStorage.setItem(BREADCRUMBS_SESSION_KEY, JSON.stringify(breadcrumbs));
+                    try {
+                        sessionStorage.setItem(
+                            BREADCRUMBS_SESSION_KEY,
+                            JSON.stringify(breadcrumbs)
+                        );
+                    } catch {
+                        // Ignore when storage is unavailable (private browsing, quota exceeded)
+                    }
                 });
 
                 // Process current URL when menuItems become available

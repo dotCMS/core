@@ -1,6 +1,6 @@
 package com.dotmarketing.portlets.rules.actionlet;
 
-import com.dotcms.repackage.com.google.common.base.Preconditions;
+import com.google.common.base.Preconditions;
 import com.dotmarketing.portlets.rules.exception.InvalidActionInstanceException;
 import java.net.URI;
 import java.util.Map;

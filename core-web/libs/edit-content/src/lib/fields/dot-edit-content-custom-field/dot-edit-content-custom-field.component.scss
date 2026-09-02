@@ -1,8 +1,6 @@
-@use "variables" as *;
+@use "../../../../../dotcms-scss/shared/colors";
 
-:host.no-label {
-    margin-top: -1rem;
-}
+@use "variables" as *;
 
 iframe {
     height: 0;
@@ -30,7 +28,7 @@ iframe {
 }
 
 .disabled-input {
-    background-color: $color-palette-gray-100;
-    color: $color-palette-gray-500;
+    background-color: colors.$color-palette-gray-100;
+    color: colors.$color-palette-gray-500;
     cursor: not-allowed;
 }

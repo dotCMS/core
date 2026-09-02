@@ -9,7 +9,6 @@
 
 package com.dotcms.enterprise.publishing.sitesearch;
 
-import com.dotcms.content.elasticsearch.business.ESIndexAPI;
 import com.dotcms.enterprise.LicenseUtil;
 import com.dotcms.enterprise.license.LicenseLevel;
 import com.dotcms.enterprise.publishing.bundlers.FileAssetBundler;
@@ -24,12 +23,13 @@ import com.dotcms.publishing.IBundler;
 import com.dotcms.publishing.PublishStatus;
 import com.dotcms.publishing.Publisher;
 import com.dotcms.publishing.PublisherConfig;
-import com.dotcms.repackage.com.google.common.collect.Lists;
+import com.google.common.collect.Lists;
 import com.dotcms.storage.FileMetadataAPI;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.util.Config;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.portlets.contentlet.business.HostAPI;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
@@ -56,7 +56,6 @@ import java.util.stream.Collectors;
 
 public class ESSiteSearchPublisher extends Publisher {
 
-    private final ESIndexAPI esIndexAPI;
     private final SiteSearchAPI siteSearchAPI;
     private final HostAPI hostAPI;
     private final FileAssetAPI fileAssetAPI;
@@ -64,20 +63,18 @@ public class ESSiteSearchPublisher extends Publisher {
     private final UserAPI userAPI;
 
     public ESSiteSearchPublisher() {
-        this(APILocator.getESIndexAPI(), APILocator.getSiteSearchAPI(),
+        this(APILocator.getSiteSearchAPI(),
              APILocator.getHostAPI(), APILocator.getFileAssetAPI(),
              APILocator.getFileMetadataAPI(), APILocator.getUserAPI());
     }
 
     @VisibleForTesting
     public ESSiteSearchPublisher(
-            final ESIndexAPI esIndexAPI,
             final SiteSearchAPI siteSearchAPI,
             final HostAPI hostAPI,
             final FileAssetAPI fileAssetAPI,
             final FileMetadataAPI fileMetadataAPI,
             final UserAPI userAPI) {
-        this.esIndexAPI = esIndexAPI;
         this.siteSearchAPI = siteSearchAPI;
         this.hostAPI = hostAPI;
         this.fileAssetAPI = fileAssetAPI;
@@ -188,7 +185,19 @@ public class ESSiteSearchPublisher extends Publisher {
                 );
 
                 final String alias = config.getIndexAlias();
-                esIndexAPI.delete(oldIndexName);
+                // Remove the old index through the phase-aware Site Search subsystem — NOT the
+                // content-index router (the former esIndexAPI). The content router fans a raw delete
+                // out to both engines with no site-search awareness and no per-engine
+                // index_not_found tolerance, so when the old index lived on only one engine (e.g. a
+                // Phase-0 ES-only index during Phase 2/3) the delete threw index_not_found on the
+                // other engine → the whole Site Search build crashed AND the surviving copy had
+                // already been destroyed. siteSearchAPI.deleteIndex is per-engine idempotent and
+                // respects the active-index guard (issue #36360, I-7).
+                try {
+                    siteSearchAPI.deleteIndex(oldIndexName);
+                } catch (final IOException e) {
+                    throw new DotDataException(e.getMessage(), e);
+                }
 
                 if (null != alias) {
                     siteSearchAPI.setAlias(newIndex, alias);
@@ -332,7 +341,7 @@ public class ESSiteSearchPublisher extends Publisher {
                     res.setUri(asset.getPath() + asset.getFileName());
                     res.setUrl(host.getHostname() + res.getUri());
                     res.setFileName(asset.getFileName());
-
+                    res.setTitle(asset.getTitle());
                     res.setMimeType(fileAssetAPI
                             .getMimeType(asset.getUnderlyingFileName()));
                     res.setModified(asset.getModDate());
@@ -409,7 +418,16 @@ public class ESSiteSearchPublisher extends Publisher {
                     res.setLanguage(((Contentlet) page).getLanguageId());
                     // map contains [fileSize, content, author, title, keywords,
                     // description, contentType, contentEncoding]
-                    res.setTitle(page.getTitle());
+                    // When SITE_SEARCH_USE_HTML_TITLE=true, prefer the rendered <title> from Tika
+                    // metadata (same source as legacy StaticHTMLPageBundler behavior and URLMap
+                    // pages), falling back to page.getTitle() only when absent.
+                    // Default is false to preserve current behavior.
+                    if (Config.getBooleanProperty("SITE_SEARCH_USE_HTML_TITLE", false)
+                            && UtilMethods.isSet((String) map.get("title"))) {
+                        res.setTitle((String) map.get("title"));
+                    } else {
+                        res.setTitle(page.getTitle());
+                    }
 
                     res.setContentLength(htmlFile.length());
                     res.setMimeType((String)map.get("contentType"));

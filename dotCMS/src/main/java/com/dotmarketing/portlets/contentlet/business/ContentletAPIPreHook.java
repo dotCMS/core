@@ -31,17 +31,21 @@ import java.util.Set;
 /**
  * @author Jason Tesser
  * @since 1.6.5c
- * This interface should be used as a pre hook for the contentletAPI.  If the hooks 
+ * This interface should be used as a pre hook for the contentletAPI.  If the hooks
  * return false then the method will throw an exception up the stack. Stopping the progress.
  * When possible you should always return true and let the methods go about their business.
  */
+// ES-DECOMMISSION: Hook interface exposes SearchCriteria (ES-layer internal type) in method signatures.
+// Remove esSearch, esSearchRaw hook methods when deprecated ContentletAPI signatures are removed at R7.
 public interface ContentletAPIPreHook {
 
 	/**
 	 * @param offset can be 0 if no offset
-	 * @param limit can be 0 of no limit
+	 * @param limit can be 0 if no limit
 	 * @return false if the hook should stop the transaction
+	 * @deprecated Do not use. For tests, use {@code ContentletDataGen.findAllContent(offset, limit)} instead.
 	 */
+	@Deprecated
 	public default boolean findAllContent(int offset, int limit){
       return true;
     }
@@ -1996,35 +2000,33 @@ public interface ContentletAPIPreHook {
     }
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #searchRaw(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
     public default boolean esSearchRaw(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
 
     /**
-     * 
-     * @param esQuery
-     * @param live
-     * @param user
-     * @param respectFrontendRoles
-     * @return
-     * @throws DotSecurityException
-     * @throws DotDataException
+     * @deprecated Use {@link #search(String, boolean, User, boolean)} instead.
      */
+    @Deprecated(forRemoval = true)
 	public default boolean esSearch(String esQuery, boolean live, User user, boolean respectFrontendRoles) throws DotSecurityException, DotDataException{
       return true;
     }
 
+    public default boolean search(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
+    public default boolean searchRaw(String query, boolean live, User user,
+            boolean respectFrontendRoles) throws DotSecurityException, DotDataException {
+        return true;
+    }
+
 	/**
-	 * 
+	 *
 	 * @param buffy
 	 * @param user
 	 * @param roles
@@ -2142,6 +2144,20 @@ public interface ContentletAPIPreHook {
 	}
 
     default boolean findContentletByIdentifierOrFallback(String identifier, boolean live, long incomingLangId, User user, boolean respectFrontendRoles, String variantName) {
+		return true;
+	}
+
+	/**
+	 * Creates an ElasticSearch Scroll API query with proper permissions applied.
+	 *
+	 * @param luceneQuery The lucene query string
+	 * @param user The user executing the query
+	 * @param respectFrontendRoles Whether to respect frontend roles
+	 * @param batchSize The size of each batch returned by the scroll
+	 * @param sortBy The sort criteria
+	 * @return false if the hook should stop the transaction
+	 */
+	default boolean createScrollQuery(String luceneQuery, User user, boolean respectFrontendRoles, int batchSize, String sortBy) {
 		return true;
 	}
 }

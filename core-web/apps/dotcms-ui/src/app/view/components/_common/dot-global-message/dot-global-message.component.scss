@@ -1,41 +1,43 @@
 @use "variables" as *;
-@import "dotcms-theme/utils/theme-variables";
+@use "dotcms-theme/utils/theme-variables";
+@use "../../../../../../../../libs/dotcms-scss/shared/colors";
+@use "../../../../../../../../libs/dotcms-scss/shared/spacing";
 
 :host {
     align-items: center;
-    border-right: solid 1px $color-palette-gray-200;
+    border-right: solid 1px colors.$color-palette-gray-200;
     display: flex;
     opacity: 0;
-    padding-right: $spacing-4;
+    padding-right: spacing.$spacing-4;
     transition: $basic-speed * 2;
 
     i,
     dot-spinner {
-        margin-right: $spacing-1;
+        margin-right: spacing.$spacing-1;
         align-self: center;
     }
 
     &.loading {
         .dot-global-message__text {
-            color: $color-palette-primary;
+            color: colors.$color-palette-primary;
         }
     }
 
     &.success {
         i {
-            color: $color-accessible-text-green;
+            color: colors.$color-accessible-text-green;
         }
     }
 
     &.warning {
         i {
-            color: $color-alert-yellow;
+            color: colors.$color-alert-yellow;
         }
     }
 
     &.error {
         i {
-            color: $color-accessible-text-red;
+            color: colors.$color-accessible-text-red;
         }
     }
 }
@@ -45,17 +47,17 @@
 }
 
 .dot-global-message__text {
-    color: $color-palette-gray-700;
+    color: colors.$color-palette-gray-700;
 }
 
 .edit-page-variant-mode :host {
     .dot-global-message__text {
-        color: $white;
+        color: colors.$white;
     }
 
     &.loading {
         .dot-global-message__text {
-            color: $white;
+            color: colors.$white;
         }
     }
 
@@ -63,7 +65,7 @@
     &.warning,
     &.error {
         i {
-            color: $white;
+            color: colors.$white;
         }
     }
 }

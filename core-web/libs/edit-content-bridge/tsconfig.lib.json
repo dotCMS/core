@@ -3,18 +3,16 @@
     "compilerOptions": {
         "outDir": "../../dist/out-tsc",
         "declaration": true,
-        "module": "ES2015",
+        "module": "preserve",
         "moduleResolution": "bundler",
         "target": "ES2015",
-        "lib": ["es2020", "dom"],
-        "types": ["node", "vite/client"]
+        "lib": ["dom", "es2022"],
+        "types": ["node", "vite/client"],
+        "skipLibCheck": true,
+        "noPropertyAccessFromIndexSignature": false,
+        "downlevelIteration": true,
+        "strictPropertyInitialization": false
     },
     "include": ["src/**/*.ts"],
-    "exclude": [
-        "**/*.spec.ts",
-        "**/*.test.ts",
-        "**/jest.config.ts",
-        "**/*.stories.ts",
-        "**/*.stories.js"
-    ]
+    "exclude": ["**/*.spec.ts", "**/*.test.ts", "**/jest.config.ts"]
 }

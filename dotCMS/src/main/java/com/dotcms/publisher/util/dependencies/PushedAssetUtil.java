@@ -49,11 +49,6 @@ public class PushedAssetUtil {
                             .map(endPoint -> endPoint.getId())
                             .collect(Collectors.joining(","));
 
-                    if (!environment.getPushToAll() && endpointIds != null && endpointIds
-                            .contains(",")) {
-                        endpointIds = endpointIds.substring(0, endpointIds.indexOf(","));
-                    }
-
                     //Add environment endpoints and publisher to map
                     environmentsEndpointsAndPublisher.put(environment.getId() + ENDPOINTS_SUFFIX,
                             endpointIds);

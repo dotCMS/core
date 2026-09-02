@@ -59,6 +59,10 @@ export class DotContainersService {
             .getKey(this.#DEFAULT_CONTAINER_KEY)
             .pipe(
                 switchMap((title) => {
+                    if (typeof title !== 'string') {
+                        return of(null);
+                    }
+
                     const isNotSet = title === DEFAULT_CONTAINER_CONFIG.NOT_FOUND;
 
                     if (!title || title === DEFAULT_CONTAINER_CONFIG.NULL_VALUE) {
@@ -88,7 +92,7 @@ export class DotContainersService {
         perPage: number,
         fetchSystemContainers = false
     ): Observable<DotContainer[]> {
-        const url = `${this.#CONTAINER_API_URL}?filter=${filter}&perPage=${perPage}&system=${fetchSystemContainers}`;
+        const url = `${this.#CONTAINER_API_URL}?filter=${filter}&per_page=${perPage}&system=${fetchSystemContainers}`;
 
         return this.#http
             .get<{ entity: DotContainer[] }>(url)
@@ -103,7 +107,7 @@ export class DotContainersService {
      * @memberof DotContainersService
      */
     getContainerByTitle(title: string, system = false): Observable<DotContainer | null> {
-        const url = `${this.#CONTAINER_API_URL}?filter=${title}&perPage=1&system=${system}`;
+        const url = `${this.#CONTAINER_API_URL}?filter=${title}&per_page=1&system=${system}`;
 
         return this.#http.get<{ entity: DotContainer[] }>(url).pipe(
             map((response) => response.entity),

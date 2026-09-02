@@ -1,5 +1,5 @@
 import { NgClass } from '@angular/common';
-import { ChangeDetectionStrategy, Component, HostBinding, input, Input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -7,7 +7,7 @@ import { UIMessage } from '../../../../models/dot-edit-content-file.model';
 
 @Component({
     selector: 'dot-file-field-ui-message',
-    imports: [NgClass, DotMessagePipe],
+    imports: [DotMessagePipe, NgClass],
     templateUrl: './dot-file-field-ui-message.component.html',
     styleUrls: ['./dot-file-field-ui-message.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -25,7 +25,5 @@ export class DotFileFieldUiMessageComponent {
      *
      * @memberof DotBinaryFieldUiMessageComponent
      */
-    @Input()
-    @HostBinding('class.disabled')
-    disabled = false;
+    $disabled = input<boolean>(false, { alias: 'disabled' });
 }

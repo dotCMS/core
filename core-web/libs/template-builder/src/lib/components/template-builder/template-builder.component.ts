@@ -9,7 +9,7 @@ import {
 import { DDElementHost } from 'gridstack/dist/dd-element';
 import { Observable, Subject, combineLatest } from 'rxjs';
 
-import { AsyncPipe, NgClass, NgStyle } from '@angular/common';
+import { AsyncPipe, NgStyle } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     ChangeDetectorRef,
@@ -30,7 +30,8 @@ import {
 } from '@angular/core';
 
 import { DividerModule } from 'primeng/divider';
-import { DialogService, DynamicDialogModule, DynamicDialogRef } from 'primeng/dynamicdialog';
+import { DialogService, DynamicDialogModule } from 'primeng/dynamicdialog';
+import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { ToolbarModule } from 'primeng/toolbar';
 
 import { filter, take, map, takeUntil, skip } from 'rxjs/operators';
@@ -41,7 +42,6 @@ import {
     DotLayout,
     DotLayoutBody,
     DotTemplateDesigner,
-    DotTheme,
     DotContainerMap,
     DotTemplate
 } from '@dotcms/dotcms-models';
@@ -55,7 +55,6 @@ import { TemplateBuilderBoxComponent } from './components/template-builder-box/t
 import { TemplateBuilderRowComponent } from './components/template-builder-row/template-builder-row.component';
 import { TemplateBuilderSectionComponent } from './components/template-builder-section/template-builder-section.component';
 import { TemplateBuilderSidebarComponent } from './components/template-builder-sidebar/template-builder-sidebar.component';
-import { TemplateBuilderThemeSelectorComponent } from './components/template-builder-theme-selector/template-builder-theme-selector.component';
 import {
     BOX_WIDTH,
     DotGridStackNode,
@@ -81,17 +80,17 @@ import {
 @Component({
     selector: 'dotcms-template-builder-lib',
     templateUrl: './template-builder.component.html',
-    styleUrls: ['./template-builder.component.scss'],
+    styleUrls: ['./template-builder.component.css'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     providers: [DotTemplateBuilderStore],
     imports: [
         AsyncPipe,
-        NgClass,
         NgStyle,
         DotMessagePipe,
         DynamicDialogModule,
         ToolbarModule,
         DividerModule,
+        ProgressSpinnerModule,
         AddWidgetComponent,
         TemplateBuilderActionsComponent,
         TemplateBuilderSectionComponent,
@@ -115,6 +114,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
 
     @Input()
     containerMap!: DotContainerMap;
+
+    @Input()
+    disabled = false;
 
     @Output()
     templateChange: EventEmitter<DotTemplateDesigner> = new EventEmitter<DotTemplateDesigner>();
@@ -158,6 +160,21 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     public draggingElement: HTMLElement | null;
     public scrollDirection: SCROLL_DIRECTION = SCROLL_DIRECTION.NONE;
 
+    // Full grid layout captured at drag-start. If the canvas is locked mid-drag,
+    // we dispatch mouseup (which commits the drag at the wrong cursor position) and
+    // immediately restore this snapshot via grid.load() — equivalent to dropping the
+    // row/column in its original position. Cleared on every normal drag completion.
+    private preDragState: GridStackWidget[] | null = null;
+
+    // The specific GridStack instance (main grid or a subgrid) that owns the dragged
+    // widget. Needed so column drags restore the correct subgrid, not just the top-level grid.
+    private preDragGrid: GridStack | null = null;
+
+    // When true, store write calls inside GridStack event handlers are skipped.
+    // Set for the synchronous window between mouseup dispatch and grid.load() so that
+    // the forced drag-commit and the subsequent layout restore do not corrupt the store.
+    private suppressStoreUpdates = false;
+
     grid!: GridStack;
 
     addBoxIsDragging = false;
@@ -174,7 +191,7 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         };
     }
 
-    @HostListener('window:mousemove', ['$event'])
+    @HostListener('window:mousemove')
     onMouseMove() {
         if (this.draggingElement) {
             const containerRect = this.templateContaniner.getBoundingClientRect();
@@ -274,6 +291,84 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                 isAnonymousTemplate: currentTemplate?.anonymous || this.template.anonymous // We createa a custom template for the page
             });
         }
+
+        if (changes.disabled !== undefined && this.grid) {
+            this.applyGridDisabled(!!changes.disabled.currentValue);
+        }
+    }
+
+    /**
+     * @description Enables or disables drag, resize, and external drop on the main grid
+     * and all of its subgrids. Called synchronously from ngOnChanges so GridStack
+     * blocks (or restores) interactions in the same tick the input changes — before
+     * any Angular render cycle.
+     *
+     * @param {boolean} disabled
+     * @memberof TemplateBuilderComponent
+     */
+    private applyGridDisabled(disabled: boolean): void {
+        if (disabled) {
+            if (this.draggingElement) {
+                // Snapshot the references before the cancel window clears them.
+                const preDragState = this.preDragState;
+                const preDragGrid = this.preDragGrid ?? this.grid;
+                this.preDragState = null;
+                this.preDragGrid = null;
+
+                // Suppress store writes for the entire synchronous cancel window:
+                // mouseup fires change/dropped synchronously (GridStack commits the drag),
+                // and grid.load() fires change again (to restore positions).
+                // Both sets of events must be dropped to keep the store consistent.
+                this.suppressStoreUpdates = true;
+
+                // Terminate the in-progress drag. DDDraggable's document mouseup listener
+                // runs synchronously: _mouseUp → dragstop → onDragStop() → change → moveRow.
+                document.dispatchEvent(
+                    new MouseEvent('mouseup', { bubbles: true, cancelable: true })
+                );
+
+                // Restore the layout to the state it was in when the drag started.
+                // For row drags preDragGrid is the main grid; for column drags it is the subgrid.
+                if (preDragState) {
+                    preDragGrid.load(preDragState);
+                }
+
+                this.suppressStoreUpdates = false;
+            }
+
+            // Close any PrimeNG overlays (container pickers, dropdowns) that were opened
+            // before the canvas locked. These panels are appended to <body> and are therefore
+            // outside the [inert] subtree and above the disabled overlay in z-order —
+            // dispatching Escape is the standard PrimeNG mechanism to close them.
+            // Note: GridStack 8.4.0 does not honour Escape for drag cancellation.
+            //
+            // Known limitation: PrimeNG DynamicDialog also responds to document Escape
+            // (primeng-dynamicdialog.mjs:740-747). A user who opens the "Add style classes"
+            // dialog during the 5-second debounce window will have it dismissed here.
+            // The practical impact is low: any style-class change inside the dialog resets
+            // the debounce, so the dialog is only at risk if the user sits idle in it for
+            // the full 5 s without confirming. Fixing this precisely would require checking
+            // for an open DynamicDialog before dispatching, which is not worth the complexity.
+            document.dispatchEvent(
+                new KeyboardEvent('keydown', { key: 'Escape', bubbles: true, cancelable: true })
+            );
+
+            this.grid.disable();
+        } else {
+            this.grid.enable();
+        }
+
+        // GridStack's built-in disable(recurse=true) only walks node.subGrid — it does not
+        // reach subgrids that were created via GridStack.addGrid() (as this component does),
+        // because addGrid() populates the DOM but not the engine's subGrid references.
+        // This manual querySelectorAll loop closes that gap.
+        const subGridEls = this.grid.el.querySelectorAll(
+            '.grid-stack'
+        ) as NodeListOf<GridHTMLElement>;
+
+        subGridEls.forEach((el) => {
+            el.gridstack?.[disabled ? 'disable' : 'enable']();
+        });
     }
 
     /**
@@ -290,7 +385,9 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         }, 350);
 
         this.grid = GridStack.init(gridOptions).on('change', (_: Event, nodes: GridStackNode[]) => {
-            this.store.moveRow(nodes as DotGridStackWidget[]);
+            if (!this.suppressStoreUpdates) {
+                this.store.moveRow(nodes as DotGridStackWidget[]);
+            }
         });
 
         GridStack.setupDragIn('dotcms-add-widget', {
@@ -305,16 +402,22 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
 
         this.grid
             .on('dropped', (_: Event, previousNode: GridStackNode, newNode: GridStackNode) => {
+                // External drag-ins (toolbar → grid) always need removeWidget so the DOM is
+                // cleaned up — even during the cancel window. Only store.addRow is suppressed.
                 if (!newNode.el || previousNode) return;
 
                 newNode.grid?.removeWidget(newNode.el, true, false);
 
-                this.store.addRow({
-                    y: newNode.y
-                });
+                if (!this.suppressStoreUpdates) {
+                    this.store.addRow({
+                        y: newNode.y
+                    });
+                }
             })
             .on('dragstart', ({ target }) => {
                 this.draggingElement = target as HTMLElement;
+                this.preDragState = this.grid.save(false) as GridStackWidget[];
+                this.preDragGrid = this.grid;
             })
             .on('dragstop', () => this.onDragStop());
 
@@ -355,7 +458,20 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
         });
 
         this.addWidget.toArray().forEach(({ nativeElement }) => {
-            nativeElement.ddElement
+            type DDElementHostWithOn = DDElementHost & {
+                on: (eventName: string, cb: (...args: unknown[]) => void) => DDElementHostWithOn;
+            };
+
+            const ddElement = (nativeElement as unknown as { ddElement?: DDElementHostWithOn })
+                ?.ddElement;
+
+            // In unit tests (and some non-browser environments) `ddElement` may not be initialized.
+            // Guard so grid setup doesn't crash; runtime behavior is unchanged when ddElement exists.
+            if (!ddElement?.on) {
+                return;
+            }
+
+            ddElement
                 .on('dragstart', ({ target }) => {
                     const helper = (target as DDElementHost).ddElement.ddDraggable?.helper;
                     this.draggingElement = (helper || target) as HTMLElement;
@@ -366,32 +482,18 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
                     this.setAddBoxIsDragging(false);
                 });
         });
+
+        // Apply the current disabled state to the freshly created grid. Without this,
+        // if [disabled]=true arrives via ngOnChanges before setUpGridStack() runs
+        // (the grid init is deferred via requestAnimationFrame), the canvas boots enabled
+        // behind an active overlay.
+        this.applyGridDisabled(this.disabled);
     }
 
     ngOnDestroy(): void {
         this.grid?.destroy(true);
         this.destroy$.next(true);
         this.destroy$.complete();
-    }
-
-    /**
-     * @description This method is used to identify items by id
-     *
-     * @param {number} index
-     * @param {GridStackWidget} w
-     * @return {*}
-     * @memberof TemplateBuilderComponent
-     */
-    identify(index: number, w: GridStackWidget): string {
-        // Ensure we always return a unique string
-        // Combine ID with index to prevent Angular 20 NG0955 errors about duplicate keys
-        // This handles cases where the same ID might appear in different rows
-        const id = w?.id;
-        if (id != null && id !== '') {
-            return `${String(id)}-${index}`;
-        }
-        // Fallback to index if ID is not available
-        return `item-${index}`;
     }
 
     /**
@@ -453,6 +555,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     editBoxStyleClasses(rowID: numberOrString, box: DotGridStackNode): void {
         const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
+            closeOnEscape: true,
+            closable: true,
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
                 selectedClasses: box.styleClass || []
@@ -479,35 +583,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      *
      * @memberof TemplateBuilderComponent
      */
-    openThemeSelectorDynamicDialog(): void {
-        let ref: DynamicDialogRef;
-
-        this.themeId$.pipe(take(1)).subscribe((themeId) => {
-            ref = this.dialogService.open(TemplateBuilderThemeSelectorComponent, {
-                header: this.dotMessage.get('dot.template.builder.theme.dialog.header.label'),
-                resizable: false,
-                width: '80%',
-                closeOnEscape: true,
-                data: {
-                    themeId
-                }
-            });
-        });
-
-        ref.onClose
-            .pipe(
-                take(1),
-                filter((theme: DotTheme) => !!theme)
-            )
-            .subscribe(
-                (theme: DotTheme) => {
-                    this.store.updateThemeId(theme.identifier);
-                },
-                () => {
-                    /* */
-                },
-                () => ref.destroy() // Destroy the dialog when it's closed
-            );
+    updateTheme(themeId: string): void {
+        this.store.updateThemeId(themeId);
     }
 
     /**
@@ -543,20 +620,39 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
     setSubGridEvent(subGrid: GridStack): void {
         subGrid
             .on('dropped', (_: Event, oldNode: GridStackNode, newNode: GridStackNode) => {
+                if (this.suppressStoreUpdates) {
+                    // Cancel window: GridStack committed the drop (external box from toolbar,
+                    // or cross-row move) but the store must not be updated. Remove the
+                    // placeholder/widget GridStack added so no ghost box appears in the layout.
+                    if (newNode.el) {
+                        newNode.grid?.removeWidget(newNode.el, true, false);
+                    }
+
+                    this.onDragStop();
+
+                    return;
+                }
+
                 this.store.subGridOnDropped(oldNode, newNode);
                 this.onDragStop();
             })
             .on('change', (_: Event, nodes: GridStackNode[]) => {
-                this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                if (!this.suppressStoreUpdates) {
+                    this.store.updateColumnGridStackData(nodes as DotGridStackWidget[]);
+                }
             })
             .on('resizestart', (_: Event, el: GridItemHTMLElement) => {
-                this.store.setResizingRowID(el.gridstackNode.grid.parentGridItem.id);
+                this.store.setResizingRowID(String(el.gridstackNode.grid.parentGridItem.id));
             })
             .on('resizestop', () => {
                 this.store.setResizingRowID(null);
             })
             .on('dragstart', ({ target }) => {
                 this.draggingElement = target as HTMLElement;
+                // Save the subgrid's own column layout — not the main grid — so that
+                // a column drag cancelled mid-flight restores only the affected row.
+                this.preDragState = subGrid.save(false) as GridStackWidget[];
+                this.preDragGrid = subGrid;
             })
             .on('dragstop', () => this.onDragStop());
     }
@@ -568,6 +664,8 @@ export class TemplateBuilderComponent implements OnDestroy, OnChanges, OnInit {
      */
     onDragStop() {
         this.draggingElement = null;
+        this.preDragState = null;
+        this.preDragGrid = null;
         this.scrollDirection = SCROLL_DIRECTION.NONE;
     }
 

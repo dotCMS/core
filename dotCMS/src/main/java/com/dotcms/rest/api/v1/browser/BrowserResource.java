@@ -148,7 +148,7 @@ public class BrowserResource {
 
         Logger.debug(this, "Getting folder contents, browser query form: " + browserQueryForm);
 
-        return Response.ok(new ResponseEntityView(this.browserAPI.getFolderContent(
+        return Response.ok(new ResponseEntityView<>(this.browserAPI.getFolderContent(
                 BrowserQuery.builder()
                         .showDotAssets(browserQueryForm.isShowDotAssets())
                         .showLinks(browserQueryForm.isShowLinks())

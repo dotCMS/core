@@ -30,14 +30,16 @@ import { BaseWrapperField } from '../shared/base-wrapper-field';
         DotMessagePipe
     ],
     templateUrl: './dot-edit-content-json-field.component.html',
-    styleUrls: ['./dot-edit-content-json-field.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
     viewProviders: [
         {
             provide: ControlContainer,
             useFactory: () => inject(ControlContainer, { skipSelf: true })
         }
-    ]
+    ],
+    host: {
+        class: 'block min-h-[150px] h-full w-full overflow-auto resize-y'
+    }
 })
 export class DotEditContentJsonFieldComponent extends BaseWrapperField {
     /**

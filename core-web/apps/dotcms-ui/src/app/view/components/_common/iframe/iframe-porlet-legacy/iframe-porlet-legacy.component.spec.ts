@@ -1,8 +1,9 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import { of } from 'rxjs';
+import { EMPTY, of } from 'rxjs';
 
-import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { DebugElement } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
@@ -16,6 +17,7 @@ import {
     DotContentTypeService,
     DotCurrentUserService,
     DotEventsService,
+    DotEventsSocket as DotEventsSocketDataAccess,
     DotFormatDateService,
     DotGlobalMessageService,
     DotHttpErrorManagerService,
@@ -31,11 +33,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ApiRoot,
-    CoreWebService,
     DotcmsConfigService,
-    DotcmsEventsService,
-    DotEventsSocket,
-    DotEventsSocketURL,
     DotPushPublishDialogService,
     LoggerService,
     LoginService,
@@ -43,18 +41,13 @@ import {
     StringUtils,
     UserModel
 } from '@dotcms/dotcms-js';
-import {
-    CoreWebServiceMock,
-    LoginServiceMock,
-    MockDotRouterService,
-    SiteServiceMock
-} from '@dotcms/utils-testing';
+import { LoginServiceMock, MockDotRouterService, SiteServiceMock } from '@dotcms/utils-testing';
 
 import { IframePortletLegacyComponent } from './iframe-porlet-legacy.component';
 
 import { DotCustomEventHandlerService } from '../../../../../api/services/dot-custom-event-handler/dot-custom-event-handler.service';
 import { DotMenuService } from '../../../../../api/services/dot-menu.service';
-import { dotEventSocketURLFactory, MockDotUiColorsService } from '../../../../../test/dot-test-bed';
+import { MockDotUiColorsService } from '../../../../../test/dot-test-bed';
 import { DotContentletEditorService } from '../../../dot-contentlet-editor/services/dot-contentlet-editor.service';
 import { DotDownloadBundleDialogComponent } from '../../dot-download-bundle-dialog/dot-download-bundle-dialog.component';
 import { IFrameModule } from '../index';
@@ -92,13 +85,10 @@ xdescribe('IframePortletLegacyComponent', () => {
     beforeEach(waitForAsync(() => {
         TestBed.configureTestingModule({
             declarations: [],
-            imports: [
-                IFrameModule,
-                RouterTestingModule,
-                DotDownloadBundleDialogComponent,
-                HttpClientTestingModule
-            ],
+            imports: [IFrameModule, RouterTestingModule, DotDownloadBundleDialogComponent],
             providers: [
+                provideHttpClient(),
+                provideHttpClientTesting(),
                 DotContentTypeService,
                 DotCustomEventHandlerService,
                 DotPushPublishDialogService,
@@ -112,7 +102,6 @@ xdescribe('IframePortletLegacyComponent', () => {
                     provide: ActivatedRoute,
                     useClass: ActivatedRouteMock
                 },
-                { provide: CoreWebService, useClass: CoreWebServiceMock },
                 { provide: DotRouterService, useClass: MockDotRouterService },
                 { provide: DotUiColorsService, useClass: MockDotUiColorsService },
                 DotContentletEditorService,
@@ -125,9 +114,10 @@ xdescribe('IframePortletLegacyComponent', () => {
                 StringUtils,
                 DotCurrentUserService,
                 DotMessageDisplayService,
-                DotcmsEventsService,
-                DotEventsSocket,
-                { provide: DotEventsSocketURL, useFactory: dotEventSocketURLFactory },
+                {
+                    provide: DotEventsSocketDataAccess,
+                    useValue: { on: jest.fn().mockReturnValue(EMPTY) }
+                },
                 DotcmsConfigService,
                 DotFormatDateService,
                 DotWizardService,

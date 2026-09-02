@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
-
 import { Observable, of } from 'rxjs';
 
 import { DebugElement } from '@angular/core';

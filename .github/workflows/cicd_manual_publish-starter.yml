@@ -9,6 +9,7 @@ on:
         options:
           - 'full'
           - 'empty'
+          - 'min'
       old-assets:
         description: 'Include old assets'
         required: true
@@ -36,11 +37,13 @@ env:
   EMPTY_STARTER_TOKEN: ${{ secrets.DOT_EMPTY_STARTER_ACCESS_TOKEN }}
   FULL_STARTER_URL: ${{ vars.DOT_STARTER_URL }}
   FULL_STARTER_TOKEN: ${{ secrets.DOT_STARTER_ACCESS_TOKEN }}
+  MIN_STARTER_URL: ${{ vars.DOT_MIN_STARTER_URL }}
+  MIN_STARTER_TOKEN: ${{ secrets.DOT_MIN_STARTER_ACCESS_TOKEN }}
   DOWNLOAD_ENDPOINT: api/v1/maintenance/_downloadStarterWithAssets?oldAssets=${{ github.event.inputs.old-assets }}
 
 jobs:
   get-starter:
-    runs-on: macos-13
+    runs-on: macos-${{ vars.MACOS_RUNNER_VERSION || 'latest' }}
     if: github.repository == 'dotcms/core'
     environment: starter
     steps:
@@ -69,11 +72,15 @@ jobs:
           if [[ "$STARTER_TYPE" == "empty" ]]; then
             echo "::debug::Empty Starter: downloading from [${{ env.EMPTY_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="empty_${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)            
+            RESPONSE=$(download_starter ${{ env.EMPTY_STARTER_URL }} ${{ env.EMPTY_STARTER_TOKEN }} $FILENAME)
+          elif [[ "$STARTER_TYPE" == "min" ]]; then
+            echo "::debug::Min Starter: downloading from [${{ env.MIN_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            FILENAME="min_${DATE}.zip"
+            RESPONSE=$(download_starter ${{ env.MIN_STARTER_URL }} ${{ env.MIN_STARTER_TOKEN }} $FILENAME)
           else
-            echo "::debut::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
+            echo "::debug::Full Starter: downloading from [${{ env.FULL_STARTER_URL }}/${{ env.DOWNLOAD_ENDPOINT }}]"
             FILENAME="${DATE}.zip"
-            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)             
+            RESPONSE=$(download_starter ${{ env.FULL_STARTER_URL }} ${{ env.FULL_STARTER_TOKEN }} $FILENAME)
           fi                    
           echo "::notice::Status Code: $RESPONSE" 
           if [[ "$RESPONSE" != "200" ]]; then
@@ -85,7 +92,7 @@ jobs:
 
       - name: 'Upload artifacts'
         id: upload-artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: ${{ env.STARTER_TYPE }}-starter
           path: |
@@ -104,7 +111,7 @@ jobs:
     steps:
       - name: 'Checkout repository'
         if: ${{ github.event.inputs.type == 'empty' && github.event.inputs.dry-run == 'false' }}
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - uses: jfrog/setup-jfrog-cli@v4
         env:
@@ -119,8 +126,9 @@ jobs:
           echo "::endgroup::"
           
       - name: 'Download artifacts'
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
+          digest-mismatch: error
           github-token: ${{ github.token }}
           name: ${{ env.STARTER_TYPE }}-starter
           path: ${{ github.workspace }}/starter
@@ -205,7 +213,7 @@ jobs:
     if: always() && github.event.inputs.dry-run == 'false'
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
 
       - name: Compose Message
         id: compose-message

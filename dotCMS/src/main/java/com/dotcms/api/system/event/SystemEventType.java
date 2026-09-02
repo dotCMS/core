@@ -56,12 +56,17 @@ public enum SystemEventType {
 	/**
 	 * When a site is published
 	 */
-	PUBLISH_SITE, // todo: not used
+	PUBLISH_SITE,
 
 	/**
 	 * When a site is updated
 	 */
 	UPDATE_SITE, // todo: not used
+
+	/**
+	 * When a site is unpublished (stopped)
+	 */
+	UN_PUBLISH_SITE,
 
 	/**
 	 * When a site is archived
@@ -264,6 +269,12 @@ public enum SystemEventType {
 	// Osgi bundles push on the load folder
 	OSGI_BUNDLES_LOADED,
 
+	/**
+	 * Fired when a bundle fails to process during the async upload pipeline.
+	 * Covers failures in package extraction, file moves, and configuration updates.
+	 */
+	OSGI_BUNDLES_UPLOAD_FAILED,
+
 	// Logout Event
 	SESSION_LOGOUT,
 
@@ -271,6 +282,15 @@ public enum SystemEventType {
 	ANALYTICS_APP,
 
 	/** A Contentlet has been updated by the AI Service */
-	AI_CONTENT_PROMPT
+	AI_CONTENT_PROMPT,
+
+	/**
+	 * A bulk content reindex ({@code POST /api/v1/content/_bulkrefresh}) has finished.
+	 * <p>
+	 * Carries the run's counters so the client can report the outcome without asking for it. Pushed
+	 * with {@link Visibility#USER} scoped to whoever submitted the run, because a reindex is nobody
+	 * else's business — unlike the legacy batch reindex, which told every CMS Administrator.
+	 */
+	BULK_REFRESH_COMPLETED
 
 }

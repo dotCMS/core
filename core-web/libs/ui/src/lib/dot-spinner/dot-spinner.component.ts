@@ -1,11 +1,10 @@
-import { CommonModule } from '@angular/common';
-import { Component, Input } from '@angular/core';
+import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
 @Component({
     selector: 'dot-spinner',
     templateUrl: './dot-spinner.component.html',
-    styleUrls: ['./dot-spinner.component.scss'],
-    imports: [CommonModule]
+    changeDetection: ChangeDetectionStrategy.Eager,
+    styleUrls: ['./dot-spinner.component.scss']
 })
 export class DotSpinnerComponent {
     @Input() borderSize = '';
