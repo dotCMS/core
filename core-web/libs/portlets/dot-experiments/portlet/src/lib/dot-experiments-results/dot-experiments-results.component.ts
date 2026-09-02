@@ -17,11 +17,13 @@ import {
     DotExperimentStatus,
     DotMessageSeverity,
     DotMessageType,
-    HealthStatusTypes
+    HealthStatusTypes,
+    MINIMUM_SESSIONS_TO_SHOW_CHART
 } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { DotExperimentsResultsChartsComponent } from './components/dot-experiments-results-charts/dot-experiments-results-charts.component';
+import { DotExperimentsResultsEmptyComponent } from './components/dot-experiments-results-empty/dot-experiments-results-empty.component';
 import { DotExperimentsResultsHeaderComponent } from './components/dot-experiments-results-header/dot-experiments-results-header.component';
 import { DotExperimentsResultsStatStripComponent } from './components/dot-experiments-results-stat-strip/dot-experiments-results-stat-strip.component';
 import { DotExperimentsResultsSummaryTableComponent } from './components/dot-experiments-results-summary-table/dot-experiments-results-summary-table.component';
@@ -65,6 +67,7 @@ const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
         ConfirmDialogModule,
         SkeletonModule,
         DotEmptyContainerComponent,
+        DotExperimentsResultsEmptyComponent,
         DotMessagePipe,
         DotExperimentsResultsHeaderComponent,
         DotExperimentsResultsStatStripComponent,
@@ -156,6 +159,27 @@ export class DotExperimentsResultsComponent {
         icon: 'error',
         iconStyle: 'material-symbols-rounded'
     };
+
+    /**
+     * A report with nothing in it is one empty state for the whole body, not one per block: below
+     * the session threshold the charts and the summary each say the same thing, and two "not enough
+     * data" panels stacked read as two failures rather than as one Experiment that has simply not
+     * run long enough.
+     */
+    readonly $hasNothingToReport = computed<boolean>(
+        () => !this.store.$hasEnoughSessionsForTable()
+    );
+
+    readonly $emptyReportTitle = this.#dotMessageService.get('experiments.results.empty.title');
+
+    readonly $emptyReportSubtitle = computed<string>(() =>
+        this.store.$isWaitingForData()
+            ? this.#dotMessageService.get('experiments.results.empty.not-started.description')
+            : this.#dotMessageService.get(
+                  'experiments.results.empty.description',
+                  String(MINIMUM_SESSIONS_TO_SHOW_CHART)
+              )
+    );
 
     constructor() {
         this.#listenForActionSuccess();
