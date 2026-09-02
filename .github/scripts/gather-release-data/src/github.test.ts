@@ -99,9 +99,20 @@ describe('onThrottle', () => {
     const opts = { method: 'GET', url: '/repos/dotCMS/core/commits/abc/pulls' };
 
     expect(handler(1, opts, null, 0)).toBe(true);
+    expect(stderrSpy).toHaveBeenLastCalledWith(
+      expect.stringContaining('Secondary rate limit on GET')
+    );
+    expect(stderrSpy).toHaveBeenLastCalledWith(expect.stringContaining('retry 1/3'));
+
     expect(handler(1, opts, null, 2)).toBe(true);
+    expect(stderrSpy).toHaveBeenLastCalledWith(expect.stringContaining('retry 3/3'));
+
+    // Never announce a retry it won't make -- this used to log "retry 4/3".
     expect(handler(1, opts, null, 3)).toBe(false);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('Secondary rate limit'));
+    expect(stderrSpy).toHaveBeenLastCalledWith(
+      expect.stringContaining('giving up after 3 retries')
+    );
+    expect(stderrSpy).not.toHaveBeenCalledWith(expect.stringContaining('retry 4/'));
 
     stderrSpy.mockRestore();
   });

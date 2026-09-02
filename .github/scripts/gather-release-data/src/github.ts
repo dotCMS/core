@@ -24,11 +24,14 @@ export function onThrottle(kind: string) {
     _octokit: unknown,
     retryCount: number
   ): boolean => {
+    const willRetry = retryCount < MAX_RATE_LIMIT_RETRIES;
     process.stderr.write(
       `${kind} rate limit on ${options.method} ${options.url}; ` +
-        `retry ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES} in ${retryAfter}s\n`
+        (willRetry
+          ? `retry ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES} in ${retryAfter}s\n`
+          : `giving up after ${MAX_RATE_LIMIT_RETRIES} retries\n`)
     );
-    return retryCount < MAX_RATE_LIMIT_RETRIES;
+    return willRetry;
   };
 }
 
