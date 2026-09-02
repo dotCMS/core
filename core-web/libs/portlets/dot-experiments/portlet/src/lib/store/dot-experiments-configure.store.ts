@@ -32,7 +32,6 @@ import {
     DotExperimentStatus,
     DotExperiment,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     Variant
 } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
@@ -88,7 +87,6 @@ const initialState: DotExperimentsConfigureViewState = {
     draftDescription: '',
     selectedPage: null,
     pagePrefillError: null,
-    pageLockInfo: null,
     deletingVariants: false,
     deleteVariantsFailed: false,
     validationRevealed: false,
@@ -155,8 +153,6 @@ function baselineOf(experiment: DotExperiment): ConfigureFormModel {
 export const DotExperimentsConfigureStore = signalStore(
     withState<DotExperimentsConfigureViewState>(initialState),
     withComputed((store) => {
-        const globalStore = inject(GlobalStore);
-
         /** A screen with no experiment yet is a draft: nothing on it is locked. */
         const $status = computed<DotExperimentStatus>(
             () => store.experiment()?.status ?? DotExperimentStatus.DRAFT
@@ -167,16 +163,6 @@ export const DotExperimentsConfigureStore = signalStore(
          * kebab still offers its status-specific actions; it is the *fields* that are frozen.
          */
         const $isLocked = computed<boolean>(() => $status() !== DotExperimentStatus.DRAFT);
-
-        const $lockedByAnotherUser = computed<boolean>(() => {
-            const lock = store.pageLockInfo();
-
-            if (!lock?.locked || !lock.lockedBy) {
-                return false;
-            }
-
-            return lock.lockedBy !== globalStore.loggedUser()?.userId;
-        });
 
         const $variants = computed<Variant[]>(
             () => store.experiment()?.trafficProportion?.variants ?? []
@@ -264,7 +250,6 @@ export const DotExperimentsConfigureStore = signalStore(
         return {
             $status,
             $isLocked,
-            $lockedByAnotherUser,
             $variants,
             $deletableVariants,
             /**
@@ -290,16 +275,23 @@ export const DotExperimentsConfigureStore = signalStore(
                     : LOCKED_BANNER_KEY_READ_ONLY;
             }),
             /**
-             * Same precedence as the old screen: a non-DRAFT status explains the disabled state
-             * before a page lock does, since it is the stronger reason.
+             * The experiment's own status is the only thing that freezes this screen.
+             *
+             * A lock held on the *page* deliberately does not, which is where this parts company
+             * with the old screen. Nothing the Configure screen writes goes through the page: a
+             * variant is a row in `variant` plus copied `multi_tree` rows, and a weight, a rename
+             * and a delete are all writes to the experiment. `ExperimentsAPIImpl` reads the page
+             * once, to build a preview URL, and neither it nor `ExperimentsResource` consults the
+             * lock — so the backend accepts every one of these edits on a locked page. Refusing
+             * them here only invented a dead end the server never asked for.
+             *
+             * Editing a variant's *content* is the write that would need the lock, and that is a
+             * UVE round-trip this screen does not make yet (#37005). The reason belongs on that
+             * button, when there is one.
              */
-            $disabledTooltipKey: computed<string | null>(() => {
-                if ($isLocked()) {
-                    return EXP_CONFIG_ERROR_LABEL_CANT_EDIT;
-                }
-
-                return $lockedByAnotherUser() ? EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED : null;
-            }),
+            $disabledTooltipKey: computed<string | null>(() =>
+                $isLocked() ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT : null
+            ),
             /** Kebab gating, straight off `AllowedActionsByExperimentStatus`. No license gates. */
             $allowedActions: computed<Record<ExperimentListAction, boolean>>(() => {
                 const status = $status();
@@ -448,7 +440,6 @@ export const DotExperimentsConfigureStore = signalStore(
             selectedPage: null,
             pagePrefillError: PAGE_PREFILL_LOOKUP_ERROR_KEY
         })),
-        on(apiEvents.pageLockResolved, ({ payload }) => ({ pageLockInfo: payload })),
 
         /**
          * The form moved. The mirror is replaced wholesale — there is nothing to merge, because
@@ -808,26 +799,6 @@ export const DotExperimentsConfigureStore = signalStore(
                 prefillPage$: events
                     .on(pageEvents.pagePrefillRequested)
                     .pipe(switchMap(({ payload }) => resolvePrefill(payload))),
-
-                /**
-                 * Lock state is ancillary: a failed lookup reports the page as unlocked rather
-                 * than blocking a screen that is otherwise fully usable.
-                 */
-                resolvePageLock$: merge(
-                    events.on(pageEvents.pageSelected).pipe(map(({ payload }) => payload.pageId)),
-                    events
-                        .on(apiEvents.pagePrefillResolved)
-                        .pipe(map(({ payload }) => payload.pageId))
-                ).pipe(
-                    filter((pageId): pageId is string => !!pageId),
-                    distinctUntilChanged(),
-                    switchMap((pageId) =>
-                        pagesBrowserService.getPageLockState(pageId).pipe(
-                            map((lockInfo) => apiEvents.pageLockResolved(lockInfo)),
-                            catchError(() => of(apiEvents.pageLockResolved({ locked: false })))
-                        )
-                    )
-                ),
 
                 /**
                  * The one write of the form: Save draft flushes the whole accumulated diff as a
