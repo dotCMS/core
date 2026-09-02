@@ -288,6 +288,19 @@ export class DotExperimentsConfigureVariantsComponent {
         this.#resplitWeightsAfterAdd();
     }
 
+    /**
+     * Identity of a row, for the table's own diffing.
+     *
+     * `$rows()` rebuilds every view model whenever the variants change, so the table's default
+     * `trackBy` — which compares the objects themselves — sees an entirely new set each time and
+     * tears down every row. Tracking by variant id is what keeps a rename or a re-split from
+     * re-creating rows that did not move, and it is what leaves the enter/leave animation firing
+     * only on the variant actually added or deleted.
+     */
+    trackVariantById(_index: number, row: VariantRowViewModel): string {
+        return row.id;
+    }
+
     /** Persists a renamed variant. The variant endpoint takes the name on its own. */
     onVariantRenamed(variantId: string, name: string): void {
         this.#dispatch.variantRenamed({ variantId, name });
