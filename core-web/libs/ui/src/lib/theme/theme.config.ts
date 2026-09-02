@@ -220,21 +220,36 @@ export const CustomLaraPreset = definePreset(Lara, {
             `
         },
         popover: {
-            // Popovers are panels app-wide: the content area carries no padding of its own, so
-            // whatever is rendered inside owns its spacing. Applied to bare `.p-popover` rather
-            // than an opt-in class — same reasoning as `tag` and `chip` above, and it means a
-            // new popover cannot look different by forgetting a marker.
+            // Popovers are panels app-wide, and what the content area does depends on what is put
+            // in it. Plain block markup — a list, a form, a help blurb — gets the panel's inset
+            // from here, so no consumer has to restate it. A component dropped straight into a
+            // popover is instead the panel itself: a listbox's options have to reach the edges for
+            // the hover and selected bands to cover the full row, and a component that lays out a
+            // search box above such a list already spaces its own parts. So the inset applies when
+            // the content's direct children include a block element, and not when the content is
+            // the component.
             //
-            // Verified against all 24 popover consumers (see the audit in the PR): filter
-            // panels, the UVE persona and favorite selectors, the theme picker, the help
-            // tooltips and the rest. A popover whose content needs breathing room provides it
-            // itself rather than relying on the component default.
+            // Keying on `> div` rather than naming the components keeps this out of the business of
+            // knowing which ones own their spacing: a wrapper component reads the same as the
+            // listbox it wraps, which a `> p-listbox` selector would have missed. Checked against
+            // all 27 popover consumers; several also pin `p-0` through `pt`, which wins over both
+            // rules anyway.
+            //
+            // `dot-popover-flush` is the opt-out for a panel built from plain markup that still
+            // wants its rows to run full bleed — the Content Drive filter panels that carry their
+            // own header rows, and the template-builder layout properties panel.
             css: `
                 .p-popover {
                     border-radius: var(--radius-lg);
                     overflow: hidden;
                 }
                 .p-popover .p-popover-content {
+                    padding: 0;
+                }
+                .p-popover .p-popover-content:has(> div) {
+                    padding: calc(var(--spacing) * 4); /* 1rem */
+                }
+                .p-popover.dot-popover-flush .p-popover-content {
                     padding: 0;
                 }
             `
