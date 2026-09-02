@@ -2,6 +2,7 @@ package com.dotcms.rest.api.v1.system;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
@@ -39,6 +40,9 @@ public class ConfigurationResourceTest {
     private static final String FLAG = FeatureFlagName.FEATURE_FLAG_UVE_TOGGLE_LOCK;
     private static final String UNDEFINED_FLAG = FeatureFlagName.FEATURE_FLAG_UVE_STYLE_EDITOR;
     private static final String NON_FLAG_KEY = "EMAIL_SYSTEM_ADDRESS";
+    /** The UVE Experiments entry-point switch introduced by #37005. */
+    private static final String EXPERIMENTS_PORTLET_FLAG =
+            FeatureFlagName.FEATURE_FLAG_EXPERIMENTS_PORTLET;
     // A key guaranteed never to appear in WHITE_LIST (fixed UUID-shaped string).
     private static final String UNLISTED_KEY = "TEST_KEY_THAT_WILL_NEVER_BE_WHITELISTED_a1b2c3d4";
 
@@ -280,6 +284,113 @@ public class ConfigurationResourceTest {
                 resource.getConfigVariables(request, response, NON_FLAG_KEY));
 
         assertEquals(testAddress, entity.get(NON_FLAG_KEY));
+    }
+
+    // ── FEATURE_FLAG_EXPERIMENTS_PORTLET (#37005) ─────────────────────────────
+
+    /**
+     * Method to test: {@link ConfigurationResource#getConfigVariables}
+     * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} is requested at its shipped default
+     *   of {@code "false"} ({@code dotmarketing-config.properties}).
+     * Expected result: Response contains the normalised string {@code "false"}, so the frontend's
+     *   {@code === 'true'} comparison resolves the UVE Experiments entry point to the legacy
+     *   per-page screens (FR-013, FR-016).
+     */
+    @Test
+    void getConfigVariables_experimentsPortletFlagSetToFalse_returnsNativeBooleanFalse() {
+        mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
+                .thenReturn("false");
+
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, EXPERIMENTS_PORTLET_FLAG));
+
+        assertEquals("false", entity.get(EXPERIMENTS_PORTLET_FLAG));
+    }
+
+    /**
+     * Method to test: {@link ConfigurationResource#getConfigVariables}
+     * Given scenario: An operator has turned {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} on.
+     * Expected result: Response contains the normalised string {@code "true"} (FR-012, FR-021).
+     */
+    @Test
+    void getConfigVariables_experimentsPortletFlagSetToTrue_returnsNativeBooleanTrue() {
+        mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
+                .thenReturn("true");
+
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, EXPERIMENTS_PORTLET_FLAG));
+
+        assertEquals("true", entity.get(EXPERIMENTS_PORTLET_FLAG));
+    }
+
+    /**
+     * Method to test: {@link ConfigurationResource#getConfigVariables}
+     * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} is requested and IS on the
+     *   whitelist, whatever its value.
+     * Expected result: The key is PRESENT in the response.
+     *
+     * <p>This is the anti-silent-omission assertion. A key omitted from {@code WHITE_LIST} is not
+     * an error — it is dropped from the response, the frontend's {@code getKey} substitutes the
+     * {@code NOT_FOUND} sentinel, and the switch reads as <b>enabled</b>: the exact inverse of
+     * FR-013, with nothing logged anywhere. This test fails loudly in that case, where the two
+     * value tests above would keep passing on the flag's own stubbed value.
+     */
+    @Test
+    void getConfigVariables_experimentsPortletFlagIsWhitelisted_isPresentInResponse() {
+        mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
+                .thenReturn("false");
+
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, EXPERIMENTS_PORTLET_FLAG));
+
+        assertTrue(entity.containsKey(EXPERIMENTS_PORTLET_FLAG),
+                "FEATURE_FLAG_EXPERIMENTS_PORTLET must be in WHITE_LIST, or the frontend reads the "
+                        + "switch as enabled by default (FR-013 inverted)");
+    }
+
+    /**
+     * Method to test: {@link ConfigurationResource#getConfigVariables}
+     * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} is not defined on the server at all.
+     * Expected result: The {@code "NOT_FOUND"} sentinel — which the frontend treats as
+     *   <b>enabled</b>.
+     *
+     * <p>Pinned deliberately: this is <i>why</i> the explicit {@code false} in
+     * {@code dotmarketing-config.properties} is required rather than decorative. Declaring the
+     * switch without shipping a value would deliver it on (FR-013).
+     */
+    @Test
+    void getConfigVariables_experimentsPortletFlagNotDefined_returnsNotFoundSentinel() {
+        mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
+                .thenReturn(null);
+
+        final Map<String, Object> entity = entityMap(
+                resource.getConfigVariables(request, response, EXPERIMENTS_PORTLET_FLAG));
+
+        assertEquals("NOT_FOUND", entity.get(EXPERIMENTS_PORTLET_FLAG));
+    }
+
+    /**
+     * Method to test: {@link ConfigurationResource#getConfigVariables}
+     * Given scenario: Both the entry-point switch and the feature-wide experiments kill-switch are
+     *   requested in one call, set to opposite values.
+     * Expected result: Each key carries its own value — the two are independent (FR-014, FR-015a).
+     *
+     * <p>The pairing that matters: "new portlet entry point off, experiments still serving to
+     * visitors" must be expressible. If the two ever collapse onto one property, this fails.
+     */
+    @Test
+    void getConfigVariables_experimentsPortletFlagAndKillSwitch_areIndependent() {
+        mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
+                .thenReturn("false");
+        mockedConfig.when(() -> Config.getStringProperty(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS, null))
+                .thenReturn("true");
+
+        final Map<String, Object> entity = entityMap(resource.getConfigVariables(
+                request, response,
+                EXPERIMENTS_PORTLET_FLAG + "," + FeatureFlagName.FEATURE_FLAG_EXPERIMENTS));
+
+        assertEquals("false", entity.get(EXPERIMENTS_PORTLET_FLAG));
+        assertEquals("true", entity.get(FeatureFlagName.FEATURE_FLAG_EXPERIMENTS));
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
