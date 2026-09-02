@@ -120,9 +120,11 @@ test.describe('apps — custom properties', () => {
         await panel.getByTestId('dot-key-value-new-visibility-toggle').click();
         await properties.addEntry(tokenKey, 'super-secret-value');
 
+        // Matched on `title`, not text: the key cell wraps its key in branches whose
+        // whitespace an anchored regex will not match, and a long key is clipped anyway.
         const row = panel
             .getByTestId('dot-key-value-key')
-            .filter({ hasText: new RegExp(`^${tokenKey}$`) })
+            .filter({ has: page.locator(`[title="${tokenKey}"]`) })
             .locator('xpath=ancestor::tr[contains(@class,"dot-key-value-table-row")][1]');
 
         // No hover anywhere before asserting.

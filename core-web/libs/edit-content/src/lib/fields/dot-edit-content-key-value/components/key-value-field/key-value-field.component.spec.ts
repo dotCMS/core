@@ -1,5 +1,7 @@
 import { Spectator, createComponentFactory } from '@openng/spectator/jest';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotKeyValueComponent } from '@dotcms/ui';
 
 import { DotKeyValueFieldComponent } from './key-value-field.component';
@@ -17,6 +19,9 @@ describe('DotKeyValueFieldComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotKeyValueFieldComponent,
+        // The shared editor confirms Clear All through this service; its hosts provide
+        // it (app-wide in dotcms-ui, on the layout in Edit Content).
+        providers: [ConfirmationService],
         shallow: true
     });
 

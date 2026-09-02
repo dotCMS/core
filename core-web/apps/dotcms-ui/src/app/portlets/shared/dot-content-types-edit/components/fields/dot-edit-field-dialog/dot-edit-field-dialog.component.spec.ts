@@ -116,6 +116,9 @@ class DotCustomFieldSettingsStubComponent {
 class DotContentTypeFieldsVariablesStubComponent {
     field = input<DotCMSContentTypeField>();
     showTable = input(false);
+    // Variables hands the dialog its own Save now, like the Settings tabs do.
+    $changeControls = output<DotDialogActions>();
+    $save = output<void>();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -359,9 +362,11 @@ describe('DotEditFieldDialogComponent', () => {
             expect(comp.saveBtn.disabled).toBe(false);
         });
 
-        it('should hide the buttons when switching to the variables tab', () => {
+        it('should keep the buttons on the variables tab', () => {
+            // Field Variables no longer writes as you type: it hands over its own Save
+            // through `changesDialogActions`, so the footer has to stay.
             comp.handleTabChange(comp.variablesTabIndex);
-            expect(comp.hideButtons).toBe(true);
+            expect(comp.hideButtons).toBe(false);
         });
 
         it('should NOT hide the buttons on the Settings tab for a field with settings', () => {

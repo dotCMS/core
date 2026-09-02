@@ -48,6 +48,9 @@ export class DotKeyValueTableRowComponent {
 
     $showHiddenField = input.required<boolean>({ alias: 'showHiddenField' });
 
+    /** Renders the pair as plain text, with nothing that could change it. */
+    $readOnly = input<boolean>(false, { alias: 'readOnly' });
+
     $index = input.required<number>({ alias: 'index' });
 
     $variable = model.required<DotKeyValue>({ alias: 'variable' });
@@ -57,16 +60,26 @@ export class DotKeyValueTableRowComponent {
      */
     $valueInput = viewChild<ElementRef<HTMLInputElement>>('valueInput');
 
+    /** The key input, which only exists while the key is being edited. */
+    $keyInput = viewChild<ElementRef<HTMLInputElement>>('keyInput');
+
     /**
-     * Whether this row's value is being edited. At rest the value is plain
-     * text; activating it swaps in the input.
+     * Which cell of this row is being edited, if any. At rest both are plain text;
+     * activating one swaps in its input.
      */
-    $isEditing = signal(false);
+    $editing = signal<'key' | 'value' | null>(null);
+
+    $isEditing = computed(() => this.$editing() === 'value');
+
+    $isEditingKey = computed(() => this.$editing() === 'key');
 
     editControl = this.#fb.nonNullable.control('');
 
-    /** Value captured when editing started, so Escape can put it back. */
-    #valueBeforeEdit = '';
+    /** Keys held by other rows, so a rename cannot collide with one. */
+    $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });
+
+    /** Text captured when editing started, so Escape can put it back. */
+    #textBeforeEdit = '';
 
     /**
      * Whether this row's value is withheld, in which case the row states that and
@@ -83,42 +96,83 @@ export class DotKeyValueTableRowComponent {
         effect(() => {
             if (this.$isEditing()) {
                 this.$valueInput()?.nativeElement.focus();
+            } else if (this.$isEditingKey()) {
+                this.$keyInput()?.nativeElement.focus();
             }
         });
     }
 
     startEdit(): void {
-        this.#valueBeforeEdit = this.$variable().value;
-        this.editControl.setValue(this.#valueBeforeEdit);
-        this.$isEditing.set(true);
+        this.#beginEditing('value', this.$variable().value);
+    }
+
+    startEditKey(): void {
+        this.#beginEditing('key', this.$variable().key);
+    }
+
+    #beginEditing(cell: 'key' | 'value', text: string): void {
+        if (this.$readOnly()) {
+            return;
+        }
+
+        this.#textBeforeEdit = text;
+        this.editControl.setValue(text);
+        this.$editing.set(cell);
     }
 
     /**
      * Commits the edit and returns the row to its at-rest presentation. Emits
-     * only when the value actually changed, so merely tabbing through a row
+     * only when the text actually changed, so merely tabbing through a row
      * does not look like an edit to the consumer.
+     *
+     * A rename into a key another row already holds is refused and the original put
+     * back: two rows sharing a key would collide wherever the pairs are stored, and
+     * the entry row rejects the same thing when adding.
      */
     commitEdit(event?: Event): void {
         event?.preventDefault();
 
-        if (!this.$isEditing()) {
+        const cell = this.$editing();
+
+        if (!cell) {
             return;
         }
 
-        this.$isEditing.set(false);
+        const text = this.editControl.value.trim();
+        const unchanged = text === this.#textBeforeEdit;
+        const rejected =
+            cell === 'key' && (!text || (text !== this.#textBeforeEdit && this.#isTaken(text)));
 
-        if (this.editControl.value !== this.#valueBeforeEdit) {
-            this.save.emit({ ...this.$variable(), value: this.editControl.value });
+        this.$editing.set(null);
+
+        if (unchanged || rejected) {
+            return;
         }
+
+        this.save.emit(
+            cell === 'key'
+                ? { ...this.$variable(), key: text }
+                : { ...this.$variable(), value: this.editControl.value }
+        );
     }
 
     /**
      * Discards the edit. Leaving edit mode removes the input, which fires
      * `blur` — so that must happen before anything else, or `commitEdit` would
-     * save the value being discarded.
+     * save the text being discarded.
      */
     cancelEdit(event?: Event): void {
         event?.preventDefault();
-        this.$isEditing.set(false);
+        this.$editing.set(null);
+    }
+
+    /**
+     * Whether *another* row already holds `key`.
+     *
+     * This row's own key is in the map too, so it has to be excluded — otherwise
+     * merely trimming whitespace off a key would count as a collision with itself.
+     */
+    #isTaken(key: string): boolean {
+        return key !== this.$variable().key && !!this.$forbiddenkeys()[key];
     }
 }

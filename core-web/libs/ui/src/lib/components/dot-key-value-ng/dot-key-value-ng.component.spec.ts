@@ -1,5 +1,6 @@
 import { Spectator, byTestId, createComponentFactory } from '@openng/spectator/jest';
 
+import { ConfirmationService } from 'primeng/api';
 import { Table } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -32,6 +33,11 @@ const messageServiceMock = new MockDotMessageService({
     'keyValue.value_input.required': 'This field is required',
     'keyValue.key_input.duplicated': 'This key already exists',
     'keyValue.value_hidden': 'Value hidden',
+    'keyValue.action.clear_all': 'Clear All',
+    'keyValue.clear_all.title': 'Clear all entries?',
+    'keyValue.clear_all.message': 'Every key and value in this field will be removed.',
+    'keyValue.clear_all.accept': 'Clear',
+    'keyValue.clear_all.reject': 'Cancel',
     'keyValue.action.load_more': 'Load more',
     Delete: 'Delete',
     Reorder: 'Reorder',
@@ -48,7 +54,10 @@ describe('DotKeyValueComponent', () => {
 
     const createComponent = createComponentFactory({
         component: DotKeyValueComponent,
-        providers: [{ provide: DotMessageService, useValue: messageServiceMock }]
+        providers: [
+            { provide: DotMessageService, useValue: messageServiceMock },
+            ConfirmationService
+        ]
     });
 
     const create = (props: Partial<Record<string, unknown>> = {}) => {
@@ -142,7 +151,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should span every column', () => {
-            expect(spectator.component.colspan).toBe(4);
+            expect(spectator.component.$colspan()).toBe(4);
         });
     });
 
@@ -303,6 +312,143 @@ describe('DotKeyValueComponent', () => {
         });
     });
 
+    describe('the footer row', () => {
+        it('should be present even with no rows to page through', () => {
+            create({ variables: [{ key: 'a', value: '1' }] });
+
+            expect(spectator.query(byTestId('dot-key-value-footer-row'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeTruthy();
+            // Only the paging control is conditional.
+            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
+        });
+
+        it('should go away entirely on an empty list', () => {
+            // Nothing to clear and nothing to page through, so the whole foot goes
+            // rather than sitting there with a dead button in it.
+            create({ variables: [] });
+
+            expect(spectator.query(byTestId('dot-key-value-footer-row'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeFalsy();
+        });
+    });
+
+    describe('clearing every entry', () => {
+        let confirmation: ConfirmationService;
+
+        beforeEach(() => {
+            create({ variables: [...mockKeyValue] });
+            confirmation = spectator.inject(ConfirmationService);
+        });
+
+        /** Runs whatever the component handed the confirmation service. */
+        const accept = () => {
+            const request = jest.mocked(confirmation.confirm).mock.calls[0][0];
+            request.accept();
+            spectator.detectChanges();
+        };
+
+        it('should ask before removing anything', () => {
+            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+
+            spectator.click(byTestId('dot-key-value-clear-all'));
+
+            expect(confirmation.confirm).toHaveBeenCalled();
+            // Nothing goes until the dialog is answered.
+            expect(listSpy).not.toHaveBeenCalled();
+            expect(spectator.component.$variableList()).toHaveLength(mockKeyValue.length);
+        });
+
+        it('should empty the list once confirmed', () => {
+            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            spectator.click(byTestId('dot-key-value-clear-all'));
+
+            accept();
+
+            expect(spectator.component.$variableList()).toEqual([]);
+            expect(spectator.queryAll(byTestId('dot-key-value-key'))).toHaveLength(0);
+        });
+
+        it('should report every removed pair and the empty list once', () => {
+            // Field Variables deletes row by row through `delete`; the other consumers
+            // take the whole array from `updatedList`.
+            jest.spyOn(confirmation, 'confirm').mockImplementation();
+            const deleteSpy = jest.spyOn(spectator.component.delete, 'emit');
+            const listSpy = jest.spyOn(spectator.component.updatedList, 'emit');
+
+            spectator.click(byTestId('dot-key-value-clear-all'));
+            accept();
+
+            expect(deleteSpy).toHaveBeenCalledTimes(mockKeyValue.length);
+            expect(listSpy).toHaveBeenCalledTimes(1);
+            expect(listSpy).toHaveBeenCalledWith([]);
+        });
+
+        it('should not ask at all when there is nothing to clear', () => {
+            // The button is not rendered for an empty list, so this guards the method
+            // itself — a consumer calling it directly must not get an empty dialog.
+            create({ variables: [] });
+            confirmation = spectator.inject(ConfirmationService);
+            jest.spyOn(confirmation, 'confirm').mockImplementation();
+
+            spectator.component.confirmClearAll();
+
+            expect(confirmation.confirm).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('read-only (a field whose pairs are generated elsewhere)', () => {
+        beforeEach(() => create({ variables: [...mockKeyValue], readOnly: true }));
+
+        it('should still show every pair', () => {
+            expect(spectator.queryAll(byTestId('dot-key-value-key')).length).toBe(
+                mockKeyValue.length
+            );
+        });
+
+        it('should offer no way to add, remove or clear', () => {
+            expect(spectator.query(byTestId('key-input'))).toBeFalsy();
+            expect(spectator.query(byTestId('save-button'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-delete-button'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeFalsy();
+        });
+
+        it('should keep reordering, which is the one action left', () => {
+            expect(spectator.query(byTestId('dot-key-value-drag-handle'))).toBeTruthy();
+        });
+
+        it('should not present the pairs as editable controls', () => {
+            const key = spectator.query(byTestId('dot-key-value-key-output'));
+            const value = spectator.query(byTestId('dot-key-value-value-output'));
+
+            // Without this a keyboard user tabs onto something that does nothing.
+            expect(key.getAttribute('role')).toBeNull();
+            expect(key.getAttribute('tabindex')).toBeNull();
+            expect(value.getAttribute('role')).toBeNull();
+            expect(value.getAttribute('tabindex')).toBeNull();
+        });
+
+        it('should drop the column that only carried actions', () => {
+            expect(spectator.component.$colspan()).toBe(3);
+            expect(spectator.queryAll('thead tr:first-child th').length).toBe(3);
+        });
+
+        it('should hide the foot when it would hold nothing', () => {
+            expect(spectator.query(byTestId('dot-key-value-footer-row'))).toBeFalsy();
+        });
+
+        it('should still page a long list', () => {
+            // Reading 200 generated entries is easier in pages; that is not an edit.
+            create({
+                readOnly: true,
+                variables: Array.from({ length: 50 }, (_, i) => ({ key: `k${i}`, value: `v${i}` }))
+            });
+
+            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeFalsy();
+        });
+    });
+
     describe('paging long lists', () => {
         const manyPairs = (count: number): DotKeyValue[] =>
             Array.from({ length: count }, (_, i) => ({
@@ -317,7 +463,7 @@ describe('DotKeyValueComponent', () => {
             create({ variables: manyPairs(40) });
 
             expect(renderedKeys()).toHaveLength(40);
-            expect(spectator.query(byTestId('dot-key-value-load-more-row'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
         });
 
         it('should render only the first page of a longer list', () => {
@@ -350,7 +496,7 @@ describe('DotKeyValueComponent', () => {
             spectator.detectChanges();
 
             expect(renderedKeys()).toHaveLength(50);
-            expect(spectator.query(byTestId('dot-key-value-load-more-row'))).toBeFalsy();
+            expect(spectator.query(byTestId('dot-key-value-load-more'))).toBeFalsy();
         });
 
         it('should keep the same label whatever is left to reveal', () => {

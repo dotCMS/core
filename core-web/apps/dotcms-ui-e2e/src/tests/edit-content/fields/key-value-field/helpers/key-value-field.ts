@@ -46,14 +46,14 @@ export class KeyValueField {
         await expect(this.keyCells).toHaveCount(count, { timeout: 10000 });
     }
 
-    private static escapeRegExp(value: string): string {
-        return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    }
-
+    /**
+     * The cell for `key`, matched on the `title` attribute rather than the rendered
+     * text. The cell wraps its key in branches and comments, so its text content
+     * carries whitespace that an anchored regex will not match, and a long key is
+     * clipped on screen anyway. `title` is the key, exactly.
+     */
     private exactKeyCell(key: string): Locator {
-        return this.keyCells.filter({
-            hasText: new RegExp(`^${KeyValueField.escapeRegExp(key)}$`)
-        });
+        return this.keyCells.filter({ has: this.page.locator(`[title="${key}"]`) });
     }
 
     private rowForKey(key: string): Locator {

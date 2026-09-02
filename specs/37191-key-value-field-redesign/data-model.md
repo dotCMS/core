@@ -65,6 +65,7 @@ One boolean input on the container selects the only affordance that varies betwe
 | Input | Type | Default | Effect |
 |---|---|---|---|
 | `showHiddenField` | `boolean` | `false` | Renders the eye toggle and masks hidden values (FR-021 to FR-024) |
+| `readOnly` | `boolean` | `false` | Renders the pairs with nothing that could change them (FR-051 to FR-054) |
 
 ### Capability matrix
 
@@ -73,6 +74,11 @@ One boolean input on the container selects the only affordance that varies betwe
 | Edit Content field | `false` | always |
 | Field Variables | `false` | always |
 | Apps custom properties | **`true`** | always |
+
+**`readOnly` is not a per-consumer choice.** Unlike `showHiddenField`, no consumer decides it: it comes
+from the field's own `readOnly` declaration in the content type, through the form's disabled state. The
+Edit Content consumer binds it from `$isDisabled`; the other two never set it, since neither renders a
+field the content type marks read-only.
 
 **Reordering is no longer a capability.** It began as a per-consumer switch (`dragAndDrop`); once
 every consumer had the handle, the input had nothing left to decide and was removed.

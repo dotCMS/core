@@ -257,7 +257,5 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
 
             expect(spy).toHaveBeenCalledWith([{ key: 'FRESH', value: 'ok' }]);
         });
-
-    });
     });
 });

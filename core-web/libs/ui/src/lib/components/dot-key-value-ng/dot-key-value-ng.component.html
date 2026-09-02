@@ -1,4 +1,5 @@
 @let showHiddenField = $showHiddenField();
+@let readOnly = $readOnly();
 
 <!--
     PrimeNG gives cells their separators but the table no outer frame, so the border
@@ -9,26 +10,37 @@
     [value]="$variableList()"
     #table
     dataKey="key"
-    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_tbody_tr:last-child_td]:border-b-0!"
+    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_.kv-gutter]:pr-0! [&_.kv-gutter]:pl-[14px]! [&_table]:table-fixed [&_tbody_tr:last-child_td]:border-b-0!"
     [rowHover]="true"
     [scrollable]="true"
     (onRowReorder)="onRowReorder()">
+    <!--
+        `table-fixed` so the columns keep their proportions whatever the rows hold. Left
+        to size themselves, a long key widens its own column and squeezes the value's —
+        measured at 308/308 with short keys and 366/250 with one long one. Key and value
+        declare no width, which under this layout splits what the two fixed columns leave
+        evenly between them.
+    -->
     <ng-template #header>
         <tr>
-            <th class="w-12 min-w-12" scope="col"></th>
+            <th class="kv-gutter w-[30px] min-w-[30px]" scope="col"></th>
             <th scope="col">{{ 'keyValue.key_header.label' | dm }}</th>
             <th scope="col">{{ 'keyValue.value_header.label' | dm }}</th>
-            <th class="w-16 min-w-12" scope="col">
-                <span class="sr-only">{{ 'keyValue.actions_header.label' | dm }}</span>
-            </th>
+            @if (!readOnly) {
+                <th class="w-[74px] min-w-[74px]" scope="col">
+                    <span class="sr-only">{{ 'keyValue.actions_header.label' | dm }}</span>
+                </th>
+            }
         </tr>
         <!-- `td` not `th`, so this row keeps the plain background instead of the header band. -->
-        <tr
-            dotKeyValueTableHeaderRow
-            (save)="saveVariable($event)"
-            (saveMany)="saveVariables($event)"
-            [showHiddenField]="showHiddenField"
-            [forbiddenkeys]="$forbiddenkeys()"></tr>
+        @if (!readOnly) {
+            <tr
+                dotKeyValueTableHeaderRow
+                (save)="saveVariable($event)"
+                (saveMany)="saveVariables($event)"
+                [showHiddenField]="showHiddenField"
+                [forbiddenkeys]="$forbiddenkeys()"></tr>
+        }
     </ng-template>
 
     <!--
@@ -45,51 +57,84 @@
                 (delete)="deleteVariable(rowIndex)"
                 (save)="updateKeyValue($event, rowIndex)"
                 [showHiddenField]="showHiddenField"
+                [readOnly]="readOnly"
+                [forbiddenkeys]="$forbiddenkeys()"
                 [variable]="variable"
                 [index]="rowIndex"
                 #tableRow></tr>
         }
     </ng-template>
 
+    <!--
+        Present from the first row onwards: an empty list has nothing to clear and
+        nothing to page through, so the whole foot goes rather than sitting there
+        disabled. With rows, only the paging control is conditional.
+    -->
     <ng-template #footer>
-        @if ($remaining() > 0) {
-            <tr data-testId="dot-key-value-load-more-row">
+        @if ($variableList().length && ($remaining() > 0 || !readOnly)) {
+            <tr data-testId="dot-key-value-footer-row">
                 <!--
-                    Left-aligned under the drag column, like the site/folder selector.
                     The separator is this row's top border: the last body row has its own
                     suppressed, so that it never doubles up with the table's outer frame.
                 -->
                 <td
-                    [attr.colspan]="colspan"
+                    [attr.colspan]="$colspan()"
                     class="border-t border-t-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3">
-                    <button
-                        (click)="loadMore()"
-                        class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
-                        data-testId="dot-key-value-load-more"
-                        type="button">
-                        <span class="material-symbols-outlined text-base!" aria-hidden="true">
-                            add_circle
-                        </span>
-                        {{ 'keyValue.action.load_more' | dm }}
-                    </button>
+                    <div class="flex items-center justify-between gap-4">
+                        @if ($remaining() > 0) {
+                            <button
+                                (click)="loadMore()"
+                                class="flex cursor-pointer items-center gap-2 border-0 bg-transparent p-0 text-left text-sm font-normal text-primary-500 hover:underline"
+                                data-testId="dot-key-value-load-more"
+                                type="button">
+                                <span
+                                    class="material-symbols-outlined text-base!"
+                                    aria-hidden="true">
+                                    add_circle
+                                </span>
+                                {{ 'keyValue.action.load_more' | dm }}
+                            </button>
+                        } @else {
+                            <!-- Holds the left half so Clear All stays put as rows are revealed. -->
+                            <span></span>
+                        }
+
+                        @if (!readOnly) {
+                            <button
+                                (click)="confirmClearAll()"
+                                [text]="true"
+                                class="shrink-0"
+                                data-testId="dot-key-value-clear-all"
+                                pButton
+                                size="small"
+                                type="button">
+                                {{ 'keyValue.action.clear_all' | dm }}
+                            </button>
+                        }
+                    </div>
                 </td>
             </tr>
         }
     </ng-template>
 
+    <!--
+        Follows the empty state the list portlets use (dot-tags, dot-users, dot-plugins):
+        the icon carries the muted tone and the message does not. `text-color` rather
+        than their literal `text-gray-800`, so it holds up in dark mode too.
+    -->
     <ng-template #emptymessage>
-        <tr>
-            <td [attr.colspan]="colspan">
+        <tr class="hover:bg-transparent!">
+            <td [attr.colspan]="$colspan()" class="border-none text-center">
                 <div
-                    class="flex flex-col items-center justify-center gap-2 p-6"
+                    class="flex flex-col items-center justify-center gap-4 p-6"
                     data-testId="no-rows">
                     <span
-                        class="material-symbols-outlined text-4xl! text-surface-500 dark:text-surface-300"
+                        class="material-symbols-outlined text-4xl! text-surface-500"
                         aria-hidden="true"
                         data-testId="dot-key-value-empty-icon">
                         key
                     </span>
-                    <p class="text-surface-500 dark:text-surface-300">
+                    <p class="m-0 text-base leading-6 text-color">
                         {{ 'keyValue.value_no_rows.label' | dm }}
                     </p>
                 </div>

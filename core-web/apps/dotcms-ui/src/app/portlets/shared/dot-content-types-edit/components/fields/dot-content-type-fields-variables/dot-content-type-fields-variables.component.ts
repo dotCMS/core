@@ -1,4 +1,4 @@
-import { Subject } from 'rxjs';
+import { Subject, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -7,18 +7,21 @@ import {
     OnChanges,
     OnDestroy,
     SimpleChanges,
+    computed,
     inject,
     input,
+    output,
     signal
 } from '@angular/core';
 
-import { take, takeUntil } from 'rxjs/operators';
+import { catchError, finalize, take, takeUntil } from 'rxjs/operators';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
     CUSTOM_FIELD_OPTIONS_KEY,
     DotCMSClazzes,
     DotCMSContentTypeField,
+    DotDialogActions,
     DotFieldVariable,
     HIDE_LABEL_VARIABLE_KEY
 } from '@dotcms/dotcms-models';
@@ -32,6 +35,12 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
  * Displays and manages free-form field variables for a content-type field.
  * Filters out reserved keys that are managed by dedicated settings sections
  * (e.g. `customFieldOptions`, `hideLabel` for Custom Fields; `allowedBlocks` for Block Editor).
+ *
+ * Edits are held here until Save. The tab used to write every add, edit and remove
+ * straight to the server, which left no way back from a mistake and no way to walk
+ * away from a half-finished set of changes — Cancel simply closed a dialog whose work
+ * was already done. Nothing leaves this component now until {@link saveChanges} runs,
+ * so Cancel means what it says.
  */
 @Component({
     selector: 'dot-content-type-fields-variables',
@@ -42,6 +51,7 @@ import { DotKeyValue } from '../../../../../../shared/models/dot-key-value-ng/do
 })
 export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDestroy {
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
+    #dotMessageService = inject(DotMessageService);
     private fieldVariablesService = inject(DotFieldVariablesService);
 
     /** The content-type field whose variables are loaded and managed. */
@@ -50,11 +60,37 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     /** When `false`, hides the key-value table (used to embed without the table UI). */
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
 
+    /** Hands the dialog its footer buttons while this tab is the one on screen. */
+    readonly $changeControls = output<DotDialogActions>();
+
+    /** Raised once every pending change has been written. */
+    readonly $save = output<void>();
+
     /** Local snapshot of the field, updated on every `$field` change. */
     field: DotCMSContentTypeField;
 
     /** Signal holding the list of variables currently shown in the table. */
     $fieldVariables = signal<DotFieldVariable[]>([]);
+
+    /** What the server last gave us, to diff the pending edits against. */
+    #stored = signal<DotFieldVariable[]>([]);
+
+    /** True while a save is in flight, so the button cannot be pressed twice. */
+    #saving = signal(false);
+
+    /**
+     * Whether anything on screen differs from what is stored.
+     *
+     * Compared by key and value rather than by reference: re-adding a pair that was
+     * just removed leaves the field exactly as it was, and that should not count as a
+     * change to save.
+     */
+    readonly $hasChanges = computed(() => {
+        const asText = (variables: DotKeyValue[]) =>
+            JSON.stringify(variables.map(({ key, value }) => [key, value]));
+
+        return asText(this.$fieldVariables()) !== asText(this.#stored());
+    });
 
     /**
      * Per-field-type map of variable keys that must be hidden from the table.
@@ -82,6 +118,12 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             this.field = this.$field();
             this.initTableData();
         }
+
+        // The dialog owns the footer, so the buttons are handed over whenever this tab
+        // becomes the visible one — the same way the Settings tabs do it.
+        if (changes.$showTable?.currentValue) {
+            this.#emitDialogActions();
+        }
     }
 
     ngOnDestroy(): void {
@@ -90,50 +132,84 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     }
 
     /**
-     * Handle Delete event doing a Delete to the Backend
-     * @param {DotKeyValue} variable
-     * @memberof DotContentTypeFieldsVariablesComponent
+     * Takes the whole list from the editor after any change.
+     *
+     * One channel rather than the per-row `save`/`update`/`delete` outputs: with
+     * nothing being written yet, all this needs is the list as it now stands.
      */
-    deleteFieldVariable(variable: DotKeyValue): void {
-        this.fieldVariablesService
-            .delete(this.field, variable)
-            .pipe(take(1))
-            .subscribe({
-                next: () => {
-                    this.$fieldVariables.set(
-                        this.$fieldVariables().filter(
-                            (item: DotFieldVariable) => item.key !== variable.key
-                        )
-                    );
-                },
-                error: (err: HttpErrorResponse) => {
+    onVariablesChanged(variables: DotKeyValue[]): void {
+        this.$fieldVariables.set(variables as DotFieldVariable[]);
+        this.#emitDialogActions();
+    }
+
+    /**
+     * Writes every pending change, then reports back so the dialog can close.
+     *
+     * Removals go out alongside the writes: a key that is gone from the list but still
+     * stored has to be deleted, and a key whose value changed is saved over. Untouched
+     * pairs are left alone rather than re-sent.
+     */
+    saveChanges(): void {
+        const stored = this.#stored();
+        const current = this.$fieldVariables();
+
+        const removed = stored.filter(({ key }) => !current.some((item) => item.key === key));
+        const written = current.filter((item) => {
+            const previous = stored.find(({ key }) => key === item.key);
+
+            return !previous || previous.value !== item.value;
+        });
+
+        if (!removed.length && !written.length) {
+            this.$save.emit();
+
+            return;
+        }
+
+        this.#saving.set(true);
+        this.#emitDialogActions();
+
+        forkJoin([
+            ...removed.map((variable) => this.fieldVariablesService.delete(this.field, variable)),
+            ...written.map((variable) => this.fieldVariablesService.save(this.field, variable))
+        ])
+            .pipe(
+                take(1),
+                takeUntil(this.destroy$),
+                catchError((err: HttpErrorResponse) => {
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
+
+                    return of(null);
+                }),
+                finalize(() => {
+                    this.#saving.set(false);
+                    this.#emitDialogActions();
+                })
+            )
+            .subscribe((result) => {
+                if (result !== null) {
+                    this.#stored.set(current);
+                    this.$save.emit();
                 }
             });
     }
 
-    /**
-     * Handle Save event doing a Post to the Backend
-     * @param {DotKeyValue} variable
-     * @memberof DotContentTypeFieldsVariablesComponent
-     */
-    updateFieldVariable(variable: DotKeyValue): void {
-        this.fieldVariablesService
-            .save(this.field, variable)
-            .pipe(take(1))
-            .subscribe({
-                next: (savedVariable: DotFieldVariable) => {
-                    this.$fieldVariables.set(this.updateVariableCollection(savedVariable));
-                },
-                error: (err: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
-                }
-            });
+    /** Rebuilds the dialog's Save button for the current state. */
+    #emitDialogActions(): void {
+        this.$changeControls.emit({
+            accept: {
+                label: this.#dotMessageService.get('contenttypes.dropzone.action.save'),
+                action: () => this.saveChanges(),
+                disabled: this.#saving() || !this.$hasChanges()
+            }
+        });
     }
 
     private initTableData(): void {
         if (!this.field?.contentTypeId || !this.field?.id) {
             this.$fieldVariables.set([]);
+            this.#stored.set([]);
+
             return;
         }
 
@@ -141,31 +217,18 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             .load(this.field)
             .pipe(takeUntil(this.destroy$))
             .subscribe(($fieldVariables: DotFieldVariable[]) => {
-                this.$fieldVariables.set(
-                    $fieldVariables.filter((item) => {
-                        const fieldBlackList = this.blackList[this.field.clazz];
-                        if (fieldBlackList) {
-                            return !fieldBlackList[item?.key];
-                        }
+                const visible = $fieldVariables.filter((item) => {
+                    const fieldBlackList = this.blackList[this.field.clazz];
+                    if (fieldBlackList) {
+                        return !fieldBlackList[item?.key];
+                    }
 
-                        return true;
-                    })
-                );
+                    return true;
+                });
+
+                this.$fieldVariables.set(visible);
+                this.#stored.set(visible);
+                this.#emitDialogActions();
             });
-    }
-
-    private updateVariableCollection(savedVariable: DotFieldVariable): DotFieldVariable[] {
-        const current = this.$fieldVariables();
-        const variableExist = current.find((item: DotKeyValue) => item.key === savedVariable.key);
-
-        return variableExist
-            ? current.map((item: DotFieldVariable) => {
-                  if (item.key === savedVariable.key) {
-                      item = savedVariable;
-                  }
-
-                  return item;
-              })
-            : [savedVariable, ...current];
     }
 }

@@ -40,12 +40,14 @@ describe('DotKeyValueTableRowComponent', () => {
                 <tr dotKeyValueTableRow
                     [variable]="variable"
                     [index]="index"
+                    [forbiddenkeys]="forbiddenkeys"
                     [showHiddenField]="showHiddenField"></tr>
             </tbody></table>`,
             {
                 hostProps: {
                     variable: mockVariable,
                     index: 0,
+                    forbiddenkeys: {},
                     showHiddenField: false
                 }
             }
@@ -220,6 +222,110 @@ describe('DotKeyValueTableRowComponent', () => {
     describe('reordering', () => {
         it('should always render a drag handle — every consumer can reorder', () => {
             expect(spectator.query(byTestId('dot-key-value-drag-handle'))).toBeTruthy();
+        });
+    });
+
+    describe('editing the key', () => {
+        const startEditing = () => {
+            spectator.click(byTestId('dot-key-value-key-output'));
+            spectator.detectChanges();
+        };
+
+        it('should swap the key for an input carrying its current text', () => {
+            startEditing();
+            const input = spectator.query(byTestId('dot-key-value-key-input'));
+
+            expect(input).toBeTruthy();
+            expect(spectator.component.editControl.value).toBe(mockVariable.key);
+            expect(spectator.query(byTestId('dot-key-value-key-output'))).toBeFalsy();
+        });
+
+        it('should report the renamed pair, keeping its value', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            startEditing();
+
+            spectator.component.editControl.setValue('renamed');
+            spectator.component.commitEdit();
+
+            expect(saveSpy).toHaveBeenCalledWith({
+                ...mockVariable,
+                key: 'renamed'
+            });
+        });
+
+        it('should say nothing when the key comes back unchanged', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            startEditing();
+
+            spectator.component.commitEdit();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it('should restore the key on Escape', () => {
+            startEditing();
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.component.editControl.setValue('typed-but-discarded');
+            spectator.component.cancelEdit();
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('dot-key-value-key-output')).textContent.trim()).toBe(
+                mockVariable.key
+            );
+        });
+
+        it('should refuse a rename onto a key another row holds', () => {
+            // Two rows sharing a key collide wherever the pairs are stored, and the
+            // entry row already rejects the same thing when adding.
+            setProps({ variable: mockVariable, forbiddenkeys: { taken: true } });
+            startEditing();
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.component.editControl.setValue('taken');
+            spectator.component.commitEdit();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it('should refuse an empty key', () => {
+            startEditing();
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.component.editControl.setValue('   ');
+            spectator.component.commitEdit();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it('should not collide with itself when only whitespace is trimmed', () => {
+            // The row's own key is in the forbidden map, so it has to be excluded.
+            setProps({
+                variable: { key: 'name', value: 'John' },
+                forbiddenkeys: { name: true }
+            });
+            startEditing();
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+
+            spectator.component.editControl.setValue('  name  ');
+            spectator.component.commitEdit();
+
+            // Trimmed back to the same key: nothing changed, so nothing is reported.
+            expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it('should edit the key and the value independently', () => {
+            startEditing();
+            expect(spectator.query(byTestId('dot-key-value-value-output'))).toBeTruthy();
+
+            spectator.component.cancelEdit();
+            spectator.detectChanges();
+            spectator.click(byTestId('dot-key-value-value-output'));
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dot-key-value-key-output'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-input'))).toBeTruthy();
         });
     });
 

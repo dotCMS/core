@@ -65,12 +65,16 @@ test.describe('key/value paging @smoke', () => {
 
         await root(page).getByTestId('dot-key-value-load-more').click();
         await expect(root(page).getByTestId('dot-key-value-key')).toHaveCount(45);
-        await expect(root(page).getByTestId('dot-key-value-load-more-row')).toHaveCount(0);
+        await expect(root(page).getByTestId('dot-key-value-load-more')).toHaveCount(0);
+        // The row itself is permanent now — it also carries Clear All.
+        await expect(root(page).getByTestId('dot-key-value-footer-row')).toHaveCount(1);
     });
 
     test('no control at all when the list fits one page', async ({ page }) => {
         await openWith(page, 3);
-        await expect(root(page).getByTestId('dot-key-value-load-more-row')).toHaveCount(0);
+        await expect(root(page).getByTestId('dot-key-value-load-more')).toHaveCount(0);
+        // The row itself is permanent now — it also carries Clear All.
+        await expect(root(page).getByTestId('dot-key-value-footer-row')).toHaveCount(1);
     });
 
     test('drag reorders correctly while rows are withheld, losing nothing', async ({ page }) => {

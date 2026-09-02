@@ -1,9 +1,11 @@
 @let variable = $variable();
 @let showHiddenField = $showHiddenField();
 @let isHiddenField = $isHiddenField();
+@let readOnly = $readOnly();
 @let isEditing = $isEditing();
+@let isEditingKey = $isEditingKey();
 
-<td class="w-12 min-w-12">
+<td class="kv-gutter w-[30px] min-w-[30px]">
     <span
         class="inline-flex cursor-grab text-surface-500 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100 dark:text-surface-400"
         [attr.aria-label]="'Reorder' | dm"
@@ -21,7 +23,34 @@
 </td>
 
 <td data-testId="dot-key-value-key">
-    <span>{{ variable.key }}</span>
+    @if (isEditingKey) {
+        <input
+            (keydown.enter)="commitEdit($event)"
+            (keydown.escape)="cancelEdit($event)"
+            (blur)="commitEdit($event)"
+            [formControl]="editControl"
+            [placeholder]="'keyValue.key_input.placeholder' | dm"
+            class="w-full"
+            #keyInput
+            autocomplete="false"
+            data-testId="dot-key-value-key-input"
+            pInputText
+            pSize="small"
+            type="text" />
+    } @else {
+        <!-- `title` keeps the whole key reachable once the column clips it. -->
+        <span
+            (click)="startEditKey()"
+            (keydown.enter)="startEditKey()"
+            [title]="variable.key"
+            [class.cursor-text]="!readOnly"
+            [attr.role]="readOnly ? null : 'button'"
+            [attr.tabindex]="readOnly ? null : 0"
+            class="block truncate"
+            data-testId="dot-key-value-key-output">
+            {{ variable.key }}
+        </span>
+    }
 </td>
 
 <!--
@@ -58,35 +87,40 @@
             pSize="small"
             type="text" />
     } @else {
+        <!-- `title` keeps the whole value reachable once the column clips it. -->
         <span
             (click)="startEdit()"
             (keydown.enter)="startEdit()"
-            class="block w-full cursor-text truncate"
-            role="button"
-            tabindex="0"
+            [class.cursor-text]="!readOnly"
+            [attr.role]="readOnly ? null : 'button'"
+            [attr.tabindex]="readOnly ? null : 0"
+            [title]="variable.value"
+            class="block w-full truncate"
             data-testId="dot-key-value-value-output">
             {{ variable.value }}
         </span>
     }
 </td>
 
-<td class="w-16 min-w-12">
-    <button
-        (click)="delete.emit()"
-        [attr.aria-label]="'Delete' | dm"
-        [text]="true"
-        class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
-        data-testId="dot-key-value-delete-button"
-        pButton
-        severity="secondary"
-        size="small"
-        type="button">
-        <span
-            class="material-symbols-outlined text-lg!"
-            aria-hidden="true"
-            data-testId="dot-key-value-delete-icon"
-            pButtonIcon>
-            close
-        </span>
-    </button>
-</td>
+@if (!readOnly) {
+    <td class="w-[74px] min-w-[74px]">
+        <button
+            (click)="delete.emit()"
+            [attr.aria-label]="'Delete' | dm"
+            [text]="true"
+            class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
+            data-testId="dot-key-value-delete-button"
+            pButton
+            severity="secondary"
+            size="small"
+            type="button">
+            <span
+                class="material-symbols-outlined text-lg!"
+                aria-hidden="true"
+                data-testId="dot-key-value-delete-icon"
+                pButtonIcon>
+                close
+            </span>
+        </button>
+    </td>
+}

@@ -3,6 +3,8 @@ import { createHostFactory, SpectatorHost } from '@openng/spectator';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
@@ -41,6 +43,7 @@ describe('DotEditContentKeyValueComponent', () => {
         detectChanges: false,
         componentMocks: [DotKeyValueComponent],
         providers: [
+            ConfirmationService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})

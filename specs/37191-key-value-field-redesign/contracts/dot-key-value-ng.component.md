@@ -17,6 +17,18 @@ what allows the redesign to land without three simultaneous consumer migrations.
 |---|---|---|---|---|---|
 | `variables` | `$variables` | `DotKeyValue[]` | `[]` | **unchanged** | FR-001 |
 | `showHiddenField` | `$showHiddenField` | `boolean` | `false` | **unchanged** | FR-021 to FR-024 |
+| `readOnly` | `$readOnly` | `boolean` | `false` | **added** | see below |
+
+**`readOnly` was added.** For fields whose pairs are produced elsewhere — a file asset's
+`metaData` is regenerated on every save — where offering to add, edit, remove or clear would
+promise control the user does not have. It is not a new concept: the content type already marks
+such fields `readOnly`, the form already disables their control, and Angular already calls
+`setDisabledState`. The input is the last link, and the Edit Content consumer binds it from
+`$isDisabled` rather than deciding for itself.
+
+It hides the entry row, the remove control, click-to-edit and Clear All, and drops the actions
+column (`$colspan` 4 → 3). Reordering, paging, the empty state and the withheld indicator stay:
+they help read a list without pretending it can be changed.
 
 **`dragAndDrop` was removed.** It gated whether a consumer rendered the drag handle. Reordering is
 now unconditional — every consumer has it — so the switch had nothing left to decide. `showHiddenField`
@@ -35,6 +47,11 @@ is the only remaining per-consumer capability.
 | `save` | `DotKeyValue` | A new pair is added | **unchanged** |
 | `update` | `{ variable, oldVariable }` | An existing pair is edited | **unchanged** |
 | `delete` | `DotKeyValue` | A pair is removed | **unchanged** |
+| `saveMany` | `DotKeyValue[]` | A `KEY=VALUE` block is pasted into the entry row | **added** |
+
+**`saveMany` was added** for pasted blocks. It is a separate output rather than a repeated `save`
+so the pairs arrive in one piece and keep the order they were pasted in; the container then emits
+`save` per pair anyway, because Field Variables persists row by row through it.
 
 The dual channel is intentional and must be preserved: Edit Content consumes `updatedList` (whole
 array), while Field Variables consumes `save`/`update`/`delete` to persist per row. Collapsing them
@@ -52,7 +69,6 @@ directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-
 | Element | Condition | Visibility at rest | Requirement |
 |---|---|---|---|
 | Entry row (key input, value input, add button) | always | visible | FR-003 |
-| Body row key | always | plain text, never an input | FR-005, FR-008 |
 | Body row value | always | plain text; becomes an input on activation | FR-005, FR-006 |
 | Drag handle | always | **`opacity-0`**, revealed on hover/focus-within | FR-017, FR-019 |
 | Remove control | always | **`opacity-0`**, revealed on hover/focus-within | FR-017, FR-019 |
@@ -60,6 +76,10 @@ directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-
 | Withheld indicator | `showHiddenField === true` **and** row's `hidden === true` | **permanently visible** — lock + "Value hidden", no value, no input | FR-018, FR-022, FR-023 |
 | Any visibility control on an existing row | never | absent | FR-023a |
 | Empty state | list is empty | icon + message, entry row still usable above | FR-014 |
+| Footer row | at least one pair, and something to put in it | Load more (left) and Clear All (right) | — |
+| Load more | more rows are withheld | link-style button, no count | — |
+| Clear All | not `readOnly` | text button, confirms before emptying | — |
+| Key at rest | not `readOnly` | plain text; becomes an input on activation | — |
 | Load-more row | more than 40 rows remain unrendered | appended after the last row; **left-aligned** "Load more", no count | FR-037 to FR-039 |
 
 ### Paging must not shorten the bound array
@@ -68,6 +88,16 @@ Only 40 rows are rendered, but `[value]` still receives the **entire** list, wit
 body template. PrimeNG reorders the array it is given, so binding a slice loses the drag silently. A
 rendered prefix also keeps `rowIndex` a true index, which every row handler depends on. See
 [research.md R-10](../research.md#r-10--row-paging-render-limit-not-a-data-limit).
+
+### The key is editable again
+
+FR-008 made the key read-only after creation, from the first round of clarifications. That was
+reversed on request: a key is now click-to-edit like its value. Renaming rejects a key another row
+holds and rejects an empty one — two rows sharing a key collide wherever the pairs are stored, and
+the entry row already refuses the same thing when adding.
+
+For a consumer that persists per row, a rename is a **remove plus an add**, not an update: Field
+Variables diffs the list on save and does exactly that.
 
 ### Visibility is chosen at creation only
 

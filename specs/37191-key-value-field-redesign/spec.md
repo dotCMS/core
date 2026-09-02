@@ -39,6 +39,21 @@ pages because it **fetches** a page at a time, while a Key/Value field already h
 memory. Here nothing is fetched — rows are withheld from the DOM and the data is untouched. See
 [research.md R-10](./research.md#r-10--row-paging-render-limit-not-a-data-limit).
 
+### Scope added after the original spec
+
+Everything below FR-041 was asked for after the spec was written — during review of the working
+redesign, not at clarification time. Recorded here so a reader can tell the original brief from what
+grew on top of it:
+
+| Added | Why | Requirements |
+|---|---|---|
+| Row paging | a field can hold dozens of pairs | FR-037 to FR-041 |
+| Pasting a `.env` block | reviewer feedback; mirrors Vercel's env editor | FR-042 to FR-046 |
+| Clear All | reviewer feedback | FR-047 to FR-050 |
+| Read-only fields | a file asset's metadata is regenerated on save, so editing it is a lie | FR-051 to FR-054 |
+| Deferred save in Field Variables | Cancel had nothing to cancel while every keystroke was written | FR-055 to FR-059 |
+| Editable key | reverses FR-008 | FR-008, FR-008a, FR-008b |
+
 ### Key ordering defect (found during implementation)
 
 Reordering rows in Edit Content worked on screen, then came back wrong after a save and reload:
@@ -231,8 +246,13 @@ persist.
   value into a focused, editable input.
 - **FR-007**: An in-progress value edit MUST be committable (by confirming or moving focus away) and
   cancellable (restoring the original value).
-- **FR-008**: A pair's key MUST NOT be editable after creation; changing a key is accomplished by
-  removing the pair and adding a new one.
+- **FR-008**: A pair's key MUST be editable in place, activated the same way its value is. *Reversed
+  on request.* It originally read "MUST NOT be editable after creation", from the first round of
+  clarifications; corrected here rather than deleted so the change is auditable.
+- **FR-008a**: A rename MUST be refused when the key is empty, or when another pair already holds it —
+  two pairs sharing a key collide wherever they are stored, and the entry row refuses the same thing
+  when adding. A refused rename MUST restore the original key.
+- **FR-008b**: A rename MUST carry the pair's value across unchanged.
 - **FR-009**: Users MUST be able to remove an existing pair.
 - **FR-010**: The editor MUST reject a new pair whose key duplicates an existing key, and MUST indicate
   why.
@@ -310,13 +330,58 @@ persist.
 - **FR-041**: Supplying a new list to the editor MUST reset it to the first page, so reopening a field
   never starts part-way down the previous one.
 
+**Pasting a block of pairs**
+
+- **FR-042**: Pasting text shaped like a `.env` file into the key input MUST create one pair per
+  assignment, in the order the text lists them, instead of dropping the text into the input.
+- **FR-043**: The reader MUST ignore comments and blank lines, drop an `export` prefix, split on the
+  **first** `=` only, and remove one matching pair of surrounding quotes from the value.
+- **FR-044**: A key the list already holds, or repeated within the paste, MUST be skipped rather than
+  overwrite what is there.
+- **FR-045**: Text that yields no assignment MUST paste normally into the input, so pasting a plain key
+  still behaves like a paste.
+- **FR-046**: Multi-line values are out of scope. A certificate pasted this way would be cut at its
+  first line break, so it stays a single-pair job through the normal inputs.
+
+**Clearing every pair**
+
+- **FR-047**: The editor MUST offer a control that removes every pair at once, behind a confirmation.
+- **FR-048**: The confirmation MUST use the host's existing dialog rather than one of the editor's own,
+  and MUST match the styling of the unsaved-changes prompt in Edit Content.
+- **FR-049**: Nothing MUST be removed until the confirmation is accepted.
+- **FR-050**: The control MUST NOT be offered when there is nothing to clear.
+
+**Fields whose pairs are produced elsewhere**
+
+- **FR-051**: A field the content type marks read-only MUST render its pairs without any way to change
+  them: no entry row, no remove control, no click-to-edit, no Clear All.
+- **FR-052**: Read-only MUST be taken from the field's existing `readOnly` declaration through the
+  form's disabled state, not from a decision made inside the editor.
+- **FR-053**: Reading affordances MUST remain: paging, the withheld indicator, the empty state, and
+  reordering.
+- **FR-054**: A read-only pair MUST NOT present itself as an interactive control — no button role and
+  not in the tab order — so keyboard users are not sent to something inert.
+
+**Deferred save in Field Variables**
+
+- **FR-055**: The Field Variables tab MUST hold every add, edit, remove and reorder until the admin
+  saves. It wrote each one immediately before, which left Cancel with nothing to cancel.
+- **FR-056**: The dialog MUST carry Cancel and Save in its footer for this tab, supplied the way the
+  Settings tabs already supply theirs.
+- **FR-057**: Save MUST be disabled until something differs from what is stored, compared by key and
+  value so that removing a pair and re-adding it does not count as a change.
+- **FR-058**: Saving MUST write only what changed: pairs removed are deleted, pairs added or edited are
+  written, untouched pairs are not re-sent.
+- **FR-059**: A failed write MUST surface the error and leave the dialog open with the edits intact, so
+  it cannot be mistaken for a save that worked.
+
 **Consumer integration & data safety**
 
 - **FR-033**: The Edit Content Key/Value field MUST continue to read its stored pairs and write them
   back in its existing shape, with no data loss on round-trip.
-- **FR-034**: The Field Variables editor MUST continue to save, update, and delete each variable against
-  the field through its existing path, and MUST continue to filter reserved keys out of the displayed
-  list.
+- **FR-034**: The Field Variables editor MUST persist through its existing per-variable path and MUST
+  continue to filter reserved keys out of the displayed list. *Amended:* it no longer writes as the
+  admin types — see [FR-055 to FR-059](#functional-requirements).
 - **FR-035**: The Apps custom properties editor MUST continue to read and write its pairs, including the
   hidden flag, through its existing path, and MUST remain hidden for apps whose descriptor does not
   allow extra parameters.
@@ -378,6 +443,14 @@ user-observable behavior. All three align with existing repository standards.
 - **SC-007**: Automated unit coverage exercises add, edit, cancel-edit, remove, reorder, duplicate-key
   rejection, empty-input rejection, hidden-value rendering, and empty-state rendering; one
   end-to-end smoke per consumer confirms values persist across save and reload.
+- **SC-009**: Pasting a `.env` block of N assignments produces N pairs in the pasted order, and text
+  with no assignment in it still pastes into the input.
+- **SC-010**: Clearing every pair takes one action plus a confirmation, and nothing is removed if the
+  confirmation is dismissed.
+- **SC-011**: A read-only field offers no control that would change it, and a keyboard user tabbing
+  through it never lands on an inert one.
+- **SC-012**: In Field Variables, edits made and then cancelled leave the stored variables untouched —
+  verified by reopening the field.
 - **SC-008**: A field holding 70 pairs renders 40 rows and stays fully operable: revealing the rest is
   one action, and a reorder performed while rows are withheld loses, duplicates and reorders nothing
   outside the drag.

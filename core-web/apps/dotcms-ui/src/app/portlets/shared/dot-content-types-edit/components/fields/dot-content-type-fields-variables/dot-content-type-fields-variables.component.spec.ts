@@ -18,7 +18,7 @@ import {
 } from '@dotcms/utils-testing';
 
 import { DotContentTypeFieldsVariablesComponent } from './dot-content-type-fields-variables.component';
-import { DotFieldVariablesService } from './services/dot-field-variables.service';
+import { DotDialogActions, DotFieldVariablesService } from './services/dot-field-variables.service';
 
 import { DOTTestBed } from '../../../../../../test/dot-test-bed';
 
@@ -72,68 +72,103 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
         expect(comp.$fieldVariables().length).toBe(0);
     });
 
-    it('should save a variable', () => {
-        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(mockFieldVariables[0]));
-        const response = mockFieldVariables[0];
+    /** Hands the editor a new list, as `updatedList` does. */
+    const changeTo = (variables: DotFieldVariable[]) =>
+        de.query(By.css('dot-key-value-ng')).triggerEventHandler('updatedList', variables);
 
-        fixtureHost.detectChanges();
-
-        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('save', response);
-
-        expect(dotFieldVariableService.save).toHaveBeenCalledWith(
-            comp.field,
-            mockFieldVariables[0]
-        );
-        expect(comp.$fieldVariables()[0]).toEqual(mockFieldVariables[0]);
-    });
-
-    it('should update variable a variable', () => {
-        const variable = {
-            ...mockFieldVariables[0],
-            value: 'test'
-        };
-
-        jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(of(variable));
-
-        fixtureHost.detectChanges();
-
-        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('update', {
-            variable,
-            oldVariable: mockFieldVariables[0]
+    describe('holding edits until Save (#37191)', () => {
+        beforeEach(() => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+                of(v as DotFieldVariable)
+            );
+            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+                of(v as DotFieldVariable)
+            );
+            fixtureHost.detectChanges();
         });
 
-        expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, variable);
-        expect(dotFieldVariableService.save).toHaveBeenCalledTimes(1);
+        it('should write nothing while the admin edits', () => {
+            // The whole point of the change: the tab used to persist on every keystroke
+            // of a row, so Cancel had nothing left to cancel.
+            changeTo([{ key: 'newKey', value: 'newValue' } as DotFieldVariable]);
 
-        expect(comp.$fieldVariables()[0]).toEqual(variable);
+            expect(dotFieldVariableService.save).not.toHaveBeenCalled();
+            expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
+        });
+
+        it('should write the added and changed pairs on save', () => {
+            const kept = mockFieldVariables[0];
+            const edited = { ...mockFieldVariables[1], value: 'changed' };
+            const added = { key: 'brandNew', value: 'v' } as DotFieldVariable;
+
+            changeTo([kept, edited, added]);
+            comp.saveChanges();
+
+            expect(dotFieldVariableService.save).toHaveBeenCalledTimes(2);
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, edited);
+            expect(dotFieldVariableService.save).toHaveBeenCalledWith(comp.field, added);
+            // An untouched pair is not re-sent.
+            expect(dotFieldVariableService.save).not.toHaveBeenCalledWith(comp.field, kept);
+        });
+
+        it('should delete the pairs removed from the list', () => {
+            const removed = mockFieldVariables[0];
+
+            changeTo(mockFieldVariables.filter(({ key }) => key !== removed.key));
+            comp.saveChanges();
+
+            expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, removed);
+            expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
+        });
+
+        it('should report back so the dialog can close', () => {
+            const saved = jest.fn();
+            comp.$save.subscribe(saved);
+
+            changeTo([...mockFieldVariables, { key: 'k', value: 'v' } as DotFieldVariable]);
+            comp.saveChanges();
+
+            expect(saved).toHaveBeenCalled();
+        });
+
+        it('should close without writing when nothing changed', () => {
+            const saved = jest.fn();
+            comp.$save.subscribe(saved);
+
+            comp.saveChanges();
+
+            expect(dotFieldVariableService.save).not.toHaveBeenCalled();
+            expect(dotFieldVariableService.delete).not.toHaveBeenCalled();
+            expect(saved).toHaveBeenCalled();
+        });
+
+        it('should not count re-adding a removed pair as a change', () => {
+            // Compared by key and value: the field is exactly as it was stored.
+            changeTo([]);
+            changeTo(mockFieldVariables);
+
+            expect(comp.$hasChanges()).toBe(false);
+        });
     });
 
-    it('should delete a variable from the server', () => {
-        const variableToDelete = mockFieldVariables[0];
+    describe('the dialog footer', () => {
+        beforeEach(() => {
+            jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
+            fixtureHost.detectChanges();
+        });
 
-        // Set up load spy to return mock data before detectChanges
-        jest.spyOn(dotFieldVariableService, 'load').mockReturnValue(of(mockFieldVariables));
-        jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(of(variableToDelete));
+        it('should offer a Save the dialog can render, disabled until something changes', () => {
+            const controls: DotDialogActions[] = [];
+            comp.$changeControls.subscribe((c) => controls.push(c));
 
-        const deletedCollection = mockFieldVariables.filter(
-            (item: DotFieldVariable) => variableToDelete.key !== item.key
-        );
+            changeTo(mockFieldVariables);
+            expect(controls.at(-1).accept.disabled).toBe(true);
 
-        fixtureHost.detectChanges();
-
-        const dotKeyValue = de.query(By.css('dot-key-value-ng'));
-        dotKeyValue.triggerEventHandler('delete', variableToDelete);
-
-        expect(dotFieldVariableService.delete).toHaveBeenCalledWith(comp.field, variableToDelete);
-        expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
-        expect(comp.$fieldVariables()).toEqual(deletedCollection);
+            changeTo([{ key: 'fresh', value: 'v' } as DotFieldVariable]);
+            expect(controls.at(-1).accept.disabled).toBe(false);
+        });
     });
-
-    // -----------------------------------------------------------------
-    // #37191 — US2
-    // -----------------------------------------------------------------
 
     describe('server failures (US2 scenario 5)', () => {
         let httpErrorManager: DotHttpErrorManagerService;
@@ -146,36 +181,39 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             fixtureHost.detectChanges();
         });
 
-        it('should surface a failed save and leave the list untouched', () => {
+        it('should surface a failed save and keep the dialog open', () => {
             jest.spyOn(dotFieldVariableService, 'save').mockReturnValue(
                 throwError(() => httpError)
             );
-            const before = comp.$fieldVariables();
+            const saved = jest.fn();
+            comp.$save.subscribe(saved);
 
-            de.query(By.css('dot-key-value-ng')).triggerEventHandler('save', {
-                key: 'newKey',
-                value: 'newValue'
-            });
+            changeTo([
+                ...mockFieldVariables,
+                { key: 'newKey', value: 'newValue' } as DotFieldVariable
+            ]);
+            comp.saveChanges();
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
-            expect(comp.$fieldVariables()).toEqual(before);
+            // Closing on a failed write would look like it succeeded.
+            expect(saved).not.toHaveBeenCalled();
         });
 
-        it('should surface a failed delete and keep the variable in the list', () => {
+        it('should surface a failed delete and keep the edits on screen', () => {
             jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 throwError(() => httpError)
             );
-            const before = comp.$fieldVariables();
+            const pending = mockFieldVariables.slice(1);
+            const saved = jest.fn();
+            comp.$save.subscribe(saved);
 
-            de.query(By.css('dot-key-value-ng')).triggerEventHandler(
-                'delete',
-                mockFieldVariables[0]
-            );
+            changeTo(pending);
+            comp.saveChanges();
 
             expect(httpErrorManager.handle).toHaveBeenCalledWith(httpError);
-            // A row that failed to delete must not disappear — that would tell
-            // the admin the deletion worked.
-            expect(comp.$fieldVariables()).toEqual(before);
+            expect(saved).not.toHaveBeenCalled();
+            // The admin's work is still there to retry with.
+            expect(comp.$fieldVariables()).toEqual(pending);
         });
     });
 

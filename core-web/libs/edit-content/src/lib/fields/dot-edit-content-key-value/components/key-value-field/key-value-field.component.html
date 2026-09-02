@@ -1,4 +1,11 @@
+<!--
+    `$isDisabled` comes from Angular via `setDisabledState`, which the form triggers
+    for any field the content type marks `readOnly` — a file asset's metaData among
+    them, since it is regenerated on every save and nothing here should suggest
+    otherwise.
+-->
 <dot-key-value-ng
     (updatedList)="updateField($event)"
     [variables]="$initialValue()"
+    [readOnly]="$isDisabled()"
     [showHiddenField]="false" />
