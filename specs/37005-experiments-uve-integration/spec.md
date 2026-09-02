@@ -77,19 +77,28 @@ revision count, no has-own-content. The legacy per-page Variants card displays *
 of any kind**: a name, a copy-URL button, a weight, a View/Edit button, a Delete button, and nothing
 else. → **D3: do not invent one.**
 
-### The one thing D3 does leave to fix
+### What D3 leaves to guard
 
-The new Variants card has a meta line under each variant name (`data-testid="variant-meta"`) that
-renders a fixed string: `Unmodified Page content` for the control, **`No content changes yet`** for
-every other variant. It is unconditional — no data feeds it.
+The new Variants card as shipped makes **no per-variant claim about content state**. It is a table —
+Variant, Split, Of Page Traffic, Actions — with a variant name, a copy-URL button, a weight, a share
+of page traffic and a row menu. There is no meta line under the name and no element carrying an
+edited or unmodified string. The only sentence about editing is the card's own description, *Content
+for each Variant is edited in the Universal Visual Editor*, which says where editing happens and
+asserts nothing about any particular variant.
 
-Today that string is trivially true, because the Edit Content button beside it is disabled and no one
-can change a variant's content from this screen at all. **This issue is what makes the string capable
-of being false.** The moment the round-trip works, a variant the editor just rewrote still reads "No
-content changes yet".
+So the card already behaves the way D3 wants, and this issue does not have to make it stop claiming
+anything. What this issue changes is the **reason** that is true. Today no claim would be safe to
+make, because the Edit Content button is disabled and nobody can change a variant's content from
+this screen at all; once the round-trip works, a claim becomes possible to make and would be wrong.
 
-So D3 does not mean "change nothing". It means the card must stop *asserting* an edit state it has no
-way to know, rather than acquiring a signal so it can assert one correctly. That is FR-007.
+The obligation is therefore to **keep** the card silent rather than to quiet it: no edited badge, no
+meta line, no last-modified indicator may be added along with the working button. That is FR-007,
+and it is a constraint to hold rather than a change to make.
+
+The string this issue does remove is a different one: the disabled Edit Content button's tooltip,
+`experiments.configure.variants.edit-content.unavailable` — *"Editing Variant content is available in
+an upcoming release"* — which stops being true the moment FR-001 lands and must come out with the
+placeholder it explains.
 
 ### What the current system does well enough to keep
 
@@ -302,9 +311,11 @@ action and confirm the editor presents read-only and offers no editing affordanc
 - **FR-006**: On return, the variant, experiment and editing-mode parameters MUST be cleared from the
   address so the page is no longer being viewed in an experiment context.
 - **FR-007**: The Variants card MUST NOT assert whether a variant's content has been modified. The
-  fixed per-variant meta text introduced for the new card — which today tells every non-control
-  variant "No content changes yet" — MUST NOT survive this change in a form that makes a claim the
-  system cannot substantiate: it MUST be reworded to something state-neutral, or removed.
+  card as shipped makes no such claim, so this is a constraint to hold rather than a change to make:
+  enabling the open-in-editor action MUST NOT introduce any per-variant text, badge or indicator that
+  states or implies an edit state, and any such element that appears MUST be state-neutral or absent.
+  The disabled Edit Content tooltip that today reads "Editing Variant content is available in an
+  upcoming release" MUST be removed along with the placeholder it explains (FR-001).
 - **FR-007a**: The system MUST NOT introduce a persisted, derived, or session-held "edited" signal for
   a variant, and MUST NOT display an edited badge, an edited meta line, or a last-modified indicator.
   The observable outcome of the round-trip is the content the editor changed in the Universal Visual
@@ -457,8 +468,8 @@ action and confirm the editor presents read-only and offers no editing affordanc
   destination is that list, and FR-021a requires it to accept a page filter.
 - **#37003** — Experiments Portlet, Screen 2 (create/update, `/experiments/:id/configuration`). The
   Variants card that hosts the open-in-editor action, the disabled placeholder button this work
-  enables, the meta text FR-007 constrains, and the screen the round-trip returns to are all
-  delivered there. Section A cannot be built before it lands.
+  enables, the card whose silence about edit state FR-007 constrains, and the screen the round-trip
+  returns to are all delivered there. Section A cannot be built before it lands.
 - **#37004** — Experiments Portlet, Screen 3 (view results). Needed for the switch-on experience to be
   complete, since the old flow's reports destination has a new-flow counterpart.
 - End-to-end coverage of both the round-trip (switch on) and the old-flow regression (switch off) is
@@ -546,8 +557,10 @@ line updates (*Edited in the Universal Visual Editor*)" would be new behavior wi
 either a contract change with rollback implications, or a session-only badge that vanishes on reload
 and is invisible to a second editor, which is misleading rather than merely incomplete.
 
-**What this still requires**: the new Variants card's fixed meta text tells every non-control variant
-"No content changes yet". That is true today only because the Edit Content button is disabled; this
-issue is what makes it capable of being false. The card must therefore stop making the claim — reword
-to something state-neutral, or drop the line — rather than acquire a signal so it can make the claim
-accurately. That is FR-007, and it is the only UI change D3 obliges.
+**What this still requires**: the new Variants card as shipped makes no per-variant claim about
+content state — it is a table of name, split, share of page traffic and actions, with no meta line
+and no edited indicator. So D3 obliges **no UI change** to that card beyond FR-001's own: enabling
+the open-in-editor action removes the disabled placeholder and its
+`experiments.configure.variants.edit-content.unavailable` tooltip, and adds nothing in their place
+that speaks to whether a variant was edited. The card's silence is what must survive this change,
+which is why FR-007 reads as a constraint to hold rather than an edit to make.
