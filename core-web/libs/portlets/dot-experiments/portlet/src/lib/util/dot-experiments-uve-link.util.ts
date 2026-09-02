@@ -1,19 +1,7 @@
+import { EXPERIMENT_RETURN_PARAM, EXPERIMENT_RETURN_PORTLET } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
 import { DotExperimentConfigurePage } from '../shared/models';
-
-/**
- * Query param naming which configuration screen opened a variant, so the return leg can land back
- * on it (#37005, FR-005).
- *
- * A query param rather than session or local storage, deliberately: it has to survive a reload and
- * a pasted link, and it has to be *absent* rather than stale when someone deep-links straight into
- * a variant — that absence is what makes the switch the fallback. Storage would fail both.
- */
-export const EXPERIMENT_RETURN_PARAM = 'experimentReturn';
-
-/** The only origin this work sets. The legacy card sets none, which is what keeps FR-018 true. */
-export const EXPERIMENT_RETURN_PORTLET = 'portlet';
 
 /** Route the Universal Visual Editor serves page content on. */
 const UVE_CONTENT_ROUTE = '/edit-page/content';

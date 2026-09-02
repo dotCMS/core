@@ -4,8 +4,9 @@ import { Subject } from 'rxjs';
 
 import { Injector, WritableSignal, signal } from '@angular/core';
 import { applyEach, disabled, FieldTree, form, max, min, validate } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 
-import { Confirmation, ConfirmationService } from 'primeng/api';
+import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tooltip } from 'primeng/tooltip';
 
@@ -19,6 +20,7 @@ import {
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -35,6 +37,7 @@ import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiment
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { toVariantWeightRows } from '../../../util/dot-experiments-configure-form.util';
 import { totalWeight } from '../../../util/dot-experiments-configure.util';
+import { buildVariantEditorLink } from '../../../util/dot-experiments-uve-link.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogResult
@@ -106,6 +109,10 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     let dialogServiceMock: { open: jest.Mock };
     let weights: WritableSignal<VariantWeightFormRow[]>;
     let weightsField: FieldTree<VariantWeightFormRow[]>;
+    /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
+    let navigate: jest.SpyInstance;
+    /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
+    let messageAdd: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureVariantsComponent,
@@ -115,7 +122,9 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            ConfirmationService
+            ConfirmationService,
+            MessageService,
+            { provide: Router, useFactory: () => ({ navigate: jest.fn() }) }
         ],
         detectChanges: false
     });
@@ -205,10 +214,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     const tooltipOf = (testId: string): Tooltip =>
         spectator.query(`[data-testid="${testId}"]`, { read: Tooltip }) as Tooltip;
 
-    /** Same tooltip on every row, so they are read as a list and indexed by row. */
-    const tooltipsOf = (testId: string): Tooltip[] =>
-        spectator.queryAll(`[data-testid="${testId}"]`, { read: Tooltip }) as Tooltip[];
-
     const isRowButtonDisabled = (rowIndex: number, testId: string): boolean =>
         (queryIn(rowIndex, testId)?.querySelector('button') as HTMLButtonElement | undefined)
             ?.disabled ?? false;
@@ -227,6 +232,8 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         dialogServiceMock = { open: jest.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+        messageAdd = jest.spyOn(spectator.inject(MessageService), 'add');
         const confirmationService = spectator.inject(ConfirmationService, true);
         confirm = jest
             .spyOn(confirmationService, 'confirm')
@@ -1008,26 +1015,159 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         });
     });
 
+    /**
+     * The outbound leg of the variant round-trip (#37005, US1).
+     *
+     * Contract: `specs/37005-experiments-uve-integration/contracts/navigation-destinations.md` §2.
+     * The URL itself is covered exhaustively in `dot-experiments-uve-link.util.spec.ts`; these
+     * tests are about the card — that the button works at all, that it hands the builder the right
+     * inputs, and that a refusal is a message rather than a navigation.
+     */
     describe('editing content', () => {
-        it('should render the control row as a disabled Preview, with a reason', () => {
+        // T035 / FR-001.
+        it('should offer a working action, not the disabled placeholder', () => {
             render();
 
-            expect(queryIn(0, 'variant-edit-content-btn')?.textContent).toContain('Preview');
-            expect(isRowButtonDisabled(0, 'variant-edit-content-btn')).toBe(true);
-            expect(tooltipsOf('variant-edit-content-tooltip')[0].content).toBe(
-                EDIT_CONTENT_UNAVAILABLE_COPY
-            );
+            expect(isRowButtonDisabled(1, 'variant-edit-content-btn')).toBe(false);
+            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit');
         });
 
-        it('should render every other row as a disabled Edit, with the same reason', () => {
-            // The UVE round-trip is out of scope for every row, control or not (AC-Var-Edit).
+        it('should no longer wrap the action in the "upcoming release" tooltip', () => {
             render();
 
-            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit');
-            expect(isRowButtonDisabled(1, 'variant-edit-content-btn')).toBe(true);
-            expect(tooltipsOf('variant-edit-content-tooltip')[1].content).toBe(
-                EDIT_CONTENT_UNAVAILABLE_COPY
-            );
+            expect(spectator.query(byTestId('variant-edit-content-tooltip'))).toBeNull();
+        });
+
+        // T030 / FR-002. The full param set is the builder's contract; here we assert the card
+        // navigates to what the builder produced, and to nothing else.
+        it('should navigate to the variant in the editor', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const link = buildVariantEditorLink({
+                page: SELECTED_PAGE,
+                variantId: SECOND_VARIANT.id,
+                experimentId: EXPERIMENT.id,
+                mode: UVE_MODE.EDIT
+            });
+
+            expect(navigate).toHaveBeenCalledWith(link?.commands, {
+                queryParams: link?.queryParams
+            });
+        });
+
+        // T030. `queryParamsHandling` must be absent: the portlet's own URL carries
+        // filter/orderby/pageAsset, none of which UVE wants.
+        it('should not merge the portlet URL params into the editor URL', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const [, options] = navigate.mock.calls[0];
+            expect(options.queryParamsHandling).toBeUndefined();
+        });
+
+        // T031. The page's real language, not editEmaGuard's substituted 1.
+        it('should send the page language rather than defaulting it', () => {
+            storeMock.selectedPage.mockReturnValue({ ...SELECTED_PAGE, languageId: 7 });
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const [, options] = navigate.mock.calls[0];
+            expect(options.queryParams.language_id).toBe(7);
+        });
+
+        // T032 / FR-003. The legacy card re-parsed window.location.href; this one must not care
+        // what the address bar says.
+        it('should build the destination from the store, not from the address bar', () => {
+            const original = window.location.href;
+            window.history.replaceState({}, '', '/experiments?filter=another-page');
+
+            try {
+                render();
+                clickButton('variant-edit-content-btn', rows()[1]);
+
+                const [, options] = navigate.mock.calls[0];
+                expect(options.queryParams.url).toBe(SELECTED_PAGE.path);
+                expect(JSON.stringify(navigate.mock.calls)).not.toContain('another-page');
+            } finally {
+                window.history.replaceState({}, '', original);
+            }
+        });
+
+        // T034. The automated half of SC-004: the whole gesture is one navigation, with no address
+        // typed or pasted anywhere in it.
+        it('should reach the editor in a single navigation', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            expect(navigate).toHaveBeenCalledTimes(1);
+        });
+
+        // T033 / T041 / FR-004, SC-006. Each case would otherwise be a silent wrong-page open,
+        // because editEmaGuard completes missing params instead of rejecting.
+        describe('refusing rather than navigating', () => {
+            it.each([
+                ['the page is unresolved', null],
+                ['the page has no path', { ...SELECTED_PAGE, path: '' }],
+                ['the page has no language', { ...SELECTED_PAGE, languageId: undefined }]
+            ])('should refuse with a message when %s', (_case, page) => {
+                storeMock.selectedPage.mockReturnValue(page as DotExperimentConfigurePage | null);
+                render();
+                clickButton('variant-edit-content-btn', rows()[1]);
+
+                expect(navigate).not.toHaveBeenCalled();
+                expect(messageAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        detail: EDIT_CONTENT_UNAVAILABLE_COPY
+                    })
+                );
+            });
+        });
+
+        // T036 / FR-007, FR-007a, SC-008. The card must not gain a claim about edit state now that
+        // the round-trip can make one false. Already true on `main`; this keeps it true.
+        describe('making no claim about edit state', () => {
+            it('should render no per-variant meta, badge or last-modified element', () => {
+                render();
+
+                expect(spectator.query(byTestId('variant-meta'))).toBeNull();
+                expect(spectator.query(byTestId('variant-edited-badge'))).toBeNull();
+                expect(spectator.query(byTestId('variant-last-modified'))).toBeNull();
+            });
+
+            it('should read identically for an edited and an unedited variant', () => {
+                // SC-008 asks that the edited and unedited cases read the same. Nothing in the
+                // model says which is which — FR-007a forbids adding anything that would — so the
+                // testable form is that two non-control rows differ only in the things that are
+                // legitimately theirs: name and numbers. An edited badge or meta line on one of
+                // them would survive this normalisation and fail.
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render();
+
+                const structureOf = (row: Element) =>
+                    (row.textContent ?? '')
+                        .replace(/\s+/g, ' ')
+                        .replace(/[\d.]+%?/g, '#')
+                        .replace(new RegExp(SECOND_VARIANT.name, 'gi'), 'NAME')
+                        .replace(new RegExp(THIRD_VARIANT.name, 'gi'), 'NAME')
+                        .trim();
+
+                const [, second, third] = rows();
+
+                expect(structureOf(third)).toBe(structureOf(second));
+            });
+
+            it('should say only where editing happens, never whether it has happened', () => {
+                render();
+
+                const cardText = spectator.query(byTestId('variants-card'))?.textContent ?? '';
+
+                expect(cardText).not.toMatch(/no content changes|unmodified|edited in/i);
+            });
         });
     });
 

@@ -1,11 +1,7 @@
+import { EXPERIMENT_RETURN_PARAM, EXPERIMENT_RETURN_PORTLET } from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 
-import {
-    buildVariantEditorLink,
-    buildPageEditorLink,
-    EXPERIMENT_RETURN_PARAM,
-    EXPERIMENT_RETURN_PORTLET
-} from './dot-experiments-uve-link.util';
+import { buildPageEditorLink, buildVariantEditorLink } from './dot-experiments-uve-link.util';
 
 import { DotExperimentConfigurePage } from '../shared/models';
 
