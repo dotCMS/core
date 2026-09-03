@@ -63,24 +63,10 @@ const link = computed(() => {
 </script>
 
 <template>
-  <figure :style="wrapperStyle">
-    <a
-      v-if="link"
-      :href="link.href"
-      :target="link.target"
-      :rel="link.rel"
-    >
-      <img
-        :alt="attrs.alt"
-        :src="attrs.src"
-        :style="imgStyle"
-      >
-    </a>
-    <img
-      v-else
-      :alt="attrs.alt"
-      :src="attrs.src"
-      :style="imgStyle"
-    >
-  </figure>
+    <figure :style="wrapperStyle">
+        <a v-if="link" :href="link.href" :target="link.target" :rel="link.rel">
+            <img :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
+        </a>
+        <img v-else :alt="attrs.alt" :src="attrs.src" :style="imgStyle" />
+    </figure>
 </template>

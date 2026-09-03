@@ -13,11 +13,8 @@ defineProps<{ link?: BlockEditorMark }>();
 </script>
 
 <template>
-  <a
-    v-if="link"
-    v-bind="link.attrs"
-  >
-    <slot />
-  </a>
-  <slot v-else />
+    <a v-if="link" v-bind="link.attrs">
+        <slot />
+    </a>
+    <slot v-else />
 </template>

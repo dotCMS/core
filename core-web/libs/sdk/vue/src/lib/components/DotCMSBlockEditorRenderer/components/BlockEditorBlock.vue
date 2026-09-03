@@ -84,93 +84,72 @@ const leafComponent = (type: string) => LEAF_BLOCKS[type];
 </script>
 
 <template>
-  <template
-    v-for="(group, groupIndex) in groups"
-    :key="groupIndex"
-  >
-    <LinkRun :link="group.link">
-      <template
-        v-for="(node, index) in group.nodes"
-        :key="`${node.type}-${index}`"
-      >
+    <template v-for="(group, groupIndex) in groups" :key="groupIndex">
+        <LinkRun :link="group.link">
+            <template v-for="(node, index) in group.nodes" :key="`${node.type}-${index}`">
         <!-- Custom renderer takes precedence for any matching block type. -->
         <component
-          :is="customRenderers[node.type]"
-          v-if="customRenderers && customRenderers[node.type]"
-          :node="node"
-        >
-          <BlockEditorBlock
-            :content="node.content"
-            :custom-renderers="customRenderers"
-            :is-dev-mode="isDevMode"
-          />
+            :is="customRenderers[node.type]"
+            v-if="customRenderers && customRenderers[node.type]"
+            :node="node">
+            <BlockEditorBlock
+                :content="node.content"
+                :custom-renderers="customRenderers"
+                :is-dev-mode="isDevMode" />
         </component>
 
         <!-- Container blocks: wrap a nested dispatcher of their children. -->
         <component
-          :is="containerComponent(node.type)"
-          v-else-if="containerComponent(node.type)"
-          :node="node"
-        >
-          <BlockEditorBlock
-            :content="node.content"
-            :custom-renderers="customRenderers"
-            :is-dev-mode="isDevMode"
-          />
+            :is="containerComponent(node.type)"
+            v-else-if="containerComponent(node.type)"
+            :node="node">
+            <BlockEditorBlock
+                :content="node.content"
+                :custom-renderers="customRenderers"
+                :is-dev-mode="isDevMode" />
         </component>
 
         <!-- Text leaf: applies marks. -->
-        <TextBlock
-          v-else-if="node.type === Blocks.TEXT"
-          :text="node.text"
-          :marks="node.marks"
-        />
+        <TextBlock v-else-if="node.type === Blocks.TEXT" :text="node.text" :marks="node.marks" />
 
         <!--
-          Legacy content only — the editor no longer creates `emoji` nodes (#37340). The node
-          stores a shortcode, never the character, so without this branch it fell through to
-          UnknownBlock and rendered nothing on the live site.
+            Legacy content only — the editor no longer creates `emoji` nodes (#37340). The node
+            stores a shortcode, never the character, so without this branch it fell through to
+            UnknownBlock and rendered nothing on the live site.
         -->
         <span v-else-if="node.type === Blocks.EMOJI">{{ emojiText(node) }}</span>
 
         <!-- Attr-driven leaf blocks. -->
         <component
-          :is="leafComponent(node.type)"
-          v-else-if="leafComponent(node.type)"
-          :node="node"
-        />
+            :is="leafComponent(node.type)"
+            v-else-if="leafComponent(node.type)"
+            :node="node" />
 
         <!-- Void blocks. -->
-        <br v-else-if="node.type === Blocks.HARDBREAK">
-        <hr v-else-if="node.type === Blocks.HORIZONTAL_RULE">
+        <br v-else-if="node.type === Blocks.HARDBREAK" />
+        <hr v-else-if="node.type === Blocks.HORIZONTAL_RULE" />
 
         <!-- Complex blocks that recurse internally. -->
         <TableRenderer
-          v-else-if="node.type === Blocks.TABLE"
-          :content="node.content ?? []"
-          :attrs="node.attrs"
-          :custom-renderers="customRenderers"
-          :is-dev-mode="isDevMode"
-        />
+            v-else-if="node.type === Blocks.TABLE"
+            :content="node.content ?? []"
+            :attrs="node.attrs"
+            :custom-renderers="customRenderers"
+            :is-dev-mode="isDevMode" />
         <GridBlock
-          v-else-if="node.type === Blocks.GRID_BLOCK"
-          :node="node"
-          :custom-renderers="customRenderers"
-          :is-dev-mode="isDevMode"
-        />
+            v-else-if="node.type === Blocks.GRID_BLOCK"
+            :node="node"
+            :custom-renderers="customRenderers"
+            :is-dev-mode="isDevMode" />
         <DotContent
-          v-else-if="node.type === Blocks.DOT_CONTENT"
-          :node="node"
-          :custom-renderers="customRenderers"
-          :is-dev-mode="isDevMode"
-        />
+            v-else-if="node.type === Blocks.DOT_CONTENT"
+            :node="node"
+            :custom-renderers="customRenderers"
+            :is-dev-mode="isDevMode" />
 
         <!-- Anything else. -->
-        <UnknownBlock
-          v-else
-          :node="node"
-        />
-      </template>
-    </LinkRun>
-  </template>
+        <UnknownBlock v-else :node="node" />
+            </template>
+        </LinkRun>
+    </template>
 </template>

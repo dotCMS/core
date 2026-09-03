@@ -32,20 +32,9 @@ const rowGridStyle = {
 </script>
 
 <template>
-  <div
-    :id="sectionId"
-    :class="rowClass"
-  >
-    <div
-      class="dotcms-row"
-      data-dot-object="row"
-      :style="rowGridStyle"
-    >
-      <Column
-        v-for="(column, i) in row.columns"
-        :key="i"
-        :column="column"
-      />
+    <div :id="sectionId" :class="rowClass">
+        <div class="dotcms-row" data-dot-object="row" :style="rowGridStyle">
+            <Column v-for="(column, i) in row.columns" :key="i" :column="column" />
+        </div>
     </div>
-  </div>
 </template>
