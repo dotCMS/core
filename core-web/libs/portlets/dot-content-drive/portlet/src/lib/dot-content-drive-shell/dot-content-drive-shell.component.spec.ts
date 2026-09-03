@@ -87,6 +87,7 @@ import {
     DotContentDriveStatus
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
@@ -189,7 +190,7 @@ describe('DotContentDriveShellComponent', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [DotContentDriveStore, provideContentDriveFilterFacade()],
         detectChanges: false
     });
 
@@ -3168,7 +3169,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [DotContentDriveStore, provideContentDriveFilterFacade()],
         detectChanges: false
     });
 

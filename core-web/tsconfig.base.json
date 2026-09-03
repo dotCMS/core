@@ -96,6 +96,7 @@
             "@dotcms/types": ["libs/sdk/types/src/index.ts"],
             "@dotcms/types/internal": ["libs/sdk/types/src/internal.ts"],
             "@dotcms/ui": ["libs/ui/src/index.ts"],
+            "@dotcms/ui/testing": ["libs/ui/src/testing.ts"],
             "@dotcms/utils": ["libs/utils/src"],
             "@dotcms/utils-testing": ["libs/utils-testing/src/index.ts"],
             "@dotcms/utils/*": ["libs/utils/src/*"],

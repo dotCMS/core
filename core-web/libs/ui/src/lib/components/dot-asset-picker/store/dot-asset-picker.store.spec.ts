@@ -241,7 +241,11 @@ describe('DotAssetPickerStore', () => {
             store.clearFilters();
 
             expect(store.$request().mimeTypes).toEqual(['image/*']);
-            expect(store.$request().language).toBeUndefined();
+            // BEHAVIOR CHANGE (FR-009 / research R6a): clearing used to drop the seeded locale,
+            // leaving an Image field's editor in an unfiltered, unlocalized library. It now lands
+            // back on what the caller seeded. The mimetype half of this test is unaffected — that
+            // restriction was never a filter and still survives every clear.
+            expect(store.$request().language).toEqual(['1']);
         });
     });
 
@@ -1391,6 +1395,249 @@ describe('DotAssetPickerStore', () => {
                 expect(siteService.getSites).not.toHaveBeenCalled();
                 expect(folderService.searchFolders).not.toHaveBeenCalled();
             });
+        });
+    });
+
+    // ── Foundational (T009–T011): the two pre-existing store defects research found, plus the
+    //    "is there anything worth clearing" signal the shared Clear all button needs.
+    //    See specs/37174-shared-picker-toolbar/research.md R6a / R6b.
+
+    describe('clearFilters restores the caller seeds (R6a)', () => {
+        // The defect: `clearFilters` sets `filters: {}` while `initPicker` seeds `languageId` and
+        // `baseType` from the config. So "Clear all" strands an Image field's editor in an
+        // unfiltered, unlocalized library — which is what FR-009 forbids.
+        it('should restore the seeded locale rather than dropping it', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('languageId')).toEqual(['1']);
+        });
+
+        it('should restore the seeded base types rather than dropping them', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('baseType')).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should seed nothing the caller did not ask for', () => {
+            // A File field pre-selects no base type, only bounds them. Clearing must not invent one.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('baseType')).toBeUndefined();
+        });
+
+        it('should drop a filter the editor added', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('contentType')).toBeUndefined();
+        });
+
+        it('should clear the search term (FR-009a)', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.getFilterValue('title')).toBeUndefined();
+        });
+
+        it('should leave the browsed folder alone (FR-009b)', () => {
+            // The location is not a filter. An editor who reached the root by searching stays
+            // there rather than being teleported back to where the picker opened.
+            store.initPicker({ ...FILE_FIELD_CONFIG, path: '/images/' });
+            store.setSearch('logo');
+
+            store.clearFilters();
+
+            expect(store.path()).toBeUndefined();
+        });
+
+        it('should keep the mimetype restriction, which was never a filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.clearFilters();
+
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+        });
+
+        it('should land on the same visible state a freshly opened picker shows', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            const opening = JSON.stringify(store.filters());
+
+            store.patchFilters({ title: 'logo', contentType: ['fileAsset'] });
+            store.clearFilters();
+
+            expect(JSON.stringify(store.filters())).toBe(opening);
+        });
+    });
+
+    describe('the filter bag admits the shared chips keys (R6b)', () => {
+        // The defect: `DotAssetPickerFilters` declares four keys and nothing else, so it cannot
+        // hold the shared-assets toggle, a Status selection, or the dynamic per-field chips.
+        beforeEach(() => store.initPicker(FILE_FIELD_CONFIG));
+
+        it('should hold the shared-assets toggle', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.getFilterValue('sharedAssets')).toBe('false');
+        });
+
+        it('should hold a Status selection', () => {
+            store.patchFilters({ status: ['ARCHIVED', 'LOCKED'] });
+
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED', 'LOCKED']);
+        });
+
+        it('should hold a dynamic user-searchable field key', () => {
+            store.patchFilters({ us_myField: 'some value' });
+
+            expect(store.getFilterValue('us_myField')).toBe('some value');
+        });
+
+        it('should keep the named keys working alongside the dynamic ones', () => {
+            store.patchFilters({ title: 'logo', sharedAssets: 'false', us_alt: 'x' });
+
+            expect(store.getFilterValue('title')).toBe('logo');
+            expect(store.getFilterValue('sharedAssets')).toBe('false');
+            expect(store.getFilterValue('us_alt')).toBe('x');
+        });
+
+        it('should report an unset key as undefined, not as an empty value', () => {
+            expect(store.getFilterValue('sharedAssets')).toBeUndefined();
+        });
+    });
+
+    describe('$hasNonDefaultFilters', () => {
+        // Drives the shared Clear all button. Counting keys would keep it on screen permanently:
+        // the seeds are always present, so there is always something in the bag.
+        it('should be false on a freshly opened picker despite the seeds', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should be true once the editor adds a filter', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.patchFilters({ contentType: ['fileAsset'] });
+
+            expect(store.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('should be true for a search term alone, matching Content Drive', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            store.patchFilters({ title: 'logo' });
+
+            expect(store.$hasNonDefaultFilters()).toBe(true);
+        });
+
+        it('should be false when a seeded value is re-selected by hand', () => {
+            // Indistinguishable from the seeded state, and clearing it would re-select the same
+            // thing — so there is nothing worth offering to clear.
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            store.patchFilters({ languageId: ['1'] });
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should be false again after clearing', () => {
+            store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({ title: 'logo' });
+
+            store.clearFilters();
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+
+        it('should not count the mimetype restriction as something to clear', () => {
+            // Otherwise an Image field would offer Clear all the moment it opened.
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.$hasNonDefaultFilters()).toBe(false);
+        });
+    });
+
+    // ── US1 (T023–T025): the Shared Assets chip has to drive a real filter, not a display toggle.
+    //    The request used to hardcode `includeSystemHost: true`.
+
+    describe('shared assets filter drives includeSystemHost', () => {
+        beforeEach(() => store.initPicker(IMAGE_FIELD_CONFIG));
+
+        it('should include shared assets when the filter is absent, preserving the current behaviour', () => {
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should include shared assets when the filter explicitly says so', () => {
+            store.patchFilters({ sharedAssets: 'true' });
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should exclude shared assets only when the filter explicitly disables them', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().includeSystemHost).toBe(false);
+        });
+
+        it('should treat any unrecognised value as on rather than off', () => {
+            // Off is opt-in: a value that predates the toggle, or a typo in restored state, must
+            // not silently hide half the library.
+            store.patchFilters({ sharedAssets: 'nonsense' });
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should come back on after the editor clears every filter', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            store.clearFilters();
+
+            expect(store.$request().includeSystemHost).toBe(true);
+        });
+
+        it('should return to the first page when toggled', () => {
+            store.setPagination({ ...store.pagination(), page: 3 });
+
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.pagination().page).toBe(1);
+        });
+
+        it('should discard the cursor bookmarks when toggled', () => {
+            // A cursor from the wider result set would page into rows the narrower query never had.
+            store.setPagination({ ...store.pagination(), page: 3 });
+
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().contentCursor).toBe(0);
+        });
+
+        it('should leave the caller restrictions untouched', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            expect(store.$request().mimeTypes).toEqual(['image/*']);
+            expect(store.$request().baseTypes).toEqual(ASSET_BASE_TYPES);
+        });
+
+        it('should not survive a close and reopen', () => {
+            store.patchFilters({ sharedAssets: 'false' });
+
+            store.initPicker(IMAGE_FIELD_CONFIG);
+
+            expect(store.getFilterValue('sharedAssets')).toBeUndefined();
+            expect(store.$request().includeSystemHost).toBe(true);
         });
     });
 });

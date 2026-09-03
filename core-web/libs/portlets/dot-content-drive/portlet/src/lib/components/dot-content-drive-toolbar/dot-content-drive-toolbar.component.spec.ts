@@ -24,6 +24,7 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import { DOT_FILTER_FACADE, DotFilterFacade } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
@@ -64,6 +65,18 @@ describe('DotContentDriveToolbarComponent', () => {
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
+            // The shared filter chips reach the store through this seam rather than injecting it,
+            // so the toolbar's graph needs it even though the toolbar itself does not inject it.
+            {
+                provide: DOT_FILTER_FACADE,
+                useValue: {
+                    getFilterValue: jest.fn(() => undefined),
+                    patchFilters: jest.fn(),
+                    removeFilter: jest.fn(),
+                    clearFilters: jest.fn(),
+                    $hasNonDefaultFilters: signal(false)
+                } satisfies DotFilterFacade
+            },
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
                 // The toolbar now renders from the visual (panel-aware) computed; reusing the same

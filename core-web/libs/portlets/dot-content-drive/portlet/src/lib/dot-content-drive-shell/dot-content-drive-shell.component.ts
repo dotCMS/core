@@ -90,6 +90,7 @@ import {
     DotContentDriveUploadSelectorPayload
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
@@ -117,6 +118,10 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
     ],
     providers: [
         DotContentDriveStore,
+        // Exposes the store to the shared filter chips through a store-agnostic seam, so a chip
+        // written once serves this toolbar and the AssetPicker's. Must sit alongside the store, not
+        // in `root`: the facade closes over whichever store instance this shell owns.
+        provideContentDriveFilterFacade(),
         // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
         // the side-panel feature flag; shared with the child components in this shell's subtree.
         DotContentDriveNavigationService,

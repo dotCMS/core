@@ -48,6 +48,7 @@ import {
     WARNING_MESSAGE_LIFE
 } from './constants';
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
+import { provideAssetPickerFilterFacade } from './store/asset-picker-filter-facade';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
@@ -94,7 +95,14 @@ import {
     // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and
     // `DotEventsSocket`, and that host has no `Router` at all. The store reports failures as state
     // instead and this component toasts them — see the `requestError` effect.
-    providers: [DotAssetPickerStore, MessageService, DotContentTypeService],
+    providers: [
+        DotAssetPickerStore,
+        // Exposes this dialog's store to the shared filter chips. Alongside the store, never in
+        // `root`: two custom fields can each hold an open picker.
+        provideAssetPickerFilterFacade(),
+        MessageService,
+        DotContentTypeService
+    ],
     imports: [
         ButtonModule,
         DialogModule,

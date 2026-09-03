@@ -10,6 +10,7 @@ import {
     DotContentTypeFilterComponent,
     DotContentTypeFilterSelection
 } from '../../../dot-content-type-filter/dot-content-type-filter.component';
+import { DotSharedAssetsFilterComponent } from '../../../dot-filter-bar/chips/dot-shared-assets-filter/dot-shared-assets-filter.component';
 import { DotLanguageFilterComponent } from '../../../dot-language-filter/dot-language-filter.component';
 import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
 import { DotUploadButtonComponent } from '../../../dot-upload-button/dot-upload-button.component';
@@ -28,6 +29,7 @@ import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
     changeDetection: ChangeDetectionStrategy.OnPush,
     imports: [
         DotSearchInputComponent,
+        DotSharedAssetsFilterComponent,
         DotContentTypeFilterComponent,
         DotLanguageFilterComponent,
         DotUploadButtonComponent

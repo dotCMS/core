@@ -23,14 +23,17 @@ import {
     LOAD_MORE_NODE_TYPE
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DotMessagePipe, DotUploadButtonComponent } from '@dotcms/ui';
+import {
+    DotMessagePipe,
+    DotSharedAssetsFilterComponent,
+    DotUploadButtonComponent
+} from '@dotcms/ui';
 
 import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
 import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
 import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
 import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
-import { DotContentDriveSharedAssetsFilterComponent } from './components/dot-content-drive-shared-assets-filter/dot-content-drive-shared-assets-filter.component';
 import { DotContentDriveStatusFilterComponent } from './components/dot-content-drive-status-filter/dot-content-drive-status-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
@@ -140,7 +143,7 @@ interface ToolbarAnimationState {
         DotContentDriveWorkflowFilterComponent,
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
-        DotContentDriveSharedAssetsFilterComponent,
+        DotSharedAssetsFilterComponent,
         DotContentDriveStatusFilterComponent,
         TooltipModule
     ],

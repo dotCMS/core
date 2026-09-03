@@ -1,8 +1,15 @@
-import { patchState, signalStore, withHooks, withMethods, withState } from '@ngrx/signals';
+import {
+    patchState,
+    signalStore,
+    withComputed,
+    withHooks,
+    withMethods,
+    withState
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
 
-import { inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { catchError, switchMap, take, tap } from 'rxjs/operators';
 
@@ -17,6 +24,7 @@ import {
 import { withAssetBrowse } from './features/with-asset-browse.feature';
 import { withAssetFolderTree } from './features/with-asset-folder-tree.feature';
 import { withAssetSelection } from './features/with-asset-selection.feature';
+import { buildPickerFilterDefaults, hasNonDefaultPickerFilters } from './filter-defaults';
 import {
     DotAssetPickerConfig,
     DotAssetPickerFilters,
@@ -57,6 +65,17 @@ export const DotAssetPickerStore = signalStore(
     withAssetSelection(),
     withAssetBrowse(),
     withAssetFolderTree(),
+    withComputed(({ filters, config }) => ({
+        /**
+         * Whether anything differs from what the picker opened with, which is what drives the
+         * shared toolbar's "Clear all".
+         *
+         * Counting filter keys would keep the button on screen permanently: the caller's seeds are
+         * always present, so there is always something in the bag. What matters is whether anything
+         * is worth clearing.
+         */
+        $hasNonDefaultFilters: computed(() => hasNonDefaultPickerFilters(filters(), config()))
+    })),
     withMethods((store, siteService = inject(DotSiteService)) => {
         /**
          * Resolves the site to open on when the caller did not name one.
@@ -118,10 +137,10 @@ export const DotAssetPickerStore = signalStore(
                         hostname: entrySite.hostname
                     },
                     path: config.path,
-                    filters: {
-                        ...(config.languageId ? { languageId: [config.languageId] } : {}),
-                        ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {})
-                    },
+                    // Shared with `clearFilters`, so a clear lands on exactly what a fresh open
+                    // shows. Keeping the two in one function is what stops one path from quietly
+                    // missing a seed.
+                    filters: buildPickerFilterDefaults(config),
                     pagination: DEFAULT_ASSET_PICKER_PAGINATION,
                     // Seeded, not pinned: `sortByDesc` sets the direction the picker opens with,
                     // and the user can still re-sort from the table header afterwards.
@@ -233,7 +252,7 @@ export const DotAssetPickerStore = signalStore(
                 });
             },
 
-            removeFilter: (filter: keyof DotAssetPickerFilters): void => {
+            removeFilter: (filter: string): void => {
                 const filters = { ...store.filters() };
 
                 if (!(filter in filters)) {
@@ -245,11 +264,33 @@ export const DotAssetPickerStore = signalStore(
             },
 
             /**
-             * Clears every filter the editor can see. The host's mimetype restriction survives —
-             * it is not a filter, it is part of what the picker is.
+             * One filter's value, or `undefined` when it is not set.
+             *
+             * The read half of what a shared filter chip needs. `undefined` and `[]` are different
+             * states and both are load-bearing: the first is "no filter", the second is "filtered
+             * to nothing selected".
+             */
+            getFilterValue: (filter: string): string | string[] | undefined =>
+                store.filters()[filter],
+
+            /**
+             * Returns the filters to what the picker opened with — the caller's seeded locale and
+             * base types — not to an empty set.
+             *
+             * It used to clear to `{}`, which dropped the seeds and stranded an Image field's editor
+             * in an unfiltered, unlocalized library. `buildPickerFilterDefaults` is shared with
+             * `initPicker` so the two paths cannot disagree about what "default" means.
+             *
+             * Two things deliberately survive a clear: the host's mimetype restriction, which is
+             * not a filter but part of what the picker *is*, and the browsed folder, which is not a
+             * filter either — an editor who reached the site root by searching stays there rather
+             * than being moved somewhere they did not ask for.
              */
             clearFilters: (): void => {
-                patchState(store, { filters: {}, ...resetPaging() });
+                patchState(store, {
+                    filters: buildPickerFilterDefaults(store.config()),
+                    ...resetPaging()
+                });
             },
 
             /**

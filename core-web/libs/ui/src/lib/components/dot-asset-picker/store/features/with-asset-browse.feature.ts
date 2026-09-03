@@ -20,6 +20,10 @@ import {
     DotContentDriveSearchResponse
 } from '@dotcms/dotcms-models';
 
+import {
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY
+} from '../../../dot-filter-bar/chips/dot-shared-assets-filter/constants';
 import { SYSTEM_HOST_ID } from '../../../dot-folder-tree/constants';
 import {
     ASSET_PICKER_ERROR_KEYS,
@@ -133,7 +137,12 @@ export function withAssetBrowse() {
 
                     return {
                         assetPath: `//${site?.hostname}${path() || '/'}`,
-                        includeSystemHost: true,
+                        // Off only when explicitly turned off. This used to be pinned `true` with
+                        // no way for the editor to change it — the chip that drives it now is the
+                        // same one Content Drive uses, and reads an absent key as on.
+                        includeSystemHost:
+                            currentFilters?.[SHARED_ASSETS_FILTER_KEY] !==
+                            SHARED_ASSETS_DISABLED_VALUE,
                         filters: { text: currentFilters?.title || '', filterFolders: true },
                         language: currentFilters?.languageId,
                         contentTypes: currentFilters?.contentType,

@@ -12,6 +12,10 @@
 </div>
 
 <div class="mt-2 flex w-full flex-wrap items-center gap-2">
+    <!-- Leads the row, as it does in Content Drive: it scopes *which* assets are in play at all,
+         so it reads as a precondition for the filters that narrow within them. -->
+    <dot-shared-assets-filter />
+
     <dot-content-type-filter
         [selectedBaseTypes]="$baseTypes()"
         [selectedContentTypes]="$contentTypes()"

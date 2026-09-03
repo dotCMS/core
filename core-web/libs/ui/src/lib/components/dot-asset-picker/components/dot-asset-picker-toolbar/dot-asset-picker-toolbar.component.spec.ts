@@ -1,4 +1,4 @@
-import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
@@ -11,6 +11,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotAssetPickerToolbarComponent } from './dot-asset-picker-toolbar.component';
 
 import { DotContentTypeFilterComponent } from '../../../dot-content-type-filter/dot-content-type-filter.component';
+import { isCanonicalChipOrder } from '../../../dot-filter-bar/constants';
+import { DOT_FILTER_FACADE, DotFilterFacade } from '../../../dot-filter-bar/filter-facade.token';
 import { buildAssetPickerConfig } from '../../asset-picker-config';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from '../../store/models';
@@ -29,7 +31,10 @@ const createMockStore = (config: DotAssetPickerConfig) => ({
     selectedNode: signal(undefined),
     setSearch: jest.fn(),
     patchFilters: jest.fn(),
-    removeFilter: jest.fn()
+    removeFilter: jest.fn(),
+    clearFilters: jest.fn(),
+    getFilterValue: jest.fn(() => undefined),
+    $hasNonDefaultFilters: signal(false)
 });
 
 describe('DotAssetPickerToolbarComponent', () => {
@@ -50,6 +55,17 @@ describe('DotAssetPickerToolbarComponent', () => {
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
+            },
+            // The shared filter chips reach the store through this seam rather than injecting it.
+            {
+                provide: DOT_FILTER_FACADE,
+                useValue: {
+                    getFilterValue: jest.fn(() => undefined),
+                    patchFilters: jest.fn(),
+                    removeFilter: jest.fn(),
+                    clearFilters: jest.fn(),
+                    $hasNonDefaultFilters: signal(false)
+                } satisfies DotFilterFacade
             }
         ],
         detectChanges: false
@@ -104,6 +120,34 @@ describe('DotAssetPickerToolbarComponent', () => {
             setup({ site: SITE });
 
             expect(offeredBaseTypes()).toBeNull();
+        });
+    });
+
+    // ── US1 (T026): the Shared Assets chip reaches the picker's toolbar.
+
+    describe('shared assets chip', () => {
+        beforeEach(() => setup(buildAssetPickerConfig({ mode: 'image', site: SITE })));
+
+        it('should render the shared assets chip', () => {
+            expect(spectator.query(byTestId('shared-assets-filter-chip'))).toBeTruthy();
+        });
+
+        it('should render it as the first chip in the row', () => {
+            // FR-007: the picker presents its filters in the same order Content Drive does, and
+            // Shared Assets leads because it scopes which assets are in play at all.
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip')
+            );
+
+            expect(chips[0]).toBe('sharedAssets');
+        });
+
+        it('should present its chips in the canonical order', () => {
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip') as string
+            );
+
+            expect(isCanonicalChipOrder(chips)).toBe(true);
         });
     });
 });

@@ -127,13 +127,15 @@ export const USER_SEARCHABLE_PREFIX = 'us.';
  * Like `languageId`, it is always seeded rather than written only when it differs from the default,
  * so the state that is applied is always visible in the URL instead of being implied by absence.
  */
-export const SHARED_ASSETS_FILTER_KEY = 'sharedAssets';
-
-/** Shows SYSTEM_HOST (shared) assets. The seeded default. */
-export const SHARED_ASSETS_ENABLED_VALUE = 'true';
-
-/** Hides SYSTEM_HOST (shared) assets. */
-export const SHARED_ASSETS_DISABLED_VALUE = 'false';
+// Re-exported rather than redefined: the chip that writes this key now lives in `@dotcms/ui` and
+// is shared with the AssetPicker, so one definition serves both. Kept exported from here so the
+// portlet's existing importers — the URL encode/decode pair, the back/forward guard, the legacy
+// `CD_` round-trip and `withFilterDefaults` — are untouched.
+export {
+    SHARED_ASSETS_DISABLED_VALUE,
+    SHARED_ASSETS_ENABLED_VALUE,
+    SHARED_ASSETS_FILTER_KEY
+} from '@dotcms/ui';
 
 /**
  * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
