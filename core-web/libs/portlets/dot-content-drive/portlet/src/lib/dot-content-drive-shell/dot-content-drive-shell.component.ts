@@ -1131,10 +1131,12 @@ export class DotContentDriveShellComponent {
         // Reports on the toolbar indicator, not as a notification announcing a start (FR-007,
         // FR-008). The two "moving …" toasts this replaces said only that something had begun,
         // which the indicator says better and without stacking up over the outcome that follows.
-        this.#store.setActionExecution({
+        const runId = this.#store.startExternalRun({
+            operation: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
             actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
             total: assetContentletsCount,
-            targetLabel: folderName
+            targetLabel: folderName,
+            targets: dragItemsInodes
         });
 
         this.#dotWorkflowActionsFireService
@@ -1154,7 +1156,7 @@ export class DotContentDriveShellComponent {
             })
             .pipe(
                 catchError(() => {
-                    this.#store.setActionExecution(undefined);
+                    this.#store.endExternalRun(runId);
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
@@ -1168,7 +1170,7 @@ export class DotContentDriveShellComponent {
                 })
             )
             .subscribe(({ successCount, fails }) => {
-                this.#store.setActionExecution(undefined);
+                this.#store.endExternalRun(runId);
 
                 if (successCount > 0) {
                     this.#messageService.add({

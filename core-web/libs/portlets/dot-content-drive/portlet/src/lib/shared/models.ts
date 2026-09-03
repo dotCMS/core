@@ -164,6 +164,26 @@ export interface DotContentDriveActionExecution {
 }
 
 /**
+ * One run held in the store's registry.
+ *
+ * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
+ * acting on. `runId` is allocated by the client at submission rather than taken from a server
+ * handle: the window a double-click has to fire twice is exactly the window before any handle has
+ * come back, so a server-side id would leave it unguarded.
+ */
+export interface DotContentDriveRun extends DotContentDriveActionExecution {
+    runId: string;
+    /**
+     * Which operation this is. Paired with {@link targets} it forms the repeat-fire guard, which is
+     * scoped to *this operation over these items* rather than to the portlet as a whole (FR-016) —
+     * so an upload running for minutes no longer blocks locking a row.
+     */
+    operation: string;
+    /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
+    targets: string[];
+}
+
+/**
  * Outcome of a finished run, published for the shell to present as a toast.
  *
  * Counts come from the response, never from the number of items submitted: both endpoints answer 200

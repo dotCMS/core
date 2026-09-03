@@ -139,7 +139,11 @@ describe('withActionExecution', () => {
 
             store.executeQuickAction('lock-id', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
+            // `objectContaining`: a run now also carries its id, operation and targets. The two
+            // fields the indicator reads are what this pins.
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Lock', total: 2 })
+            );
         });
 
         it('should report the counts the server returned, not the number of inodes submitted', () => {
@@ -166,15 +170,54 @@ describe('withActionExecution', () => {
             expect(store.actionExecution()).toBeUndefined();
         });
 
-        it('should refuse a second run while one is already in flight', () => {
+        it('should refuse the same action fired again over the same item', () => {
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+
+            expect(fireDefaultAction).toHaveBeenCalledTimes(1);
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Lock', total: 1 })
+            );
+        });
+
+        it('should allow a different action while one is in flight', () => {
+            // **Deliberate change.** The guard used to be global, so any run blocked every other.
+            // That was tolerable when actions took a second and unacceptable once one of them is an
+            // upload running for minutes (FR-015). It is now scoped to this operation over these
+            // items (FR-016).
             build();
             fireDefaultAction.mockReturnValue(new Subject());
 
             store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
             store.executeQuickAction('unlock-id', 'Unlock', ['inode-2']);
 
-            expect(fireDefaultAction).toHaveBeenCalledTimes(1);
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 1 });
+            expect(fireDefaultAction).toHaveBeenCalledTimes(2);
+            expect(store.activeRunCount()).toBe(2);
+        });
+
+        it('should name no single run while several are in flight', () => {
+            // Naming one of several arbitrarily would be worse than naming none; the indicator
+            // falls back to a count (FR-017).
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+            store.executeQuickAction('unlock-id', 'Unlock', ['inode-2']);
+
+            expect(store.actionExecution()).toBeUndefined();
+        });
+
+        it('should expose the items every in-flight run is touching', () => {
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1', 'inode-2']);
+            store.executeQuickAction('unlock-id', 'Unlock', ['inode-3']);
+
+            expect(store.busyRows()).toEqual(['inode-1', 'inode-2', 'inode-3']);
         });
 
         it('should do nothing when there are no inodes', () => {
@@ -228,12 +271,12 @@ describe('withActionExecution', () => {
             });
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same workflow action fired again over the same items', () => {
             build();
             bulkFire.mockReturnValue(new Subject());
 
             store.executeWorkflowAction('wf-1', 'Publish', ['a']);
-            store.executeWorkflowAction('wf-2', 'Archive', ['b']);
+            store.executeWorkflowAction('wf-1', 'Publish', ['a']);
 
             expect(bulkFire).toHaveBeenCalledTimes(1);
         });
@@ -372,8 +415,11 @@ describe('withActionExecution', () => {
 
             store.reportRefreshCompleted('Refresh', completed());
 
-            // Clearing it here would hide that action's indicator and reopen its replay guard.
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 1 });
+            // Was a real hazard when there was one slot to wipe. Keying runs by id removes it by
+            // construction, so this now guards the property rather than the workaround.
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Lock', total: 1 })
+            );
         });
 
         it('should settle only once for the same run', () => {

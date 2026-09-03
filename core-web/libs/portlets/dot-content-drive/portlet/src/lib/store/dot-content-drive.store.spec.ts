@@ -1870,7 +1870,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1882,7 +1882,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
             expect(store.actionExecutionResult()).toBeDefined();
         });
 
@@ -1931,7 +1931,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeQuickAction('LOCK', 'Lock', ['inode-2']);
 
             const lockInFlight = store.actionExecution();
-            expect(lockInFlight).toEqual({ actionName: 'Lock', total: 1 });
+            expect(lockInFlight).toEqual(expect.objectContaining({ actionName: 'Lock', total: 1 }));
 
             store.reportRefreshCompleted('Refresh', {
                 jobId: 'job-1',
@@ -1943,7 +1943,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 0
             });
 
-            expect(store.actionExecution()).toBe(lockInFlight);
+            expect(store.actionExecution()).toEqual(lockInFlight);
         });
 
         it('should report an unusable outcome rather than settling on it', () => {
@@ -2048,7 +2048,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Lock', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Lock', total: 2 })
+            );
         });
 
         it('should fire the default action with the given inodes', () => {
@@ -2302,16 +2304,29 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Add to Bundle', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Add to Bundle', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being queued again while in flight', () => {
+            addToBundleService.addToBundle.mockReturnValue(NEVER);
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
+
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should allow different items to be queued while one run is in flight', () => {
+            // **Deliberate change.** The guard is now scoped to this operation over *these* items
+            // (FR-016), so bundling one asset no longer blocks bundling a different one.
             addToBundleService.addToBundle.mockReturnValue(NEVER);
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-2']);
 
-            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(1);
+            expect(addToBundleService.addToBundle).toHaveBeenCalledTimes(2);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2457,14 +2472,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecution()).toEqual({ actionName: 'Push Publish', total: 2 });
+            expect(store.actionExecution()).toEqual(
+                expect.objectContaining({ actionName: 'Push Publish', total: 2 })
+            );
         });
 
-        it('should refuse a second run while one is in flight', () => {
+        it('should refuse the same items being pushed again while in flight', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(NEVER);
             store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
-            store.executePushPublish('Push Publish', ['id-2'], SETTINGS);
+            store.executePushPublish('Push Publish', ['id-1'], SETTINGS);
 
             expect(pushPublishService.pushPublishAssets).toHaveBeenCalledTimes(1);
         });

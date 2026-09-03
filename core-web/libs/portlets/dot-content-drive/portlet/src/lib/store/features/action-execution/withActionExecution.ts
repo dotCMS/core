@@ -2,6 +2,7 @@ import {
     patchState,
     signalStoreFeature,
     type,
+    withComputed,
     withHooks,
     withMethods,
     withState
@@ -9,7 +10,7 @@ import {
 import { EMPTY, Observable } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { DestroyRef, inject } from '@angular/core';
+import { computed, DestroyRef, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { catchError, take } from 'rxjs/operators';
@@ -35,12 +36,18 @@ import {
 import {
     DotContentDriveActionExecution,
     DotContentDriveActionExecutionResult,
+    DotContentDriveRun,
     DotContentDriveState
 } from '../../../shared/models';
 
 interface WithActionExecutionState {
-    /** The action currently being applied, or `undefined` when nothing is running. */
-    actionExecution?: DotContentDriveActionExecution;
+    /**
+     * Every run currently in flight, keyed by its client-allocated id.
+     *
+     * Was a single slot, which made one long operation block every other one. An upload runs for
+     * minutes, so "one at a time" stopped being a reasonable guard and became a freeze (FR-015).
+     */
+    runs: Record<string, DotContentDriveRun>;
     /**
      * Outcome of the last finished execution, awaiting presentation. The shell consumes this and
      * calls {@link clearActionExecutionResult}; the store never shows the toast itself.
@@ -80,10 +87,38 @@ export function withActionExecution() {
             state: type<DotContentDriveState>()
         },
         withState<WithActionExecutionState>({
-            actionExecution: undefined,
+            runs: {},
             actionExecutionResult: undefined,
             refreshJobIds: []
         }),
+        withComputed(({ runs }) => ({
+            /** Runs in flight, in insertion order. */
+            activeRuns: computed(() => Object.values(runs())),
+            /**
+             * The run the indicator names when there is exactly one.
+             *
+             * Kept as a single value so every existing consumer reads unchanged; with several runs
+             * it is `undefined` and the indicator falls back to a count (FR-017). Naming one of
+             * several arbitrarily would be worse than naming none.
+             */
+            actionExecution: computed<DotContentDriveActionExecution | undefined>(() => {
+                const active = Object.values(runs());
+
+                return active.length === 1 ? active[0] : undefined;
+            }),
+            /** How many runs are in flight; what the indicator shows once naming one is not enough. */
+            activeRunCount: computed(() => Object.keys(runs()).length),
+            /**
+             * Every inode any in-flight run is acting on.
+             *
+             * Keyed by inode, not identifier: the language filter is multi-select, so one identifier
+             * can legitimately occupy several rows and marking by identifier would mark siblings
+             * that nothing is happening to.
+             */
+            busyRows: computed(() =>
+                Object.values(runs()).flatMap((run) => run.targets)
+            )
+        })),
         withMethods(
             (
                 store,
@@ -104,11 +139,53 @@ export function withActionExecution() {
                  * already sets `LOADING` and clears the selection itself. The shell reloads when it
                  * consumes the result, which is where the rest of the post-run UI work already lives.
                  */
-                const onSettled = (result: DotContentDriveActionExecutionResult): void => {
+                /**
+                 * Registers a run and returns its id.
+                 *
+                 * The id is allocated here rather than taken from a server handle because the window
+                 * a double-click has to fire twice is precisely the window before any handle exists.
+                 */
+                const startRun = (run: Omit<DotContentDriveRun, 'runId'>): string => {
+                    const runId = `${run.operation}-${Date.now()}-${Math.random()
+                        .toString(36)
+                        .slice(2, 8)}`;
+
                     patchState(store, {
-                        actionExecution: undefined,
-                        actionExecutionResult: result
+                        runs: { ...store.runs(), [runId]: { ...run, runId } },
+                        actionExecutionResult: undefined
                     });
+
+                    return runId;
+                };
+
+                /** Removes a run from the registry. Safe to call for an id already gone. */
+                const endRun = (runId: string): void => {
+                    const remaining = { ...store.runs() };
+                    delete remaining[runId];
+
+                    patchState(store, { runs: remaining });
+                };
+
+                /**
+                 * Whether this operation is already running over any of these items.
+                 *
+                 * Scoped to the operation *and* its targets (FR-016). Firing Publish twice on the
+                 * same row is still refused; firing Lock while an upload runs is not, which is the
+                 * whole point of the change.
+                 */
+                const isRunning = (operation: string, targets: string[]): boolean =>
+                    Object.values(store.runs()).some(
+                        (run) =>
+                            run.operation === operation &&
+                            run.targets.some((target) => targets.includes(target))
+                    );
+
+                const onSettled = (
+                    runId: string,
+                    result: DotContentDriveActionExecutionResult
+                ): void => {
+                    endRun(runId);
+                    patchState(store, { actionExecutionResult: result });
                 };
 
                 /**
@@ -123,8 +200,8 @@ export function withActionExecution() {
                  * reassuring direction. Publishing no result at all leaves the user with an error
                  * rather than a fabricated success.
                  */
-                const onUnknownOutcome = (): void => {
-                    patchState(store, { actionExecution: undefined });
+                const onUnknownOutcome = (runId: string): void => {
+                    endRun(runId);
                     httpErrorManagerService.handle(
                         new HttpErrorResponse({
                             status: 500,
@@ -157,20 +234,22 @@ export function withActionExecution() {
                     request: () => Observable<DotAjaxActionResponseView>,
                     noResultMessage: string
                 ): void => {
-                    if (!identifiers.length || store.actionExecution()) {
+                    if (!identifiers.length || isRunning(actionName, identifiers)) {
                         return;
                     }
 
-                    patchState(store, {
-                        actionExecution: { actionName, total: identifiers.length },
-                        actionExecutionResult: undefined
+                    const runId = startRun({
+                        operation: actionName,
+                        actionName,
+                        total: identifiers.length,
+                        targets: identifiers
                     });
 
                     request()
                         .pipe(
                             take(1),
                             catchError((error) => {
-                                patchState(store, { actionExecution: undefined });
+                                endRun(runId);
                                 httpErrorManagerService.handle(error);
 
                                 return EMPTY;
@@ -185,7 +264,7 @@ export function withActionExecution() {
                             // of everything on what may well have worked. Neither is a result worth
                             // showing, so both go to the error handler instead.
                             if (typeof result?.errors !== 'number') {
-                                patchState(store, { actionExecution: undefined });
+                                endRun(runId);
                                 httpErrorManagerService.handle(
                                     new HttpErrorResponse({
                                         status: 500,
@@ -199,7 +278,7 @@ export function withActionExecution() {
                                 return;
                             }
 
-                            onSettled({
+                            onSettled(runId, {
                                 actionName,
                                 // `total` counts everything queued, failures included, so the
                                 // successes are what is left after removing them.
@@ -223,13 +302,15 @@ export function withActionExecution() {
                         actionName: string,
                         inodes: string[]
                     ): void => {
-                        if (!inodes.length || store.actionExecution()) {
+                        if (!inodes.length || isRunning(actionId, inodes)) {
                             return;
                         }
 
-                        patchState(store, {
-                            actionExecution: { actionName, total: inodes.length },
-                            actionExecutionResult: undefined
+                        const runId = startRun({
+                            operation: actionId,
+                            actionName,
+                            total: inodes.length,
+                            targets: inodes
                         });
 
                         workflowActionsFireService
@@ -237,7 +318,7 @@ export function withActionExecution() {
                             .pipe(
                                 take(1),
                                 catchError((error) => {
-                                    patchState(store, { actionExecution: undefined });
+                                    endRun(runId);
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
@@ -247,12 +328,12 @@ export function withActionExecution() {
                                 const summary = result?.summary;
 
                                 if (!summary) {
-                                    onUnknownOutcome();
+                                    onUnknownOutcome(runId);
 
                                     return;
                                 }
 
-                                onSettled({
+                                onSettled(runId, {
                                     actionName,
                                     successCount: summary.successCount,
                                     skippedCount: 0,
@@ -388,10 +469,10 @@ export function withActionExecution() {
                             return;
                         }
 
-                        // Deliberately not onSettled: that clears actionExecution, which by now may
-                        // belong to a different action the user fired *after* this reindex started.
-                        // Wiping it hid that action's indicator and reopened its replay guard, so it
-                        // could be fired a second time over rows already being changed.
+                        // Still not onSettled, but for a smaller reason now: a reindex never
+                        // registered a run, so there is nothing to settle. Before the registry this
+                        // also had to avoid wiping a *different* action's slot; keying runs by id
+                        // removed that hazard.
                         patchState(store, {
                             actionExecutionResult: {
                                 actionName,
@@ -428,13 +509,15 @@ export function withActionExecution() {
                             pushPublish?: DotActionBulkRequestOptions['additionalParams']['pushPublish'];
                         }
                     ): void => {
-                        if (!contentletIds.length || store.actionExecution()) {
+                        if (!contentletIds.length || isRunning(workflowActionId, contentletIds)) {
                             return;
                         }
 
-                        patchState(store, {
-                            actionExecution: { actionName, total: contentletIds.length },
-                            actionExecutionResult: undefined
+                        const runId = startRun({
+                            operation: workflowActionId,
+                            actionName,
+                            total: contentletIds.length,
+                            targets: contentletIds
                         });
 
                         const request: DotActionBulkRequestOptions = {
@@ -457,14 +540,14 @@ export function withActionExecution() {
                             .pipe(
                                 take(1),
                                 catchError((error) => {
-                                    patchState(store, { actionExecution: undefined });
+                                    endRun(runId);
                                     httpErrorManagerService.handle(error);
 
                                     return EMPTY;
                                 })
                             )
                             .subscribe((result) =>
-                                onSettled({
+                                onSettled(runId, {
                                     actionName,
                                     successCount: result?.successCount ?? 0,
                                     skippedCount: result?.skippedCount ?? 0,
@@ -537,20 +620,18 @@ export function withActionExecution() {
                         ),
 
                     /**
-                     * Registers, or clears, a run this store did not fire itself.
+                     * Registers a run this store did not fire itself, returning its id.
                      *
-                     * The context menu fires a single-item workflow action through its own service
-                     * call and presents its own outcome, but the *in-flight* half belongs on the
-                     * toolbar indicator like every other operation (FR-007). Without this it had
-                     * only one way to say "working": blanking the whole listing.
-                     *
-                     * **Transitional.** When the single `actionExecution` slot becomes a keyed
-                     * registry, this is replaced by registering and settling a run by id. It is a
-                     * plain setter today because there is exactly one slot to set.
+                     * The context menu and the drag-and-drop move own their own service calls and
+                     * present their own outcomes, but the *in-flight* half belongs on the shared
+                     * indicator like every other operation (FR-007). Without this the context menu
+                     * had one way to say "working": blanking the whole listing.
                      */
-                    setActionExecution: (execution?: DotContentDriveActionExecution): void => {
-                        patchState(store, { actionExecution: execution });
-                    },
+                    startExternalRun: (run: Omit<DotContentDriveRun, 'runId'>): string =>
+                        startRun(run),
+
+                    /** Settles a run registered with {@link startExternalRun}. */
+                    endExternalRun: (runId: string): void => endRun(runId),
 
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {

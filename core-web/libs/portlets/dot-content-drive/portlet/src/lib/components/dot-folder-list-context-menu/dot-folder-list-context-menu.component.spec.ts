@@ -1708,26 +1708,29 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
         it('should report the run on the toolbar indicator, naming the item', async () => {
             jest.useFakeTimers();
-            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+            const startExternalRun = jest.spyOn(store, 'startExternalRun');
 
             await fireSaveAction();
 
-            expect(setActionExecution).toHaveBeenCalledWith({
-                actionName: 'Save',
-                total: 1,
-                targetLabel: mockContentlet.title
-            });
+            expect(startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    actionName: 'Save',
+                    total: 1,
+                    targetLabel: mockContentlet.title,
+                    targets: [mockContentlet.inode]
+                })
+            );
 
             jest.useRealTimers();
         });
 
         it('should clear the indicator once the run settles', async () => {
             jest.useFakeTimers();
-            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+            const endExternalRun = jest.spyOn(store, 'endExternalRun');
 
             await fireSaveAction();
 
-            expect(setActionExecution).toHaveBeenLastCalledWith(undefined);
+            expect(endExternalRun).toHaveBeenCalled();
 
             jest.useRealTimers();
         });
@@ -1735,12 +1738,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
         it('should clear the indicator when the run fails', async () => {
             jest.useFakeTimers();
             workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => new Error('boom')));
-            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+            const endExternalRun = jest.spyOn(store, 'endExternalRun');
 
             await fireSaveAction();
 
             // A failed run that left the indicator up would report work that is not happening.
-            expect(setActionExecution).toHaveBeenLastCalledWith(undefined);
+            expect(endExternalRun).toHaveBeenCalled();
 
             jest.useRealTimers();
         });

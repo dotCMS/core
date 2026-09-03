@@ -450,16 +450,18 @@ export class DotFolderListViewContextMenuComponent {
         // Reports on the toolbar indicator rather than blanking the listing: the author needs to
         // keep seeing the row they acted on, and the listing's own loading state means "fetching
         // the listing" and nothing else (FR-007, FR-009).
-        this.#store.setActionExecution({
+        const runId = this.#store.startExternalRun({
+            operation: actionId,
             actionName,
             total: 1,
-            targetLabel: itemTitle
+            targetLabel: itemTitle,
+            targets: [contentletInode]
         });
         this.#workflowActionsFireService
             .fireTo({ actionId, inode: contentletInode, data: payload })
             .subscribe(
                 () => {
-                    this.#store.setActionExecution(undefined);
+                    this.#store.endExternalRun(runId);
                     this.#store.reloadContentDrive();
 
                     this.#messageService.add({
@@ -485,7 +487,7 @@ export class DotFolderListViewContextMenuComponent {
                         ),
                         life: ERROR_MESSAGE_LIFE
                     });
-                    this.#store.setActionExecution(undefined);
+                    this.#store.endExternalRun(runId);
                     console.error('Error firing workflow action', error);
                 }
             );

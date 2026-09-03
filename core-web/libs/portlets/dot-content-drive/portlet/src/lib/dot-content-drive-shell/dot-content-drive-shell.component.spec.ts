@@ -235,7 +235,8 @@ describe('DotContentDriveShellComponent', () => {
                     pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
-                    setActionExecution: jest.fn(),
+                    startExternalRun: jest.fn().mockReturnValue('run-1'),
+                    endExternalRun: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     selectedItems: jest.fn().mockReturnValue([]),
@@ -1917,7 +1918,7 @@ describe('DotContentDriveShellComponent', () => {
                 expect(messageService.add).not.toHaveBeenCalledWith(
                     expect.objectContaining({ severity: 'info' })
                 );
-                expect(store.setActionExecution).toHaveBeenCalledWith(
+                expect(store.startExternalRun).toHaveBeenCalledWith(
                     expect.objectContaining({ total: expect.any(Number) })
                 );
 
@@ -2062,7 +2063,7 @@ describe('DotContentDriveShellComponent', () => {
                 expect(messageService.add).not.toHaveBeenCalledWith(
                     expect.objectContaining({ severity: 'info' })
                 );
-                expect(store.setActionExecution).toHaveBeenCalledWith(
+                expect(store.startExternalRun).toHaveBeenCalledWith(
                     expect.objectContaining({ total: expect.any(Number) })
                 );
 
@@ -2356,7 +2357,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageService.add).not.toHaveBeenCalledWith(
                 expect.objectContaining({ severity: 'info' })
             );
-            expect(store.setActionExecution).toHaveBeenCalledWith(
+            expect(store.startExternalRun).toHaveBeenCalledWith(
                 expect.objectContaining({ total: expect.any(Number) })
             );
 
@@ -2560,7 +2561,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(messageService.add).not.toHaveBeenCalledWith(
                 expect.objectContaining({ severity: 'info' })
             );
-            expect(store.setActionExecution).toHaveBeenCalledWith(
+            expect(store.startExternalRun).toHaveBeenCalledWith(
                 expect.objectContaining({ total: expect.any(Number) })
             );
 
@@ -3224,7 +3225,8 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     $request: jest.fn(),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
-                    setActionExecution: jest.fn(),
+                    startExternalRun: jest.fn().mockReturnValue('run-1'),
+                    endExternalRun: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     setSelectedItems: jest.fn(),
