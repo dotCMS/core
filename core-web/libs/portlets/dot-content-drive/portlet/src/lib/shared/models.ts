@@ -144,6 +144,23 @@ export interface DotContentDriveActionExecution {
     actionName: string;
     /** Number of contentlets the run was fired over. */
     total: number;
+    /**
+     * What the run is being applied to, when that is one nameable thing.
+     *
+     * Lets a single-item run read "Applying **Publish** to *My Page*" instead of "to 1 item(s)".
+     * Like `actionName` it reaches the indicator's `[innerHTML]`, and unlike `actionName` it is
+     * content the author typed, so escaping it is not optional.
+     */
+    targetLabel?: string;
+    /**
+     * How many items are done, when the run reports it.
+     *
+     * **Optional on purpose.** Absent means the run does not report progress, which the indicator
+     * shows as activity without a position — never as zero. Progress readback is the backend's
+     * largest piece of hidden work, so the indicator must degrade to indeterminate rather than
+     * assume a number exists.
+     */
+    processed?: number;
 }
 
 /**

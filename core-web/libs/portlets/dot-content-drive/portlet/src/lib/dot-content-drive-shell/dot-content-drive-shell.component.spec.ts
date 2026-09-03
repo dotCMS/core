@@ -235,6 +235,7 @@ describe('DotContentDriveShellComponent', () => {
                     pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
+                    setActionExecution: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     selectedItems: jest.fn().mockReturnValue([]),
@@ -1470,7 +1471,10 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
-        it('should show the info message when the upload starts', () => {
+        it('should not announce the start of an upload with a notification', () => {
+            // FR-008: in-flight state belongs on the toolbar indicator, never as a transient
+            // notification. A toast that says only "this has begun" competes with the outcome that
+            // follows it and tells the author nothing they cannot already see.
             uploadService.uploadFileByBaseType.mockReturnValue(of({} as DotCMSContentlet));
             const addSpy = jest.spyOn(messageService, 'add');
 
@@ -1480,11 +1484,7 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
+            expect(addSpy).not.toHaveBeenCalledWith(expect.objectContaining({ severity: 'info' }));
         });
 
         it('should show a success message after a successful upload', () => {
@@ -1913,11 +1913,13 @@ describe('DotContentDriveShellComponent', () => {
                 const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'info',
-                    summary: expect.any(String),
-                    detail: expect.any(String)
-                });
+                // The move's "moving …" notification is gone; the indicator carries it (FR-007).
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'info' })
+                );
+                expect(store.setActionExecution).toHaveBeenCalledWith(
+                    expect.objectContaining({ total: expect.any(Number) })
+                );
 
                 expect(workflowService.bulkFire).toHaveBeenCalledWith({
                     additionalParams: {
@@ -2056,11 +2058,13 @@ describe('DotContentDriveShellComponent', () => {
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
                 // Should show the message with folders (different message when folders are included)
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'info',
-                    summary: 'content-drive.move-to-folder-in-progress-with-folders',
-                    detail: expect.any(String)
-                });
+                // The move reports on the toolbar indicator now, not as a notification (FR-007).
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'info' })
+                );
+                expect(store.setActionExecution).toHaveBeenCalledWith(
+                    expect.objectContaining({ total: expect.any(Number) })
+                );
 
                 // Should still call workflow service with contentlet inodes (not folders)
                 expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -2349,11 +2353,12 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show info message
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: expect.any(String),
-                detail: expect.any(String)
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+            expect(store.setActionExecution).toHaveBeenCalledWith(
+                expect.objectContaining({ total: expect.any(Number) })
+            );
 
             // Should call workflow service with correct parameters
             expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -2552,11 +2557,12 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show the message with folders (different message when folders are included)
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'info',
-                summary: 'content-drive.move-to-folder-in-progress-with-folders',
-                detail: expect.any(String)
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'info' })
+            );
+            expect(store.setActionExecution).toHaveBeenCalledWith(
+                expect.objectContaining({ total: expect.any(Number) })
+            );
 
             // Should still call workflow service with contentlet inodes (not folders)
             expect(workflowService.bulkFire).toHaveBeenCalledWith({
@@ -3218,6 +3224,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                     $request: jest.fn(),
                     setItems: jest.fn(),
                     setStatus: jest.fn(),
+                    setActionExecution: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
                     setSelectedItems: jest.fn(),

@@ -422,7 +422,6 @@ export class DotFolderListViewContextMenuComponent {
                     workflowAction.actionInputs
                 );
 
-                this.#store.setStatus(DotContentDriveStatus.LOADING);
                 this.#fireWorkflowAction({
                     contentletInode: contentlet.inode,
                     actionId: workflowAction.id,
@@ -448,11 +447,19 @@ export class DotFolderListViewContextMenuComponent {
         itemTitle: string;
         payload?: DotProcessedWorkflowPayload;
     }) {
-        this.#store.setStatus(DotContentDriveStatus.LOADING);
+        // Reports on the toolbar indicator rather than blanking the listing: the author needs to
+        // keep seeing the row they acted on, and the listing's own loading state means "fetching
+        // the listing" and nothing else (FR-007, FR-009).
+        this.#store.setActionExecution({
+            actionName,
+            total: 1,
+            targetLabel: itemTitle
+        });
         this.#workflowActionsFireService
             .fireTo({ actionId, inode: contentletInode, data: payload })
             .subscribe(
                 () => {
+                    this.#store.setActionExecution(undefined);
                     this.#store.reloadContentDrive();
 
                     this.#messageService.add({
@@ -478,7 +485,7 @@ export class DotFolderListViewContextMenuComponent {
                         ),
                         life: ERROR_MESSAGE_LIFE
                     });
-                    this.#store.setStatus(DotContentDriveStatus.LOADED);
+                    this.#store.setActionExecution(undefined);
                     console.error('Error firing workflow action', error);
                 }
             );

@@ -302,13 +302,44 @@ export class DotContentDriveToolbarComponent {
     readonly $actionExecutionLabel = computed(() => {
         const execution = this.$actionExecution();
 
-        return execution
+        if (!execution) {
+            return '';
+        }
+
+        // Both halves are escaped, and the item name matters more: `actionName` is a
+        // `WorkflowAction.name` from the backend, but a target label is content an author typed.
+        const actionName = escapeHtml(execution.actionName);
+
+        // "Applying Publish to 1 item(s)" tells an author nothing they did not already know. When
+        // the run is over one nameable thing, name it.
+        return execution.targetLabel
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.applying',
-                  escapeHtml(execution.actionName),
-                  String(execution.total)
+                  'content-drive.action-center.applying-item',
+                  actionName,
+                  escapeHtml(execution.targetLabel)
               )
-            : '';
+            : this.#dotMessageService.get(
+                  'content-drive.action-center.applying',
+                  actionName,
+                  String(execution.total)
+              );
+    });
+
+    /**
+     * How far the run has got, as a percentage, or `undefined` when it does not report progress.
+     *
+     * `undefined` and `0` are deliberately different answers: a run that has done nothing yet is not
+     * the same as a run that cannot say. A truthiness check would collapse the two and show an empty
+     * bar for a run that has no bar to show.
+     */
+    readonly $actionExecutionPercent = computed(() => {
+        const execution = this.$actionExecution();
+
+        if (!execution || execution.processed === undefined || !execution.total) {
+            return undefined;
+        }
+
+        return Math.round((execution.processed / execution.total) * 100);
     });
 
     /**

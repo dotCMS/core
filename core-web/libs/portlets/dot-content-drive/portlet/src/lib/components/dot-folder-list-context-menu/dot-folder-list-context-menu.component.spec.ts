@@ -1588,8 +1588,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
             jest.useRealTimers();
         });
 
-        it('should set status to LOADED when workflow action fails', async () => {
+        it('should leave the listing status untouched when a workflow action fails', async () => {
             jest.useFakeTimers();
+            const statusBefore = store.status();
             const mockWorkflowWithoutInputs = [
                 {
                     ...mockWorkflowActions[1],
@@ -1612,7 +1613,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             jest.advanceTimersByTime(0);
 
-            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+            // It used to set LOADED here only to undo the LOADING it had set itself. Now that the run
+            // reports on the toolbar indicator, the listing's status is not this component's
+            // business at all, and writing either value would be reaching into an unrelated concern.
+            expect(store.status()).toBe(statusBefore);
 
             jest.useRealTimers();
         });
@@ -1667,6 +1671,78 @@ describe('DotFolderListViewContextMenuComponent', () => {
             invoke(items, 'Save');
 
             expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+    });
+
+    describe('in-flight reporting (FR-007, FR-009)', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        const fireSaveAction = async () => {
+            workflowsActionsService.getByInode.mockReturnValue(
+                of([{ ...mockWorkflowActions[1], actionInputs: [] }])
+            );
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            invoke(component.$items(), 'Save');
+            jest.advanceTimersByTime(0);
+        };
+
+        it('should not blank the listing while a workflow action runs', async () => {
+            jest.useFakeTimers();
+            const setStatus = jest.spyOn(store, 'setStatus');
+
+            await fireSaveAction();
+
+            // The listing's loading state means "the listing is being fetched" and nothing else
+            // (FR-009). Using it to report a one-row action hid the very row the author acted on,
+            // and was indistinguishable from an ordinary page load.
+            expect(setStatus).not.toHaveBeenCalledWith(DotContentDriveStatus.LOADING);
+
+            jest.useRealTimers();
+        });
+
+        it('should report the run on the toolbar indicator, naming the item', async () => {
+            jest.useFakeTimers();
+            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+
+            await fireSaveAction();
+
+            expect(setActionExecution).toHaveBeenCalledWith({
+                actionName: 'Save',
+                total: 1,
+                targetLabel: mockContentlet.title
+            });
+
+            jest.useRealTimers();
+        });
+
+        it('should clear the indicator once the run settles', async () => {
+            jest.useFakeTimers();
+            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+
+            await fireSaveAction();
+
+            expect(setActionExecution).toHaveBeenLastCalledWith(undefined);
+
+            jest.useRealTimers();
+        });
+
+        it('should clear the indicator when the run fails', async () => {
+            jest.useFakeTimers();
+            workflowsActionsFireService.fireTo.mockReturnValue(throwError(() => new Error('boom')));
+            const setActionExecution = jest.spyOn(store, 'setActionExecution');
+
+            await fireSaveAction();
+
+            // A failed run that left the indicator up would report work that is not happening.
+            expect(setActionExecution).toHaveBeenLastCalledWith(undefined);
+
+            jest.useRealTimers();
         });
     });
 

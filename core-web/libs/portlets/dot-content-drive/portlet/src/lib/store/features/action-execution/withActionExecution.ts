@@ -536,6 +536,22 @@ export function withActionExecution() {
                             'The push publish returned no result'
                         ),
 
+                    /**
+                     * Registers, or clears, a run this store did not fire itself.
+                     *
+                     * The context menu fires a single-item workflow action through its own service
+                     * call and presents its own outcome, but the *in-flight* half belongs on the
+                     * toolbar indicator like every other operation (FR-007). Without this it had
+                     * only one way to say "working": blanking the whole listing.
+                     *
+                     * **Transitional.** When the single `actionExecution` slot becomes a keyed
+                     * registry, this is replaced by registering and settling a run by id. It is a
+                     * plain setter today because there is exactly one slot to set.
+                     */
+                    setActionExecution: (execution?: DotContentDriveActionExecution): void => {
+                        patchState(store, { actionExecution: execution });
+                    },
+
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {
                         patchState(store, { actionExecutionResult: undefined });

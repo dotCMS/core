@@ -1054,12 +1054,6 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
-        });
-
         this.uploadByBaseType(files[0], baseType, targetFolder);
     }
 
@@ -1134,32 +1128,15 @@ export class DotContentDriveShellComponent {
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
         const assetContentletsCount = dragItems.contentlets.length;
 
-        if (dragItems.folders.length > 0) {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-with-folders'
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail-with-folders',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        } else {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress',
-                    folderName
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        }
+        // Reports on the toolbar indicator, not as a notification announcing a start (FR-007,
+        // FR-008). The two "moving …" toasts this replaces said only that something had begun,
+        // which the indicator says better and without stacking up over the outcome that follows.
+        this.#store.setActionExecution({
+            actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
+            total: assetContentletsCount,
+            targetLabel: folderName
+        });
+
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -1177,6 +1154,7 @@ export class DotContentDriveShellComponent {
             })
             .pipe(
                 catchError(() => {
+                    this.#store.setActionExecution(undefined);
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
@@ -1190,6 +1168,8 @@ export class DotContentDriveShellComponent {
                 })
             )
             .subscribe(({ successCount, fails }) => {
+                this.#store.setActionExecution(undefined);
+
                 if (successCount > 0) {
                     this.#messageService.add({
                         severity: 'success',

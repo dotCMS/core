@@ -161,6 +161,10 @@ describe('DotContentDriveToolbarComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+        // `clearAllMocks` resets call history but leaves a `jest.spyOn` implementation in place, so
+        // a test that stubs `DotMessageService.get` to render real copy was leaking that stub into
+        // every test after it. Restoring puts the shared key-echoing mock back.
+        jest.restoreAllMocks();
         isTreeExpandedSignal.set(false);
         filtersSignal.set({});
         selectedItemsSignal.set([]);
@@ -647,6 +651,105 @@ describe('DotContentDriveToolbarComponent', () => {
             spectator.detectChanges();
 
             expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        // ---- FR-010: name the item when there is one ----
+
+        it('should name the item, not a count, when the run is over a single thing', () => {
+            // "Applying Publish to 1 item(s)" is worse than useless on a context-menu action: the
+            // author knows it is one item, what they cannot see is *which*.
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 1,
+                targetLabel: 'My Page'
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying-item'
+            );
+        });
+
+        it('should keep the count form when several items are in play', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 12 });
+            spectator.detectChanges();
+
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying'
+            );
+        });
+
+        // ---- FR-011: the item name is author-supplied content ----
+
+        it('should not render markup carried by the item name', () => {
+            // `actionName` comes from the backend; a title is typed by an author, so this is the
+            // likelier of the two to carry markup and the one that must not become live DOM.
+            const messageService = spectator.inject(DotMessageService);
+
+            jest.spyOn(messageService, 'get').mockImplementation(
+                (key: string, ...args: string[]) =>
+                    key === 'content-drive.action-center.applying-item'
+                        ? `Applying <b>${args[0]}</b> to <i>${args[1]}</i>`
+                        : key
+            );
+
+            actionExecutionSignal.set({
+                actionName: 'Publish',
+                total: 1,
+                targetLabel: '<img src=x onerror="window.__xss = true">'
+            });
+            spectator.detectChanges();
+
+            const indicator = spectator.query(byTestId('action-execution-indicator'));
+
+            expect(indicator?.querySelector('img')).toBeNull();
+            expect(indicator?.querySelector('[onerror]')).toBeNull();
+            expect(indicator?.textContent).toContain('<img src=x');
+        });
+
+        // ---- FR-012: a position only when the run actually reports one ----
+
+        it('should show activity without a position when the run reports no progress', () => {
+            // Progress readback is the backend's largest piece of hidden work. Until it lands every
+            // run is indeterminate, and the indicator must not imply a position it does not have.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50 });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
+            expect(spectator.query(byTestId('action-execution-progress'))).toBeNull();
+        });
+
+        it('should show the position once the run reports one', () => {
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
+            spectator.detectChanges();
+
+            const progress = spectator.query(byTestId('action-execution-progress'));
+
+            expect(progress).toBeTruthy();
+            expect(spectator.component.$actionExecutionPercent()).toBe(40);
+        });
+
+        it('should treat a reported zero as a position, not as absence', () => {
+            // `processed: 0` is a run that has genuinely done nothing yet, which is different from a
+            // run that cannot say. A truthiness check would collapse the two.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 0 });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-progress'))).toBeTruthy();
+            expect(spectator.component.$actionExecutionPercent()).toBe(0);
+        });
+
+        // ---- FR-035: announce state changes, not every tick ----
+
+        it('should keep progress updates out of the live region', () => {
+            // The indicator is a polite live region. A fifty-file upload that re-announced on every
+            // tick would speak fifty times; the value stays queryable instead of being pushed.
+            actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
+            spectator.detectChanges();
+
+            const progress = spectator.query(byTestId('action-execution-progress'));
+
+            expect(progress?.getAttribute('aria-live')).toBe('off');
         });
     });
 
