@@ -76,7 +76,8 @@
 
                     @if ($pageFilterBackLink(); as backLink) {
                         <a
-                            [href]="backLink"
+                            [routerLink]="backLink.commands"
+                            [queryParams]="backLink.queryParams"
                             class="text-sm text-(--color-palette-primary) no-underline hover:underline"
                             data-testid="experiments-page-filter-back">
                             {{ 'experiments.list.page-filter.back' | dm }}

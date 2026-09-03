@@ -166,7 +166,12 @@ describe('DotExperimentsListComponent', () => {
             ConfirmationService
         ],
         providers: [
-            provideRouter([{ path: 'experiments', children: [] }]),
+            provideRouter([
+                { path: 'experiments', children: [] },
+                // The page-filter chip's back link target; without it the navigation the test
+                // follows would be rejected by the router rather than resolved.
+                { path: 'edit-page/content', children: [] }
+            ]),
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
@@ -624,20 +629,30 @@ describe('DotExperimentsListComponent', () => {
 
         // FR-024. Reuses the deep-link builder, so the address is the one the round-trip uses
         // minus the experiment context — not a second URL assembler.
-        it('should offer a link back to the page in the editor', () => {
+        //
+        // Asserted by following the link rather than by reading its `href`: dotAdmin runs on
+        // `withHashLocation()`, and a serialised address in a plain `href` renders a string that
+        // *looks* right (`/edit-page/content?...`) while sending the browser out of the app,
+        // because only the `LocationStrategy` knows about the `#`. Whether the click reaches the
+        // router is the difference an `href` substring check cannot see.
+        it('should navigate back to the page in the editor', async () => {
             withPageFilter();
 
             const back = spectator.query(byTestId('experiments-page-filter-back'));
 
             expect(back).not.toBeNull();
 
-            // The router serialises the path, so the param arrives percent-encoded. Asserting the
-            // encoded form rather than the raw one, since that is what a browser receives.
-            const href = back?.getAttribute('href') ?? '';
+            // Still a real anchor, so it stays middle-clickable and copyable.
+            expect(back?.getAttribute('href')).toBeTruthy();
 
-            expect(href).toContain('/edit-page/content');
-            expect(href).toContain(`url=${encodeURIComponent(PAGE_INFO[PAGE_ID].url)}`);
-            expect(href).toContain('language_id=');
+            spectator.click(back as HTMLElement);
+            await spectator.fixture.whenStable();
+
+            const url = spectator.inject(Router).url;
+
+            expect(url).toContain('/edit-page/content');
+            expect(url).toContain(`url=${encodeURIComponent(PAGE_INFO[PAGE_ID].url)}`);
+            expect(url).toContain('language_id=');
         });
 
         // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the

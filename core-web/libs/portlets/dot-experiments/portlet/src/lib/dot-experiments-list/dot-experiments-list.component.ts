@@ -14,7 +14,7 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { ConfirmationService, MenuItem } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -85,7 +85,7 @@ import {
     resolvePagePath,
     variantsCount
 } from '../util/dot-experiments-list.util';
-import { buildPageEditorLink } from '../util/dot-experiments-uve-link.util';
+import { buildPageEditorLink, DotEditorLink } from '../util/dot-experiments-uve-link.util';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
@@ -123,6 +123,7 @@ const configureCommandsOf = (experimentId: string): string[] => [
         TableModule,
         TagModule,
         ToolbarModule,
+        RouterLink,
         DotAddToBundleComponent,
         DotEmptyContainerComponent,
         DotExperimentListFilterComponent,
@@ -308,8 +309,16 @@ export class DotExperimentsListComponent {
      * The round-trip's own builder with the variant, experiment and mode omitted — one function,
      * two call sites, rather than a second URL assembler that can drift from the first. `null`
      * when the page cannot be resolved, since there is then nothing to open.
+     *
+     * Returned as the builder's `commands`/`queryParams` pair for the template to bind through
+     * `routerLink`, NOT as a serialised string. `createUrlTree(...).toString()` renders the
+     * router's internal address (`/edit-page/content?...`), and dotAdmin runs on
+     * `withHashLocation()` — so that string in a plain `href` sends the browser to
+     * `<host>/edit-page/content`, outside the app, instead of
+     * `<host>/dotAdmin/#/edit-page/content`. `routerLink` puts the value through the active
+     * `LocationStrategy`, which is the only thing that knows about the hash.
      */
-    readonly $pageFilterBackLink = computed<string | null>(() => {
+    readonly $pageFilterBackLink = computed<DotEditorLink | null>(() => {
         const pageId = this.store.selectedPageId();
         const info = pageId ? this.store.pageInfoByPageId()[pageId] : null;
 
@@ -317,18 +326,12 @@ export class DotExperimentsListComponent {
             return null;
         }
 
-        const link = buildPageEditorLink({
+        return buildPageEditorLink({
             pageId,
             title: info.url,
             path: info.url,
             languageId: DEFAULT_PAGE_FILTER_LANGUAGE_ID
         });
-
-        return link
-            ? this.#router
-                  .createUrlTree(link.commands, { queryParams: link.queryParams })
-                  .toString()
-            : null;
     });
 
     /** Any narrowing the user applied, as opposed to a site that simply has no experiments. */
