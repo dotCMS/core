@@ -283,12 +283,19 @@ describe('DotFolderTreeComponent', () => {
             renderWithIcons(folders);
 
             expect(firstIcon().classList.contains('pi-folder')).toBe(true);
+            // The static classes must survive alongside the `[class]` binding that swaps the glyph
+            // — without `pi` there is no icon font and without `shrink-0` the icon collapses next
+            // to a long label.
+            expect(firstIcon().classList.contains('pi')).toBe(true);
+            expect(firstIcon().classList.contains('shrink-0')).toBe(true);
 
             spectator.click(firstToggler());
             spectator.detectChanges();
 
             expect(firstIcon().classList.contains('pi-folder-open')).toBe(true);
             expect(firstIcon().classList.contains('pi-folder')).toBe(false);
+            expect(firstIcon().classList.contains('pi')).toBe(true);
+            expect(firstIcon().classList.contains('shrink-0')).toBe(true);
         });
 
         it('should follow node.expanded across expand, collapse and expand again', () => {

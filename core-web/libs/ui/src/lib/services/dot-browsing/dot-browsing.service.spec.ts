@@ -306,6 +306,8 @@ describe('DotBrowsingService', () => {
                     addChildrenAllowed: true
                 });
                 expect(result.folders).toHaveLength(2);
+                // These keep their per-node icons: they render in the relationship field's
+                // `p-treeSelect`, which has no shared-tree input to opt into (#37362).
                 expect(result.folders[0]).toEqual({
                     key: 'child-1',
                     label: 'example.com/parent/child1',
@@ -315,6 +317,8 @@ describe('DotBrowsingService', () => {
                         path: '/parent/child1',
                         type: 'folder'
                     },
+                    expandedIcon: 'pi pi-folder-open',
+                    collapsedIcon: 'pi pi-folder',
                     leaf: false
                 });
                 expect(dotFolderService.getFolders).toHaveBeenCalledWith('//example.com/parent');
