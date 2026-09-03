@@ -23,6 +23,11 @@ on:
         required: false
         type: boolean
         default: false
+      slack_channel_id:
+        description: 'Slack channel id for failure notices. Defaults to #dot-releases.'
+        required: false
+        type: string
+        default: 'CE1TBQU00'  # #dot-releases (public). Pass an override to post elsewhere.
     secrets:
       ANTHROPIC_API_KEY:
         required: true
@@ -30,6 +35,9 @@ on:
       CI_MACHINE_TOKEN:
         required: false
         description: 'GitHub token with release edit permissions (falls back to github.token)'
+      SLACK_BOT_TOKEN:
+        required: false
+        description: 'Slack bot token for failure notices. Omit to disable them.'
 
 jobs:
   generate-notes:
@@ -44,6 +52,7 @@ jobs:
       RELEASE_TAG: ${{ inputs.release_tag }}
       PREVIOUS_TAG: ${{ inputs.previous_tag }}
       REPO: ${{ github.repository }}
+      HAVE_SLACK_TOKEN: ${{ secrets.SLACK_BOT_TOKEN != '' }}
     # Skip non-standard releases (CLI, LTS)
     if: >-
       !contains(inputs.release_tag, 'dotcms-cli-')
@@ -172,3 +181,19 @@ jobs:
 
           echo "## Release Notes Updated" >> "$GITHUB_STEP_SUMMARY"
           echo "Release [${RELEASE_TAG}](https://github.com/${REPO}/releases/tag/${RELEASE_TAG}) description updated." >> "$GITHUB_STEP_SUMMARY"
+
+      # allow_failure: true keeps a notes failure from blocking the release, which
+      # also hides it — four releases shipped with empty bodies before anyone
+      # noticed. This is the only signal that it broke. Success posts nothing.
+      - name: Notify Slack (release notes failed)
+        if: failure() && env.HAVE_SLACK_TOKEN == 'true'
+        uses: ./.github/actions/core-cicd/notification/notify-slack
+        with:
+          channel-id: ${{ inputs.slack_channel_id }}
+          slack-bot-token: ${{ secrets.SLACK_BOT_TOKEN }}
+          payload: >-
+            :rotating_light: *Release notes generation FAILED* for
+            `${{ inputs.release_tag }}` — the GitHub release is published but its
+            description is empty. The software release itself is unaffected.
+            Re-run via the AI Release Notes Backfill workflow. Run:
+            ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
