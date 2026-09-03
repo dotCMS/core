@@ -90,13 +90,25 @@ caller must **not** call `setContent`.
 | B6 | A genuinely different document | `false` | `false` | AC-007 |
 | B7 | Unknown **node** type, object entry point | `true` | `true` | AC-011 |
 | B8 | Unknown **node** type, string entry point | `false` | **`true`** | AC-011 |
-| B9 | Undeserializable **mark** | `false` | `false` | AC-008 |
+| B9 | Body carrying an unknown **mark** | `false` | **`true`** | AC-008 |
+| B9a | A document that cannot be deserialized at all | `false` | `false` | AC-008 |
 | B10 | Bare array of nodes (UVE side panel) | `false` | **`true`** | AC-009 |
 | B11 | HTML string (JSP showdown fallback) | compares against `editor.getHTML()` | unchanged | — |
 
-**Rows B1, B3, B4, B5, B8 and B10 are the behaviour change — all six must FAIL at Red.** Every
-other row must keep its current verdict; they exist to stop an over-permissive fix. If B6 or B9
-also fails at Red, the fixtures are wrong, not the implementation.
+**Rows B1, B3, B4, B5, B8, B9 and B10 are the behaviour change — all seven must FAIL at Red.**
+Every other row must keep its current verdict; they exist to stop an over-permissive fix. If B6 or
+**B9a** also fails at Red, the fixtures are wrong, not the implementation.
+
+> **B9 flipped after this contract was written.** It originally required `false`, on the grounds
+> that an unknown mark aborts `Node.fromJSON` with
+> `RangeError: There is no mark type X in this schema`. That was true when written. #37175
+> (`53f5ba760f`, merged to `main` 2026-08-31) gave marks the same placeholder treatment nodes
+> already had — `dotUnsupportedMark` — so an unknown mark now round-trips and must compare
+> **equal**, exactly like an unknown node in B7/B8. Measured after merging: parsing the raw JSON
+> still throws, but the comparator preserves first, so it parses and matches.
+>
+> The fail-closed path is still required, so it moved to **B9a** with input that genuinely cannot
+> deserialize. The `catch` is now defensive rather than routine.
 
 Two rows are easy to misread as pre-existing behaviour:
 
@@ -126,8 +138,12 @@ Two rows are easy to misread as pre-existing behaviour:
    dropping undeclared attrs, *not* by the choice of comparison. If anyone later declares doc attrs
    on the schema for the emit path, `Node.eq` would silently start failing while `Fragment.eq`
    would not. Pin `content.eq`.
-3. **Preserve the unknown-node placeholder transform.** Run `preserveUnknownNodesInDocument` on the
-   incoming value on **both** entry points — the string branch's omission is why B8 fails today.
+3. **Preserve the unknown-node AND unknown-mark placeholder transforms.** Run
+   `preserveUnknownNodesInDocument` on the incoming value on **both** entry points — the string
+   branch's omission is why B8 fails today. Since #37175 that helper takes a third argument,
+   `knownMarkNames`, and applies **nodes first, then marks**: an unknown node is swallowed whole
+   into the placeholder's `originalNode` payload, which must stay byte-for-byte as stored, so the
+   mark pass may only walk what is left of the real tree.
 4. **Wrap bare arrays** as `{ type: 'doc', content: array }` before deserialization.
 5. **Fail closed.** If deserialization throws, return `false` so the caller loads the content.
 6. **Do not log document content** in the `catch`. Story Block bodies are customer content.

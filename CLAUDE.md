@@ -100,7 +100,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 
 ## Tech Stack
 
-- **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
+- **Backend**: Java 25 (runtime + core compile target, override-able), Maven, CDI
 - **Frontend**: Angular 22+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
