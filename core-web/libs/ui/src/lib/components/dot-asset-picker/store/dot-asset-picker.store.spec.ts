@@ -94,13 +94,17 @@ const IMAGE_FIELD_CONFIG: DotAssetPickerConfig = {
 };
 
 /**
- * What `openBrowserModal` hands the store: pages alongside assets, plus folders and menu links —
- * none of which any other entry point may ask for.
+ * What `openBrowserModal` hands the store: pages alongside assets, plus menu links — which no other
+ * entry point may ask for.
+ *
+ * No `showFolders`: the option no longer exists (#37366). The picker's list carries content only,
+ * and folders are reached through the sidebar tree, so there is no browse option a caller could set
+ * to put a folder in the list.
  */
 const BROWSE_CONFIG: DotAssetPickerConfig = {
     site: SITE,
     allowedBaseTypes: [DotCMSBaseTypesContentTypes.FILEASSET, DotCMSBaseTypesContentTypes.HTMLPAGE],
-    browse: { showFolders: true, showLinks: true }
+    browse: { showLinks: true }
 };
 
 describe('DotAssetPickerStore', () => {
@@ -245,18 +249,36 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
-    // Formerly "showFolders invariant". It is no longer an invariant — `openBrowserModal` can ask
-    // for folders — but it remains the DEFAULT, and these are now the guards that prove no other
-    // entry point gained them.
-    describe('showFolders default (no browse options)', () => {
-        it('should be false with no filters applied', () => {
-            store.initPicker(FILE_FIELD_CONFIG);
+    // An invariant again (#37366). It briefly stopped being one when `openBrowserModal` could ask
+    // for folders; that capability is withdrawn, so `showFolders` is now false for EVERY entry
+    // point and there is no configuration that flips it. BROWSE_CONFIG is asserted alongside the
+    // field configs on purpose — it is the only caller that ever got folders, so a guard that
+    // omitted it would be a guard that cannot fail.
+    describe('showFolders invariant (every entry point)', () => {
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG],
+            ['browse (openBrowserModal)', BROWSE_CONFIG]
+        ])('should be false with no filters applied for the %s', (_name, config) => {
+            store.initPicker(config);
 
             expect(store.$request().showFolders).toBe(false);
         });
 
         it('should be false with every filter applied', () => {
             store.initPicker(IMAGE_FIELD_CONFIG);
+            store.patchFilters({
+                title: 'logo',
+                contentType: ['fileAsset'],
+                baseType: ['FILEASSET'],
+                languageId: ['1', '2']
+            });
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should be false with every filter applied for a browse caller', () => {
+            store.initPicker(BROWSE_CONFIG);
             store.patchFilters({
                 title: 'logo',
                 contentType: ['fileAsset'],
@@ -275,10 +297,36 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().showFolders).toBe(false);
         });
 
-        it('should never advance the folder cursor', () => {
+        it('should send showFolders rather than omit it', () => {
+            // Load-bearing, and the reason this is asserted separately from the `false` checks:
+            // `showFolders` defaults to TRUE server-side (AbstractDriveRequestForm#showFolders), so
+            // an omitted key relists folders. `toBe(false)` alone would pass on `undefined` under a
+            // looser matcher, so assert the key's presence explicitly.
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request()).toHaveProperty('showFolders', false);
+        });
+
+        it('should ignore a re-added showFolders browse option', () => {
+            // The one falsifiable guard at this layer, and the regression actually worth guarding:
+            // that no configuration can re-enable folder listing. The cast simulates a future
+            // change re-introducing the option that #37366 withdrew — the request must still send
+            // `false`, because the store hardcodes it rather than reading it from `browse`.
+            store.initPicker({
+                ...BROWSE_CONFIG,
+                browse: { showFolders: true }
+            } as unknown as DotAssetPickerConfig);
+
+            expect(store.$request().showFolders).toBe(false);
+        });
+
+        it('should not send a folder cursor at all', () => {
+            // Was "should never advance the folder cursor", asserting a pinned 0. The key is gone
+            // entirely now (#37366) — the endpoint defaults it to 0, and there is no folder stream
+            // for the picker to page.
             store.initPicker(FILE_FIELD_CONFIG);
 
-            expect(store.$request().folderCursor).toBe(0);
+            expect(store.$request()).not.toHaveProperty('folderCursor');
         });
     });
 
@@ -435,10 +483,14 @@ describe('DotAssetPickerStore', () => {
             nextLinkCursor: 3
         };
 
-        it('should ask for folders when the caller does', () => {
+        it('should never ask for folders, not even for a browse caller', () => {
+            // Inverted in #37366. #37207 shipped this as "should ask for folders when the caller
+            // does"; QA rejected the design (TC-001), so the capability is withdrawn rather than
+            // the implementation fixed. The list carries content only; the sidebar tree is where
+            // folders live.
             store.initPicker(BROWSE_CONFIG);
 
-            expect(store.$request().showFolders).toBe(true);
+            expect(store.$request().showFolders).toBe(false);
         });
 
         it('should ask for menu links when the caller does', () => {
@@ -465,61 +517,42 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().archived).toBe(true);
         });
 
-        describe('three-cursor paging', () => {
+        // Two cursors, not three (#37366). Contentlets and menu links still page independently;
+        // the folder stream is gone, so the request carries no folder cursor to resume.
+        describe('two-cursor paging', () => {
             beforeEach(() => {
                 contentDriveService.search.mockReturnValue(of(MORE_OF_EVERYTHING));
                 store.initPicker(BROWSE_CONFIG);
                 spectator.flushEffects();
             });
 
-            it('should no longer pin the folder cursor to zero', () => {
-                // The old invariant ("with showFolders: false the folder cursor never advances")
-                // held only because folders were never returned. Now they can be.
+            it('should not carry a folder cursor on any page', () => {
+                expect(store.$request()).not.toHaveProperty('folderCursor');
+
                 store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
 
-                expect(store.$request().folderCursor).toBe(5);
+                expect(store.$request()).not.toHaveProperty('folderCursor');
             });
 
             it('should resume every stream from where the previous page left off', () => {
-                // Contentlets, folders and links page independently — one cursor cannot describe a
-                // page of a mixed list.
+                // Contentlets and links page independently — one cursor cannot describe a page of a
+                // mixed list.
                 store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
 
                 expect(store.$request().contentCursor).toBe(20);
-                expect(store.$request().folderCursor).toBe(5);
                 expect(store.$request().linkCursor).toBe(3);
             });
 
             it('should start every stream at zero on page one', () => {
                 expect(store.$request().contentCursor).toBe(0);
-                expect(store.$request().folderCursor).toBe(0);
                 expect(store.$request().linkCursor).toBe(0);
             });
         });
 
         describe('exhausted streams', () => {
-            it('should stop asking for folders once there are no more', () => {
-                // The endpoint's own contract: when hasMoreFolders comes back false, the next page
-                // should skip the folder query entirely rather than pay for it again.
-                contentDriveService.search.mockReturnValue(
-                    of({
-                        ...MORE_OF_EVERYTHING,
-                        hasMoreFolders: false,
-                        nextFolderCursor: 5
-                    })
-                );
-                store.initPicker(BROWSE_CONFIG);
-                spectator.flushEffects();
-
-                // Asserted on BOTH pages on purpose. `showFolders` starts out hardcoded `false`, so
-                // checking only page 2 would pass today for entirely the wrong reason — a guard
-                // that cannot fail is not a guard.
-                expect(store.$request().showFolders).toBe(true);
-
-                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
-
-                expect(store.$request().showFolders).toBe(false);
-            });
+            // "should stop asking for folders once there are no more" was removed in #37366: there
+            // is no folder stream to exhaust. `showFolders` is a hardcoded `false` on every page,
+            // which the `showFolders invariant` suite above covers.
 
             it('should stop asking for links once there are no more', () => {
                 contentDriveService.search.mockReturnValue(
@@ -614,12 +647,15 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
-    describe('paginator row count across three streams', () => {
-        it('should keep Next reachable while folders remain, even with content exhausted', () => {
-            // Reported in review of #37273. The paginator total looked only at `hasMoreContent`, so
-            // a page whose content stream ended while folders kept going reported the rows already
-            // on screen as the grand total. PrimeNG then sees `first + rows >= totalRecords`,
-            // disables Next, and the remaining folders become unreachable.
+    // Two streams since #37366, and the invariant is unchanged: claim one page beyond while ANY
+    // surviving stream reports more, so a stream that outlives the others stays reachable. The
+    // folder case that #37273's review originally caught is gone with the folder stream itself;
+    // the menu-link case below is the same bug shape and is what now guards it.
+    describe('paginator row count across two streams', () => {
+        it('should ignore hasMoreFolders even if the endpoint reports it', () => {
+            // The response type still carries the folder pair, and a `showFolders: false` request
+            // always gets `hasMoreFolders: false` — but a server that reported `true` must not
+            // inflate the total for rows the picker never asked for and cannot show.
             contentDriveService.search.mockReturnValue(
                 of({
                     ...EMPTY_RESPONSE,
@@ -633,8 +669,7 @@ describe('DotAssetPickerStore', () => {
             store.initPicker(BROWSE_CONFIG);
             spectator.flushEffects();
 
-            // One page beyond what is on screen, so the arrow stays live.
-            expect(store.$totalRecords()).toBeGreaterThan(15);
+            expect(store.$totalRecords()).toBe(15);
         });
 
         it('should keep Next reachable while menu links remain', () => {
@@ -686,7 +721,9 @@ describe('DotAssetPickerStore', () => {
         it.each([
             ['File field', FILE_FIELD_CONFIG],
             ['Image field', IMAGE_FIELD_CONFIG]
-        ])('should keep the folder cursor pinned for the %s', (_name, config) => {
+        ])('should send no folder cursor for the %s, on any page', (_name, config) => {
+            // Was "should keep the folder cursor pinned", asserting 0. The key is absent entirely
+            // now (#37366) — asserted on page 2 as well, since paging is what used to advance it.
             contentDriveService.search.mockReturnValue(
                 of({ ...EMPTY_RESPONSE, hasMoreContent: true, nextContentCursor: 20 })
             );
@@ -695,7 +732,7 @@ describe('DotAssetPickerStore', () => {
 
             store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
 
-            expect(store.$request().folderCursor).toBe(0);
+            expect(store.$request()).not.toHaveProperty('folderCursor');
         });
 
         it('should not request archived content', () => {
