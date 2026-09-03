@@ -55,7 +55,7 @@ public final class ObfuscationUtil {
      * Masks the value when the key matches the obfuscation rules; returns it untouched otherwise.
      */
     public static String obfuscateIfNeeded(final String key, final Object valueObject) {
-        final String value = (String) valueObject;
+        final String value = valueObject == null ? null : String.valueOf(valueObject);
         if (UtilMethods.isEmpty(value)) {
             return "";
         }
