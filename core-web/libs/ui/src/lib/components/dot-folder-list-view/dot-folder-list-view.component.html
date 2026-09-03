@@ -121,39 +121,41 @@
                     <td
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
-                        <!-- Deliberately NOT a skeleton. Swapping a busy row for placeholders
-                             repeats, at row scale, the very thing this feature removes: the row the
-                             author wants to watch is the one that disappears. It stays readable and
-                             is marked instead. -->
-                        @if ($busyRowsSet().has(item.inode)) {
-                            <i
-                                class="pi pi-spin pi-spinner text-(--color-palette-primary-500)"
-                                role="status"
-                                aria-live="off"
-                                [attr.title]="'content-drive.list-view.row-busy' | dm"
-                                data-testId="row-busy"></i>
-                        } @else {
-                            <div
-                                class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
-                                (click)="onTitleClick($event, item)">
-                                @if (!isFolder) {
-                                    <!-- No fieldVariable: rows are the assets themselves, so the mapper
+                        <!-- The busy marker swaps the thumbnail's *contents*, never its box: this
+                             is the title cell's first grid column and it is sized (4.5rem), so
+                             replacing the container collapses the column and the row loses its
+                             layout. Deliberately not a skeleton either - swapping a busy row for
+                             placeholders repeats, one row at a time, the very thing this feature
+                             removes, since the row the author wants to watch is the one that
+                             disappears. -->
+                        <div
+                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            data-testId="item-thumbnail-box"
+                            (click)="onTitleClick($event, item)">
+                            @if ($busyRowsSet().has(item.inode)) {
+                                <i
+                                    class="pi pi-spin pi-spinner flex! size-full! items-center! justify-center! text-2xl! text-(--color-palette-primary-500)"
+                                    role="status"
+                                    aria-live="off"
+                                    [attr.title]="'content-drive.list-view.row-busy' | dm"
+                                    data-testId="row-busy"></i>
+                            } @else if (!isFolder) {
+                                <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                      resolves through titleImage / the default /dA path. Passing the
                                      contentType here (legacy quirk) 404s the /contentAsset-based
                                      types (SVG, PDF) — that endpoint needs the real field variable. -->
-                                    <dot-content-thumbnail
-                                        [contentlet]="item"
-                                        iconSize="36px"
-                                        data-testId="contentlet-thumbnail"
-                                        [attr.data-table-id]="item.identifier" />
-                                } @else {
-                                    <i
-                                        class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
-                                        data-testId="folder-icon"
-                                        [attr.data-table-id]="item.identifier"></i>
-                                }
-                            </div>
-                        }
+                                <dot-content-thumbnail
+                                    [contentlet]="item"
+                                    iconSize="36px"
+                                    data-testId="contentlet-thumbnail"
+                                    [attr.data-table-id]="item.identifier" />
+                            } @else {
+                                <i
+                                    class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
+                                    data-testId="folder-icon"
+                                    [attr.data-table-id]="item.identifier"></i>
+                            }
+                        </div>
                         <!-- `min-w-0` is what keeps `truncate` working on the children: a grid item
                          defaults to `min-width: auto`, so the cell would otherwise grow to the longest
                          title instead of clipping it. -->

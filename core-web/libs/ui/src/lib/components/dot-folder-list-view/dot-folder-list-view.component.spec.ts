@@ -360,6 +360,23 @@ describe('DotFolderListViewComponent', () => {
             expect(spectator.query(byTestId('loading-row'))).toBeFalsy();
         });
 
+        it('should keep the title cell’s shape when a row is busy', () => {
+            // Regression: the marker first *replaced* the thumbnail's container rather than its
+            // contents. That container is the title cell's first grid column and it is sized, so
+            // removing it collapsed the column and the row visibly lost its layout. Counting the
+            // cell's direct children pins the grid's shape without asserting any styling.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            // The box must survive, with the marker inside it. Counting the cell's children does
+            // NOT catch this - the broken version still rendered exactly one element there, just
+            // an unsized one - which is why this asserts the container itself is still present.
+            const box = spectator.query(byTestId('item-thumbnail-box'));
+
+            expect(box).toBeTruthy();
+            expect(box?.querySelector('[data-testid="row-busy"]')).toBeTruthy();
+        });
+
         it('should leave rows the operation is not touching alone', () => {
             spectator.setInput('busyRows', ['some-other-inode']);
             spectator.detectChanges();
