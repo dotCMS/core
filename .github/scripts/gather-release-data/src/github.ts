@@ -138,17 +138,48 @@ export async function fetchCommitRange(
 }
 
 /**
- * Extract PR numbers from commit messages.
- * Looks for patterns like "(#12345)" at the end of the first line.
+ * Resolve PR numbers for a list of commits via the GitHub API.
  */
-export function extractPRNumbers(commits: CommitInfo[]): number[] {
+export async function extractPRNumbers(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  commits: CommitInfo[]
+): Promise<number[]> {
   const prNumbers = new Set<number>();
-  for (const commit of commits) {
-    const match = commit.message.match(/\(#(\d+)\)\s*$/);
-    if (match) {
-      prNumbers.add(parseInt(match[1], 10));
+  const BATCH_SIZE = 15;
+
+  for (let i = 0; i < commits.length; i += BATCH_SIZE) {
+    const batch = commits.slice(i, i + BATCH_SIZE);
+
+    const promises = batch.map(async (commit) => {
+      try {
+        const { data } = await octokit.repos.listPullRequestsAssociatedWithCommit({
+          owner,
+          repo,
+          commit_sha: commit.sha,
+        });
+        return data.map((pr) => pr.number);
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        process.stderr.write(
+          `Warning: Could not fetch PRs for commit ${commit.sha}: ${errMsg}\n`
+        );
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.all(promises);
+    for (const nums of batchResults) {
+      for (const n of nums) prNumbers.add(n);
+    }
+
+    // Brief pause between batches to avoid secondary rate limits
+    if (i + BATCH_SIZE < commits.length) {
+      await sleep(500);
     }
   }
+
   return Array.from(prNumbers);
 }
 

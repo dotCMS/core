@@ -265,19 +265,13 @@ async function main(): Promise<void> {
     return;
   }
 
-  const prNumbers = extractPRNumbers(commits);
+  const prNumbers = await extractPRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
   );
   if (commits.length > 0 && prNumbers.length === 0) {
-    // The extractPRNumbers regex only matches squash-merge commit subjects
-    // (`(#N)` at end). If `main` ever switches to merge commits the QA
-    // section would silently disappear from every release notification.
-    // Surface the situation explicitly so the cause is obvious.
     process.stderr.write(
-      `Warning: no PR numbers extracted from ${commits.length} commits. ` +
-        `Has the merge strategy on the source branch changed? ` +
-        `Expected squash-merge commit subjects ending in "(#N)".\n`
+      `Warning: no PR numbers resolved from ${commits.length} commits.\n`
     );
   }
 

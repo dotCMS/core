@@ -127,10 +127,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Extract PR numbers from commit messages
-  const prNumbers = extractPRNumbers(commits);
+  // Resolve PR numbers for commits
+  const prNumbers = await extractPRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
   );
 
   // Fetch PR details
