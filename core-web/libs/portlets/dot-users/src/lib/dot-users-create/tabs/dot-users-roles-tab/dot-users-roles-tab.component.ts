@@ -1,4 +1,3 @@
-import { NgTemplateOutlet } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -13,9 +12,10 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
+import { TreeNode } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
-import { CheckboxModule } from 'primeng/checkbox';
 import { InputTextModule } from 'primeng/inputtext';
+import { TreeModule } from 'primeng/tree';
 
 import { switchMap, take } from 'rxjs/operators';
 
@@ -68,14 +68,7 @@ interface RoleTreeNode {
  */
 @Component({
     selector: 'dot-users-roles-tab',
-    imports: [
-        NgTemplateOutlet,
-        FormsModule,
-        ButtonModule,
-        CheckboxModule,
-        InputTextModule,
-        DotMessagePipe
-    ],
+    imports: [FormsModule, ButtonModule, InputTextModule, TreeModule, DotMessagePipe],
     templateUrl: './dot-users-roles-tab.component.html',
     styleUrl: './dot-users-roles-tab.component.scss',
     changeDetection: ChangeDetectionStrategy.OnPush,
@@ -321,6 +314,32 @@ export class DotUsersRolesTabComponent {
             );
     });
 
+    /**
+     * PrimeNG-shaped mirror of `$availableTree`. Rebuilt whenever the
+     * pruned tree changes (filter typed, roles granted / revoked) so
+     * `<p-tree>` stays declarative. Non-grantable rows (workflow-only
+     * branches or `editUsers=false` leaves) get `selectable=false` so
+     * the checkbox column stays blank on them — same rule the
+     * hand-rolled tree enforced via `canSelectRole`.
+     *
+     * The expanded flag is seeded from `$collapsed` so a filter that
+     * hides + restores a branch preserves the user's open/closed
+     * choice across renders.
+     */
+    protected readonly $availableTreeNodes = computed<TreeNode[]>(() =>
+        this.buildTreeNodes(this.$availableTree())
+    );
+
+    /**
+     * PrimeNG selection is stored as a TreeNode array. We keep it as
+     * the UI source of truth for the `<p-tree>` binding and derive
+     * `$selectedAvailable` (the leaf-id source used by `grant()`) on
+     * every change. Tests still reach `$selectedAvailable` directly so
+     * the isFullyChecked / isPartiallyChecked assertions keep working
+     * without any tree wiring.
+     */
+    protected readonly $selectedTreeNodes = signal<TreeNode[]>([]);
+
     protected readonly $grantedList = computed<RoleOption[]>(() => {
         const query = this.$grantedFilter().toLowerCase().trim();
         const map = this.#$rolesById();
@@ -367,53 +386,46 @@ export class DotUsersRolesTabComponent {
         this.$grantedFilter.set(value);
     }
 
-    protected toggleNode(id: string): void {
-        this.$collapsed.update((state) => ({ ...state, [id]: !state[id] }));
+    /**
+     * Records a node's expand/collapse state from `<p-tree>` events so
+     * a filter that hides + restores a branch preserves what the user
+     * had open. p-tree emits both `onNodeExpand` and `onNodeCollapse`.
+     */
+    protected onNodeExpand(event: { node: TreeNode }): void {
+        const key = event.node.key;
+        if (key) {
+            this.$collapsed.update((state) => ({ ...state, [key]: false }));
+        }
     }
 
-    protected isNodeOpen(id: string): boolean {
-        return !this.$collapsed()[id];
-    }
-
-    protected toggleAvailableSelection(id: string): void {
-        const role = this.#$allRoles().find((entry) => entry.id === id);
-        if (!role) {
-            return;
+    protected onNodeCollapse(event: { node: TreeNode }): void {
+        const key = event.node.key;
+        if (key) {
+            this.$collapsed.update((state) => ({ ...state, [key]: true }));
         }
-        // Rows without any grantable descendants (workflow branches,
-        // isolated organizational nodes) toggle their subtree instead
-        // of getting checked — matches the legacy Dojo tree.
-        if (!this.canSelectRole(role)) {
-            this.toggleNode(id);
-
-            return;
-        }
-
-        // Checking a row selects every grantable leaf under it in one
-        // shot. Unchecking removes them all. For a leaf, `leaves` is
-        // just `[role.id]`, so the behavior collapses to per-row
-        // toggling.
-        const leaves = this.#$grantableLeavesByRole().get(id) ?? [];
-        const currentSet = new Set(this.$selectedAvailable());
-        const allChecked = leaves.every((leafId) => currentSet.has(leafId));
-
-        if (allChecked) {
-            for (const leafId of leaves) {
-                currentSet.delete(leafId);
-            }
-        } else {
-            for (const leafId of leaves) {
-                currentSet.add(leafId);
-            }
-        }
-
-        this.$selectedAvailable.set(Array.from(currentSet));
     }
 
     protected toggleGrantedSelection(id: string): void {
         this.$selectedGranted.update((current) =>
             current.includes(id) ? current.filter((x) => x !== id) : [...current, id]
         );
+    }
+
+    /**
+     * PrimeNG `(selectionChange)` handler. Stores the raw TreeNode
+     * array for the `<p-tree>` binding and derives the leaf-id list
+     * for `grant()`. A parent whose children are only partially
+     * checked still appears in the array with `partialSelected=true`
+     * — filtering by `isGrantableLeaf` drops those non-leaf entries
+     * cleanly.
+     */
+    protected onTreeSelectionChange(selection: TreeNode | TreeNode[] | null): void {
+        const nodes = Array.isArray(selection) ? selection : selection ? [selection] : [];
+        this.$selectedTreeNodes.set(nodes);
+        const leafIds = nodes
+            .filter((node) => !!node.data && this.isGrantableLeaf(node.data as RoleOption))
+            .map((node) => (node.data as RoleOption).id);
+        this.$selectedAvailable.set(leafIds);
     }
 
     protected grant(): void {
@@ -423,7 +435,7 @@ export class DotUsersRolesTabComponent {
         }
         const roles = this.#$allRoles();
         // `selectedAvailable` only ever holds grantable-leaf ids
-        // (see toggleAvailableSelection); the isGrantableLeaf check
+        // (see onTreeSelectionChange); the isGrantableLeaf check
         // is kept as defence-in-depth in case anything slipped in
         // between renders (e.g. tree refetch demoted a role).
         const idsToAdd = roles
@@ -431,6 +443,7 @@ export class DotUsersRolesTabComponent {
             .map((role) => role.id);
         this.$granted.update((current) => Array.from(new Set([...current, ...idsToAdd])));
         this.$selectedAvailable.set([]);
+        this.$selectedTreeNodes.set([]);
         this.grantedChange.emit(this.$granted());
     }
 
@@ -446,6 +459,22 @@ export class DotUsersRolesTabComponent {
 
     protected isSelectedGranted(id: string): boolean {
         return this.$selectedGranted().includes(id);
+    }
+
+    /**
+     * Walks the pruned `$availableTree` and produces the TreeNode
+     * array `<p-tree>` consumes. Deliberately no icon on any node —
+     * icons were dropped per the design pass.
+     */
+    private buildTreeNodes(nodes: RoleTreeNode[]): TreeNode[] {
+        return nodes.map((node) => ({
+            key: node.role.id,
+            label: node.role.name,
+            data: node.role,
+            selectable: this.canSelectRole(node.role),
+            expanded: !this.$collapsed()[node.role.id],
+            children: this.buildTreeNodes(node.children)
+        }));
     }
 
     private loadRoles(): void {

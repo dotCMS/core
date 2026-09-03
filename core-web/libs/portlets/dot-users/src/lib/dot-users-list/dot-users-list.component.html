@@ -20,34 +20,96 @@
         <dot-users-filter-by data-testid="users-filter-by" />
 
         <div class="ml-auto flex items-center gap-4">
-            @if (store.selectedUsers().length > 0) {
+            <!--
+                Fade + slide-in on selection instead of `@if` mount/unmount so the
+                transition can play on both enter and exit. `pointer-events-none`
+                keeps the hidden buttons non-interactive when the row is empty,
+                and `max-w` collapses so it does not steal layout space either.
+            -->
+            <div
+                class="flex items-center gap-3 overflow-hidden transition-all duration-300 ease-out"
+                [class.opacity-100]="store.selectedUsers().length > 0"
+                [class.opacity-0]="store.selectedUsers().length === 0"
+                [class.max-w-\[600px\]]="store.selectedUsers().length > 0"
+                [class.max-w-0]="store.selectedUsers().length === 0"
+                [class.pointer-events-none]="store.selectedUsers().length === 0"
+                data-testid="users-selection-toolbar">
                 <span class="text-color-secondary text-sm" data-testid="users-selected-count">
                     {{ 'users.selected.count' | dm: [store.selectedUsers().length.toString()] }}
                 </span>
+                @if ($isPushPublishEnabled()) {
+                    <p-button
+                        [label]="'users.actions.push-publish' | dm"
+                        (onClick)="openBulkPushPublish()"
+                        data-testid="users-bulk-push-publish-btn" />
+                    <p-button
+                        [label]="'users.actions.add-to-bundle' | dm"
+                        [outlined]="true"
+                        (onClick)="openBulkAddToBundle()"
+                        data-testid="users-bulk-add-to-bundle-btn" />
+                } @else {
+                    <!--
+                        Add to Bundle promotes to primary when Push Publish is not
+                        available: on a non-EE instance it is the only bulk action
+                        besides delete, so it earns the emphasis Push Publish would
+                        otherwise take.
+                    -->
+                    <p-button
+                        [label]="'users.actions.add-to-bundle' | dm"
+                        (onClick)="openBulkAddToBundle()"
+                        data-testid="users-bulk-add-to-bundle-btn" />
+                }
                 <p-button
                     [label]="'users.delete' | dm"
-                    [outlined]="true"
+                    [text]="true"
                     (onClick)="confirmDelete()"
                     data-testid="users-delete-btn" />
-            }
-            <p-button
-                [label]="'users.new' | dm"
-                (onClick)="openCreateDialog()"
-                data-testid="users-new-btn" />
+            </div>
+            <!--
+                Mirror of the selection toolbar: while a selection is active
+                the New button fades and collapses out of the way so only the
+                bulk actions read. Kept mounted for symmetric enter/leave
+                transitions with the selection block on the other side.
+            -->
+            <div
+                class="overflow-hidden transition-all duration-300 ease-out"
+                [class.opacity-100]="store.selectedUsers().length === 0"
+                [class.opacity-0]="store.selectedUsers().length > 0"
+                [class.max-w-40]="store.selectedUsers().length === 0"
+                [class.max-w-0]="store.selectedUsers().length > 0"
+                [class.pointer-events-none]="store.selectedUsers().length > 0"
+                data-testid="users-new-btn-wrapper">
+                <p-button
+                    [label]="'users.new' | dm"
+                    (onClick)="openCreateDialog()"
+                    data-testid="users-new-btn" />
+            </div>
         </div>
     </div>
 </p-toolbar>
 
 <div class="flex min-h-0 flex-1 flex-col overflow-hidden" data-testid="users-table-wrapper">
+    <!--
+        Paginator config mirrors dot-folder-list-view (content-drive): compact
+        report + rows-per-page dropdown, no first/last or numbered page links.
+        `paginatorDropdownAppendTo="body"` escapes the scroll container the
+        table wraps its paginator in — an inline overlay would be clipped and
+        cut off the second option on open, exactly the way it does in the drive.
+    -->
     <p-table
         [value]="store.users()"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
+        [showFirstLastIcon]="false"
+        [showPageLinks]="false"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="('Page' | dm) + ' {currentPage}'"
+        paginatorDropdownAppendTo="body"
         [rows]="store.rows()"
         [totalRecords]="store.totalRecords()"
         [first]="(store.page() - 1) * store.rows()"
-        [rowsPerPageOptions]="[20, 40, 100]"
+        [rowsPerPageOptions]="[20, 40, 60]"
         [rowHover]="true"
         [scrollable]="true"
         scrollHeight="flex"
@@ -70,12 +132,13 @@
                     {{ 'users.table.header.email' | dm }}
                     <p-sortIcon field="emailAddress" />
                 </th>
-                <th>{{ 'users.table.header.roles' | dm }}</th>
-                <th>{{ 'users.table.header.access' | dm }}</th>
+                <th style="width: 18rem">{{ 'users.table.header.roles' | dm }}</th>
+                <th style="width: 12rem">{{ 'users.table.header.access' | dm }}</th>
                 <th pSortableColumn="lastLoginDate" style="width: 12rem">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
+                <th style="width: 3rem"></th>
             </tr>
         </ng-template>
 
@@ -88,9 +151,13 @@
                     <td><p-skeleton height="1.5rem" width="50%" /></td>
                     <td><p-skeleton height="1.5rem" width="40%" /></td>
                     <td><p-skeleton height="1.5rem" width="70%" /></td>
+                    <td><p-skeleton height="1.5rem" width="1.5rem" /></td>
                 </tr>
             } @else {
-                <tr data-testid="users-row" class="cursor-pointer" (click)="openEditDialog(user)">
+                <tr
+                    data-testid="users-row"
+                    class="group cursor-pointer"
+                    (click)="openEditDialog(user)">
                     <td (click)="$event.stopPropagation()">
                         <p-tableCheckbox [value]="user" />
                     </td>
@@ -131,14 +198,14 @@
                             @if (user.backendUser) {
                                 <p-tag
                                     [value]="'users.access.backend' | dm"
-                                    severity="info"
+                                    severity="secondary"
                                     styleClass="whitespace-nowrap"
                                     data-testid="users-access-backend-chip" />
                             }
                             @if (user.frontendUser) {
                                 <p-tag
                                     [value]="'users.access.frontend' | dm"
-                                    severity="success"
+                                    severity="secondary"
                                     styleClass="whitespace-nowrap"
                                     data-testid="users-access-frontend-chip" />
                             }
@@ -149,13 +216,39 @@
                             {{ user.lastLoginDate | date: 'MM/dd/yyyy' }}
                         }
                     </td>
+                    <td (click)="$event.stopPropagation()" data-testid="users-cell-actions">
+                        @if ($isPushPublishEnabled()) {
+                            <p-menu
+                                #rowMenu
+                                [model]="getRowMenuItems(user)"
+                                [popup]="true"
+                                appendTo="body" />
+                            <!--
+                                Hover-reveal on the row (see `group` on the tr).
+                                Kept focusable via `focus-within` fallbacks so a
+                                keyboard user tabbing across the table can still
+                                reach the trigger; without that the button would
+                                only be interactable when the pointer hovers.
+                            -->
+                            <button
+                                type="button"
+                                pButton
+                                [rounded]="true"
+                                [text]="true"
+                                icon="pi pi-ellipsis-v"
+                                class="opacity-0 transition-opacity duration-150 group-focus-within:opacity-100 group-hover:opacity-100 focus:opacity-100"
+                                [attr.aria-label]="'users.actions.more.aria' | dm"
+                                (click)="openRowMenu($event, rowMenu)"
+                                data-testid="users-row-more-btn"></button>
+                        }
+                    </td>
                 </tr>
             }
         </ng-template>
 
         <ng-template pTemplate="emptymessage">
             <tr class="hover:bg-transparent!">
-                <td colspan="6" class="border-none p-0 text-center">
+                <td colspan="7" class="border-none p-0 text-center">
                     <div
                         class="mx-auto flex h-full max-w-100 flex-col items-center justify-center gap-4 p-6"
                         data-testid="users-empty-state">
@@ -219,16 +312,27 @@
         </div>
     </div>
     <ng-template pTemplate="footer">
+        @if ($bulkDeleteWarning(); as key) {
+            <div
+                class="mr-auto flex items-center gap-2 text-sm text-orange-600"
+                role="alert"
+                data-testid="users-bulk-delete-warning">
+                <span class="material-symbols-rounded text-lg!" aria-hidden="true">warning</span>
+                <span>{{ key | dm }}</span>
+            </div>
+        }
         <p-button
             [label]="'users.cancel' | dm"
-            severity="secondary"
-            [text]="true"
+            [outlined]="true"
             (onClick)="closeBulkDelete()"
             data-testid="users-bulk-delete-cancel-btn" />
         <p-button
             [label]="'users.delete' | dm"
-            severity="danger"
             (onClick)="confirmBulkDelete()"
             data-testid="users-bulk-delete-confirm-btn" />
     </ng-template>
 </p-dialog>
+
+@if ($addToBundleAssetId(); as assetId) {
+    <dot-add-to-bundle [assetIdentifier]="assetId" (cancel)="$addToBundleAssetId.set(null)" />
+}

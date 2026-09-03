@@ -1,17 +1,12 @@
 import { Subject } from 'rxjs';
 
 import { DatePipe } from '@angular/common';
-import {
-    ChangeDetectionStrategy,
-    Component,
-    computed,
-    DestroyRef,
-    inject,
-    signal
-} from '@angular/core';
+import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 
+import { MenuItem } from 'primeng/api';
 import { AvatarModule } from 'primeng/avatar';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
@@ -19,6 +14,7 @@ import { DialogService } from 'primeng/dynamicdialog';
 import { IconFieldModule } from 'primeng/iconfield';
 import { InputIconModule } from 'primeng/inputicon';
 import { InputTextModule } from 'primeng/inputtext';
+import { Menu, MenuModule } from 'primeng/menu';
 import { SkeletonModule } from 'primeng/skeleton';
 import { TableLazyLoadEvent, TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
@@ -27,7 +23,9 @@ import { ToolbarModule } from 'primeng/toolbar';
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotPushPublishDialogService } from '@dotcms/dotcms-js';
+import { DotEnvironment } from '@dotcms/dotcms-models';
+import { DotAddToBundleComponent, DotMessagePipe } from '@dotcms/ui';
 
 import { DotUsersFilterByComponent } from './components/dot-users-filter-by/dot-users-filter-by.component';
 import { DotUsersListStore } from './store/dot-users-list.store';
@@ -38,6 +36,17 @@ import {
     DotUsersDialogResult
 } from '../dot-users-create/dot-users-create.component';
 import { DotUserListItem } from '../services/dot-users.service';
+
+/**
+ * Legacy backend contract: Push Publish and Add to Bundle identify a
+ * user asset by the prefix `user_` on the raw userId. `users_` (empty
+ * suffix) means "the current selection", which the pushHandler backend
+ * resolves against the session — matching what the legacy Dojo portlet
+ * did in `view_users_js_inc.jsp`. Bulk selections stringify with the
+ * `user_` prefix on each id, comma-joined, mirroring how content-drive
+ * hands multiple identifiers to the same dialog.
+ */
+const USER_ASSET_PREFIX = 'user_';
 
 @Component({
     selector: 'dot-users-list',
@@ -51,9 +60,11 @@ import { DotUserListItem } from '../services/dot-users.service';
         InputTextModule,
         IconFieldModule,
         InputIconModule,
+        MenuModule,
         SkeletonModule,
         TagModule,
         ToolbarModule,
+        DotAddToBundleComponent,
         DotMessagePipe,
         DotUsersFilterByComponent,
         DotUsersReplacementPickerComponent
@@ -61,7 +72,6 @@ import { DotUserListItem } from '../services/dot-users.service';
     templateUrl: './dot-users-list.component.html',
     styleUrl: './dot-users-list.component.scss',
     providers: [DotUsersListStore, DialogService],
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'flex flex-col h-full min-h-0' }
 })
 export class DotUsersListComponent {
@@ -69,7 +79,9 @@ export class DotUsersListComponent {
 
     readonly #dialogService = inject(DialogService);
     readonly #dotMessageService = inject(DotMessageService);
+    readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #destroyRef = inject(DestroyRef);
+    readonly #route = inject(ActivatedRoute);
 
     readonly #searchSubject = new Subject<string>();
 
@@ -80,6 +92,24 @@ export class DotUsersListComponent {
      * footer validation hint; the button stays enabled per design.
      */
     protected readonly $bulkDeleteAttempted = signal(false);
+
+    /**
+     * Identifier fed to `<dot-add-to-bundle>`. Null closes the dialog;
+     * a string opens it. Same signal shape used by dot-plugins and
+     * dot-experiments so the component's `(cancel)` callback resets it.
+     */
+    protected readonly $addToBundleAssetId = signal<string | null>(null);
+
+    /**
+     * Resolver output from the users route. Push Publish and Add to
+     * Bundle only make sense when the license permits and at least one
+     * environment is registered — otherwise the row menu drops those
+     * two entries entirely (dot-locales convention).
+     */
+    readonly #envs = (this.#route.snapshot.data['pushPublishEnvironments'] ??
+        []) as DotEnvironment[];
+    readonly #isEnterprise = !!this.#route.snapshot.data['isEnterprise'];
+    protected readonly $isPushPublishEnabled = signal(this.#isEnterprise && this.#envs.length > 0);
 
     /**
      * The picker must never surface any user currently selected for
@@ -119,6 +149,40 @@ export class DotUsersListComponent {
 
         return null;
     });
+
+    /**
+     * i18n key for the bulk-delete dialog's footer warning. Same rule
+     * as the main dialog's `$formWarning`: single generic message on
+     * the footer row, per-field inline errors stay under each field.
+     */
+    protected readonly $bulkDeleteWarning = computed(() =>
+        this.$bulkReplacementError() ? 'users.dialog.warning.form-errors' : null
+    );
+
+    /**
+     * Menu items for the trailing kebab on a single row. Scope is
+     * intentionally narrow: Edit is already the row's own click target,
+     * Delete is the selection-toolbar action, so the kebab only holds
+     * the two publish-adjacent commands. Empty on non-enterprise
+     * instances — the template skips rendering the kebab entirely in
+     * that case so users don't see a dead trigger.
+     */
+    protected getRowMenuItems(user: DotUserListItem): MenuItem[] {
+        if (!this.$isPushPublishEnabled()) {
+            return [];
+        }
+
+        return [
+            {
+                label: this.#dotMessageService.get('users.actions.push-publish'),
+                command: () => this.openRowPushPublish(user)
+            },
+            {
+                label: this.#dotMessageService.get('users.actions.add-to-bundle'),
+                command: () => this.openRowAddToBundle(user)
+            }
+        ];
+    }
 
     constructor() {
         this.#searchSubject
@@ -225,6 +289,65 @@ export class DotUsersListComponent {
 
         this.$bulkDeleteVisible.set(false);
         this.store.deleteSelectedUsers(replacement.userId);
+    }
+
+    /** Row kebab → Push to Publish for a single user. */
+    openRowPushPublish(user: DotUserListItem): void {
+        this.#pushPublishDialogService.open({
+            assetIdentifier: `${USER_ASSET_PREFIX}${user.userId}`,
+            title: this.#dotMessageService.get('contenttypes.content.push_publish')
+        });
+    }
+
+    /** Row kebab → Add to Bundle for a single user. */
+    openRowAddToBundle(user: DotUserListItem): void {
+        this.$addToBundleAssetId.set(`${USER_ASSET_PREFIX}${user.userId}`);
+    }
+
+    /**
+     * Selection toolbar → Push to Publish for every selected user.
+     * Sends one comma-joined identifier the way content-drive does; the
+     * backend's RemotePublishAjaxAction splits on commas.
+     */
+    openBulkPushPublish(): void {
+        const ids = this.#joinSelectionAssetIds();
+        if (!ids) {
+            return;
+        }
+
+        this.#pushPublishDialogService.open({
+            assetIdentifier: ids,
+            title: this.#dotMessageService.get('contenttypes.content.push_publish')
+        });
+    }
+
+    /** Selection toolbar → Add to Bundle for every selected user. */
+    openBulkAddToBundle(): void {
+        const ids = this.#joinSelectionAssetIds();
+        if (!ids) {
+            return;
+        }
+
+        this.$addToBundleAssetId.set(ids);
+    }
+
+    #joinSelectionAssetIds(): string | null {
+        const selected = this.store.selectedUsers();
+        if (selected.length === 0) {
+            return null;
+        }
+
+        return selected.map((user) => `${USER_ASSET_PREFIX}${user.userId}`).join(',');
+    }
+
+    /**
+     * Opens the row kebab. Passes the click event straight to the menu
+     * so PrimeNG positions the popup on the trigger regardless of how
+     * many rows the table renders — no per-row viewChild needed.
+     */
+    openRowMenu(event: Event, menu: Menu): void {
+        event.stopPropagation();
+        menu.toggle(event);
     }
 
     /**

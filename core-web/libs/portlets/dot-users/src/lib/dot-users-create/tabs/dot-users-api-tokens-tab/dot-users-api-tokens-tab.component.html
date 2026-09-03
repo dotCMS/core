@@ -91,7 +91,6 @@
                     @if (!isInactive) {
                         <p-button
                             [label]="'users.dialog.tokens.revoke' | dm"
-                            severity="danger"
                             [text]="true"
                             size="small"
                             (onClick)="revoke(token, $event)"
@@ -118,7 +117,6 @@
                             </span>
                             <p-button
                                 [label]="'users.dialog.tokens.retry' | dm"
-                                severity="secondary"
                                 [outlined]="true"
                                 size="small"
                                 (onClick)="retryLoad()"
@@ -204,8 +202,7 @@
         <ng-template pTemplate="footer">
             <p-button
                 [label]="'users.dialog.tokens.reveal.close' | dm"
-                severity="secondary"
-                [text]="true"
+                [outlined]="true"
                 (onClick)="closeReveal()"
                 data-testid="users-api-tokens-reveal-close" />
         </ng-template>
