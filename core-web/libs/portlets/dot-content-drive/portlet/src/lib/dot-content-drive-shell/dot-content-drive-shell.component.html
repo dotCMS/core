@@ -67,6 +67,7 @@
 @if ($contextMenuData()?.showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
+        [onAdded]="onBundleAdded"
         [assetIdentifier]="$contextMenuData().contentlet.identifier" />
 }
 

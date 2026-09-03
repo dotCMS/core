@@ -804,10 +804,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                     await component.getMenuItems(folderContextMenuWithPublish);
                     pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                    expect(pushPublishDialogService.open).toHaveBeenCalledWith({
-                        assetIdentifier: folderWithPublish.identifier,
-                        title: 'contenttypes.content.push_publish'
-                    });
+                    expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            assetIdentifier: folderWithPublish.identifier,
+                            title: 'contenttypes.content.push_publish'
+                        })
+                    );
                 });
 
                 it('should enable the item, plainly labelled, once an environment is reachable', async () => {
@@ -1343,10 +1345,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 await component.getMenuItems(mockContextMenuData);
                 pushPublishItem()?.command?.({} as unknown as MenuItemCommandEvent);
 
-                expect(pushPublishDialogService.open).toHaveBeenCalledWith({
-                    assetIdentifier: mockContentlet.identifier,
-                    title: 'contenttypes.content.push_publish'
-                });
+                // `objectContaining`: the call now also carries an `onSuccess` callback, which is
+                // how the caller says what to report without the shared dialog owning a message.
+                expect(pushPublishDialogService.open).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        assetIdentifier: mockContentlet.identifier,
+                        title: 'contenttypes.content.push_publish'
+                    })
+                );
             });
 
             it('should disable the item with a tooltip when no environment is reachable', async () => {

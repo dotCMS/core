@@ -688,7 +688,16 @@ export class DotFolderListViewContextMenuComponent {
 
         this.#dotPushPublishDialogService.open({
             assetIdentifier: identifier,
-            title: this.#dotMessageService.get('contenttypes.content.push_publish')
+            title: this.#dotMessageService.get('contenttypes.content.push_publish'),
+            // The dialog is opened globally and says nothing on success by design, so the caller
+            // owns the message. Copy says *queued*, because that is what push publish is.
+            onSuccess: () =>
+                this.#messageService.add({
+                    severity: 'success',
+                    summary: this.#dotMessageService.get('push-publish.enqueued'),
+                    detail: this.#dotMessageService.get('push-publish.enqueued-detail'),
+                    life: SUCCESS_MESSAGE_LIFE
+                })
         });
     }
 

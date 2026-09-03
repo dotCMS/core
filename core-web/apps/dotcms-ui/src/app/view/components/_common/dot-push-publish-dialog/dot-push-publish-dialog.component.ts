@@ -11,7 +11,6 @@ import {
 } from '@angular/core';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 
-import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DatePickerModule } from 'primeng/datepicker';
 import { DialogModule } from 'primeng/dialog';
@@ -53,12 +52,6 @@ import { DotPushPublishFormComponent } from '../forms/dot-push-publish-form/dot-
 })
 export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
     private pushPublishService = inject(PushPublishService);
-    /**
-     * Optional on purpose. This dialog is opened globally, and PrimeNG's `MessageService` is not an
-     * app-level provider, so requiring it would crash the dialog wherever no toast host exists. A
-     * missing provider degrades to the old silent-close rather than to an error.
-     */
-    private messageService = inject(MessageService, { optional: true });
     private dotMessageService = inject(DotMessageService);
     private dotPushPublishDialogService = inject(DotPushPublishDialogService);
     private cdr = inject(ChangeDetectorRef);
@@ -129,14 +122,9 @@ export class DotPushPublishDialogComponent implements OnInit, OnDestroy {
                 .subscribe((result: DotAjaxActionResponseView) => {
                     this.isSaving = false;
                     if (!result?.errors) {
-                        // Success was signalled only by the dialog vanishing, which reads as the
-                        // dialog having given up. Push publish is queued rather than immediate, so
-                        // the copy says enqueued rather than done.
-                        this.messageService?.add({
-                            severity: 'success',
-                            summary: this.dotMessageService.get('push-publish.enqueued'),
-                            detail: this.dotMessageService.get('push-publish.enqueued-detail')
-                        });
+                        // The caller decides what to say, if anything; this dialog stays free of a
+                        // messaging concern it cannot satisfy everywhere it is opened.
+                        this.eventData?.onSuccess?.();
                         this.close();
                     } else {
                         this.errorMessage = result.errors;

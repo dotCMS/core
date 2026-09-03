@@ -35,6 +35,7 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
+    DotBundle,
     DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotCMSDataTypes,
@@ -199,6 +200,25 @@ export class DotContentDriveShellComponent {
      * Upload buttons via the store, so the three cannot disagree.
      */
     readonly $canAddChildren = this.#store.$canAddChildren;
+
+    /**
+     * Reports a successful Add to Bundle.
+     *
+     * An arrow property, not a method: it is handed to the dialog as data and invoked from there,
+     * so it has to carry its own `this`.
+     *
+     * The dialog says nothing on success by design — it is shared with nine other consumers and
+     * cannot assume a toast host exists — so the caller owns the message. Same reasoning as the
+     * push-publish dialog's `onSuccess`.
+     */
+    protected readonly onBundleAdded = (bundle: DotBundle): void => {
+        this.#messageService.add({
+            severity: 'success',
+            summary: this.#dotMessageService.get('add-to-bundle.added'),
+            detail: this.#dotMessageService.get('add-to-bundle.added-detail', bundle?.name ?? ''),
+            life: SUCCESS_MESSAGE_LIFE
+        });
+    };
 
     /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
     readonly $busyRows = this.#store.busyRows;
