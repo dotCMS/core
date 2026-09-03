@@ -100,6 +100,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
     let workflowsActionsFireService: SpyObject<DotWorkflowActionsFireService>;
     let dotContentletService: SpyObject<DotContentletService>;
     let messageService: SpyObject<MessageService>;
+    let dotMessageService: SpyObject<DotMessageService>;
 
     const mockContentlet = createFakeContentlet();
 
@@ -196,6 +197,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
         workflowsActionsFireService = spectator.inject(DotWorkflowActionsFireService);
         dotContentletService = spectator.inject(DotContentletService);
         messageService = spectator.inject(MessageService);
+        dotMessageService = spectator.inject(DotMessageService);
     });
 
     afterEach(() => {
@@ -1533,8 +1535,16 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'success',
-                summary: 'content-drive.toast.workflow-executed'
+                summary: 'content-drive.toast.workflow-executed',
+                detail: 'content-drive.toast.workflow-executed-detail'
             });
+            // The mocked `get` echoes the key, so the assertion above cannot tell whether the
+            // action and the item reached the copy. This is what actually proves FR-028.
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.workflow-executed-detail',
+                'Save',
+                mockContentlet.title
+            );
 
             jest.useRealTimers();
         });
@@ -1566,8 +1576,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             expect(messageService.add).toHaveBeenCalledWith({
                 severity: 'error',
                 summary: 'content-drive.toast.workflow-error',
+                detail: 'content-drive.toast.workflow-error-detail',
                 life: 4500
             });
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.workflow-error-detail',
+                'Save',
+                mockContentlet.title
+            );
 
             jest.useRealTimers();
         });
@@ -1683,6 +1699,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 detail: 'content-drive.toast.lock-error-detail',
                 life: 4500
             });
+            // Asymmetry this closes: `lock-success` is "Locked {0}" while the failure said only
+            // "The contentlet wasn't locked", leaving the author to work out which one.
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.lock-error-detail',
+                mockContentlet.title
+            );
 
             jest.useRealTimers();
         });
@@ -1715,6 +1737,10 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 detail: 'content-drive.toast.unlock-error-detail',
                 life: 4500
             });
+            expect(dotMessageService.get).toHaveBeenCalledWith(
+                'content-drive.toast.unlock-error-detail',
+                mockContentlet.title
+            );
 
             jest.useRealTimers();
         });
