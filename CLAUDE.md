@@ -122,6 +122,7 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
+- [System Events](docs/backend/SYSTEM_EVENTS.md) — Cross-node event queue: at-least-once delivery, consumer idempotency rules, payload deserialization
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
