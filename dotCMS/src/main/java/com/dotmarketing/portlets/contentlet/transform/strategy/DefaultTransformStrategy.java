@@ -401,7 +401,7 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         if(!options.contains(VERSION_INFO)){
             return;
         }
-        final User modUser = toolBox.userAPI.loadUserById(contentlet.getModUser());
+        final User modUser = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getModUser())).getOrNull();
         map.put("modUserName", null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
         map.put(WORKING_KEY, contentlet.isWorking());
         map.put(LIVE_KEY, contentlet.isLive());
@@ -413,10 +413,14 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
         map.put("hasLiveVersion", toolBox.versionableAPI.hasLiveVersion(contentlet));
         final Optional<String> lockedByOpt = Try.of(()->toolBox.versionableAPI.getLockedBy(contentlet)).getOrElse(Optional.empty());
         if (lockedByOpt.isPresent()) {
-
-            final User user = toolBox.userAPI.loadUserById(lockedByOpt.get());
-            map.put("lockedBy", Map.of("userId", user.getUserId(),
-                    "firstName", user.getFirstName(), "lastName", user.getLastName()));
+            // issue #37186 (FR-004a): an orphaned locked-by id must degrade this one field, not
+            // fail the whole transform — same fallback pattern as modUser above and
+            // addAuditProperties, instead of an uncaught NoSuchUserException.
+            final User user = Try.of(() -> toolBox.userAPI.loadUserById(lockedByOpt.get())).getOrNull();
+            if (null != user) {
+                map.put("lockedBy", Map.of("userId", user.getUserId(),
+                        "firstName", user.getFirstName(), "lastName", user.getLastName()));
+            }
         }
 
         final Optional<ContentletVersionInfo> versionInfo =
