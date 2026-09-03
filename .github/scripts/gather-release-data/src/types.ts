@@ -30,11 +30,6 @@ export interface ReleaseData {
   changes: Change[];
 }
 
-/** Raw commit from the GitHub Compare API. */
-export interface CommitInfo {
-  sha: string;
-}
-
 /** PR details fetched from GitHub. */
 export interface PRDetails {
   number: number;
