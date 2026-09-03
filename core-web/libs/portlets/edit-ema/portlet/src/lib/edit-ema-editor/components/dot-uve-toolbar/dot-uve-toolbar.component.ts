@@ -33,6 +33,8 @@ import {
     DotDeviceListItem,
     DotExperimentStatus,
     DotLanguage,
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
     EXPERIMENT_RETURN_PARAM,
     EXPERIMENT_RETURN_PORTLET
 } from '@dotcms/dotcms-models';
@@ -50,6 +52,7 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-ac
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import {
@@ -142,7 +145,22 @@ export class DotUveToolbarComponent {
     readonly $isEditMode = this.#store.$isEditMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
-    readonly $infoDisplayProps = this.#store.$infoDisplayProps;
+    /**
+     * The variant chip — the store's own, plus the one case it does not cover (#37005).
+     *
+     * `$infoDisplayProps` returns `null` for the DEFAULT variant, which is right for an ordinary
+     * page: there is no variant to announce. But the portlet's Configure screen previews the
+     * CONTROL through the same door, and the chip is the only thing that reads the origin marker
+     * and offers the way back — so that preview opened the editor on a screen with no route home,
+     * while `experimentReturn=portlet` sat unread in the address.
+     *
+     * Scoped to arrivals carrying the marker. The legacy in-UVE screens send the same
+     * `experimentId` and would otherwise gain a chip they never had, and this work leaves the
+     * switch-off path exactly as it was (FR-016, FR-019).
+     */
+    readonly $infoDisplayProps = computed<InfoOptions | null>(
+        () => this.#store.$infoDisplayProps() ?? this.#controlFromPortletProps()
+    );
     readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen;
@@ -267,6 +285,44 @@ export class DotUveToolbarComponent {
      * Handle info display action event from presentational DotEmaInfoDisplayComponent
      * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
      */
+    /**
+     * Chip for the control variant previewed from the portlet, or `null` when that is not the
+     * case. Same shape the store builds for a real variant, so the action handler and the template
+     * need no special case: the id stays `variant` and the back arrow means the same thing.
+     */
+    #controlFromPortletProps(): InfoOptions | null {
+        const { queryParams } = this.#activatedRoute.snapshot;
+
+        if (queryParams[EXPERIMENT_RETURN_PARAM] !== EXPERIMENT_RETURN_PORTLET) {
+            return null;
+        }
+
+        const experiment = this.#store.pageExperiment();
+
+        if (!experiment) {
+            return null;
+        }
+
+        const mode = this.#store.pageParams()?.mode;
+        const controlName =
+            experiment.trafficProportion?.variants?.find(
+                (variant) => variant.id === DEFAULT_VARIANT_ID
+            )?.name ?? DEFAULT_VARIANT_NAME;
+
+        return {
+            info: {
+                message:
+                    mode === UVE_MODE.PREVIEW || mode === UVE_MODE.LIVE
+                        ? 'editpage.viewing.variant'
+                        : 'editpage.editing.variant',
+                args: [controlName]
+            },
+            icon: 'pi pi-file-edit',
+            id: 'variant',
+            actionIcon: 'pi pi-arrow-left'
+        };
+    }
+
     handleInfoDisplayAction(optionId: string) {
         if (optionId === 'device' || optionId === 'socialMedia') {
             this.#store.viewClearDeviceAndSocialMedia();

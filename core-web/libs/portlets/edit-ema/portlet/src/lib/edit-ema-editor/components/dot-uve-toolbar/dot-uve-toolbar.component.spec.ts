@@ -28,6 +28,7 @@ import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotLanguage,
+    DEFAULT_VARIANT_ID,
     EXPERIMENT_RETURN_PARAM,
     EXPERIMENT_RETURN_PORTLET
 } from '@dotcms/dotcms-models';
@@ -1769,6 +1770,63 @@ describe('DotUveToolbarComponent', () => {
                                 pageId: PAGE_ID
                             } as DotExperiment);
                             navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+                        });
+
+                        // #37005. Previewing the CONTROL from the portlet's Configure screen
+                        // opens UVE on the default variant, and the store's own
+                        // `$infoDisplayProps` returns null for it — so the chip, which is the only
+                        // thing that reads the origin marker and offers the way back, never
+                        // rendered. The editor arrived from a screen it cannot return to.
+                        describe('previewing the control from the portlet', () => {
+                            beforeEach(() => {
+                                infoDisplayPropsSignal.set(undefined);
+                                baseUVEState.pageExperiment.set({
+                                    id: EXPERIMENT_ID,
+                                    pageId: PAGE_ID,
+                                    trafficProportion: {
+                                        variants: [{ id: DEFAULT_VARIANT_ID, name: 'Original' }]
+                                    }
+                                } as DotExperiment);
+                            });
+
+                            it('should offer the chip, naming the control', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toEqual(
+                                    expect.objectContaining({
+                                        id: 'variant',
+                                        info: expect.objectContaining({ args: ['Original'] })
+                                    })
+                                );
+                            });
+
+                            // The legacy in-UVE screens send the same `experimentId` but never the
+                            // marker, and #37005 must leave the switch-off path exactly as it was.
+                            it('should not offer the chip without the origin marker', () => {
+                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeFalsy();
+                            });
+
+                            it('should return to Configure when the chip is used', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(navigate).toHaveBeenCalledWith(
+                                    ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                    expect.anything()
+                                );
+                            });
                         });
 
                         // T037 / FR-005, FR-006.
