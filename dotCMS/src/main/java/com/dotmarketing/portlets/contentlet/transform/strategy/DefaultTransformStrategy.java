@@ -396,13 +396,29 @@ public class DefaultTransformStrategy extends AbstractTransformStrategy<Contentl
      * Use this method to add any additional property
      * @param contentlet Same contentlet with any additional property added
      */
+    /**
+     * Resolves the display name for {@code contentlet}'s modifying user, reusing the value
+     * {@link #addAuditProperties} already put under {@link Contentlet#MOD_USER_NAME_KEY} when
+     * both it and {@link #addVersionProperties} run for the same row (issue #37186, User Story
+     * 2). Once the warm-up in {@code BrowserAPIImpl} makes the id cache-warm, a second
+     * {@code loadUserById} call for the same id is only a cache hit, not a DB round trip — this
+     * still avoids the redundant call-count/CPU overhead, and matters independently for any
+     * other caller of this strategy that doesn't warm up first.
+     */
+    private String resolveModUserName(final Contentlet contentlet, final Map<String, Object> map) {
+        if (map.containsKey(MOD_USER_NAME_KEY)) {
+            return (String) map.get(MOD_USER_NAME_KEY);
+        }
+        final User modUser = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getModUser())).getOrNull();
+        return null != modUser ? modUser.getFullName() : NOT_APPLICABLE;
+    }
+
     private void addVersionProperties(final Contentlet contentlet, final Map<String, Object> map, final Set<TransformOptions> options)
             throws DotSecurityException, DotDataException {
         if(!options.contains(VERSION_INFO)){
             return;
         }
-        final User modUser = Try.of(() -> toolBox.userAPI.loadUserById(contentlet.getModUser())).getOrNull();
-        map.put("modUserName", null != modUser ? modUser.getFullName() : NOT_APPLICABLE);
+        map.put(MOD_USER_NAME_KEY, resolveModUserName(contentlet, map));
         map.put(WORKING_KEY, contentlet.isWorking());
         map.put(LIVE_KEY, contentlet.isLive());
         map.put(ARCHIVED_KEY, contentlet.isArchived());

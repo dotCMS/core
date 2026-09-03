@@ -1,8 +1,13 @@
 package com.dotmarketing.portlets.contentlet.transform.strategy;
 
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.MOD_USER_NAME_KEY;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.BINARIES;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.VERSION_INFO;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
 
 import com.dotcms.api.APIProvider;
 import com.dotcms.contenttype.model.field.BinaryField;
@@ -11,14 +16,19 @@ import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.storage.model.Metadata;
 import com.dotmarketing.beans.Identifier;
 import com.dotmarketing.business.IdentifierAPI;
+import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.VersionableAPI;
 import com.dotmarketing.image.focalpoint.FocalPointAPI;
+import com.dotmarketing.portlets.contentlet.business.ContentletVersionInfo;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAssetAPI;
+import com.liferay.portal.model.User;
 import java.io.Serializable;
 import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import org.junit.Test;
 import org.mockito.Mockito;
@@ -212,5 +222,76 @@ public class DefaultTransformStrategyTest {
                 (Map<String, Serializable>) map.get(FILE_ASSET_META_KEY);
         assertEquals("focalPoint must default to 0.0 when absent from custom metadata",
                 "0.0", metaMap.get(FocalPointAPI.FOCAL_POINT));
+    }
+
+    // --- resolveModUserName (issue #37186, User Story 2: no repeated resolution within one row)
+
+    /**
+     * Invokes the private {@code resolveModUserName} method in isolation, mirroring
+     * {@link #invokeAddBinaries} above.
+     */
+    private String invokeResolveModUserName(final DefaultTransformStrategy strategy,
+            final Contentlet contentlet, final Map<String, Object> map) throws Exception {
+        final Method resolveModUserName = DefaultTransformStrategy.class.getDeclaredMethod(
+                "resolveModUserName", Contentlet.class, Map.class);
+        resolveModUserName.setAccessible(true);
+        return (String) resolveModUserName.invoke(strategy, contentlet, map);
+    }
+
+    private APIProvider toolBoxWithMockUserAPI(final UserAPI userAPI) throws Exception {
+        final APIProvider toolBox = Mockito.mock(APIProvider.class);
+        final java.lang.reflect.Field field = APIProvider.class.getDeclaredField("userAPI");
+        field.setAccessible(true);
+        field.set(toolBox, userAPI);
+        return toolBox;
+    }
+
+    /**
+     * When {@code addAuditProperties} already resolved modUser for this row (its value is
+     * already in the map under {@code MOD_USER_NAME_KEY}), {@code addVersionProperties} must
+     * reuse it rather than calling {@code loadUserById} a second time for the same id.
+     */
+    @Test
+    public void resolveModUserName_reusesAlreadyResolvedName_doesNotCallLoadUserByIdAgain()
+            throws Exception {
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final DefaultTransformStrategy strategy =
+                new DefaultTransformStrategy(toolBoxWithMockUserAPI(userAPI));
+
+        final Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getModUser()).thenReturn("user-1");
+
+        final Map<String, Object> map = new HashMap<>();
+        map.put(MOD_USER_NAME_KEY, "Ada Lovelace"); // already resolved by addAuditProperties
+
+        final String result = invokeResolveModUserName(strategy, contentlet, map);
+
+        assertEquals("Ada Lovelace", result);
+        verify(userAPI, never()).loadUserById(Mockito.anyString());
+    }
+
+    /**
+     * When nothing resolved modUser yet (e.g. COMMON_PROPS wasn't requested for this transform),
+     * {@code addVersionProperties} must still resolve it itself — exactly once.
+     */
+    @Test
+    public void resolveModUserName_notYetResolved_resolvesExactlyOnce() throws Exception {
+        final UserAPI userAPI = Mockito.mock(UserAPI.class);
+        final User user = Mockito.mock(User.class);
+        Mockito.when(user.getFullName()).thenReturn("Grace Hopper");
+        Mockito.when(userAPI.loadUserById("user-2")).thenReturn(user);
+
+        final DefaultTransformStrategy strategy =
+                new DefaultTransformStrategy(toolBoxWithMockUserAPI(userAPI));
+
+        final Contentlet contentlet = Mockito.mock(Contentlet.class);
+        Mockito.when(contentlet.getModUser()).thenReturn("user-2");
+
+        final Map<String, Object> map = new HashMap<>(); // nothing resolved it yet
+
+        final String result = invokeResolveModUserName(strategy, contentlet, map);
+
+        assertEquals("Grace Hopper", result);
+        verify(userAPI, times(1)).loadUserById("user-2");
     }
 }
