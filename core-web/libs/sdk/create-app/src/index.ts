@@ -787,7 +787,11 @@ async function startScaffoldingFrontEnd({
         // process.exit skips `finally` — which would strand docker-compose.yml in the parent
         // directory on the exact failure that `finally` exists to survive (AC-008). The outer
         // catch prints the message and still exits 1, so the exit contract is unchanged.
-        throw new Error(`Failed to scaffold frontend project (${selectedFramework}).`);
+        //
+        // The underlying error, not a copy of the spinner text: the outer catch prints
+        // whatever it gets, and repeating the line above would just say it twice. This one
+        // names the likely causes (git missing, no network).
+        throw created.val;
     }
 
     // TODO need to insert here the dependices step

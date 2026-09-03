@@ -84,15 +84,11 @@ export async function downloadDockerCompose(directory: string) {
     await fs.writeFile(dockerComposePath, contents);
 }
 
-export async function moveDockerComposeOneLevelUp(directory: string) {
-    const sourcePath = path.join(directory, 'docker-compose.yml');
-    const targetPath = path.join(directory, '..', 'docker-compose.yml');
-    await fs.rename(sourcePath, targetPath);
-}
-
-export async function moveDockerComposeBack(directory: string) {
-    const sourcePath = path.join(directory, '..', 'docker-compose.yml');
-    const targetPath = path.join(directory, 'docker-compose.yml');
-
-    await fs.rename(sourcePath, targetPath);
-}
+/*
+ * `moveDockerComposeOneLevelUp` / `moveDockerComposeBack` used to live here. They are gone,
+ * not merely unused: they moved the compose file into the parent — the user's cwd — with no
+ * guard and no `finally`, which is both defects review found on this branch (a clobbered
+ * `docker-compose.yml`, and a stranded one after a failure). They had no callers, so leaving
+ * them would only invite the bug back. `withComposeFileMovedAside` in `utils/compose-move.ts`
+ * is the one supported way to do this.
+ */

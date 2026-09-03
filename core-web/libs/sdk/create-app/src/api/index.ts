@@ -16,7 +16,7 @@ function getSafeErrorDetails(err: unknown): string {
             err.message ? `message=${err.message}` : null
         ].filter(Boolean);
 
-        return details.length > 0 ? details.join(', ') : 'Axios request failed';
+        return details.length > 0 ? details.join(', ') : 'HTTP request failed';
     }
 
     if (err instanceof Error) {
