@@ -690,13 +690,16 @@ export class DotFolderListViewContextMenuComponent {
             assetIdentifier: identifier,
             title: this.#dotMessageService.get('contenttypes.content.push_publish'),
             // The dialog is opened globally and says nothing on success by design, so the caller
-            // owns the message. Copy says *queued*, because that is what push publish is.
+            // reports it — through the same outcome the Workflow Center publishes, so Push Publish
+            // reads identically whichever surface fired it.
             onSuccess: () =>
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get('push-publish.enqueued'),
-                    detail: this.#dotMessageService.get('push-publish.enqueued-detail'),
-                    life: SUCCESS_MESSAGE_LIFE
+                this.#store.reportExternalResult({
+                    // `Remote-Publish` is the key the Workflow Center labels this action with
+                    // (`action-center.ts`, PUSH_PUBLISH quick action). Same key, same wording.
+                    actionName: this.#dotMessageService.get('Remote-Publish'),
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 0
                 })
         });
     }

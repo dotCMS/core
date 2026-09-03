@@ -633,6 +633,24 @@ export function withActionExecution() {
                     /** Settles a run registered with {@link startExternalRun}. */
                     endExternalRun: (runId: string): void => endRun(runId),
 
+                    /**
+                     * Publishes an outcome for a run this store did not fire itself.
+                     *
+                     * Add to Bundle and Push Publish from the row context menu hand off to shared
+                     * dialogs that own their own request. Fired from the Workflow Center the same
+                     * two operations settle through `onSettled` and are reported by the shell with
+                     * one wording; fired from the context menu they used to report nothing at all.
+                     *
+                     * Rather than give the context menu its own copy, it publishes here and the
+                     * shell's existing effect renders it — so the same operation reads the same way
+                     * whichever surface started it, and the reload behaviour matches too.
+                     */
+                    reportExternalResult: (
+                        result: DotContentDriveActionExecutionResult
+                    ): void => {
+                        patchState(store, { actionExecutionResult: result });
+                    },
+
                     /** Called by the shell once the result has been presented. */
                     clearActionExecutionResult: (): void => {
                         patchState(store, { actionExecutionResult: undefined });

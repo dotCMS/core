@@ -35,7 +35,6 @@ import {
 } from '@dotcms/data-access';
 import {
     ContextMenuData,
-    DotBundle,
     DotCMSBaseTypesContentTypes,
     DotCMSContentTypeField,
     DotCMSDataTypes,
@@ -202,21 +201,21 @@ export class DotContentDriveShellComponent {
     readonly $canAddChildren = this.#store.$canAddChildren;
 
     /**
-     * Reports a successful Add to Bundle.
+     * Reports a successful Add to Bundle through the shared outcome pipeline.
      *
      * An arrow property, not a method: it is handed to the dialog as data and invoked from there,
      * so it has to carry its own `this`.
      *
-     * The dialog says nothing on success by design — it is shared with nine other consumers and
-     * cannot assume a toast host exists — so the caller owns the message. Same reasoning as the
-     * push-publish dialog's `onSuccess`.
+     * Publishing a result rather than raising a toast is the point — the Workflow Center fires the
+     * same operation and its wording, severity and reload all come from one place. A second toast
+     * here would say the same thing differently and drift the moment either is edited.
      */
-    protected readonly onBundleAdded = (bundle: DotBundle): void => {
-        this.#messageService.add({
-            severity: 'success',
-            summary: this.#dotMessageService.get('add-to-bundle.added'),
-            detail: this.#dotMessageService.get('add-to-bundle.added-detail', bundle?.name ?? ''),
-            life: SUCCESS_MESSAGE_LIFE
+    protected readonly onBundleAdded = (): void => {
+        this.#store.reportExternalResult({
+            actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
+            successCount: 1,
+            skippedCount: 0,
+            failCount: 0
         });
     };
 
