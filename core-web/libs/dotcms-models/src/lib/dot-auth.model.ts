@@ -52,6 +52,7 @@ export interface DotAuthConfigValues {
     logoutUrl?: string;
     groupsClaim?: string;
     groupsUrl?: string;
+    groupsResponsePath?: string;
     emailClaim?: string;
     firstNameClaim?: string;
     lastNameClaim?: string;
@@ -129,6 +130,7 @@ export interface DotAuthHeadlessValues {
     logoutUrl?: string;
     groupsClaim?: string;
     groupsUrl?: string;
+    groupsResponsePath?: string;
     extraRoles?: string;
     buildRolesStrategy?: string;
     callbackUrl?: string;
@@ -208,6 +210,8 @@ export interface DotAuthOidcConfig extends DotAuthProvisioningConfig {
     revocationUrl: string;
     /** Groups endpoint — not edited in the UI, but must round-trip so a save never deletes it. */
     groupsUrl: string;
+    /** Dot-path into the groups endpoint response (e.g. memberships[].groupKey.id) — round-trips like groupsUrl. */
+    groupsResponsePath: string;
     clientId: string;
     clientSecret: string;
     scopes: string;

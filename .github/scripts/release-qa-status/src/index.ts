@@ -48,7 +48,7 @@ import {
   listStandardReleaseTags,
   findPreviousTag,
   fetchCommitRange,
-  extractPRNumbers,
+  resolvePRNumbers,
   fetchPRDetails,
   fetchIssueInfos,
 } from './github';
@@ -265,21 +265,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  const prNumbers = extractPRNumbers(commits);
+  const prNumbers = await resolvePRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} merged PRs from ${commits.length} commits.\n`
   );
-  if (commits.length > 0 && prNumbers.length === 0) {
-    // The extractPRNumbers regex only matches squash-merge commit subjects
-    // (`(#N)` at end). If `main` ever switches to merge commits the QA
-    // section would silently disappear from every release notification.
-    // Surface the situation explicitly so the cause is obvious.
-    process.stderr.write(
-      `Warning: no PR numbers extracted from ${commits.length} commits. ` +
-        `Has the merge strategy on the source branch changed? ` +
-        `Expected squash-merge commit subjects ending in "(#N)".\n`
-    );
-  }
 
   const prDetails = await fetchPRDetails(octokit, owner, repo, prNumbers);
   process.stderr.write(`Fetched details for ${prDetails.size} PRs.\n`);
