@@ -64,7 +64,7 @@ export const BlockEditorBlock = ({
         }
 
         return [
-            <Link key={`link-${groupIndex}`} attrs={group.link.attrs}>
+            <Link key={`link-${groupIndex}`} type={group.link.type} attrs={group.link.attrs}>
                 {rendered}
             </Link>
         ];
