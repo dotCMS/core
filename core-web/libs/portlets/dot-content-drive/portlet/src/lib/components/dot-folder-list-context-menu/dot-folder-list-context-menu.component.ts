@@ -747,11 +747,26 @@ export class DotFolderListViewContextMenuComponent {
             return;
         }
 
+        // A recursive subtree delete is the slowest thing in the portlet, and the confirm dialog
+        // closes on accept, so the run outlives its trigger and belongs on the indicator (FR-007).
+        // It reported nothing at all until its toast.
+        //
+        // Targeted by `identifier`: a folder row's `inode` is backfilled to equal it by the search
+        // service, so this is the key the grid marks busy by.
+        const runId = this.#store.startExternalRun({
+            operation: 'DELETE_FOLDER',
+            actionName: this.#dotMessageService.get('content-drive.context-menu.delete-folder'),
+            total: 1,
+            targetLabel: folder.name,
+            targets: [folder.identifier]
+        });
+
         this.#dotFolderService
             .deleteFolder(`//${hostname}${folder.path}`)
             .pipe(take(1))
             .subscribe({
                 next: () => {
+                    this.#store.endExternalRun(runId);
                     this.#messageService.add({
                         severity: 'success',
                         summary: this.#dotMessageService.get(
@@ -771,7 +786,9 @@ export class DotFolderListViewContextMenuComponent {
                     if (this.#browsingInside(folder.path)) {
                         this.#store.setPath(ROOT_PATH);
                     } else {
-                        this.#store.reloadContentDrive();
+                        // Quiet: the folder row was marked busy, so a skeleton here would be a
+                        // second load right after the first and would read as a jump.
+                        this.#store.reloadContentDrive({ quiet: true });
                     }
 
                     // Always: the tree reloads separately from the grid, so without this it keeps
@@ -779,6 +796,8 @@ export class DotFolderListViewContextMenuComponent {
                     this.#store.loadFolders();
                 },
                 error: (error: HttpErrorResponse) => {
+                    // A failed delete that left the indicator up would report work that stopped.
+                    this.#store.endExternalRun(runId);
                     this.#httpErrorManagerService.handle(error);
                 }
             });

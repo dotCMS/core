@@ -1,7 +1,7 @@
 import { describe, expect, it } from '@jest/globals';
 import { patchState } from '@ngrx/signals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
@@ -1048,6 +1048,52 @@ describe('DotFolderListViewContextMenuComponent', () => {
                         `//demo.dotcms.com${folderWithEdit.path}`
                     );
                     expect(store.reloadContentDrive).toHaveBeenCalled();
+                });
+
+                it('should report the delete on the toolbar while it runs', async () => {
+                    // A recursive subtree delete is the slowest thing in the portlet and reported
+                    // nothing at all until its toast. The confirm dialog closes on accept, so the
+                    // run outlives its trigger and belongs on the indicator (FR-007).
+                    folderService.deleteFolder = jest.fn().mockReturnValue(NEVER);
+                    const startExternalRun = jest.spyOn(store, 'startExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(startExternalRun).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            total: 1,
+                            targetLabel: folderWithEdit.name,
+                            // Folder rows carry `inode === identifier`, backfilled by the search
+                            // service, so this is the key the grid marks busy by.
+                            targets: [folderWithEdit.identifier]
+                        })
+                    );
+                });
+
+                it('should clear the indicator when the delete succeeds', async () => {
+                    const endExternalRun = jest.spyOn(store, 'endExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(endExternalRun).toHaveBeenCalled();
+                });
+
+                it('should clear the indicator when the delete fails', async () => {
+                    // A failed delete that left the indicator up would report work that stopped.
+                    folderService.deleteFolder = jest
+                        .fn()
+                        .mockReturnValue(throwError(() => new Error('nope')));
+                    const endExternalRun = jest.spyOn(store, 'endExternalRun');
+
+                    await component.getMenuItems(folderContextMenuWithEdit);
+                    deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);
+                    (alertConfirmService.confirm as jest.Mock).mock.lastCall[0].accept();
+
+                    expect(endExternalRun).toHaveBeenCalled();
                 });
 
                 it('should not reload the drive when the delete fails', async () => {
