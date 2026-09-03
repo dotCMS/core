@@ -18,7 +18,10 @@ import org.postgresql.core.Parser;
  * literal early, producing a PostgreSQL {@code Unterminated identifier} parse error and aborting the fix.
  *
  * <p>This test validates the two SQL shapes through the actual PostgreSQL JDBC driver's SQL parser
- * ({@code org.postgresql.core.Parser}), the same parser that raised the original error:</p>
+ * (see {@link #parseWithPostgresDriver(String)}), the same parser that raised the original error.
+ * Note that this parser lives in pgjdbc's <em>internal</em> API ({@code org.postgresql.core.Parser});
+ * all uses are funneled through that single helper so a driver upgrade that changes the internal
+ * signature only ever touches one place in this file:</p>
  * <ul>
  *   <li>The pre-fix shape (JSON inlined via {@code '%s'}) fails to parse when the JSON contains an
  *   apostrophe.</li>
@@ -92,7 +95,7 @@ public class ContentletAsJsonSqlBindingTest {
     public void test_pre_fix_inlined_json_with_apostrophe_breaks_postgres_parser() {
         final String inlinedSql = String.format(PRE_FIX_SQL_TEMPLATE, CONTENTLET_AS_JSON);
         final SQLException exception = assertThrows(SQLException.class,
-                () -> Parser.replaceProcessing(inlinedSql, true, true),
+                () -> parseWithPostgresDriver(inlinedSql),
                 "Inlining a JSON payload with an apostrophe into the SQL must break the PostgreSQL parser");
         assertTrue(exception.getMessage().contains("Unterminated identifier"),
                 "Unexpected parser error: " + exception.getMessage());
@@ -106,7 +109,7 @@ public class ContentletAsJsonSqlBindingTest {
     @Test
     public void test_pre_fix_inlined_json_without_apostrophes_parses() {
         final String inlinedSql = String.format(PRE_FIX_SQL_TEMPLATE, CONTENTLET_AS_JSON_NO_APOSTROPHES);
-        assertDoesNotThrow(() -> Parser.replaceProcessing(inlinedSql, true, true));
+        assertDoesNotThrow(() -> parseWithPostgresDriver(inlinedSql));
     }
 
     /**
@@ -121,7 +124,20 @@ public class ContentletAsJsonSqlBindingTest {
                 "The fixed SQL must not contain the JSON payload");
         assertFalse(FIXED_SQL.contains("data's"),
                 "The fixed SQL must not contain any content value");
-        assertDoesNotThrow(() -> Parser.replaceProcessing(FIXED_SQL, true, true));
+        assertDoesNotThrow(() -> parseWithPostgresDriver(FIXED_SQL));
+    }
+
+    /**
+     * Single seam over pgjdbc's <em>internal</em> SQL parser, the exact code path that raised the
+     * original "Unterminated identifier" production error. {@code org.postgresql.core.Parser} is not
+     * part of the driver's public API, so its signature may change on a driver upgrade; if that
+     * happens, this is the only method that needs updating.
+     *
+     * @param sql the SQL text to run through the PostgreSQL JDBC driver's parser
+     * @throws SQLException if the driver's parser rejects the statement
+     */
+    private static void parseWithPostgresDriver(final String sql) throws SQLException {
+        Parser.replaceProcessing(sql, true, true);
     }
 
 }
