@@ -141,15 +141,27 @@ jobs:
             echo "date=$(/bin/date -u "+%Y-%m")"
           } >> "$GITHUB_OUTPUT"
 
+      # A GitHub Release for this version means the pipeline already got at least
+      # this far for it, so re-dispatching would republish different artifacts under
+      # a version that is already public (see #37380). Refuse before anything is
+      # mutated. There is deliberately no force override: bumping the counter on a
+      # retry is already the convention (26.08.19-01..-04), and the changelog range
+      # tolerates it because findPreviousTag skips releases with no notes.
+      - name: Reject already-released version
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ steps.set-version.outputs.release_tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          if gh release view "${RELEASE_TAG}" --repo "${REPO}" --json tagName >/dev/null 2>&1; then
+            echo "::error::Release ${RELEASE_TAG} already exists. Re-releasing a published version would republish different artifacts under the same version, and force-recreates its release branch. Dispatch the next counter instead."
+            exit 1
+          fi
+          echo "No existing release for ${RELEASE_TAG} — proceeding."
+
       - name: Create Release Branch and Tag
         id: create-branch
         run: |
-          release_tag=${{ steps.set-version.outputs.release_tag }}
-          if git rev-parse "${release_tag}" >/dev/null 2>&1; then
-            echo "Tag ${release_tag} exists, removing it"
-            git push origin :refs/tags/${release_tag}
-          fi
-
           release_commit=${{ steps.set-version.outputs.release_commit }}
           # Shallow checkout (fetch-depth: 1) only guarantees HEAD of the default
           # branch. When an explicit release commit was supplied, fetch just that
