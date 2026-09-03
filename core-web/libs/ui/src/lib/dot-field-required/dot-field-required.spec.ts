@@ -77,7 +77,9 @@ describe('Directive: dotFieldRequired', () => {
 @Component({
     standalone: true,
     imports: [DotFieldRequiredDirective],
-    template: `<label data-testid="plainLabel" dotFieldRequired for="plain">Plain</label>`
+    template: `
+        <label data-testid="plainLabel" dotFieldRequired for="plain">Plain</label>
+    `
 })
 class NoFormHostComponent {}
 
@@ -116,14 +118,14 @@ describe('Directive: dotFieldRequired (signal forms)', () => {
     });
 
     it('should mark a field the schema declares required', () => {
-        expect(hasMarker(fixture.debugElement.query(By.css('[data-testid="signalRequired"]')))).toBe(
-            true
-        );
+        expect(
+            hasMarker(fixture.debugElement.query(By.css('[data-testid="signalRequired"]')))
+        ).toBe(true);
     });
 
     it('should not mark a field the schema leaves optional', () => {
-        expect(hasMarker(fixture.debugElement.query(By.css('[data-testid="signalOptional"]')))).toBe(
-            false
-        );
+        expect(
+            hasMarker(fixture.debugElement.query(By.css('[data-testid="signalOptional"]')))
+        ).toBe(false);
     });
 });
