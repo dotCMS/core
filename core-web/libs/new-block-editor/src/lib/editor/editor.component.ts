@@ -52,17 +52,12 @@ import { DotUploadService } from './services/dot-upload.service';
 import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
-import { stripDocStats } from './utils/doc-stats.utils';
+import { contentMatchesEditorDocument } from './utils/content-match.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import {
     preserveUnknownNodesInDocument,
     restoreUnknownBlockNodes
 } from './utils/unknown-block.utils';
-
-/** Stringifies the editor document for form output (plain ProseMirror JSON, no extra attrs). */
-function editorDocumentJsonText(editor: Editor): string {
-    return JSON.stringify(stripDocStats(editor.getJSON()));
-}
 
 /**
  * Keeps "scroll the caret into view" confined to the editor's own scroll container.
@@ -133,25 +128,8 @@ function getKnownNodeNames(editor: Editor): Set<string> {
     return new Set(Object.keys(editor.schema.nodes));
 }
 
-/** True when {@link parsed} represents the same document already in {@link editor}. */
-function editorContentMatchesParsed(editor: Editor, parsed: string | JSONContent): boolean {
-    const currentJson = editorDocumentJsonText(editor);
-    if (typeof parsed === 'string') {
-        const trimmed = parsed.trimStart();
-        if (trimmed.startsWith('{')) {
-            try {
-                return JSON.stringify(stripDocStats(JSON.parse(parsed))) === currentJson;
-            } catch {
-                return false;
-            }
-        }
-        return parsed === editor.getHTML();
-    }
-    return (
-        JSON.stringify(
-            stripDocStats(preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)))
-        ) === currentJson
-    );
+function getKnownMarkNames(editor: Editor): Set<string> {
+    return new Set(Object.keys(editor.schema.marks));
 }
 
 /**
@@ -425,6 +403,23 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     private pendingValue: string | JSONContent | null = null;
 
     /**
+     * The raw `value` reference most recently loaded into the editor, or `undefined` when
+     * nothing has been loaded yet.
+     *
+     * Compared by identity, never serialized. This exists because the value effect below is
+     * re-run by Angular without any of its inputs changing: selecting a node with an Angular
+     * node view makes `ngx-tiptap` write that node view's `selected` input, and Angular's
+     * `setInput` marks every ancestor view dirty, which re-flushes this component's effects
+     * (#36985). Measured: wrapping the effect's reads in `untracked()` — leaving it with zero
+     * dependencies — does not stop it re-running, so narrowing dependencies cannot fix this.
+     *
+     * Identity is the right gate because `setInput` returns early when the new value is
+     * `Object.is`-equal to the previous one, so on a spurious re-run the host has written
+     * nothing and `value()` yields the very same object.
+     */
+    #loadedValue: string | JSONContent | undefined = undefined;
+
+    /**
      * Buffers a {@link setDisabledState} call that arrives before the editor exists.
      * Applied right after {@link buildEditor} returns.
      */
@@ -481,9 +476,38 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     }
 
     /**
-     * Pins a freshly built editor inside the {@link editor} signal and drains any
-     * value / disabled state that arrived through {@link ControlValueAccessor} while
-     * the editor was still mounting on the slow path.
+     * Replaces the editor's document with `content`, normalizing unknown node types into the
+     * `dotUnsupportedBlock` placeholder first so custom blocks survive the round trip.
+     *
+     * Every load goes through here — the initial one from {@link commitEditor}, later host
+     * pushes from the `value` effect, and reactive-forms writes from {@link writeValue} — so
+     * there is one place where the document is replaced rather than three near-copies.
+     */
+    private loadContent(editor: Editor, content: string | JSONContent): void {
+        const parsed = normalizeEditorContent(content);
+        editor.commands.setContent(
+            typeof parsed === 'string'
+                ? parsed
+                : preserveUnknownNodesInDocument(
+                      parsed,
+                      getKnownNodeNames(editor),
+                      getKnownMarkNames(editor)
+                  ),
+            { emitUpdate: false }
+        );
+    }
+
+    /**
+     * Pins a freshly built editor inside the {@link editor} signal and loads the initial
+     * document — from the {@link ControlValueAccessor} write that arrived while the editor was
+     * still mounting, or from the `value` input when the host is the web component.
+     *
+     * This is the single load point for both hosts, which is why no host detection is needed:
+     * the reactive-forms host never sets `value`, and the web-component host never calls
+     * `writeValue`. It deliberately mirrors the legacy editor, which loads once in
+     * `editor.on('create')` and does not react to `value` afterwards — and does not have
+     * #36985 as a result. `on('create')` itself is unusable here because it fires inside
+     * `new Editor(...)`, before {@link editor} is set on the line below.
      */
     private commitEditor(editor: Editor): void {
         this.editor.set(editor);
@@ -493,17 +517,21 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             this.pendingDisabled = null;
         }
 
+        // Reactive forms take precedence: a `writeValue` that arrived during mounting is the
+        // authoritative content for that host. Only one of the two ever has a value.
         if (this.pendingValue !== null) {
-            const parsed = normalizeEditorContent(this.pendingValue);
-            if (!editorContentMatchesParsed(editor, parsed)) {
-                editor.commands.setContent(
-                    typeof parsed === 'string'
-                        ? parsed
-                        : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(editor)),
-                    { emitUpdate: false }
-                );
+            if (this.pendingValue !== '') {
+                this.loadContent(editor, this.pendingValue);
             }
             this.pendingValue = null;
+
+            return;
+        }
+
+        const initial = this.value();
+        if (initial) {
+            this.#loadedValue = initial;
+            this.loadContent(editor, initial);
         }
     }
 
@@ -611,24 +639,28 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             this.store.setLanguageId(id);
         });
 
-        // Sync value input → editor (for web component / non-CVA usage).
-        // Guard: skip when value is empty to avoid overriding CVA-set content on init;
-        // skip when unchanged so two-way [value] + (valueChange) does not reset the cursor.
-        // Also tracks `editor()` so the effect re-fires once the slow-path editor mounts.
-        // Skip while dragging — setContent mid-drag can turn a move into a duplicate (#36976).
+        // Sync value input → editor, for the web-component host where there is no
+        // ControlValueAccessor. The initial load happens in `commitEditor`; this effect exists
+        // only to pick up a host that later swaps in a different document.
+        //
+        // Angular re-runs this effect whenever any descendant Angular node view writes an input
+        // — which happens every time a `dotContent` or `codeBlock` node is selected. Nothing it
+        // reads has changed on those runs, so the identity check below is what makes a click
+        // free. Do NOT replace it with a content comparison: that is what #36985 was, and the
+        // whole point is to answer without inspecting the document at all.
+        //
+        // Bail order is load-bearing. Emptiness must be tested before the latch, or `''` latches
+        // and content never loads. The editor and drag bails must NOT latch either, or the
+        // value would be discarded and never retried (#36976 — a setContent mid-drag turns a
+        // move into a duplicate).
         effect(() => {
             const v = this.value();
             if (!v) return;
+            if (v === this.#loadedValue) return;
             const ed = this.editor();
             if (!ed || ed.view.dragging) return;
-            const parsed = normalizeEditorContent(v);
-            if (editorContentMatchesParsed(ed, parsed)) return;
-            ed.commands.setContent(
-                typeof parsed === 'string'
-                    ? parsed
-                    : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
-                { emitUpdate: false }
-            );
+            this.#loadedValue = v;
+            this.loadContent(ed, v);
         });
 
         // Preserve selection highlight while any popover or slash menu is open
@@ -743,14 +775,15 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
             return;
         }
         if (ed.view.dragging) return;
-        const parsed = normalizeEditorContent(content);
-        if (editorContentMatchesParsed(ed, parsed)) return;
-        ed.commands.setContent(
-            typeof parsed === 'string'
-                ? parsed
-                : preserveUnknownNodesInDocument(parsed, getKnownNodeNames(ed)),
-            { emitUpdate: false }
-        );
+
+        // The only call site that still compares documents. Angular reactive forms can
+        // legitimately write more than once — `setValue`, `patchValue`, `reset` — and unlike the
+        // `value` input there is no stable reference to latch on, because the host stringifies.
+        // The value effect uses an identity latch instead, and `commitEditor` is a one-shot
+        // drain that needs no guard at all.
+        if (contentMatchesEditorDocument(ed, content ?? '')) return;
+
+        this.loadContent(ed, content ?? '');
     }
 
     /** @inheritdoc */

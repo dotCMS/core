@@ -34,42 +34,25 @@
                     {{ 'experiments.configure.page.empty' | dm }}
                 </span>
             }
-            <!-- Select and Clear swap rather than sit side by side: with a page chosen the
-                     way to a different one is to clear this one, which is also the only gesture
-                     the required-page rule can react to. -->
-            @if ($selectedPage() && $canChangePage()) {
-                <p-button
-                    type="button"
-                    class="ml-auto flex-none"
-                    size="small"
-                    [text]="true"
-                    [rounded]="true"
-                    severity="secondary"
-                    [attr.aria-label]="'experiments.configure.page.action.clear' | dm"
-                    [pTooltip]="'experiments.configure.page.action.clear' | dm"
-                    tooltipPosition="top"
-                    (onClick)="clearPage()"
-                    data-testid="experiments-configure-page-clear-btn">
-                    <span
-                        class="material-symbols-rounded text-lg! leading-none!"
-                        aria-hidden="true">
-                        close
-                    </span>
-                </p-button>
-            } @else {
-                <p-button
-                    type="button"
-                    class="ml-auto flex-none"
-                    size="small"
-                    severity="secondary"
-                    [outlined]="true"
-                    [label]="'experiments.configure.page.action.select' | dm"
-                    [disabled]="$isSelectDisabled()"
-                    [pTooltip]="$selectTooltipKey() ? ($selectTooltipKey()! | dm) : ''"
-                    tooltipPosition="top"
-                    (onClick)="openPageSelector()"
-                    data-testid="experiments-configure-page-select-btn" />
-            }
+            <!-- One button either way, and the label is the whole difference: with a page in
+                     place the gesture is to change it, not to empty the card and pick again. -->
+            <p-button
+                type="button"
+                class="ml-auto flex-none"
+                size="small"
+                severity="secondary"
+                [outlined]="true"
+                [label]="
+                    ($selectedPage()
+                        ? 'experiments.configure.page.action.change'
+                        : 'experiments.configure.page.action.select'
+                    ) | dm
+                "
+                [disabled]="$isPageActionDisabled()"
+                [pTooltip]="$pageActionTooltipKey() ? ($pageActionTooltipKey()! | dm) : ''"
+                tooltipPosition="top"
+                (onClick)="onChangePage()"
+                data-testid="experiments-configure-page-select-btn" />
         </div>
 
         <!-- Allocation only means something once there is a page to take traffic from, so it

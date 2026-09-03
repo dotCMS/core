@@ -77,6 +77,7 @@ import {
     GridBlock,
     ImageNode,
     LoaderNode,
+    UnsupportedBlockMark,
     UnsupportedBlockNode,
     VideoNode
 } from '../../nodes';
@@ -87,6 +88,7 @@ import {
     removeInvalidNodes,
     restoreUnknownBlockNodes,
     RestoreDefaultDOMAttrs,
+    preserveUnknownBlockMarks,
     preserveUnknownBlockNodes,
     SetDocAttrStep
 } from '../../shared';
@@ -115,6 +117,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
     readonly #injector = inject(Injector);
     /** Schema node names captured as soon as the TipTap editor instance exists. */
     readonly #knownEditorNodeNames = new Set<string>();
+    readonly #knownEditorMarkNames = new Set<string>();
     /** Buffers incoming form content until the editor create lifecycle can safely consume it. */
     #pendingValue: Content | null = null;
     /** Field-level allowed blocks, with paragraph forced in as the legacy default. */
@@ -282,6 +285,10 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
                 this.#knownEditorNodeNames.clear();
                 Object.keys(this.editor.schema.nodes).forEach((nodeName) =>
                     this.#knownEditorNodeNames.add(nodeName)
+                );
+                this.#knownEditorMarkNames.clear();
+                Object.keys(this.editor.schema.marks).forEach((markName) =>
+                    this.#knownEditorMarkNames.add(markName)
                 );
 
                 this.dotMarketingConfigService.setProperty(
@@ -763,6 +770,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
      */
     private getEditorMarks() {
         return [
+            UnsupportedBlockMark,
             Underline,
             TextAlign.configure({ types: ['heading', 'paragraph', 'listItem', 'dotImage'] }),
             Highlight.configure({ HTMLAttributes: { style: 'background: #accef7;' } }),
@@ -803,11 +811,20 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
             return;
         }
 
+        // Nodes first, then marks: an unknown node is swallowed whole into the placeholder's
+        // `originalNode` payload, which must stay exactly as stored, so the mark pass only
+        // ever walks what is left of the real tree.
         const preservedContent = Array.isArray(content)
-            ? preserveUnknownBlockNodes(content, this.#knownEditorNodeNames)
+            ? preserveUnknownBlockMarks(
+                  preserveUnknownBlockNodes(content, this.#knownEditorNodeNames),
+                  this.#knownEditorMarkNames
+              )
             : {
                   ...content,
-                  content: preserveUnknownBlockNodes(content.content, this.#knownEditorNodeNames)
+                  content: preserveUnknownBlockMarks(
+                      preserveUnknownBlockNodes(content.content, this.#knownEditorNodeNames),
+                      this.#knownEditorMarkNames
+                  )
               };
 
         this.content =
