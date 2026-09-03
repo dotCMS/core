@@ -1887,6 +1887,21 @@ describe('DotFolderListViewContextMenuComponent', () => {
             jest.useRealTimers();
         });
 
+        it('should reload quietly, since the row was already marked', async () => {
+            // Reported from the running instance: the table blinked. The row marks appear, the lock
+            // settles, and a loud reload then blanks the whole grid — a second load right after the
+            // first. Nothing caught it because no test asserted *how* the reload was performed.
+            jest.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+            const reload = jest.spyOn(store, 'reloadContentDrive');
+
+            await fireLock(false);
+
+            expect(reload).toHaveBeenCalledWith({ quiet: true });
+
+            jest.useRealTimers();
+        });
+
         it('should clear the indicator when a lock fails', async () => {
             jest.useFakeTimers();
             dotContentletService.lockContent.mockReturnValue(throwError(() => new Error('nope')));

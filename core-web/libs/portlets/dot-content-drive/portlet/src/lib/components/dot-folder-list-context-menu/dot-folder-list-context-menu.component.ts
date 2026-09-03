@@ -544,7 +544,9 @@ export class DotFolderListViewContextMenuComponent {
                             )
                         });
 
-                        this.#store.reloadContentDrive();
+                        // Quiet: the row was marked busy, so a skeleton here is a second load
+                        // straight after the first and reads as the table blinking.
+                        this.#store.reloadContentDrive({ quiet: true });
                     },
                     (error) => {
                         this.#store.endExternalRun(runId);
@@ -580,7 +582,9 @@ export class DotFolderListViewContextMenuComponent {
                                 'content-drive.toast.lock-success-detail'
                             )
                         });
-                        this.#store.reloadContentDrive();
+                        // Quiet: the row was marked busy, so a skeleton here is a second load
+                        // straight after the first and reads as the table blinking.
+                        this.#store.reloadContentDrive({ quiet: true });
                     },
                     (error) => {
                         this.#store.endExternalRun(runId);
