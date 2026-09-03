@@ -153,26 +153,37 @@ describe('EditEmaNavigationBarComponent', () => {
                     }
                 );
 
-                it('should not prefix an href that is already absolute', () => {
-                    const navigateSpy = jest
-                        .spyOn(spectator.inject(Router), 'navigate')
-                        .mockResolvedValue(true);
+                /**
+                 * Asserts the RESOLVED URL, not the commands array.
+                 *
+                 * The first version of this test asserted `commands` equalled
+                 * `['', 'experiments']` — the array the implementation happened to produce by
+                 * splitting `'/experiments'` on `/`. It passed, and the button did nothing: an
+                 * empty leading segment does not start with `/`, so the router treated the whole
+                 * navigation as relative. Asserting the array locked the bug in. Resolving it
+                 * through the real router is what makes the test able to see the destination.
+                 */
+                it('should navigate to an absolute href without the edit-page prefix', () => {
+                    const router = spectator.inject(Router);
+                    const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
 
                     spectator.setInput('items', [
                         {
                             materialIcon: 'science',
                             label: 'editema.editor.navbar.experiments',
                             href: '/experiments',
-                            id: 'experiments'
+                            id: 'experiments',
+                            queryParams: { pageAsset: 'page-1' }
                         }
                     ]);
                     spectator.detectChanges();
 
                     clickItemAt(0);
 
-                    const [commands] = navigateSpy.mock.calls[0];
-                    expect(commands).toEqual(['', 'experiments']);
-                    expect(commands).not.toContain('edit-page');
+                    const [commands, extras] = navigateSpy.mock.calls[0];
+                    const url = router.serializeUrl(router.createUrlTree(commands, extras));
+
+                    expect(url).toBe('/experiments?pageAsset=page-1');
                 });
             });
 
