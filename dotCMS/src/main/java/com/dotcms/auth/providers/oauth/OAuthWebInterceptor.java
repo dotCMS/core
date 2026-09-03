@@ -416,12 +416,12 @@ public class OAuthWebInterceptor implements WebInterceptor {
     private OAuthProvider buildProvider(final OAuthAppConfig config) {
         if (config.isOidc()) {
             return new OIDCProvider(config.issuerUrl, config.clientId, config.clientSecret,
-                    config.groupsClaim, config.groupsUrl);
+                    config.groupsClaim, config.groupsUrl, config.groupsResponsePath);
         }
         return new GenericOAuth2Provider(config.clientId, config.clientSecret,
                 config.authorizationUrl, config.tokenUrl, config.userinfoUrl,
                 config.revocationUrl, config.logoutUrl,
-                config.groupsClaim, config.groupsUrl);
+                config.groupsClaim, config.groupsUrl, config.groupsResponsePath);
     }
 
     /**

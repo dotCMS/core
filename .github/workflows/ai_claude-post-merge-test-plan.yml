@@ -23,15 +23,18 @@ on:
     types: [closed]
   workflow_dispatch:
     inputs:
-      pr_number:
-        description: 'PR number to generate a plan for (must be merged)'
+      pr:
+        description: 'Merged PR — number (37206) or URL (https://github.com/dotCMS/core/pull/37206)'
         required: true
-        type: number
+        type: string
 
 # Never cancel: a run that is midway through posting to several issues must not
 # be killed with the plan on only some of them.
 concurrency:
-  group: post-merge-test-plan-${{ github.event.pull_request.number || inputs.pr_number }}
+  # On dispatch this may be a URL rather than a bare number, so two dispatches for the same PR
+  # entered in different forms land in different groups. Harmless: the per-issue idempotency check
+  # in prep is what actually prevents a double post.
+  group: post-merge-test-plan-${{ github.event.pull_request.number || inputs.pr }}
   cancel-in-progress: false
 
 jobs:
@@ -56,9 +59,33 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           REPO: ${{ github.repository }}
           EVENT_NAME: ${{ github.event_name }}
-          PR_NUMBER: ${{ github.event.pull_request.number || inputs.pr_number }}
+          PR_INPUT: ${{ github.event.pull_request.number || inputs.pr }}
         run: |
           set -euo pipefail
+
+          # Accept what people actually paste. A pull_request event always supplies a bare number;
+          # a human on workflow_dispatch usually pastes the URL straight from the address bar.
+          # The repo in a URL is checked rather than ignored: `.../ai-workflows/pull/5` would
+          # otherwise yield 5 and plan against dotCMS/core#5 — an unrelated PR entirely.
+          RAW="$(printf '%s' "$PR_INPUT" | tr -d '[:space:]')"
+          if [ -z "$RAW" ]; then
+            echo "::error::No PR given."; exit 1
+          elif [[ "$RAW" =~ ^https?://github\.com/([^/]+)/([^/]+)/pull/([0-9]+) ]]; then
+            URL_REPO="${BASH_REMATCH[1]}/${BASH_REMATCH[2]}"
+            if [ "$URL_REPO" != "$REPO" ]; then
+              echo "::error::That URL points at $URL_REPO, but this workflow only plans for $REPO."
+              exit 1
+            fi
+            PR_NUMBER="${BASH_REMATCH[3]}"
+          elif [[ "$RAW" =~ ^https?://github\.com/[^/]+/[^/]+/issues/([0-9]+) ]]; then
+            echo "::error::That is an issue URL. Pass the pull request that fixed it."; exit 1
+          elif [[ "$RAW" =~ ^#?([0-9]+)$ ]]; then
+            PR_NUMBER="${BASH_REMATCH[1]}"
+          else
+            echo "::error::Could not read a PR from '$PR_INPUT'. Pass a number (37206) or a URL (https://github.com/$REPO/pull/37206)."
+            exit 1
+          fi
+          echo "Resolved PR #$PR_NUMBER"
           echo "pr_number=$PR_NUMBER" >> "$GITHUB_OUTPUT"
 
           # Label strings are the ones that actually exist in dotCMS/core —
@@ -359,7 +386,7 @@ jobs:
             echo "::error::No plan comment found on:$MISSING"
             {
               echo
-              echo "**Rerun:** Actions → *Claude AI Post-Merge Test Plan* → Run workflow → \`pr_number: $PR_NUMBER\`."
+              echo "**Rerun:** Actions → *Claude AI Post-Merge Test Plan* → Run workflow → \`pr: $PR_NUMBER\` (a PR URL works too)."
               echo "Re-running is safe: issues that already carry a plan for this merge SHA are skipped."
             } >> "$GITHUB_STEP_SUMMARY"
             exit 1
