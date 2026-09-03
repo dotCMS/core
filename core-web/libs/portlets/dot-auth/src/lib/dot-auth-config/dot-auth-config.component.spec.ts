@@ -29,6 +29,7 @@ const DRAFT: DotAuthConfig = {
         logoutUrl: '',
         revocationUrl: '',
         groupsUrl: '',
+        groupsResponsePath: '',
         clientId: 'dotcms',
         clientSecret: '****',
         scopes: 'openid email profile',
