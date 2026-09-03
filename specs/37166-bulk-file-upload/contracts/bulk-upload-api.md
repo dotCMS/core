@@ -9,38 +9,73 @@ Field names below are binding. Changing one is a change to both halves.
 
 ---
 
-## 1. Submit a batch
+## 1. Stage the content
 
 ```
-POST /api/v1/assets/_bulkupload
+POST /api/v1/temp
 Content-Type: multipart/form-data
 ```
 
-One call carrying the file content. The client never stages content itself and never handles a
-staging identifier (spec §Decisions Q5).
+The product's existing file-staging endpoint. **Not new, and not this feature's** — its own
+documentation prescribes exactly this pattern: *"Use this endpoint to supply files for binary and
+image fields. After uploading, pass `tempFiles[0].id` as the field value."*
 
-### Multipart parts
+Send all the files as parts of one request. Optional `?maxFileLength=` tightens the per-file
+ceiling for that call.
 
-| Part | Repeats | Required | Description |
-|---|---|---|---|
-| `files` | yes, once per file | yes | The binary content. Repeat the part for each file; its `filename` is the name the asset takes. |
-| `form` | no | yes | A JSON string with the batch parameters below. |
+```json
+{
+  "tempFiles": [
+    { "id": "temp_5311313004", "fileName": "hero.jpg", "length": 84471,
+      "mimeType": "image/jpeg", "referenceUrl": "/dA/temp_5311313004/tmp/hero.jpg" },
+    { "id": "temp_5311313005", "fileName": "brochure.pdf", "length": 1249881,
+      "mimeType": "application/pdf" }
+  ]
+}
+```
 
-`form` follows the `_import` precedent (`ContentImportParams`), where the binary rides in its own
-part and everything else arrives as one JSON string.
+The client keeps the `id` of each. `length` and `mimeType` are **measured and resolved by the
+server**, which is why step 2 can validate size and type without reading anything.
 
-### `form` fields
+**Why the client makes this call rather than the batch endpoint proxying it**: staging is the
+product's designed intake for files and the right home for cross-cutting file concerns; a second
+intake door would have to re-earn them. It also hands the client per-file upload progress and
+per-file retry for free — see C-001a. Recorded as spec §Decisions Q5.
+
+**Timing matters.** The staging layer expires content on a global timer (default 30 minutes) with
+no per-call override. Stage close to submitting, not at file-selection time — references that have
+expired are refused in step 2.
+
+---
+
+## 2. Submit a batch
+
+```
+POST /api/v1/assets/_bulkupload
+Content-Type: application/json
+```
+
+No content, only references.
+
+```json
+{
+  "baseType": "DOTASSET",
+  "folderId": "abc-123",
+  "tempFileIds": ["temp_5311313004", "temp_5311313005"]
+}
+```
 
 | Field | Type | Required | Description |
 |---|---|---|---|
 | `baseType` | string | yes | `DOTASSET` or `FILEASSET`. One type for the whole batch. Any other value is `400`. |
-| `folderId` | string | conditional | Target folder identifier. **Exactly one** of `folderId` / `siteId` must be present. |
+| `folderId` | string | conditional | Target folder identifier. **Exactly one** of `folderId` / `siteId`. |
 | `siteId` | string | conditional | Target site, for an upload at the site root. |
-| `totalSizeBytes` | number | no | The client's declared total. Enables the fast refusal below; it is **not** the enforcement point. |
+| `tempFileIds` | string[] | yes | The ids from step 1, in the order the author chose the files. That order is preserved in the outcome. |
 
-> **Why two target fields and not one.** The single-file upload sends one `hostFolder` carrying
-> either a folder or a site id. ADR-0020 deprecated an endpoint for exactly that — one string
-> encoding several concerns — so this endpoint asks which one you mean. See plan.md §ADR Alignment.
+> **Why two target fields and not one.** The workflow API this feature fires already separates
+> `contentHost` (site id) from `hostFolder` (folder id), and carries explicit disambiguation
+> messaging because callers confuse them. Content Drive currently sends a site id *in* `hostFolder`
+> at the root, which is the overloading ADR-0020 deprecates. Two fields state the intent.
 
 ### Responses
 
@@ -57,29 +92,27 @@ part and everything else arrives as one JSON string.
 
 | Status | When |
 |---|---|
-| `400` | no files; `baseType` neither `DOTASSET` nor `FILEASSET`; neither or both of `folderId`/`siteId`; more than the configured file count; declared total over the configured batch ceiling |
+| `400` | empty `tempFileIds`; `baseType` neither `DOTASSET` nor `FILEASSET`; neither or both of `folderId`/`siteId`; more ids than the configured file count; **summed size over the configured batch ceiling**; a reference that cannot be resolved or that the author did not stage |
 | `403` | the author may not add children to the target |
 | `404` | the target folder or site does not exist |
-| `413` | the batch exceeded the total ceiling while being read (see below) |
 
-**On `413`**: the total-size ceiling can only be enforced authoritatively while the content is read
-(spec FR-013c.2), so a caller that under-declares or omits `totalSizeBytes` is refused part-way
-through the upload rather than up front. Content staged before the refusal is reclaimed (FR-013d).
-Declaring `totalSizeBytes` turns this into an immediate `400`, which is why the client should send
-it — it is a courtesy to the author, not a limit the client enforces.
+**Every refusal is immediate**, before any batch exists. The submission carries no content, so the
+total-size check is a sum over what staging already measured — there is no partial upload to unwind
+and no `413`.
 
-**No batch is created for any refusal.** A `400`/`403`/`404`/`413` never leaves a job behind.
+Content staged for a submission that is then refused is left to the staging layer's own expiry.
+This feature did not create it and does not reclaim it.
 
 ### Resubmitting after a lost connection
 
 Safe. A resubmission of the same batch never silently produces a second copy (FR-040). Where the
 implementation resolves it by the collision branch, the outcome is flagged so the client can tell a
 duplicate resubmission from a batch whose files genuinely all collided (FR-040a) — see
-`duplicateSubmission` in §3.
+`duplicateSubmission` in §4.
 
 ---
 
-## 2. Follow, cancel
+## 3. Follow, cancel
 
 Existing job-framework endpoints. This feature adds none.
 
@@ -94,9 +127,9 @@ follow — and should not hardcode it.
 
 ---
 
-## 3. The outcome
+## 4. The outcome
 
-Read from the job's `result`, and carried in the completion event (§4). This is the **shared batch
+Read from the job's `result`, and carried in the completion event (§5). This is the **shared batch
 outcome shape** (FR-018): the same shape bulk refresh emits, generalized so a batch of folder paths
 reads the same as a batch of files, for #37062 / #37063 to adopt unchanged.
 
@@ -146,14 +179,14 @@ Stable set. Every one needs client copy; adding one later is a change to both ha
 
 ---
 
-## 4. Completion notification
+## 5. Completion notification
 
 Pushed to the submitting author over the websocket the admin UI already holds, and recorded as a
 durable notification so the outcome survives navigating away (FR-019 … FR-023). Follows
 `BulkRefreshCompletionListener` (#37131) one-for-one.
 
 - **Event**: `BULK_UPLOAD_COMPLETED`, `Visibility.USER`, addressed to the submitter only (FR-021)
-- **Payload**: the §3 outcome — **counts _and_ `results`**, not counts alone. The frontend needs the
+- **Payload**: the §4 outcome — **counts _and_ `results`**, not counts alone. The frontend needs the
   failing file names to tell the author which files to choose again (spec C-006)
 - **Fires on any terminal state** — completed, cancelled, or permanently failed (FR-019) — and
   **once per batch**, even across an interruption and resume (FR-039)
@@ -165,11 +198,40 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 
 | Property | Default | Governs |
 |---|---|---|
-| `CONTENT_BULK_UPLOAD_MAX_FILES` | `50` | Files per batch (FR-010) |
-| `CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES` | see plan | Total size per batch (FR-013b) |
-| `CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES` | see plan | Per-file ceiling **where the content type declares none** (FR-011.2) |
+| `CONTENT_BULK_UPLOAD_MAX_FILES` | `50` | References per batch (FR-010) |
+| `CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES` | `1073741824` (1 GB) | Summed size per batch (FR-013b) |
+| `CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES` | `209715200` (200 MB) | Per-file ceiling **only where the content type declares none** (FR-011.2) |
+
+**Where the defaults come from.** The realistic case is an author dragging in 50 images or PDFs of
+a few megabytes each — roughly 250 MB — so 1 GB clears it with room and still bounds the
+pathological batch. The 200 MB per-file fallback is deliberately generous: it is the ceiling that
+makes a file fail in a batch and succeed on its own (FR-011a), so the less often it bites, the less
+it surprises. In practice the batch total is the binding constraint. **These are reasoned defaults,
+not measured ones — worth checking against what customers actually upload.**
 
 The per-file ceiling prefers the content type's own `maxFileLength` field variable wherever an
 operator has set one, so a file is accepted or rejected identically alone or in a batch. The
 fallback applies only where none is declared — a knowing exception to that equivalence, recorded as
-FR-011a, and the reason a large file can be refused in a batch and accepted on its own.
+FR-011a.
+
+---
+
+## Where each check happens
+
+Useful when reading the two halves side by side.
+
+| Check | Where | On failure |
+|---|---|---|
+| Per-file size ceiling (`maxFileLength` query param, system config) | staging, step 1 | that file is not staged; the client sees it in step 1 |
+| Reference resolvable, and staged by this author | submission, step 2 | `400` for the whole submission |
+| `baseType`, target, exactly one of `folderId`/`siteId`, file count | submission, step 2 | `400` / `404` |
+| Add-children permission on the target | submission, step 2 | `403` |
+| Summed size vs the batch ceiling | submission, step 2 | `400` |
+| Content type's size ceiling, or the fallback | the run, per file | `FAILED` / `OVER_SIZE_LIMIT` — batch continues |
+| Content type's allowed media types | the run, per file | `FAILED` / `DISALLOWED_FILE_TYPE` — batch continues |
+| Name collision in the target | the run, per file | `FAILED` / `NAME_COLLISION` — batch continues |
+
+The content-type rules stay per-file rather than becoming submission refusals even though staging
+already reported the size and media type: FR-011 and FR-012 require one bad file to fail on its own
+rather than take the batch with it. What staging's data buys is a **reliable reason**, not an
+earlier refusal.
