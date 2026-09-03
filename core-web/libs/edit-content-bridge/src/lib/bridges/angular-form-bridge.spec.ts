@@ -958,9 +958,7 @@ describe('AngularFormBridge', () => {
             it('should map the link kind to a browse option', () => {
                 bridge.openBrowserModal({ kinds: ['page', 'link'] });
 
-                expect(openedConfig().browse).toEqual(
-                    expect.objectContaining({ showLinks: true })
-                );
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
             });
 
             it('should not carry a folder browse option for a caller that asks for folders', () => {
@@ -972,9 +970,7 @@ describe('AngularFormBridge', () => {
                 } as unknown as DotBrowserOptions);
 
                 expect(openedConfig().browse).not.toHaveProperty('showFolders');
-                expect(openedConfig().browse).toEqual(
-                    expect.objectContaining({ showLinks: true })
-                );
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
             });
 
             it('should warn about an unsupported kind rather than ignore it silently', () => {
