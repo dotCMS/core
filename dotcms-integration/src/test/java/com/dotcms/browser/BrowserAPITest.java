@@ -8,7 +8,15 @@ import static org.junit.Assert.assertTrue;
 
 import com.dotcms.IntegrationTestBase;
 import com.dotcms.browser.BrowserAPIImpl.PaginatedContents;
+import com.dotcms.browser.FieldSearchCriteria.RoutingBucket;
 import com.dotcms.contenttype.business.ContentTypeAPI;
+import com.dotcms.contenttype.model.field.CategoryField;
+import com.dotcms.contenttype.model.field.DateTimeField;
+import com.dotcms.contenttype.model.field.Field;
+import com.dotcms.contenttype.model.field.MultiSelectField;
+import com.dotcms.contenttype.model.field.TagField;
+import com.dotcms.contenttype.model.field.TextField;
+import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.datagen.ContentTypeDataGen;
 import com.dotcms.datagen.ContentletDataGen;
 import com.dotcms.datagen.DotAssetDataGen;
@@ -80,6 +88,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.Test;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mockito;
 
 /**
  * Created by Oscar Arrieta on 6/8/17.
@@ -2530,5 +2540,385 @@ public class BrowserAPITest extends IntegrationTestBase {
         final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
+    }
+
+    // ------------------------------------------------------------------------------------------
+    // issue #37184 -- FR-002 single-pass eligibility (BrowserAPIImpl#isSinglePassEligible).
+    //
+    // Tests T011-T014 (User Story 1) and T030-T033 (User Story 2) from
+    // specs/37184-content-drive-field-filter-chunk-multiplier/tasks.md. Each field filter is
+    // built directly against FieldSearchCriteria's factory methods with an explicit RoutingBucket,
+    // matching the same bucket ContentDriveFieldFilterResolver#routingBucketFor assigns per field
+    // type (Tag -> DB, everything else in scope -> INDEX), so the BrowserQuery exercised here is
+    // the same shape a real Content Drive field-filter request produces.
+
+    private static final String FF_TEXT_VAR = "ffText";
+    private static final String FF_DATE_VAR = "ffDate";
+    private static final String FF_MULTI_VAR = "ffMulti";
+    private static final String FF_CATEGORY_VAR = "ffCategory";
+    private static final String FF_TAG_VAR = "ffTag";
+
+    private static final class FieldFilterFixture {
+        ContentType contentType;
+        Field textField;
+        Field dateField;
+        Field multiField;
+        Field categoryField;
+        Field tagField;
+        com.dotmarketing.portlets.categories.model.Category category;
+    }
+
+    /**
+     * Creates a content type carrying one field of each type this suite exercises: Text, Date-Time,
+     * Multi-Select and Category (all INDEX-routed) plus Tag (DB-routed, per ADR-0018).
+     */
+    private static FieldFilterFixture createFieldFilterContentType(final String uniqueId) throws Exception {
+        final FieldFilterFixture fixture = new FieldFilterFixture();
+        fixture.contentType = new ContentTypeDataGen()
+                .name("ffType_" + uniqueId)
+                .velocityVarName("ffType_" + uniqueId)
+                .nextPersisted();
+
+        fixture.textField = new FieldDataGen().type(TextField.class).name(FF_TEXT_VAR)
+                .velocityVarName(FF_TEXT_VAR).contentTypeId(fixture.contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        fixture.dateField = new FieldDataGen().type(DateTimeField.class).name(FF_DATE_VAR)
+                .velocityVarName(FF_DATE_VAR).contentTypeId(fixture.contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        fixture.multiField = new FieldDataGen().type(MultiSelectField.class).name(FF_MULTI_VAR)
+                .velocityVarName(FF_MULTI_VAR).contentTypeId(fixture.contentType.id())
+                .values("news|news\r\npress|press").searchable(true).indexed(true).nextPersisted();
+        fixture.category = new com.dotcms.datagen.CategoryDataGen()
+                .setCategoryName("ffCategory_" + uniqueId).setKey("ffCategoryKey_" + uniqueId)
+                .nextPersisted();
+        fixture.categoryField = new FieldDataGen().type(CategoryField.class).name(FF_CATEGORY_VAR)
+                .velocityVarName(FF_CATEGORY_VAR).contentTypeId(fixture.contentType.id())
+                .values(fixture.category.getInode()).searchable(true).indexed(true).nextPersisted();
+        fixture.tagField = new FieldDataGen().type(TagField.class).name(FF_TAG_VAR)
+                .velocityVarName(FF_TAG_VAR).contentTypeId(fixture.contentType.id())
+                .searchable(true).indexed(true).nextPersisted();
+        return fixture;
+    }
+
+    private static FieldSearchCriteria textCriterion(final FieldFilterFixture fixture, final String value) {
+        return FieldSearchCriteria.scalar(FF_TEXT_VAR, fixture.textField, fixture.contentType,
+                RoutingBucket.INDEX, value);
+    }
+
+    private static FieldSearchCriteria dateRangeCriterion(final FieldFilterFixture fixture,
+            final String from, final String to) {
+        return FieldSearchCriteria.range(FF_DATE_VAR, fixture.dateField, fixture.contentType,
+                RoutingBucket.INDEX, from, to);
+    }
+
+    private static FieldSearchCriteria multiSelectCriterion(final FieldFilterFixture fixture,
+            final String value) {
+        return FieldSearchCriteria.multi(FF_MULTI_VAR, fixture.multiField, fixture.contentType,
+                RoutingBucket.INDEX, List.of(value));
+    }
+
+    private static FieldSearchCriteria categoryCriterion(final FieldFilterFixture fixture) {
+        return FieldSearchCriteria.multi(FF_CATEGORY_VAR, fixture.categoryField, fixture.contentType,
+                RoutingBucket.INDEX, List.of(fixture.category.getInode()));
+    }
+
+    private static FieldSearchCriteria tagCriterion(final FieldFilterFixture fixture, final String value) {
+        return FieldSearchCriteria.scalar(FF_TAG_VAR, fixture.tagField, fixture.contentType,
+                RoutingBucket.DB, value);
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> An eligible field filter (Text, no Tag/Relationship/workflow/
+     *     free-text) is applied against a large folder (~20,000 items, per quickstart.md Scenario
+     *     A) where matches are sparse.</li>
+     *     <li><b>Expected Result:</b> {@link BrowserAPIImpl#processESDirectly} is invoked exactly
+     *     once and the DB candidate scan resolves in a single pass -- not the ~23 chunked passes
+     *     the pre-fix default ({@code BROWSER_CONTENT_CHUNK_SIZE=900}) would require.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_largeSparseFolder_singlePass() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        final int total = 20_000;
+        final String matchValue = "sparseMatch_" + uniqueId;
+        for (int i = 0; i < total; i++) {
+            new ContentletDataGen(fixture.contentType.id())
+                    .folder(folder)
+                    .setProperty("title", "ffDoc_" + uniqueId + "_" + i)
+                    .setProperty(FF_TEXT_VAR, i == total / 2 ? matchValue : "noise_" + uniqueId + "_" + i)
+                    .languageId(1)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted();
+        }
+
+        final BrowserAPIImpl spyBrowserAPI = Mockito.spy(new BrowserAPIImpl());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                .build();
+
+        final PaginatedContents result = spyBrowserAPI.getPaginatedContents(browserQuery);
+
+        Mockito.verify(spyBrowserAPI, Mockito.times(1))
+                .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
+        assertEquals("The single sparse match must still be found", 1, result.list.size());
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Method to Test:</b> {@link BrowserAPIImpl#isSinglePassEligible} via
+     *     {@link BrowserAPIImpl#getPaginatedContents(BrowserQuery)}</li>
+     *     <li><b>Given Scenario:</b> The same single-pass assertion as above, repeated for
+     *     Date-range, Multi-select and Category field filters (not just Text) -- FR-007,
+     *     Acceptance Scenario 2. See quickstart.md Scenario B.</li>
+     *     <li><b>Expected Result:</b> Each field type resolves in a single
+     *     {@link BrowserAPIImpl#processESDirectly} call and returns the same result set as the
+     *     pre-fix multi-scan path would.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_perFieldTypeCoverage_singlePass() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        final Contentlet matchByDate = new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffDateMatch_" + uniqueId)
+                .setProperty(FF_DATE_VAR, "2024-06-15 00:00:00").languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        final Contentlet matchByMulti = new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffMultiMatch_" + uniqueId)
+                .setProperty(FF_MULTI_VAR, "news").languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        final Contentlet matchByCategory = new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffCategoryMatch_" + uniqueId)
+                .setProperty(FF_CATEGORY_VAR, fixture.category.getInode()).languageId(1)
+                .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        assertSinglePassMatch(folder, dateRangeCriterion(fixture, "2024-06-01", "2024-06-30"),
+                matchByDate.getIdentifier());
+        assertSinglePassMatch(folder, multiSelectCriterion(fixture, "news"), matchByMulti.getIdentifier());
+        assertSinglePassMatch(folder, categoryCriterion(fixture), matchByCategory.getIdentifier());
+    }
+
+    private void assertSinglePassMatch(final Folder folder, final FieldSearchCriteria criterion,
+            final String expectedIdentifier) throws Exception {
+        final BrowserAPIImpl spyBrowserAPI = Mockito.spy(new BrowserAPIImpl());
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(criterion))
+                .build();
+
+        final PaginatedContents result = spyBrowserAPI.getPaginatedContents(browserQuery);
+
+        Mockito.verify(spyBrowserAPI, Mockito.times(1))
+                .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
+        assertTrue("Must find the expected match for field type " + criterion.getFieldVariable(),
+                result.list.stream().anyMatch(c -> expectedIdentifier.equals(c.get("identifier"))));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> The same eligible field-filter shape against a small folder (a
+     *     few dozen children) -- Acceptance Scenario 3.</li>
+     *     <li><b>Expected Result:</b> Result set unchanged from the pre-fix behavior; the single-pass
+     *     path is not scale-dependent.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_smallFolder_noRegression() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        final String matchValue = "smallMatch_" + uniqueId;
+        Contentlet expectedMatch = null;
+        for (int i = 0; i < 30; i++) {
+            final Contentlet contentlet = new ContentletDataGen(fixture.contentType.id())
+                    .folder(folder).setProperty("title", "ffSmall_" + uniqueId + "_" + i)
+                    .setProperty(FF_TEXT_VAR, i == 15 ? matchValue : "other_" + uniqueId + "_" + i)
+                    .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+            if (i == 15) {
+                expectedMatch = contentlet;
+            }
+        }
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                .build();
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(browserQuery);
+
+        assertEquals(1, result.list.size());
+        assertEquals(expectedMatch.getIdentifier(), result.list.get(0).get("identifier"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> An eligible field filter that matches nothing in a large
+     *     folder, and the same filter against an empty folder -- quickstart.md Scenario E.</li>
+     *     <li><b>Expected Result:</b> Both resolve in a single pass (the DB scan does not exhaust
+     *     every chunk before concluding there are no matches) and return an empty result.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_eligibleFieldFilter_zeroMatchesOrEmptyFolder_singlePass()
+            throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folderWithNoise = new FolderDataGen().site(site).nextPersisted();
+        final Folder emptyFolder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        for (int i = 0; i < 50; i++) {
+            new ContentletDataGen(fixture.contentType.id())
+                    .folder(folderWithNoise).setProperty("title", "ffNoise_" + uniqueId + "_" + i)
+                    .setProperty(FF_TEXT_VAR, "noise_" + uniqueId + "_" + i).languageId(1)
+                    .setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        }
+
+        final String noMatchValue = "doesNotExist_" + uniqueId;
+
+        final BrowserAPIImpl spyOnNoisyFolder = Mockito.spy(new BrowserAPIImpl());
+        final PaginatedContents noMatchResult = spyOnNoisyFolder.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folderWithNoise.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(textCriterion(fixture, noMatchValue)))
+                .build());
+        Mockito.verify(spyOnNoisyFolder, Mockito.times(1))
+                .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
+        assertTrue("A non-matching value must return no results", noMatchResult.list.isEmpty());
+
+        final BrowserAPIImpl spyOnEmptyFolder = Mockito.spy(new BrowserAPIImpl());
+        final PaginatedContents emptyFolderResult = spyOnEmptyFolder.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(emptyFolder.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(textCriterion(fixture, noMatchValue)))
+                .build());
+        Mockito.verify(spyOnEmptyFolder, Mockito.atMost(1))
+                .processESDirectly(ArgumentMatchers.any(), ArgumentMatchers.anySet());
+        assertTrue("An empty folder must return no results", emptyFolderResult.list.isEmpty());
+    }
+
+    // --- User Story 2: DB-routed/workflow/free-text combinations must stay multi-scan ----------
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A content-type field filter combined with a Tag filter (DB-
+     *     routed) -- FR-005, SC-003, quickstart.md Scenario D.</li>
+     *     <li><b>Expected Result:</b> {@code isSinglePassEligible} is false (mixed DB/INDEX
+     *     criteria); the result set is unchanged from today's multi-scan behavior.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_fieldFilterPlusTagFilter_staysMultiScan() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        final String matchValue = "tagCombo_" + uniqueId;
+        final Contentlet expectedMatch = new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffTagCombo_" + uniqueId)
+                .setProperty(FF_TEXT_VAR, matchValue)
+                .setProperty(FF_TAG_VAR, "combo-tag-" + uniqueId)
+                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffTagComboOther_" + uniqueId)
+                .setProperty(FF_TEXT_VAR, matchValue)
+                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        assertFalse("A mixed DB/INDEX criteria list must not be single-pass eligible",
+                BrowserAPIImpl.isSinglePassEligible(
+                        List.of(textCriterion(fixture, matchValue), tagCriterion(fixture, "combo-tag-" + uniqueId)),
+                        Set.of(), Set.of(), null, null));
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .withFieldCriteria(List.of(textCriterion(fixture, matchValue),
+                        tagCriterion(fixture, "combo-tag-" + uniqueId)))
+                .build());
+
+        assertEquals(1, result.list.size());
+        assertEquals(expectedMatch.getIdentifier(), result.list.get(0).get("identifier"));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A content-type field filter combined with a workflow scheme
+     *     filter -- FR-005, quickstart.md Scenario D.</li>
+     *     <li><b>Expected Result:</b> {@code isSinglePassEligible} is false even though every field
+     *     criterion is INDEX-routed, because a workflow scheme is present.</li>
+     * </ul>
+     */
+    @Test
+    public void test_isSinglePassEligible_fieldFilterPlusWorkflowScheme_isIneligible() {
+        final FieldSearchCriteria indexRoutedCriterion = Mockito.mock(FieldSearchCriteria.class);
+        Mockito.when(indexRoutedCriterion.getBucket()).thenReturn(RoutingBucket.INDEX);
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(indexRoutedCriterion),
+                Set.of("some-workflow-scheme-id"), Set.of(), null, null));
+    }
+
+    /**
+     * <ul>
+     *     <li><b>Given Scenario:</b> A content-type field filter combined with a free-text
+     *     ({@code filter}) term -- FR-005, quickstart.md Scenario D.</li>
+     *     <li><b>Expected Result:</b> {@code isSinglePassEligible} is false and the request stays
+     *     on the existing text-filtering path; the result set matches only content satisfying both
+     *     the field filter and the free-text term.</li>
+     * </ul>
+     */
+    @Test
+    public void test_getPaginatedContents_fieldFilterPlusFreeText_staysMultiScan() throws Exception {
+        final String uniqueId = UUIDGenerator.shorty();
+        final Host site = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(site).nextPersisted();
+        final FieldFilterFixture fixture = createFieldFilterContentType(uniqueId);
+
+        final String matchValue = "freeTextCombo_" + uniqueId;
+        final String freeTextTitle = "uniqueTitle_" + uniqueId;
+        final Contentlet expectedMatch = new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", freeTextTitle)
+                .setProperty(FF_TEXT_VAR, matchValue)
+                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        new ContentletDataGen(fixture.contentType.id())
+                .folder(folder).setProperty("title", "ffFreeTextOther_" + uniqueId)
+                .setProperty(FF_TEXT_VAR, matchValue)
+                .languageId(1).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+
+        assertFalse("A free-text term must keep the request off the single-pass path",
+                BrowserAPIImpl.isSinglePassEligible(List.of(textCriterion(fixture, matchValue)),
+                        Set.of(), Set.of(), freeTextTitle, null));
+
+        final PaginatedContents result = browserAPI.getPaginatedContents(BrowserQuery.builder()
+                .withUser(APILocator.systemUser())
+                .withHostOrFolderId(folder.getIdentifier())
+                .showFiles(true)
+                .withFilter(freeTextTitle)
+                .withFieldCriteria(List.of(textCriterion(fixture, matchValue)))
+                .build());
+
+        assertEquals(1, result.list.size());
+        assertEquals(expectedMatch.getIdentifier(), result.list.get(0).get("identifier"));
     }
 }
