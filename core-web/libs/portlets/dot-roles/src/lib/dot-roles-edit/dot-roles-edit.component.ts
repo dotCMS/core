@@ -24,7 +24,13 @@ import {
 } from '@dotcms/ui';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
-import { DotRoleDetail, DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
+import {
+    DotRoleDetail,
+    DotRoleFormValue,
+    DotRoleNode,
+    ROOT_PARENT_OPTION_KEY,
+    toParentRoleId
+} from '../models/dot-roles.models';
 
 /**
  * Edit Role dialog. Wired to PUT /v1/roles/{roleId} via the store (#36936).
@@ -135,7 +141,17 @@ export class DotRolesEditComponent {
         }
         exclude.add(this.role.id);
 
-        return this.#toTreeNodes(source, exclude, this.#expandedKeys());
+        // "None (Top Level)" is pinned first — a choice, not a candidate, so it
+        // is never subject to the descendant exclusion above nor replaced by
+        // the search path.
+        return [
+            {
+                key: ROOT_PARENT_OPTION_KEY,
+                label: this.#messageService.get('roles.form.parent.root'),
+                leaf: true
+            },
+            ...this.#toTreeNodes(source, exclude, this.#expandedKeys())
+        ];
     });
 
     constructor() {
@@ -158,6 +174,11 @@ export class DotRolesEditComponent {
                     label: this.#parentLabel(currentParentId)
                 }
             );
+        } else {
+            // The role is already a root, so show that as the explicit entry
+            // rather than a blank field the admin has to interpret. Same
+            // outcome on save either way — both map to `parentRoleId: null`.
+            this.form.controls.parent.setValue(this.$parentTree()[0]);
         }
 
         if (this.readOnly) {
@@ -185,10 +206,11 @@ export class DotRolesEditComponent {
         this.$error.set(null);
 
         const { parent, ...rest } = this.form.getRawValue();
-        // An empty picker means the role becomes a root.
+        // An empty picker and the explicit "None (Top Level)" entry both mean
+        // the role becomes a root — see `toParentRoleId`.
         const value: DotRoleFormValue = {
             ...rest,
-            parentRoleId: (parent?.key as string | undefined) ?? null
+            parentRoleId: toParentRoleId(parent)
         };
 
         this.#store.updateRole(this.role.id, value).then((updated) => {

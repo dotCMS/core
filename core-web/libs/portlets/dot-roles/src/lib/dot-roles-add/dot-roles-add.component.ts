@@ -14,6 +14,7 @@ import { TreeSelect, TreeSelectModule } from 'primeng/treeselect';
 
 import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 
+import { DotMessageService } from '@dotcms/data-access';
 import {
     DotFieldRequiredDirective,
     DotFieldValidationMessageComponent,
@@ -21,7 +22,12 @@ import {
 } from '@dotcms/ui';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
-import { DotRoleFormValue, DotRoleNode } from '../models/dot-roles.models';
+import {
+    DotRoleFormValue,
+    DotRoleNode,
+    ROOT_PARENT_OPTION_KEY,
+    toParentRoleId
+} from '../models/dot-roles.models';
 
 /**
  * Add Role dialog. POST /v1/roles already exists so this form is fully
@@ -48,6 +54,7 @@ export class DotRolesAddComponent {
     readonly #fb = inject(FormBuilder);
     readonly #ref = inject(DynamicDialogRef);
     readonly #config = inject(DynamicDialogConfig);
+    readonly #messageService = inject(DotMessageService);
     readonly #destroyRef = inject(DestroyRef);
 
     /**
@@ -95,9 +102,20 @@ export class DotRolesAddComponent {
         description: ['']
     });
 
-    protected readonly $parentTree = computed<TreeNode[]>(() =>
-        this.#toTreeNodes(this.#searchResults() ?? this.#store.roleTree(), this.#expandedKeys())
-    );
+    /**
+     * Candidates, with the explicit root entry pinned first. Prepended here
+     * rather than inside `#toTreeNodes` so it survives the search path too —
+     * `#searchResults()` replaces the whole tree, and "None (Top Level)" is a
+     * choice, not a search hit.
+     */
+    protected readonly $parentTree = computed<TreeNode[]>(() => [
+        {
+            key: ROOT_PARENT_OPTION_KEY,
+            label: this.#messageService.get('roles.form.parent.root'),
+            leaf: true
+        },
+        ...this.#toTreeNodes(this.#searchResults() ?? this.#store.roleTree(), this.#expandedKeys())
+    ]);
 
     constructor() {
         // Same 3-char gate and debounce as the roles tree filter, so the two
@@ -121,6 +139,12 @@ export class DotRolesAddComponent {
                     label: prefilledParent
                 }
             );
+        } else {
+            // Opened from `New` rather than a row's `+`: default to the explicit
+            // root entry. Same outcome as leaving the picker empty — both map to
+            // `parentRoleId: null` — but the field states what will happen
+            // instead of leaving the admin to infer it from a blank.
+            this.form.controls.parent.setValue(this.$parentTree()[0]);
         }
     }
 
@@ -144,10 +168,11 @@ export class DotRolesAddComponent {
         this.$error.set(null);
 
         const { parent, ...rest } = this.form.getRawValue();
-        // An empty picker means a root role.
+        // An empty picker and the explicit "None (Top Level)" entry both mean a
+        // root role — see `toParentRoleId`.
         const value: DotRoleFormValue = {
             ...rest,
-            parentRoleId: (parent?.key as string | undefined) ?? null
+            parentRoleId: toParentRoleId(parent)
         };
 
         this.#store.createRole(value).then((created) => {

@@ -28,7 +28,9 @@
         <!--
             A tree rather than a flat indented list: the hierarchy is the whole
             point of picking a parent, and indentation alone gets ambiguous
-            past two levels. Clearing means "no parent" (a root role).
+            past two levels. "None (Top Level)" is pinned as the first entry so
+            reparenting to root is an explicit pick; clearing the field means
+            the same thing, and `showClear` stays as the shortcut for it.
         -->
         <p-treeSelect
             id="parentRoleId"
@@ -42,7 +44,7 @@
             (onNodeCollapse)="onNodeCollapse($event)"
             (onFilter)="onFilter($event)"
             appendTo="body"
-            [placeholder]="'roles.form.parent.root' | dm"
+            [placeholder]="'roles.form.parent.placeholder' | dm"
             data-testid="select-parent" />
     </div>
 
