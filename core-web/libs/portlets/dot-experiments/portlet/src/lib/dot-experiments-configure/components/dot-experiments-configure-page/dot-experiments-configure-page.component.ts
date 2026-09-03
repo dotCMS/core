@@ -279,7 +279,7 @@ export class DotExperimentsConfigurePageComponent {
             inputValues
         });
 
-        this.#changePageRef.onClose
+        this.#changePageRef?.onClose
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((result?: DotExperimentsChangePageDialogResult) => {
                 this.#changePageRef = null;
