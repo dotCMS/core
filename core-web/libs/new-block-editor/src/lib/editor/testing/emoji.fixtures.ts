@@ -36,7 +36,7 @@ export const TEXT_PRESENTATION_SAMPLE = [
     '〰', // 〰 wavy_dash
     '✳', // ✳ eight_spoked_asterisk
     '♾', // ♾ infinity
-    '⚕'  // ⚕ medical_symbol
+    '⚕' // ⚕ medical_symbol
 ] as const;
 
 /** Ordinary pictographic emoji — these must behave identically to the symbols above. */
@@ -47,10 +47,10 @@ export const PICTOGRAPHIC_SAMPLE = ['🚀', '🙂', '🎉'] as const;
  * grapheme: a variation selector, a ZWJ sequence, and a regional-indicator flag pair.
  */
 export const MULTI_CODEPOINT_SAMPLE = [
-    '©️',                 // ©️  copyright + VS16
-    '❤️',                 // ❤️  heart + VS16
-    '👨‍👩‍👧‍👦',    // 👨‍👩‍👧‍👦 ZWJ family sequence
-    '🇺🇸'                            // regional-indicator flag pair
+    '©️', // ©️  copyright + VS16
+    '❤️', // ❤️  heart + VS16
+    '👨‍👩‍👧‍👦', // 👨‍👩‍👧‍👦 ZWJ family sequence
+    '🇺🇸' // regional-indicator flag pair
 ] as const;
 
 /** Every character the AC-002 assertions run over. */
@@ -68,5 +68,5 @@ export const NON_EMOJI_CONTROL_SAMPLE = [
     '½', // ½ vulgar fraction
     '—', // — em dash
     'é', // é e-acute
-    '→'  // → rightwards arrow (NOT the emoji ➡)
+    '→' // → rightwards arrow (NOT the emoji ➡)
 ] as const;
