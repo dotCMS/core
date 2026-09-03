@@ -22,7 +22,7 @@ import {
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotMessagePipe, DotTruncatedLabelComponent } from '@dotcms/ui';
 
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
@@ -49,6 +49,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
         ContextMenuModule,
         ConfirmDialogModule,
         DotFolderTreeComponent,
+        DotTruncatedLabelComponent,
         DotMessagePipe
     ],
     providers: [DialogService, ConfirmationService],

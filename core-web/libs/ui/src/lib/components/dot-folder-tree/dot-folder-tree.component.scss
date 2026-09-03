@@ -4,3 +4,25 @@
     height: 100%;
     width: 100%;
 }
+
+/* The clipping chain for node labels (#37363).
+ *
+ * Truncation needs three things and only the third one lives in the label element itself: the
+ * flex row and the label slot must both be allowed to shrink below their content width. Without
+ * these two rules `truncate` has nothing to truncate into — the row just grows or wraps, which
+ * is exactly why each consumer previously produced a different result.
+ *
+ * These live here rather than in the `pt` input because four consumers pass their own `pt`
+ * object. Writing `nodeContent` / `nodeLabel` keys from this component would mean deep-merging
+ * with theirs and concatenating class strings, and whichever side lost the merge would silently
+ * drop the guard. A stylesheet cannot be clobbered by a consumer's `pt`. */
+:host ::ng-deep {
+    .p-tree-node-content {
+        min-width: 0;
+    }
+
+    .p-tree-node-label {
+        min-width: 0;
+        overflow: hidden;
+    }
+}

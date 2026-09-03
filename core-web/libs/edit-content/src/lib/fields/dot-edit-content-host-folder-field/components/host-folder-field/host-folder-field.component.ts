@@ -31,7 +31,8 @@ import {
     DotFolderSearchResultsComponent,
     DotFolderTreeComponent,
     DotFolderNamePipe,
-    DotMessagePipe
+    DotMessagePipe,
+    DotTruncatedLabelComponent
 } from '@dotcms/ui';
 
 import { alignOverlayLeftToTrigger } from './host-folder-field-overlay.utils';
@@ -55,6 +56,7 @@ import { HostFolderFiledStore } from '../../store/host-folder-field.store';
         ScrollerModule,
         SkeletonModule,
         DotFolderTreeComponent,
+        DotTruncatedLabelComponent,
         DotFolderSearchResultsComponent,
         ButtonModule,
         TooltipModule,
@@ -173,7 +175,7 @@ export class DotHostFolderFieldComponent extends BaseControlValueAccessor<string
                   }
                 : { class: 'min-w-0 max-w-full overflow-hidden' },
             nodeIcon: isSearching ? { class: 'mt-1 shrink-0 self-start' } : undefined,
-            nodeLabel: { class: 'min-w-0 flex-1 overflow-hidden leading-snug' }
+            nodeLabel: { class: 'leading-snug' }
         };
     });
 

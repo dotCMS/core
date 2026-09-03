@@ -11,6 +11,7 @@ import { DotFolderSearchResultsComponent } from '../../../dot-folder-search-resu
 import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
 import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
 import { DotSiteComponent } from '../../../dot-site/dot-site.component';
+import { DotTruncatedLabelComponent } from '../../../dot-truncated-label/dot-truncated-label.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 
 /**
@@ -32,7 +33,8 @@ import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
         DotSearchInputComponent,
         DotSiteComponent,
         DotFolderNamePipe,
-        DotMessagePipe
+        DotMessagePipe,
+        DotTruncatedLabelComponent
     ],
     // Three rows now: site selector, folder search, then the tree taking what is left.
     host: { class: 'grid h-full w-full min-h-0 grid-rows-[min-content_min-content_1fr]' }

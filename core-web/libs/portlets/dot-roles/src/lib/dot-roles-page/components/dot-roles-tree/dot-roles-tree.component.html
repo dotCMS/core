@@ -63,7 +63,9 @@
                         [attr.data-testid]="'node-icon-' + data.id">
                         {{ isLeaf ? 'shield_person' : 'folder' }}
                     </span>
-                    <span class="flex-1 truncate">{{ node.label }}</span>
+                    <dot-truncated-label class="min-w-0 flex-1">
+                        {{ node.label }}
+                    </dot-truncated-label>
                     <!-- Direct-grant count (#37071). Hidden at zero to keep
                          the row quiet, and absent entirely on legacy search
                          nodes, which don't carry the field. -->

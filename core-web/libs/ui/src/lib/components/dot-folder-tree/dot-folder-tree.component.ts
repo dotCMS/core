@@ -24,6 +24,10 @@ import type {
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 import { DotFolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.pipe';
+import {
+    DotTruncatedLabelComponent,
+    TRUNCATED_LABEL_ATTR
+} from '../dot-truncated-label/dot-truncated-label.component';
 
 /**
  * Presentational folder tree shell shared across Content Drive, Browser Selector,
@@ -32,11 +36,21 @@ import { DotFolderNamePipe } from '../../pipes/dot-folder-name/dot-folder-name.p
  */
 @Component({
     selector: 'dot-folder-tree',
-    imports: [TreeModule, DotFolderNamePipe, DotMessagePipe, NgTemplateOutlet],
+    imports: [
+        TreeModule,
+        DotFolderNamePipe,
+        DotMessagePipe,
+        NgTemplateOutlet,
+        DotTruncatedLabelComponent
+    ],
     templateUrl: './dot-folder-tree.component.html',
     styleUrls: ['./dot-folder-tree.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush,
-    host: { '[class]': 'hostClasses()' }
+    host: {
+        '[class]': 'hostClasses()',
+        '(focusin)': 'onRowFocus($event)',
+        '(focusout)': 'onRowBlur($event)'
+    }
 })
 export class DotFolderTreeComponent {
     /**
@@ -154,6 +168,33 @@ export class DotFolderTreeComponent {
      * Node icons come from TreeNode.icon / expandedIcon / collapsedIcon — not the toggler.
      */
     readonly hostClasses = computed(() => `block min-h-0 h-full w-full ${this.$styleClass()}`);
+
+    /**
+     * Opens the label's overflow tooltip when its row takes keyboard focus.
+     *
+     * PrimeNG puts the tabindex on the `treeitem` and binds a tooltip's focus listeners to the
+     * tooltip's own host element, so focus never reaches the label: without this, the tooltip
+     * would only ever open for pointer users. Forwarding the row's focus as a pointer enter on
+     * the label reuses PrimeNG's own activation path, which keeps the ellipsis gate, the delay
+     * and the dismissal in one place rather than duplicating any of them here. The label is not
+     * made focusable instead, because the tree navigates with arrow keys and manages `tabIndex`
+     * on the row itself — a focusable label would add a second tab stop to every row.
+     */
+    protected onRowFocus(event: FocusEvent): void {
+        this.#labelOfRow(event)?.dispatchEvent(new MouseEvent('mouseenter'));
+    }
+
+    protected onRowBlur(event: FocusEvent): void {
+        this.#labelOfRow(event)?.dispatchEvent(new MouseEvent('mouseleave'));
+    }
+
+    #labelOfRow(event: FocusEvent): HTMLElement | null {
+        const row = (event.target as HTMLElement | null)?.closest('[role="treeitem"]');
+
+        // First match is the row's own label: PrimeNG renders the node's content before the
+        // container holding its children.
+        return row?.querySelector<HTMLElement>(`[${TRUNCATED_LABEL_ATTR}]`) ?? null;
+    }
 
     protected onLoadMoreClick(event: Event, node: TreeNode): void {
         event.stopPropagation();
