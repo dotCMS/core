@@ -172,7 +172,7 @@
                       could produce to nothing. Runs right after install, before anything
                       builds, so a drift fails fast and with a clear message.
 
-                      --check never writes; regenerate locally with
+                      The check mode never writes; regenerate locally with
                       `pnpm generate:emoji-map` and commit the result.
                     -->
                     <execution>

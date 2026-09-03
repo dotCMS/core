@@ -1,4 +1,7 @@
-#macro(renderContentBlock $data)#*
+##
+## Renders a list of inline/block nodes. $inLink is true when the caller has already opened an
+## <a> for the whole run, so text nodes skip their own anchor (#37340).
+#macro(renderStoryBlockNodes $data $inLink)#*
     *##foreach($element in $data)#*
         *##if( $element.type == "paragraph" )
 #*          *#<p#if(${element.attrs.textAlign}) style="text-align: $element.attrs.textAlign;"#end>#*
@@ -94,7 +97,52 @@
             *##set($item = $element)#*
             *##parse("static/storyblock/gridBlock.vtl")#*
         *##elseif( $element.type == "text" )#*
-            *##renderMarks($element)#*
+            *##renderMarks($element, $inLink)#*
+        *##elseif( $element.type == "emoji" )#*
+            *###
+            ## Legacy content only - the editor no longer creates emoji nodes (#37340). The node
+            ## stores a shortcode, never the character, so before this branch existed the macro
+            ## had no case for it and silently dropped the character from the published page.
+            ## The name is user-controlled (no Story Block schema validation on the REST API),
+            ## so the resolved fallback is escaped.
+            *##if($dotStoryBlockRenderHelper)#*
+                *#${esc.html($dotStoryBlockRenderHelper.emoji($element))}#*
+            *##else#*
+                *#:${esc.html($!{element.attrs.name})}:#*
+            *##end#*
         *##end#*
+    *##end#*
+*##end
+
+##
+## Entry point. Groups siblings into link runs so one logical link renders as ONE <a> (#37340).
+##
+## Rendering node by node opened and closed an anchor per text node, so stored JSON with several
+## text nodes sharing a link produced several anchors: duplicate tab stops, duplicate
+## screen-reader entries and a fragmented announcement (WCAG 2.2 A - 1.3.1, 2.4.4, 4.1.2). In the
+## reported payload the two linked text nodes are not even adjacent, because the mark-less emoji
+## node sits between them, so the run has to absorb it.
+##
+## The grouping lives in StoryBlockRenderHelper (Java) rather than here: it is unit-testable
+## there, and this macro renders every Story Block field on every VTL page. When the helper is
+## absent from the context the macro falls back to the original flat behaviour.
+#macro(renderContentBlock $data)#*
+    *##if($dotStoryBlockRenderHelper)#*
+        *##foreach($run in $dotStoryBlockRenderHelper.linkRuns($data))#*
+            *##if($run.linked)#*
+                *#<a href="${esc.html($!{run.link.attrs.href})}"#*
+                *##if($!{run.link.attrs.target}) target="${esc.html($!{run.link.attrs.target})}"#end#*
+                *##if($!{run.link.attrs.title}) title="${esc.html($!{run.link.attrs.title})}"#end#*
+                *##if($run.link.attrs.get("aria-label")) aria-label="${esc.html($run.link.attrs.get('aria-label'))}"#end#*
+                *##if($!{run.link.attrs.rel}) rel="${esc.html($!{run.link.attrs.rel})}"#end#*
+                *#>#*
+                *##renderStoryBlockNodes($run.nodes, true)#*
+                *#</a>#*
+            *##else#*
+                *##renderStoryBlockNodes($run.nodes, false)#*
+            *##end#*
+        *##end#*
+    *##else#*
+        *##renderStoryBlockNodes($data, false)#*
     *##end#*
 *##end

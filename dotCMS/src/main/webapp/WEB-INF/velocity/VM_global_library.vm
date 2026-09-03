@@ -4,7 +4,12 @@
 	${UtilMethods.fixBreaks($stringToFix)}
 #end
 
-#macro(renderMarks $content)#*
+##
+## $skipLink suppresses ONLY the <a> wrapper, so a caller that has already opened one anchor for
+## a whole link run can reuse this macro for the inner text without nesting anchors (#37340).
+## Velocity passes an omitted arg as null, so every existing `#renderMarks($element)` call is
+## unaffected.
+#macro(renderMarks $content $skipLink)#*
 
     *##if($content.marks)#*
         *##set($start = 0)#*
@@ -32,7 +37,7 @@
             *##if ($mark.type == "superscript")#*
                 *#<sup>#*
             *##end#*
-            *##if ($mark.type == "link")#*
+            *##if ($mark.type == "link" && !$skipLink)#*
                 *#<a href="${esc.html($mark.attrs.href)}" target="${esc.html($mark.attrs.target)}"#*
                 *##if($mark.attrs.title) title="${esc.html($mark.attrs.title)}"#end#*
                 *##if($mark.attrs.get("aria-label")) aria-label="${esc.html($mark.attrs.get("aria-label"))}"#end#*
@@ -66,7 +71,7 @@
             *##if ($mark.type == "superscript")#*
                 *#</sup>#*
             *##end#*
-            *##if($mark.type == "link")#*
+            *##if($mark.type == "link" && !$skipLink)#*
                 *#</a>#*
             *##end#*
         *##end#*
