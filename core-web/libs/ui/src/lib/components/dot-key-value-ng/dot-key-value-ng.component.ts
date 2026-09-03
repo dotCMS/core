@@ -11,6 +11,7 @@ import {
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
+import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { TableModule } from 'primeng/table';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -40,6 +41,7 @@ export interface DotKeyValue {
     templateUrl: './dot-key-value-ng.component.html',
     imports: [
         ButtonModule,
+        ConfirmDialogModule,
         TableModule,
         DotKeyValueTableHeaderRowComponent,
         DotKeyValueTableRowComponent,
@@ -106,6 +108,19 @@ export class DotKeyValueComponent {
 
     /** Rows revealed per step, matching the site/folder selector's page size. */
     static readonly PAGE_SIZE = 40;
+
+    /**
+     * Scopes the confirmation to this editor's own dialog.
+     *
+     * The editor carries a `p-confirmDialog` because its hosts do not agree on one:
+     * Edit Content's layout renders one unconditionally, while dotcms-ui's only exists
+     * while `DotAlertConfirmService` has a model — so an unkeyed `confirm()` from here
+     * reached nothing at all in Field Variables and Apps, and Clear All did nothing.
+     *
+     * The key keeps the two apart in both directions: Edit Content's unkeyed dialog
+     * ignores this confirmation, and this one ignores everyone else's.
+     */
+    protected readonly CLEAR_ALL_KEY = 'dot-key-value-clear-all';
 
     /**
      * How many rows are currently rendered.
@@ -197,6 +212,7 @@ export class DotKeyValueComponent {
         }
 
         this.#confirmationService.confirm({
+            key: this.CLEAR_ALL_KEY,
             header: this.#dotMessageService.get('keyValue.clear_all.title'),
             message: this.#dotMessageService.get('keyValue.clear_all.message'),
             acceptLabel: this.#dotMessageService.get('keyValue.clear_all.accept'),
