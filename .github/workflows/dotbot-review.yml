@@ -83,7 +83,7 @@ jobs:
           echo "Rendered .openrouter-review.yml from DOTBOT_REVIEW_MODELS:"
           cat .openrouter-review.yml
       - name: dotbot autonomous review
-        uses: dotcms/openrouter-code-review-action
+        uses: dotcms/openrouter-code-review-action@latest # a716ed1aaa24814e11ed684901b1f1525e8ee353
         with:
           mode: review
           openrouter_api_key: ${{ secrets.OPENROUTER_API_KEY }}
