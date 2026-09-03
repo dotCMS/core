@@ -210,6 +210,20 @@ describe('withActionExecution', () => {
             expect(store.actionExecution()).toBeUndefined();
         });
 
+        it('should keep a run over rows off the toolbar', () => {
+            // The rows dim in front of the author, so a toolbar line saying the same thing is the
+            // duplication this set out to remove. `actionExecution` still reports it, because the
+            // Action Center reads that to gate itself — only the *presentation* signal is narrowed.
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+
+            expect(store.actionExecution()).toBeDefined();
+            expect(store.toolbarRun()).toBeUndefined();
+            expect(store.toolbarRunCount()).toBe(0);
+        });
+
         it('should expose the items every in-flight run is touching', () => {
             build();
             fireDefaultAction.mockReturnValue(new Subject());

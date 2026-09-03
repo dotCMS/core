@@ -87,8 +87,10 @@ describe('DotContentDriveToolbarComponent', () => {
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
-                actionExecution: actionExecutionSignal,
-                activeRunCount: activeRunCountSignal,
+                // The toolbar reads the *presentation* signals: only runs the rows cannot
+                // speak for themselves, which today means an upload.
+                toolbarRun: actionExecutionSignal,
+                toolbarRunCount: activeRunCountSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
                 // through the two signals it derives from, not through a hardcoded answer.

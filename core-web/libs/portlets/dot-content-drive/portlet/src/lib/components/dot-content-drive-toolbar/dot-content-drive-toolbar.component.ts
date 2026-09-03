@@ -286,14 +286,14 @@ export class DotContentDriveToolbarComponent {
      * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
      * so without this the work would continue with no indication until the completion toast fired.
      */
-    readonly $actionExecution = this.#store.actionExecution;
+    readonly $actionExecution = this.#store.toolbarRun;
 
     /**
      * How many runs are in flight. Drives whether the indicator is shown at all: with several runs
      * `$actionExecution` is deliberately undefined, so keying visibility off it alone would hide the
      * indicator exactly when the most is happening.
      */
-    readonly $activeRunCount = this.#store.activeRunCount;
+    readonly $activeRunCount = this.#store.toolbarRunCount;
 
     readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
 

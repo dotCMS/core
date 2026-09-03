@@ -95,6 +95,17 @@ export function withActionExecution() {
             /** Runs in flight, in insertion order. */
             activeRuns: computed(() => Object.values(runs())),
             /**
+             * Runs the toolbar indicator speaks for: the ones with nothing to mark.
+             *
+             * A run over rows is already reported by those rows dimming, so a toolbar line saying
+             * the same thing is the duplication this feature set out to remove. A run with no
+             * targets has no other surface at all — an upload's content does not exist until the run
+             * creates it — so the indicator is the only place it can be seen.
+             */
+            unmarkedRuns: computed(() =>
+                Object.values(runs()).filter((run) => run.targets.length === 0)
+            ),
+            /**
              * The run the indicator names when there is exactly one.
              *
              * Kept as a single value so every existing consumer reads unchanged; with several runs
@@ -106,8 +117,25 @@ export function withActionExecution() {
 
                 return active.length === 1 ? active[0] : undefined;
             }),
-            /** How many runs are in flight; what the indicator shows once naming one is not enough. */
+            /** How many runs are in flight, of any kind. */
             activeRunCount: computed(() => Object.keys(runs()).length),
+            /**
+             * The run the toolbar names, when exactly one has nothing to mark.
+             *
+             * Separate from `actionExecution` on purpose: that is the general "is something
+             * running" signal, read by the Action Center to gate itself. This one is presentation —
+             * which runs the *indicator* should speak for — and the answer is only those the rows
+             * cannot speak for themselves.
+             */
+            toolbarRun: computed<DotContentDriveActionExecution | undefined>(() => {
+                const unmarked = Object.values(runs()).filter((run) => run.targets.length === 0);
+
+                return unmarked.length === 1 ? unmarked[0] : undefined;
+            }),
+            /** How many runs the indicator speaks for. */
+            toolbarRunCount: computed(
+                () => Object.values(runs()).filter((run) => run.targets.length === 0).length
+            ),
             /**
              * Every inode any in-flight run is acting on.
              *
