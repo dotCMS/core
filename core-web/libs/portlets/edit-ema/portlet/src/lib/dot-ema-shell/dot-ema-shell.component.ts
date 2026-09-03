@@ -61,6 +61,32 @@ import {
 } from '../utils';
 import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
 
+/**
+ * Query params for the breadcrumb's address — the same page, spelled the way `editEmaGuard` wants
+ * to read it.
+ *
+ * The address bar and the crumb are two different consumers. `normalizeQueryParams` shortens the
+ * address for humans, and part of that is dropping the persona when it is the default one. But
+ * `editEmaGuard` treats a missing persona as an incomplete URL and **redirects** to complete it,
+ * so a crumb built from the shortened form points at an address nobody ever lands on: the router
+ * reports the redirected URL, which no longer equals any crumb in the trail.
+ *
+ * That comparison is what `processSpecialRoute` uses to decide whether a navigation is a step
+ * *back* into the trail (truncate it) or a step forward (append). With the crumb never matching,
+ * returning to the editor from a deeper screen appended a second copy of the page instead of
+ * rewinding — leaving the screen you just left sitting in the trail behind you.
+ *
+ * So the crumb states the persona explicitly, under the key the guard looks for.
+ */
+function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Params {
+    const { personaId, ...rest } = cleanedParams;
+
+    return {
+        ...rest,
+        [PERSONA_KEY]: personaId ?? pageParams?.[PERSONA_KEY] ?? DEFAULT_PERSONA.identifier
+    };
+}
+
 /** Structural shape of `EditEmaEditorComponent.openContentForEdit` (the 'content' child route). */
 interface RouteWithOpenContentForEdit {
     openContentForEdit(contentlet: DotCMSContentlet): void;
@@ -284,7 +310,9 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const params = this.uveStore.pageFriendlyParams();
         const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
-        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams: crumbQueryParams(cleanedParams, this.uveStore.pageParams())
+        });
         const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
         const label = urlContentMap?.title ?? page.title;
         const identifier = urlContentMap?.identifier ?? page.identifier;

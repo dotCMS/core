@@ -41,8 +41,9 @@ import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
 
 const CURRENT_SITE_ID = 'site-123';
 
-/** `GlobalStore` is `providedIn: 'root'`; only the signals this screen reads are stubbed. */
+/** `GlobalStore` is `providedIn: 'root'`; only what this screen reads and writes is stubbed. */
 const globalStoreMock = {
+    addNewBreadcrumb: jest.fn(),
     currentSiteId: signal(CURRENT_SITE_ID),
     siteDetails: signal({
         identifier: CURRENT_SITE_ID,

@@ -17,6 +17,7 @@ import {
     GOAL_TYPES,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsListComponent } from './dot-experiments-list.component';
@@ -101,7 +102,10 @@ const ERROR_COPY = {
     subtitle: 'Failed to retrieve experiments data'
 };
 
+const LIST_TITLE_COPY = 'Experiments List';
+
 const messageServiceMock = new MockDotMessageService({
+    'experiment.container.list.title': LIST_TITLE_COPY,
     'experiments.list.page-filter.unavailable': PAGE_UNAVAILABLE_COPY,
     'experiments.list.page-filter.label': 'Page: {0}',
     'experiments.list.page-filter.back': 'Back to page',
@@ -152,6 +156,8 @@ const createStoreMock = () => ({
 
 describe('DotExperimentsListComponent', () => {
     let spectator: Spectator<DotExperimentsListComponent>;
+    /** Where the trail is written; the component only ever appends its own crumb. */
+    let globalStore: { addNewBreadcrumb: jest.Mock };
     let storeMock: ReturnType<typeof createStoreMock>;
     let dispatch: jest.SpyInstance;
     let confirm: jest.SpyInstance;
@@ -175,7 +181,10 @@ describe('DotExperimentsListComponent', () => {
             provideLocationMocks(),
             { provide: DotMessageService, useValue: messageServiceMock },
             mockProvider(DotMessageDisplayService),
-            mockProvider(DotPushPublishDialogService)
+            mockProvider(DotPushPublishDialogService),
+            // Not `mockProvider`: `GlobalStore` is a signal store, so its methods live on the
+            // instance rather than the prototype and Spectator's auto-mock finds none of them.
+            { provide: GlobalStore, useFactory: () => globalStore }
         ],
         detectChanges: false
     });
@@ -235,8 +244,10 @@ describe('DotExperimentsListComponent', () => {
 
     beforeEach(() => {
         storeMock = createStoreMock();
+        globalStore = { addNewBreadcrumb: jest.fn() };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+
         // `p-confirmDialog` needs the real service (it subscribes to its streams), so the
         // confirmation is intercepted instead of mocked away.
         const confirmationService = spectator.inject(ConfirmationService, true);
@@ -653,6 +664,31 @@ describe('DotExperimentsListComponent', () => {
             expect(url).toContain('/edit-page/content');
             expect(url).toContain(`url=${encodeURIComponent(PAGE_INFO[PAGE_ID].url)}`);
             expect(url).toContain('language_id=');
+        });
+
+        // #37005. Arriving from UVE the trail already ends with the page's own crumb (pushed by
+        // the UVE shell, carrying the editor address). The list has to put its own crumb on top of
+        // it, or the screen keeps rendering the page's name as its title — which is what it did.
+        describe('breadcrumbs', () => {
+            it('should add its own crumb, keeping the page filter in the address', () => {
+                withPageFilter();
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        id: 'experiments-list',
+                        label: LIST_TITLE_COPY,
+                        url: `/dotAdmin/#/experiments?pageAsset=${PAGE_ID}`
+                    })
+                );
+            });
+
+            it('should add a site-wide crumb when the list is not narrowed to a page', () => {
+                withPageFilter(null);
+
+                expect(globalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({ url: '/dotAdmin/#/experiments' })
+                );
+            });
         });
 
         // FR-021b, zero. The generic "your filters are hiding them" state is wrong here: the

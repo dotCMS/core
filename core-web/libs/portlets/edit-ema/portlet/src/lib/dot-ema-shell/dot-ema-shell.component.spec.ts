@@ -1150,6 +1150,26 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
+            // #37005. `editEmaGuard` treats a missing persona as an incomplete URL and redirects
+            // to complete it, so a crumb without one points at an address nobody lands on: the
+            // router reports the redirected URL, it matches no crumb, and `processSpecialRoute`
+            // appends instead of truncating — leaving the screen you just left in the trail behind
+            // you. The address bar still drops the default persona; only the crumb keeps it.
+            it('should address the page with an explicit persona, so returning truncates the trail', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        url: expect.stringContaining(
+                            'com.dotmarketing.persona.id=modes.persona.no.persona'
+                        )
+                    })
+                );
+            });
+
             it('should call addNewBreadcrumb again when page response changes', async () => {
                 mockGlobalStore.addNewBreadcrumb.mockClear();
                 spectator.detectChanges();

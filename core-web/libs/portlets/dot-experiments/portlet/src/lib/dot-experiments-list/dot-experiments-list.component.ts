@@ -46,6 +46,7 @@ import {
     GOALS_METADATA_MAP,
     HealthStatusTypes
 } from '@dotcms/dotcms-models';
+import { GlobalStore } from '@dotcms/store';
 import {
     DotAddToBundleComponent,
     DotEmptyContainerComponent,
@@ -77,6 +78,7 @@ import {
 import { dotExperimentsApiEvents } from '../store/dot-experiments-api.events';
 import { dotExperimentsListPageEvents } from '../store/dot-experiments-list-page.events';
 import { DotExperimentsListStore } from '../store/dot-experiments-list.store';
+import { experimentsListCrumb } from '../util/dot-experiments-breadcrumb.util';
 import {
     ExperimentScheduleLabels,
     formatSchedule,
@@ -86,6 +88,12 @@ import {
     variantsCount
 } from '../util/dot-experiments-list.util';
 import { buildPageEditorLink, DotEditorLink } from '../util/dot-experiments-uve-link.util';
+
+/**
+ * i18n key of the list screen's own title — the same one its route declares, so the crumb and the
+ * browser tab cannot drift apart.
+ */
+const LIST_TITLE_KEY = 'experiment.container.list.title';
 
 /** Where the New Experiment button goes: the Configure screen with nothing created yet. */
 const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
@@ -246,6 +254,7 @@ export class DotExperimentsListComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
+    readonly #globalStore = inject(GlobalStore);
     readonly #pushPublishDialogService = inject(DotPushPublishDialogService);
     readonly #destroyRef = inject(DestroyRef);
 
@@ -417,6 +426,33 @@ export class DotExperimentsListComponent {
     constructor() {
         this.#listenForActionSuccess();
     }
+
+    /**
+     * Puts this screen on the breadcrumb trail (#37005).
+     *
+     * Nothing else does. `processUrl` in the breadcrumb feature only builds a trail for a URL that
+     * matches a main-menu entry, and this portlet matches neither test: it is opt-in, so it is
+     * absent from `/api/v1/menu`, and the arrival from UVE carries `?pageAsset=` without an `mId`,
+     * which that matcher rejects outright. With no crumb of its own the trail kept whatever the
+     * previous screen left — so, arriving from the editor, the list rendered the *page's* name as
+     * its title.
+     *
+     * Appended rather than set: the crumb the UVE shell pushed for the page is exactly the way
+     * back to the editor, and it belongs above this one. `addNewBreadcrumb` replaces on a matching
+     * id, so re-entering the list (a reload, clearing the page filter, returning from Configure)
+     * lands on the crumb already there instead of stacking another.
+     *
+     * An effect rather than a one-shot: the filter can be cleared without leaving the screen, and
+     * the crumb's address has to follow it.
+     */
+    protected readonly syncBreadcrumbEffect = effect(() => {
+        const crumb = experimentsListCrumb(
+            this.#dotMessageService.get(LIST_TITLE_KEY),
+            this.store.selectedPageId()
+        );
+
+        untracked(() => this.#globalStore.addNewBreadcrumb(crumb));
+    });
 
     /**
      * Options for the two chip filters. Both are built here rather than inside the filter so it
