@@ -508,12 +508,31 @@ export class DotFolderListViewContextMenuComponent {
     }
 
     #resolveLockAction(contentlet: DotCMSContentlet, canLockData: DotContentletCanLock) {
+        // Registered like every other operation, so the same Lock reads the same way whether it was
+        // fired from here or from the Workflow Center (FR-007). It used to report nothing at all
+        // until its toast, which was the last place this inconsistency survived.
+        //
+        // The request stays this component's own: the Workflow Center locks through the default
+        // workflow action, this locks through the contentlet service. Only the *reporting* is shared.
+        const runId = this.#store.startExternalRun({
+            operation: canLockData.locked ? 'UNLOCK' : 'LOCK',
+            actionName: this.#dotMessageService.get(
+                canLockData.locked
+                    ? 'content-drive.context-menu.unlock'
+                    : 'content-drive.context-menu.lock'
+            ),
+            total: 1,
+            targetLabel: contentlet.title,
+            targets: [contentlet.inode]
+        });
+
         if (canLockData.locked) {
             this.#dotContentletService
                 .unlockContent(contentlet.inode)
                 .pipe(take(1))
                 .subscribe(
                     ({ title }: DotCMSContentlet) => {
+                        this.#store.endExternalRun(runId);
                         this.#messageService.add({
                             severity: 'success',
                             summary: this.#dotMessageService.get(
@@ -528,6 +547,7 @@ export class DotFolderListViewContextMenuComponent {
                         this.#store.reloadContentDrive();
                     },
                     (error) => {
+                        this.#store.endExternalRun(runId);
                         console.error('Error unlocking content', error);
                         this.#messageService.add({
                             severity: 'error',
@@ -549,6 +569,7 @@ export class DotFolderListViewContextMenuComponent {
                 .pipe(take(1))
                 .subscribe(
                     ({ title }: DotCMSContentlet) => {
+                        this.#store.endExternalRun(runId);
                         this.#messageService.add({
                             severity: 'success',
                             summary: this.#dotMessageService.get(
@@ -562,6 +583,7 @@ export class DotFolderListViewContextMenuComponent {
                         this.#store.reloadContentDrive();
                     },
                     (error) => {
+                        this.#store.endExternalRun(runId);
                         console.error('Error locking content', error);
                         this.#messageService.add({
                             severity: 'error',

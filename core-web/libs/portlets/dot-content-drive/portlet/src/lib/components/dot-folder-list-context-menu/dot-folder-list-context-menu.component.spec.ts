@@ -1820,6 +1820,86 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('lock/unlock in-flight reporting', () => {
+        const mockEvent = new MouseEvent('contextmenu');
+
+        const fireLock = async (locked: boolean) => {
+            dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, locked)));
+
+            await component.getMenuItems({
+                triggeredEvent: mockEvent,
+                contentlet: mockContentlet,
+                showAddToBundle: false
+            });
+
+            const label = locked
+                ? 'content-drive.context-menu.unlock'
+                : 'content-drive.context-menu.lock';
+
+            component.$items()
+                .find((item) => item.label === label)
+                ?.command?.({} as unknown as MenuItemCommandEvent);
+
+            jest.advanceTimersByTime(0);
+        };
+
+        it('should report a lock on the toolbar, naming the item', async () => {
+            // The same Lock fired from the Workflow Center registers a run and reports; from the
+            // row menu it registered nothing, so one action read two ways depending on the surface.
+            jest.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(NEVER);
+            const startExternalRun = jest.spyOn(store, 'startExternalRun');
+
+            await fireLock(false);
+
+            expect(startExternalRun).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    total: 1,
+                    targetLabel: mockContentlet.title,
+                    targets: [mockContentlet.inode]
+                })
+            );
+
+            jest.useRealTimers();
+        });
+
+        it('should report an unlock the same way', async () => {
+            jest.useFakeTimers();
+            dotContentletService.unlockContent.mockReturnValue(NEVER);
+            const startExternalRun = jest.spyOn(store, 'startExternalRun');
+
+            await fireLock(true);
+
+            expect(startExternalRun).toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+
+        it('should clear the indicator when a lock settles', async () => {
+            jest.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
+            const endExternalRun = jest.spyOn(store, 'endExternalRun');
+
+            await fireLock(false);
+
+            expect(endExternalRun).toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+
+        it('should clear the indicator when a lock fails', async () => {
+            jest.useFakeTimers();
+            dotContentletService.lockContent.mockReturnValue(throwError(() => new Error('nope')));
+            const endExternalRun = jest.spyOn(store, 'endExternalRun');
+
+            await fireLock(false);
+
+            expect(endExternalRun).toHaveBeenCalled();
+
+            jest.useRealTimers();
+        });
+    });
+
     describe('lock/unlock error handling', () => {
         const mockEvent = new MouseEvent('contextmenu');
 
