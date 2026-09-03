@@ -51,9 +51,13 @@ jobs:
   resolve-site-inputs:
     name: Resolve Site Inputs
     needs: release-notes
-    # Same exclusion as the notes phase: the site changelog is current-track GA only.
+    # success() is explicit, not decorative: a job carrying a custom `if` must state its
+    # own status gate, and publishing the site off a failed notes regeneration is the
+    # exact thing this must not do. Second clause is the notes phase's own exclusion —
+    # the site changelog is current-track GA only.
     if: >-
-      !contains(inputs.release_tag, 'dotcms-cli-')
+      success()
+      && !contains(inputs.release_tag, 'dotcms-cli-')
       && !contains(inputs.release_tag, '_lts_')
       && startsWith(inputs.release_tag, 'v')
     runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
