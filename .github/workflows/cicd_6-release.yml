@@ -145,16 +145,32 @@ jobs:
           # release-prepare hasn't created this release's tag yet at this point in the
           # pipeline — main is the correct proxy for "what's about to ship" (release_commit
           # defaults to main's tip the same way).
-          # Only the commit SUBJECT (first line) — the full multi-line message's body
-          # routinely has prose or footnotes ending in "(#N)" that reference an unrelated,
-          # often much older PR/issue (confirmed: ~20 real examples in this repo's last 3000
-          # commits). Scanning the full message would treat those stray references as PRs in
-          # this release's range, risking both a false block (an old referenced PR happens to
-          # carry the label) and an unwarranted floor bump if the operator reruns with
-          # bump_min_sdk_version=true to "fix" it.
-          PR_NUMBERS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...main" --paginate \
-            --jq '.commits[].commit.message | split("\n")[0]' \
-            | grep -oE '\(#[0-9]+\)$' | grep -oE '[0-9]+' | sort -un || true)
+          # Resolve each commit to its merged PR via GitHub's commits→PRs association API
+          # rather than parsing the commit subject for a trailing "(#N)". That regex only
+          # matched squash-merge subjects; merge-commit subjects ("Merge pull request #N
+          # from …") don't end in "(#N)", so once squash merges were disabled on this repo
+          # (dotCMS/private-issues#673) the regex silently found zero PRs and this gate
+          # always passed. The API resolves off git's actual PR-merge metadata, not the
+          # subject's text shape, so it stays correct under squash, merge, or rebase.
+          COMMIT_SHAS=$(gh api "repos/${REPO}/compare/${PREV_TAG}...main" --paginate \
+            --jq '.commits[].sha' || true)
+
+          # Fix for PR #37219 review feedback (sfreudenthaler + Claude bot, High): a bare
+          # `2>/dev/null || true` here would make a genuine API failure (rate limit,
+          # transient 5xx, network blip) indistinguishable from "this commit has no PR" —
+          # silently dropping that commit's PR from the count re-introduces the same
+          # silent-pass failure this gate exists to prevent. So each lookup is checked
+          # explicitly: a real failure fails the step loudly and by name, instead of being
+          # swallowed like a normal empty result.
+          PR_NUMBERS_FILE=$(mktemp)
+          for sha in ${COMMIT_SHAS}; do
+            if ! gh api "repos/${REPO}/commits/${sha}/pulls" --jq '.[].number' >> "${PR_NUMBERS_FILE}"; then
+              echo "::error::Failed to look up the PR(s) associated with commit ${sha} (repos/${REPO}/commits/${sha}/pulls) — likely a transient GitHub API error or rate limit, not the absence of a PR. Re-run the release; if this keeps failing, check GitHub API status/rate limits before assuming this commit has no associated PR."
+              exit 1
+            fi
+          done
+          PR_NUMBERS=$(sort -un "${PR_NUMBERS_FILE}")
+          rm -f "${PR_NUMBERS_FILE}"
 
           BREAKING_PRS=()
           for pr in ${PR_NUMBERS}; do
@@ -292,11 +308,11 @@ jobs:
       group: evergreen-tracks-registry
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@v5
       - uses: docker/setup-buildx-action@v3
       - name: Docker login
-        uses: docker/login-action@v3
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
         with:
           username: ${{ secrets.DOCKER_USERNAME }}
           password: ${{ secrets.DOCKER_TOKEN }}
@@ -339,10 +355,13 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
-          fetch-depth: 0
+          # Shallow checkout: this job only needs HEAD of main (it does its own
+          # `git fetch origin main` before checkout -B). fetch-depth: 0 pulled
+          # every branch ref (~2k+ branches, ~1.1 GB pack) at ~19-20 min.
+          fetch-depth: 1
           token: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
 
       - name: Bump MinSdkVersion.VALUE and open PR
@@ -498,6 +517,7 @@ jobs:
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
 
   # Changelog Site Publish - deliver the changelog entry to dev.dotcms.com/docs/changelogs.
   # Runs after release-notes, current-track GA only (reusing release-prepare's is_latest —
@@ -539,7 +559,7 @@ jobs:
     if: always()
     steps:
       - name: Checkout core
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           ref: main
 
@@ -560,7 +580,7 @@ jobs:
           && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
           && startsWith(needs.release-prepare.outputs.release_tag, 'v')
         continue-on-error: true
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: '22'
 

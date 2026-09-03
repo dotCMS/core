@@ -327,6 +327,13 @@ public interface AbstractDriveRequestForm {
      *   <li><strong>Working:</strong> Draft/unpublished content in progress</li>
      * </ul>
      *
+     * <p>
+     * <b>Interaction with {@link #status()}:</b> selecting {@code ARCHIVED} or {@code UNPUBLISHED}
+     * forces the query onto the working version, because neither state has a live one. That choice
+     * applies to the whole query, so combining {@code live: true} with either of those statuses
+     * returns working-version fields despite the request for live content. Not reachable from the
+     * Content Drive UI, which leaves this at its default.
+     *
      * @return true to include only live content, false to include working content (default)
      */
     @JsonProperty("live")
@@ -356,9 +363,86 @@ public interface AbstractDriveRequestForm {
     default boolean archived() { return false; }
 
 
+    /**
+     * Content states to filter by. Accepted values: {@code ARCHIVED}, {@code UNPUBLISHED},
+     * {@code LOCKED}.
+     * <p>
+     * Entries combine with <b>OR</b> — the result is content in <i>any</i> of the selected states,
+     * so adding a status never shrinks the result set. This matches {@link #contentTypes()} and
+     * {@link #language()}; it is not an intersection.
+     * <p>
+     * Excluding archived content is the browse query's standing default rather than a fourth value
+     * here: {@code ARCHIVED} is the only status that admits archived content, so
+     * {@code ["UNPUBLISHED"]} means "unpublished and not archived".
+     * <p>
+     * Defaults to empty, which is skipped entirely and preserves today's behavior exactly. An
+     * unrecognized value is rejected with a 400 by {@link ContentDriveHelper}, consistent with how
+     * {@link #userSearchable()} rejects unknown keys. Declared as strings rather than the enum so
+     * that rejection stays an explicit {@code BadRequestException} rather than a Jackson
+     * deserialization error.
+     * <p>
+     * Has <b>no side effects on other fields</b>. In particular it does not touch
+     * {@link #showFolders()}: folders carry no status, so the Content Drive UI stops asking for
+     * them once a status is selected, but that is the caller's decision and this endpoint honours
+     * whatever it is sent.
+     *
+     * @return content states to filter by, defaults to an empty list (no status filtering)
+     */
+    @JsonProperty("status")
+    @Value.Default
+    default List<String> status() { return List.of(); }
+
     @JsonProperty("showFolders")
     @Value.Default
     default boolean showFolders(){return true; }
+
+    /**
+     * Whether to include menu Links in results.
+     * <p>
+     * When false (default), menu Links are never returned, so existing callers are unaffected.
+     * When true, the Links directly under the resolved {@code assetPath} are returned alongside
+     * folders and contentlets, filtered by the requesting user's READ permission.
+     * </p>
+     * <p>
+     * Links are not a {@code BaseContentType}, so this flag is <b>orthogonal</b> to
+     * {@code baseTypes} rather than a value within it:
+     * </p>
+     * <ul>
+     *   <li>{@code showLinks: true} with {@code baseTypes} omitted returns links <i>plus</i>
+     *       content of every base type.</li>
+     *   <li>{@code showLinks: true, baseTypes: ["HTMLPAGE"]} returns links plus pages.</li>
+     *   <li>{@code showLinks: true, baseTypes: [], showFolders: false} returns links
+     *       <i>only</i> — an empty {@code baseTypes} array disables the content query.</li>
+     * </ul>
+     * <p>
+     * Links are ignored when {@code mimeTypes}, {@code workflow} or {@code userSearchable}
+     * filters are present: a Link carries no file MIME type, no workflow state and no fields, so
+     * it could never satisfy any of them.
+     * Links are also always the <i>direct</i> children of the resolved path — they are never
+     * gathered recursively across subfolders, matching the legacy {@code /api/v1/browser}
+     * endpoint.
+     * </p>
+     * <p>
+     * Two ordering and filtering details are worth knowing:
+     * </p>
+     * <ul>
+     *   <li><b>Links page in title order, independent of {@code sortBy}.</b> The page slice is
+     *       taken in title-ascending order (identifier as tiebreaker) so that an index-based
+     *       {@code linkCursor} stays stable; {@code sortBy} then reorders the items already
+     *       selected. This matches the other two sources — folders slice in name-ascending order
+     *       and contentlets in {@code mod_date} order, likewise regardless of {@code sortBy}.</li>
+     *   <li><b>{@code filters.filterFolders} does not gate link titles.</b> That flag only
+     *       controls whether folder <i>names</i> are narrowed by {@code filters.text}; link titles
+     *       are always narrowed when {@code filters.text} is set, because a link is a selectable
+     *       leaf rather than something to navigate into. There is no {@code filterLinks}
+     *       equivalent.</li>
+     * </ul>
+     *
+     * @return true to include menu Links, false to exclude (default)
+     */
+    @JsonProperty("showLinks")
+    @Value.Default
+    default boolean showLinks(){ return false; }
 
     /**
      * Content cursor: the DB row to start scanning content from (returned as
@@ -396,6 +480,23 @@ public interface AbstractDriveRequestForm {
     @JsonProperty("folderCursor")
     @Value.Default
     default int folderCursor() { return 0; }
+
+    /**
+     * Link cursor: the index into the link list to start from (returned as
+     * {@code nextLinkCursor} in the previous page response).
+     * <p>
+     * On the first page leave this at 0. On subsequent pages pass the
+     * {@code nextLinkCursor} value from the previous response. When the
+     * previous response returned {@code hasMoreLinks: false} you should
+     * also set {@code showLinks: false} to skip the link query entirely
+     * on pages where all links have already been shown.
+     * </p>
+     *
+     * @return link list index to start from, defaults to 0
+     */
+    @JsonProperty("linkCursor")
+    @Value.Default
+    default int linkCursor() { return 0; }
 
     /**
      * Per-field value filters, keyed by field variable name.

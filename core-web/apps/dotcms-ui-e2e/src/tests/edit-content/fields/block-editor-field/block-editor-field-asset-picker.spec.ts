@@ -122,7 +122,7 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
 
         await picker.expectTitle('Add Image');
         await expect(picker.sidebar).toBeVisible();
-        await expect(picker.treeSearch).toBeVisible();
+        await expect(picker.folderSearch).toBeVisible();
         // A row here exists to be picked, not managed.
         await picker.expectNoRowActions();
     });
@@ -172,6 +172,12 @@ test.describe('Block Editor — insert an image through the AssetPicker', () => 
     });
 
     test('the embedded image survives a save and reload @critical', async ({ page }) => {
+        // The only test here that persists anything, and the 60s budget covers the hooks too: the
+        // seed uploads two assets, the body pays for the picker *and* a second full dotAdmin boot
+        // after the save, and cleanup then deletes a content type that now has content in it.
+        // Teardown was what ran out of time on CI, not the assertions.
+        test.slow();
+
         const image = seededImage as Contentlet;
         const formPage = new NewEditContentFormPage(page);
         await formPage.goToNew(contentTypeVariable);

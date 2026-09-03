@@ -10,10 +10,14 @@ export const DEFAULT_ASSET_PICKER_SORT: DotAssetPickerSort = {
     order: 'desc'
 };
 
-/** Page 1 always starts at cursor 0. */
+/** Page 1 always starts every stream at cursor 0. */
 export const DEFAULT_ASSET_PICKER_PAGE: DotAssetPickerPage = {
     contentCursor: 0,
-    hasMoreContent: true
+    hasMoreContent: true,
+    folderCursor: 0,
+    hasMoreFolders: true,
+    linkCursor: 0,
+    hasMoreLinks: true
 };
 
 /**

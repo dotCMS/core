@@ -254,6 +254,23 @@
                             }}
                         </span>
                     </div>
+                } @else if (isSearching) {
+                    <!-- Search results render from the shared list (#37208), not from the tree.
+                         A recursive result set is flat: there is nothing to expand, so the tree's
+                         indentation and togglers had to be styled away here anyway. The row itself
+                         is unchanged — it moved to `@dotcms/ui` so the AssetPicker renders the
+                         identical thing instead of a second copy of it. -->
+                    <dot-folder-search-results
+                        class="min-h-0 min-w-0 flex-1"
+                        [results]="store.displayedFolders()"
+                        [selectedKey]="store.treeSelection()?.key ?? null"
+                        [loading]="store.searchLoading()"
+                        loadMoreLabelKey="dot.file.field.host.folder.action.load.more"
+                        listTestId="host-folder-search-results"
+                        rowTestId="host-folder-search-result"
+                        loadMoreTestId="host-folder-load-more"
+                        (resultSelect)="onSearchResultSelect($event)"
+                        (loadMore)="onLoadMoreNode($event)" />
                 } @else {
                     <dot-folder-tree
                         #folderTree
@@ -272,20 +289,10 @@
                         (onNodeExpand)="onFolderExpand($event)"
                         (loadMore)="onLoadMoreNode($event)">
                         <ng-template #folderTreeNodeLabel let-node>
-                            <span class="flex w-full min-w-0 flex-col gap-1 overflow-hidden">
-                                <span
-                                    class="block w-full min-w-0 truncate"
-                                    [class.font-semibold]="isSearching"
-                                    [class.leading-normal]="isSearching">
-                                    {{ node.label | dotFolderName }}
-                                </span>
-                                @if (isSearching && node.data?.path) {
-                                    <span
-                                        class="block w-full min-w-0 truncate text-sm leading-normal text-surface-500"
-                                        data-testid="host-folder-search-result-path">
-                                        {{ formatSearchNodePath(node) }}
-                                    </span>
-                                }
+                            <!-- One line now: the two-line search row moved to the shared list, so
+                                 this branch only ever renders a folder being browsed. -->
+                            <span class="block w-full min-w-0 truncate">
+                                {{ node.label | dotFolderName }}
                             </span>
                         </ng-template>
                     </dot-folder-tree>
