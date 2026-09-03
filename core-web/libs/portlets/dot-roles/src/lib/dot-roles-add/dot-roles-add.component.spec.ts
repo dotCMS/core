@@ -213,24 +213,49 @@ describe('DotRolesAddComponent', () => {
         }));
     });
 
-    it('should render the required inputs and disabled Save button', () => {
+    it('should render the required inputs and an enabled Save button', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('input-role-name'))).toBeTruthy();
         expect(spectator.query(byTestId('input-description'))).toBeTruthy();
 
+        // Save is never disabled by validation — an empty form is reported in
+        // the footer on submit, not by a dead button.
         const saveBtn = spectator.query(byTestId('btn-save')) as HTMLButtonElement;
-        expect(saveBtn.disabled).toBe(true);
+        expect(saveBtn.disabled).toBe(false);
     });
 
-    it('should enable Save once the required roleName is filled', () => {
+    it('should report the missing required field in the footer instead of creating', () => {
+        const store = spectator.inject(DotRolesStore);
+        // The `mockProvider` factory reuses the same `jest.fn()` across tests
+        // in this suite, so a bare `not.toHaveBeenCalled()` would inherit
+        // earlier calls.
+        (store.createRole as jest.Mock).mockClear();
         spectator.detectChanges();
+
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
+
+        expect(store.createRole).not.toHaveBeenCalled();
+        expect(spectator.query(byTestId('add-error'))).toBeTruthy();
+        expect(spectator.component['form'].get('roleName')?.touched).toBe(true);
+    });
+
+    it('should clear the validation error once the form is completed and submitted', () => {
+        const store = spectator.inject(DotRolesStore);
+        spectator.detectChanges();
+
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('add-error'))).toBeTruthy();
 
         spectator.typeInElement('New Role', byTestId('input-role-name'));
         spectator.detectChanges();
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
 
-        const saveBtn = spectator.query(byTestId('btn-save')) as HTMLButtonElement;
-        expect(saveBtn.disabled).toBe(false);
+        expect(store.createRole).toHaveBeenCalled();
+        expect(spectator.query(byTestId('add-error'))).toBeFalsy();
     });
 
     it('should close the dialog when Cancel is clicked', () => {

@@ -94,20 +94,21 @@
             data-testid="input-description"></textarea>
     </div>
 
-    @if ($error()) {
-        <p class="m-0 text-red-700" data-testid="edit-error">{{ $error() | dm }}</p>
-    }
-
     <p-confirmDialog
         [draggable]="false"
         [style]="{ width: '500px' }"
         data-testid="delete-confirm-dialog" />
 
-    <footer class="mt-2 flex justify-between gap-2">
+    <!--
+        Save is never disabled by validation, so the footer carries the reason a
+        submit did nothing — sitting to the right of Delete, per design.
+        `ml-auto` on the button group keeps Cancel/Save right-aligned whether or
+        not the message is present.
+    -->
+    <footer class="mt-2 flex items-center gap-2">
         <button
             pButton
             type="button"
-            severity="danger"
             [outlined]="true"
             (click)="onDelete()"
             [disabled]="readOnly || $submitting()"
@@ -116,11 +117,15 @@
             {{ 'roles.action.delete' | dm }}
         </button>
 
-        <div class="flex gap-2">
+        @if ($error()) {
+            <p class="m-0 text-sm text-red-700" data-testid="edit-error">{{ $error() | dm }}</p>
+        }
+
+        <div class="ml-auto flex gap-2">
             <button
                 pButton
                 type="button"
-                [outlined]="true"
+                [text]="true"
                 (click)="onCancel()"
                 data-testid="btn-cancel">
                 {{ 'roles.action.cancel' | dm }}
@@ -128,7 +133,7 @@
             <button
                 pButton
                 type="submit"
-                [disabled]="form.invalid || $submitting() || readOnly"
+                [disabled]="readOnly"
                 [loading]="$submitting()"
                 [pTooltip]="readOnly ? ('roles.edit.readonly' | dm) : ''"
                 data-testid="btn-save">

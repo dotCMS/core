@@ -88,26 +88,27 @@
             data-testid="input-description"></textarea>
     </div>
 
-    @if ($error()) {
-        <p class="m-0 text-red-700" data-testid="add-error">{{ $error() | dm }}</p>
-    }
-
-    <footer class="mt-2 flex justify-end gap-2">
-        <button
-            pButton
-            type="button"
-            [outlined]="true"
-            (click)="onCancel()"
-            data-testid="btn-cancel">
-            {{ 'roles.action.cancel' | dm }}
-        </button>
-        <button
-            pButton
-            type="submit"
-            [disabled]="form.invalid || $submitting()"
-            [loading]="$submitting()"
-            data-testid="btn-save">
-            {{ 'roles.action.save' | dm }}
-        </button>
+    <!--
+        Save is never disabled by validation, so the footer carries the reason
+        a submit did nothing. `ml-auto` on the button group keeps the buttons
+        right-aligned whether or not the message is present.
+    -->
+    <footer class="mt-2 flex items-center gap-2">
+        @if ($error()) {
+            <p class="m-0 text-sm text-red-700" data-testid="add-error">{{ $error() | dm }}</p>
+        }
+        <div class="ml-auto flex gap-2">
+            <button
+                pButton
+                type="button"
+                [text]="true"
+                (click)="onCancel()"
+                data-testid="btn-cancel">
+                {{ 'roles.action.cancel' | dm }}
+            </button>
+            <button pButton type="submit" [loading]="$submitting()" data-testid="btn-save">
+                {{ 'roles.action.save' | dm }}
+            </button>
+        </div>
     </footer>
 </form>

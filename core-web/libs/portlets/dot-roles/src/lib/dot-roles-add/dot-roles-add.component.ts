@@ -125,7 +125,18 @@ export class DotRolesAddComponent {
     }
 
     protected onSave(): void {
-        if (this.form.invalid || this.$submitting()) {
+        if (this.$submitting()) {
+            return;
+        }
+
+        // Save is never disabled, so an incomplete form reaches here. Name the
+        // problem in the footer instead of leaving a dead button the admin has
+        // to reverse-engineer; `markAllAsTouched` lights up the per-field
+        // messages at the same time.
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            this.$error.set('roles.form.error.required');
+
             return;
         }
 

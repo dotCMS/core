@@ -166,7 +166,18 @@ export class DotRolesEditComponent {
     }
 
     protected onSave(): void {
-        if (this.form.invalid || this.$submitting() || this.readOnly) {
+        if (this.$submitting() || this.readOnly) {
+            return;
+        }
+
+        // See the note in the Add dialog: Save stays enabled for validation, so
+        // an invalid form has to explain itself here rather than in a disabled
+        // button. `readOnly` above is a permission gate, not a validation one,
+        // and keeps disabling Save with its own tooltip.
+        if (this.form.invalid) {
+            this.form.markAllAsTouched();
+            this.$error.set('roles.form.error.required');
+
             return;
         }
 
