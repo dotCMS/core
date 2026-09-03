@@ -33,8 +33,7 @@ const mockNode = (id: string): TreeNodeItem => ({
     key: id,
     label: id,
     data: { id, hostname: id, path: '', type: 'site' },
-    expandedIcon: 'pi pi-globe',
-    collapsedIcon: 'pi pi-globe'
+    icon: 'pi pi-globe'
 });
 
 const mockNodeSelectEvent = (id: string): TreeNodeSelectItem => ({

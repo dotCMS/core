@@ -94,6 +94,20 @@ export class DotFolderTreeComponent {
     $showLoadMorePlusIcon = input(false, { alias: 'showLoadMorePlusIcon' });
 
     /**
+     * When true, renders a state-reflecting folder icon ahead of each folder row's label:
+     * a closed folder when the row is collapsed, an open one when it is expanded.
+     *
+     * Off by default — consumers opt in. `DotRolesTreeComponent` renders a non-folder
+     * hierarchy through this component and draws its own icons, so a default-on rule would
+     * stamp a folder glyph next to them.
+     *
+     * A row that declares an icon of its own (`icon` / `expandedIcon` / `collapsedIcon`) is
+     * left alone: PrimeNG already draws that one, and a second would double it. This is how a
+     * site row keeps its globe.
+     */
+    $showFolderIcons = input(false, { alias: 'showFolderIcons' });
+
+    /**
      * `data-testid` applied to the underlying `p-tree`.
      */
     $treeTestId = input('dot-folder-tree', { alias: 'treeTestId' });
@@ -151,9 +165,22 @@ export class DotFolderTreeComponent {
 
     /**
      * Host layout classes (consumer `styleClass` + defaults).
-     * Node icons come from TreeNode.icon / expandedIcon / collapsedIcon — not the toggler.
+     * Node icons come from `showFolderIcons` (state-driven, drawn here) or from
+     * TreeNode.icon / expandedIcon / collapsedIcon (fixed, drawn by PrimeNG) — never the toggler.
      */
     readonly hostClasses = computed(() => `block min-h-0 h-full w-full ${this.$styleClass()}`);
+
+    /**
+     * Whether this component draws the folder icon for a given row.
+     *
+     * A plain template predicate on purpose — the icon is a function of `node.expanded` evaluated
+     * at render time, with no per-node signal, computed or stored state behind it. It also never
+     * writes to the node: several consumers pass NgRx signal-store state, which is frozen in dev
+     * builds.
+     */
+    protected showsFolderIcon(node: TreeNode): boolean {
+        return this.$showFolderIcons() && !node.icon && !node.expandedIcon && !node.collapsedIcon;
+    }
 
     protected onLoadMoreClick(event: Event, node: TreeNode): void {
         event.stopPropagation();

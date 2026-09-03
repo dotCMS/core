@@ -84,6 +84,26 @@ describe('DotRolesTreeComponent', () => {
         expect(spectator.query(byTestId('tree-empty'))).toBeNull();
     });
 
+    it('should not inherit the shared tree folder icons (#37362)', () => {
+        // This portlet renders a *roles* hierarchy through the shared DotFolderTreeComponent and
+        // draws its own Material Symbols icons in the projected label template. The shared
+        // folder-icon input is opt-in precisely so a folder glyph never lands next to them here.
+        const store = spectator.inject(DotRolesStore, true);
+        (store.filteredRoles as jest.Mock).mockReturnValue([
+            { id: 'r-eco', name: 'Eco Role', children: [] }
+        ]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tree-node-folder-icon'))).toBeNull();
+
+        // The row still draws its own Material Symbols icon. Which glyph it picks is leaf
+        // detection, covered by the `childCount` tests below — what matters here is that the icon
+        // is this portlet's and no PrimeIcons folder joined it.
+        const ownIcon = spectator.query(byTestId('node-icon-r-eco'));
+        expect(ownIcon?.classList.contains('material-symbols-outlined')).toBe(true);
+        expect(ownIcon?.querySelector('.pi')).toBeNull();
+    });
+
     describe('leaf detection via childCount (#37071)', () => {
         // `$treeNodes` is protected; reach it by index so the assertions
         // target the mapping logic rather than PrimeNG's rendered DOM.

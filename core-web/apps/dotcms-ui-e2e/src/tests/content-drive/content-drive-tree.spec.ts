@@ -48,6 +48,35 @@ test.describe('Content Drive Folder Tree', () => {
         await tree.expectFolderVisible(childName);
     });
 
+    test('shows a folder icon that opens and closes with the row @critical', async ({
+        adminPage,
+        apiHelpers,
+        testSuffix
+    }) => {
+        // #37362: folder rows lost their icon when the four folder trees were unified in #36848.
+        // The icon must also revert on collapse — the half of the report that was never about
+        // Content Drive.
+        const site = await apiHelpers.getDefaultSite();
+        const parentName = `cd-icon-${testSuffix}`;
+        const childName = `cd-icon-child-${testSuffix}`;
+        await apiHelpers.createFolders(site.hostname, [`/${parentName}/${childName}`]);
+
+        const drive = new ContentDrivePage(adminPage);
+        const tree = new ContentDriveTree(adminPage);
+
+        await drive.goTo();
+        await tree.expectFolderVisible(parentName);
+
+        await tree.expectFolderIconVisible(parentName);
+        await tree.expectFolderIconExpanded(parentName, false);
+
+        await tree.expandFolder(parentName);
+        await tree.expectFolderIconExpanded(parentName, true);
+
+        await tree.collapseFolder(parentName);
+        await tree.expectFolderIconExpanded(parentName, false);
+    });
+
     test('selects folder and shows child folder in list @critical', async ({
         adminPage,
         apiHelpers,
