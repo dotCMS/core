@@ -462,7 +462,9 @@ export class DotFolderListViewContextMenuComponent {
             .subscribe(
                 () => {
                     this.#store.endExternalRun(runId);
-                    this.#store.reloadContentDrive();
+                    // Quiet: this row was marked busy, so the skeleton would be a second load right
+                    // after the first and would read as a jump.
+                    this.#store.reloadContentDrive({ quiet: true });
 
                     this.#messageService.add({
                         severity: 'success',

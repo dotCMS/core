@@ -1511,6 +1511,60 @@ describe('DotContentDriveStore - Content Loading Effect', () => {
         );
     });
 
+    describe('quiet reload', () => {
+        beforeEach(() => {
+            // Held in flight on purpose: this is about what the listing looks like *while* the
+            // request is out. Letting it resolve would settle the status and hide the difference.
+            contentDriveService.search.mockReturnValue(NEVER);
+        });
+
+        it('should blank the listing for an ordinary search', () => {
+            // The skeleton is the only signal an author has that a search is running. It stays.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should leave the listing rendered on a quiet reload', () => {
+            // Redundant exactly when the affected rows are already marked busy: the author has
+            // already been told which rows are working, so blanking everything to swap them reads
+            // as a second load and a jump.
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+
+        it('should still refetch when quiet, so the result stays filter-correct', () => {
+            // The point of refetching rather than patching rows in place: an archived or unpublished
+            // row simply is not in the new result. The client cannot work that out for itself.
+            contentDriveService.search.mockClear();
+
+            spectator.service.loadItems({ quiet: true });
+
+            expect(contentDriveService.search).toHaveBeenCalled();
+        });
+
+        it('should keep the skeleton for a reload that marked no rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive();
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADING);
+        });
+
+        it('should skip the skeleton for a reload whose caller marked rows', () => {
+            store.setStatus(DotContentDriveStatus.LOADED);
+
+            store.reloadContentDrive({ quiet: true });
+
+            expect(store.status()).toBe(DotContentDriveStatus.LOADED);
+        });
+    });
+
     it('should handle title filter in request', () => {
         // Set title filter
         store.patchFilters({ title: 'test' });

@@ -578,7 +578,10 @@ export class DotContentDriveShellComponent {
                 // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
                 // selection the run consumed. Skipped for a backgrounded result while a dialog is
                 // open, because reloading pulls the rows out from under the form being filled in.
-                this.#store.loadItems();
+                //
+                // Quiet: the run marked its rows, so a skeleton here would be a second load
+                // right after the first and would read as a jump.
+                this.#store.loadItems({ quiet: true });
             }
 
             if (!backgrounded) {
@@ -1189,7 +1192,8 @@ export class DotContentDriveShellComponent {
                         ),
                         life: SUCCESS_MESSAGE_LIFE
                     });
-                    this.#store.loadItems();
+                    // Quiet: the moved rows were marked busy.
+                    this.#store.loadItems({ quiet: true });
                 }
 
                 fails.forEach(({ errorMessage, inode }) => {
