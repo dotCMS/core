@@ -20,6 +20,7 @@ import {
     Validators
 } from '@angular/forms';
 
+import { MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { DialogModule } from 'primeng/dialog';
 import { Select, SelectModule } from 'primeng/select';
@@ -68,6 +69,8 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
     private destroy$: Subject<boolean> = new Subject<boolean>();
     readonly #dotMessageService = inject(DotMessageService);
     readonly #addToBundleService = inject(AddToBundleService);
+    /** Optional: this dialog has consumers that provide no toast host. See the push-publish one. */
+    readonly #messageService = inject(MessageService, { optional: true });
     readonly #fb = inject(UntypedFormBuilder);
     readonly #loggerService = inject(LoggerService);
 
@@ -135,9 +138,26 @@ export class DotAddToBundleComponent implements OnInit, AfterViewInit, OnDestroy
                             JSON.stringify(this.setBundleData())
                         );
                         this.form.reset();
+                        // Closing was the only sign anything happened, which reads as the dialog
+                        // having given up rather than having worked. Say what was done.
+                        this.#messageService?.add({
+                            severity: 'success',
+                            summary: this.#dotMessageService.get('add-to-bundle.added'),
+                            detail: this.#dotMessageService.get(
+                                'add-to-bundle.added-detail',
+                                this.setBundleData().name
+                            )
+                        });
                         this.close();
                     } else {
+                        // Was `loggerService.debug` only: the author was told nothing at all, and
+                        // the dialog simply stayed open with no explanation.
                         this.#loggerService.debug(result.errorMessages);
+                        this.#messageService?.add({
+                            severity: 'error',
+                            summary: this.#dotMessageService.get('add-to-bundle.failed'),
+                            detail: this.#dotMessageService.get('add-to-bundle.failed-detail')
+                        });
                     }
                 });
         }
