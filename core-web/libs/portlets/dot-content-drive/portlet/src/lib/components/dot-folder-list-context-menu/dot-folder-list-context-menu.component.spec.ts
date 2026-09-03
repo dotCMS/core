@@ -1360,6 +1360,25 @@ describe('DotFolderListViewContextMenuComponent', () => {
         });
     });
 
+    describe('menu cache invalidation', () => {
+        it('should drop the memo when reloaded rows arrive, even with no LOADING in between', () => {
+            // Regression: the memo was only cleared by a LOADING status. A reload that settles an
+            // action is now quiet — it never sets LOADING — so the cache survived it and the menu
+            // kept offering the workflow actions for the step the item was on *before* the action.
+            //
+            // Keying by inode does not save it: publishing does not change the working inode, so
+            // the same key comes back pointing at a stale menu.
+            spectator.detectChanges();
+            component.$memoizedMenuItems.set({ 'test-inode': [] });
+
+            // A quiet reload delivers rows with no status change at all.
+            patchState(store, { items: [mockContentlet as DotContentDriveItem] });
+            spectator.detectChanges();
+
+            expect(component.$memoizedMenuItems()).toEqual({});
+        });
+    });
+
     describe('statusEffect', () => {
         it('should not clear memoized items when status is not loading', () => {
             const memoizedItems = { 'test-inode': [] };

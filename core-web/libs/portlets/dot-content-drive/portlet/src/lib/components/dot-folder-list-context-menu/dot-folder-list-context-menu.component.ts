@@ -133,9 +133,21 @@ export class DotFolderListViewContextMenuComponent {
      * The memoized items are cleared to force a refresh of the menu options.
      */
     readonly statusEffect = effect(() => {
+        // Both read up front: a guard placed before a read drops that signal as a dependency.
         const status = this.#store.status();
+        const items = this.#store.items();
 
-        if (status === DotContentDriveStatus.LOADING) {
+        // `items` is the load-agnostic trigger, and it is the one that matters. The memo used to be
+        // dropped only on LOADING, which held while every reload blanked the listing. A reload that
+        // settles an action is now quiet and never sets LOADING, so the cache outlived the data and
+        // the menu went on offering the workflow actions for the step the item was on *before* the
+        // action ran.
+        //
+        // Keying the memo by inode does not save it: publishing does not change the working inode,
+        // so the same key comes back pointing at a stale menu. Dropping the memo when the rows
+        // themselves arrive is the honest trigger, since that is exactly when what the menu was
+        // built from stopped being true.
+        if (status === DotContentDriveStatus.LOADING || items) {
             this.$memoizedMenuItems.set({});
         }
     });
