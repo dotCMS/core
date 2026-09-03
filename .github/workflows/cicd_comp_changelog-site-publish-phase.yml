@@ -33,6 +33,11 @@ on:
         description: 'Space-separated docker image tags produced by the deployment phase'
         required: true
         type: string
+      released_date:
+        description: 'Availability date (yyyy-MM-dd). Defaults to today. A backfill MUST pass the original release date — the update path writes this through verbatim, so today would relabel an old entry.'
+        required: false
+        type: string
+        default: ''
       allow_failure:
         description: 'If true, job failures are non-blocking (used by release pipeline). Defaults to false.'
         required: false
@@ -113,6 +118,7 @@ jobs:
           # passed here — override is a manual operator re-run only.
           DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT: ${{ vars.DOTCMS_DEVSITE_RELEASENOTES_ACCOUNT }}
           DOCKER_TAGS: ${{ inputs.docker_tags }}
+          RELEASED_DATE: ${{ inputs.released_date }}
         run: |
           # Pick the sha-tagged dotcms/dotcms image (version_sha form, e.g.
           # dotcms/dotcms:26.07.10-01_84b0486). The `_` in the glob excludes the floating
@@ -135,7 +141,7 @@ jobs:
             --version "$RELEASE_VERSION" \
             --notes-file /tmp/site-release-notes.md \
             --docker-image "$DOCKER_IMAGE" \
-            --released-date "$(date -u +%F)" \
+            --released-date "${RELEASED_DATE:-$(date -u +%F)}" \
             --apply 2>&1)
           RC=$?
           set -e

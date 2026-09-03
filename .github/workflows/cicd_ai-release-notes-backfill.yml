@@ -9,6 +9,10 @@
 # - Re-generate notes for a specific release (clear existing notes first)
 # - Test the release notes pipeline in isolation
 #
+# The regenerated GitHub release body is then republished to the dev.dotcms.com
+# changelog (#37388). Without that leg, a release whose notes generation failed
+# publishes an empty site entry that no later backfill can ever repair.
+#
 
 name: 'AI Release Notes (Backfill)'
 run-name: "Release Notes: ${{ inputs.release_tag }}"
@@ -39,4 +43,71 @@ jobs:
       previous_tag: ${{ inputs.previous_tag }}
     secrets:
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
+
+  # The release pipeline reads docker_tags off its deployment phase; a backfill has no
+  # deployment, so recover them from Docker Hub. Also recovers the original availability
+  # date — the phase otherwise defaults to today and would relabel an old entry.
+  resolve-site-inputs:
+    name: Resolve Site Inputs
+    needs: release-notes
+    # Same exclusion as the notes phase: the site changelog is current-track GA only.
+    if: >-
+      !contains(inputs.release_tag, 'dotcms-cli-')
+      && !contains(inputs.release_tag, '_lts_')
+      && startsWith(inputs.release_tag, 'v')
+    runs-on: ubuntu-${{ vars.UBUNTU_RUNNER_VERSION || '24.04' }}
+    outputs:
+      release_version: ${{ steps.resolve.outputs.release_version }}
+      docker_tags: ${{ steps.resolve.outputs.docker_tags }}
+      released_date: ${{ steps.resolve.outputs.released_date }}
+    steps:
+      - name: Resolve version, image and availability date
+        id: resolve
+        env:
+          GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          REPO: ${{ github.repository }}
+        run: |
+          version="${RELEASE_TAG#v}"
+
+          # Select on a 7-hex sha suffix, NOT a bare "_": <version>_tainted tags exist
+          # (26.08.28-01, 26.08.31-01) and a looser match picks them over the real image.
+          sha_tag=$(curl -sS --fail \
+            "https://hub.docker.com/v2/repositories/dotcms/dotcms/tags/?page_size=100&name=${version}" \
+            | jq -r --arg v "${version}" \
+                '.results[].name | select(startswith($v + "_")) | select(test("_[0-9a-f]{7}$"))' \
+            | head -1)
+          if [ -z "${sha_tag}" ]; then
+            echo "::error::No sha-tagged dotcms/dotcms image found for ${version}. The site changelog records the deployed image, so publishing without it would be wrong."
+            exit 1
+          fi
+
+          # published_at, not today: publisher.py writes released_date through verbatim on
+          # the update path, so today's date would silently relabel an old entry.
+          released_date=$(gh api "repos/${REPO}/releases/tags/${RELEASE_TAG}" --jq .published_at | cut -dT -f1)
+
+          {
+            echo "release_version=${version}"
+            echo "docker_tags=dotcms/dotcms:${sha_tag} dotcms/dotcms:${version}"
+            echo "released_date=${released_date}"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Resolved ${version}: image dotcms/dotcms:${sha_tag}, available ${released_date}."
+
+  # Not allow_failure: the release pipeline tolerates a changelog hiccup because it must
+  # never fail a software release (FR-008). A backfill has no release to protect, and a
+  # silent failure here is the exact condition #37388 exists to end.
+  changelog-site-publish:
+    name: Changelog Site Publish
+    needs: [ release-notes, resolve-site-inputs ]
+    uses: ./.github/workflows/cicd_comp_changelog-site-publish-phase.yml
+    with:
+      release_tag: ${{ inputs.release_tag }}
+      release_version: ${{ needs.resolve-site-inputs.outputs.release_version }}
+      docker_tags: ${{ needs.resolve-site-inputs.outputs.docker_tags }}
+      released_date: ${{ needs.resolve-site-inputs.outputs.released_date }}
+    secrets:
+      DOTCMS_DEVSITE_RELEASENOTES_TOKEN: ${{ secrets.DOTCMS_DEVSITE_RELEASENOTES_TOKEN }}
+      SLACK_BOT_TOKEN: ${{ secrets.SLACK_BOT_TOKEN }}
       CI_MACHINE_TOKEN: ${{ secrets.CI_MACHINE_TOKEN }}
