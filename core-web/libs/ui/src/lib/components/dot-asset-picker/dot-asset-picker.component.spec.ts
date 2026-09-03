@@ -37,6 +37,7 @@ import {
     DotDialogHeaderComponent
 } from '../dot-dialog';
 import { DotToastComponent } from '../dot-toast/dot-toast.component';
+import { DotUploadTypeSelectorComponent } from '../dot-upload-type-selector/dot-upload-type-selector.component';
 
 /**
  * What every `overrideComponent({ set: { imports } })` below has to keep real.
@@ -61,7 +62,8 @@ const PICKER_REAL_IMPORTS = [
     DotDialogComponent,
     DotDialogHeaderComponent,
     DotDialogContentComponent,
-    DotDialogFooterComponent
+    DotDialogFooterComponent,
+    DotUploadTypeSelectorComponent
 ];
 
 const SITE: DotSite = {
@@ -187,7 +189,12 @@ describe('DotAssetPickerComponent', () => {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({
                     'dot.common.dialog.accept': 'Add',
-                    'dot.common.dialog.reject': 'Cancel'
+                    'dot.common.dialog.reject': 'Cancel',
+                    'dot.asset.picker.upload.rejected': "Can't upload this file",
+                    'dot.asset.picker.upload.rejected.detail': 'Only {0} can be uploaded here.',
+                    'dot.asset.picker.upload.types.image': 'images',
+                    'dot.asset.picker.upload.types.video': 'video files',
+                    'dot.asset.picker.upload.types.audio': 'audio files'
                 })
             },
             { provide: DynamicDialogConfig, useValue: { data: CONFIG } }
@@ -591,6 +598,206 @@ describe('DotAssetPickerComponent', () => {
             spectator.component['onRequestUpload']({ files, targetFolder: PINNED_FOLDER });
 
             expect(store.loadItems).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('upload restriction', () => {
+        const messageService = () => spectator.inject(MessageService, true);
+
+        /** `new File()` defaults `type` to `''`, which the restriction deliberately allows. */
+        const fileList = (type: string, name = 'asset.bin'): FileList => {
+            const files = [new File([''], name, { type })] as unknown as FileList;
+            Object.defineProperty(files, 'length', { value: 1 });
+
+            return files;
+        };
+
+        /** Puts the picker in a media mode, the way an Image field opens it. */
+        const restrictToImages = () => {
+            store.config.set({ ...CONFIG, mimeTypes: ['image/*'] });
+            spectator.detectChanges();
+        };
+
+        describe('in a media mode', () => {
+            beforeEach(() => restrictToImages());
+
+            it('should refuse a dropped file outside the allowed types', () => {
+                const spyAdd = jest.spyOn(messageService(), 'add');
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+                expect(spyAdd).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: 'error',
+                        detail: 'Only images can be uploaded here.'
+                    })
+                );
+            });
+
+            it('should not open the Asset/File prompt for a refused drop', () => {
+                // Without the early gate the user is asked to choose a storage type and only then
+                // told the file was never eligible.
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(spectator.component.$uploadSelectorPayload()).toBeUndefined();
+                expect(spectator.component.$uploadModalVisible()).toBe(false);
+            });
+
+            it('should refuse a file chosen through the OS dialog', () => {
+                // `accept` is a hint the user can override from the dialog's own filter, so the
+                // pre-upload check has to stand on its own.
+                spectator.component.$activeSelection.set({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET
+                });
+
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/pdf', 'report.pdf'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a file after the Asset/File prompt is answered', () => {
+                spectator.component['onUploadTypeSelected']({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET,
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a drop into a folder that pins a base type', () => {
+                // This route skips the prompt entirely — the one most easily left unguarded.
+                spectator.component['onRequestUpload']({
+                    files: fileList('audio/mpeg', 'song.mp3'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should refuse a button upload into a folder that pins a base type', () => {
+                store.selectedNode.set({ data: PINNED_FOLDER });
+                spectator.detectChanges();
+
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/pdf', 'report.pdf'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
+            });
+
+            it('should allow a file whose type the browser does not report', () => {
+                // AC-010: the server stays the authority rather than blocking a file we cannot
+                // classify.
+                spectator.component['onRequestUpload']({
+                    files: fileList('', 'mystery.dat'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should upload an allowed file and refresh the list with the restriction intact', () => {
+                store.$request.set({ mimeTypes: ['image/*'] });
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('image/png', 'logo.png'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+                expect(store.loadItems).toHaveBeenCalledWith({ mimeTypes: ['image/*'] });
+            });
+        });
+
+        describe('the hidden file input', () => {
+            const fileInput = () =>
+                spectator.query('input[type="file"]') as HTMLInputElement | null;
+
+            it('should filter the OS dialog to the restricted family', () => {
+                restrictToImages();
+
+                expect(fileInput()?.getAttribute('accept')).toBe('image/*');
+            });
+
+            it('should carry every pattern a browse caller asked for', () => {
+                store.config.set({ ...CONFIG, mimeTypes: ['image/*', 'video/*'] });
+                spectator.detectChanges();
+
+                expect(fileInput()?.getAttribute('accept')).toBe('image/*,video/*');
+            });
+
+            it('should carry no accept attribute at all when nothing is restricted', () => {
+                // Absence, not `accept=""` — an empty value is a different thing to the browser,
+                // and a test asserting `''` would pass against a broken implementation.
+                expect(fileInput()?.hasAttribute('accept')).toBe(false);
+            });
+        });
+
+        describe('the Asset/File prompt', () => {
+            const selector = () => spectator.query(DotUploadTypeSelectorComponent);
+
+            it('should hand the restriction label to the selector in a media mode', () => {
+                restrictToImages();
+
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.detectChanges();
+
+                expect(selector()?.$restrictionLabel()).toBe('images');
+            });
+
+            it('should hand the selector no label when nothing is restricted', () => {
+                spectator.component['onUpload'](new MouseEvent('click'));
+                spectator.detectChanges();
+
+                expect(selector()?.$restrictionLabel()).toBe('');
+            });
+        });
+
+        describe('in the File field, which restricts nothing', () => {
+            // The over-reach guard. CONFIG carries no `mimeTypes`, exactly as a File field opens.
+            it('should upload a dropped PDF', () => {
+                const spyAdd = jest.spyOn(messageService(), 'add');
+
+                spectator.component['onRequestUpload']({
+                    files: fileList('application/pdf', 'report.pdf'),
+                    targetFolder: PINNED_FOLDER
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+                expect(spyAdd).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'error' })
+                );
+            });
+
+            it('should upload a PDF chosen through the OS dialog', () => {
+                spectator.component.$activeSelection.set({
+                    baseType: DotCMSBaseTypesContentTypes.DOTASSET
+                });
+
+                spectator.component['onFileChange']({
+                    target: { files: fileList('application/zip', 'bundle.zip'), value: 'x' }
+                } as unknown as Event);
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
+
+            it('should upload a PDF after the Asset/File prompt is answered', () => {
+                spectator.component['onUploadTypeSelected']({
+                    baseType: DotCMSBaseTypesContentTypes.FILEASSET,
+                    files: fileList('application/pdf', 'report.pdf')
+                });
+
+                expect(uploadService.uploadFileByBaseType).toHaveBeenCalled();
+            });
         });
     });
 });

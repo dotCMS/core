@@ -50,6 +50,11 @@ import {
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
+import {
+    buildUploadAccept,
+    isUploadAllowed,
+    resolveUploadRestrictionLabel
+} from './upload-restriction';
 
 import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../dialog/fullscreen-dialog';
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
@@ -201,6 +206,28 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Holds the chosen type while the OS file picker is open (Upload-button flow only). */
     readonly $activeSelection = signal<DotUploadSelection | undefined>(undefined);
+
+    /**
+     * Pre-filters the OS file dialog to what the entry point can hold.
+     *
+     * `null` in the unrestricted modes, which removes the attribute — the File field and `browse`
+     * must keep offering every file. A hint only: the dialog lets the user switch back to "all
+     * files", which is why `#refuseDisallowedUpload` still has to stand behind it.
+     */
+    protected readonly $uploadAccept = computed(() =>
+        buildUploadAccept(this.store.config()?.mimeTypes)
+    );
+
+    /**
+     * What the restriction is called, for the Asset/File prompt and the refusal toast. Empty when
+     * nothing is restricted, which is what makes the prompt render its default copy.
+     */
+    protected readonly $uploadRestrictionLabel = computed(
+        () =>
+            resolveUploadRestrictionLabel(this.store.config()?.mimeTypes, (key) =>
+                this.#dotMessageService.get(key)
+            ) ?? ''
+    );
 
     ngOnInit(): void {
         const config = this.#dialogConfig?.data;
@@ -410,6 +437,13 @@ export class DotAssetPickerComponent implements OnInit {
 
     /** Drag-and-drop: the files are already known, so a pinned base type uploads immediately. */
     protected onRequestUpload({ files, targetFolder }: DotUploadFiles): void {
+        // Judged here as well as at `#resolveFilesUpload`, which is the actual guarantee. Without
+        // this the user would be asked to choose a storage type for a file that was never eligible,
+        // and only then be refused.
+        if (this.#refuseDisallowedUpload(files)) {
+            return;
+        }
+
         const baseType = this.#resolvePreferredBaseType(targetFolder);
 
         if (baseType) {
@@ -506,8 +540,51 @@ export class DotAssetPickerComponent implements OnInit {
         }
     }
 
+    /**
+     * Refuses a file the entry point cannot hold, and says which types it can.
+     *
+     * The restriction is `config.mimeTypes` — the same value that narrows what the list shows, so
+     * an Image field cannot upload something it would then be unable to display. Returns whether
+     * the upload was refused.
+     *
+     * This is the guarantee, not the filter: `accept` on the file input only *suggests* a type to
+     * the OS dialog, and the user can switch it off from the dialog itself. Judged on the file that
+     * would actually be uploaded, since a multi-file selection already warns and uploads only the
+     * first.
+     */
+    #refuseDisallowedUpload(files?: FileList | null): boolean {
+        const mimeTypes = this.store.config()?.mimeTypes;
+        const file = files?.[0];
+
+        if (!file || isUploadAllowed(file, mimeTypes)) {
+            return false;
+        }
+
+        const allowed = resolveUploadRestrictionLabel(mimeTypes, (key) =>
+            this.#dotMessageService.get(key)
+        );
+
+        this.#messageService.add({
+            severity: 'error',
+            summary: this.#dotMessageService.get('dot.asset.picker.upload.rejected'),
+            detail: this.#dotMessageService.get(
+                'dot.asset.picker.upload.rejected.detail',
+                allowed ?? ''
+            ),
+            life: ERROR_MESSAGE_LIFE
+        });
+
+        return true;
+    }
+
     #resolveFilesUpload({ files, targetFolder, baseType }: DotUploadSelection): void {
         if (!files?.length) {
+            return;
+        }
+
+        // The one gate every upload route converges on — the Upload button, drag-and-drop, and a
+        // folder whose settings pin a base type and skip the prompt entirely.
+        if (this.#refuseDisallowedUpload(files)) {
             return;
         }
 

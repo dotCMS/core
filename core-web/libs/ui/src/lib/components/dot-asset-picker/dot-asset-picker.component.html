@@ -96,6 +96,7 @@
             data-testid="asset-picker-upload-selector"
             [targetFolder]="payload.targetFolder"
             [files]="payload.files"
+            [restrictionLabel]="$uploadRestrictionLabel()"
             (selectUploadType)="onUploadTypeSelected($event)" />
     }
 </ng-template>
@@ -124,6 +125,14 @@
     <ng-container *ngTemplateOutlet="uploadSelectorTpl" />
 </p-dialog>
 
-<input type="file" (change)="onFileChange($event)" #fileInput hidden />
+<!-- `[attr.accept]` so an unrestricted mode removes the attribute outright: `accept=""` is a
+     different thing to the browser. A hint only — the OS dialog lets the user override it, so
+     `#refuseDisallowedUpload` is what actually guarantees the restriction. -->
+<input
+    type="file"
+    [attr.accept]="$uploadAccept()"
+    (change)="onFileChange($event)"
+    #fileInput
+    hidden />
 
 <dot-toast position="top-center" />
