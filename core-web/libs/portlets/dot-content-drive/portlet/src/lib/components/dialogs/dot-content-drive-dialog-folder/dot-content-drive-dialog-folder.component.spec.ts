@@ -87,7 +87,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
                         'Folder created successfully',
                     'content-drive.dialog.folder.message.create-error': 'Error creating folder',
                     'content-drive.dialog.folder.message.save-success': 'Folder saved successfully',
-                    'content-drive.dialog.folder.message.save-error': 'Error saving folder'
+                    'content-drive.dialog.folder.message.save-error': 'Error saving folder',
+                    // FR-028: outcomes name what ran and what it ran on. FR-030: the author sees
+                    // product copy, never the server's raw message.
+                    'content-drive.dialog.folder.message.create-success-detail': '{0} was created.',
+                    'content-drive.dialog.folder.message.save-success-detail': '{0} was saved.',
+                    'content-drive.dialog.folder.message.create-error-detail':
+                        'The folder could not be created.',
+                    'content-drive.dialog.folder.message.save-error-detail':
+                        'The folder could not be saved.'
                 })
             },
             mockProvider(DotContentTypeService, {
@@ -795,11 +803,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Success',
-                detail: 'Folder created successfully'
-            });
+            // `summary: 'Success'` was a hardcoded English literal in the component, not a
+            // message key — untranslatable, and FR-029 forbids it reaching the interface.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'Folder created successfully',
+                    detail: expect.stringContaining('Test Folder')
+                })
+            );
         });
 
         it('should show error message on creation failure', () => {
@@ -812,11 +824,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(createButton);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error creating folder',
-                detail: 'Creation failed'
-            });
+            // 'Creation failed' is the server's own `error.message`. FR-030 keeps it out of the
+            // author's view and in the logs, where support can still reach it.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error creating folder',
+                    detail: 'The folder could not be created.'
+                })
+            );
         });
     });
 
@@ -1369,11 +1385,15 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(saveButton);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'Folder saved successfully',
-                detail: undefined
-            });
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'success',
+                    summary: 'Folder saved successfully',
+                    // The form renames it to 'Updated Folder' before saving, so naming the new
+                    // title is the correct behaviour - the author needs to see what they saved.
+                    detail: expect.stringContaining('Updated Folder')
+                })
+            );
         });
 
         it('should show error message on save failure', () => {
@@ -1386,11 +1406,14 @@ describe('DotContentDriveDialogFolderComponent', () => {
             );
             spectator.click(saveButton);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'error',
-                summary: 'Error saving folder',
-                detail: 'Save failed'
-            });
+            // Second of the two raw-message leaks: 'Save failed' comes straight from the server.
+            expect(messageService.add).toHaveBeenCalledWith(
+                expect.objectContaining({
+                    severity: 'error',
+                    summary: 'Error saving folder',
+                    detail: 'The folder could not be saved.'
+                })
+            );
         });
     });
 });

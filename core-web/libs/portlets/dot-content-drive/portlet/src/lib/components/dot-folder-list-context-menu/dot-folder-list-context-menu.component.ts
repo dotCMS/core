@@ -400,7 +400,9 @@ export class DotFolderListViewContextMenuComponent {
         } else {
             this.#fireWorkflowAction({
                 contentletInode: contentlet.inode,
-                actionId: workflowAction.id
+                actionId: workflowAction.id,
+                actionName: workflowAction.name,
+                itemTitle: contentlet.title
             });
         }
     }
@@ -424,6 +426,8 @@ export class DotFolderListViewContextMenuComponent {
                 this.#fireWorkflowAction({
                     contentletInode: contentlet.inode,
                     actionId: workflowAction.id,
+                    actionName: workflowAction.name,
+                    itemTitle: contentlet.title,
                     payload
                 });
             });
@@ -432,10 +436,16 @@ export class DotFolderListViewContextMenuComponent {
     #fireWorkflowAction({
         contentletInode,
         actionId,
+        actionName,
+        itemTitle,
         payload
     }: {
         contentletInode: string;
         actionId: string;
+        /** Already-resolved action label, so the outcome can name what ran. */
+        actionName: string;
+        /** What it ran on. Both halves are needed: "Workflow Executed" told the author neither. */
+        itemTitle: string;
         payload?: DotProcessedWorkflowPayload;
     }) {
         this.#store.setStatus(DotContentDriveStatus.LOADING);
@@ -449,6 +459,11 @@ export class DotFolderListViewContextMenuComponent {
                         severity: 'success',
                         summary: this.#dotMessageService.get(
                             'content-drive.toast.workflow-executed'
+                        ),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.toast.workflow-executed-detail',
+                            actionName,
+                            itemTitle
                         )
                     });
                 },
@@ -456,6 +471,11 @@ export class DotFolderListViewContextMenuComponent {
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.toast.workflow-error'),
+                        detail: this.#dotMessageService.get(
+                            'content-drive.toast.workflow-error-detail',
+                            actionName,
+                            itemTitle
+                        ),
                         life: ERROR_MESSAGE_LIFE
                     });
                     this.#store.setStatus(DotContentDriveStatus.LOADED);
@@ -492,7 +512,8 @@ export class DotFolderListViewContextMenuComponent {
                                 'content-drive.toast.unlock-error'
                             ),
                             detail: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-error-detail'
+                                'content-drive.toast.unlock-error-detail',
+                                contentlet.title
                             ),
                             life: ERROR_MESSAGE_LIFE
                         });
@@ -523,7 +544,8 @@ export class DotFolderListViewContextMenuComponent {
                             severity: 'error',
                             summary: this.#dotMessageService.get('content-drive.toast.lock-error'),
                             detail: this.#dotMessageService.get(
-                                'content-drive.toast.lock-error-detail'
+                                'content-drive.toast.lock-error-detail',
+                                contentlet.title
                             ),
                             life: ERROR_MESSAGE_LIFE
                         });
