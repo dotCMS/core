@@ -27,11 +27,12 @@ contract every renderer consumes — plus the one new build artifact.
 | Field | Type | Notes |
 |---|---|---|
 | `attrs.name` | string | Shortcode. **User-controllable** via the Contentlet REST API — no schema validation exists. Must be HTML-escaped wherever echoed. |
-| `attrs.text` | string? | Not written by the editor today. Renderers read it if present (fallback precedence step 2). |
+| `attrs.text` | string? | Not written by the editor today. Renderers read it first when present. |
 | `marks` | array? | Present in Shape 2, absent in Shape 1. |
 
 - Inline, `selectable: false`, leaf (therefore an atom).
-- **No literal character is stored** — only the shortcode. This is why a map is required.
+- **No literal character is stored** — only the shortcode, which is why renderers cannot recover
+  the character without a lookup table.
 - Registration is preserved so TipTap can still parse it; nothing creates it any more.
 
 ### Lifecycle
@@ -70,16 +71,13 @@ Any other node — a differing `link`, an unmarked `text`, a `hardBreak`, any no
 
 ---
 
-## 3. Emoji shortcode map — new build artifact
+## 3. No shortcode lookup table
 
-Generated from `@tiptap/extension-emoji`'s `emojis` export during the `core-web` Maven build.
+Deliberately not carried. Resolving `attrs.name` back to a character would need a ~1900-entry
+table in three published npm packages and on the Java classpath. Nothing creates `emoji` nodes any
+more, so the table's coverage requirement is frozen and it would exist solely to rescue a single
+reported case.
 
-| Property | Value |
-|---|---|
-| Shape | `{ "<name>": "<character>" }` |
-| Entries | ~1949 |
-| Source of truth | the extension's `emojis` list — never hand-edited |
-| Consumers | the four JS SDK renderers; `StoryBlockRenderHelper` on the Java classpath |
-| Integrity | CI regenerates and fails on any diff (AC-012) |
-
-See [contracts/emoji-map.contract.md](./contracts/emoji-map.contract.md).
+Renderers emit `attrs.text` when present, otherwise a visible `:name:` — see
+[contracts/renderer.contract.md](./contracts/renderer.contract.md) C1. The editor is unaffected:
+it bundles the emoji list already, so legacy nodes still display their character there.

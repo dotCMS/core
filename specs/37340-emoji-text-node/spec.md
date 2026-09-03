@@ -83,8 +83,8 @@ Decisions taken during `/speckit-clarify`. Earlier decisions from the specify se
   default rather than opt-in.
 - Q: What does a renderer output for an `emoji` node whose `name` does not resolve? → A:
   **Render the node's `text` if present, else the literal `:name:` — never nothing — and warn.**
-  Resolution precedence is: (1) the generated map, (2) the node's own `text` if it carries one,
-  (3) `:name:`. Every renderer also emits a warning, in the JS SDKs via `console.warn` and in
+  Resolution precedence is: (1) the node's own `text` if it carries one, (2) `:name:`. **The map
+  step was later withdrawn** — see AC-012. Every renderer also emits a warning, in the JS SDKs via `console.warn` and in
   Java via `Logger.warn` (Constitution Principle II), with the message
   `[dotCMS Block Editor]: Emoji <name> is not supported`. Warned once per distinct name per
   render scope so a page with repeats does not flood the console or the log. The scope is
@@ -228,9 +228,9 @@ editor in jsdom):
     — **legacy Velocity macro surface**. Not `com.dotmarketing.*` Java, but legacy in style and
     the highest-risk edit in this change: the macro is shared by all Story Block rendering.
   - `com.dotcms.rendering.velocity.viewtools.content.util.StoryBlockRenderHelper` — **modern**
-    `com.dotcms.*`. Carries **both** server-side responsibilities: Velocity cannot resolve a
-    shortcode to a character on its own, so the generated map is read here, and it also
-    pre-groups adjacent same-link text nodes so the macro never has to look ahead at siblings. This helper is already exposed in the Velocity context as
+    `com.dotcms.*`. Pre-groups link runs so the macro never has to look ahead at siblings, and
+    resolves a legacy `emoji` node to `attrs.text` or a visible `:name:`. No lookup table is
+    loaded — see AC-012. This helper is already exposed in the Velocity context as
     `$dotStoryBlockRenderHelper` and already invoked as `.render($element)` from `render.vtl`,
     so the resolution extends an established extension point rather than adding a new Velocity
     tool. **Legacy Impact is therefore lower than a Velocity-only fix would suggest**: the Java
@@ -314,10 +314,8 @@ function.
   renderers** (React, Vue, Angular standard, Angular semantic), plus the `emoji` member in the
   shared `libs/sdk/types` node-type enum, so already-stored `emoji` nodes render their character
   as inline text and never as a block-level element inside a `<p>`.
-- **The `name` → character map that Gap A depends on**, generated at build time from
-  `@tiptap/extension-emoji`'s `emojis` list so it cannot drift from the editor. Consumed by the
-  JS SDKs via a small runtime module and by VTL via `StoryBlockRenderHelper`. A CI check
-  verifies the committed artifact matches the generated one.
+- **A defined, non-empty fallback for legacy `emoji` nodes** — `attrs.text` when present, else a
+  visible `:name:`. No shortcode lookup table is shipped; see AC-012.
 - **A defined, identical fallback in all five renderers** when a `name` does not resolve —
   reachable because no Story Block schema validation was found in `dotCMS/src/main/java`, so
   arbitrary node JSON can arrive through the Contentlet REST API. Precedence: map → the node's
@@ -389,11 +387,10 @@ function.
   - No REST contract, DB schema, or ES mapping changes. Not rollback-unsafe in the
     [documented categories](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) **unless** a data
     migration is chosen — and render-only was decided, so none is.
-  - The generated map is a **new drift surface**: if it falls behind the extension's `emojis`
-    list, renderers resolve a `name` the editor can produce to nothing. The CI equality check in
-    AC-012 is what prevents that, and is why generation is required over a hand-written table.
-  - **The cross-build handoff is the riskiest unproven mechanic in this change, and the plan
-    must prove it rather than assume it.** The map is generated from `@tiptap/extension-emoji`,
+  - **No generated artifact ships**, so there is no drift surface and no cross-build handoff —
+    both were removed with AC-012. The paragraphs below are retained as the record of why that
+    route was investigated and then dropped.
+  - ~~The cross-build handoff is the riskiest unproven mechanic in this change.~~ The map is generated from `@tiptap/extension-emoji`,
     a `core-web` npm dependency, but consumed by `StoryBlockRenderHelper` on the Java
     classpath. The `openapi.yaml` precedent is **not** a like-for-like comparison: that artifact
     is generated *inside* the Maven build, whereas this one originates in the frontend
@@ -459,9 +456,12 @@ function.
   input instead of falling through to their unknown-block component.
 - **AC-011**: No renderer emits a block-level element (e.g. `<div>`) inside a `<p>` for an
   `emoji` node, in UVE or on the live site.
-- **AC-012**: The `name` → character map is generated from `@tiptap/extension-emoji`'s `emojis`
-  list, and a CI check fails if the committed artifact does not match what the build produces.
-  VTL and all four JS SDK renderers resolve a given `name` to the **same** character.
+- **AC-012**: ~~The `name` → character map is generated…~~ **Withdrawn.** No shortcode lookup
+  table is carried. A `name` is a TipTap shortcode, not an HTML entity, so resolving it needs a
+  ~1900-entry table in three published SDKs and on the Java classpath — disproportionate for
+  content that only the opt-in new editor ever created and that nothing creates any more. Legacy
+  nodes render a visible `:name:` instead (AC-013), which is what tells an author which content to
+  re-enter.
 - **AC-013**: For an `emoji` node whose `name` does not resolve, every renderer outputs the
   node's `text` when it carries one and otherwise the literal `:name:` — **never** empty
   output — and emits `[dotCMS Block Editor]: Emoji <name> is not supported` as a warning

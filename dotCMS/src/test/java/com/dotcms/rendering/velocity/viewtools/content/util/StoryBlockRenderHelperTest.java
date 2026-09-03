@@ -2,7 +2,6 @@ package com.dotcms.rendering.velocity.viewtools.content.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import com.dotcms.rendering.velocity.viewtools.content.util.StoryBlockRenderHelper.LinkRun;
@@ -175,19 +174,16 @@ public class StoryBlockRenderHelperTest {
 
     // ---------------------------------------------------------------- emoji resolution
 
-    /** AC-009 — the character the VTL renderer used to drop entirely. */
+    /**
+     * AC-009 — the character the VTL renderer used to drop entirely now renders as a visible
+     * shortcode instead of vanishing. No lookup table is carried: nothing creates these nodes any
+     * more, so the visible marker is what tells an author which content to re-enter.
+     */
     @Test
-    public void resolvesTheReportedSymbols() throws JSONException {
-        assertEquals("©", helper.emoji(emoji("copyright")));
-        assertEquals("®", helper.emoji(emoji("registered")));
-        assertEquals("™", helper.emoji(emoji("tm")));
-    }
-
-    /** The generated map must actually be on the classpath, or every emoji degrades. */
-    @Test
-    public void theGeneratedMapIsOnTheClasspath() {
-        assertTrue("expected the generated emoji map to load", EmojiShortcodes.size() > 1000);
-        assertNotNull(EmojiShortcodes.resolve("rocket"));
+    public void legacyEmojiNodesRenderVisiblyRatherThanVanishing() throws JSONException {
+        assertEquals(":copyright:", helper.emoji(emoji("copyright")));
+        assertEquals(":registered:", helper.emoji(emoji("registered")));
+        assertEquals(":tm:", helper.emoji(emoji("tm")));
     }
 
     /** AC-013 — precedence step 2: the node's own text wins over the shortcode fallback. */

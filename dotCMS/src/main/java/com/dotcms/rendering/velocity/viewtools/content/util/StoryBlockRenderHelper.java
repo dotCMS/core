@@ -81,11 +81,20 @@ public class StoryBlockRenderHelper {
     }
 
     /**
-     * Resolves a Story Block {@code emoji} node to the text the macro should output (#37340).
+     * Resolves a legacy Story Block {@code emoji} node to the text the macro should output
+     * (#37340).
      * <p>
-     * Precedence: the generated shortcode map, then the node's own {@code attrs.text}, then the
-     * literal {@code :name:}. It never returns empty — silently dropping the character is the
-     * defect this fixes.
+     * The Block Editor no longer creates {@code emoji} nodes — a typed emoji stays a character in
+     * the surrounding text node — so this only ever runs against content saved before that fix.
+     * Such a node stores a TipTap shortcode, never the character, and a shortcode is not an HTML
+     * entity ({@code :copyright:} is not {@code &copy;}, and most emoji have no entity at all).
+     * Turning the name back into a character would need a ~1900-entry table on the classpath;
+     * that is deliberately not carried, since nothing creates these nodes any more and the
+     * affected content is a single reported case.
+     * <p>
+     * So: the node's own {@code attrs.text} when it carries one, otherwise the literal
+     * {@code :name:}. Never empty — the character silently disappearing is the defect this fixes,
+     * and a visible {@code :copyright:} is what tells an author which content to re-enter.
      * <p>
      * <strong>The caller must escape the result.</strong> {@code attrs.name} arrives from the
      * Contentlet REST API, which applies no Story Block schema validation, so it is
@@ -96,13 +105,6 @@ public class StoryBlockRenderHelper {
      */
     public String emoji(final JSONObject node) {
         final String name = attrString(node, NAME);
-
-        final String resolved = EmojiShortcodes.resolve(name);
-
-        if (null != resolved) {
-            return resolved;
-        }
-
         final String carried = attrString(node, TEXT);
 
         if (null != carried && !carried.isEmpty()) {

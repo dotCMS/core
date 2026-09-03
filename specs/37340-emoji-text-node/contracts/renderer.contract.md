@@ -10,11 +10,16 @@ Precedence, in order. **Never emit empty output.**
 
 | # | Source | Condition |
 |---|---|---|
-| 1 | generated map | `attrs.name` is a known shortcode |
-| 2 | `attrs.text` | the node carries one |
-| 3 | `:<name>:` literal | otherwise — **HTML-escaped** |
+| 1 | `attrs.text` | the node carries the character |
+| 2 | `:<name>:` literal | otherwise — **HTML-escaped** |
 
-On reaching step 3, emit exactly one warning per distinct unresolved name per render scope:
+**No shortcode lookup table is carried.** A `name` is a TipTap shortcode, not an HTML entity
+(`:copyright:` is not `&copy;`, and most emoji have no entity at all), so resolving it would need
+a ~1900-entry table in three published SDKs and on the Java classpath. Nothing creates `emoji`
+nodes any more, so that table would exist purely to rescue a single reported case; the visible
+`:copyright:` is what tells an author which content to re-enter instead.
+
+On reaching step 2, emit exactly one warning per distinct name per render scope:
 
 ```text
 [dotCMS Block Editor]: Emoji <name> is not supported
@@ -39,7 +44,7 @@ Collapse a link run (see [data-model.md §2](../data-model.md)) into exactly **o
 | Input | Required output |
 |---|---|
 | adjacent `text(link)` + `text(link)`, identical attrs | one `<a>` |
-| `text(link)` + `emoji(no marks)` + `text(link)`, identical attrs | one `<a>`, emoji character inline |
+| `text(link)` + `emoji(no marks)` + `text(link)`, identical attrs | one `<a>`, emoji node inline |
 | `text(link)` + `emoji(link)` + `text(link)` | one `<a>` |
 | link attrs differ in any of `href`/`target`/`rel`/`title`/`aria-label` | two `<a>` |
 | `text(link)` + `hardBreak` (or any non-`emoji` atom) + `text(link)` | two `<a>` — run breaks |
@@ -52,7 +57,9 @@ silently pull unrelated nodes inside links.
 
 ## C4 — Equivalence
 
-These two inputs MUST produce byte-identical rendered output:
+A legacy `emoji` node and the literal character it stood for both render **inline, inside the
+same anchor**. They are not byte-identical any more — the node degrades to a visible `:copyright:`
+— which is the accepted trade-off for carrying no lookup table:
 
 ```json
 [{ "type": "text", "marks": [L], "text": "dotCMS © 2026" }]

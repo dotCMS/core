@@ -30,17 +30,17 @@ const domText = (el: Element) => el.textContent ?? '';
  * itself is pinned by the `@dotcms/client` unit specs.
  */
 describe('Vue Block Editor renderer — emoji + link runs (#37340)', () => {
-    it('AC-010: renders the character for a stored emoji node', () => {
+    it('AC-010: renders a stored emoji node visibly instead of dropping it', () => {
         expect(domText(mountNodes(load('mixedRepresentation')).element)).toBe(
             fixtures['mixedRepresentation'].expectedText
         );
     });
 
-    it('AC-011: emits the emoji inline, never as a block element', () => {
+    it('AC-011: emits the emoji node inline, never as a block element', () => {
         const wrapper = mountNodes([{ type: 'emoji', attrs: { name: 'copyright' } }]);
 
         expect(wrapper.find('div').exists()).toBe(false);
-        expect(domText(wrapper.element)).toBe('©');
+        expect(domText(wrapper.element)).toBe(':copyright:');
     });
 
     it('AC-015: Shape 1 — a link split by an unmarked emoji renders as ONE anchor', () => {

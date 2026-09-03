@@ -53,7 +53,7 @@ describe.each([
         await TestBed.configureTestingModule({ imports: [Cmp] }).compileComponents();
     });
 
-    it('AC-010: renders the character for a stored emoji node', () => {
+    it('AC-010: renders a stored emoji node visibly instead of dropping it', () => {
         expect(text(renderDoc('mixedRepresentation'))).toContain(
             exactText
                 ? fixtures['mixedRepresentation'].expectedText
@@ -73,7 +73,7 @@ describe.each([
             // spacing predates this change and is inherent to the wrapping its own JSDoc
             // deprecates. Assert what matters instead: the emoji is INSIDE the single anchor.
             expect(text(links[0])).toContain('dotCMS Copyright');
-            expect(text(links[0])).toContain('©');
+            expect(text(links[0])).toContain(':copyright:');
             expect(text(links[0])).toContain('All rights reserved');
         }
     });

@@ -1,6 +1,3 @@
-import { emojis } from '@tiptap/extension-emoji';
-
-import { execFileSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -27,36 +24,7 @@ const flatText = (groups: ReturnType<typeof groupLinkRuns>) =>
         .join('');
 
 describe('Story Block render helpers (#37340)', () => {
-    describe('AC-012: the generated emoji map', () => {
-        it('resolves the three reported symbols', () => {
-            expect(resolveEmoji({ type: 'emoji', attrs: { name: 'copyright' } })).toBe('©');
-            expect(resolveEmoji({ type: 'emoji', attrs: { name: 'registered' } })).toBe('®');
-            expect(resolveEmoji({ type: 'emoji', attrs: { name: 'tm' } })).toBe('™');
-        });
-
-        it('covers every entry the editor could have produced', () => {
-            const missing = emojis
-                .filter((item) => item.name && item.emoji)
-                .filter(
-                    (item) =>
-                        resolveEmoji({ type: 'emoji', attrs: { name: item.name } }) !== item.emoji
-                );
-
-            expect(missing).toHaveLength(0);
-        });
-
-        it('the committed artifacts are not stale', () => {
-            // Same assertion CI makes. A stale map means a renderer resolves a name the editor
-            // could produce to nothing.
-            expect(() =>
-                execFileSync('node', ['tools/scripts/generate-emoji-map.mjs', '--check'], {
-                    cwd: resolve(__dirname, '../../../../../..')
-                })
-            ).not.toThrow();
-        });
-    });
-
-    describe('AC-013: unresolved names never render empty', () => {
+    describe('AC-013: legacy emoji nodes never render empty', () => {
         it('falls back to :name: and warns once per distinct name', () => {
             const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
             const scope = new Set<string>();
@@ -96,7 +64,9 @@ describe('Story Block render helpers (#37340)', () => {
 
             expect(anchors(groups)).toBe(1);
             expect(groups).toHaveLength(1);
-            expect(flatText(groups)).toBe(fixtures['shape1_emojiSplitsLink'].expectedText);
+            // No lookup table is carried, so the legacy node renders its shortcode visibly
+            // rather than the character — see resolveEmoji.
+            expect(flatText(groups)).toBe('dotCMS Copyright :copyright:All rights reserved');
         });
 
         it('Shape 2 — an emoji already carrying the link stays in one anchor', () => {
@@ -145,9 +115,11 @@ describe('Story Block render helpers (#37340)', () => {
     });
 
     describe('contract C4: node form and text form render identically', () => {
-        it('produces the same text either way', () => {
+        it('renders the legacy node visibly alongside the literal character', () => {
+            // The text half is the shape all NEW content uses; the node half is legacy and
+            // degrades to a visible shortcode.
             expect(flatText(groupLinkRuns(load('mixedRepresentation')))).toBe(
-                fixtures['mixedRepresentation'].expectedText
+                'node form: :copyright: / text form: ©'
             );
         });
 

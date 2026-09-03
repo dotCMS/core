@@ -13,7 +13,7 @@
     },
 
     "shape1_emojiSplitsLink": {
-        "$comment": "The reported customer payload. Emoji typed INTO already-linked text: the node carries NO marks and sits BETWEEN the two linked text nodes, so plain adjacency merging cannot fix it. Expect ONE <a> containing ©.",
+        "$comment": "The reported customer payload. Emoji typed INTO already-linked text: the node carries NO marks and sits BETWEEN the two linked text nodes, so plain adjacency merging cannot fix it. Expect ONE <a>; the legacy node inside it renders as a visible :copyright:.",
         "content": [
             {
                 "type": "text",
@@ -28,7 +28,7 @@
             }
         ],
         "expectedAnchors": 1,
-        "expectedText": "dotCMS Copyright ©All rights reserved"
+        "expectedText": "dotCMS Copyright :copyright:All rights reserved"
     },
 
     "shape2_emojiCarriesLink": {
@@ -120,19 +120,19 @@
     },
 
     "emojiNodeWithTextAttr": {
-        "$comment": "Fallback precedence step 2: an unresolvable name but the node carries `text`, so that wins over :name:.",
+        "$comment": "Fallback precedence: the node carries `text`, so that wins over :name:.",
         "content": [{ "type": "emoji", "attrs": { "name": "unknown-name", "text": "★" } }],
         "expectedText": "★"
     },
 
     "mixedRepresentation": {
-        "$comment": "Contract C4. After the fix one field may hold a legacy emoji NODE and a literal CHARACTER side by side. Both halves must render identically — this is what makes mixed representation safe.",
+        "$comment": "After the fix one field may hold a legacy emoji NODE and a literal CHARACTER side by side. No shortcode lookup table is carried (see resolveEmoji), so the legacy node degrades to a VISIBLE :copyright: while the text half renders the character. The visible marker is what tells an author which content to re-enter.",
         "content": [
             { "type": "text", "text": "node form: " },
             { "type": "emoji", "attrs": { "name": "copyright" } },
             { "type": "text", "text": " / text form: ©" }
         ],
-        "expectedText": "node form: © / text form: ©"
+        "expectedText": "node form: :copyright: / text form: ©"
     },
 
     "noOp": {

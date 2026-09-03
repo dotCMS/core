@@ -27,17 +27,17 @@ const renderNodes = (nodes: BlockEditorNode[]) => {
  * these assert the DOM the React SDK actually emits, which is what a consumer ships.
  */
 describe('React Block Editor renderer — emoji + link runs (#37340)', () => {
-    it('AC-010: renders the character for a stored emoji node', () => {
+    it('AC-010: renders a stored emoji node visibly instead of dropping it', () => {
         expect(renderNodes(load('mixedRepresentation')).textContent).toBe(
             fixtures['mixedRepresentation'].expectedText
         );
     });
 
-    it('AC-011: emits the emoji inline, never as a block element', () => {
+    it('AC-011: emits the emoji node inline, never as a block element', () => {
         const container = renderNodes([{ type: 'emoji', attrs: { name: 'copyright' } }]);
 
         expect(container.querySelector('div')).toBeNull();
-        expect(container.textContent).toBe('©');
+        expect(container.textContent).toBe(':copyright:');
     });
 
     it('AC-015: Shape 1 — a link split by an unmarked emoji renders as ONE anchor', () => {

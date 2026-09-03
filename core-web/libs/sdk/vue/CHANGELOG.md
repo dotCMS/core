@@ -12,10 +12,11 @@ All notable changes to the DotCMS Vue SDK will be documented in this file.
   - Stored `emoji` nodes carry only a shortcode (`{"type":"emoji","attrs":{"name":"copyright"}}`),
     never the literal character, so they previously fell through to the unknown-block component
     and rendered nothing.
-  - The shortcode is resolved through a map generated from the editor's own emoji list, so it
-    cannot describe a character the Block Editor could not have produced.
-  - An unresolvable name renders as `:name:` rather than disappearing, and warns once per
-    distinct name.
+  - The node stores a TipTap shortcode rather than the character, and no lookup table is
+    shipped, so it renders as a visible `:name:` — enough to show an author which content to
+    re-enter, instead of the character silently disappearing.
+  - The Block Editor no longer creates these nodes at all: a typed emoji is now stored as an
+    ordinary character in the surrounding text, so new content is unaffected.
 
 ### Fixed
 
