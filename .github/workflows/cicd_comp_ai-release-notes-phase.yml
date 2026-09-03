@@ -86,12 +86,18 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
         run: |
+          # `bash -e` aborts the step the moment node exits non-zero, so the cat
+          # below never runs and the real error is lost. Trap it explicitly.
           if [ -n "$PREVIOUS_TAG" ]; then
-            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" --from-tag "$PREVIOUS_TAG" \
-              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+            set -- --from-tag "$PREVIOUS_TAG"
           else
-            node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" \
-              > /tmp/release-data.json 2>/tmp/gather-stderr.log
+            set --
+          fi
+          if ! node dist/index.js --repo "$REPO" --to-tag "$RELEASE_TAG" "$@" \
+              > /tmp/release-data.json 2>/tmp/gather-stderr.log; then
+            echo "::error::gather-release-data failed:"
+            cat /tmp/gather-stderr.log
+            exit 1
           fi
 
           # Log the resolved range for operator visibility
@@ -121,45 +127,48 @@ jobs:
       - name: Assemble prompt
         id: prompt
         run: |
-          # Build the full prompt: template + JSON data
-          cat .github/scripts/gather-release-data/prompt-template.md > /tmp/claude-prompt.md
-          printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> /tmp/claude-prompt.md
-          cat /tmp/release-data.json >> /tmp/claude-prompt.md
-          printf '\n```\n' >> /tmp/claude-prompt.md
+          # Build the full prompt: template + JSON data.
+          # Written into the workspace (not /tmp) so Claude's Read/Write stay
+          # inside its working directory.
+          cat .github/scripts/gather-release-data/prompt-template.md > release-prompt.md
+          printf '\n---\n\n## Release Data (JSON)\n\n```json\n' >> release-prompt.md
+          cat /tmp/release-data.json >> release-prompt.md
+          printf '\n```\n' >> release-prompt.md
+          echo "Prompt is $(wc -c < release-prompt.md) bytes."
 
-          # Pass prompt content via environment file to avoid shell escaping issues.
-          # Use a random delimiter to prevent PR body content from terminating the heredoc early.
-          DELIM="PROMPT_$(openssl rand -hex 16)"
-          {
-            echo "PROMPT_CONTENT<<${DELIM}"
-            cat /tmp/claude-prompt.md
-            echo "${DELIM}"
-          } >> "$GITHUB_ENV"
+          # NOT passed via GITHUB_ENV or argv: Linux caps a single env var /
+          # argv entry at MAX_ARG_STRLEN (128 KiB), and a full release's prompt
+          # exceeds that, killing every later step with E2BIG.
 
       - name: Generate release notes with Claude
         uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          prompt: ${{ env.PROMPT_CONTENT }}
-          claude_args: "--allowedTools Write --max-turns 3"
+          prompt: |
+            Read ./release-prompt.md (it is large — page through it until you
+            have read all of it), follow the instructions it contains, and write
+            the finished release notes to ./release-notes.md. Write no other files.
+          # Read is required for release-prompt.md; without it every tool call is
+          # denied and Claude exits "successfully" having written nothing.
+          claude_args: "--allowedTools Read,Write --max-turns 20"
 
       - name: Update release description
         env:
           GH_TOKEN: ${{ secrets.CI_MACHINE_TOKEN || github.token }}
         run: |
-          if [ ! -f /tmp/release-notes.md ]; then
-            echo "Error: Claude did not generate /tmp/release-notes.md"
-            echo "Listing /tmp/ for debugging:"
-            ls -la /tmp/*.md 2>/dev/null || echo "No .md files in /tmp/"
+          if [ ! -f release-notes.md ]; then
+            echo "Error: Claude did not generate release-notes.md"
+            echo "Listing workspace .md files for debugging:"
+            ls -la ./*.md 2>/dev/null || echo "No .md files in the workspace"
             exit 1
           fi
 
-          echo "Generated release notes ($(wc -l < /tmp/release-notes.md) lines):"
-          cat /tmp/release-notes.md
+          echo "Generated release notes ($(wc -l < release-notes.md) lines):"
+          cat release-notes.md
 
           gh release edit "$RELEASE_TAG" \
             --repo "$REPO" \
-            --notes-file /tmp/release-notes.md
+            --notes-file release-notes.md
 
           echo "## Release Notes Updated" >> "$GITHUB_STEP_SUMMARY"
           echo "Release [${RELEASE_TAG}](https://github.com/${REPO}/releases/tag/${RELEASE_TAG}) description updated." >> "$GITHUB_STEP_SUMMARY"
