@@ -3131,18 +3131,40 @@ describe('EditEmaEditorComponent', () => {
             describe('handleInternalNav', () => {
                 let pageLoadSpy: jest.SpyInstance;
                 let windowOpenSpy: jest.Mock;
+                let openedLink: {
+                    href: string;
+                    target: string;
+                    rel: string;
+                    click: jest.Mock;
+                    remove: jest.Mock;
+                };
                 let mockWindow: {
                     location: { origin: string; hostname: string };
                     open: jest.Mock;
+                    document: { createElement: jest.Mock; body: { appendChild: jest.Mock } };
                 };
 
                 beforeEach(() => {
+                    // Asset links are opened through a `rel="noopener"` anchor rather
+                    // than window.open, so the sandboxed iframe's gesture is not
+                    // treated as a popup request. See EditEmaEditorComponent.
+                    openedLink = {
+                        href: '',
+                        target: '',
+                        rel: '',
+                        click: jest.fn(),
+                        remove: jest.fn()
+                    };
                     mockWindow = {
                         location: {
                             origin: 'http://localhost:3000',
                             hostname: 'localhost'
                         },
-                        open: jest.fn()
+                        open: jest.fn(),
+                        document: {
+                            createElement: jest.fn().mockReturnValue(openedLink),
+                            body: { appendChild: jest.fn() }
+                        }
                     };
                     (spectator.component as unknown as { window: typeof mockWindow }).window =
                         mockWindow;
@@ -3211,6 +3233,100 @@ describe('EditEmaEditorComponent', () => {
 
                     expect(pageLoadSpy).toHaveBeenCalledWith({
                         url: '/test-page'
+                    });
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should open a same-host PDF link in a new tab instead of loading it as a page', () => {
+                    const pdfUrl = 'http://localhost:3000/application/files/report.pdf';
+                    const mockEvent = createMockEvent(pdfUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe(pdfUrl);
+                    expect(openedLink.target).toBe('_blank');
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should open a /dA/ asset link in a new tab instead of loading it as a page', () => {
+                    const assetUrl = 'http://localhost:3000/dA/abc123/asset/report.pdf';
+                    const mockEvent = createMockEvent(assetUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe(assetUrl);
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should sever the opener without a windowFeatures popup request', () => {
+                    // A windowFeatures string makes Firefox treat the call as a popup,
+                    // which the iframe sandbox rejects with "The operation is insecure".
+                    const mockEvent = createMockEvent(
+                        'http://localhost:3000/dA/abc123/asset/photo.jpg'
+                    );
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.rel).toBe('noopener');
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should resolve a relative asset href against the site origin, not the admin path', () => {
+                    // The click lands on a child of the anchor, so `target.href` is undefined
+                    // and the raw (relative) href attribute is what reaches the handler.
+                    const mockEvent = {
+                        target: {
+                            closest: jest.fn().mockReturnValue({
+                                getAttribute: () => 'files/report.pdf'
+                            })
+                        },
+                        preventDefault: jest.fn()
+                    } as unknown as MouseEvent;
+
+                    jest.spyOn(store, 'editorState').mockReturnValue(EDITOR_STATE.IDLE);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(openedLink.href).toBe('http://localhost:3000/files/report.pdf');
+                    expect(openedLink.click).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                });
+
+                it('should keep the iframe on the page when opening a new tab throws', () => {
+                    // The click must still be cancelled if the open fails for any
+                    // reason, or the anchor navigates the iframe to the asset, and the
+                    // throw must not escape into the RxJS subscriber driving this.
+                    openedLink.click.mockImplementation(() => {
+                        throw new DOMException('The operation is insecure.');
+                    });
+
+                    const mockEvent = createMockEvent(
+                        'http://localhost:3000/dA/abc123/asset/photo.jpg'
+                    );
+
+                    expect(() => spectator.component.handleInternalNav(mockEvent)).not.toThrow();
+
+                    expect(mockEvent.preventDefault).toHaveBeenCalled();
+                    expect(pageLoadSpy).not.toHaveBeenCalled();
+                    // click() is what throws, so cleanup has to be unconditional or
+                    // every refused open strands an anchor in the admin document.
+                    expect(openedLink.remove).toHaveBeenCalled();
+                });
+
+                it('should still load a page when the URL uses the page extension', () => {
+                    const pageUrl = 'http://localhost:3000/test-page/index.html';
+                    const mockEvent = createMockEvent(pageUrl);
+
+                    spectator.component.handleInternalNav(mockEvent);
+
+                    expect(windowOpenSpy).not.toHaveBeenCalled();
+                    expect(pageLoadSpy).toHaveBeenCalledWith({
+                        url: '/test-page/index.html'
                     });
                     expect(mockEvent.preventDefault).toHaveBeenCalled();
                 });

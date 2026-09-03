@@ -5,7 +5,7 @@
     (removed)="onClearAll()"
     data-testid="workflow-filter-chip" />
 
-<p-popover #popover [pt]="popoverPt">
+<p-popover #popover styleClass="dot-popover-flush">
     <div
         class="grid w-160 grid-cols-[repeat(2,1fr)] grid-rows-[minmax(0,1fr)] overflow-hidden"
         [style.height]="LISTBOX_SCROLL_HEIGHT"
@@ -40,7 +40,6 @@
                     optionLabel="name"
                     optionValue="id"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     data-testid="workflow-scheme-listbox">
                     <ng-template let-item pTemplate="item">
                         <div class="flex w-full min-w-0 items-center gap-2">
@@ -99,7 +98,6 @@
                     optionLabel="name"
                     optionValue="id"
                     [scrollHeight]="LISTBOX_SCROLL_HEIGHT"
-                    [pt]="listboxPt"
                     data-testid="workflow-step-listbox">
                     <ng-template let-item pTemplate="item">
                         <div class="flex w-full min-w-0 items-center gap-2">

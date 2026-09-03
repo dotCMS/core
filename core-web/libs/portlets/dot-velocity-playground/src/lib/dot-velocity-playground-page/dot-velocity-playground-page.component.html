@@ -149,18 +149,66 @@
     <!-- Right: Output -->
     <ng-template pTemplate>
         <div class="flex h-full flex-col overflow-hidden">
-            @if (store.hasError()) {
+            @if (store.error(); as error) {
                 <p-message
                     severity="error"
                     [pt]="{
-                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0' }
+                        root: { class: '!rounded-none border-x-0! border-t-0! shrink-0 block' },
+                        text: { class: 'w-full' }
                     }"
                     data-testid="velocity-playground-error-banner">
                     <ng-template #icon>
                         <span class="material-symbols-rounded" aria-hidden="true">warning</span>
                     </ng-template>
-                    {{ store.errorMessage() | dm }}
+                    <div class="flex w-full flex-col gap-1">
+                        <span
+                            class="font-medium wrap-break-word"
+                            data-testid="velocity-playground-error-message">
+                            {{ $errorSummary() }}
+                        </span>
+                        @if (error.structured; as detail) {
+                            <div
+                                class="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs"
+                                data-testid="velocity-playground-error-detail">
+                                @if (detail.errorType) {
+                                    <!-- Read-only status label: severity comes from the
+                                         theme preset so it tracks light/dark, rather than
+                                         a literal red palette pairing. -->
+                                    <p-tag
+                                        severity="danger"
+                                        [value]="detail.errorType"
+                                        styleClass="font-mono"
+                                        data-testid="velocity-playground-error-type" />
+                                }
+                                @if (detail.line !== undefined && detail.line !== null) {
+                                    <span
+                                        class="inline-flex items-center gap-1"
+                                        data-testid="velocity-playground-error-location">
+                                        <span
+                                            class="material-symbols-outlined text-[0.7rem]!"
+                                            aria-hidden="true">
+                                            location_on
+                                        </span>
+                                        {{
+                                            'velocityPlayground.error.location'
+                                                | dm
+                                                    : [
+                                                          '' + detail.line,
+                                                          detail.column !== undefined &&
+                                                          detail.column !== null
+                                                              ? '' + detail.column
+                                                              : '—'
+                                                      ]
+                                        }}
+                                    </span>
+                                }
+                            </div>
+                        }
+                    </div>
                 </p-message>
+            }
+            @if (store.hasWarnings() && !store.hasError()) {
+                <dot-velocity-playground-warnings [warnings]="store.warnings()" />
             }
             @if (store.status() === ComponentStatus.INIT && !store.hasError()) {
                 <dot-empty-container
@@ -173,14 +221,20 @@
                     class="flex flex-1 flex-col items-center justify-center gap-3"
                     data-testid="velocity-playground-loading">
                     <dot-spinner size="3rem" borderSize="3px" />
-                    <span class="text-color-secondary text-sm">
+                    <span class="text-sm text-muted-color">
                         {{ 'velocityPlayground.output.running' | dm }}
                     </span>
                 </div>
+            } @else if (store.hasError()) {
+                <ngx-monaco-editor
+                    class="min-h-0 flex-1"
+                    [ngModel]="$errorTrace()"
+                    [options]="$errorEditorOptions()"
+                    data-testid="velocity-playground-error-editor" />
             } @else {
                 <!-- Stats bar -->
                 <div
-                    class="text-color-secondary flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm"
+                    class="flex min-h-14 shrink-0 items-center gap-2 border-b border-surface-200 bg-surface-50 px-4 py-2 text-sm text-muted-color"
                     data-testid="velocity-playground-stats-bar">
                     <div class="flex items-center gap-1.5">
                         @if (store.hasOutput()) {
@@ -190,7 +244,7 @@
                                 {{ 'velocityPlayground.output.viewing' | dm }}
                                 {{ store.outputContentType() }}
                             </span>
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                         }
                         <span
                             class="material-symbols-rounded text-xl! text-green-600"
@@ -200,7 +254,7 @@
                         </span>
                         {{ 'velocityPlayground.output.ready' | dm }}
                         @if (store.elapsedMs() !== null) {
-                            <span class="text-color-secondary mx-1">&middot;</span>
+                            <span class="mx-1 text-muted-color">&middot;</span>
                             <span class="inline-flex items-center gap-1">
                                 <span class="font-bold text-color">{{ store.elapsedMs() }}</span>
                                 {{ 'velocityPlayground.output.timing' | dm }}
@@ -290,7 +344,7 @@
                     </div>
                     @if (example.description) {
                         <p
-                            class="text-color-secondary m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs"
+                            class="m-0 border-b border-surface-200 bg-surface-0 px-3 py-2 text-xs text-muted-color"
                             data-testid="velocity-playground-help-description">
                             {{ example.description | dm }}
                         </p>

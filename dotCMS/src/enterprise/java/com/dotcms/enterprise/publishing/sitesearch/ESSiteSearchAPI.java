@@ -33,9 +33,7 @@ import com.dotmarketing.util.StringUtils;
 import com.dotmarketing.util.UUIDGenerator;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
-import java.io.File;
 import java.io.IOException;
-import java.net.URL;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -46,6 +44,7 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import io.vavr.control.Try;
@@ -371,8 +370,15 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
      * @throws DotDataException
      */
     @Override
+    public Optional<String> defaultIndexName() throws DotDataException {
+        return Optional.ofNullable(indiciesAPI.loadIndicies().getSiteSearch());
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-       return  indexName.equals(indiciesAPI.loadIndicies().getSiteSearch());
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override
@@ -413,12 +419,8 @@ public class ESSiteSearchAPI implements SiteSearchAPI{
             return false;
 
         indexName=indexName.toLowerCase();
-        ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
-        URL url = classLoader.getResource("es-sitesearch-settings.json");
-        // read settings and mappings
-        String settings = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
-        url = classLoader.getResource("es-sitesearch-mapping.json");
-        String mapping = new String(com.liferay.util.FileUtil.getBytes(new File(url.getPath())));
+        String settings = SiteSearchIndexResources.settings("es-sitesearch-settings.json");
+        String mapping = SiteSearchIndexResources.mapping("es-sitesearch-mapping.json");
 
 
         //create index

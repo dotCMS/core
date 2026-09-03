@@ -75,6 +75,7 @@ The lib follows a strict split: **data fetching** delegates to `@dotcms/data-acc
 | `DotContentTypeService` | Content type filtering for the slash-menu's content-type sub-picker (`filterContentTypes`) and per-type metadata reads (`getContentType`, used by `ContentletEditUrlService`). |
 | `DotContentSearchService` | Lucene search behind the slash-menu's contentlet drill-down (`/api/content/_search`). The editor-flavoured query string (`+contentType:X +languageId:Y +deleted:false +working:true +catchall:** title:''^15`) is built inline at the call site (`buildContentletByTypeQuery` in `slash-menu-catalog.ts`); the service itself stays generic. |
 | `DotLanguagesService` | Language metadata for the editor store (`getById`). |
+| `DotSiteService` | `getCurrentSite()` for the **new** asset picker — `DotAssetPickerComponent` needs a `DotSite` to browse and the editor holds none of its own. The legacy `DotBrowserSelectorComponent` path never calls it. |
 | `DotAiService` | AI text generation, AI image generation + publish, plugin status check. Identical surface to legacy block-editor usage. |
 | `DotUploadFileService` | Wrapped by the lib's local `DotUploadService` adapter (see below). |
 | `DotMessageService` | i18n. Used everywhere. |
@@ -86,7 +87,7 @@ Do **not** create custom HTTP services in this lib for any of the above. If you 
 | Service | Why it stays local |
 |---|---|
 | `EditorPopoverService` | Caret-anchored popover state (active id, anchor rect, per-popover payloads). Editor-only concern. |
-| `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, image / video pickers). Editor-only concern. |
+| `EditorModalService` | Lifecycle for centered `DialogService.open()` modals (AI content, AI image, and the image / video / audio asset pickers). Editor-only concern. |
 | `EditorToolbarStore` | Signal mirror of TipTap mark/block/alignment state for the toolbar. Editor-only concern. |
 | `SlashMenuService` | Slash-menu catalog, filtering, sub-menu loading. Editor-only concern. |
 | `ContentletEditUrlService` | Resolves the legacy-vs-new content editor URL via per-content-type feature-flag cache. Caches the metadata read so repeated contentlet edits within one session don't re-hit the network. The wrapper exists *for* the cache; without it, every "Edit contentlet" click would re-fetch. |
@@ -105,7 +106,7 @@ The editor uses two distinct overlay primitives. Pick by interaction model, not 
 | Primitive | Use | Anchored to | Modality | Examples |
 |-----------|-----|-------------|----------|----------|
 | `<dot-editor-popover>` shell | Compact, caret-anchored, single form | Caret / trigger rect via `@floating-ui/dom` | Non-modal — no backdrop, no focus trap, click-outside dismisses | link, table, image-properties, emoji |
-| PrimeNG `DialogService.open()` | Centered modal — large content, multi-pane, embeddable, or external library component | Viewport center | Modal — backdrop, focus trap, explicit close | AI content, AI image, image picker, video picker |
+| PrimeNG `DialogService.open()` | Centered modal — large content, multi-pane, embeddable, or external library component | Viewport center | Modal — backdrop, focus trap, explicit close | AI content, AI image, asset picker (image / video / audio) |
 
 When an overlay has both an input area AND a result/preview area, default to a centered modal — caret-anchored popovers get cramped.
 
@@ -123,10 +124,13 @@ Each popover content component:
 
 ### Centered modals via `DialogService.open()` (`EditorModalService`)
 
-Every centered modal in the editor — AI content, AI image, image picker, video picker — is opened through PrimeNG's `DialogService.open()`, surfaced by `EditorModalService` (`services/editor-modal.service.ts`). One pattern, one teardown story:
+Every centered modal in the editor — AI content, AI image, and the image / video / audio asset pickers — is opened through PrimeNG's `DialogService.open()`, surfaced by `EditorModalService` (`services/editor-modal.service.ts`). One pattern, one teardown story:
 
 - The editor component provides `DialogService` at the component scope so each editor instance gets its own dynamic-dialog factory. Provided in `editor.component.ts`.
-- `EditorModalService` keeps one private `DynamicDialogRef` per modal kind, set to `null` between opens.
+- `EditorModalService` keeps one live `DynamicDialogRef` per modal kind, cleared between opens (the three asset pickers share one `Map` keyed by media mode, since they are one flow parameterised by mimetype).
+- The asset pickers pick their component from the host: `EditorModalService` injects `ASSET_PICKER_LAUNCHER` (`@dotcms/ui`) as `{ optional: true }` — present means the Angular Edit Content and the new AssetPicker, absent means the legacy Dojo editor and `DotBrowserSelectorComponent`. The old edit contentlet page was never designed for the new picker (#37132). Nothing at the call site can tell the hosts apart, which is exactly why the switch is a DI token provided by the host.
+- Only the new picker resolves the current site through `DotSiteService` before opening — `DotAssetPickerComponent` cannot be configured without a `DotSite`, and the legacy selector needs none. It is cached per editor instance and fetched lazily on first open. That async gap is why they guard on a *pending* set as well as the live ref: without it two fast clicks both sail past the ref check and stack two dialogs. Both paths share `trackPicker`, so a selection means the same thing either way.
+- The launcher is handed this service's own `DialogService` rather than injecting one. PrimeNG keys open dialogs by component type *per service instance* and returns `null` for a duplicate, so a host-level `DialogService` would let one field's open picker block another's.
 - Each `openX(editor)` method calls `dialogService.open(Component, config)` with the right `data` and subscribes to `dialogRef.onClose` to apply the result (insert nodes, mutate state) into the editor.
 - Modal components inject `DynamicDialogRef` and signal a result by calling `this.dialogRef.close(result)`. Cancel/Escape/X close with no value, which the `onClose` subscriber treats as "no-op".
 - `ngOnDestroy()` on the service closes every live ref so an editor unmount mid-dialog doesn't orphan an overlay.
@@ -160,7 +164,8 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `dotImage` | `image.extension.ts` | Image (modal picker) | Insert image, wrap-left/right (node-scoped), align, image properties popover (node-scoped) | `image` |
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `dotAudio` | `audio.extension.ts` | Audio (modal picker) | Insert audio | `audio` |
-| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | `youtube` |
+| `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | none — always registered. `youtube` is not an Allowed Blocks option, so gating it only dropped stored embeds on restricted fields (#37175). Insertion is gated in the UI via `showAssetByUrl()`. |
+| `emoji` | `@tiptap/extension-emoji` | — (toolbar popover, gated by `emoji`) | — | none — always registered, same reason as `youtube` (#37175). Authoring is gated: toolbar button behind `@if (isAllowed('emoji'))`, `:)` input rule behind `enableEmoticons: has('emoji')`. |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
@@ -178,8 +183,45 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `code` | StarterKit | Inline code | any text |
 | `superscript` | `@tiptap/extension-superscript` | Sup | any text |
 | `subscript` | `@tiptap/extension-subscript` | Sub | any text |
-| `link` | `@tiptap/extension-link` | Link popover | any text (gated by `link` allowed-block) |
+| `highlight` | `@tiptap/extension-highlight` | — (schema only; the legacy editor has no button either) | any text |
+| `link` | `@tiptap/extension-link` | Link popover — hidden when `link` is not in allowed blocks | any text. Always in the schema; `allowedBlocks` gates only the authoring paths (button, autolink, link-on-paste). Gating the *registration* blanked every restricted field (#37175) — a missing mark aborts `Node.fromJSON` for the whole document, and `link` is not even offered as an Allowed Blocks option. |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
+| `dotUnsupportedMark` | `createUnsupportedBlockMark()` (`@dotcms/dotcms-models`) | — (never authored; visually neutral) | any text whose stored mark this schema does not declare. Registered unconditionally: an unknown mark aborts `Node.fromJSON` for the WHOLE document, so `preserveUnknownBlockMarks` swaps it for this placeholder on load and `restoreUnknownBlockNodes` puts the original back on save (#37175). Mark-side twin of `dotUnsupportedBlock`. |
+
+### Unknown nodes and marks (load-path invariant)
+
+Stored content can name a node or mark this schema does not declare — content written by the
+API, migrated from another CMS, or produced by a newer version. Both are preserved rather than
+dropped, and the two passes are **not** interchangeable:
+
+| | Unknown node | Unknown mark |
+|---|---|---|
+| Placeholder | `dotUnsupportedBlock` — renders `Unsupported block (type)` | `dotUnsupportedMark` — visually neutral, the text renders as ordinary text |
+| Preserve on load | `preserveUnknownBlockNodes` | `preserveUnknownBlockMarks` |
+| Restore on save | `restoreUnknownBlockNodes` (handles both) | same |
+| Failure without it | `RangeError: Unknown node type: X` | `RangeError: There is no mark type X in this schema` |
+
+Order matters: **nodes first, then marks.** An unknown node is swallowed whole into the
+placeholder's `originalNode` attr, and that payload is inert data rather than part of the
+document tree — running the mark pass first would rewrite marks inside the very payload the
+placeholder exists to preserve.
+
+Both editors wire this the same way (`preserveUnknownNodesInDocument` here,
+`setEditorJSONContent` in the legacy `dot-block-editor.component.ts`), and both derive the known
+sets from the live schema, so a newly registered extension needs no bookkeeping.
+
+TipTap does not surface either failure loudly: it catches the `RangeError`, logs
+`[tiptap warn]: Invalid content`, and boots an EMPTY document. The field looks emptied while the
+stored JSON is intact — and the next save makes that loss real (#37145, #37175).
+
+**Known limitation — "Clear formatting" discards both payloads.** That action runs
+`unsetAllMarks().clearNodes()` (`toolbar.component.ts`; the legacy bubble menu runs
+`unsetAllMarks()`), which strips `dotUnsupportedMark` along with every real mark, and
+`clearNodes()` does the same to `dotUnsupportedBlock`. Neither placeholder renders visible
+formatting, so the author cannot tell anything was discarded and there is no way back. Still
+strictly better than not loading the document at all, and unlike that, user-initiated.
+Excluding both placeholders from the clear-formatting command is worth doing — it belongs to
+that command in each editor, not to the placeholders.
 
 ### Special / node-scoped commands
 
@@ -201,7 +243,7 @@ These slash entries do not map 1:1 to a node — they trigger flows that mutate 
 | AI Image | Opens `DotAIImagePromptComponent` via `DialogService.open()` (centered modal). On accept, inserts a `dotImage` node. |
 | AI Content | Opens `AiContentDialogComponent` via `DialogService.open()` (centered modal). On insert, the generated HTML is parsed against the editor schema so each block becomes a normal editable node (paragraphs / headings / lists). Does NOT wrap in an `aiContent` block. |
 | Content type | Opens an in-place sub-menu of allowed content types, then a contentlet picker. Inserts a `dotContent` node. |
-| Image / Video | Opens `DotBrowserSelectorComponent` via `DialogService.open()` (centered modal picker). Inserts the corresponding `dotImage` / `dotVideo` node. |
+| Image / Video / Audio | Opens a centered modal picker via `DialogService.open()`, **chosen by host**. In the Angular Edit Content (`ASSET_PICKER_LAUNCHER` provided) it is `DotAssetPickerComponent` — the same picker the Edit Content File and Image fields use — opened through the launcher, which owns `buildAssetPickerConfig` + `buildAssetPickerDialogConfig` (`@dotcms/ui`). In the legacy Dojo editor (token absent, the editor mounted as `<dotcms-block-editor>`) it is `DotBrowserSelectorComponent` via `buildBrowserSelectorConfig` (`config.utils.ts`). Either way the mode (`image` \| `video` \| `audio`) supplies the mimetype narrowing and the dialog title, and inserts the corresponding `dotImage` / `dotVideo` / `dotAudio` node. |
 | Table / Link / Emoji | Opens a caret-anchored `<dot-editor-popover>`. Insert / mutate the corresponding node. |
 
 ### Customer-supplied remote commands (`customBlocks` field variable)

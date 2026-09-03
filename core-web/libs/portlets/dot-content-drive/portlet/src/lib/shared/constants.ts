@@ -3,6 +3,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
+import { SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -10,8 +11,8 @@ import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrde
 export const SYSTEM_HOST: DotSite = {
     aliases: '',
     archived: false,
-    hostname: 'SYSTEM_HOST',
-    identifier: 'SYSTEM_HOST'
+    hostname: SYSTEM_HOST_ID,
+    identifier: SYSTEM_HOST_ID
 };
 
 // Default pagination
@@ -28,12 +29,24 @@ export const DEFAULT_PAGINATION: DotContentDrivePagination = {
 export const FOLDER_TREE_PAGE_SIZE = DOT_FOLDER_TREE_PAGE_SIZE;
 
 /**
- * Page size for the deep-link / initial hierarchy fetch only.
- * One request per ancestor level (parallel); large enough that path segments past
- * the interactive page of 40 still appear so {@link buildTreeFolderNodes} can select them.
- * Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ * Page size for the deep-link / initial hierarchy fetch only. One request per ancestor level
+ * (parallel). Expand and load-more keep using {@link FOLDER_TREE_PAGE_SIZE}.
+ *
+ * Pinned to the backend's cap for `includePermissions=true`
+ * (`content.drive.folder.search.permissions.max.per.page`, default 200): anything larger is
+ * rejected with a 400, and the hierarchy load must carry permissions so every node the tree
+ * renders on first paint can gate its context menu without a second round-trip.
+ *
+ * An ancestor sorting past this page is fetched individually instead of by widening the page,
+ * see `getFolderHierarchyByPath`.
+ *
+ * Deliberately a whole multiple of {@link FOLDER_TREE_PAGE_SIZE}: load-more resumes in
+ * 40-sized pages, so the hierarchy's page count has to convert to a clean page boundary.
  */
-export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 10000;
+export const FOLDER_TREE_HIERARCHY_PAGE_SIZE = 200;
+
+/** Minimum length the folder-search `name` filter accepts; shorter values are rejected with a 400. */
+export const FOLDER_NAME_FILTER_MIN_LENGTH = 2;
 
 export const DEFAULT_SORT = {
     field: 'modDate',
@@ -51,6 +64,15 @@ export const DEFAULT_TREE_EXPANDED = true;
 
 // Default path, it needs to be undefined to show the root folder
 export const DEFAULT_PATH = undefined;
+
+/**
+ * The site root as a browsable path.
+ *
+ * Distinct from {@link DEFAULT_PATH}: that is the *absence* of a path in the URL, while this is an
+ * explicit "go to the root" the drive can be sent to — used when the folder being browsed stops
+ * existing.
+ */
+export const ROOT_PATH = '/';
 
 export const DEFAULT_PAGE: DotContentDrivePage = {
     hasMoreContent: true,
@@ -96,6 +118,22 @@ export const DEBOUNCE_TIME = 500;
  * field whose variable happens to be `title`, `workflow`, etc.
  */
 export const USER_SEARCHABLE_PREFIX = 'us.';
+
+/**
+ * Filter-bag key backing the "Show Shared Assets" toggle, which drives `includeSystemHost` on the
+ * search request. It lives in the bag rather than in its own query param so it inherits the URL
+ * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
+ *
+ * Like `languageId`, it is always seeded rather than written only when it differs from the default,
+ * so the state that is applied is always visible in the URL instead of being implied by absence.
+ */
+export const SHARED_ASSETS_FILTER_KEY = 'sharedAssets';
+
+/** Shows SYSTEM_HOST (shared) assets. The seeded default. */
+export const SHARED_ASSETS_ENABLED_VALUE = 'true';
+
+/** Hides SYSTEM_HOST (shared) assets. */
+export const SHARED_ASSETS_DISABLED_VALUE = 'false';
 
 /**
  * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
@@ -184,6 +222,40 @@ export const TITLE_FIELD_VARIABLE = 'title';
 /** Separator joining multi-select values and date-range `from,to` in the flat filter string. */
 export const USER_SEARCHABLE_VALUE_SEPARATOR = ',';
 
+/**
+ * Filter-bag key backing the Status filter (Archived / Unpublished / Locked).
+ *
+ * Lives in the flat `filters` bag rather than its own query param so it inherits every navigation
+ * mechanism the other filters already use: deep link, reload, folder browsing, browser
+ * Back/Forward, and the legacy-editor `CD_` round-trip. Giving it a dedicated param would mean
+ * bespoke handling in all four places.
+ *
+ * Unlike `languageId` and {@link SHARED_ASSETS_FILTER_KEY}, it is deliberately NOT seeded by
+ * `withFilterDefaults` — an empty selection genuinely means "no status filtering", so leaving it
+ * unseeded makes "Clear all" appear and clear correctly with no extra code.
+ */
+export const STATUS_FILTER_KEY = 'status';
+
+/** Content states the Status filter offers. Values match the backend `ContentStatus` enum. */
+export const CONTENT_STATUS = {
+    ARCHIVED: 'ARCHIVED',
+    UNPUBLISHED: 'UNPUBLISHED',
+    LOCKED: 'LOCKED'
+} as const;
+
+/**
+ * Status options in display order. Archived leads: it is the capability people currently leave
+ * Content Drive to get.
+ *
+ * Selections combine with OR — checking more boxes returns more content, consistent with the
+ * content-type and locale filters beside it.
+ */
+export const STATUS_FILTER_OPTIONS: { value: string; labelKey: string }[] = [
+    { value: CONTENT_STATUS.ARCHIVED, labelKey: 'content-drive.status-filter.archived' },
+    { value: CONTENT_STATUS.UNPUBLISHED, labelKey: 'content-drive.status-filter.unpublished' },
+    { value: CONTENT_STATUS.LOCKED, labelKey: 'content-drive.status-filter.locked' }
+];
+
 export const PANEL_SCROLL_HEIGHT = '25rem';
 
 // Dialog type
@@ -229,29 +301,28 @@ export const ACTION_CENTER_DIALOG_CONTENT_STYLE = {
     padding: '0'
 } as const;
 
-export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
-
 /**
- * Options shown in the upload-type selector dialog. `baseType` is the base type fired to the
- * upload endpoint, which the backend resolves to the matching content type: `DOTASSET` for Assets,
- * `FILEASSET` for Files.
+ * Pass-through styling for the Action Center's "these folders can only be bundled" notice, which
+ * spans the dialog edge to edge instead of sitting inset like the sections around it.
+ *
+ * `-mx-6` cancels the dialog body's `px-6`. Because that inset is *padding*, the notice grows into
+ * the container's padding box rather than past its border box, so the body's `overflow-y-auto`
+ * does not turn into a horizontal scrollbar. The dialog's own content box is `padding: 0` (see
+ * {@link ACTION_CENTER_DIALOG_CONTENT_STYLE}), so `px-6` is the only inset to cancel.
+ *
+ * Both `!` flags are required rather than defensive. `.p-message` sets `border-radius` and
+ * `.p-message-content` sets a `padding` shorthand; PrimeNG injects that stylesheet at runtime, so
+ * at equal specificity it lands after Tailwind's and wins.
+ *
+ * The content keeps 24px of its own horizontal padding so the text stays on the same left edge as
+ * the dialog header and the sections below it.
  */
-export const UPLOAD_SELECTOR_OPTIONS = [
-    {
-        baseType: DotCMSBaseTypesContentTypes.DOTASSET,
-        icon: 'image',
-        labelKey: 'content-drive.dialog.upload-selector.asset',
-        descriptionKey: 'content-drive.dialog.upload-selector.asset.description',
-        recommended: true
-    },
-    {
-        baseType: DotCMSBaseTypesContentTypes.FILEASSET,
-        icon: 'code_blocks',
-        labelKey: 'content-drive.dialog.upload-selector.file',
-        descriptionKey: 'content-drive.dialog.upload-selector.file.description',
-        recommended: false
-    }
-] as const;
+export const ACTION_CENTER_FOLDER_NOTICE_PT = {
+    root: { class: '-mx-6 rounded-none!' },
+    content: { class: 'px-6!' }
+} as const;
+
+export const DEFAULT_FILE_ASSET_TYPES = [{ id: 'FileAsset', name: 'File' }];
 
 /**
  * Options for the folder settings "Upload Behavior" radio group. `value` is persisted to the
@@ -303,13 +374,6 @@ export const SUCCESS_MESSAGE_LIFE = 4500;
 export const WARNING_MESSAGE_LIFE = 4200;
 export const ERROR_MESSAGE_LIFE = 4500;
 export const MOVE_TO_FOLDER_WORKFLOW_ACTION_ID = 'dd4c4b7c-e9d3-4dc0-8fbf-36102f9c6324';
-
-// Dropzone state
-export const DROPZONE_STATE = {
-    INTERNAL_DRAG: 'internal-drag',
-    ACTIVE: 'active',
-    INACTIVE: 'inactive'
-} as const;
 
 /**
  * `editContent` value written for a `new`-mode panel: a non-shareable marker (creating has no

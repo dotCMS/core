@@ -2,7 +2,8 @@ import { type InferSchema, type ToolExtraArguments, type ToolMetadata } from 'xm
 import { z } from 'zod';
 
 import { uploadAssets } from '../lib/assets-transfer';
-import { errorMessage, runtimeFromEnv } from '../lib/runtime';
+import { lenientBoolean } from '../lib/lenient-boolean';
+import { runtimeFromEnv, toolFailure } from '../lib/runtime';
 
 export const schema = {
     src: z.string().min(1).describe('Absolute local directory the MCP server reads files from'),
@@ -15,15 +16,19 @@ export const schema = {
     include: z
         .string()
         .optional()
-        .describe('Optional comma-separated glob filter, e.g. *.vtl,*.scss'),
-    publish: z
-        .boolean()
-        .default(true)
-        .describe('Use /api/v2/assets/publish when true, otherwise /api/v2/assets/save'),
-    verify: z
-        .boolean()
-        .default(true)
-        .describe('After publishing, verify live status through /api/v1/content/{identifier}')
+        .describe(
+            'Optional comma-separated glob filter, matched against each file path RELATIVE to `src`. ' +
+                'Supports *, ? (single non-slash char), ** (globstar, crosses directories), and ' +
+                '{a,b,c} brace expansion. A pattern with no "/" matches the basename anywhere in the ' +
+                'tree; a pattern with a "/" is anchored at the top of `src`. Examples: "*.vtl,*.scss", ' +
+                '"*.{png,webp,jpg}", "**/*.png". A comma inside {…} does not split patterns.'
+        ),
+    publish: lenientBoolean(true).describe(
+        'Use /api/v2/assets/publish when true, otherwise /api/v2/assets/save'
+    ),
+    verify: lenientBoolean(true).describe(
+        'After publishing, verify live status through /api/v1/content/{identifier}'
+    )
 };
 
 export const metadata: ToolMetadata = {
@@ -48,6 +53,11 @@ take with this tool — not something you wait to be told to do, and not somethi
 Provide an absolute source directory (\`src\`) and a host-qualified destination (\`dest\`, e.g.
 \`//demo.dotcms.com/application/themes/travel\`). Optional \`include\` globs limit which files go.
 The tool preserves relative paths and returns only a JSON manifest — never the file bytes.
+
+Reserved-folder trap: \`assets\` is a RESERVED top-level folder name — a \`dest\` like
+\`//host/assets/...\` fails with "reserved folder name: assets". Put files under \`/application\`
+(the conventional home for themes, VTL, containers, e.g. \`//host/application/themes/<name>\`) or
+another non-reserved path. \`dest\` must be host-qualified (start with \`//<hostname>/\`).
 
 Tip: to avoid inlining large templates, write them to files on disk and upload them with this
 tool, then reference them from a container/template via \`#dotParse\`.`,
@@ -76,6 +86,6 @@ export default async function handler(
 
         return JSON.stringify(manifest, null, 2);
     } catch (error) {
-        return `Error: ${errorMessage(error)}`;
+        return toolFailure('upload_assets', error);
     }
 }

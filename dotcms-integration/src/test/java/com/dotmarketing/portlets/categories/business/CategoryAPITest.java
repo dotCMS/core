@@ -48,9 +48,12 @@ import com.dotmarketing.portlets.structure.model.Structure;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.Lists;
 import com.liferay.portal.model.User;
+import com.dotmarketing.common.db.DotConnect;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import net.bytebuddy.utility.RandomString;
 import org.junit.Assert;
@@ -1818,5 +1821,278 @@ public class CategoryAPITest extends IntegrationTestBase {
         assertTrue(categoriesAExpected.containsAll(hierarchy));
 
         verify(categoryFactory).findHierarchy(inodes);
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A 3-level category tree (root -> 2 children -> 2 grandchildren each) is
+     * deleted by its root
+     * ExpectedResult: Every category of the subtree is removed from the category and tree tables
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_threeLevelTree_deletesEveryDescendant()
+            throws DotDataException, DotSecurityException {
+
+        final List<Category> subtree = new ArrayList<>();
+        final Category root = createCategory("root", null);
+        subtree.add(root);
+        for (int i = 0; i < 2; i++) {
+            final Category child = createCategory("child", root);
+            subtree.add(child);
+            for (int j = 0; j < 2; j++) {
+                subtree.add(createCategory("grandchild", child));
+            }
+        }
+
+        final CategoryDeleteResult deleteResult = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode()), user, false);
+
+        assertTrue("No failures expected", deleteResult.getFailures().isEmpty());
+        assertEquals("The cascade total must count the root plus every descendant",
+                subtree.size(), deleteResult.getDeletedCount());
+        assertSubtreeFullyRemoved(subtree);
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A 4-level category chain (root -> child -> grandchild -> great-grandchild)
+     * is deleted by its root
+     * ExpectedResult: Every category of the chain is removed from the category and tree tables
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_fourLevelTree_deletesEveryDescendant()
+            throws DotDataException, DotSecurityException {
+
+        final Category root = createCategory("root", null);
+        final Category child = createCategory("child", root);
+        final Category grandchild = createCategory("grandchild", child);
+        final Category greatGrandchild = createCategory("greatgrandchild", grandchild);
+
+        final CategoryDeleteResult deleteResult = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode()), user, false);
+
+        assertTrue("No failures expected", deleteResult.getFailures().isEmpty());
+        assertEquals("A 4-level chain must report all 4 categories as deleted",
+                4, deleteResult.getDeletedCount());
+        assertSubtreeFullyRemoved(list(root, child, grandchild, greatGrandchild));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A 3-level tree whose grandchild category is assigned to a contentlet is
+     * deleted by its root
+     * ExpectedResult: The whole subtree is deleted and the contentlet no longer references the
+     * category; the delete is reported as a success
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_descendantUsedByContent_deletesAndDetaches()
+            throws Exception {
+
+        final Category root = createCategory("root", null);
+        final Category child = createCategory("child", root);
+        final Category grandchild = createCategory("grandchild", child);
+
+        ContentType type = null;
+        Contentlet contentlet = null;
+        try {
+            type = createContentTypeWithCatAndTextField(root);
+
+            contentlet = new Contentlet();
+            contentlet.setContentTypeId(type.id());
+            contentlet.setHost(type.host());
+            contentlet.setLanguageId(APILocator.getLanguageAPI().getDefaultLanguage().getId());
+            contentlet.setIndexPolicy(IndexPolicy.FORCE);
+            contentlet = APILocator.getContentletAPI().checkin(contentlet, list(grandchild),
+                    APILocator.getPermissionAPI().getPermissions(contentlet, false, true), user,
+                    false);
+
+            final CategoryDeleteResult deleteResult = categoryAPI
+                    .deleteCategoryAndChildren(list(root.getInode()), user, false);
+
+            assertTrue("Deleting an in-use category must succeed", deleteResult.getFailures().isEmpty());
+            assertEquals("An in-use descendant still counts towards the cascade total",
+                    3, deleteResult.getDeletedCount());
+            assertSubtreeFullyRemoved(list(root, child, grandchild));
+            assertTrue("Content must no longer reference the deleted category",
+                    categoryAPI.getParents(contentlet, user, false).isEmpty());
+        } finally {
+            try {
+                if (contentlet != null && UtilMethods.isSet(contentlet.getIdentifier())) {
+                    APILocator.getContentletAPI().destroy(contentlet, user, false);
+                }
+                if (type != null) {
+                    contentTypeApi.delete(type);
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A batch containing an existing category tree and a non-existing inode is
+     * deleted
+     * ExpectedResult: The existing tree is fully deleted and the non-existing inode is reported
+     * back as unable to delete, so the caller can distinguish success from partial failure
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_mixedBatch_reportsMissingInodeAndDeletesValidOne()
+            throws DotDataException, DotSecurityException {
+
+        final Category root = createCategory("root", null);
+        final Category child = createCategory("child", root);
+        final String missingInode = "nonexistent-" + System.currentTimeMillis();
+
+        final CategoryDeleteResult deleteResult = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode(), missingInode), user, false);
+
+        assertEquals(1, deleteResult.getFailures().size());
+        assertEquals("The missing inode must be reported back with the not-found reason",
+                CategoryAPI.DELETE_FAIL_REASON_NOT_FOUND, deleteResult.getFailures().get(missingInode));
+        assertEquals("Only the existing tree counts towards the cascade total",
+                2, deleteResult.getDeletedCount());
+        assertSubtreeFullyRemoved(list(root, child));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A batch contains both a category and one of its descendants (e.g.
+     * select-all on a filtered flat list), with the ancestor listed first
+     * ExpectedResult: The whole subtree is deleted and the descendant, already removed by the
+     * ancestor's cascade, is NOT reported as a failure
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_batchWithAncestorAndDescendant_reportsNoFailure()
+            throws DotDataException, DotSecurityException {
+
+        final Category root = createCategory("root", null);
+        final Category child = createCategory("child", root);
+        final Category grandchild = createCategory("grandchild", child);
+
+        final CategoryDeleteResult deleteResult = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode(), grandchild.getInode()), user,
+                        false);
+
+        assertTrue("A descendant deleted by an earlier cascade must not be reported as failure",
+                deleteResult.getFailures().isEmpty());
+        assertEquals("The descendant listed twice in the batch must be counted once",
+                3, deleteResult.getDeletedCount());
+        assertSubtreeFullyRemoved(list(root, child, grandchild));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A limited user without EDIT permission on the selected category tries to
+     * delete it
+     * ExpectedResult: The category is reported back with the no-permission reason and nothing
+     * is deleted; no exception is thrown so the rest of a batch can still be processed
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_asLimitedUserWithoutEditPermission_reportsFailureAndDeletesNothing()
+            throws DotDataException, DotSecurityException {
+
+        final Category root = createCategory("root", null);
+        final Category child = createCategory("child", root);
+        final User limitedUser = new UserDataGen().nextPersisted();
+
+        final CategoryDeleteResult deleteResult = categoryAPI
+                .deleteCategoryAndChildren(list(root.getInode()), limitedUser, false);
+
+        assertEquals(1, deleteResult.getFailures().size());
+        assertEquals("The root must be reported back with the no-permission reason",
+                String.format(CategoryAPI.DELETE_FAIL_REASON_NO_PERMISSION,
+                        root.getCategoryName()),
+                deleteResult.getFailures().get(root.getInode()));
+        assertEquals("Nothing was deleted, so the cascade total must be zero",
+                0, deleteResult.getDeletedCount());
+        assertEquals("Root category must survive", 1, dbCategoryCount(root.getInode()));
+        assertEquals("Child category must survive", 1, dbCategoryCount(child.getInode()));
+    }
+
+    /**
+     * Method to test: {@link CategoryAPI#deleteCategoryAndChildren(List, User, boolean)}
+     * Given Scenario: A limited user with inherited EDIT over categories deletes two trees; one
+     * tree contains a grandchild protected by an individual permission override that excludes
+     * the user
+     * ExpectedResult: The protected tree is skipped whole (pre-flight, nothing in it deleted)
+     * and reported with the protected-descendant reason; the other tree is fully deleted
+     */
+    @Test
+    public void test_deleteCategoryAndChildren_protectedDescendant_skipsThatTreeAndContinues()
+            throws DotDataException, DotSecurityException {
+
+        final User limitedUser = new UserDataGen().nextPersisted();
+        final User otherUser = new UserDataGen().nextPersisted();
+
+        // limitedUser gets EDIT over all categories via host-level inheritable permission
+        final Permission inheritable = new Permission(PermissionableType.CATEGORY.getCanonicalName(),
+                APILocator.systemHost().getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(limitedUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ | PermissionAPI.PERMISSION_EDIT, true);
+        APILocator.getPermissionAPI().save(inheritable, APILocator.systemHost(), user, false);
+
+        final Category protectedRoot = createCategory("root", null);
+        final Category protectedChild = createCategory("child", protectedRoot);
+        final Category protectedGrandchild = createCategory("grandchild", protectedChild);
+        final Category deletableRoot = createCategory("root", null);
+        final Category deletableChild = createCategory("child", deletableRoot);
+
+        // individual override on the grandchild that excludes limitedUser
+        final Permission override = new Permission(PermissionAPI.INDIVIDUAL_PERMISSION_TYPE,
+                protectedGrandchild.getPermissionId(),
+                APILocator.getRoleAPI().loadRoleByKey(otherUser.getUserId()).getId(),
+                PermissionAPI.PERMISSION_READ, true);
+        APILocator.getPermissionAPI().save(override, protectedGrandchild, user, false);
+
+        final CategoryDeleteResult deleteResult = categoryAPI.deleteCategoryAndChildren(
+                list(protectedRoot.getInode(), deletableRoot.getInode()), limitedUser, false);
+
+        assertEquals(1, deleteResult.getFailures().size());
+        assertEquals("The protected tree's root must be reported with the descendant reason",
+                String.format(CategoryAPI.DELETE_FAIL_REASON_PROTECTED_DESCENDANT,
+                        protectedGrandchild.getCategoryName()),
+                deleteResult.getFailures().get(protectedRoot.getInode()));
+        assertEquals("Protected root must survive", 1, dbCategoryCount(protectedRoot.getInode()));
+        assertEquals("Protected child must survive", 1, dbCategoryCount(protectedChild.getInode()));
+        assertEquals("Protected grandchild must survive", 1,
+                dbCategoryCount(protectedGrandchild.getInode()));
+        assertEquals("Only the deletable tree counts; the skipped subtree contributes nothing",
+                2, deleteResult.getDeletedCount());
+        assertSubtreeFullyRemoved(list(deletableRoot, deletableChild));
+    }
+
+    private Category createCategory(final String prefix, final Category parent) {
+        final String name = prefix + System.currentTimeMillis() + new RandomString(5).nextString();
+        return new CategoryDataGen()
+                .setCategoryName(name)
+                .setKey(name)
+                .setCategoryVelocityVarName(name)
+                .parent(parent)
+                .nextPersisted();
+    }
+
+    private int dbCategoryCount(final String inode) throws DotDataException {
+        return new DotConnect()
+                .setSQL("select count(*) as test from category where inode = ?")
+                .addParam(inode)
+                .getInt("test");
+    }
+
+    private int dbTreeCount(final String inode) throws DotDataException {
+        return new DotConnect()
+                .setSQL("select count(*) as test from tree where parent = ? or child = ?")
+                .addParam(inode)
+                .addParam(inode)
+                .getInt("test");
+    }
+
+    private void assertSubtreeFullyRemoved(final List<Category> subtree) throws DotDataException {
+        for (final Category category : subtree) {
+            assertEquals("Category row must be gone for " + category.getInode(),
+                    0, dbCategoryCount(category.getInode()));
+            assertEquals("Tree rows must be gone for " + category.getInode(),
+                    0, dbTreeCount(category.getInode()));
+        }
     }
 }

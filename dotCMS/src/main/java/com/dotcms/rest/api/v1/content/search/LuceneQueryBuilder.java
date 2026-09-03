@@ -118,7 +118,7 @@ public class LuceneQueryBuilder {
                                 fieldContextBuilder.withFieldName(luceneFieldName);
                                 fieldContextBuilder.withFieldValue(fieldValue);
                                 Logger.debug(this, String.format("Processing Field Name '%s' with Field Value '%s'", luceneFieldName, fieldValue));
-                                final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
+                                final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field);
                                 if (null != handler) {
                                     final String query = handler.apply(fieldContextBuilder.build());
                                     if (field instanceof RelationshipField && UtilMethods.isSet(query) && !query.contains(COLON)) {

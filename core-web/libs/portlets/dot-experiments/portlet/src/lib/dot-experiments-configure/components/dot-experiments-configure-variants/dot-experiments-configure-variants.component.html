@@ -1,0 +1,311 @@
+<!-- `inert` alongside the mask: BlockUI stops the pointer but leaves the fields in the tab order,
+     so a keyboard user could still fill in a card that has nowhere to save to. -->
+<p-panel #panel [attr.inert]="$gated() ? '' : null" data-testid="variants-card">
+    <ng-template #header>
+        <div class="flex flex-col gap-1">
+            <h2 class="m-0 text-lg font-bold text-surface-900" data-section="variants">
+                {{ 'experiments.configure.variants.name' | dm }}
+            </h2>
+            <span class="text-sm text-surface-500">
+                {{ 'experiments.configure.variants.description' | dm }}
+            </span>
+        </div>
+    </ng-template>
+
+    <section class="flex flex-col gap-5">
+        <p-table
+            [value]="$rows()"
+            dataKey="id"
+            [tableStyle]="{ 'table-layout': 'fixed' }"
+            data-testid="variants-table">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th class="w-full">
+                        {{ 'experiments.configure.variants.column.variant' | dm }}
+                    </th>
+                    <th class="w-40 whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.split' | dm }}
+                    </th>
+                    <th class="w-45 text-right! whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.of-all-traffic' | dm }}
+                    </th>
+                    <th class="w-48 whitespace-nowrap">
+                        {{ 'experiments.configure.variants.column.actions' | dm }}
+                    </th>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="body" let-row>
+                <tr data-testid="variant-row">
+                    <td class="max-w-0">
+                        <div class="flex min-w-0 items-center gap-3">
+                            <span
+                                class="size-2.5 flex-none rounded-full"
+                                [style.background]="row.color"
+                                aria-hidden="true"></span>
+
+                            <div class="flex min-w-0 items-center gap-2">
+                                @if (row.isControl) {
+                                    <span
+                                        class="truncate text-sm font-semibold text-surface-900"
+                                        data-testid="variant-control-name">
+                                        {{ row.name }}
+                                    </span>
+                                    <span
+                                        class="flex-none rounded-full bg-surface-100 px-2 py-0.5 text-[10px] font-semibold tracking-wider text-surface-600"
+                                        data-testid="variant-control-chip">
+                                        {{ 'experiments.configure.variants.control-chip' | dm }}
+                                    </span>
+                                } @else {
+                                    <dot-experiments-variant-name-inplace
+                                        [name]="row.name"
+                                        [disabled]="row.disabled"
+                                        [maxLength]="MAX_INPUT_TITLE_LENGTH"
+                                        (nameChanged)="onVariantRenamed(row.id, $event)"
+                                        data-testid="variant-name-inplace" />
+                                }
+
+                                @if (row.copyUrl) {
+                                    <dot-copy-button
+                                        [copy]="row.copyUrl"
+                                        [tooltipText]="
+                                            'dot.common.message.pageurl.copy.clipboard' | dm
+                                        "
+                                        iconStyle="material-symbols-rounded"
+                                        data-testid="variant-copy-url" />
+                                }
+                            </div>
+                        </div>
+                    </td>
+                    <td>
+                        <div
+                            [pTooltip]="row.disabledTooltipKey ? (row.disabledTooltipKey | dm) : ''"
+                            [tooltipDisabled]="!row.disabledTooltipKey"
+                            tooltipPosition="bottom"
+                            data-testid="variant-weight-tooltip">
+                            <p-inputgroup>
+                                @if ($weightFieldById().get(row.id); as weightField) {
+                                    <input
+                                        pInputText
+                                        type="number"
+                                        step="1"
+                                        class="text-right font-semibold"
+                                        [formField]="weightField"
+                                        (blur)="onWeightCommitted(row.id)"
+                                        (keydown.enter)="onWeightCommitted(row.id)"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.weight' | dm
+                                        "
+                                        data-testid="variant-weight-input" />
+                                } @else {
+                                    <input
+                                        pInputText
+                                        type="number"
+                                        class="text-right font-semibold"
+                                        [value]="row.weight.toString()"
+                                        [disabled]="true"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.weight' | dm
+                                        "
+                                        data-testid="variant-weight-input" />
+                                }
+                                <p-inputgroup-addon>%</p-inputgroup-addon>
+                            </p-inputgroup>
+                        </div>
+                    </td>
+
+                    <td class="text-right!" data-testid="variant-share-of-all">
+                        {{
+                            'experiments.configure.variants.share-of-all'
+                                | dm: [($shareOfAllTrafficById().get(row.id) ?? 0) + '']
+                        }}
+                    </td>
+
+                    <td>
+                        <div class="flex items-center justify-end gap-1">
+                            <!-- Editing content is a UVE round-trip, which this screen does not do yet. -->
+                            <div
+                                [pTooltip]="
+                                    'experiments.configure.variants.edit-content.unavailable' | dm
+                                "
+                                tooltipPosition="bottom"
+                                data-testid="variant-edit-content-tooltip">
+                                <p-button
+                                    [outlined]="true"
+                                    size="small"
+                                    severity="secondary"
+                                    [disabled]="true"
+                                    [label]="
+                                        (row.isControl
+                                            ? 'experiments.configure.variants.action.preview'
+                                            : 'experiments.configure.variants.action.edit'
+                                        ) | dm
+                                    "
+                                    data-testid="variant-edit-content-btn">
+                                    <span
+                                        class="material-symbols-rounded text-lg! leading-none!"
+                                        aria-hidden="true">
+                                        {{ row.isControl ? 'visibility' : 'edit' }}
+                                    </span>
+                                </p-button>
+                            </div>
+
+                            <!-- A fixed slot, occupied or not: the control has no second action —
+                                 it is never deleted, and Preview is already its primary one — but
+                                 its row still has to line up with the ones that do. -->
+                            <div class="flex w-9 flex-none justify-end">
+                                @if (!row.isControl && !row.disabled) {
+                                    <p-button
+                                        [text]="true"
+                                        [rounded]="true"
+                                        size="small"
+                                        severity="secondary"
+                                        (onClick)="onRowMenuToggle(row); rowMenu.toggle($event)"
+                                        [attr.aria-label]="
+                                            'experiments.configure.variants.actions.menu' | dm
+                                        "
+                                        data-testid="variant-actions-btn">
+                                        <span
+                                            class="material-symbols-rounded text-xl! leading-none!"
+                                            aria-hidden="true">
+                                            more_vert
+                                        </span>
+                                    </p-button>
+                                }
+                            </div>
+                        </div>
+                    </td>
+                </tr>
+            </ng-template>
+
+            <ng-template pTemplate="footer">
+                <tr data-testid="variants-total-row">
+                    <td class="font-semibold text-surface-900">
+                        {{ 'experiments.configure.variants.total' | dm }}
+                    </td>
+                    <td
+                        class="font-bold"
+                        [class.text-red-700]="$hasWeightWarning()"
+                        [class.text-surface-900]="!$hasWeightWarning()"
+                        data-testid="variants-total-weight">
+                        {{ $totalWeight() }}%
+                    </td>
+                    <td
+                        class="text-right! text-surface-500"
+                        data-testid="variants-total-of-entering">
+                        {{
+                            'experiments.configure.variants.total.of-entering'
+                                | dm: [store.$trafficAllocation() + '']
+                        }}
+                    </td>
+                    <td></td>
+                </tr>
+            </ng-template>
+        </p-table>
+
+        <div class="flex items-center justify-between gap-4">
+            <!-- Whichever of the two has something to say; the actions sit opposite them. -->
+            <div class="flex min-w-0 items-center gap-3">
+                @if ($showMinVariantsError()) {
+                    <span
+                        data-error="1"
+                        class="flex items-center gap-1.5 text-xs font-medium text-red-700"
+                        data-testid="variants-min-error">
+                        <span
+                            class="material-symbols-rounded text-base! leading-none!"
+                            aria-hidden="true">
+                            error
+                        </span>
+                        {{ 'experiments.configure.variants.error.min' | dm }}
+                    </span>
+                }
+                @if ($isHintVisible()) {
+                    <span class="text-xs text-surface-500" data-testid="variants-hint">
+                        {{
+                            $isDisabled()
+                                ? ('experiments.configure.variants.hint.locked' | dm)
+                                : ('experiments.configure.variants.hint'
+                                  | dm: [MAX_VARIANTS_ALLOWED.toString()])
+                        }}
+                    </span>
+                }
+            </div>
+
+            <div class="flex flex-none items-center gap-2">
+                <!-- Stays on screen while the card is read-only, disabled, the way it did when it
+                     lived in the total row: it explains what the numbers are, not just how to
+                     change them. Add is the one that goes, since there is nothing to add to. -->
+                <p-button
+                    [text]="true"
+                    size="small"
+                    [disabled]="$isSplitEvenlyDisabled()"
+                    (onClick)="onSplitEvenly()"
+                    [label]="'experiments.configure.variants.split-evenly' | dm"
+                    data-testid="variants-split-evenly-btn" />
+
+                @if (!$isDisabled()) {
+                    <p-button
+                        [outlined]="true"
+                        size="small"
+                        [disabled]="$isAddDisabled()"
+                        (onClick)="onAddVariant()"
+                        [pTooltip]="'experiments.configure.variants.cap-reached' | dm"
+                        [tooltipDisabled]="!$isAtVariantCap()"
+                        tooltipPosition="top"
+                        [label]="'experiments.configure.variants.add' | dm"
+                        data-testid="variants-add-btn" />
+                }
+            </div>
+        </div>
+
+        @if ($hasWeightWarning()) {
+            <div
+                animate.enter="weights-warning-enter"
+                animate.leave="weights-warning-leave"
+                [attr.data-error]="$showWeightsError() ? '1' : null"
+                class="flex items-center gap-2 rounded-md border px-3 py-2.5 text-sm"
+                [class.border-red-200]="$showWeightsError()"
+                [class.bg-red-50]="$showWeightsError()"
+                [class.text-red-700]="$showWeightsError()"
+                [class.border-orange-200]="!$showWeightsError()"
+                [class.bg-orange-50]="!$showWeightsError()"
+                [class.text-orange-700]="!$showWeightsError()"
+                data-testid="variants-weight-warning">
+                <span class="material-symbols-rounded text-xl! leading-none!" aria-hidden="true">
+                    warning
+                </span>
+                <span>
+                    @for (error of $weightsErrors(); track error.kind) {
+                        {{ error.message }}
+                    }
+                </span>
+            </div>
+        }
+    </section>
+</p-panel>
+
+<!-- The gate: nothing here can be filled in until the draft exists. `target` is the panel
+     itself — PrimeNG appends the mask into it, and blocks the whole document when it has no
+     target, which is why this sits next to the panel rather than around it. -->
+<p-blockUI [target]="panel" [blocked]="$gated()" data-testid="configure-gate-variants" />
+
+<p-menu #rowMenu [model]="$rowMenuItems()" [popup]="true" appendTo="body">
+    <ng-template #item let-item>
+        <span
+            class="p-menu-item-link flex items-center gap-3 px-3 py-2"
+            [class.cursor-pointer]="!item.disabled"
+            [class.opacity-60]="item.disabled"
+            [attr.data-testid]="item.id">
+            <span
+                class="material-symbols-rounded text-lg! leading-none!"
+                [class.text-red-600]="item.danger"
+                [class.text-surface-500]="!item.danger"
+                aria-hidden="true">
+                {{ item.icon }}
+            </span>
+            <span [class.text-red-600]="item.danger" [class.text-surface-800]="!item.danger">
+                {{ item.label }}
+            </span>
+        </span>
+    </ng-template>
+</p-menu>

@@ -6,9 +6,37 @@
  */
 
 import { Octokit } from '@octokit/rest';
+import { throttling } from '@octokit/plugin-throttling';
 import { CommitInfo, ExternalRef, LinkedIssueInfo, PRDetails } from './types';
 
 const STANDARD_RELEASE_PATTERN = /^v\d{2}\.\d{2}\.\d{2}-\d{1,2}$/;
+
+/**
+ * resolvePRNumbers is one request per commit — hundreds per release under merge
+ * commits. Inside the 5000/hr primary budget, but enough to trip the per-minute
+ * secondary limit, where a 403 would degrade into a silently dropped PR.
+ */
+const ThrottledOctokit = Octokit.plugin(throttling);
+
+const MAX_RATE_LIMIT_RETRIES = 3;
+
+export function onThrottle(kind: string) {
+  return (
+    retryAfter: number,
+    options: { method?: string; url?: string },
+    _octokit: unknown,
+    retryCount: number
+  ): boolean => {
+    const willRetry = retryCount < MAX_RATE_LIMIT_RETRIES;
+    process.stderr.write(
+      `${kind} rate limit on ${options.method} ${options.url}; ` +
+        (willRetry
+          ? `retry ${retryCount + 1}/${MAX_RATE_LIMIT_RETRIES} in ${retryAfter}s\n`
+          : `giving up after ${MAX_RATE_LIMIT_RETRIES} retries\n`)
+    );
+    return willRetry;
+  };
+}
 
 export function createOctokit(): Octokit {
   const token = process.env.GITHUB_TOKEN || process.env.GH_TOKEN;
@@ -17,7 +45,13 @@ export function createOctokit(): Octokit {
       'GitHub token required. Set GITHUB_TOKEN or GH_TOKEN (e.g. `export GH_TOKEN=$(gh auth token)`).'
     );
   }
-  return new Octokit({ auth: token });
+  return new ThrottledOctokit({
+    auth: token,
+    throttle: {
+      onRateLimit: onThrottle('Primary'),
+      onSecondaryRateLimit: onThrottle('Secondary'),
+    },
+  });
 }
 
 export function parseRepo(fullRepo: string): { owner: string; repo: string } {
@@ -28,32 +62,59 @@ export function parseRepo(fullRepo: string): { owner: string; repo: string } {
   return { owner, repo };
 }
 
+/** A published standard release, and whether its notes were ever written. */
+export interface ReleaseRef {
+  tag: string;
+  /** False when the release body is empty — a cut whose pipeline died before notes. */
+  hasNotes: boolean;
+}
+
+/**
+ * List standard releases (matching vYY.MM.DD-NN pattern), newest first.
+ *
+ * Kept in sync with gather-release-data/src/github.ts: both resolve the same release
+ * boundary, and a divergence puts the QA status and the changelog on different ranges.
+ *
+ * Drafts are skipped: listReleases returns them first regardless of date, so they
+ * corrupt the ordering this function promises, and a draft may duplicate a real tag.
+ */
 export async function listStandardReleaseTags(
   octokit: Octokit,
   owner: string,
   repo: string
-): Promise<string[]> {
-  const tags: string[] = [];
+): Promise<ReleaseRef[]> {
+  const releases: ReleaseRef[] = [];
   for await (const response of octokit.paginate.iterator(
     octokit.repos.listReleases,
     { owner, repo, per_page: 100 }
   )) {
     for (const release of response.data) {
+      if (release.draft) continue;
       if (STANDARD_RELEASE_PATTERN.test(release.tag_name)) {
-        tags.push(release.tag_name);
+        releases.push({
+          tag: release.tag_name,
+          hasNotes: (release.body ?? '').trim().length > 0,
+        });
       }
     }
   }
-  return tags;
+  return releases;
 }
 
+/**
+ * Find the previous documented release before `currentTag`.
+ *
+ * Undocumented releases are skipped: a cut whose pipeline died before writing notes
+ * never shipped a QA status either, so stopping at its tag would report on one attempt
+ * instead of the whole release.
+ */
 export function findPreviousTag(
-  tags: string[],
+  releases: ReleaseRef[],
   currentTag: string
 ): string | undefined {
-  const idx = tags.indexOf(currentTag);
+  const idx = releases.findIndex((r) => r.tag === currentTag);
   if (idx === -1) return undefined;
-  return tags[idx + 1];
+  return releases.slice(idx + 1).find((r) => r.hasNotes)?.tag;
 }
 
 export async function fetchCommitRange(
@@ -87,10 +148,7 @@ export async function fetchCommitRange(
     });
 
     for (const c of response.data.commits) {
-      commits.push({
-        sha: c.sha,
-        message: c.commit.message.split('\n')[0],
-      });
+      commits.push({ sha: c.sha });
     }
 
     if (response.data.commits.length < perPage) break;
@@ -100,18 +158,49 @@ export async function fetchCommitRange(
   return { totalCommits, commits };
 }
 
-/**
- * Extract PR numbers from squash-merge commit messages (the format dotCMS
- * uses on `main`). Merge-commit-merged PRs ("Merge pull request #N from …")
- * would be silently dropped if the merge policy ever changed — revisit this
- * regex if that happens.
- */
-export function extractPRNumbers(commits: CommitInfo[]): number[] {
+/** Mirrors resolvePRNumbers in gather-release-data/src/github.ts. */
+export async function resolvePRNumbers(
+  octokit: Octokit,
+  owner: string,
+  repo: string,
+  commits: CommitInfo[]
+): Promise<number[]> {
   const prNumbers = new Set<number>();
-  for (const commit of commits) {
-    const match = commit.message.match(/\(#(\d+)\)\s*$/);
-    if (match) prNumbers.add(parseInt(match[1], 10));
+  const BATCH_SIZE = 15;
+
+  for (let i = 0; i < commits.length; i += BATCH_SIZE) {
+    const batch = commits.slice(i, i + BATCH_SIZE);
+
+    const promises = batch.map(async (commit) => {
+      try {
+        const { data } = await octokit.repos.listPullRequestsAssociatedWithCommit({
+          owner,
+          repo,
+          commit_sha: commit.sha,
+          // A default-branch commit resolves to the one merged PR that introduced
+          // it, so page 1 always suffices; this just clears the default 30.
+          per_page: 100,
+        });
+        // Only merged PRs: for commits not reachable from the default branch the
+        // endpoint also returns open PRs.
+        return data.filter((pr) => pr.merged_at).map((pr) => pr.number);
+      } catch (error: unknown) {
+        const errMsg = error instanceof Error ? error.message : String(error);
+        process.stderr.write(
+          `Warning: could not resolve PR for commit ${commit.sha}: ${errMsg}\n`
+        );
+        return [];
+      }
+    });
+
+    const batchResults = await Promise.all(promises);
+    for (const numbers of batchResults) {
+      for (const n of numbers) prNumbers.add(n);
+    }
+
+    if (i + BATCH_SIZE < commits.length) await sleep(500);
   }
+
   return Array.from(prNumbers);
 }
 
@@ -157,10 +246,10 @@ export async function fetchClosingIssueRefs(
 
   for (let i = 0; i < prNumbers.length; i += BATCH) {
     const batch = prNumbers.slice(i, i + BATCH);
-    // PR numbers come from extractPRNumbers' strict `\(#(\d+)\)` regex, so
-    // they're already integers — but GraphQL aliases must be static field
-    // names (no $variables), so we interpolate. Belt-and-suspenders: drop
-    // anything that isn't a positive integer before building the query.
+    // PR numbers come from the commits→pulls API, so they're already integers —
+    // but GraphQL aliases must be static field names (no $variables), so we
+    // interpolate. Belt-and-suspenders: drop anything that isn't a positive
+    // integer before building the query.
     const safeBatch = batch.filter((n) => Number.isInteger(n) && n > 0);
     if (safeBatch.length === 0) continue;
     const aliases = safeBatch

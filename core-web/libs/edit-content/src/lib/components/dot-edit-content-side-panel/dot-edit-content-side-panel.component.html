@@ -3,10 +3,17 @@
     `!important` is required to override PrimeNG's default dimmed mask background, which the theme
     and the `pt` API do not otherwise let us clear — it is deliberate, not a leftover.
 
-    The left-cast shadow on `pt.root.class` is an arbitrary Tailwind value on purpose: the drawer
-    uses `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
-    `:host ::ng-deep` cannot reach it, and no dotCMS `$shadow-*` token is left-directional (they all
-    cast downward, but a right-anchored drawer needs the shadow cast to the left).
+    The shadow goes on `pt.root.class` rather than in component SCSS because the drawer uses
+    `appendTo="body"` (teleported out of this component's DOM), so component-scoped SCSS /
+    `:host ::ng-deep` cannot reach it.
+
+    `dismissible` is left OFF even though clicking outside DOES close the panel: PrimeNG's own
+    dismissible tears the drawer down immediately, bypassing the unsaved-changes guard. The mask
+    click is handled by the component instead (see `onMaskClick`).
+
+    The header buttons name themselves through PrimeNG's `[ariaLabel]` input, never
+    `[attr.aria-label]`: the latter lands on the non-focusable `<p-button>` host, leaving the real
+    `<button>` — whose only content is an icon glyph — with no accessible name.
 -->
 <p-drawer
     [visible]="!!data()"
@@ -18,8 +25,9 @@
     [maskStyle]="{ background: 'transparent !important' }"
     [pt]="{
         root: {
-            class: '!shadow-[-12px_0_24px_rgb(0_0_0_/_20%)]',
-            style: { width: $expanded() ? '100%' : '70%', transition: 'width 250ms ease' }
+            'data-testid': 'edit-content-side-panel',
+            class: '!shadow-2xl',
+            style: { width: $expanded() ? '100%' : '80%', transition: 'width 250ms ease' }
         },
         content: { class: 'p-0!' }
     }"
@@ -33,7 +41,7 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [attr.aria-label]="
+                    [ariaLabel]="
                         $expanded()
                             ? ('edit.content.side-panel.collapse' | dm)
                             : ('edit.content.side-panel.expand' | dm)
@@ -49,7 +57,7 @@
                 <p-button
                     [text]="true"
                     severity="secondary"
-                    [attr.aria-label]="'edit.content.side-panel.close' | dm"
+                    [ariaLabel]="'edit.content.side-panel.close' | dm"
                     (onClick)="requestClose()"
                     data-testid="side-panel-close">
                     <ng-template #icon>

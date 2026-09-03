@@ -169,6 +169,29 @@ const PORTLETS_ANGULAR: Route[] = [
             import('@dotcms/portlets/dot-es-search/portlet').then((m) => m.dotEsSearchRoutes)
     },
     {
+        path: 'dotAuth',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
+    },
+    {
+        path: 'experiments',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        // No `reuseRoute: false` here, same reasoning as `/content` above: the Configure screen
+        // REUSES its component across the `experiments/new → experiments/:id/configuration` swap
+        // that follows creation, so the in-flight autosaves and the just-created experiment
+        // survive it. `shouldReuseRoute` is evaluated per level and route `data` is inherited, so
+        // this flag on the parent would recreate the whole subtree regardless of what the child
+        // route asks for. Moving between the list and Configure is still not reused — they are
+        // different route configs.
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-experiments/portlet').then(
+                (m) => m.dotExperimentsPortletRoutes
+            )
+    },
+    {
         path: 'tags',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
@@ -186,12 +209,26 @@ const PORTLETS_ANGULAR: Route[] = [
             )
     },
     {
-        path: 'users',
+        path: 'agents',
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-agents/portlet').then((m) => m.dotAgentsRoutes)
+    },
+    {
+        path: 'users-beta',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],
         data: { reuseRoute: false },
         loadChildren: () =>
             import('@dotcms/portlets/dot-users/portlet').then((m) => m.dotUsersRoutes)
+    },
+    {
+        path: 'roles-beta',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () =>
+            import('@dotcms/portlets/dot-roles/portlet').then((m) => m.dotRolesRoutes)
     },
     {
         path: 'query-tool',

@@ -18,7 +18,7 @@ import {
   listStandardReleaseTags,
   findPreviousTag,
   fetchCommitRange,
-  extractPRNumbers,
+  resolvePRNumbers,
   fetchPRDetails,
 } from './github';
 import { processChanges } from './categorize';
@@ -81,7 +81,7 @@ async function main(): Promise<void> {
 
     // Validate that toTag is visible in the release list. If it's missing,
     // the GitHub releases API hasn't indexed the newly published release yet.
-    if (!tags.includes(args.toTag)) {
+    if (!tags.some((r) => r.tag === args.toTag)) {
       process.stderr.write(
         `Error: ${args.toTag} not found in GitHub releases API. ` +
           `The release may not have been published yet, or the API has not caught up. ` +
@@ -127,10 +127,10 @@ async function main(): Promise<void> {
     return;
   }
 
-  // Extract PR numbers from commit messages
-  const prNumbers = extractPRNumbers(commits);
+  // Resolve PR numbers via the commits→pulls API (see resolvePRNumbers)
+  const prNumbers = await resolvePRNumbers(octokit, owner, repo, commits);
   process.stderr.write(
-    `Extracted ${prNumbers.length} PR numbers from ${commits.length} commits.\n`
+    `Resolved ${prNumbers.length} merged PRs from ${commits.length} commits.\n`
   );
 
   // Fetch PR details

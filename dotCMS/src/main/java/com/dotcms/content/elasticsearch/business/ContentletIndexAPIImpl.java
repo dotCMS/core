@@ -1,5 +1,7 @@
 package com.dotcms.content.elasticsearch.business;
 
+import com.dotcms.cost.RequestCost;
+import com.dotcms.cost.RequestPrices.Price;
 import static com.dotcms.content.index.IndexConfigHelper.haltMigration;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationComplete;
 import static com.dotcms.content.index.IndexConfigHelper.isMigrationNotStarted;
@@ -192,7 +194,16 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             new ReindexMappingRunner(
                     () -> Config.getIntProperty(REINDEX_CONTENTLET_MAPPING_TIMEOUT_SECONDS, 120),
                     Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_THREADS", 8),
+                    Config.getIntProperty("REINDEX_CONTENTLET_MAPPING_MAX_ABANDONED", 32),
                     DbConnectionFactory::closeSilently));
+
+    /**
+     * The process-wide mapping guard, for health reporting. Its counters describe whether content
+     * indexing is able to make progress at all — see {@link ReindexMappingRunner}.
+     */
+    public static ReindexMappingRunner sharedMappingRunner() {
+        return mappingRunner.get();
+    }
 
     public ContentletIndexAPIImpl() {
         this(new ContentletIndexOperationsES(),
@@ -2321,6 +2332,7 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         }
     }
 
+    @RequestCost(Price.CONTENT_INDEX)
     @Override
     public void addContentToIndex(final List<Contentlet> contentToIndex) {
 
@@ -2414,15 +2426,31 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } catch (final Exception e) {
                 esException = new DotRuntimeException(e.getMessage(), e);
             }
+            RuntimeException osException = null;
             try {
                 operationsOS.putToIndex(dual.osReq);
             } catch (final Exception e) {
-                Logger.warnAndDebug(this.getClass(),
-                        "OS shadow write failed in putToIndex — "
-                                + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+                if (isReadEnabled()) {
+                    // Phase 2: OS serves reads (PhaseRouter.readProvider), so a failure here is
+                    // not a shadow divergence — it leaves the index users actually query out of
+                    // sync with the database (#37276). Surface it once ES has been given its
+                    // chance, so the caller can retry rather than assume the write landed.
+                    osException = (e instanceof RuntimeException)
+                            ? (RuntimeException) e
+                            : new DotRuntimeException(e.getMessage(), e);
+                } else {
+                    Logger.warnAndDebug(this.getClass(),
+                            "OS shadow write failed in putToIndex — "
+                                    + "OS index may diverge until next reindex. Cause: " + e.getMessage(), e);
+                }
             }
+            // ES stays authoritative when both legs fail: its exception is the one callers have
+            // always seen, and demoting it would change behaviour beyond this fix.
             if (esException != null) {
                 throw esException;
+            }
+            if (osException != null) {
+                throw osException;
             }
         } else {
             // Single-provider phase (0 or 3): forward to the sole active provider.
@@ -2483,10 +2511,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
         final boolean isDualWrite = providers.size() > 1;
         final List<CompositeBulkProcessor.Entry> entries = new ArrayList<>();
         for (final ContentletIndexOperations ops : providers) {
-            // OS is the shadow index in Phases 1 and 2 (dual-write): it replicates ES writes
-            // but is not yet the source of truth. In Phase 3 isDualWrite=false, so shadow=false
-            // and OS becomes the primary — failures propagate normally from that point.
-            final boolean shadow = isDualWrite && ops == operationsOS;
+            // OS is the shadow index in Phase 1 only: it replicates ES writes and nothing reads
+            // from it, so a failure there is genuinely tolerable (ADR-0009).
+            //
+            // Phase 2 is different and used to be handled as if it were Phase 1. Reads are served
+            // by OS from Phase 2 onwards (PhaseRouter.readProvider), so an OS write failure is
+            // immediately user-visible: a removal lost on the OS leg leaves an orphaned document
+            // in the very index being queried — the #37276 symptom, in the phase the migration
+            // spends the longest in. Treating OS as a shadow there also meant the journal entry
+            // was acked on the ES result alone and never retried.
+            //
+            // In Phase 3 isDualWrite=false, so shadow=false and OS is simply the primary.
+            final boolean shadow = isDualWrite && ops == operationsOS && !isReadEnabled();
             // Each provider gets its own listener so counters and log output stay per-provider.
             // The shadow OS listener never touches the reindex queue or triggers a rebuild.
             final IndexBulkListener listenerForOps = shadow
@@ -2512,7 +2548,18 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     public void appendToBulkProcessor(final IndexBulkProcessor bulk,
             final Collection<ReindexEntry> idxs) throws DotDataException {
         for (final ReindexEntry idx : idxs) {
-            appendToBulkProcessorEntry(bulk, idx);
+            try {
+                appendToBulkProcessorEntry(bulk, idx);
+            } catch (final ReindexPoolExhaustedException poolUnavailable) {
+                if (poolUnavailable.isCircuitOpen()) {
+                    // Storage (or the index endpoint) is down: abandon the rest of the batch so the
+                    // reindex loop can back off. Every remaining entry is left exactly as it was.
+                    throw poolUnavailable;
+                }
+                // Momentary saturation only — skip this entry, untouched, and try the next one.
+                Logger.debug(this, "Mapping pool momentarily saturated, deferring entry "
+                        + idx.getIdentToIndex());
+            }
         }
     }
 
@@ -2595,14 +2642,27 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
     private void appendBulkRequestToProcessor(final IndexBulkProcessor proc,
             final ReindexEntry idx) throws DotDataException {
+        final List<MappedDocument> documents;
         try {
             // Bounded timeout: loading and mapping touch binary files, and a hung stat on
-            // network-backed storage must fail this entry instead of wedging the reindex
-            // thread forever (issue #36498).
-            mappingRunner().run(() -> {
-                mapEntryForProcessor(proc, idx);
-                return null;
-            }, "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
+            // network-backed storage must fail this entry instead of wedging the reindex thread
+            // forever (issue #36498). Only the mapping is guarded: the bulk enqueue below has its
+            // own, longer retry budget and timing it out here made index slowness alone look like
+            // dead storage (issue #37038).
+            documents = mappingRunner().run(() -> mapEntry(idx),
+                    "reindex entry with identifier '" + idx.getIdentToIndex() + "'");
+        } catch (final ReindexPoolExhaustedException poolUnavailable) {
+            // Infrastructure failure, not this entry's fault. Leave its error count and priority
+            // untouched so it is retried later, and let the reindex loop back off — charging a
+            // retry attempt per rejection is what pushed 300K entries past Priority.ERROR, where
+            // the queue loader never reads them again (issue #37038).
+            throw poolUnavailable;
+        } catch (final Exception e) {
+            APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
+            return;
+        }
+        try {
+            enqueueMappedDocuments(proc, documents, idx.isReindex());
         } catch (final Exception e) {
             APILocator.getReindexQueueAPI().markAsFailed(idx, e.getMessage());
         }
@@ -2618,19 +2678,23 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * Loads all versions of the entry's contentlet and appends their index operations to the
-     * processor. Runs on a {@link ReindexMappingRunner} worker thread when the mapping timeout
-     * guard is enabled, so it must not rely on caller-thread state.
+     * Loads all versions of the entry's contentlet and maps each one to its index document.
+     *
+     * <p>This is the storage-touching half of indexing — it reads binary field metadata from the
+     * filesystem — and therefore the half that runs inside the {@link ReindexMappingRunner}
+     * guard. It must not rely on caller-thread state, and it deliberately does <em>not</em> talk
+     * to the index: enqueuing is {@link #enqueueMappedDocuments}'s job, outside the guard.</p>
      */
     @VisibleForTesting
-    void mapEntryForProcessor(final IndexBulkProcessor proc, final ReindexEntry idx)
-            throws Exception {
+    List<MappedDocument> mapEntry(final ReindexEntry idx) throws Exception {
+        final List<MappedDocument> documents = new ArrayList<>();
         for (final Contentlet contentlet : loadVersionInodes(idx).values()) {
             Logger.debug(this, String.format("Indexing id: '%s', priority: '%s'",
                     contentlet.getInode(), idx.getPriority()));
             contentlet.setIndexPolicy(IndexPolicy.DEFER);
-            addBulkRequestToProcessor(proc, List.of(contentlet), idx.isReindex());
+            mapContentletForProcessor(contentlet).ifPresent(documents::add);
         }
+        return documents;
     }
 
     private void appendBulkRequestFromContentlets(final IndexBulkRequest req,
@@ -2747,71 +2811,94 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
     }
 
     /**
-     * Adds document index operations to the async {@code proc} for the current read provider.
+     * A contentlet already rendered to its index document.
      *
-     * <p>The async processor is always owned by a single provider (the one returned by
-     * {@link #createBulkProcessor}). Dual-write via the processor path is not yet supported;
-     * full dual-write is handled by the synchronous bulk-request path instead.</p>
+     * <p>Splitting the mapping from the enqueue is what lets the storage-touching work run under
+     * the {@link ReindexMappingRunner} timeout while the index call — which has its own, longer
+     * retry budget — runs outside it (issue #37038).</p>
      */
-    private void addBulkRequestToProcessor(final IndexBulkProcessor proc,
-            final List<Contentlet> contentToIndex, final boolean forReindex) {
-        if (contentToIndex == null || contentToIndex.isEmpty()) {
+    @VisibleForTesting
+    record MappedDocument(Contentlet contentlet, String id, String mapping, boolean isWorking,
+                          boolean isLive) {
+    }
+
+    /**
+     * Renders one contentlet to its index document. This is the storage-touching step: building
+     * the mapping reads binary field metadata from the filesystem.
+     *
+     * @return empty when the contentlet is neither working nor live and so has nothing to index
+     */
+    private Optional<MappedDocument> mapContentletForProcessor(final Contentlet contentlet) {
+        final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
+                + "_" + contentlet.getVariantId();
+        try {
+            final boolean isWorking = this.isWorking(contentlet);
+            final boolean isLive    = this.isLive(contentlet);
+            if (!isWorking && !isLive) {
+                return Optional.empty();
+            }
+            // Compute mapping once; reuse across all providers for the same contentlet.
+            final String mapping = Try.of(
+                            () -> objectMapper.writeValueAsString(getMappingAPI().toMap(contentlet)))
+                    .getOrElseThrow(DotRuntimeException::new);
+            return Optional.of(new MappedDocument(contentlet, id, mapping, isWorking, isLive));
+        } catch (final Exception ex) {
+            Logger.error(this,
+                    "Can't get a mapping for contentlet with id_lang:" + id
+                            + " Content data: " + contentlet.getMap(), ex);
+            throw ex;
+        }
+    }
+
+    /**
+     * Adds document index operations for already-mapped documents to the async {@code proc}.
+     *
+     * <p>Runs on the caller thread, deliberately outside the mapping guard: {@code add()} blocks
+     * on the index client's in-flight-request semaphore and its backoff budget can exceed the
+     * mapping timeout, so guarding it made index slowness indistinguishable from dead storage
+     * (issue #37038).</p>
+     *
+     * <p>CompositeBulkProcessor spans all write providers (1 in Phase 0/3, 2 in Phase 1/2). A
+     * non-composite proc (e.g. from test code) is treated as a single-provider fallback.</p>
+     */
+    private void enqueueMappedDocuments(final IndexBulkProcessor proc,
+            final List<MappedDocument> documents, final boolean forReindex) {
+        if (documents == null || documents.isEmpty()) {
             return;
         }
         Logger.debug(this.getClass(),
-                "Indexing " + contentToIndex.size() + " contents via processor, starting with identifier ["
-                        + contentToIndex.get(0).getIdentifier() + "]");
+                "Indexing " + documents.size() + " contents via processor, starting with identifier ["
+                        + documents.get(0).contentlet().getIdentifier() + "]");
 
-        // Resolve provider targets from the composite processor.
-        // CompositeBulkProcessor spans all write providers (1 in Phase 0/3, 2 in Phase 1/2).
-        // A non-composite proc (e.g. from test code) is treated as a single-provider fallback.
         final List<CompositeBulkProcessor.Entry> targets = resolveProcessorTargets(proc);
 
-        final Set<Contentlet> deduped = new HashSet<>(contentToIndex);
-        for (final Contentlet contentlet : deduped) {
-            final String id = contentlet.getIdentifier() + "_" + contentlet.getLanguageId()
-                    + "_" + contentlet.getVariantId();
-            try {
-                final boolean isWorking = this.isWorking(contentlet);
-                final boolean isLive    = this.isLive(contentlet);
-                if (!isWorking && !isLive) {
+        for (final MappedDocument document : documents) {
+            final String id = document.id();
+            final String mapping = document.mapping();
+            for (final CompositeBulkProcessor.Entry target : targets) {
+                final ProviderIndices indices = loadProviderIndicesQuietly(target.ops);
+                if (indices == null) {
+                    Logger.warn(this, "No index info for provider — skipping processor indexing");
                     continue;
                 }
-                // Compute mapping once; reuse across all providers for the same contentlet.
-                final String mapping = Try.of(
-                                () -> objectMapper.writeValueAsString(getMappingAPI().toMap(contentlet)))
-                        .getOrElseThrow(DotRuntimeException::new);
-
-                for (final CompositeBulkProcessor.Entry target : targets) {
-                    final ProviderIndices indices = loadProviderIndicesQuietly(target.ops);
-                    if (indices == null) {
-                        Logger.warn(this, "No index info for provider — skipping processor indexing");
-                        continue;
+                if (document.isWorking()) {
+                    if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
+                        target.ops.addIndexOpToProcessor(target.proc, indices.working, id, mapping);
                     }
-                    if (isWorking) {
-                        if (indices.working != null && (!forReindex || indices.reindexWorking == null)) {
-                            target.ops.addIndexOpToProcessor(target.proc, indices.working, id, mapping);
-                        }
-                        if (indices.reindexWorking != null) {
-                            target.ops.addIndexOpToProcessor(target.proc, indices.reindexWorking, id, mapping);
-                        }
-                    }
-                    if (isLive) {
-                        if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
-                            target.ops.addIndexOpToProcessor(target.proc, indices.live, id, mapping);
-                        }
-                        if (indices.reindexLive != null) {
-                            target.ops.addIndexOpToProcessor(target.proc, indices.reindexLive, id, mapping);
-                        }
+                    if (indices.reindexWorking != null) {
+                        target.ops.addIndexOpToProcessor(target.proc, indices.reindexWorking, id, mapping);
                     }
                 }
-                contentlet.markAsReindexed();
-            } catch (Exception ex) {
-                Logger.error(this,
-                        "Can't get a mapping for contentlet with id_lang:" + id
-                                + " Content data: " + contentlet.getMap(), ex);
-                throw ex;
+                if (document.isLive()) {
+                    if (indices.live != null && (!forReindex || indices.reindexLive == null)) {
+                        target.ops.addIndexOpToProcessor(target.proc, indices.live, id, mapping);
+                    }
+                    if (indices.reindexLive != null) {
+                        target.ops.addIndexOpToProcessor(target.proc, indices.reindexLive, id, mapping);
+                    }
+                }
             }
+            document.contentlet().markAsReindexed();
         }
     }
 
@@ -3068,7 +3155,13 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
 
         final DualIndexBulkRequest dualReq = bulkRequest instanceof DualIndexBulkRequest ? (DualIndexBulkRequest) bulkRequest : null;
 
-        for (final ContentletIndexOperations ops : router.writeProviders()) {
+        // writeProviders() is ordered primary-first in every phase (0 → [ES], 1/2 → [ES, OS],
+        // 3 → [OS]), so element 0 is the provider whose outcome the caller is entitled to.
+        final List<ContentletIndexOperations> deleteProviders = router.writeProviders();
+        final ContentletIndexOperations primary = deleteProviders.get(0);
+        int primaryDeleteOps = 0;
+
+        for (final ContentletIndexOperations ops : deleteProviders) {
             final ProviderIndices indices = loadProviderIndicesQuietly(ops);
             if (indices == null) {
                 continue;
@@ -3079,20 +3172,46 @@ public class ContentletIndexAPIImpl implements ContentletIndexAPI {
             } else {
                 providerReq = bulkRequest;
             }
+            int opsAdded = 0;
             if (indices.live != null) {
                 ops.addDeleteOp(providerReq, indices.live, id);
+                opsAdded++;
             }
             if (indices.reindexLive != null) {
                 ops.addDeleteOp(providerReq, indices.reindexLive, id);
+                opsAdded++;
             }
             if (!onlyLive) {
                 if (indices.working != null) {
                     ops.addDeleteOp(providerReq, indices.working, id);
+                    opsAdded++;
                 }
                 if (indices.reindexWorking != null) {
                     ops.addDeleteOp(providerReq, indices.reindexWorking, id);
+                    opsAdded++;
                 }
             }
+            if (ops == primary) {
+                primaryDeleteOps = opsAdded;
+            }
+        }
+
+        // The primary contributing no delete operations means the removal did not happen, and
+        // putToIndex early-returns on an empty batch — so without this check it is
+        // indistinguishable from a completed removal (#37276, loss point L2).
+        //
+        // Counting the operations rather than testing for a null ProviderIndices covers both
+        // ways the primary can come up empty: its pointers failed to load (loadProviderIndices
+        // threw), or they loaded but hold no active index at all. The second reads as success
+        // just as silently as the first, and only the operation count sees both.
+        //
+        // A shadow provider keeps warn-and-continue, matching how putToIndex already isolates
+        // the OS leg under ADR-0009.
+        if (primaryDeleteOps == 0) {
+            throw new DotRuntimeException(
+                    "Cannot remove content from the index: the primary provider ("
+                            + primary.getClass().getSimpleName() + ") resolved no active index "
+                            + "for document " + id + ". The removal was NOT performed.");
         }
 
         if (!onlyLive && UtilMethods.isSet(relationships)) {

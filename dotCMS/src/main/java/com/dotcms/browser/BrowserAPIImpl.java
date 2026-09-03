@@ -23,6 +23,7 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
 import com.dotmarketing.business.PermissionAPI;
+import com.dotmarketing.business.PermissionAPI.Type;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.web.UserWebAPI;
@@ -55,10 +56,12 @@ import com.dotmarketing.portlets.workflows.model.WorkflowScheme;
 import com.dotmarketing.portlets.workflows.model.WorkflowStep;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import com.dotmarketing.util.LuceneQueryUtils;
 import com.dotmarketing.util.UtilHTML;
 import com.dotmarketing.util.UtilMethods;
 import com.google.common.annotations.VisibleForTesting;
 import com.google.common.collect.Lists;
+import com.liferay.portal.ejb.UserLocalManagerUtil;
 import com.liferay.portal.language.LanguageUtil;
 import com.liferay.portal.model.User;
 import io.vavr.Lazy;
@@ -72,6 +75,7 @@ import java.time.LocalDateTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -90,6 +94,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.INCLUDE_DOTRAW_METADATA_FIELDS;
 import static com.dotcms.content.elasticsearch.business.ESMappingAPIImpl.WRITE_METADATA_ON_REINDEX;
@@ -108,6 +113,8 @@ import static com.liferay.util.StringPool.BLANK;
  */
 public class BrowserAPIImpl implements BrowserAPI {
 
+    private static final String LINK_MIME_TYPE = "application/dotlink";
+
     private final UserWebAPI userAPI = WebAPILocator.getUserWebAPI();
     private final FolderAPI folderAPI = APILocator.getFolderAPI();
     private final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
@@ -120,6 +127,13 @@ public class BrowserAPIImpl implements BrowserAPI {
     private static final StringBuilder MSSQL_ASSETNAME_COLUMN = new StringBuilder("JSON_VALUE(c.").append
             (ContentletJsonAPI.CONTENTLET_AS_JSON).append(", '$.fields.").append("fileName.").append("value')" +
             " ");
+
+    /**
+     * Synthetic MIME Type that dotCMS assigns to HTML Pages at display time. It is never persisted to the
+     * {@code contentlet_as_json} column, so it can only be resolved through the HTMLPAGE base type. Legacy display
+     * code declares its own copies of this value; they are intentionally left alone.
+     */
+    private static final String DOTPAGE_MIME_TYPE = "application/dotpage";
 
     private static final StringBuilder ASSET_NAME_LIKE = new StringBuilder().append("LOWER(%s) LIKE ? ");
 
@@ -600,7 +614,7 @@ public class BrowserAPIImpl implements BrowserAPI {
         query.append("+systemType:false ");
         query.append("-contentType:forms ");
         query.append("-contentType:Host ");
-        query.append("+deleted:false ");
+        appendContentStatusESQuery(query, browserQuery.getContentStatuses());
 
         // Working/live content filter
         if (browserQuery.showWorking) {
@@ -1275,6 +1289,25 @@ public class BrowserAPIImpl implements BrowserAPI {
                 continue;
             }
 
+            // A Checkbox stores the OPTION VALUE it was ticked with -- "yes", "accept", "true" -- and
+            // stores nothing at all when it is not ticked. So a boolean filter on one cannot be
+            // matched literally: asking for the text "true" finds nothing unless the option's value
+            // happens to be that word, and "false" can never match, because an unticked box has no
+            // token to match against. Both halves are resolved from the field's own option value:
+            // ticked means "contains that value", unticked means the negation of the same clause.
+            if (criteria.getKind() == FieldSearchCriteria.FilterKind.BOOLEAN
+                    && field instanceof CheckboxField) {
+                final Optional<String> optionValue = this.firstOptionValue(field);
+                if (optionValue.isPresent()) {
+                    final String clause = this.buildOptionValueClause(luceneFieldName,
+                            optionValue.get(), Boolean.TRUE.equals(criteria.getBooleanValue()));
+                    if (UtilMethods.isSet(clause)) {
+                        clauses.append(' ').append(clause);
+                    }
+                    continue;
+                }
+            }
+
             // Time fields index the main field as a full datetime with the value's own date, so a
             // range on it would compare the (meaningless) date component. Match time-of-day instead,
             // against the _dotraw keyword sub-field (indexed as HH:mm:ss), so the range works
@@ -1286,7 +1319,9 @@ public class BrowserAPIImpl implements BrowserAPI {
             }
 
             final String luceneValue = fieldCriteriaLuceneValue(criteria);
-            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field.type());
+            // Passed as the field (not just its type) so a True/False Data Type routes to the exact-term
+            // boolean handler instead of the TEXT handler's wildcard, which a boolean-mapped ES field rejects.
+            final Function<FieldContext, String> handler = FieldHandlerRegistry.getHandler(field);
             final FieldContext fieldContext = new FieldContext.Builder()
                     .withContentType(contentType)
                     .withUser(browserQuery.user)
@@ -1458,11 +1493,19 @@ public class BrowserAPIImpl implements BrowserAPI {
      * "in list" semantics match Tag/Category (both OR-in-list) rather than the AND the shared text
      * strategy would produce.
      *
+     * <p>Each value is escaped with {@link LuceneQueryUtils#escape(String)} before the wildcards are
+     * wrapped around it, exactly as {@code TextFieldStrategy} does. Option values routinely contain
+     * {@code query_string} syntax -- {@code Yes/No}, {@code N/A}, {@code Level:1} -- and because these
+     * queries are not lenient, one unescaped character fails the WHOLE query, which surfaces as an
+     * empty result set with no error rather than as a bad request. The {@code *} wildcards are added
+     * after escaping so they are not themselves escaped.</p>
+     *
      * @param fieldName The Lucene field name ({@code contentTypeVar.fieldVar}).
      * @param values    The selected values.
      * @return A clause like {@code +(f:*a* f_dotraw:*a* f:*b* f_dotraw:*b*)}, or {@link #BLANK}.
      */
-    private String buildMultiValueOrClause(final String fieldName, final List<String> values) {
+    @VisibleForTesting
+    static String buildMultiValueOrClause(final String fieldName, final List<String> values) {
         final StringBuilder inner = new StringBuilder();
         for (final String value : values) {
             final String token = value.trim();
@@ -1472,10 +1515,59 @@ public class BrowserAPIImpl implements BrowserAPI {
             if (inner.length() > 0) {
                 inner.append(' ');
             }
-            inner.append(fieldName).append(":*").append(token).append("* ")
-                    .append(fieldName).append("_dotraw:*").append(token).append('*');
+            final String escaped = LuceneQueryUtils.escape(token);
+            inner.append(fieldName).append(":*").append(escaped).append("* ")
+                    .append(fieldName).append("_dotraw:*").append(escaped).append('*');
         }
         return inner.length() == 0 ? BLANK : "+(" + inner + ")";
+    }
+
+    /**
+     * Returns the value of a selectable field's first option, i.e. the value a contentlet stores when
+     * that option is picked.
+     * <p>Options are authored one per line as {@code label|value}, where the label may be empty --
+     * {@code |true} is how the classic boolean Checkbox is defined -- or the pipe absent altogether,
+     * in which case the single token is both label and value ({@code yes}).</p>
+     *
+     * @param field The {@link Field} whose first option value will be read.
+     *
+     * @return The first option's value, or empty when the field declares no usable option.
+     */
+    private Optional<String> firstOptionValue(final Field field) {
+        if (!UtilMethods.isSet(field.values())) {
+            return Optional.empty();
+        }
+        return Arrays.stream(field.values().split("\\r\\n|\\n|\\r"))
+                .map(String::trim)
+                .filter(line -> !line.isEmpty())
+                .map(line -> {
+                    final int pipeIndex = line.indexOf('|');
+                    return (pipeIndex >= 0 ? line.substring(pipeIndex + 1) : line).trim();
+                })
+                .filter(value -> !value.isEmpty())
+                .findFirst();
+    }
+
+    /**
+     * Builds the clause matching -- or deliberately NOT matching -- a single option value.
+     *
+     * @param fieldName The Lucene field name, i.e. {@code contentTypeVar.fieldVar}.
+     * @param value     The option value to match.
+     * @param matches   {@code true} for contentlets holding the value; {@code false} for the ones that
+     *                  do not, which is the only way to express "this box is not ticked" -- an unticked
+     *                  Checkbox stores nothing, so there is no value to match positively.
+     *
+     * @return The Lucene clause, or an empty String when no clause could be built.
+     */
+    private String buildOptionValueClause(final String fieldName, final String value,
+                                         final boolean matches) {
+        final String clause = buildMultiValueOrClause(fieldName, List.of(value));
+        if (!UtilMethods.isSet(clause)) {
+            return BLANK;
+        }
+        // buildMultiValueOrClause returns a required group, `+( … )`; the negative case is the same
+        // group as a must-not, `-( … )`.
+        return matches ? clause : "-" + clause.substring(1);
     }
 
     /**
@@ -1610,10 +1702,13 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         int folderCount = 0;
         int contentCount = 0;
+        int linkCount = 0;
         boolean hasMoreContent = false;
         boolean hasMoreFolders = false;
+        boolean hasMoreLinks = false;
         int nextContentCursor = browserQuery.contentCursor;
         int nextFolderCursor = browserQuery.folderCursor;
+        int nextLinkCursor = browserQuery.linkCursor;
 
         // Folders — cursor-based: slice starting from folderCursor.
         // When hasMoreFolders=false is returned, the caller should set showFolders=false
@@ -1634,6 +1729,28 @@ public class BrowserAPIImpl implements BrowserAPI {
             // else: folderCursor is past the end — all folders already shown, add nothing
         }
 
+        // Menu Links — cursor-based: slice starting from linkCursor, mirroring the folder
+        // slice. Links consume whatever budget folders left over, before contentlets.
+        // When hasMoreLinks=false is returned, the caller should set showLinks=false on the
+        // next request to skip this query entirely.
+        if (browserQuery.showLinks) {
+            final List<Map<String, Object>> allLinks = linksDefaultView(browserQuery, roles);
+            final int totalLinks = allLinks.size();
+            final int linkStart = Math.min(browserQuery.linkCursor, totalLinks);
+
+            if (linkStart < totalLinks) {
+                // When folders exhausted the budget maxResults is exactly 0, so the slice is
+                // empty, the cursor stays put and hasMoreLinks correctly reports the remainder.
+                final int linkEnd = Math.min(linkStart + maxResults, totalLinks);
+                list.addAll(allLinks.subList(linkStart, linkEnd));
+                linkCount = linkEnd - linkStart;
+                maxResults -= linkCount;
+                nextLinkCursor = linkEnd;
+                hasMoreLinks = linkEnd < totalLinks;
+            }
+            // else: linkCursor is past the end — all links already shown, add nothing
+        }
+
         // Contentlets — cursor-based: slice starting from contentCursor.
         if (browserQuery.showContent) {
             if (maxResults > 0) {
@@ -1645,8 +1762,8 @@ public class BrowserAPIImpl implements BrowserAPI {
                 contentCount = contentlets.size();
                 list.addAll(contentlets);
             } else {
-                // maxResults was exhausted by folders — probe with limit=1 to detect
-                // whether content exists without adding items to this page.
+                // maxResults was exhausted by folders and/or links — probe with limit=1 to
+                // detect whether content exists without adding items to this page.
                 final ContentUnderParent probe = getContentUnderParentFromDB(browserQuery, 1);
                 hasMoreContent = !probe.contentlets.isEmpty();
             }
@@ -1654,8 +1771,8 @@ public class BrowserAPIImpl implements BrowserAPI {
 
         list.sort(new GenericMapFieldComparator(browserQuery.sortBy, browserQuery.sortByDesc));
 
-        return new PaginatedContents(list, folderCount, contentCount, hasMoreContent,
-                nextContentCursor, hasMoreFolders, nextFolderCursor);
+        return new PaginatedContents(list, folderCount, contentCount, linkCount, hasMoreContent,
+                nextContentCursor, hasMoreFolders, nextFolderCursor, hasMoreLinks, nextLinkCursor);
     }
 
     /**
@@ -1666,15 +1783,33 @@ public class BrowserAPIImpl implements BrowserAPI {
      *   <li>Pass {@code nextContentCursor} as {@code contentCursor} on the next request to
      *       continue content scanning from where this page left off.</li>
      *   <li>Pass {@code nextFolderCursor} as {@code folderCursor} on the next request.</li>
-     *   <li>When {@code hasMoreFolders} is {@code false} set {@code showFolders=false} on
-     *       subsequent requests to skip the folder query entirely.</li>
+     *   <li>Pass {@code nextLinkCursor} as {@code linkCursor} on the next request.</li>
+     *   <li>When {@code hasMoreFolders} / {@code hasMoreLinks} is {@code false} set
+     *       {@code showFolders=false} / {@code showLinks=false} on subsequent requests to skip
+     *       that query entirely.</li>
      *   <li>Keep {@code offset} at 0 on every request — only the cursors change between pages.</li>
+     *   <li>A {@code next*Cursor} is only meaningful while its matching {@code hasMore*} is
+     *       {@code true}. Once a source reports {@code hasMore* == false} it is exhausted and its
+     *       cursor should not be interpreted further — a cursor sent past the end of a source is
+     *       echoed back unchanged rather than clamped.</li>
      * </ul>
+     *
+     * <p>Folders, links and contentlets are paged independently: each source has its own
+     * cursor, count and {@code hasMore} flag, and each consumes the page budget in that
+     * order. A source is exhausted when its {@code hasMore} flag is {@code false}.</p>
+     *
+     * <p>Each source also slices its page in its <i>own</i> internal order — folders by name
+     * ascending, links by title ascending, contentlets by {@code mod_date} — which is what keeps
+     * the index-based cursors stable across pages. {@code sortBy} is applied afterwards, to the
+     * merged {@link #list} of this page only: it decides how the page is presented, not which
+     * items the page contains.</p>
      */
     public static class PaginatedContents {
         public final List<Map<String, Object>> list;
         public final int folderCount;
         public final int contentCount;
+        /** Number of menu Links included in this page. */
+        public final int linkCount;
         /** True when there are more content DB rows to scan beyond this page. */
         public final boolean hasMoreContent;
         /**
@@ -1687,20 +1822,33 @@ public class BrowserAPIImpl implements BrowserAPI {
         public final boolean hasMoreFolders;
         /**
          * Folder list index to pass as {@code folderCursor} on the next page request.
-         * Equals the index of the first folder not yet returned.
+         * While {@code hasMoreFolders} is {@code true} this is the index of the first folder not
+         * yet returned; once folders are exhausted it carries the request's cursor unchanged.
          */
         public final int nextFolderCursor;
+        /** True when there are more menu Links to show beyond this page. */
+        public final boolean hasMoreLinks;
+        /**
+         * Link list index to pass as {@code linkCursor} on the next page request.
+         * While {@code hasMoreLinks} is {@code true} this is the index of the first link not yet
+         * returned; once links are exhausted it carries the request's cursor unchanged.
+         */
+        public final int nextLinkCursor;
 
         public PaginatedContents(final List<Map<String, Object>> list, final int folderCount,
-                final int contentCount, final boolean hasMoreContent, final int nextContentCursor,
-                final boolean hasMoreFolders, final int nextFolderCursor) {
+                final int contentCount, final int linkCount, final boolean hasMoreContent,
+                final int nextContentCursor, final boolean hasMoreFolders,
+                final int nextFolderCursor, final boolean hasMoreLinks, final int nextLinkCursor) {
             this.list = list;
             this.folderCount = folderCount;
             this.contentCount = contentCount;
+            this.linkCount = linkCount;
             this.hasMoreContent = hasMoreContent;
             this.nextContentCursor = nextContentCursor;
             this.hasMoreFolders = hasMoreFolders;
             this.nextFolderCursor = nextFolderCursor;
+            this.hasMoreLinks = hasMoreLinks;
+            this.nextLinkCursor = nextLinkCursor;
         }
     }
 
@@ -1887,14 +2035,21 @@ public class BrowserAPIImpl implements BrowserAPI {
         }
         // Detect archive-target steps once per request (cached WorkflowAPI lookups, never per row).
         // Only step-pinned entries can be archive-target; scheme-only entries always stay live-only.
-        // Skipped when showArchived is true: everything archived already shows, so the archive-step
-        // logic must not run (it would force cvi.deleted='false' on the live branch and hide the
-        // archived content the caller explicitly asked for). See spec §3.5.
-        final Set<String> archiveStepIds = browserQuery.showArchived
+        // Skipped when archived rows are already admitted, so the archive-step logic must not run
+        // (it would force cvi.deleted='false' on the live branch and hide the archived content the
+        // caller explicitly asked for). See spec §3.5.
+        //
+        // An explicit ARCHIVED status gets identical treatment to showArchived: without it, the
+        // status group would say cvi.deleted='true' while appendWorkflowQuery's live branch says
+        // 'false', and the two would contradict each other into an empty result.
+        final boolean admitsArchived = browserQuery.showArchived
+                || browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED);
+        final Set<String> archiveStepIds = admitsArchived
                 ? Set.of()
                 : resolveArchiveTargetSteps(browserQuery.workflowStepIds);
         appendWorkflowQuery(selectQuery, browserQuery.workflowSchemeIds,
                 browserQuery.workflowStepIds, archiveStepIds, parameters);
+        appendContentStatusQuery(selectQuery, browserQuery.getContentStatuses());
         //We only build the filtering bits of the SQL Query if we're not using ES
         if (!browserQuery.useElasticsearchFiltering) {
             if (UtilMethods.isSet(browserQuery.filter)) {
@@ -1916,7 +2071,12 @@ public class BrowserAPIImpl implements BrowserAPI {
         // Suppress the global archived exclusion ONLY when an archive-target step is present; in
         // that case appendWorkflowQuery owns cvi.deleted per branch. Otherwise (no archive step,
         // or showArchived) the generated SQL is byte-identical to before.
-        if (!browserQuery.showArchived && archiveStepIds.isEmpty()) {
+        // The status group owns cvi.deleted when ARCHIVED is selected; emitting the baseline too
+        // would AND deleted=false against a group containing deleted=true and return nothing.
+        // Any selection WITHOUT ARCHIVED keeps the baseline, which is what makes UNPUBLISHED and
+        // LOCKED exclude archived content for free.
+        if (!browserQuery.showArchived && archiveStepIds.isEmpty()
+                && !browserQuery.getContentStatuses().contains(ContentStatus.ARCHIVED)) {
             appendExcludeArchivedQuery(selectQuery);
         }
         if (UtilMethods.isSet(browserQuery.mimeTypes)) {
@@ -2410,6 +2570,111 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Appends the Content Drive status filter: the selected states OR'd together inside <b>one</b>
+     * group.
+     * <p>
+     * They are deliberately not separate {@code and} clauses — that would be AND, and these
+     * combine with OR so that selecting more statuses returns more content, matching the
+     * content-type and language filters. A single selection degenerates to a one-disjunct group,
+     * so {@code [ARCHIVED]} is still exactly {@code cvi.deleted = true}.
+     * <p>
+     * The archived baseline ({@link #appendExcludeArchivedQuery}) stays <b>outside</b> this group
+     * and is AND'd against it; only {@link ContentStatus#ARCHIVED} suppresses it. Folding the
+     * baseline in would make {@code [UNPUBLISHED, LOCKED]} read
+     * {@code (deleted = false or ...)}, which matches essentially every row — a filter that
+     * silently stops filtering.
+     * <p>
+     * <b>No-ops on an empty set</b>, rather than opening a group it has nothing to fill: {@code and
+     * ( )} is a syntax error, and an empty selection must leave the generated SQL byte-identical to
+     * a request that never mentioned status at all. That is the path every pre-existing caller
+     * takes.
+     * <p>
+     * All values come from a closed enum validated upstream, so nothing here is interpolated from
+     * user input.
+     *
+     * @param sqlQuery        The StringBuilder representing the SQL query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusQuery(final StringBuilder sqlQuery,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            return;
+        }
+
+        final List<String> disjuncts = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    disjuncts.add(" cvi.deleted = " + DbConnectionFactory.getDBTrue() + " ");
+                    break;
+                case UNPUBLISHED:
+                    disjuncts.add(" cvi.live_inode is null ");
+                    break;
+                case LOCKED:
+                    disjuncts.add(" cvi.locked_by is not null ");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        sqlQuery.append(" and (").append(String.join(" or ", disjuncts)).append(") ");
+    }
+
+    /**
+     * Appends the status terms for the index-only ({@code PURE_ES}) path, plus the archived
+     * baseline they replace.
+     * <p>
+     * <b>The statuses go in ONE explicit group.</b> In Lucene a leading {@code +} means REQUIRED, so
+     * emitting {@code +deleted:true +live:false} would be an <b>AND</b> — the opposite of this
+     * feature, and a silent one: the query stays valid and simply returns almost nothing. They must
+     * be written as {@code +(deleted:true OR live:false)}. This mirrors the grouping the host filter
+     * in this same method already uses ({@code +(conhost:… OR conhost:SYSTEM_HOST)}).
+     * <p>
+     * The archived baseline stays a separate required clause AND'd against that group, and only
+     * {@link ContentStatus#ARCHIVED} suppresses it — the same shape as the SQL path, so both
+     * heuristics answer identically.
+     * <p>
+     * With no statuses selected this degrades to exactly the previous behaviour, the bare
+     * {@code +deleted:false}.
+     *
+     * @param query           The StringBuilder representing the ES query being built.
+     * @param contentStatuses The states to match; empty means no status filtering.
+     */
+    private void appendContentStatusESQuery(final StringBuilder query,
+            final Set<ContentStatus> contentStatuses) {
+
+        if (!UtilMethods.isSet(contentStatuses)) {
+            query.append("+deleted:false ");
+            return;
+        }
+
+        if (!contentStatuses.contains(ContentStatus.ARCHIVED)) {
+            query.append("+deleted:false ");
+        }
+
+        final List<String> terms = new ArrayList<>();
+        for (final ContentStatus status : contentStatuses) {
+            switch (status) {
+                case ARCHIVED:
+                    terms.add("deleted:true");
+                    break;
+                case UNPUBLISHED:
+                    terms.add("live:false");
+                    break;
+                case LOCKED:
+                    terms.add("locked:true");
+                    break;
+                default:
+                    throw new DotRuntimeException("Unhandled content status: " + status);
+            }
+        }
+
+        query.append("+(").append(String.join(" OR ", terms)).append(") ");
+    }
+
+    /**
      * Appends the query to exclude archived content to the given SQL query.
      *
      * @param sqlQuery The StringBuilder object representing the SQL query to be appended.
@@ -2433,14 +2698,32 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
-     * Appends the specified MIME Types to the main SQL query.
+     * Appends the specified MIME Types to the main SQL query. Every requested MIME Type is routed to the only
+     * condition that can actually match it, and the resulting conditions are OR'ed together:
+     * <ul>
+     *     <li>{@link #DOTPAGE_MIME_TYPE} resolves to the {@link BaseContentType#HTMLPAGE} base type. That value is
+     *     synthetic: it is stamped onto a Page's view map at display time and is never written to
+     *     {@code contentlet_as_json}, so the asset metadata check below can never match a Page.</li>
+     *     <li>Any other MIME Type keeps the asset metadata {@code contentType} check. Only File Assets and
+     *     dotAssets carry asset metadata, which is precisely the "MIME type(s) (for file assets)" scoping that
+     *     ADR-0018 assigns to this predicate.</li>
+     * </ul>
+     * The match on the synthetic value is exact on purpose. A MIME Type that merely starts with it -- say,
+     * {@code application/dotpage-foo} -- must still go through the metadata check.
+     * <p>The {@code struc} table is already joined by {@link #buildSelectBaseQuery(BrowserQuery, String)}, so the
+     * base type condition needs no extra join and no bound parameter.
      *
      * @param sqlQuery  The main SQL query.
      * @param mimeTypes The list of MIME Types specified by the client.
      */
     private void appendMIMETypeQuery(final StringBuilder sqlQuery, final List<String> mimeTypes) {
         final String mimeTypesFilter = String.format(" AND (%s)", mimeTypes.stream()
-                .map(mimeType -> String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType))
+                .map(mimeType -> {
+                    if (DOTPAGE_MIME_TYPE.equals(mimeType)) {
+                        return String.format("struc.structuretype = %d", BaseContentType.HTMLPAGE.getType());
+                    }
+                    return String.format("jsonb_path_exists(c.contentlet_as_json,'$.fields.**.metadata ? (@.contentType like_regex \".*%s.*\")')", mimeType);
+                })
                 .collect(Collectors.joining(" OR ")));
         sqlQuery.append(mimeTypesFilter);
     }
@@ -2494,7 +2777,7 @@ public class BrowserAPIImpl implements BrowserAPI {
 
                 final Map<String, Object> linkMap = link.getMap();
                 linkMap.put("permissions", permissions2);
-                linkMap.put("mimeType", "application/dotlink");
+                linkMap.put("mimeType", LINK_MIME_TYPE);
                 linkMap.put("name", link.getTitle());
                 linkMap.put("title", link.getName());
                 linkMap.put("description", link.getFriendlyName());
@@ -2511,19 +2794,37 @@ public class BrowserAPIImpl implements BrowserAPI {
     } // includeLinks.
 
 
+    /**
+     * Retrieves the menu Links directly under the browser query's parent, honouring
+     * {@code showWorking} and {@code showArchived}.
+     *
+     * <p>{@link FolderAPI} owns the working/live distinction: the live case delegates to
+     * {@code getLiveLinks}, never to {@code getLinks(parent, false, ...)}. The {@code working=false}
+     * form does not mean "live" — it asks for versions that are not the working one — and the
+     * version-table predicate it emits does not correlate on the link, so it returns duplicates.
+     *
+     * <p>{@code getLiveLinks} pins {@code deleted=false}, which is all this path needs:
+     * {@link BrowserQuery} ORs {@code showArchived} into {@code showWorking}, so the live branch is
+     * only ever reached with {@code archived=false}.</p>
+     *
+     * @param browserQuery the query holding the parent and the version flags
+     * @return the links under the parent, already filtered by READ permission by {@link FolderAPI}
+     */
     private List<Link> getLinks(final BrowserQuery browserQuery) throws DotDataException, DotSecurityException {
         if (browserQuery.directParent instanceof Host) {
-            return folderAPI.getLinks((Host) browserQuery.directParent,
-                    browserQuery.showWorking, browserQuery.showArchived, browserQuery.user,
-                    false);
+            final Host host = (Host) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(host, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(host, browserQuery.user, false);
         }
 
         if (browserQuery.directParent instanceof Folder) {
-            return folderAPI
-                    .getLinks((Folder) browserQuery.directParent, browserQuery.showWorking, browserQuery.showArchived,
-                            browserQuery.user,
-                            false);
+            final Folder folder = (Folder) browserQuery.directParent;
+            return browserQuery.showWorking
+                    ? folderAPI.getLinks(folder, true, browserQuery.showArchived, browserQuery.user, false)
+                    : folderAPI.getLiveLinks(folder, browserQuery.user, false);
         }
+
         return Collections.emptyList();
     }
 
@@ -2566,6 +2867,137 @@ public class BrowserAPIImpl implements BrowserAPI {
             return transformer.toMaps();
         }
         return List.of();
+    }
+
+    /**
+     * Builds the Content Drive view of the menu Links directly under the browser query's parent,
+     * in a stable order so that an index-based {@code linkCursor} can page them safely.
+     *
+     * <p>Links are only ever the <em>direct</em> children of the resolved parent — unlike
+     * contentlets, they are never gathered recursively across subfolders. This mirrors the
+     * behaviour of the legacy {@code /api/v1/browser} endpoint.</p>
+     *
+     * <p>Note that {@link com.dotmarketing.portlets.folders.business.FolderFactoryImpl}'s
+     * convenience overloads cap children at 1000 rows, so a parent holding more links than that
+     * is not fully reachable. The underlying factory already supports offset/limit if that
+     * ceiling ever needs raising.</p>
+     *
+     * @param browserQuery the query holding the parent, filter and version flags
+     * @param roles the roles of the requesting user, used for READ permission filtering
+     * @return the Content Drive map view of every readable link, ordered deterministically
+     */
+    private List<Map<String, Object>> linksDefaultView(final BrowserQuery browserQuery,
+            final Role[] roles) {
+
+        final List<Link> links;
+        try {
+            links = getLinks(browserQuery);
+        } catch (final DotSecurityException e) {
+            // The user cannot read the parent, so they see none of its links.
+            Logger.debug(this, () -> String.format(
+                    "User '%s' cannot read the parent of the requested links: %s",
+                    browserQuery.user.getUserId(), e.getMessage()));
+            return List.of();
+        } catch (final DotDataException e) {
+            Logger.error(this, "Could not load links : ", e);
+            return List.of();
+        }
+
+        // Links are not indexed in Elasticsearch, so the text filter has to be applied here or a
+        // narrowed search would return every link under the parent. Unlike getFolders, this is
+        // not gated behind filterFolderNames: that flag exists so a client can keep folders
+        // navigable while narrowing the results, and a link is a selectable leaf, not something
+        // to navigate into.
+        final Stream<Link> filtered = UtilMethods.isSet(browserQuery.filter)
+                ? links.stream().filter(link -> null != link.getTitle() && link.getTitle()
+                        .toLowerCase().contains(browserQuery.filter.toLowerCase()))
+                : links.stream();
+
+        // A stable order is what makes the index-based linkCursor sound. Titles are not unique
+        // among sibling links, hence the identifier tiebreaker.
+        final List<Link> ordered = filtered
+                .sorted(Comparator.comparing(Link::getTitle,
+                                Comparator.nullsFirst(String::compareTo))
+                        .thenComparing(Link::getIdentifier,
+                                Comparator.nullsFirst(String::compareTo)))
+                .collect(Collectors.toList());
+
+        final List<Map<String, Object>> views = new ArrayList<>(ordered.size());
+        for (final Link link : ordered) {
+            // One unmappable link must not fail the whole page, matching how
+            // DotFolderTransformerImpl logs and skips a folder it cannot transform.
+            try {
+                final List<Integer> permissions =
+                        permissionAPI.getPermissionIdsFromRoles(link, roles, browserQuery.user);
+                if (permissions.contains(PERMISSION_READ)) {
+                    views.add(driveLinkView(link, permissions));
+                }
+            } catch (final Exception e) {
+                Logger.error(this, String.format(
+                        "Error building map view of link with id `%s`", link.getIdentifier()), e);
+            }
+        }
+        return views;
+    }
+
+    /**
+     * Builds the Content Drive map view of a single menu Link, following the same conventions as
+     * {@link com.dotmarketing.portlets.contentlet.transform.DotFolderTransformerImpl}'s folder
+     * view: permissions as role-type names and no {@code inode}.
+     *
+     * @param link the link to transform
+     * @param permissions the permission ids the requesting user holds on the link
+     * @return the map view of the link
+     * @throws DotDataException if the link's map cannot be built
+     * @throws DotSecurityException if the link's map cannot be read by the requesting user
+     */
+    private Map<String, Object> driveLinkView(final Link link, final List<Integer> permissions)
+            throws DotDataException, DotSecurityException {
+        final Map<String, Object> map = new HashMap<>(link.getMap());
+        map.put("permissions", permissionNames(permissions));
+        map.remove("inode");
+        map.put("owner", ownerName(link.getOwner()));
+        // Link.getMap() only carries "title"; Content Drive folders expose both, and
+        // GenericMapFieldComparator falls back between them when sorting.
+        map.put("name", link.getTitle());
+        map.put("description", link.getFriendlyName());
+        map.put("mimeType", LINK_MIME_TYPE);
+        map.put("extension", "link");
+        map.put("__icon__", "linkIcon");
+        map.put("hasLiveVersion",
+                Try.of(() -> APILocator.getVersionableAPI().hasLiveVersion(link)).getOrElse(false));
+        return map;
+    }
+
+    /**
+     * Converts permission ids into their role-type names, the form Content Drive views expose.
+     *
+     * @param permissions permission ids
+     * @return the matching permission type names, skipping any id that cannot be resolved
+     */
+    private static List<String> permissionNames(final List<Integer> permissions) {
+        return permissions.stream()
+                .map(permission -> Try.of(() -> Type.findById(permission).name()).getOrNull())
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    /**
+     * Resolves an owner id into a display name, matching the Content Drive folder view.
+     *
+     * @param ownerId the owner user id, may be {@code null}
+     * @return the owner's full name, {@code "System"}, {@code "unknown"}, or {@code null} when no
+     * owner is set
+     */
+    private static String ownerName(final String ownerId) {
+        if (null == ownerId) {
+            return null;
+        }
+        if ("system".equalsIgnoreCase(ownerId)) {
+            return "System";
+        }
+        final User owner = Try.of(() -> UserLocalManagerUtil.getUserById(ownerId)).getOrNull();
+        return null != owner ? owner.getFullName() : "unknown";
     }
 
     /**

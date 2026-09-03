@@ -28,7 +28,9 @@ public class RequestCostSnapshotTest extends UnitTestBase {
                 4.6d,
                 999_999L,
                 12_345_678.25d,
-                12.35d);
+                12.35d,
+                42.5d,
+                86_400.75d);
     }
 
     @Test
@@ -47,6 +49,8 @@ public class RequestCostSnapshotTest extends UnitTestBase {
         assertTrue("missing lifetimeRequests", json.has("lifetimeRequests"));
         assertTrue("missing lifetimeTokens", json.has("lifetimeTokens"));
         assertTrue("missing lifetimeAvgTokensPerRequest", json.has("lifetimeAvgTokensPerRequest"));
+        assertTrue("missing windowJobTokens", json.has("windowJobTokens"));
+        assertTrue("missing lifetimeJobTokens", json.has("lifetimeJobTokens"));
     }
 
     @Test
@@ -65,15 +69,17 @@ public class RequestCostSnapshotTest extends UnitTestBase {
         assertEquals(999_999L, json.get("lifetimeRequests").asLong());
         assertEquals(12_345_678.25d, json.get("lifetimeTokens").asDouble(), 0.0001d);
         assertEquals(12.35d, json.get("lifetimeAvgTokensPerRequest").asDouble(), 0.0001d);
+        assertEquals(42.5d, json.get("windowJobTokens").asDouble(), 0.0001d);
+        assertEquals(86_400.75d, json.get("lifetimeJobTokens").asDouble(), 0.0001d);
     }
 
     @Test
-    public void test_serialization_emitsExactlyTenFields() throws Exception {
+    public void test_serialization_emitsExactlyTwelveFields() throws Exception {
         // When
         final JsonNode json = MAPPER.readTree(MAPPER.writeValueAsString(sample()));
 
         // Then — guard against accidental leakage of internal fields if someone adds private
         // helpers later without updating the @JsonAutoDetect visibility
-        assertEquals("unexpected fields on the wire", 10, json.size());
+        assertEquals("unexpected fields on the wire", 12, json.size());
     }
 }

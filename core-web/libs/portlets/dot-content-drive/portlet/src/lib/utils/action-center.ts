@@ -10,203 +10,359 @@ import {
 import { isFolder } from './functions';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
-/** Quick action that is not a `SystemAction` and so is not fired through the workflow endpoints. */
+/**
+ * Action Center helpers.
+ *
+ * Two action sources, one dialog:
+ * 1. **Quick actions** — fixed list (`QUICK_ACTIONS`), eligibility from row state.
+ * 2. **Workflow actions** — from bulk-actions API, one request per content type, then merged.
+ *
+ * Folders are always dropped: endpoints take contentlet inodes only.
+ */
+
+/** Not a `SystemAction`; not fired through workflow endpoints. */
 export const ADD_TO_BUNDLE_ACTION_ID = 'ADD_TO_BUNDLE';
 
-export type DotActionCenterQuickActionId = WORKFLOW_ACTION_ID | typeof ADD_TO_BUNDLE_ACTION_ID;
+/**
+ * Push Publish over the selection — the old search toolbar's own bulk action, not a `SystemAction`.
+ *
+ * Collects environments, a schedule and a filter on the configuration step (the same
+ * `DotWorkflowPushPublishComponent` the workflow-action path uses), then posts the whole selection to
+ * `RemotePublishAjaxAction` as comma-joined identifiers.
+ *
+ * Unavailable when the instance has no push publish environment the current user's role can send to —
+ * see {@link DotActionCenterContext.hasPushPublishEnvironments}.
+ */
+export const PUSH_PUBLISH_ACTION_ID = 'PUSH_PUBLISH';
 
 /**
- * A quick action as rendered in the Action Center: the action itself, an icon, and the number of
- * selected contentlets it applies to.
+ * Reindex the selection — the old search toolbar's "Refresh", backed by `_bulkrefresh`.
+ *
+ * Clears each contentlet's cache entry and rewrites every version of it to the index. Useful when
+ * content is right in the database but stale or missing from search results. **Not** a full index
+ * rebuild: that is `POST /api/v1/esindex/reindex`, a different operation over the whole index.
+ *
+ * The only quick action that is job-backed rather than synchronous — the endpoint answers `202` with a
+ * job id, and completion is pushed back over the websocket. So it does not share the `bulkFire` path the
+ * workflow quick actions use, but it reports through the same result toast.
+ *
+ * Unlike the others, eligibility does not depend on row state: reindexing applies to live, archived and
+ * locked content alike, because none of those affect whether the index copy is correct.
+ *
+ * Gated on the CMS Administrator role, which is the whole of what the endpoint enforces even though
+ * `BulkRefreshHelper.canRefresh` reads as two checks. The first, `doesUserHaveRole(user,
+ * loadRoleByKey(Role.CMS_POWER_USER))`, resolves the role *key* `"CMS Power User"`, and no role ships
+ * with that key: `loadRoleByKey` answers null and `RoleFactoryImpl` returns false for a null role. So
+ * the surviving half is `doesUserHaveRole(user, loadCMSAdminRole())`, which is the same expression as
+ * `User.isAdmin()` and therefore the same answer as {@link DotActionCenterContext.isAdmin}, which is
+ * fed from the current user's `admin` flag.
+ *
+ * That equivalence is what makes gating here safe: the row cannot disable an action the endpoint
+ * would have allowed. The one exception is an install that has hand-created a role keyed
+ * `"CMS Power User"`, where the server would allow a non-admin holder and this row would not — worth
+ * knowing, but it is not something dotCMS ships.
  */
+export const REFRESH_ACTION_ID = 'REFRESH';
+
+export type DotActionCenterQuickActionId =
+    | WORKFLOW_ACTION_ID
+    | typeof ADD_TO_BUNDLE_ACTION_ID
+    | typeof PUSH_PUBLISH_ACTION_ID
+    | typeof REFRESH_ACTION_ID;
+
+/** Quick action as rendered in the dialog (with eligibility counts). */
 export interface DotActionCenterQuickAction {
     id: DotActionCenterQuickActionId;
-    /** i18n key for the label. */
+    /** i18n label key. */
     name: string;
-    /** Material Symbols glyph name, rendered inside the row's icon chip. */
+    /** Material Symbols glyph name. */
     icon: string;
     /**
-     * The contentlet inodes the action applies to — exactly the set that gets fired.
+     * The ids the action will fire on. Built with {@link count} in one pass so the badge and the
+     * payload cannot diverge.
      *
-     * Derived alongside {@link count} from one filter pass so the number shown on the row and the
-     * items actually acted on cannot drift apart.
+     * **Inodes for the contentlet-only actions**, which is what pins the version and therefore the
+     * step a fire lands on, so one contentlet sitting on two steps contributes two entries.
+     * **Identifiers for the folder-capable ones** (Add to Bundle, Push Publish), which send the
+     * asset rather than a version and accept a folder, and a folder has no inode. Same asymmetry
+     * `executeAddToBundle` already documents on the store side.
      */
     eligibleInodes: string[];
-    /**
-     * Number of selected contentlets the action applies to. `0` means it does not apply to this
-     * selection at all; the row is still rendered, but not selectable.
-     */
+    /** Eligible contentlets. `0` = shown but not selectable. */
     count: number;
-    /** Destructive action — rendered with the danger severity, as in the design. */
-    danger: boolean;
-    /** i18n key for a confirmation prompt shown before firing, when the action warrants one. */
-    confirmMessage?: string;
     /**
-     * i18n key explaining why the action cannot be run at all yet, independent of the selection.
-     * When set the row is always non-selectable and shows this as its hint.
+     * Eligible items likely to fail — heads-up only; they are still fired.
+     * See Unlock in {@link QUICK_ACTIONS}.
      */
-    pendingHint?: string;
+    warningCount: number;
+    /** i18n key for {@link warningCount}. Absent when count is `0`. */
+    warningHint?: string;
+    /**
+     * Shown, disabled, and not yet wired to anything.
+     *
+     * Deliberately rendered rather than hidden: these are actions the old search toolbar offers, and
+     * leaving them out of the list makes Content Drive look like it dropped them instead of not having
+     * reached them yet. Disabled with a tooltip is the honest state.
+     */
+    comingSoon: boolean;
+    /**
+     * Wired, but unusable here because the instance has no push publish environment configured for
+     * this user's role.
+     *
+     * Distinct from {@link comingSoon}: nothing is missing from dotCMS, something is missing from the
+     * *configuration*, and the fix is an administrator's rather than ours. The row says which.
+     */
+    missingEnvironments: boolean;
+    /**
+     * Wired, but this user is not a CMS Administrator, which is what the endpoint requires.
+     *
+     * Distinct from {@link missingEnvironments}: that one is a gap in the instance's configuration
+     * that an administrator can close, this one is about *who is asking* and no configuration
+     * changes it. Same disabled treatment either way, different tooltip.
+     */
+    missingAdminRole: boolean;
+}
+
+/** Caller state predicates need beyond row data. */
+export interface DotActionCenterContext {
+    /**
+     * CMS Administrator role. `false` while unresolved → treated as non-admin
+     * (see {@link isLockedByAnotherUser}).
+     */
+    isAdmin: boolean;
+    /**
+     * At least one push publish environment is reachable by this user's role.
+     *
+     * `undefined` means "not looked up yet" and reads the same as "none": Push Publish stays disabled
+     * until the answer arrives, rather than enabling for a moment and then retracting.
+     */
+    hasPushPublishEnvironments?: boolean;
 }
 
 /**
- * Quick actions offered in the Action Center.
- *
- * **The order of this array is the display order and is fixed** — Publish, Unpublish, Archive,
- * Delete, Unarchive, Add to Bundle. Rows keep their position whether or not they are selectable, so
- * the list never reshuffles as the selection changes.
- *
- * Scope notes for v1:
- * - Every entry except Add to Bundle is a `SystemAction` the multi-contentlet endpoint accepts
- *   (`POST /api/v1/workflow/actions/default/fire/{systemAction}`), so each fires in one request.
- * - **Add to Bundle is present but always disabled.** `POST /api/v1/bundles/assets` does accept a
- *   list of asset identifiers, so the endpoint is not the blocker: it needs a target bundle, which
- *   means a picker step (`DotAddToBundleComponent` takes a single identifier today) and an
- *   enterprise-license gate. Tracked separately.
- * - **Lock / Unlock are absent**: no bulk REST endpoint exists. The legacy JSP drives unlock through
- *   a Struts command (`full_unlock_list`) that loops server-side.
- *
- * `eligibleWhen` derives the count from row state the grid already has. It is a state heuristic,
- * not a permission check — an item can be counted and still fail at execution.
+ * Definition of a quick action before selection counts are applied.
+ * {@link getQuickActions} maps these into {@link DotActionCenterQuickAction}.
  */
-const QUICK_ACTIONS: {
+interface DotActionCenterQuickActionDef {
     id: DotActionCenterQuickActionId;
-    /** Label key. Held here rather than borrowed from the toolbar's action list, which no longer
-     *  carries these actions now that the Workflow Center owns them. */
+    /**
+     * i18n label key. Owned here (not shared with the toolbar) now that the
+     * Action Center owns these actions.
+     */
     nameKey: string;
     icon: string;
-    danger: boolean;
-    eligibleWhen: (item: DotCMSContentlet) => boolean;
-    /** Confirmation message key. Set for actions destructive enough to warrant a prompt. */
-    confirmMessage?: string;
-    pendingHint?: string;
-}[] = [
+    /**
+     * Row-state heuristic — not a permission check. Counted items can still fail at fire.
+     *
+     * Takes the union, not `DotCMSContentlet`, because a `supportsFolders` action's rows include
+     * folders. That makes the compiler hold the invariant a comment used to: a predicate reading a
+     * contentlet-only field has to narrow first, so adding `supportsFolders` to an action whose
+     * predicate reads `locked` or `contentType` fails to build instead of silently reading
+     * `undefined` off a folder.
+     */
+    eligibleWhen: (item: DotContentDriveItem) => boolean;
+    /** Among eligible items; feeds `warningCount`. Takes the union for the same reason as
+     * {@link DotActionCenterQuickActionDef.eligibleWhen}. */
+    warnWhen?: (item: DotContentDriveItem, context: DotActionCenterContext) => boolean;
+    /** Required whenever `warnWhen` is set. */
+    warningHint?: string;
+    /** Rendered but disabled — see {@link DotActionCenterQuickAction.comingSoon}. */
+    comingSoon?: boolean;
+    /** Needs at least one push publish environment before it can run. */
+    requiresEnvironments?: boolean;
+    /** Needs the CMS Administrator role before it can run. See {@link REFRESH_ACTION_ID}. */
+    requiresAdmin?: boolean;
+    /**
+     * Runs on folders as well as contentlets.
+     *
+     * Only for actions that send the *asset* by identifier and whose `eligibleWhen` ignores row
+     * state, since a folder has none of it. The bulk endpoints behind everything else take
+     * contentlet inodes, and folders have no workflow, so they are contentlet-only by nature
+     * rather than by omission.
+     */
+    supportsFolders?: boolean;
+}
+
+/**
+ * True when the row is locked by someone else *and* that matters for the current user.
+ *
+ * Shared by the Unlock warning badge and the preview markers so those counts stay in sync.
+ *
+ * - Grid `contentEditable` ≈ lock owner (`lockedBy == currentUser` + WRITE), not role.
+ * - Server `canLock` lets CMS Admins unlock anyone — so admins get no warning.
+ * - Known over-warn: EDIT on content type (not contentlet) still fails `contentEditable`
+ *   while `canLock` allows it. Hint says "may require" for that reason.
+ */
+export const isLockedByAnotherUser = (
+    item: DotContentDriveItem,
+    { isAdmin }: DotActionCenterContext
+): boolean => !isAdmin && !isFolder(item) && !!item.locked && !item.contentEditable;
+
+/**
+ * Quick actions in display order (fixed — rows never reshuffle).
+ *
+ * Order: Lock, Unlock, Add to Bundle, Push Publish, Refresh.
+ *
+ * **Scope: the old search toolbar's bulk operations, and only those.** Publish, Unpublish, Archive,
+ * Unarchive and Delete used to sit here as well, fired through
+ * `POST .../workflow/actions/default/fire/{systemAction}`. They were removed because the Workflow
+ * Actions section below already offers them — as the *scheme's own* actions, which is the accurate
+ * answer for a contentlet whose scheme maps `PUBLISH` to something other than a plain publish. Two
+ * rows labelled "Publish" that resolve differently is worse than one that resolves correctly.
+ *
+ * What is left is what the old search offered outside the workflow dropdown: Lock and Unlock (per-user
+ * state, no workflow transition, so they have no scheme action to defer to), Add to Bundle, Push
+ * Publish and Refresh.
+ *
+ * Lock/Unlock fire through the system-action endpoint; Add to Bundle posts to the legacy bundle
+ * servlet and collects a target first. Refresh is job-backed and reports completion by push. Push Publish is
+ * still a placeholder — see {@link DotActionCenterQuickAction.comingSoon}.
+ */
+const QUICK_ACTIONS: DotActionCenterQuickActionDef[] = [
     {
-        id: WORKFLOW_ACTION_ID.PUBLISH,
-        nameKey: 'Default-Action-Publish',
-        icon: 'publish',
-        danger: false,
-        eligibleWhen: (item) => !item.live && !item.archived
+        id: WORKFLOW_ACTION_ID.LOCK,
+        nameKey: 'content-drive.context-menu.lock',
+        icon: 'lock',
+        // UX filter only: locking archived content has no upside and can block delete
+        // (`canLock` is a delete precondition). Server still allows it.
+        // `isFolder` narrows the union rather than guarding at runtime: Lock has no
+        // `supportsFolders`, so it never receives one.
+        eligibleWhen: (item) => !isFolder(item) && !item.locked && !item.archived
     },
     {
-        id: WORKFLOW_ACTION_ID.UNPUBLISH,
-        nameKey: 'Default-Action-Unpublish',
-        icon: 'visibility_off',
-        danger: false,
-        eligibleWhen: (item) => !!item.live && !item.archived
-    },
-    {
-        id: WORKFLOW_ACTION_ID.ARCHIVE,
-        nameKey: 'Default-Action-Archive',
-        icon: 'archive',
-        danger: true,
-        eligibleWhen: (item) => !item.archived
-    },
-    {
-        id: WORKFLOW_ACTION_ID.DELETE,
-        nameKey: 'Default-Action-Delete',
-        icon: 'delete',
-        danger: true,
-        eligibleWhen: (item) => !!item.archived,
-        // Carried over from the toolbar's Delete, which prompted before firing. Without this the
-        // move into the Workflow Center would have quietly dropped the only guard on a bulk delete.
-        confirmMessage: 'content.drive.worflow.action.delete.confirm'
-    },
-    {
-        // Sits after Delete so the two archived-only actions are adjacent, and so archiving is not
-        // a one-way trip: without it nothing in this dialog can un-archive.
-        id: WORKFLOW_ACTION_ID.UNARCHIVE,
-        nameKey: 'Default-Action-Unarchive',
-        icon: 'unarchive',
-        danger: false,
-        eligibleWhen: (item) => !!item.archived
+        id: WORKFLOW_ACTION_ID.UNLOCK,
+        nameKey: 'content-drive.context-menu.unlock',
+        icon: 'lock_open',
+        eligibleWhen: (item) => !isFolder(item) && !!item.locked && !item.archived,
+        // Warn, don't filter — only the server knows if unlock will succeed.
+        warnWhen: isLockedByAnotherUser,
+        warningHint: 'content-drive.action-center.unlock.locked-by-others'
     },
     {
         id: ADD_TO_BUNDLE_ACTION_ID,
         nameKey: 'content-drive.action-center.add-to-bundle',
         icon: 'inventory_2',
-        danger: false,
-        // A bundle accepts any asset, so the count is the whole contentlet selection. It is shown
-        // for honesty about what the action would cover once the picker exists.
+        // Every contentlet can go in a bundle: no row state disqualifies one. Coverage is the whole
+        // selection, minus the identifier collapse the configuration step explains.
         eligibleWhen: () => true,
-        pendingHint: 'content-drive.action-center.add-to-bundle.pending'
+        supportsFolders: true
+    },
+    {
+        id: PUSH_PUBLISH_ACTION_ID,
+        nameKey: 'Remote-Publish',
+        icon: 'cloud_upload',
+        // No contentlet state disqualifies a push; the environment does, and that is not a per-row
+        // question. Counted over the whole selection so the row reports what it would send.
+        eligibleWhen: () => true,
+        requiresEnvironments: true,
+        supportsFolders: true
+    },
+    {
+        id: REFRESH_ACTION_ID,
+        nameKey: 'Refresh',
+        icon: 'refresh',
+        // No row state disqualifies a reindex. Live, archived, locked — none of them change whether
+        // the index copy of a contentlet is stale, which is the only thing this fixes.
+        //
+        // Role-gated, because the endpoint is. See {@link REFRESH_ACTION_ID} for why `isAdmin` is
+        // the whole gate and not half of it.
+        eligibleWhen: () => true,
+        requiresAdmin: true
     }
 ];
 
 /**
- * Strips folders out of a selection. Folders can be selected in the grid but are ignored by every
- * bulk action: the endpoints take contentlet inodes, and folders carry no workflow step.
+ * Whether a quick action runs on folders as well as contentlets.
  *
- * @param items - The raw selection from the grid
- * @returns Only the contentlet items
+ * Read from the same registry the rows are built from, so the dialog cannot disagree with
+ * {@link getQuickActions} about which key an action's `eligibleInodes` holds.
  */
+export const supportsFolders = (id: DotActionCenterQuickActionId): boolean =>
+    !!QUICK_ACTIONS.find((quickAction) => quickAction.id === id)?.supportsFolders;
+
+/** Drops folders from a selection (bulk endpoints are contentlet-only). */
 export const excludeFolders = (items: DotContentDriveItem[]): DotCMSContentlet[] =>
     items.filter((item): item is DotCMSContentlet => !isFolder(item));
 
 /**
- * Maps a selection to the inode list expected by the bulk endpoints.
+ * Distinct identifiers among the given contentlets, in first-seen order.
  *
- * @param items - The raw selection from the grid (folders are dropped)
- * @returns Contentlet inodes
+ * Bundles hold one entry per identifier, so every language version of a contentlet is the same asset.
+ * The endpoint dedupes server-side either way ("Multiples languages have the same identifier"); doing
+ * it here as well is what lets the dialog say how many assets it is really about to add, instead of
+ * promising a row count the result will silently undercut.
  */
+export const toDistinctIdentifiers = (items: DotContentDriveItem[]): string[] => [
+    ...new Set(items.map((item) => item.identifier).filter(Boolean))
+];
+
+/** Contentlet inodes for bulk endpoints (folders dropped). */
 export const toContentletInodes = (items: DotContentDriveItem[]): string[] =>
     excludeFolders(items).map((item) => item.inode);
 
 /**
- * Builds the Quick Actions list for the current selection, each with its eligible count.
+ * Quick actions for the current selection, always in {@link QUICK_ACTIONS} order.
  *
- * Every action is always returned, including those that apply to nothing — a `count` of `0` means
- * "does not apply to this selection", and the dialog renders those rows as non-selectable. Keeping
- * them visible makes the set of available actions stable as the selection changes, instead of rows
- * appearing and disappearing under the pointer.
+ * Every action is returned — `count: 0` means not applicable but still shown, so the
+ * list stays stable as the selection changes. Empty array only when there are no contentlets.
  *
- * An empty result means there are no contentlets at all (an empty or folder-only selection), where
- * no action could apply.
- *
- * @param items - The raw selection from the grid
- * @returns Every quick action in display order, each with its eligible count (possibly `0`)
+ * @param context Defaults to non-admin (safe over-warning).
  */
-export const getQuickActions = (items: DotContentDriveItem[]): DotActionCenterQuickAction[] => {
-    const contentlets = excludeFolders(items);
-
-    if (!contentlets.length) {
+export const getQuickActions = (
+    items: DotContentDriveItem[],
+    context: DotActionCenterContext = { isAdmin: false }
+): DotActionCenterQuickAction[] => {
+    if (!items.length) {
         return [];
     }
 
-    return QUICK_ACTIONS.map((quickAction) => {
-        // One filter pass feeds both the count and the inodes that get fired, so the row can never
-        // advertise a different number of items than the action actually touches.
-        const eligibleInodes = contentlets
-            .filter(quickAction.eligibleWhen)
-            .map((item) => item.inode);
+    const contentlets = excludeFolders(items);
+
+    return QUICK_ACTIONS.flatMap((quickAction) => {
+        // Folder-capable actions see the whole selection; everything else sees contentlets only.
+        const scoped = quickAction.supportsFolders ? items : contentlets;
+
+        // Dropped rather than shown with a count of `0`: a folder-only selection is not "no eligible
+        // rows", it is an action that does not apply to what is selected, and a disabled Lock row
+        // over a folder selection is noise rather than information.
+        if (!scoped.length) {
+            return [];
+        }
+
+        // No cast: `eligibleWhen` takes the union, so the contentlet-only predicates narrow inside
+        // themselves and the compiler enforces what this used to assert in prose.
+        const eligible = scoped.filter(quickAction.eligibleWhen);
+        // One pass → count and fired ids stay aligned. See `eligibleInodes` for why the key differs
+        // by action.
+        const eligibleInodes = eligible.map((item) =>
+            quickAction.supportsFolders ? item.identifier : item.inode
+        );
+        const { warnWhen } = quickAction;
+        const warningCount = warnWhen
+            ? eligible.filter((item) => warnWhen(item, context)).length
+            : 0;
 
         return {
             id: quickAction.id,
             name: quickAction.nameKey,
             icon: quickAction.icon,
-            danger: quickAction.danger,
             eligibleInodes,
             count: eligibleInodes.length,
-            confirmMessage: quickAction.confirmMessage,
-            pendingHint: quickAction.pendingHint
+            warningCount,
+            warningHint: warningCount > 0 ? quickAction.warningHint : undefined,
+            comingSoon: !!quickAction.comingSoon,
+            missingEnvironments:
+                !!quickAction.requiresEnvironments && !context.hasPushPublishEnvironments,
+            missingAdminRole: !!quickAction.requiresAdmin && !context.isAdmin
         };
     });
 };
 
 /**
- * Flattens the `scheme -> steps -> actions` response into a single action list per scheme.
+ * Flattens `scheme → steps → actions` into one action list per scheme.
  *
- * The nested step grouping is a backend implementation detail the dialog does not surface. Two
- * things make the flattening safe:
- *
- * - The backend already sums an action's `count` across every step of its scheme, so concatenating
- *   step action lists does not inflate counts.
- * - The backend already dedupes actions per scheme, keeping a single occurrence.
- *
- * A defensive dedupe by action id is still applied (keeping the highest count) so a partially
- * out-of-sync index cannot render the same action twice.
- *
- * @param view - The raw `BulkActionView` response
- * @returns One entry per scheme, each with a flat action list; schemes with no actions are dropped
+ * Backend already sums counts and dedupes per scheme; we still dedupe by id
+ * (keep highest count) as a safety net. Schemes with no actions are dropped.
  */
 export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterScheme[] => {
     if (!view?.schemes?.length) {
@@ -228,8 +384,7 @@ export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterS
                 }
             }
 
-            // Each contentlet sits in exactly one step, so summing step counts gives the number of
-            // selected contentlets on this scheme.
+            // One contentlet per step → sum step counts = scheme coverage.
             const count = (schemeView.steps ?? []).reduce(
                 (total, { step }) => total + (step?.count ?? 0),
                 0
@@ -246,13 +401,8 @@ export const toActionCenterSchemes = (view: DotBulkActionView): DotActionCenterS
 };
 
 /**
- * Groups a contentlet selection by content type variable name, preserving selection order.
- *
- * Used to split the bulk-actions lookup into one request per content type, which is what makes
- * per-action eligibility knowable at all — see {@link mergeActionCenterSchemes}.
- *
- * @param contentlets - Contentlets (folders already excluded)
- * @returns One entry per distinct content type
+ * Groups contentlets by content type, preserving selection order.
+ * Enables per-type bulk lookups — see {@link mergeActionCenterSchemes}.
  */
 export const groupByContentType = (
     contentlets: DotCMSContentlet[]
@@ -273,19 +423,11 @@ export const groupByContentType = (
 };
 
 /**
- * Merges per-content-type bulk-action responses into one scheme list, recording which content types
- * contributed each action.
+ * Merges per-content-type bulk responses into one scheme list.
  *
- * The endpoint only ever reports counts, so a single lookup over a mixed selection cannot say which
- * contentlets an action applies to. Asking once per content type recovers that: schemes are assigned
- * per content type, so an action returned for the "Blog" request applies to Blog contentlets and no
- * others.
- *
- * Counts are summed across groups, which reproduces exactly what a single combined lookup would have
- * reported — each contentlet is counted by exactly one group.
- *
- * @param groups - One `(contentType, response)` pair per content type in the selection
- * @returns Merged schemes, each action carrying its eligible content types
+ * A single mixed lookup only returns counts — not which contentlets match.
+ * One request per content type recovers that; each action gets `contentTypes`.
+ * Counts sum to the same totals a combined lookup would report.
  */
 export const mergeActionCenterSchemes = (
     groups: { contentType: string; view: DotBulkActionView }[]
@@ -320,8 +462,7 @@ export const mergeActionCenterSchemes = (
                 }
 
                 merged.count += action.count;
-                // Approximate wins: if the condition was unevaluated for any group, the total is an
-                // upper bound too.
+                // Unevaluated condition in any group → total is an upper bound.
                 merged.approximateCount = merged.approximateCount || action.approximateCount;
 
                 if (!merged.contentTypes.includes(contentType)) {
@@ -337,18 +478,10 @@ export const mergeActionCenterSchemes = (
 };
 
 /**
- * Narrows a selection to the contentlets a workflow action can actually run on.
+ * Contentlets a workflow action can run on (by content type).
  *
- * Falls back to the whole selection when the action has no resolved content types, so an unresolved
- * lookup shows too many rows rather than none.
- *
- * Scheme-level accurate, not step-level: two contentlets of the same content type can sit on
- * different steps, and only one of those steps may expose the action. The action's own `count` stays
- * the authority on the true total, which is why the dialog still warns when it falls short.
- *
- * @param action - The selected workflow action
- * @param contentlets - Contentlets in the selection (folders already excluded)
- * @returns The contentlets whose content type exposes the action
+ * Falls back to the full selection when `contentTypes` is empty (prefer over-include).
+ * Scheme-level only — same type, different steps, may still diverge from `action.count`.
  */
 export const eligibleContentlets = (
     action: DotActionCenterWorkflowAction | undefined,
@@ -362,26 +495,119 @@ export const eligibleContentlets = (
 };
 
 /**
- * Maps one `CountWorkflowAction` onto the UI shape.
+ * A configuration section the dialog knows how to render.
  *
- * `requiresInput` folds together every flag that means the action cannot be fired straight from the
- * dialog: push-publish settings, a move target path, or an assign/comment prompt. v1 disables those
- * rather than reimplementing the params dialog.
+ * `assignComment` is **one** section covering two flags: `DotWorkflowAssignCommentComponent` renders an
+ * assignee, a comment, or both, so an action declaring both still needs a single section.
+ */
+export type DotActionInputKind = 'move' | 'assignComment' | 'pushPublish';
+
+/**
+ * The configuration sections an action needs, in the order they are shown.
+ *
+ * Every section is rendered together on one screen, so this is a render order rather than a page
+ * sequence. The order still matches the legacy wizard's — move and assign/comment before push publish —
+ * so a user moving between the two dialogs meets the same arrangement.
+ *
+ * An empty result means the action fires straight from the selection, and there is no configuration
+ * screen at all.
+ */
+export const requiredInputKinds = (
+    action: DotActionCenterWorkflowAction | undefined
+): DotActionInputKind[] => {
+    if (!action) {
+        return [];
+    }
+
+    const { moveable, assignable, commentable, pushPublish } = action.inputs;
+
+    return [
+        ...(moveable ? (['move'] as const) : []),
+        ...(assignable || commentable ? (['assignComment'] as const) : []),
+        ...(pushPublish ? (['pushPublish'] as const) : [])
+    ];
+};
+
+/**
+ * Converts the host/folder field's value into the `_path_to_move` the bulk endpoint expects.
+ *
+ * `DotHostFolderFieldComponent` writes `hostname:/folder/path` — the format the Site-or-Folder *content
+ * field* persists. `MoveContentActionlet` reads `//hostname/folder/path` instead, the same shape Content
+ * Drive's drag-and-drop move already builds. Neither side is wrong; they are different contracts that
+ * happen to meet here, so the seam gets one named function instead of an inline template expression.
+ *
+ * Returns an empty string for an unset or unrecognised value, which callers treat as "no path chosen"
+ * — never a silently malformed path that the server would reject with "The host path is not valid".
+ */
+export const toPathToMove = (hostFolderValue: string | null | undefined): string => {
+    const separatorIndex = hostFolderValue?.indexOf(':') ?? -1;
+
+    if (!hostFolderValue || separatorIndex < 1) {
+        return '';
+    }
+
+    const hostname = hostFolderValue.slice(0, separatorIndex);
+    const path = hostFolderValue.slice(separatorIndex + 1);
+
+    return `//${hostname}${path.startsWith('/') ? path : `/${path}`}`;
+};
+
+/**
+ * Inverse of {@link toPathToMove}: `//hostname/path` → the `hostname:/path` the picker reads.
+ *
+ * Used to seed the picker with the folder Content Drive is currently browsing, which is what makes it
+ * open on the tree already expanded to that folder rather than at the site list. The picker has no
+ * separate "start here" input — `writeValue` is the only channel that drives its initial load — so the
+ * starting location has to arrive as a value.
+ *
+ * Returns an empty string for anything it cannot parse, which leaves the picker unseeded rather than
+ * feeding it a path it would fail to resolve.
+ */
+export const toHostFolderValue = (pathToMove: string | null | undefined): string => {
+    if (!pathToMove?.startsWith('//')) {
+        return '';
+    }
+
+    const withoutPrefix = pathToMove.slice(2);
+    const separatorIndex = withoutPrefix.indexOf('/');
+
+    if (separatorIndex < 1) {
+        // A bare `//hostname` is the site root; the picker still expects an explicit path.
+        return withoutPrefix ? `${withoutPrefix}:/` : '';
+    }
+
+    return `${withoutPrefix.slice(0, separatorIndex)}:${withoutPrefix.slice(separatorIndex)}`;
+};
+
+/**
+ * Maps API `CountWorkflowAction` → UI shape.
+ *
+ * The four input flags are carried through individually rather than collapsed: each maps to a section
+ * the configuration screen renders, and a roll-up boolean would say nothing about which.
  */
 const toActionCenterAction = (
     countAction: DotCountWorkflowAction
 ): DotActionCenterWorkflowAction => {
     const { workflowAction, pushPublish, moveable, conditionPresent, count } = countAction;
 
+    const inputs = {
+        moveable,
+        pushPublish,
+        assignable: workflowAction.assignable,
+        commentable: workflowAction.commentable
+    };
+
     return {
         id: workflowAction.id,
         name: workflowAction.name,
         count,
-        requiresInput:
-            pushPublish || moveable || workflowAction.assignable || workflowAction.commentable,
+        inputs,
+        // Only meaningful for an assignable action, but carried unconditionally so the assignee picker
+        // does not need a second lookup to find the role list it should offer.
+        nextAssign: workflowAction.nextAssign,
+        roleHierarchyForAssign: workflowAction.roleHierarchyForAssign,
         approximateCount: conditionPresent,
-        // Stamped by `mergeActionCenterSchemes`, which is the only caller that knows which content
-        // type a response came from.
+        // Filled by `mergeActionCenterSchemes`.
         contentTypes: []
     };
 };

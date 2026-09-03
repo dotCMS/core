@@ -89,7 +89,7 @@ Before setting up the MCP server, you need these environment variables to connec
 | ------------------ | -------- | ---------------------------------- | ------- |
 | `DOTCMS_URL`  | ✅       | Your dotCMS instance URL           | `https://demo.dotcms.com` |
 | `AUTH_TOKEN` | ✅       | API authentication token (created in [setup step](#create-a-dotcms-api-token)) | `your-api-token-here` |
-| `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 15000) | `15000` |
+| `SANDBOX_TIMEOUT`  | ❌       | Sandbox execution timeout in ms (default: 45000) | `45000` |
 | `DEBUG`            | ❌       | When set to any truthy value, emits diagnostic logs to stderr (e.g. context cache load events) | `1` |
 
 
@@ -98,9 +98,6 @@ Before setting up the MCP server, you need these environment variables to connec
 Get up and running with the dotCMS MCP Server in minutes.
 
 The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
-
-> [!NOTE]
-> This version is currently in **beta**. Once stable, replace `@dotcms/mcp-server@beta` with `@dotcms/mcp-server` in the examples below.
 
 ### Claude Desktop Setup
 
@@ -116,7 +113,7 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server@beta"],
+            "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -133,7 +130,7 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
     "mcpServers": {
         "dotcms": {
             "command": "bunx",
-            "args": ["@dotcms/mcp-server@beta"],
+            "args": ["@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -154,7 +151,7 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server@beta"],
+            "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -171,7 +168,7 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
     "mcpServers": {
         "dotcms": {
             "command": "bunx",
-            "args": ["@dotcms/mcp-server@beta"],
+            "args": ["@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -208,7 +205,7 @@ The dotCMS MCP Server provides tools that enable comprehensive content managemen
 
 **Purpose**: Explore the dotCMS REST API specification using JavaScript code that runs in an isolated sandbox.
 
-The `spec` global contains the full dereferenced OpenAPI spec with `paths` object.
+The `spec` global contains the filtered OpenAPI spec — `$ref`-based, with a `paths` object and a `components.schemas` map. Request/response `.schema` values are usually `$ref`s (e.g. `{ $ref: '#/components/schemas/PageView' }`); call `resolveRef(schemaOrName, depth)` to expand them at a bounded depth. Output is hard-capped (~25k chars), so return only what you need.
 
 ```javascript
 // List all available endpoint paths
@@ -218,6 +215,9 @@ return Object.keys(spec.paths)
 return Object.entries(spec.paths)
   .filter(([path]) => path.includes('contenttype'))
   .map(([path, methods]) => ({ path, methods: Object.keys(methods) }))
+
+// Resolve a request-body schema one level deep
+return resolveRef(spec.paths['/api/v1/contenttype'].post.requestBody.content['application/json'].schema, 1)
 ```
 
 ### Execute
@@ -459,7 +459,7 @@ libs/sdk/ai/                      # Portable runtime primitives
 │   │       ├── bun-worker.ts   # Bun Web Worker sandbox
 │   │       └── node-worker.ts  # Node.js worker_threads sandbox
 │   └── generated/
-│       └── spec.json       # Committed processed OpenAPI spec
+│       └── spec.json       # Build-generated, git-ignored (lives in libs/sdk/ai)
 └── project.json            # Nx project configuration
 ```
 
@@ -479,7 +479,7 @@ libs/sdk/ai/                      # Portable runtime primitives
 -   Adapter pattern bridges sandbox ↔ main thread for API calls
 
 **Build-time Spec Processing**: The OpenAPI spec is pre-processed at build time:
--   `generate-spec` target dereferences `$ref` pointers and filters to relevant endpoints
+-   `generate-spec` target filters to relevant endpoints, keeps request/response `$ref`s, and prunes `components.schemas` to just the referenced schemas
 -   Output is a compact JSON embedded in the bundle
 -   Reduces runtime overhead and MCP response size
 
@@ -501,7 +501,7 @@ pnpm nx test mcp-server
 # Run tests in watch mode
 pnpm nx test mcp-server --watch
 
-# Refresh the OpenAPI spec (run when dotCMS API changes, then commit spec.json)
+# Refresh the OpenAPI spec (git-ignored; regenerated by build/serve/test via dependsOn)
 # Defaults to https://demo.dotcms.com/api/openapi.json
 pnpm nx run sdk-ai:generate-spec
 ```

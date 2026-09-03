@@ -73,8 +73,6 @@ public interface FeatureFlagName {
      */
     String FEATURE_FLAG_CONTENT_EDITOR2_ENABLED = "CONTENT_EDITOR2_ENABLED";
 
-    String FEATURE_FLAG_LOCALE_SELECTOR_V2 = "FEATURE_FLAG_LOCALE_SELECTOR_V2";
-
     /**
      * Opens the new content editor (Edit Content v2) in a right slide-in side panel instead of
      * navigating full-screen (Content Drive) or a centered dialog (UVE). On by default
@@ -84,10 +82,26 @@ public interface FeatureFlagName {
     String FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL = "FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL";
 
     /**
+     * Minifies rendered page HTML (collapses insignificant whitespace and strips comments) before
+     * it is written to the response. Off by default.
+     *
+     * @see com.dotcms.rendering.util.HtmlMinifier
+     */
+    String FEATURE_FLAG_MINIFY_HTML = "FEATURE_FLAG_MINIFY_HTML";
+
+    /**
      * libvips image-engine toggle (off by default; the legacy Java2D engine is used
      * otherwise). The new image editor reads this through the configuration endpoint
      * to gate the libvips-only AVIF output format. Not a UI feature flag — kept here so
      * {@code ConfigurationResource} can reference it as a constant like the others.
      */
     String IMAGE_API_USE_LIBVIPS = "IMAGE_API_USE_LIBVIPS";
+
+    /**
+     * Gates the redesigned dotAI provider configuration page ({@code dot-ai-config-detail}).
+     * Off by default so existing customers keep seeing the restored pre-redesign dotAI config
+     * screen ({@code dot-ai-config-detail-legacy}) until they opt in.
+     * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
+     */
+    String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
 }

@@ -432,6 +432,8 @@ public class ESContentletAPIImpl implements ContentletAPI {
      * @throws DotDataException
      * @throws DotSecurityException
      */
+    // Base fee for asking for one contentlet. If the factory misses cache and falls through
+    // to findInDb, that adds the CONTENT_FROM_DB surcharge - so warm is 1, cold is 11.
     @RequestCost(Price.CONTENT_FROM_CACHE)
     @CloseDBIfOpened
     @Override
@@ -575,6 +577,13 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    // Deliberately NOT a terminal, and the stacking is intended: move() calls
+    // indexAPI.addContentToIndex(..) below, which reaches the annotated
+    // addContentToIndex(List) and adds CONTENT_INDEX on top of this CONTENT_MOVE. A move
+    // really does reindex, so it really should cost both. This is not the "annotating two
+    // methods in one chain double-charges" trap - that is about one operation being counted
+    // twice, this is two distinct operations each counted once. Do not remove either.
+    @RequestCost(Price.CONTENT_MOVE)
     @Override
     public Contentlet move(final Contentlet contentlet, final User incomingUser, final Host host,
             final Folder folder,
@@ -3045,6 +3054,77 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     /**
+     * Identifiers whose index removal will be deferred, and therefore needs a durable record.
+     *
+     * <p>Mirrors the add path, which journals only under {@link IndexPolicy#DEFER}
+     * ({@code ContentletIndexAPIImpl#addContentToIndex}). The journal row exists to protect the
+     * deferred route, where the removal is handed to an in-memory commit listener that can be
+     * lost. Under {@code FORCE} / {@code WAIT_FOR} the removal is applied inline and
+     * synchronously: a failure already reaches the caller and rolls the transaction back, so
+     * there is nothing left owing and a journal row would only add work — one redundant insert
+     * per identifier on the highest-volume delete path.</p>
+     *
+     * <p>An identifier is included when <em>any</em> of its versions is deferred: a single
+     * journal entry covers the whole identifier, so one deferred version is enough to need it.</p>
+     *
+     * <p>Must be called before {@code contentFactory.delete}.</p>
+     *
+     * @param contentletsVersion every version of the contentlets being destroyed
+     * @return the identifiers that need a durable removal record; never {@code null}
+     */
+    private static Set<String> deferredRemovalIdentifiers(
+            final List<Contentlet> contentletsVersion) {
+
+        return contentletsVersion.stream()
+                .filter(contentlet -> IndexPolicy.DEFER == contentlet.getIndexPolicy())
+                .map(Contentlet::getIdentifier)
+                .filter(UtilMethods::isSet)
+                .collect(Collectors.toSet());
+    }
+
+    /**
+     * Records a durable index-removal intent in {@code dist_reindex_journal} for every identifier
+     * being destroyed, so that a failed or lost index write is retried instead of silently
+     * orphaning the document.
+     *
+     * <p>Must be called inside the transaction that deletes the contentlet rows: a rolled-back
+     * destroy must not leave the index owing a removal for content that still exists.</p>
+     *
+     * <p>A journal entry is <b>identifier-wide</b> — the consumer fans out across every language
+     * and variant of the identifier. That is correct here, because destruction removes every
+     * version and language by design. It is <b>not</b> transportable to the unpublish/archive
+     * path, where a removal is per language and an identifier-wide entry would drop languages
+     * that are still live.</p>
+     *
+     * <p>Takes identifiers rather than contentlets on purpose: they are collected <b>before</b>
+     * the rows are deleted, so this method cannot depend on the state of {@link Contentlet}
+     * objects that {@code contentFactory.delete} has already processed. The signature is what
+     * enforces that ordering — a comment would not.</p>
+     *
+     * <p>Only <b>deferred</b> removals are journalled — see
+     * {@link #deferredRemovalIdentifiers(List)}.</p>
+     *
+     * @param identifiers identifiers of the contentlets being destroyed, collected before deletion
+     */
+    private void journalContentDeletes(final Set<String> identifiers) {
+
+        if (identifiers == null || identifiers.isEmpty()) {
+            return;
+        }
+
+        try {
+            APILocator.getReindexQueueAPI().addIdentifierDelete(identifiers);
+        } catch (final DotDataException e) {
+            // The journal row is the durability guarantee; without it the removal is only as good
+            // as the in-memory listener. Fail the destroy rather than commit a deletion whose
+            // index removal nothing is tracking.
+            throw new DotRuntimeException(
+                    "Unable to journal the index removal for destroyed content: " + e.getMessage(),
+                    e);
+        }
+    }
+
+    /**
      * Completely destroys the given list of {@link Contentlet} objects (versions, relationships,
      * associated contents, binary files) in all of their languages.
      *
@@ -3108,11 +3188,34 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         this.backupDestroyedContentlets(contentlets, user);
 
+        // Collected before the delete so the journal never depends on post-deletion object
+        // state — see journalContentDeletes.
+        final Set<String> destroyedIdentifiers = deferredRemovalIdentifiers(contentletsVersion);
+
         // Delete all the versions of the contentlets to delete
         this.contentFactory.delete(contentletsVersion);
-        // Remove the contentlets from the Elastic index and cache
+
+        // Record the index removal durably, in the SAME transaction that just deleted the rows.
+        // The commit listener below stays as the low-latency path, but it lives only in memory:
+        // if it is lost — the JVM stops between commit and execution, the shared pool rejects the
+        // task, or the bulk comes back with per-item failures — nothing would remember that the
+        // index still owes a removal, and the document is orphaned permanently. The journal row
+        // is what ReindexThread retries. This mirrors what the add path already does (see
+        // ContentletIndexAPIImpl#addContentToIndex, IndexPolicy.DEFER branch).
+        this.journalContentDeletes(destroyedIdentifiers);
+
+        // Remove the contentlets from the search index and cache
+        final Set<String> removedFromIndex = new HashSet<>();
         for (final Contentlet contentlet : contentletsVersion) {
 
+            // The index document ID is per identifier/language/variant, so removing it once per version
+            // would be pure repetition. Relying on forceUnpublishArchive() alone is not enough either:
+            // it only removes live content, leaving working-only versions behind as stale documents.
+            final String documentKey = contentlet.getIdentifier() + StringPool.UNDERLINE
+                    + contentlet.getLanguageId() + StringPool.UNDERLINE + contentlet.getVariantId();
+            if (removedFromIndex.add(documentKey)) {
+                this.indexAPI.removeContentFromIndex(contentlet);
+            }
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
         }
 
@@ -3528,7 +3631,17 @@ public class ESContentletAPIImpl implements ContentletAPI {
             contentletInodes.add(element.getInode());
         }
 
+        // Collected before the delete — see journalContentDeletes.
+        final Set<String> destroyedIdentifiers = deferredRemovalIdentifiers(contentletsVersion);
+
         contentFactory.delete(contentletsVersion);
+
+        // Same durability requirement as destroyContentlets: the index removal below is deferred
+        // and in-memory, so record the intent in the journal inside this transaction. Safe here
+        // because contentletsVersion was built from findAllVersions(identifier) above — every
+        // version and language of the identifier is going away, which is what an identifier-wide
+        // journal entry means.
+        this.journalContentDeletes(destroyedIdentifiers);
 
         for (Contentlet contentlet : perCons) {
             indexAPI.removeContentFromIndex(contentlet);
@@ -3581,6 +3694,11 @@ public class ESContentletAPIImpl implements ContentletAPI {
 
         contentFactory.delete(contentletsVersion);
 
+        // Deliberately NOT journalled (#37276). Unlike destroyContentlets and
+        // deleteAllVersionsandBackup, contentletsVersion here is just the caller's list — this
+        // method can delete a subset of an identifier's versions or languages. A journal entry is
+        // identifier-wide, so recording one would remove index documents for languages that still
+        // exist. Same reason the unpublish/archive path is excluded.
         for (Contentlet contentlet : perCons) {
             indexAPI.removeContentFromIndex(contentlet);
             CacheLocator.getIdentifierCache().removeFromCacheByVersionable(contentlet);
@@ -5718,6 +5836,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
         return contentlet.isWorkflowInProgress();
     }
 
+    @RequestCost(Price.CONTENT_CHECKIN)
     private Contentlet internalCheckin(Contentlet contentlet,
             ContentletRelationships contentRelationships, List<Category> categories,
             final User incomingUser,
@@ -7100,6 +7219,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_CHECKOUT)
     @Override
     public Contentlet checkout(final String contentletInode, final User user,
             final boolean respectFrontendRoles)
@@ -9464,6 +9584,7 @@ public class ESContentletAPIImpl implements ContentletAPI {
     }
 
     @WrapInTransaction
+    @RequestCost(Price.CONTENT_COPY)
     @Override
     @SuppressWarnings("unchecked")
     public Contentlet copyContentlet(final Contentlet sourceContentlet,

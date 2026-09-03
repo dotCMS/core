@@ -426,35 +426,75 @@ For `dojoType="dijit.Dialog"` elements, use the native HTML `<dialog>` element w
 <script type="application/javascript">
   DotCustomFieldApi.ready(() => {
     // Select a Page
-    const pageSelectorModal = DotCustomFieldApi.openBrowserModal({
-      header: "Select a Page",
-      params: {
-        mimeTypes: ["application/dotpage"],
+    const pageSelector = DotCustomFieldApi.openBrowserModal({
+      title: "Select a Page",
+      kinds: ["page"],
+      onClose: (selection) => {
+        if (selection) console.log(selection.url);
       },
-      onClose: (result) => console.log(result),
     });
-    pageSelectorModal.close(); // close programmatically if needed
+    pageSelector.close(); // close programmatically if needed
 
     // Select an Image
-    const imageSelectorModal = DotCustomFieldApi.openBrowserModal({
-      header: "Select an Image",
-      params: {
-        mimeTypes: ["image"],
+    DotCustomFieldApi.openBrowserModal({
+      title: "Select an Image",
+      kinds: ["file", "dotasset"],
+      mimeTypes: ["image/*"],
+      onClose: (selection) => {
+        if (selection) console.log(selection.url);
       },
-      onClose: (result) => console.log(result),
     });
 
-    // Select a File
-    const fileSelectorModal = DotCustomFieldApi.openBrowserModal({
-      header: "Select a File",
-      params: {
-        includeDotAssets: true,
+    // Select a File, dotAssets included
+    DotCustomFieldApi.openBrowserModal({
+      title: "Select a File",
+      kinds: ["file", "dotasset"],
+      onClose: (selection) => {
+        if (selection) console.log(selection.url);
       },
-      onClose: (result) => console.log(result),
+    });
+
+    // Browse a folder tree, or pick a menu link for a redirect
+    DotCustomFieldApi.openBrowserModal({
+      title: "Select a destination",
+      kinds: ["page", "folder", "link"],
+      status: "live",
+      sort: { field: "modDate", direction: "desc" },
+      onClose: (selection) => {
+        if (!selection) return; // the editor cancelled
+
+        // `kind` says what was picked, and `url` is always populated:
+        // a file's path, a page's URL, a folder's path, a link's target.
+        console.log(selection.kind, selection.url);
+      },
     });
   });
 </script>
 ```
+
+**Options:**
+
+| Option | What it does |
+|---|---|
+| `title` | Dialog title. |
+| `kinds` | What may be listed and returned: `"file"`, `"dotasset"`, `"page"`, `"folder"`, `"link"`. Defaults to `["file", "dotasset"]`. |
+| `status` | `"live"` (published only), `"working"`, or `"archived"`. Omit for the default, which **includes** working versions. |
+| `path` | Folder to start in, as `//site/folder/`. Omit to start where the editor last picked something. |
+| `mimeTypes` | Narrows file assets, e.g. `["image/*"]`. Cannot be combined with `"link"` — menu links carry no MIME type, so the server omits them. |
+| `sort` | `{ field, direction }`, e.g. `{ field: "title", direction: "asc" }`. |
+| `onClose` | Called **exactly once** with the selection, or `null` if the editor cancelled. |
+
+**What you get back:** an object with `kind`, `identifier`, `inode`, `title` and — always
+non-empty — `url`. That last one is what a field normally stores. Asset and page selections also
+carry `mimeType` / `baseType` / `contentType`; folders and menu links do not, because they have
+none. Branch on `kind` when you need those.
+
+**Returns** a controller with `close()`, for dismissing the dialog yourself. Opening is
+asynchronous (the picker resolves the current site first), which is why the result arrives through
+`onClose` rather than as a return value — `close()` works even before the dialog appears.
+
+> ⚠️ Only available in the **new Edit Content**. In the legacy Dojo editor this opens nothing,
+> calls `onClose(null)`, and logs a warning.
 
 ### Rule 12: Use `field.show()` / `field.hide()` and `field.enable()` / `field.disable()` for field visibility and state
 

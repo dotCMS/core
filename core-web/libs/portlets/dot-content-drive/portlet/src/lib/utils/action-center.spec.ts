@@ -13,9 +13,15 @@ import {
     excludeFolders,
     getQuickActions,
     groupByContentType,
+    isLockedByAnotherUser,
     mergeActionCenterSchemes,
+    PUSH_PUBLISH_ACTION_ID,
+    REFRESH_ACTION_ID,
+    requiredInputKinds,
     toActionCenterSchemes,
-    toContentletInodes
+    toContentletInodes,
+    toHostFolderValue,
+    toPathToMove
 } from './action-center';
 import { WORKFLOW_ACTION_ID } from './workflow-actions';
 
@@ -33,6 +39,33 @@ const contentlet = (
 
 const folder = (inode: string): DotContentDriveItem =>
     ({ type: 'folder', inode, identifier: inode }) as unknown as DotContentDriveItem;
+
+/**
+ * A folder in the shape the sidebar tree actually passes: an identifier and **no inode**.
+ * Used where the point is that nothing reads `.inode` off a folder.
+ */
+const actionableFolder = (identifier: string): DotContentDriveItem =>
+    ({ type: 'folder', identifier }) as unknown as DotContentDriveItem;
+
+/** An action that fires straight from the selection. */
+const NO_INPUTS = {
+    moveable: false,
+    pushPublish: false,
+    assignable: false,
+    commentable: false
+};
+
+/** Builds a bare action carrying only the input flags under test. */
+const actionWithInputs = (
+    inputs: Partial<DotActionCenterWorkflowAction['inputs']>
+): DotActionCenterWorkflowAction =>
+    ({
+        id: 'a1',
+        name: 'Action',
+        count: 1,
+        inputs: { ...NO_INPUTS, ...inputs },
+        contentTypes: []
+    }) as DotActionCenterWorkflowAction;
 
 /**
  * Builds a `BulkActionView` fixture. `steps` is a list of `[stepCount, actions]` pairs so tests can
@@ -96,72 +129,244 @@ describe('action-center utils', () => {
         });
     });
 
+    describe('isLockedByAnotherUser', () => {
+        const row = (overrides: Partial<DotCMSContentlet>) =>
+            contentlet({ inode: 'a', ...overrides }) as DotCMSContentlet;
+
+        it('should flag a locked row the current user cannot edit', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(true);
+        });
+
+        it('should not flag a lock the current user holds', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: true }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should not flag an unlocked row', () => {
+            // `contentEditable` is false on plenty of unlocked rows (no WRITE permission); only a
+            // lock makes it mean "somebody else holds this".
+            expect(
+                isLockedByAnotherUser(row({ locked: false, contentEditable: false }), {
+                    isAdmin: false
+                })
+            ).toBe(false);
+        });
+
+        it('should never flag anything for an administrator', () => {
+            expect(
+                isLockedByAnotherUser(row({ locked: true, contentEditable: false }), {
+                    isAdmin: true
+                })
+            ).toBe(false);
+        });
+    });
+
     describe('getQuickActions', () => {
         it('should return no actions for an empty selection', () => {
             expect(getQuickActions([])).toEqual([]);
         });
 
-        it('should return no actions for a folder-only selection', () => {
-            expect(getQuickActions([folder('f1')])).toEqual([]);
+        it('should offer only the folder-capable actions for a folder-only selection', () => {
+            // Add to Bundle and Push Publish both resolve a folder identifier server-side; the rest
+            // are contentlet-only, so a folder-only selection must not offer them.
+            const ids = getQuickActions([actionableFolder('f1')]).map((action) => action.id);
+
+            expect(ids).toEqual([ADD_TO_BUNDLE_ACTION_ID, PUSH_PUBLISH_ACTION_ID]);
         });
 
-        it('should count Publish for items that are not live', () => {
-            const items = [
-                contentlet({ inode: 'a', live: false }),
-                contentlet({ inode: 'b', live: true }),
-                contentlet({ inode: 'c', live: false })
-            ];
+        it('should key the folder-capable actions on identifiers, since a folder has no inode', () => {
+            const items = [contentlet({ inode: 'a', identifier: 'id-a' }), actionableFolder('f1')];
 
-            const publish = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+            const bundle = getQuickActions(items).find(
+                (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(publish?.count).toBe(2);
+            expect(bundle?.eligibleInodes).toEqual(['id-a', 'f1']);
+            expect(bundle?.count).toBe(2);
         });
 
-        it('should count Unpublish only for live items', () => {
+        it('should keep excluding folders from the contentlet-only actions', () => {
+            const items = [contentlet({ inode: 'a', locked: false }), actionableFolder('f1')];
+
+            const actions = getQuickActions(items);
+            const lock = actions.find((action) => action.id === WORKFLOW_ACTION_ID.LOCK);
+            const refresh = actions.find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(lock?.eligibleInodes).toEqual(['a']);
+            expect(refresh?.eligibleInodes).toEqual(['a']);
+        });
+
+        // An inode pins a version, so a contentlet sitting on two steps contributes two entries.
+        // That is why the contentlet-only actions key on inode and must keep doing so.
+        it('should keep keying Lock on inodes, so two steps of one contentlet both count', () => {
             const items = [
-                contentlet({ inode: 'a', live: true }),
-                contentlet({ inode: 'b', live: false })
+                contentlet({ inode: 'step-1', identifier: 'same-id' }),
+                contentlet({ inode: 'step-2', identifier: 'same-id' })
             ];
 
-            const unpublish = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.UNPUBLISH
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
             );
 
-            expect(unpublish?.count).toBe(1);
+            expect(lock?.eligibleInodes).toEqual(['step-1', 'step-2']);
+            expect(lock?.count).toBe(2);
         });
 
-        it('should count Delete and Unarchive only for archived items', () => {
+        it('should not offer the workflow state actions as quick actions', () => {
+            // Publish, Unpublish, Archive, Unarchive and Delete are the scheme's own actions and
+            // are reached through the Workflow Actions section, where they resolve to whatever the
+            // content type's scheme actually maps them to.
+            const ids = getQuickActions([
+                contentlet({ inode: 'a', archived: true, live: true, locked: true })
+            ]).map((action) => action.id);
+
+            expect(ids).not.toContain(WORKFLOW_ACTION_ID.PUBLISH);
+            expect(ids).not.toContain(WORKFLOW_ACTION_ID.UNPUBLISH);
+            expect(ids).not.toContain(WORKFLOW_ACTION_ID.ARCHIVE);
+            expect(ids).not.toContain(WORKFLOW_ACTION_ID.UNARCHIVE);
+            expect(ids).not.toContain(WORKFLOW_ACTION_ID.DELETE);
+        });
+
+        it('should count Lock for items that are not locked', () => {
             const items = [
-                contentlet({ inode: 'a', archived: true }),
-                contentlet({ inode: 'b', archived: false })
+                contentlet({ inode: 'a', locked: false }),
+                contentlet({ inode: 'b', locked: true }),
+                contentlet({ inode: 'c', locked: false })
             ];
+
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
+            );
+
+            expect(lock?.count).toBe(2);
+            expect(lock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should not count archived items as lockable or unlockable', () => {
+            // Locking an archived row serves no purpose and leaves it undeletable by anyone but
+            // the holder, since `canLock` is a delete precondition. Unlock is covered by `locked`
+            // alone (archive refuses locked content), but excluded explicitly so the pair reads the
+            // same. This narrows the dialog only — the lock endpoints accept archived content.
+            const items = [contentlet({ inode: 'a', archived: true, locked: false })];
 
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
-            expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(1);
-            expect(byId.get(WORKFLOW_ACTION_ID.UNARCHIVE)).toBe(1);
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)).toBe(0);
+        });
+
+        it('should count Unlock only for locked items', () => {
+            const items = [
+                contentlet({ inode: 'a', locked: true }),
+                contentlet({ inode: 'b', locked: false }),
+                contentlet({ inode: 'c', locked: true })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['a', 'c']);
+        });
+
+        it('should warn on Unlock about locks held by other users', () => {
+            // `contentEditable` is the server's answer to "is this locked by *me*?" — false on a
+            // locked row means someone else holds it, and only an administrator can release it.
+            const items = [
+                contentlet({ inode: 'mine', locked: true, contentEditable: true }),
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Every locked item is still fired — the server is the authority on who may unlock.
+            expect(unlock?.count).toBe(3);
+            expect(unlock?.warningCount).toBe(2);
+            expect(unlock?.warningHint).toBeTruthy();
+        });
+
+        it('should not warn on Unlock when every lock is the current user’s own', () => {
+            const items = [contentlet({ inode: 'mine', locked: true, contentEditable: true })];
+
+            const unlock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(0);
+        });
+
+        it('should not warn on Unlock for an administrator, whatever the locks', () => {
+            // `canLock` returns true for a CMS Admin before it ever looks at the lock owner, so an
+            // admin releases every one of these. Warning them is noise about an outcome that will
+            // not happen — and it was the only role the warning was ever addressed to.
+            const items = [
+                contentlet({ inode: 'theirs', locked: true, contentEditable: false }),
+                contentlet({ inode: 'also-theirs', locked: true, contentEditable: false })
+            ];
+
+            const unlock = getQuickActions(items, { isAdmin: true }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            // Still fired over both — the warning was never a filter.
+            expect(unlock?.count).toBe(2);
+            expect(unlock?.eligibleInodes).toEqual(['theirs', 'also-theirs']);
+            expect(unlock?.warningCount).toBe(0);
+            expect(unlock?.warningHint).toBeUndefined();
+        });
+
+        it('should warn on Unlock while the admin flag is still unresolved', () => {
+            // An unresolved flag arrives as `false` (the store's default), so it behaves like a
+            // non-admin. Deliberate: the hint says a foreign lock *may* require administrator
+            // permission, so over-warning is honest, whereas staying quiet would let a non-admin
+            // fire with no heads-up at all.
+            const items = [contentlet({ inode: 'theirs', locked: true, contentEditable: false })];
+
+            const unlock = getQuickActions(items, { isAdmin: false }).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.UNLOCK
+            );
+
+            expect(unlock?.warningCount).toBe(1);
+        });
+
+        it('should not warn on actions other than Unlock', () => {
+            const items = [contentlet({ inode: 'a', locked: true, contentEditable: false })];
+
+            for (const action of getQuickActions(items)) {
+                if (action.id !== WORKFLOW_ACTION_ID.UNLOCK) {
+                    expect(action.warningCount).toBe(0);
+                }
+            }
         });
 
         it('should still list actions that apply to nothing, with a zero count', () => {
-            // Nothing archived, so Delete applies to no item — but stays in the list so the dialog
-            // can render it as non-selectable rather than dropping the row.
-            const items = [contentlet({ inode: 'a', archived: false })];
+            // Already locked, so Lock applies to no item — but stays in the list so the dialog can
+            // render it as non-selectable rather than dropping the row.
+            const items = [contentlet({ inode: 'a', locked: true })];
 
             const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
 
-            expect(byId.get(WORKFLOW_ACTION_ID.DELETE)).toBe(0);
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)).toBe(0);
         });
 
         it('should keep a fixed display order regardless of the selection', () => {
             const expected = [
-                WORKFLOW_ACTION_ID.PUBLISH,
-                WORKFLOW_ACTION_ID.UNPUBLISH,
-                WORKFLOW_ACTION_ID.ARCHIVE,
-                WORKFLOW_ACTION_ID.DELETE,
-                WORKFLOW_ACTION_ID.UNARCHIVE,
-                ADD_TO_BUNDLE_ACTION_ID
+                WORKFLOW_ACTION_ID.LOCK,
+                WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
+                PUSH_PUBLISH_ACTION_ID,
+                REFRESH_ACTION_ID
             ];
 
             expect(getQuickActions([contentlet({ inode: 'a' })]).map((a) => a.id)).toEqual(
@@ -172,18 +377,22 @@ describe('action-center utils', () => {
                     (a) => a.id
                 )
             ).toEqual(expected);
+            expect(
+                getQuickActions([contentlet({ inode: 'c', locked: true })]).map((a) => a.id)
+            ).toEqual(expected);
         });
 
-        it('should mark Add to Bundle as pending so it can never be fired', () => {
+        it('should leave Add to Bundle selectable', () => {
+            // No longer pending: the bundle picker exists, so the row opens its configuration step.
             const addToBundle = getQuickActions([contentlet({ inode: 'a' })]).find(
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.pendingHint).toBeTruthy();
+            expect(addToBundle?.count).toBe(1);
         });
 
-        it('should count Add to Bundle against every selected contentlet', () => {
-            // A bundle accepts any asset, so state does not narrow it.
+        it('should count Add to Bundle against every selected item, folders included', () => {
+            // A bundle accepts any asset, so neither row state nor being a folder narrows it.
             const items = [
                 contentlet({ inode: 'a', archived: true }),
                 contentlet({ inode: 'b', live: true }),
@@ -194,7 +403,7 @@ describe('action-center utils', () => {
                 (action) => action.id === ADD_TO_BUNDLE_ACTION_ID
             );
 
-            expect(addToBundle?.count).toBe(2);
+            expect(addToBundle?.count).toBe(3);
         });
 
         it('should offer the same set of actions regardless of the selection', () => {
@@ -204,29 +413,19 @@ describe('action-center utils', () => {
             expect(archived.map((action) => action.id)).toEqual(live.map((action) => action.id));
         });
 
-        it('should not count archived items as publishable', () => {
-            const items = [contentlet({ inode: 'a', archived: true, live: false })];
-
-            const publish = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
-            );
-
-            expect(publish?.count).toBe(0);
-        });
-
         it('should expose the eligible inodes, matching the count', () => {
             const items = [
-                contentlet({ inode: 'not-live', live: false }),
-                contentlet({ inode: 'is-live', live: true }),
+                contentlet({ inode: 'unlocked', locked: false }),
+                contentlet({ inode: 'is-locked', locked: true }),
                 folder('f1')
             ];
 
-            const publish = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.PUBLISH
+            const lock = getQuickActions(items).find(
+                (action) => action.id === WORKFLOW_ACTION_ID.LOCK
             );
 
-            expect(publish?.eligibleInodes).toEqual(['not-live']);
-            expect(publish?.count).toBe(publish?.eligibleInodes.length);
+            expect(lock?.eligibleInodes).toEqual(['unlocked']);
+            expect(lock?.count).toBe(lock?.eligibleInodes.length);
         });
 
         it('should keep count and eligibleInodes in step for every action', () => {
@@ -241,14 +440,159 @@ describe('action-center utils', () => {
             }
         });
 
-        it('should mark destructive actions as danger', () => {
-            const items = [contentlet({ inode: 'a', archived: true })];
-
-            const remove = getQuickActions(items).find(
-                (action) => action.id === WORKFLOW_ACTION_ID.DELETE
+        it('should offer Refresh as a wired action', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
             );
 
-            expect(remove?.danger).toBe(true);
+            expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(false);
+        });
+
+        it('should offer Refresh regardless of live, archived or locked state', () => {
+            // The one quick action whose eligibility owes nothing to row state: none of these
+            // affect whether the index copy of a contentlet is stale, which is all a reindex fixes.
+            const items = [
+                contentlet({ inode: 'a', live: true }),
+                contentlet({ inode: 'b', archived: true }),
+                contentlet({ inode: 'c', locked: true }),
+                contentlet({ inode: 'd', live: true, locked: true })
+            ];
+
+            const refresh = getQuickActions(items).find(
+                (action) => action.id === REFRESH_ACTION_ID
+            );
+
+            expect(refresh?.count).toBe(4);
+            expect(refresh?.eligibleInodes).toEqual(['a', 'b', 'c', 'd']);
+        });
+
+        it('should drop folders from the Refresh selection', () => {
+            // The endpoint takes contentlet inodes only; a folder inode would come back as a
+            // per-item failure and make the count the dialog promised a lie.
+            const refresh = getQuickActions([
+                contentlet({ inode: 'a' }),
+                folder('f1'),
+                contentlet({ inode: 'b' })
+            ]).find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(refresh?.count).toBe(2);
+            expect(refresh?.eligibleInodes).toEqual(['a', 'b']);
+        });
+
+        it('should block Refresh for a non-admin, matching the endpoint gate', () => {
+            // `BulkRefreshHelper.canRefresh` ORs a CMS Power User check with a CMS Administrator
+            // check, but the Power User half resolves a role *key* that ships with no role, so it is
+            // always false. What is left is `User.isAdmin()`, which is the same call that feeds
+            // `currentUserIsAdmin` here — so the row can predict the 403 instead of firing into it.
+            const refresh = getQuickActions([contentlet({ inode: 'a' })], { isAdmin: false }).find(
+                (action) => action.id === REFRESH_ACTION_ID
+            );
+
+            expect(refresh?.missingAdminRole).toBe(true);
+        });
+
+        it('should release Refresh for an admin and still count every contentlet', () => {
+            const refresh = getQuickActions(
+                [contentlet({ inode: 'a' }), contentlet({ inode: 'b' })],
+                { isAdmin: true }
+            ).find((action) => action.id === REFRESH_ACTION_ID);
+
+            expect(refresh?.missingAdminRole).toBe(false);
+            // The role gates the row, not the rows it would fire on: no content state disqualifies
+            // a reindex.
+            expect(refresh?.count).toBe(2);
+        });
+
+        it('should never block the other rows on the admin role', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a', locked: true })], {
+                    isAdmin: false
+                }).map((action) => [action.id, action])
+            );
+
+            for (const id of [
+                WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
+                PUSH_PUBLISH_ACTION_ID
+            ] as string[]) {
+                expect(byId.get(id)?.missingAdminRole).toBe(false);
+            }
+        });
+
+        it('should block Push Publish on the environments, not on coming-soon', () => {
+            // Nothing is missing from dotCMS here, something is missing from the configuration, and
+            // the fix belongs to an administrator. The two states read differently on the row.
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
+            );
+
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)?.comingSoon).toBe(false);
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)?.missingEnvironments).toBe(true);
+        });
+
+        it('should release Push Publish once an environment is reachable', () => {
+            const push = getQuickActions([contentlet({ inode: 'a' }), contentlet({ inode: 'b' })], {
+                isAdmin: false,
+                hasPushPublishEnvironments: true
+            }).find((action) => action.id === PUSH_PUBLISH_ACTION_ID);
+
+            expect(push?.missingEnvironments).toBe(false);
+            // Every contentlet counts: no row state disqualifies a push.
+            expect(push?.count).toBe(2);
+        });
+
+        it('should keep Push Publish blocked while the environments are still unknown', () => {
+            // An unresolved lookup reads as "none" — enabling and then retracting is worse than a
+            // row that stays shut until the answer arrives.
+            const push = getQuickActions([contentlet({ inode: 'a' })], { isAdmin: false }).find(
+                (action) => action.id === PUSH_PUBLISH_ACTION_ID
+            );
+
+            expect(push?.missingEnvironments).toBe(true);
+        });
+
+        it('should never block the other rows on the environments', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a', locked: true })]).map((action) => [
+                    action.id,
+                    action
+                ])
+            );
+
+            for (const id of [
+                WORKFLOW_ACTION_ID.UNLOCK,
+                ADD_TO_BUNDLE_ACTION_ID,
+                REFRESH_ACTION_ID
+            ] as string[]) {
+                expect(byId.get(id)?.missingEnvironments).toBe(false);
+            }
+        });
+
+        it('should not flag the wired actions as coming soon', () => {
+            const byId = new Map(
+                getQuickActions([contentlet({ inode: 'a' })]).map((action) => [action.id, action])
+            );
+
+            expect(byId.get(WORKFLOW_ACTION_ID.LOCK)?.comingSoon).toBe(false);
+            expect(byId.get(WORKFLOW_ACTION_ID.UNLOCK)?.comingSoon).toBe(false);
+            expect(byId.get(ADD_TO_BUNDLE_ACTION_ID)?.comingSoon).toBe(false);
+            expect(byId.get(REFRESH_ACTION_ID)?.comingSoon).toBe(false);
+        });
+
+        it('should count the coming-soon actions over the whole selection', () => {
+            // A `0` would read as "does not apply to these items", which is a different claim from
+            // "not built yet". The row is disabled by `comingSoon`, not by its count.
+            const items = [
+                contentlet({ inode: 'a', archived: true }),
+                contentlet({ inode: 'b', live: true, locked: true }),
+                folder('f1')
+            ];
+
+            const byId = new Map(getQuickActions(items).map((action) => [action.id, action.count]));
+
+            // Push Publish takes folders, so it counts all three; Refresh is contentlet-only.
+            expect(byId.get(PUSH_PUBLISH_ACTION_ID)).toBe(3);
+            expect(byId.get(REFRESH_ACTION_ID)).toBe(2);
         });
     });
 
@@ -300,7 +644,7 @@ describe('action-center utils', () => {
             expect(toActionCenterSchemes(view)).toEqual([]);
         });
 
-        it('should flag actions needing extra input', () => {
+        it('should carry the input flags the API advertises', () => {
             const view = bulkActionView('System Workflow', [
                 [
                     1,
@@ -317,7 +661,7 @@ describe('action-center utils', () => {
             const byId = new Map(
                 toActionCenterSchemes(view)[0].actions.map((action) => [
                     action.id,
-                    action.requiresInput
+                    Object.values(action.inputs).some(Boolean)
                 ])
             );
 
@@ -326,6 +670,43 @@ describe('action-center utils', () => {
             expect(byId.get('as')).toBe(true);
             expect(byId.get('cm')).toBe(true);
             expect(byId.get('ok')).toBe(false);
+        });
+
+        it('should carry each input flag through individually', () => {
+            // The roll-up is not enough: the dialog collects a move path but not the other three, so
+            // it has to be able to tell which kind an action is asking for.
+            const view = bulkActionView('System Workflow', [
+                [
+                    1,
+                    [
+                        {
+                            id: 'combo',
+                            name: 'Approve',
+                            count: 1,
+                            flags: { assignable: true, commentable: true, pushPublish: true }
+                        },
+                        { id: 'mv', name: 'Move', count: 1, flags: { moveable: true } }
+                    ]
+                ]
+            ]);
+
+            const byId = new Map(
+                toActionCenterSchemes(view)[0].actions.map((action) => [action.id, action.inputs])
+            );
+
+            // One action, three inputs at once — the case a single boolean cannot express.
+            expect(byId.get('combo')).toEqual({
+                moveable: false,
+                pushPublish: true,
+                assignable: true,
+                commentable: true
+            });
+            expect(byId.get('mv')).toEqual({
+                moveable: true,
+                pushPublish: false,
+                assignable: false,
+                commentable: false
+            });
         });
 
         it('should flag a count as approximate when the action has a condition', () => {
@@ -511,7 +892,7 @@ describe('action-center utils', () => {
             id: 'a1',
             name: 'Copy',
             count: 1,
-            requiresInput: false,
+            inputs: NO_INPUTS,
             approximateCount: false,
             contentTypes
         });
@@ -539,6 +920,113 @@ describe('action-center utils', () => {
 
         it('should return nothing when no contentlet matches', () => {
             expect(eligibleContentlets(action(['Unrelated']), items)).toEqual([]);
+        });
+    });
+
+    describe('requiredInputKinds', () => {
+        it('should return nothing for an action that fires from the selection alone', () => {
+            expect(requiredInputKinds(actionWithInputs({}))).toEqual([]);
+        });
+
+        it('should collapse assignable and commentable into one screen', () => {
+            expect(
+                requiredInputKinds(actionWithInputs({ assignable: true, commentable: true }))
+            ).toEqual(['assignComment']);
+        });
+
+        it('should order the screens as the legacy wizard does', () => {
+            // Assign/comment before push publish, so the sequence matches the old dialog.
+            expect(
+                requiredInputKinds(
+                    actionWithInputs({ pushPublish: true, commentable: true, moveable: true })
+                )
+            ).toEqual(['move', 'assignComment', 'pushPublish']);
+        });
+
+        it('should return nothing when there is no action', () => {
+            expect(requiredInputKinds(undefined)).toEqual([]);
+        });
+
+        it.each([
+            ['a move path', { moveable: true }, ['move']],
+            ['an assignee', { assignable: true }, ['assignComment']],
+            ['a comment', { commentable: true }, ['assignComment']],
+            ['push publish', { pushPublish: true }, ['pushPublish']]
+        ])('should return one section for an action needing %s', (_label, inputs, expected) => {
+            expect(requiredInputKinds(actionWithInputs(inputs))).toEqual(expected);
+        });
+
+        it.each([
+            ['a move path and an assignee', { moveable: true, assignable: true }],
+            ['push publish and a comment', { pushPublish: true, commentable: true }],
+            ['a move path and push publish', { moveable: true, pushPublish: true }]
+        ])('should return every section for an action needing %s', (_label, inputs) => {
+            // Nothing is refused any more: all of them render together on one screen.
+            expect(requiredInputKinds(actionWithInputs(inputs)).length).toBe(2);
+        });
+    });
+
+    describe('toPathToMove', () => {
+        it('should convert the picker value into the actionlet path format', () => {
+            expect(toPathToMove('demo.dotcms.com:/application/containers')).toBe(
+                '//demo.dotcms.com/application/containers'
+            );
+        });
+
+        it('should handle a site root', () => {
+            expect(toPathToMove('demo.dotcms.com:/')).toBe('//demo.dotcms.com/');
+        });
+
+        it('should insert the missing separator when the path has none', () => {
+            expect(toPathToMove('demo.dotcms.com:application')).toBe(
+                '//demo.dotcms.com/application'
+            );
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            // No hostname to build a path from — `//:/x` would be sent as a valid-looking path and
+            // rejected server-side with an opaque error.
+            ['a leading separator', ':/application'],
+            ['no separator', 'demo.dotcms.com']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toPathToMove(value)).toBe('');
+        });
+    });
+
+    describe('toHostFolderValue', () => {
+        it('should convert the actionlet path into the picker format', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/application/containers')).toBe(
+                'demo.dotcms.com:/application/containers'
+            );
+        });
+
+        it('should convert a site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com/')).toBe('demo.dotcms.com:/');
+        });
+
+        it('should treat a bare host as the site root', () => {
+            expect(toHostFolderValue('//demo.dotcms.com')).toBe('demo.dotcms.com:/');
+        });
+
+        it.each([
+            ['unset', undefined],
+            ['null', null],
+            ['empty', ''],
+            ['a missing prefix', 'demo.dotcms.com/application'],
+            ['only the prefix', '//']
+        ])('should return nothing for %s', (_label, value) => {
+            expect(toHostFolderValue(value)).toBe('');
+        });
+
+        it('should round-trip with toPathToMove', () => {
+            // The two conversions bracket the picker, so a value that survives one has to survive
+            // both — otherwise the seeded destination would differ from the one that gets sent.
+            const path = '//demo.dotcms.com/application/containers';
+
+            expect(toPathToMove(toHostFolderValue(path))).toBe(path);
         });
     });
 });

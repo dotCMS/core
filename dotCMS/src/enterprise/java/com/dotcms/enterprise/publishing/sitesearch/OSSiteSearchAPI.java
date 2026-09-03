@@ -48,7 +48,6 @@ import com.google.common.annotations.VisibleForTesting;
 import io.vavr.control.Try;
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.time.Duration;
@@ -520,8 +519,15 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
     // =========================================================================
 
     @Override
+    public Optional<String> defaultIndexName() {
+        return defaultSiteSearchIndex();
+    }
+
+    @Override
     public boolean isDefaultIndex(final String indexName) throws DotDataException {
-        return indexName != null && indexName.equals(defaultSiteSearchIndex().orElse(null));
+        // Defined in terms of defaultIndexName so "which index is the default" has one definition
+        // per engine (issue #36983).
+        return indexName != null && defaultIndexName().filter(indexName::equals).isPresent();
     }
 
     @Override
@@ -601,7 +607,6 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         }
 
         indexName = indexName.toLowerCase();
-        final ClassLoader classLoader = Thread.currentThread().getContextClassLoader();
         // OpenSearch-format resources, kept separate from their es-*.json counterparts so the OS
         // index lifecycle never depends on an ES-named file. Settings: the legacy
         // es-sitesearch-settings.json uses ES-only token filter syntax (e.g. edgeNGram / side) that
@@ -610,10 +615,8 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
         // The mapping is functionally identical to es-sitesearch-mapping.json today, but owning a
         // dedicated os-sitesearch-mapping.json decouples the two vendors — a future ES mapping
         // change cannot silently alter OS behaviour.
-        // Read via getResourceAsStream so the index lifecycle works when these resources are packaged
-        // inside a JAR (new File(url.getPath()) only works for filesystem URLs and NPEs if missing).
-        final String settings = readResource(classLoader, "os-sitesearch-settings.json");
-        final String mapping = readResource(classLoader, "os-sitesearch-mapping.json");
+        final String settings = SiteSearchIndexResources.settings("os-sitesearch-settings.json");
+        final String mapping = SiteSearchIndexResources.mapping("os-sitesearch-mapping.json");
 
         try {
             // Create the .os-tagged physical index (osTagged), matching physicalName()/putMapping()
@@ -642,25 +645,6 @@ public class OSSiteSearchAPI implements SiteSearchAPI {
      * aggregations such as {@code mimeType}). Forwarding to the same untagged physical name used by
      * {@code createIndex}/search/put keeps the mapping on the index that is actually hit.</p>
      */
-    /**
-     * Reads a UTF-8 classpath resource fully into a String via {@code getResourceAsStream}, so it
-     * resolves whether the resource sits on the filesystem or inside a packaged JAR. Throws a clear
-     * {@link DotSearchException} when the resource is absent rather than NPE-ing on a null URL.
-     */
-    private static String readResource(final ClassLoader classLoader, final String resource)
-            throws DotSearchException {
-        try (final InputStream in = classLoader.getResourceAsStream(resource)) {
-            if (in == null) {
-                throw new DotSearchException(
-                        "Required OpenSearch site search resource not found on the classpath: " + resource);
-            }
-            return new String(in.readAllBytes(), StandardCharsets.UTF_8);
-        } catch (final IOException e) {
-            throw new DotSearchException(
-                    "Error reading OpenSearch site search resource " + resource + ": " + e.getMessage(), e);
-        }
-    }
-
     private void putMapping(final String indexName, final String mapping) throws DotSearchException {
         final String endpoint = "/" + physicalName(indexName) + "/_mapping";
         try (final Response response = clientProvider.getClient().generic()

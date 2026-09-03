@@ -64,6 +64,24 @@ export class DotFolderService {
     }
 
     /**
+     * Permanently deletes a folder and everything inside it.
+     *
+     * Keyed on the path rather than the id, which is what the endpoint takes, and the trailing
+     * slash matters: without it the path resolves as an asset and the endpoint refuses it.
+     *
+     * Recursive and irreversible on the server (`FolderAPI.delete`), which is why callers confirm
+     * first. Enforces EDIT on the folder (`FolderAPIImpl:438`), so gate the affordance on that.
+     *
+     * @param {string} assetPath - Full path to the folder, e.g. `//demo.dotcms.com/old-projects/`
+     * @returns {Observable<boolean>} Observable that emits the server's acknowledgement
+     */
+    deleteFolder(assetPath: string): Observable<boolean> {
+        return this.#http
+            .post<DotCMSAPIResponse<boolean>>('/api/v1/assets/folders/_delete', { assetPath })
+            .pipe(map((response) => response.entity));
+    }
+
+    /**
      * Searches folders within a site using the unified, paginated search endpoint.
      * Replaces `getFolders`/`byPath` for the interactive Site/Folder selector, where
      * real server-side pagination and name filtering are required.
@@ -94,6 +112,12 @@ export class DotFolderService {
 
         if (hasValidValue(params.direction)) {
             httpParams = httpParams.set('direction', params.direction);
+        }
+
+        // Only sent when opting in: the backend defaults it to false and caps `per_page` when it is
+        // true, so an always-on `includePermissions=false` would be noise on every tree request.
+        if (params.includePermissions) {
+            httpParams = httpParams.set('includePermissions', 'true');
         }
 
         httpParams = httpParams.set('page', String(params.page ?? DEFAULT_FOLDER_SEARCH_PAGE));
