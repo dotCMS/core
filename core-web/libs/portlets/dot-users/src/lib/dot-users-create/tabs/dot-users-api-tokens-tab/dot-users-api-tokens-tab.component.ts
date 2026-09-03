@@ -292,8 +292,8 @@ export class DotUsersApiTokensTabComponent {
             message: this.#messageService.get('users.dialog.tokens.revoke.confirm.message'),
             acceptLabel: this.#messageService.get('users.dialog.tokens.revoke'),
             rejectLabel: this.#messageService.get('users.cancel'),
-            acceptButtonProps: { severity: 'danger' },
-            rejectButtonProps: { severity: 'secondary', text: true },
+            acceptButtonProps: {},
+            rejectButtonProps: { outlined: true },
             accept: () => {
                 this.#usersService
                     .revokeApiToken(token.id)

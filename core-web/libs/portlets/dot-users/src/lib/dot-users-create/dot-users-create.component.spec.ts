@@ -43,6 +43,7 @@ const MESSAGES = {
     'users.dialog.create': 'Create User',
     'users.dialog.delete.button': 'Delete User',
     'users.dialog.delete-confirm.header': 'Delete user',
+    'users.dialog.warning.form-errors': 'Please fill in all required fields.',
     'users.cancel': 'Cancel'
 };
 
@@ -128,6 +129,33 @@ describe('DotUsersCreateComponent', () => {
             // errors surface immediately — verify by looking at the
             // required first-name control's touched state.
             expect(spectator.component.form.controls.account.controls.firstName.touched).toBe(true);
+        });
+
+        it('should surface the footer warning banner after an invalid Save click', () => {
+            spectator.click(saveButton(spectator));
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('users-dialog-warning'))).toBeTruthy();
+            expect(spectator.component['$formWarning']()).toBe('users.dialog.warning.form-errors');
+        });
+
+        it('should hide the footer warning once the form becomes valid', () => {
+            spectator.click(saveButton(spectator));
+            expect(spectator.component['$formWarning']()).toBe('users.dialog.warning.form-errors');
+
+            spectator.component.form.patchValue({
+                account: {
+                    firstName: 'Ada',
+                    lastName: 'Lovelace',
+                    email: 'ada@dotcms.com',
+                    password: 'Xy7#abcdef',
+                    confirmPassword: 'Xy7#abcdef'
+                }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component['$formWarning']()).toBeNull();
+            expect(spectator.query(byTestId('users-dialog-warning'))).toBeNull();
         });
 
         it('should close with the form value on save when valid', () => {

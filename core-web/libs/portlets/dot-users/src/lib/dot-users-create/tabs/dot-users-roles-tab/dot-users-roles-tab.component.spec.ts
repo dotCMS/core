@@ -223,6 +223,46 @@ describe('DotUsersRolesTabComponent', () => {
         });
     });
 
+    describe('p-tree selection sync', () => {
+        it('$availableTreeNodes mirrors the pruned tree with selectable=false on non-grantable rows', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootC = nodes.find((node) => node.key === '7');
+            const c1 = rootC?.children?.find((child) => child.key === '8');
+            const c2 = rootC?.children?.find((child) => child.key === '9');
+
+            // Root C has one grantable and one non-grantable leaf — the
+            // container is still selectable (bulk-picks the grantable
+            // one), but the editUsers=false leaf itself gets locked.
+            expect(rootC?.selectable).toBe(true);
+            expect(c1?.selectable).toBe(false);
+            expect(c2?.selectable).toBe(true);
+        });
+
+        it('onTreeSelectionChange filters to grantable leaves and hydrates $selectedAvailable', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootC = nodes.find((node) => node.key === '7');
+            const c1 = rootC?.children?.find((child) => child.key === '8');
+            const c2 = rootC?.children?.find((child) => child.key === '9');
+
+            // PrimeNG's checkbox propagation surfaces every checked
+            // TreeNode in the emitted array — parents, partials, and
+            // non-selectable leaves included. onTreeSelectionChange has
+            // to drop everything but grantable leaves.
+            spectator.component['onTreeSelectionChange']([rootC!, c1!, c2!]);
+
+            expect(spectator.component['$selectedAvailable']()).toEqual(['9']);
+        });
+
+        it('onTreeSelectionChange accepts a single TreeNode object (single-mode fallback)', () => {
+            const nodes = spectator.component['$availableTreeNodes']();
+            const rootB = nodes.find((node) => node.key === '6');
+
+            spectator.component['onTreeSelectionChange'](rootB!);
+
+            expect(spectator.component['$selectedAvailable']()).toEqual(['6']);
+        });
+    });
+
     describe('grant / revoke', () => {
         it('grant() moves the selected leaves to the granted list and clears selection', () => {
             let emitted: string[] | undefined;
@@ -235,6 +275,9 @@ describe('DotUsersRolesTabComponent', () => {
             // — no more roleKey fallback for keyless roles.
             expect(spectator.component['$granted']()).toContain('3');
             expect(spectator.component['$selectedAvailable']()).toEqual([]);
+            // Tree selection has to reset in lockstep — otherwise the
+            // next paint would still show the granted rows as checked.
+            expect(spectator.component['$selectedTreeNodes']()).toEqual([]);
             expect(emitted).toContain('3');
         });
 

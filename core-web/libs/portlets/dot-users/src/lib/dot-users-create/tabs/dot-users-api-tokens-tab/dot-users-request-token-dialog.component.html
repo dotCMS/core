@@ -14,11 +14,24 @@
         <label for="users-request-token-expires" dotFieldRequired>
             {{ 'users.dialog.tokens.request.expires' | dm }}
         </label>
-        <input
-            pInputText
-            id="users-request-token-expires"
-            type="date"
+        <!--
+            `dataType="string"` keeps the control value as a
+            `YYYY-MM-DD` string so `expirationSecondsFrom` (regex-based
+            parser in the .ts) and the seeded default from
+            `defaultExpiryDate()` stay untouched. `[showIcon]="true"`
+            + `iconDisplay="input"` matches the standard dotCMS
+            datepicker shape used in dot-analytics / experiments.
+        -->
+        <p-datepicker
+            inputId="users-request-token-expires"
             formControlName="expires"
+            dataType="string"
+            dateFormat="yy-mm-dd"
+            [minDate]="minDate"
+            [showIcon]="true"
+            iconDisplay="input"
+            appendTo="body"
+            styleClass="w-full"
             data-testid="users-request-token-expires" />
     </div>
 
@@ -33,11 +46,19 @@
             data-testid="users-request-token-network" />
     </div>
 
-    <div class="mt-4 flex justify-end gap-2 border-t border-surface-200 pt-4">
+    <div class="mt-4 flex items-center justify-end gap-2 border-t border-surface-200 pt-4">
+        @if ($formWarning(); as key) {
+            <div
+                class="mr-auto flex items-center gap-2 text-sm text-orange-600"
+                role="alert"
+                data-testid="users-request-token-warning">
+                <span class="material-symbols-rounded text-lg!" aria-hidden="true">warning</span>
+                <span>{{ key | dm }}</span>
+            </div>
+        }
         <p-button
             [label]="'users.cancel' | dm"
-            severity="secondary"
-            [text]="true"
+            [outlined]="true"
             (onClick)="close()"
             data-testid="users-request-token-cancel-btn" />
         <p-button

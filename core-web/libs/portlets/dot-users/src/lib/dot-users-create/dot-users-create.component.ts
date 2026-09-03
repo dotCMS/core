@@ -261,6 +261,46 @@ export class DotUsersCreateComponent {
     );
 
     /**
+     * Flips true the first time the user clicks Save with an invalid
+     * form. Stays true so `$formWarning` keeps surfacing on subsequent
+     * edits until the form actually validates — the warning updates in
+     * place through the reactive form status signal below.
+     */
+    protected readonly $saveAttempted = signal(false);
+
+    /**
+     * Signal mirror of the form's validity status. Powers the warning
+     * banner reactively without wiring up manual change detection.
+     * Seeded with the current status so the initial render already
+     * reflects whatever validators fired synchronously.
+     */
+    readonly #$formStatus = toSignal(this.form.statusChanges, {
+        initialValue: this.form.status
+    });
+
+    /**
+     * i18n key rendered on the footer warning banner. Null hides the
+     * banner. Depends on `#$formStatus` so it recomputes on every
+     * validator transition, not only when the user clicks Save. When
+     * multiple errors exist we prefer a specific message over the
+     * generic "fill required fields" — the highlighted-field inline
+     * errors still show the per-field detail.
+     */
+    protected readonly $formWarning = computed(() => {
+        // Read the form status signal so the computed recomputes on
+        // validity transitions.
+        this.#$formStatus();
+        if (!this.$saveAttempted() || this.$isSaveDisabled()) {
+            return null;
+        }
+        if (!this.form.invalid) {
+            return null;
+        }
+
+        return 'users.dialog.warning.form-errors';
+    });
+
+    /**
      * Role KEYS that hydrate the Roles tab's Granted panel. Sourced
      * from `getUserRoles` on edit-mode open; stays empty in create
      * mode.
@@ -321,6 +361,23 @@ export class DotUsersCreateComponent {
         return null;
     });
 
+    /**
+     * i18n key for the delete-confirm dialog's footer warning. Reuses
+     * the per-field computeds — same rule as the save flow: one banner
+     * saying "fix highlighted fields", inline errors still explain
+     * each one.
+     */
+    protected readonly $deleteWarning = computed(() => {
+        if (!this.$deleteAttempted()) {
+            return null;
+        }
+        if (this.$replacementError() || this.$emailConfirmError()) {
+            return 'users.dialog.warning.form-errors';
+        }
+
+        return null;
+    });
+
     protected readonly $canConfirmDelete = computed(() => {
         const target = (this.user?.emailAddress ?? '').trim().toLowerCase();
         if (!target) {
@@ -364,6 +421,11 @@ export class DotUsersCreateComponent {
     protected save(): void {
         this.form.markAllAsTouched();
         if (this.form.invalid || this.$isSaveDisabled()) {
+            // Reveal the footer warning banner. The button itself stays
+            // enabled per design so users can always click and get an
+            // explanation instead of a dead trigger.
+            this.$saveAttempted.set(true);
+
             return;
         }
 
