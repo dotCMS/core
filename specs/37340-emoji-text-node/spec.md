@@ -55,6 +55,47 @@ are the visible symptom of a defect that spans a large class of characters (meas
 - **How often**: every time an affected character is typed. Links still resolve and navigate,
   which is why this is Medium rather than High.
 
+## Clarifications
+
+Decisions taken during `/speckit-clarify`. Earlier decisions from the specify session are in
+[Resolved Decisions](#resolved-decisions).
+
+### Session 2026-09-03
+
+- Q: How do renderers resolve an `emoji` node's `name` attribute to a character, given no
+  shortcode table exists in Java or in any SDK? → A: **Option A — a generated shared map.**
+  Generate the `name` → character table at build time from `@tiptap/extension-emoji`'s own
+  `emojis` list, so it cannot drift from the editor. Expose it to the JS SDKs as a small runtime
+  module (**not** `@dotcms/types`, which is types-only) and to VTL through the existing
+  `StoryBlockRenderHelper`.
+- Q: Where does Gap B (adjacent-link coalescing) live for the VTL path — the Velocity macro,
+  Java, or the shared read path? → A: **Option A — pre-group in Java.**
+  `StoryBlockRenderHelper` merges adjacent same-link text nodes before the macro renders. The
+  `.vm`/`.vtl` edits stay additive, the mark-attribute equality logic becomes JUnit-testable
+  instead of interpreted per request, and no API contract changes. The four JS SDK renderers
+  still implement Gap B themselves.
+- Q: How do the three published SDK packages ship a change that alters rendered HTML for
+  content consumers already have? → A: **Option A — coordinated minor bump, independent
+  version numbers.** `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` are released
+  together, each with a `### Fixed` entry for Gap B that explicitly warns rendered HTML changes
+  for existing content (snapshot diffs expected), and an `### Added` entry for Gap A. Not a
+  major bump — the prior output is a WCAG 2.2 Level A failure, so the fix must be on by
+  default rather than opt-in.
+- Q: What does a renderer output for an `emoji` node whose `name` does not resolve? → A:
+  **Render the node's `text` if present, else the literal `:name:` — never nothing — and warn.**
+  Resolution precedence is: (1) the generated map, (2) the node's own `text` if it carries one,
+  (3) `:name:`. Every renderer also emits a warning, in the JS SDKs via `console.warn` and in
+  Java via `Logger.warn` (Constitution Principle II), with the message
+  `[dotCMS Block Editor]: Emoji <name> is not supported`. Warned once per distinct name per
+  render pass so a page with repeats does not flood the console or the log.
+- Q: The two linked text nodes in the reported data are not adjacent — an unmarked `emoji` node
+  sits between them. Should coalescing absorb it? → A: **Option A, narrowed to `emoji` nodes
+  only.** A run of `text(link) + unmarked node + text(link)` collapses into a single `<a>` only
+  when the intervening node is an **`emoji`** node carrying no marks and both `link` marks are
+  identical. Any other unmarked inline atom (e.g. `hardBreak`) is **not** absorbed and still
+  breaks the run. This confines the inference to the exact node type this defect produces,
+  rather than silently swallowing arbitrary nodes into links.
+
 ## Reproduction *(mandatory)*
 
 **Environment**: `main` (verified against commit `69073e17f1`), `@tiptap/extension-emoji@3.22.2`,
@@ -176,10 +217,27 @@ editor in jsdom):
     returns **zero** hits in any SDK.
   - `core-web/libs/sdk/types` — the shared `internal.ts` enum of Story Block node types has no
     `emoji` member; all three JS SDKs dispatch from it.
+  - **Release surface**: `package.json` + `CHANGELOG.md` for `@dotcms/react` (1.2.6),
+    `@dotcms/vue` (1.5.5) and `@dotcms/angular` (1.1.1). There is no changesets tooling in
+    `core-web` — versions are hand-bumped and changelogs hand-written (`## vX.Y.Z` with
+    `### Fixed` / `### Added`), so the release artifacts are part of the change, not a
+    follow-up.
   - `dotCMS/src/main/webapp/WEB-INF/velocity/` (`VM_global_library.vm`, `static/storyblock/render.vtl`)
     — **legacy Velocity macro surface**. Not `com.dotmarketing.*` Java, but legacy in style and
     the highest-risk edit in this change: the macro is shared by all Story Block rendering.
-  - No Java package under `com.dotcms.*` or `com.dotmarketing.*` is expected to change.
+  - `com.dotcms.rendering.velocity.viewtools.content.util.StoryBlockRenderHelper` — **modern**
+    `com.dotcms.*`. Carries **both** server-side responsibilities: Velocity cannot resolve a
+    shortcode to a character on its own, so the generated map is read here, and it also
+    pre-groups adjacent same-link text nodes so the macro never has to look ahead at siblings. This helper is already exposed in the Velocity context as
+    `$dotStoryBlockRenderHelper` and already invoked as `.render($element)` from `render.vtl`,
+    so the resolution extends an established extension point rather than adding a new Velocity
+    tool. **Legacy Impact is therefore lower than a Velocity-only fix would suggest**: the Java
+    edit lands in a modern package, and the `.vm`/`.vtl` edits stay additive.
+  - A **generated** `name` → character map, produced at build time from
+    `@tiptap/extension-emoji`'s `emojis` list and consumed by both the JS SDKs and the Java
+    helper. CI must verify the committed artifact matches what the build produces — the same
+    guarantee the repo already applies to `openapi.yaml`.
+  - No `com.dotmarketing.*` Java package is expected to change.
 - **Related known decisions**:
   - #37175 established that `link`, `emoji`, and `youtube` are registered **regardless of a
     field's Allowed Blocks**, so that stored content authored with them still parses. That
@@ -216,8 +274,10 @@ this bug makes visible, and both must be addressed for already-stored content:
 
 - **Gap A** — no renderer has an `emoji` branch, so the character is dropped (VTL) or renders
   as an unknown block (React, Vue, and both Angular renderers).
-- **Gap B** — no renderer coalesces adjacent text nodes that share an identical `link` mark, so
-  each emits its own `<a>`. All five renderer implementations use the same recursive
+- **Gap B** — no renderer coalesces text nodes that share an identical `link` mark, so
+  each emits its own `<a>`. In the reported data the two linked text nodes are not even
+  adjacent — the unmarked `emoji` node sits between them — so plain adjacency merging is not
+  sufficient on its own. All five renderer implementations use the same recursive
   "outermost mark wraps the rest" pattern and none looks at its siblings, which is precisely
   why none of them coalesce. This is latent for any stored JSON with adjacent same-link text
   nodes and predates the new editor.
@@ -252,9 +312,32 @@ function.
   renderers** (React, Vue, Angular standard, Angular semantic), plus the `emoji` member in the
   shared `libs/sdk/types` node-type enum, so already-stored `emoji` nodes render their character
   as inline text and never as a block-level element inside a `<p>`.
-- **Gap B** — coalesce adjacent text nodes sharing an identical `link` mark into a single `<a>`
-  in VTL and in all four JS SDK renderers, comparing full mark attributes so links differing in
-  `href`, `target`, `rel`, `title`, or `aria-label` stay separate.
+- **The `name` → character map that Gap A depends on**, generated at build time from
+  `@tiptap/extension-emoji`'s `emojis` list so it cannot drift from the editor. Consumed by the
+  JS SDKs via a small runtime module and by VTL via `StoryBlockRenderHelper`. A CI check
+  verifies the committed artifact matches the generated one.
+- **A defined, identical fallback in all five renderers** when a `name` does not resolve —
+  reachable because no Story Block schema validation was found in `dotCMS/src/main/java`, so
+  arbitrary node JSON can arrive through the Contentlet REST API. Precedence: map → the node's
+  own `text` → `:name:`. Never empty, plus a warning (see Clarifications).
+- **Gap B** — collapse a run of text nodes sharing an identical `link` mark into a single `<a>`,
+  comparing full mark attributes so links differing in `href`, `target`, `rel`, `title`, or
+  `aria-label` stay separate. A run continues across an intervening **`emoji` node that carries
+  no marks**, which is absorbed into the anchor; any other unmarked inline atom breaks the run.
+  Two stored shapes must both resolve to one anchor:
+  - **Shape 1** — emoji typed *into* linked text: `text(link) + emoji(no marks) + text(link)`.
+    The reported case; needs the absorption rule.
+  - **Shape 2** — link applied *over* an existing emoji node: the `emoji` node carries the
+    `link` mark and already renders as one anchor today.
+
+  Implemented per surface:
+  - **VTL** — the grouping happens in `StoryBlockRenderHelper` (Java), *before* the macro
+    renders. The `.vm`/`.vtl` change stays additive; no sibling lookahead in Velocity.
+  - **JS SDKs** — each of the four renderers implements the grouping itself, against the same
+    shared fixture so all surfaces agree.
+- **Release artifacts for the three published SDK packages**: a coordinated minor version bump
+  (independent numbers) plus `CHANGELOG.md` entries — `### Added` for Gap A, `### Fixed` for
+  Gap B with an explicit warning that rendered HTML changes for existing content.
 - Regression coverage at each layer, per Constitution Principle V.
 
 **Explicitly out of scope / non-goals**:
@@ -280,10 +363,13 @@ function.
 ## Regression Risk *(mandatory)*
 
 - **Blast radius**:
-  - **Highest risk is the VTL macro.** `VM_global_library.vm` renders *every* Story Block field
-    on *every* VTL-rendered page, for all customers, flag or no flag. Gap B changes how text
-    runs are grouped there. A defect introduced in coalescing affects far more content than
-    this bug does.
+  - **Highest risk is the VTL path.** `VM_global_library.vm` renders *every* Story Block field
+    on *every* VTL-rendered page, for all customers, flag or no flag. A defect in coalescing
+    affects far more content than this bug does.
+    **Mitigated by the Q2 decision**: the grouping logic moves into `StoryBlockRenderHelper`
+    (Java), so it is JUnit-testable in isolation and the interpreted macro edit stays additive.
+    The residual risk is that the helper now sits on the render path for every Story Block —
+    it must be allocation-cheap and must return the input unchanged when nothing coalesces.
   - The React, Vue, and both Angular SDK text renderers carry the same coalescing risk for
     headless consumers — five implementations of the same logic, which must stay behaviourally
     identical or the same content renders differently per framework.
@@ -300,7 +386,17 @@ function.
     literal text.
   - No REST contract, DB schema, or ES mapping changes. Not rollback-unsafe in the
     [documented categories](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) **unless** a data
-    migration is chosen.
+    migration is chosen — and render-only was decided, so none is.
+  - The generated map is a **new drift surface**: if it falls behind the extension's `emojis`
+    list, renderers resolve a `name` the editor can produce to nothing. The CI equality check in
+    AC-012 is what prevents that, and is why generation is required over a hand-written table.
+  - The map adds weight to three **published** npm packages (`@dotcms/react`, `@dotcms/vue`,
+    `@dotcms/angular`). It must be tree-shakeable and must not land in `@dotcms/types`.
+  - **Gap B is a consumer-visible output change** in those same published packages: content a
+    consumer already has starts rendering one `<a>` where it rendered two. Downstream snapshot
+    tests will diff, and CSS relying on adjacent-anchor selectors may shift. Shipped as a minor
+    bump with an explicit changelog warning rather than opt-in, because the prior output is a
+    WCAG 2.2 Level A failure and must not stay on by default.
   - Renderer coalescing must not merge across differing mark attributes, and must keep other
     marks (e.g. `bold`) nested correctly inside the single `<a>`.
   - This change **contradicts an acceptance criterion in issue #37340**, which requires
@@ -312,7 +408,7 @@ function.
     rendering, which is why it is in scope rather than optional.
   - **Decided: render-only.** Stored `emoji` nodes are NOT normalized — no data migration and
     no heal-on-load. Gap A and Gap B make existing content render correctly without a re-save,
-    which satisfies AC-015 on its own and keeps this change out of Java, the DB, and
+    which satisfies AC-019 on its own and keeps this change out of Java, the DB, and
     rollback-relevant territory. Accepted consequence: old `emoji` nodes persist indefinitely,
     so the legacy-editor drop path and the `<img>` fallback stay live for that content.
 
@@ -351,23 +447,43 @@ function.
   input instead of falling through to their unknown-block component.
 - **AC-011**: No renderer emits a block-level element (e.g. `<div>`) inside a `<p>` for an
   `emoji` node, in UVE or on the live site.
+- **AC-012**: The `name` → character map is generated from `@tiptap/extension-emoji`'s `emojis`
+  list, and a CI check fails if the committed artifact does not match what the build produces.
+  VTL and all four JS SDK renderers resolve a given `name` to the **same** character.
+- **AC-013**: For an `emoji` node whose `name` does not resolve, every renderer outputs the
+  node's `text` when it carries one and otherwise the literal `:name:` — **never** empty
+  output — and emits `[dotCMS Block Editor]: Emoji <name> is not supported` as a warning
+  (`console.warn` in the JS SDKs, `Logger.warn` in Java). The warning fires once per distinct
+  unresolved name per render pass, not once per occurrence.
 
-**Renderers — Gap B (adjacent-link coalescing)**
+**Renderers — Gap B (link run coalescing)**
 
-- **AC-012**: Given stored JSON with adjacent text nodes sharing an identical `link` mark, VTL
+- **AC-014**: Given stored JSON with adjacent text nodes sharing an identical `link` mark, VTL
   and all four JS SDK renderers each emit exactly **one** `<a>`.
-- **AC-013**: Given adjacent text nodes whose `link` marks differ in any of `href`, `target`,
+- **AC-015**: **Shape 1** — given `text(link) + emoji(no marks) + text(link)` with identical
+  `link` marks, every renderer emits exactly **one** `<a>` containing the emoji character
+  inline. This is the reported customer payload.
+- **AC-016**: An intervening unmarked inline atom that is **not** an `emoji` node (e.g.
+  `hardBreak`) is **not** absorbed: the run breaks and two `<a>` elements are emitted.
+- **AC-017**: Given adjacent text nodes whose `link` marks differ in any of `href`, `target`,
   `rel`, `title`, or `aria-label`, each renderer emits **two** `<a>` elements.
-- **AC-014**: A `bold` (or other) mark inside a coalesced link still nests correctly within the
+- **AC-018**: A `bold` (or other) mark inside a coalesced link still nests correctly within the
   single `<a>`.
-- **AC-015**: Content already saved with the split renders as a single link **without requiring
+- **AC-019**: Content already saved with the split renders as a single link **without requiring
   a re-save**.
 
 **Accessibility verification**
 
-- **AC-016**: Tabbing through the rendered link produces exactly **one** focus stop.
-- **AC-017**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the
+- **AC-020**: Tabbing through the rendered link produces exactly **one** focus stop.
+- **AC-021**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the
   complete accessible name, including the symbol.
+
+**Release**
+
+- **AC-022**: `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` each carry a minor version
+  bump and a `CHANGELOG.md` entry for this release: `### Added` for `emoji` node support,
+  `### Fixed` for link run coalescing, the latter stating explicitly that rendered HTML
+  changes for existing content.
 
 **Verification method**:
 
@@ -376,18 +492,27 @@ function.
   the class, not three literals, is covered. Use real `NgZone` in service tests; a mocked one
   breaks the change-detection scheduler.
   `pnpm nx test new-block-editor`
-- **Unit (Jest)** for the React, Vue, and Angular SDK renderers — AC-010 through AC-014. The
+- **Unit (Jest)** for the React, Vue, and Angular SDK renderers — AC-010 through AC-018. The
   Angular SDK needs both of its renderers covered.
   `pnpm nx test sdk-react` / `pnpm nx test sdk-vue` / `pnpm nx test sdk-angular`
-- **VTL renderer** — AC-009, AC-011 through AC-014. Exercised via a Postman collection
+- **VTL renderer end-to-end** — AC-009, AC-011 through AC-018, on top of the JUnit coverage
+  above. Exercised via a Postman collection
   rendering a fixture contentlet whose Story Block field holds both an `emoji` node and
   adjacent same-link text nodes.
   `./mvnw verify -pl :dotcms-postman -Dpostman.test.skip=false -Dpostman.collections=<collection>`
 - **Regression fixture** — a stored-JSON fixture reproducing the exact three-node payload from
   the Actual Behavior section, shared across the renderer test suites so all five renderer
-  implementations assert against identical input. This fixture is what proves **AC-015**: it is only ever
+  implementations assert against identical input. This fixture is what proves **AC-019**: it is only ever
   rendered, never re-saved.
-- **Manual accessibility pass** — AC-016 and AC-017, with NVDA and with VoiceOver. Not
+- **Unit (JUnit)** for `StoryBlockRenderHelper` — the Gap B grouping and the map lookup, in
+  `dotCMS/src/test/java/com/dotcms/rendering/velocity/viewtools/content/util/`, alongside the
+  existing `StoryBlockAPIImplToMapTest`. Covers AC-014, AC-017 and the no-op path.
+  `./mvnw test -pl :dotcms-core -Dtest=StoryBlockRenderHelperTest`
+- **Generated map and unresolved-name fallback** — AC-012 and AC-013. A CI step regenerates the map and fails on any diff against the
+  committed artifact, plus a unit test asserting VTL and the SDKs agree on a sample of names.
+- **Release artifacts** — AC-022. Reviewed on the PR: three `package.json` bumps and three
+  `CHANGELOG.md` entries. No automated gate exists, so this is a review checklist item.
+- **Manual accessibility pass** — AC-020 and AC-021, with NVDA and with VoiceOver. Not
   automatable; must be recorded in the post-merge QA plan.
 
 Per Constitution Principle V, these tests are written, developer-approved, and confirmed
@@ -420,7 +545,7 @@ spec carries no `[NEEDS CLARIFICATION]` markers.
 
 | # | Question | Decision | Rationale / consequence |
 | --- | --- | --- | --- |
-| 1 | Existing stored `emoji` nodes — render-only, heal-on-edit, or migrate? | **Render-only** | Gap A + Gap B satisfy AC-015 without a re-save. No Java, no DB, not rollback-relevant. Accepted trade-off: old nodes persist, so the legacy-editor drop path and the `<img>` fallback stay live for that content. |
+| 1 | Existing stored `emoji` nodes — render-only, heal-on-edit, or migrate? | **Render-only** | Gap A + Gap B satisfy AC-019 without a re-save. No Java, no DB, not rollback-relevant. Accepted trade-off: old nodes persist, so the legacy-editor drop path and the `<img>` fallback stay live for that content. |
 | 2 | `enableEmoticons` (`:)`) — keep as text, or drop? | **Insert literal character** | Preserves a shortcut authors already use, while removing the node creation that strips marks. `:)` now yields `🙂` inside the text node. Covered by AC-006. |
 | 3 | Does AC-002's character sample need to be exhaustive? | **Representative sample** | All 3 reported symbols, ~20 further text-presentation characters, plus pictographic and multi-codepoint cases (ZWJ sequence, flag). Fast, readable, and stable across extension upgrades. |
 
