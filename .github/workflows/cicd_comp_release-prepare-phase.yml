@@ -153,11 +153,29 @@ jobs:
           RELEASE_TAG: ${{ steps.set-version.outputs.release_tag }}
           REPO: ${{ github.repository }}
         run: |
-          if gh release view "${RELEASE_TAG}" --repo "${REPO}" --json tagName >/dev/null 2>&1; then
-            echo "::error::Release ${RELEASE_TAG} already exists. Re-releasing a published version would republish different artifacts under the same version, and force-recreates its release branch. Dispatch the next counter instead."
-            exit 1
-          fi
-          echo "No existing release for ${RELEASE_TAG} — proceeding."
+          # Read the HTTP status rather than an exit code: a bare non-zero from the
+          # API can mean rate-limited, unauthorized or offline just as easily as
+          # "absent", and treating those as absent would fail the gate OPEN — the
+          # branch guard below would then clobber the release branch, i.e. exactly
+          # the corruption this step exists to stop. Only a literal 404 proceeds.
+          status=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Accept: application/vnd.github+json" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            -H "Authorization: Bearer ${GH_TOKEN}" \
+            "https://api.github.com/repos/${REPO}/releases/tags/${RELEASE_TAG}")
+          case "${status}" in
+            404)
+              echo "No existing release for ${RELEASE_TAG} — proceeding."
+              ;;
+            200)
+              echo "::error::Release ${RELEASE_TAG} already exists. Re-releasing a published version would republish different artifacts under the same version, and force-recreates its release branch. Dispatch the next counter instead."
+              exit 1
+              ;;
+            *)
+              echo "::error::Could not determine whether ${RELEASE_TAG} is already released (HTTP ${status}). Refusing to proceed."
+              exit 1
+              ;;
+          esac
 
       - name: Create Release Branch and Tag
         id: create-branch
