@@ -258,5 +258,21 @@ describe('applyStarterUrl', () => {
             // The asset itself must therefore never use that shape.
             expect(readBundledCompose()).not.toMatch(/CUSTOM_STARTER_URL\s*:\s*[|>]/);
         });
+
+        // `String.replace` with a replacement STRING expands `$1`, `$&`, `` $` ``, `$'` and
+        // `$$`. Passing the URL through that expanded those sequences instead of writing them,
+        // so a starter URL containing `$` was silently rewritten into a different URL — no
+        // throw, no warning, wrong starter. A replacer function takes the value verbatim.
+        it.each([
+            ['$1', 'https://example.com/starter$1.zip'],
+            ['$&', 'https://example.com/starter$&.zip'],
+            ['$$', 'https://example.com/starter$$.zip'],
+            ["$'", "https://example.com/starter$'.zip"],
+            ['a signed URL', 'https://example.com/s.zip?sig=ab$1cd&x=$&']
+        ])('writes a URL containing %s verbatim', (_label, url) => {
+            const rewritten = applyStarterUrl(readBundledCompose(), url);
+
+            expect(rewritten).toContain(`"${url}"`);
+        });
     });
 });

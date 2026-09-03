@@ -657,7 +657,9 @@ export async function getDockerDiagnostics(directory?: string): Promise<string> 
     diagnostics.push(chalk.gray('     docker logs <container-name>'));
     diagnostics.push(chalk.white('  3. Restart the containers:'));
     diagnostics.push(chalk.gray('     docker compose down && docker compose up -d'));
-    diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, 9200, and 9600 are available\n'));
+    // Must track REQUIRED_PORTS (utils/ports.ts): 9200/9600 are no longer published by the
+    // bundled stack, and 8090 now is.
+    diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, and 8090 are available\n'));
 
     return diagnostics.join('\n');
 }

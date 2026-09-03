@@ -34,5 +34,12 @@ export function applyStarterUrl(composeContents: string, starterUrl: string): st
         );
     }
 
-    return composeContents.replace(CUSTOM_STARTER_URL_LINE, `$1"${starterUrl}"`);
+    // A replacer FUNCTION, not a replacement string: in a string, `$1`/`$&`/`$'` are
+    // substitution patterns, so any `$` in the user's --starter URL was rewritten into
+    // something else entirely — silently, which is the one failure mode this module exists
+    // to prevent. A function receives the URL verbatim.
+    return composeContents.replace(
+        CUSTOM_STARTER_URL_LINE,
+        (_match, prefix: string) => `${prefix}"${starterUrl}"`
+    );
 }

@@ -2,15 +2,23 @@
  * Contract spec for the compose-file round trip around scaffolding
  * (task T033, dotCMS #37262, AC-008).
  *
- * THE BUG. `docker-compose.yml` is moved one level UP before scaffolding, because git requires
- * an empty directory to clone into, then moved BACK afterwards. If scaffolding fails in between,
- * the move-back never runs and the compose file is stranded in the PARENT directory — so the
- * user cannot even `docker compose down` the stack that is still running. The recovery path is
- * destroyed by the failure it is meant to survive, which is the shape of this whole issue.
+ * THE BUG. `docker-compose.yml` is moved OUT of the project before scaffolding, because git
+ * requires an empty directory to clone into, then moved BACK afterwards. If scaffolding fails in
+ * between, the move-back never runs and the compose file is stranded outside the project — so
+ * the user cannot even `docker compose down` the stack that is still running. The recovery path
+ * is destroyed by the failure it is meant to survive, which is the shape of this whole issue.
  *
  * The fix is `try/finally`: the file comes back whether scaffolding succeeds or throws, and the
  * original error still propagates — a `finally` that swallows the cause would trade one silent
  * failure for another.
+ *
+ * TWO CONSTRAINTS THIS SPEC EXISTS TO HOLD, both regressions found in review:
+ *
+ *   1. The holding spot is a private temp dir, never the parent. The parent is the user's cwd,
+ *      and moving there with `overwrite` destroyed a compose file they already had.
+ *   2. `action` must signal failure by THROWING. `process.exit` skips `finally`, so a caller
+ *      that exits instead of throwing silently reintroduces the stranded-file bug — which is
+ *      exactly what `startScaffoldingFrontEnd` did (see src/index.ts).
  *
  * API PINNED
  *   export async function withComposeFileMovedAside<T>(
@@ -106,6 +114,35 @@ describe('withComposeFileMovedAside', () => {
     it('preserves the file contents across the round trip', async () => {
         await withComposeFileMovedAside(projectDir, async () => undefined);
 
+        expect(fs.readFileSync(path.join(projectDir, COMPOSE), 'utf8')).toBe(CONTENTS);
+    });
+
+    // The parent directory is the user's cwd. The first implementation moved our compose file
+    // there with `overwrite: true`, so a `docker-compose.yml` the user already had was silently
+    // destroyed — and the `finally` then moved OUR file into the project, leaving no copy of
+    // theirs anywhere. Scaffolding into a directory that already runs its own compose stack is
+    // an ordinary thing to do, so this is data loss on a normal path.
+    it('does not touch a docker-compose.yml the user already has in the parent directory', async () => {
+        const theirs = 'services:\n  their-own-app:\n    image: nginx\n';
+        fs.writeFileSync(path.join(parentDir, COMPOSE), theirs, 'utf8');
+
+        await withComposeFileMovedAside(projectDir, async () => 'scaffolded');
+
+        expect(fs.readFileSync(path.join(parentDir, COMPOSE), 'utf8')).toBe(theirs);
+        expect(fs.readFileSync(path.join(projectDir, COMPOSE), 'utf8')).toBe(CONTENTS);
+    });
+
+    it('leaves the parent compose file alone even when the action fails', async () => {
+        const theirs = 'services:\n  their-own-app:\n    image: nginx\n';
+        fs.writeFileSync(path.join(parentDir, COMPOSE), theirs, 'utf8');
+
+        await expect(
+            withComposeFileMovedAside(projectDir, async () => {
+                throw new Error('scaffolding failed');
+            })
+        ).rejects.toThrow('scaffolding failed');
+
+        expect(fs.readFileSync(path.join(parentDir, COMPOSE), 'utf8')).toBe(theirs);
         expect(fs.readFileSync(path.join(projectDir, COMPOSE), 'utf8')).toBe(CONTENTS);
     });
 });

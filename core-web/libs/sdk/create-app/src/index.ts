@@ -783,7 +783,11 @@ async function startScaffoldingFrontEnd({
 
     if (!created.ok) {
         spinner.fail(`Failed to scaffold frontend project (${selectedFramework}).`);
-        process.exit(1);
+        // `throw`, NOT process.exit: this runs inside withComposeFileMovedAside, and
+        // process.exit skips `finally` — which would strand docker-compose.yml in the parent
+        // directory on the exact failure that `finally` exists to survive (AC-008). The outer
+        // catch prints the message and still exits 1, so the exit contract is unchanged.
+        throw new Error(`Failed to scaffold frontend project (${selectedFramework}).`);
     }
 
     // TODO need to insert here the dependices step
