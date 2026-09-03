@@ -318,6 +318,28 @@ export function applyOidcDiscovery(
     return draft;
 }
 
+/** Issuer Google returns from its OIDC discovery document; stable and unique to Google. */
+export const GOOGLE_ISSUER = 'https://accounts.google.com';
+export const GOOGLE_GROUPS_SCOPE = 'https://www.googleapis.com/auth/cloud-identity.groups.readonly';
+export const GOOGLE_GROUPS_URL =
+    "https://cloudidentity.googleapis.com/v1/groups/-/memberships:searchDirectGroups?query=member_key_id=='{email}'";
+
+/**
+ * Google cannot emit groups in token claims, so pre-fill the Cloud Identity groups lookup.
+ * Only empty fields are written, so re-running discovery never clobbers an admin's edits;
+ * the scope is appended once. Draft-only: nothing is persisted until the admin saves.
+ */
+export function applyGoogleGroupsPreset(config: DotAuthConfig): DotAuthConfig {
+    const draft = clone(config);
+    draft.oidc.groupsUrl ||= GOOGLE_GROUPS_URL;
+    draft.oidc.groupsResponsePath ||= 'memberships[].groupKey.id';
+    const scopes = draft.oidc.scopes.split(/\s+/).filter(Boolean);
+    if (!scopes.includes(GOOGLE_GROUPS_SCOPE)) {
+        draft.oidc.scopes = [...scopes, GOOGLE_GROUPS_SCOPE].join(' ');
+    }
+    return draft;
+}
+
 export function applyTrustedDiscovery(
     config: DotAuthConfig,
     path: `headless.trustedIdps.${number}`,

@@ -5,6 +5,7 @@ import {
     effect,
     inject,
     signal,
+    untracked,
     viewChild
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
@@ -79,6 +80,12 @@ export class DotAuthConfigComponent implements OnInit {
 
     constructor() {
         effect(() => {
+            if (this.store.googlePrefillPending()) {
+                untracked(() => this.#offerGoogleGroupsPrefill());
+            }
+        });
+
+        effect(() => {
             if (this.store.status() === 'loaded' && !this.store.isSystem()) {
                 this.isOverriding.set(!this.store.inherited());
             }
@@ -122,6 +129,21 @@ export class DotAuthConfigComponent implements OnInit {
 
     ngOnInit(): void {
         this.store.load(this.#route.snapshot.paramMap.get('hostId') ?? this.SYSTEM_HOST);
+    }
+
+    /**
+     * Google returns no groups in its tokens; offer to fill the Cloud Identity lookup fields.
+     * The flag is cleared before the dialog opens so a dismissed dialog cannot re-trigger it.
+     */
+    #offerGoogleGroupsPrefill(): void {
+        this.store.dismissGooglePrefill();
+        this.#confirm.confirm({
+            header: this.#dotMessageService.get('dotauth.confirm.google-groups.header'),
+            message: this.#dotMessageService.get('dotauth.confirm.google-groups.message'),
+            acceptLabel: this.#dotMessageService.get('dotauth.confirm.google-groups.accept'),
+            rejectLabel: this.#dotMessageService.get('dotauth.confirm.google-groups.reject'),
+            accept: () => this.store.applyGoogleGroupsPreset()
+        });
     }
 
     switchProtocol(protocol: DotAuthUiProtocol): void {
