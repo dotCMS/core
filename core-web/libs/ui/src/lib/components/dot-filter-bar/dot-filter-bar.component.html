@@ -1,0 +1,18 @@
+<div
+    class="flex w-full flex-wrap items-center gap-2"
+    data-testid="dot-filter-bar">
+    <!-- Chips arrive by projection, not from a registry. A registry inside this library could not
+         render Content Drive's Workflow chip — that one lives in the portlet, and the dependency
+         would run the wrong way. -->
+    <ng-content />
+
+    @if (filters.$hasNonDefaultFilters()) {
+        <p-button
+            [label]="'content-drive.filters.clear-all' | dm"
+            [text]="true"
+            [rounded]="true"
+            size="small"
+            (click)="onClearAll()"
+            data-testid="clear-all-filters" />
+    }
+</div>

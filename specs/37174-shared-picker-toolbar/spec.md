@@ -21,6 +21,7 @@
 - Q: Should the picker offer the Status chip, given it pins archived content out? → A: Yes — the pin is the thing that is wrong, not the chip. `archived` and Status are two ways to say one thing, so the boolean is removed and Status becomes the only way to express content condition. Archived, Unpublished and Locked all become usable in the picker. Workflow stays excluded.
 - Q: With the `archived` flag gone, what should `openBrowserModal`'s public `status: 'archived'` mean? → A: "Archived only" — it seeds the Status filter with Archived, rather than today's "working plus archived". No shipped caller passes it, and a value named `archived` returning archived content is the more honest reading.
 - Q: Is any other filter contradicted by a pinned request property, now that `archived` is fixed? → A: One — version state. The platform forces the query onto the working version when Archived or Unpublished is selected, which was documented as unreachable from the UI; offering Status in a picker that pins live-only would make it reachable and could hand a field the working version of an unpublished page. Resolved by bounding the Status control's *options* to what the caller's version state admits, the same way the content-type control is already bounded by the allowed base types.
+- Q: The field-filter chips cannot move to the shared library — they reach a content-selection dialog that lives in a library which already depends on the shared one, so moving them would make the dependency circular. How should the "More" filters still reach the picker? → A: Split it. The shared control covers every field type on its own; the one field type that needs that dialog (Relationship) gets it injected by whichever surface can supply it. Content Drive supplies it and keeps today's behaviour; the picker supplies none and the control degrades for that field type only — which costs it nothing, because the content types it filters have no relationship fields.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -239,6 +240,13 @@ the chip set matches the opted-in set, in the same order, with the same labels a
 - **FR-014e**: A control whose options are bounded by a caller restriction MUST make the bound
   legible rather than silently showing a shorter list — the editor should be able to tell that
   something is unavailable because of how the picker was opened, not because it does not exist.
+- **FR-020**: A shared filter control MUST NOT require capabilities that only some surfaces can
+  provide. Where one field type needs a capability a surface cannot supply, the control MUST accept
+  it as an optional, surface-provided extension and MUST remain fully usable without it — degrading
+  only that field type, and saying so, rather than failing to render.
+- **FR-021**: Content Drive's field filters MUST keep their current behavior in full, the
+  relationship picker included. Nothing an editor can do there today may become unavailable as a
+  result of the control being shared.
 - **FR-015**: A filter control whose options are loaded on demand MUST report a load failure through
   the reporting path of the surface it is rendered on, and MUST leave that surface usable. In the
   picker this is its own in-dialog notification — the same channel it already uses when assets or
@@ -296,6 +304,8 @@ the chip set matches the opted-in set, in the same order, with the same labels a
   that selection.
 - **SC-009**: No combination of filter selections reachable in the picker can return content
   described by a version state the caller did not ask for.
+- **SC-010**: A shared filter control renders and works on a surface that supplies none of its
+  optional extensions.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
