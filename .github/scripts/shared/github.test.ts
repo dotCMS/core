@@ -1,5 +1,6 @@
 import {
   findPreviousTag,
+  listStandardReleaseTags,
   onThrottle,
   parseRepo,
   resolvePRNumbers,
@@ -96,6 +97,50 @@ describe('resolvePRNumbers', () => {
     await expect(
       resolvePRNumbers(octokit, 'dotCMS', 'core', [{ sha: AAA }])
     ).rejects.toThrow('502 Bad Gateway');
+  });
+});
+
+describe('listStandardReleaseTags', () => {
+  /** Stand-in for octokit.paginate.iterator over repos.listReleases. */
+  function mockOctokit(data: { tag_name: string; draft: boolean; body: string | null }[]) {
+    return {
+      repos: { listReleases: {} },
+      paginate: { iterator: () => [{ data }][Symbol.iterator]() },
+    } as unknown as Octokit;
+  }
+
+  it('skips drafts, which listReleases returns first regardless of date (#37138)', async () => {
+    // Live state on dotCMS/core: 6 drafts match STANDARD_RELEASE_PATTERN and
+    // one of them duplicates a published tag, so an unfiltered list both
+    // mis-orders the walk-back and makes findIndex ambiguous.
+    const tags = await listStandardReleaseTags(
+      mockOctokit([
+        { tag_name: 'v26.04.11-02', draft: true, body: null },
+        { tag_name: 'v26.08.19-04', draft: false, body: 'notes' },
+        { tag_name: 'v26.04.11-02', draft: false, body: 'notes' },
+      ]),
+      'dotCMS',
+      'core'
+    );
+
+    expect(tags).toEqual([
+      { tag: 'v26.08.19-04', hasNotes: true },
+      { tag: 'v26.04.11-02', hasNotes: true },
+    ]);
+  });
+
+  it('ignores non-standard tags and reports an empty body as undocumented', async () => {
+    const tags = await listStandardReleaseTags(
+      mockOctokit([
+        { tag_name: 'dotcms-cli-1.2.3', draft: false, body: 'notes' },
+        { tag_name: 'v26.08.19-04_lts_01', draft: false, body: 'notes' },
+        { tag_name: 'v26.08.19-03', draft: false, body: '   ' },
+      ]),
+      'dotCMS',
+      'core'
+    );
+
+    expect(tags).toEqual([{ tag: 'v26.08.19-03', hasNotes: false }]);
   });
 });
 
