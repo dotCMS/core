@@ -13,7 +13,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRolesEditComponent } from './dot-roles-edit.component';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
-import { DotRoleNode } from '../models/dot-roles.models';
+import { DotRoleNode, ROOT_PARENT_OPTION_KEY } from '../models/dot-roles.models';
 
 const MESSAGES = {
     'roles.edit.title': 'Edit Role',
@@ -26,7 +26,7 @@ const MESSAGES = {
     'roles.form.name': 'Role',
     'roles.form.key': 'Key',
     'roles.form.parent': 'Parent',
-    'roles.form.parent.root': 'None (top level)',
+    'roles.form.parent.root': 'None (Top Level)',
     'roles.form.description': 'Description',
     'roles.form.can-grant': 'Can grant',
     'roles.form.users': 'Users',
@@ -177,6 +177,42 @@ describe('DotRolesEditComponent', () => {
             expect.objectContaining({ roleName: 'Eco Role' })
         );
         expect(dialogRef.close).toHaveBeenCalledWith(BASE_ROLE);
+    });
+
+    it('shows "None (Top Level)" for a role that is already a root', () => {
+        // `BASE_ROLE` is a root: the BE marks one with a self-referential
+        // `parent`, which `#normalizeParentId` maps to null.
+        spectator.detectChanges();
+
+        expect(spectator.component['form'].controls.parent.value?.key).toBe(ROOT_PARENT_OPTION_KEY);
+    });
+
+    it('keeps the current parent selected rather than defaulting to root', () => {
+        dialogConfig.data = { role: { ...BASE_ROLE, parent: 'r-parent' } };
+        spectator = createComponent();
+        spectator.detectChanges();
+
+        expect(spectator.component['form'].controls.parent.value?.key).toBe('r-parent');
+    });
+
+    it('reparents to root when "None (Top Level)" is picked, sending null not the sentinel', async () => {
+        const store = spectator.inject(DotRolesStore, true);
+        (store.updateRole as jest.Mock).mockClear();
+        spectator.detectChanges();
+
+        const [rootOption] = spectator.component['$parentTree']();
+        expect(rootOption.key).toBe(ROOT_PARENT_OPTION_KEY);
+
+        spectator.component['form'].controls.parent.setValue(rootOption);
+        spectator.component['onSave']();
+        await Promise.resolve();
+
+        // Sending the sentinel through would be read as a real id and answered
+        // with a 404 "parent role not found".
+        expect(store.updateRole).toHaveBeenCalledWith(
+            'r-eco',
+            expect.objectContaining({ parentRoleId: null })
+        );
     });
 
     it('closes on Cancel without calling updateRole', () => {
