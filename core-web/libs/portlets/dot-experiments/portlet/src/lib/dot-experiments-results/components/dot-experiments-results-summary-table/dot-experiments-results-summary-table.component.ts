@@ -13,7 +13,7 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
-import { VARIANT_COLORS } from '../../../shared/constants';
+import { RESULTS_VARIANT_COLORS } from '../../../shared/constants';
 import { DotExperimentResultVariantDetail, LiftTone } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
@@ -99,8 +99,8 @@ export class DotExperimentsResultsSummaryTableComponent {
             .map((row, index) => ({
                 ...row,
                 // The control is drawn first, so it always takes the first colour — the same one
-                // the charts give it. Past the palette's length the colours repeat.
-                color: VARIANT_COLORS[index % VARIANT_COLORS.length],
+                // the charts give it, because both read the one palette.
+                color: RESULTS_VARIANT_COLORS[index % RESULTS_VARIANT_COLORS.length],
                 isControl: row.id === DEFAULT_VARIANT_ID,
                 liftClass: LIFT_TONE_CLASSES[row.liftTone]
             }))

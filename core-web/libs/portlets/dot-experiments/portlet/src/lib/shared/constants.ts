@@ -1,5 +1,6 @@
 import {
     DotExperimentStatus,
+    ExperimentChartDatasetColorsVariants,
     ExperimentsStatusList,
     GOAL_TYPES,
     GOALS_METADATA_MAP
@@ -272,6 +273,20 @@ export const VARIANT_COLORS: readonly string[] = [
     '#22c55e',
     '#f43f5e'
 ];
+
+/**
+ * Row colours of the Results screen, in the order the rows are drawn.
+ *
+ * The line colours the charts already draw with, read straight off the chart palette rather than
+ * restated here. On that screen a row's dot exists to tie the row to its line, so the dot, the line
+ * and the legend swatch have to be one value — and they are, because there is only one to change.
+ *
+ * `MAX_VARIANTS_ALLOWED` is 3 and so is this palette, so the modulo never wraps today; it is there
+ * for a cap raised without the chart palette following.
+ */
+export const RESULTS_VARIANT_COLORS: readonly string[] = ExperimentChartDatasetColorsVariants.map(
+    ({ borderColor }) => String(borderColor)
+);
 
 /**
  * Kind of the cross-field error the weights raise when they do not add up to 100.
