@@ -43,6 +43,7 @@ public class SystemEventsCursorTracker {
      */
     private final LongSupplier overlapWindowMillis;
     private final LongSupplier maxBacklogMillis;
+    private final LongSupplier seedLookbackMillis;
     private final IntSupplier lagWarnThresholdPercent;
 
     /** Events this node observed that it had authored itself; the input to reconciliation. */
@@ -63,7 +64,8 @@ public class SystemEventsCursorTracker {
 
     public SystemEventsCursorTracker(final long overlapWindowMillis, final long maxBacklogMillis,
                                      final int lagWarnThresholdPercent) {
-        this(() -> overlapWindowMillis, () -> maxBacklogMillis, () -> lagWarnThresholdPercent);
+        this(() -> overlapWindowMillis, () -> maxBacklogMillis, () -> lagWarnThresholdPercent,
+                () -> overlapWindowMillis);
     }
 
     /**
@@ -72,10 +74,12 @@ public class SystemEventsCursorTracker {
      */
     public SystemEventsCursorTracker(final LongSupplier overlapWindowMillis,
                                      final LongSupplier maxBacklogMillis,
-                                     final IntSupplier lagWarnThresholdPercent) {
+                                     final IntSupplier lagWarnThresholdPercent,
+                                     final LongSupplier seedLookbackMillis) {
         this.overlapWindowMillis = overlapWindowMillis;
         this.maxBacklogMillis = maxBacklogMillis;
         this.lagWarnThresholdPercent = lagWarnThresholdPercent;
+        this.seedLookbackMillis = seedLookbackMillis;
     }
 
     /**
@@ -86,7 +90,8 @@ public class SystemEventsCursorTracker {
     public static SystemEventsCursorTracker fromConfig() {
         return new SystemEventsCursorTracker(SystemEventsConfig::getOverlapWindowMillis,
                 SystemEventsConfig::getMaxBacklogMillis,
-                SystemEventsConfig::getLagWarnThresholdPercent);
+                SystemEventsConfig::getLagWarnThresholdPercent,
+                SystemEventsConfig::getSeedLookbackMillis);
     }
 
     /**
@@ -99,10 +104,18 @@ public class SystemEventsCursorTracker {
     public SystemEventsPollWindow beginPoll(final Long storedCursor, final long now) {
 
         if (null == storedCursor) {
-            // First start, or the first poll after upgrade. Seed at "now" rather than at zero: a node
-            // must never replay the retained backlog, which can be up to DELETE_EVENTS_OLDER_THAN days.
-            evictOlderThan(now);
-            return new SystemEventsPollWindow(now, now, false, 0L);
+            // No stored cursor. Two cases are indistinguishable from here: this node has just
+            // restarted, or it is genuinely new to the cluster - and while server ids are regenerated
+            // on every JVM start (see #37291), a restart always looks like the latter.
+            //
+            // Reach back a bounded amount rather than starting at "now", so a restart recovers the
+            // events published while it was down; a container restart is typically well inside this
+            // window. Never as far as the retained backlog, which can be DELETE_EVENTS_OLDER_THAN
+            // days: a genuinely new node replaying that much is where re-processing starts to
+            // misfire.
+            final long seedFloor = now - this.seedLookbackMillis.getAsLong();
+            evictOlderThan(seedFloor);
+            return new SystemEventsPollWindow(seedFloor, now, false, 0L);
         }
 
         final long backlogBound = now - this.maxBacklogMillis.getAsLong();

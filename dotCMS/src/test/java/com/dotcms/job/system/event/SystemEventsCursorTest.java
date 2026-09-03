@@ -52,20 +52,59 @@ public class SystemEventsCursorTest {
 
     /**
      * Method to test: {@link SystemEventsCursorTracker#beginPoll(Long, long)}
-     * Given Scenario: No cursor row exists yet — a fresh install, or the first start after upgrade
-     * ExpectedResult: The cursor seeds at "now" and the read floor is "now". A node must not replay
-     * the retained backlog (up to 31 days) on its very first poll.
+     * Given Scenario: No cursor row exists yet — either a genuinely new node, or (because server ids
+     * are regenerated on every JVM start, see #37291) a node that has just restarted
+     * ExpectedResult: The read floor reaches back by the seed lookback, so a restart recovers events
+     * published while it was down. The cursor itself still advances to "now".
+     *
+     * <p>An earlier version of this test asserted {@code readFloor >= now} — i.e. no lookback at all.
+     * That was an over-correction: the requirement is not to replay the <i>retained backlog</i>
+     * (up to 31 days), and reaching back one bounded window is a long way short of that. The
+     * assertion below is the corrected intent.
      */
     @Test
-    public void test_first_run_seeds_at_now_without_replaying_the_backlog() {
+    public void test_first_run_seeds_with_a_bounded_lookback() {
         final SystemEventsCursorTracker tracker = tracker();
         final long now = 1_000_000L;
 
         final SystemEventsPollWindow window = tracker.beginPoll(null, now);
 
-        assertTrue("A seeded poll must not reach back before the node started",
-                window.getReadFloor() >= now);
+        assertEquals("A seeding node reaches back exactly one lookback",
+                now - OVERLAP_WINDOW_MILLIS, window.getReadFloor());
         assertEquals(now, tracker.completePoll(window));
+        assertFalse("Seeding is not a clamp", window.isClamped());
+    }
+
+    /**
+     * Method to test: the seed lookback is bounded, not the retained backlog
+     * Given Scenario: A seeding node with the default lookback
+     * ExpectedResult: It reaches back minutes, never the retention window. A node replaying 31 days
+     * of history is the failure this bound exists to prevent.
+     */
+    @Test
+    public void test_seed_lookback_is_far_short_of_the_retention_window() {
+        final SystemEventsCursorTracker tracker = tracker();
+        final long now = TimeUnit.DAYS.toMillis(40);
+
+        final long reachBack = now - tracker.beginPoll(null, now).getReadFloor();
+
+        assertTrue("The seed lookback must stay well inside the retention window",
+                reachBack < TimeUnit.HOURS.toMillis(1));
+    }
+
+    /**
+     * Method to test: a seed lookback of zero
+     * Given Scenario: An operator disables the lookback with SYSTEM_EVENTS_SEED_LOOKBACK_SECONDS=0
+     * ExpectedResult: The floor is "now" — the previous behaviour, still available for anyone who
+     * would rather a new node never re-read anything.
+     */
+    @Test
+    public void test_seed_lookback_can_be_disabled() {
+        final SystemEventsCursorTracker tracker = new SystemEventsCursorTracker(
+                () -> OVERLAP_WINDOW_MILLIS, () -> MAX_BACKLOG_MILLIS, () -> 50, () -> 0L);
+        final long now = 1_000_000L;
+
+        assertEquals(now, tracker.beginPoll(null, now).getReadFloor());
     }
 
     /**

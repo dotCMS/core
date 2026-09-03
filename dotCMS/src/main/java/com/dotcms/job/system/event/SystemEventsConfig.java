@@ -61,6 +61,14 @@ public class SystemEventsConfig {
     /** The poll cadence, used only to judge whether the cursor has gone stale. */
     public static final String POLL_INTERVAL_SECONDS = "SYSTEM_EVENTS_POLL_INTERVAL_SECONDS";
 
+    /**
+     * How far a node with no stored cursor reaches back on its first poll. Set to 0 to disable.
+     *
+     * <p>Defaults to the overlap window rather than to a separate number, so operators have one
+     * value to reason about unless they deliberately want otherwise.
+     */
+    public static final String SEED_LOOKBACK_SECONDS = "SYSTEM_EVENTS_SEED_LOOKBACK_SECONDS";
+
     static final int DEFAULT_OVERLAP_WINDOW_SECONDS = 120;
     static final int DEFAULT_MAX_BACKLOG_MINUTES = 60;
     static final int DEFAULT_LAG_WARN_THRESHOLD_PERCENT = 50;
@@ -130,6 +138,30 @@ public class SystemEventsConfig {
                 Config.getIntProperty(DELETE_EVENTS_OLDER_THAN,
                         DEFAULT_DELETE_EVENTS_OLDER_THAN_DAYS),
                 DEFAULT_DELETE_EVENTS_OLDER_THAN_DAYS, DELETE_EVENTS_OLDER_THAN);
+    }
+
+    /**
+     * How far back a node with no stored cursor reaches on its first poll.
+     *
+     * <p>A node has no cursor in two cases that are indistinguishable from here: it has just
+     * restarted, or it is genuinely new to the cluster. Reaching back a bounded amount recovers the
+     * events a restart would otherwise miss — a container restart is typically well under this
+     * window — at the cost of a genuinely new node re-reading the same span. That is tolerable
+     * because the dominant payload is cache and configuration invalidation, and a new node's caches
+     * are empty anyway.
+     *
+     * <p>It is deliberately <b>not</b> the backlog bound: reaching back an hour would make a new node
+     * replay an hour of events, which is where replaying informational events starts to misfire.
+     *
+     * @return the seed lookback in milliseconds; 0 disables it, so a seeding node reads nothing older
+     * than "now"
+     */
+    public static long getSeedLookbackMillis() {
+        final int configured = Config.getIntProperty(SEED_LOOKBACK_SECONDS, -1);
+        if (configured >= 0) {
+            return TimeUnit.SECONDS.toMillis(configured);
+        }
+        return getOverlapWindowMillis();
     }
 
     /**
