@@ -1170,6 +1170,22 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
+            // #37005. PrimeNG's breadcrumb renders `[attr.target]="item.target"`, and an item with
+            // no `target` stringifies to `target="undefined"` — a NAMED browsing context. The link
+            // then opens the editor in a new window instead of navigating, which is why clicking
+            // the page crumb appeared to do nothing while spawning a second browser. Every other
+            // crumb author in the app passes `_self`; this one did not.
+            it('should open in the same window', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({ target: '_self' })
+                );
+            });
+
             it('should call addNewBreadcrumb again when page response changes', async () => {
                 mockGlobalStore.addNewBreadcrumb.mockClear();
                 spectator.detectChanges();

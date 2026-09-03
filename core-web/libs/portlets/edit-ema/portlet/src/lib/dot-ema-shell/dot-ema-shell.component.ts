@@ -319,6 +319,11 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
 
         this.#globalStore.addNewBreadcrumb({
             label,
+            // Required, not decorative: PrimeNG's breadcrumb binds `[attr.target]="item.target"`,
+            // so an item without one renders `target="undefined"` — a *named browsing context*.
+            // The crumb then opened the editor in a new window instead of navigating, which read
+            // as the link doing nothing. Every other crumb author in the app passes `_self`.
+            target: '_self',
             url: `/dotAdmin/#${urlTree.toString()}`,
             id: `${identifier}`
         });
