@@ -6,7 +6,6 @@ import { DOT_FILTER_FACADE } from './filter-facade.token';
 
 import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
 
-
 /**
  * The filter chip row, shared by every surface that offers filters.
  *
