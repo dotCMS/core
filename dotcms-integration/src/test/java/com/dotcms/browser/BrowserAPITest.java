@@ -36,6 +36,7 @@ import com.dotmarketing.business.PermissionAPI;
 import com.dotmarketing.business.Role;
 import com.dotmarketing.business.Treeable;
 import com.dotmarketing.business.UserAPI;
+import com.dotmarketing.business.UserFactoryImpl;
 import com.dotmarketing.common.db.DotConnect;
 import com.dotmarketing.db.DbConnectionFactory;
 import com.dotmarketing.exception.DotDataException;
@@ -55,6 +56,7 @@ import com.dotmarketing.portlets.templates.model.Template;
 import com.dotmarketing.util.Config;
 import com.dotmarketing.util.FileUtil;
 import com.dotmarketing.util.UUIDGenerator;
+import com.dotmarketing.util.UtilMethods;
 import com.google.common.collect.ImmutableSet;
 import com.liferay.portal.model.User;
 import com.liferay.util.StringPool;
@@ -70,6 +72,7 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -2530,5 +2533,152 @@ public class BrowserAPITest extends IntegrationTestBase {
         final File file = new File(Files.createTempDirectory("issue37050").toFile(), name);
         FileUtils.writeStringToFile(file, "this is a test!", StandardCharsets.UTF_8);
         return file;
+    }
+
+    // --- Issue #37186 (User Story 1): warm-up eliminates the concurrent thundering herd ------
+    //
+    // Freshly-created users are guaranteed cache-misses on their first resolution, so no manual
+    // cache-flush is needed to set up a "cold" scenario — that is exactly what makes this test
+    // deterministic without touching shared cache state other concurrently-running tests rely on.
+
+    /**
+     * Method to test: {@link BrowserAPI#getPaginatedContents(BrowserQuery)}
+     * <p>Given a folder whose rows are authored by a handful of distinct, not-yet-cached users,
+     * a single listing request must resolve each distinct author exactly once — regardless of how
+     * many parallel hydration chunks the page is split into — and an immediate repeat request
+     * must hit the now-warm cache with zero further DB lookups. Before the fix (FR-001), this
+     * scenario reproduces reliably with a lookup count exceeding the number of distinct authors,
+     * because concurrent chunks race on the same not-yet-cached id.</p>
+     */
+    @Test
+    public void test_getPaginatedContents_warmUpResolvesEachDistinctAuthorExactlyOnce() throws Exception {
+        final List<User> authors = new ArrayList<>();
+        for (int i = 0; i < 3; i++) {
+            authors.add(new UserDataGen().nextPersisted());
+        }
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final var contentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        // 12 rows over 3 authors: hydrateContentletsInParallel's chunk size is
+        // max(1, min(10, total/4)) = 3 for 12 rows, i.e. 4 parallel chunks — enough for at least
+        // two chunks to need the same not-yet-cached author at the same time pre-fix.
+        final List<Contentlet> created = new ArrayList<>();
+        for (int i = 0; i < 12; i++) {
+            final User author = authors.get(i % authors.size());
+            created.add(new ContentletDataGen(contentType)
+                    .setProperty("title", "warmup-" + i)
+                    .host(host)
+                    .folder(folder)
+                    .user(author)
+                    .setPolicy(IndexPolicy.WAIT_FOR)
+                    .nextPersisted());
+        }
+
+        // Determine the REAL distinct set of modUser/owner ids the warm-up must resolve, from
+        // what was actually persisted — not assumed from the authors list, since owner assignment
+        // is not this test's concern and must not be guessed at.
+        final Set<String> expectedIds = new LinkedHashSet<>();
+        for (final Contentlet contentlet : created) {
+            if (UtilMethods.isSet(contentlet.getModUser())) {
+                expectedIds.add(contentlet.getModUser());
+            }
+            if (UtilMethods.isSet(contentlet.getOwner())) {
+                expectedIds.add(contentlet.getOwner());
+            }
+        }
+        assertFalse("Expected at least one distinct author id to warm up", expectedIds.isEmpty());
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showContent(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .build();
+
+        UserFactoryImpl.resetDbLookupCountForTesting();
+        final PaginatedContents firstPage = browserAPI.getPaginatedContents(browserQuery);
+        assertEquals("First (cold) request must resolve each distinct author exactly once",
+                (long) expectedIds.size(), UserFactoryImpl.getDbLookupCountForTesting());
+        assertEquals("All 12 rows must still come back", created.size(), firstPage.contentCount);
+
+        UserFactoryImpl.resetDbLookupCountForTesting();
+        final PaginatedContents secondPage = browserAPI.getPaginatedContents(browserQuery);
+        assertEquals("An immediate repeat must hit the warm cache with zero DB lookups",
+                0L, UserFactoryImpl.getDbLookupCountForTesting());
+        assertEquals(created.size(), secondPage.contentCount);
+    }
+
+    // --- Issue #37186 (User Story 3): one orphan user reference must not fail the whole listing
+
+    /**
+     * Method to test: {@link BrowserAPI#getPaginatedContents(BrowserQuery)}
+     * <p>A folder containing one row whose {@code modUser} no longer exists in {@code user_} must
+     * still list successfully, with that row falling back to the existing "N/A" label — not fail
+     * the entire request. Before the fix (FR-004a), {@code DefaultTransformStrategy
+     * .addVersionProperties}'s unwrapped {@code loadUserById} call throws an uncaught
+     * {@code NoSuchUserException} that escapes the parallel hydration future and fails the whole
+     * page.</p>
+     */
+    @Test
+    public void test_getPaginatedContents_orphanModUser_doesNotFailWholeListing() throws Exception {
+        final User orphan = new UserDataGen().nextPersisted();
+
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final var contentType = new ContentTypeDataGen()
+                .host(host)
+                .folder(folder)
+                .field(new FieldDataGen().name("title").velocityVarName("title").next())
+                .nextPersisted();
+
+        final Contentlet orphanedRow = new ContentletDataGen(contentType)
+                .setProperty("title", "orphan-owned")
+                .host(host)
+                .folder(folder)
+                .user(orphan)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        final Contentlet healthyRow = new ContentletDataGen(contentType)
+                .setProperty("title", "healthy")
+                .host(host)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+
+        // Orphan the user AFTER authoring content with it, so modUser still points at an id that
+        // no longer resolves in user_ — exactly the "deleted user still referenced" scenario.
+        // Deliberately NOT using UserAPI#delete: every overload reassigns the deleted user's
+        // content references to a replacement user (UserAPIImpl#delete ->
+        // ContentletAPI#updateUserReferences), which would leave no orphan reference at all —
+        // the opposite of what this test needs. A raw SQL delete reproduces the real-world
+        // failure mode (a user row removed without reassigning what it authored).
+        new DotConnect().executeUpdate("delete from user_ where userid = ?", orphan.getUserId());
+
+        final BrowserQuery browserQuery = BrowserQuery.builder()
+                .showContent(true)
+                .withHostOrFolderId(folder.getIdentifier())
+                .offset(0)
+                .maxResults(20)
+                .build();
+
+        // Must NOT throw — this is the whole point of FR-004a. Before the fix, this call fails
+        // the entire request instead of falling back on just the orphaned row.
+        final PaginatedContents page = browserAPI.getPaginatedContents(browserQuery);
+
+        assertEquals("Both rows must come back — the orphan reference degrades, it doesn't fail the page",
+                2, page.contentCount);
+
+        final Map<String, Object> orphanRowResult = page.list.stream()
+                .filter(item -> orphanedRow.getIdentifier().equals(item.get("identifier")))
+                .findFirst()
+                .orElseThrow(() -> new AssertionError("Orphan-authored row must still be present"));
+        assertEquals("Orphan modUser must fall back to the existing N/A label, not a resolved name",
+                "N/A", orphanRowResult.get("modUserName"));
     }
 }
