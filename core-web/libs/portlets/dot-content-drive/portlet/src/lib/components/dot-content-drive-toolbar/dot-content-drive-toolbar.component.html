@@ -107,7 +107,7 @@
             <!-- Sits at the end of the filter row rather than beside the search box: during a run the
                  selection still stands, so the row above is occupied by the workflow-action buttons.
                  `ml-auto` keeps it right-aligned as filter chips come and go. -->
-            @if ($actionExecution()) {
+            @if ($hasRunInFlight()) {
                 <div
                     class="ml-auto flex items-center gap-2 text-sm text-gray-700"
                     animate.enter="toolbar-enter"

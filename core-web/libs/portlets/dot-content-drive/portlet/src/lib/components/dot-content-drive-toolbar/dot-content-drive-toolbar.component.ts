@@ -289,6 +289,15 @@ export class DotContentDriveToolbarComponent {
     readonly $actionExecution = this.#store.actionExecution;
 
     /**
+     * How many runs are in flight. Drives whether the indicator is shown at all: with several runs
+     * `$actionExecution` is deliberately undefined, so keying visibility off it alone would hide the
+     * indicator exactly when the most is happening.
+     */
+    readonly $activeRunCount = this.#store.activeRunCount;
+
+    readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
+
+    /**
      * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
      * `string[]` arguments and the item count is a number.
      *
@@ -302,8 +311,14 @@ export class DotContentDriveToolbarComponent {
     readonly $actionExecutionLabel = computed(() => {
         const execution = this.$actionExecution();
 
+        // Several at once: name none of them and report the number instead (FR-017).
         if (!execution) {
-            return '';
+            return this.$activeRunCount() > 1
+                ? this.#dotMessageService.get(
+                      'content-drive.action-center.applying-many',
+                      String(this.$activeRunCount())
+                  )
+                : '';
         }
 
         // Both halves are escaped, and the item name matters more: `actionName` is a

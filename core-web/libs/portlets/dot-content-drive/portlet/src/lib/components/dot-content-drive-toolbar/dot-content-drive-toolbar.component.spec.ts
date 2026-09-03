@@ -59,6 +59,7 @@ describe('DotContentDriveToolbarComponent', () => {
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    const activeRunCountSignal = signal<number>(0);
     const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
 
     const createComponent = createComponentFactory({
@@ -87,6 +88,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
                 actionExecution: actionExecutionSignal,
+                activeRunCount: activeRunCountSignal,
                 siteCanAddChildren: siteCanAddChildrenSignal,
                 // Mirrors the store's own computed so the toolbar tests still drive the gate
                 // through the two signals it derives from, not through a hardcoded answer.
@@ -170,6 +172,7 @@ describe('DotContentDriveToolbarComponent', () => {
         selectedItemsSignal.set([]);
         selectedNodeSignal.set(undefined);
         actionExecutionSignal.set(undefined);
+        activeRunCountSignal.set(0);
     });
 
     it('should render toolbar container', () => {
@@ -536,6 +539,7 @@ describe('DotContentDriveToolbarComponent', () => {
             // Reopening mid-run gives a dialog with every row greyed out that then closes itself
             // when the run settles. Refusing to open it is the honest version of that state.
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -548,6 +552,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should explain why it is disabled while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -565,6 +570,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should not open the dialog while an action is running', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -576,6 +582,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
         it('should become available again once the run settles', async () => {
             selectedItemsSignal.set([MOCK_ITEMS[0]]);
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             await settleToolbarAnimation(spectator);
 
@@ -600,6 +607,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should report the action and the number of items once a run starts', () => {
             // The toolbar is the only place still reporting the run after the Action Center dialog is
             // closed, which is the whole reason the indicator lives out here.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
 
@@ -627,6 +635,7 @@ describe('DotContentDriveToolbarComponent', () => {
                         : key
             );
 
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({
                 actionName: '<img src=x onerror="window.__xss = true">',
                 total: 3
@@ -644,9 +653,36 @@ describe('DotContentDriveToolbarComponent', () => {
         });
 
         it('should disappear again once the run settles', () => {
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 3 });
             spectator.detectChanges();
 
+            actionExecutionSignal.set(undefined);
+            // Settling clears the count too; the indicator now keys visibility off it so that
+            // several runs (where no single one is named) still show something.
+            activeRunCountSignal.set(0);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeNull();
+        });
+
+        // ---- FR-017: several runs at once ----
+
+        it('should collapse to a count when several runs are in flight', () => {
+            // `actionExecution` is undefined with more than one run: naming one of several
+            // arbitrarily is worse than naming none.
+            activeRunCountSignal.set(2);
+            actionExecutionSignal.set(undefined);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('action-execution-indicator'))).toBeTruthy();
+            expect(spectator.component.$actionExecutionLabel()).toBe(
+                'content-drive.action-center.applying-many'
+            );
+        });
+
+        it('should still hide the indicator when nothing at all is running', () => {
+            activeRunCountSignal.set(0);
             actionExecutionSignal.set(undefined);
             spectator.detectChanges();
 
@@ -658,6 +694,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should name the item, not a count, when the run is over a single thing', () => {
             // "Applying Publish to 1 item(s)" is worse than useless on a context-menu action: the
             // author knows it is one item, what they cannot see is *which*.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({
                 actionName: 'Publish',
                 total: 1,
@@ -671,6 +708,7 @@ describe('DotContentDriveToolbarComponent', () => {
         });
 
         it('should keep the count form when several items are in play', () => {
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 12 });
             spectator.detectChanges();
 
@@ -693,6 +731,7 @@ describe('DotContentDriveToolbarComponent', () => {
                         : key
             );
 
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({
                 actionName: 'Publish',
                 total: 1,
@@ -712,6 +751,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should show activity without a position when the run reports no progress', () => {
             // Progress readback is the backend's largest piece of hidden work. Until it lands every
             // run is indeterminate, and the indicator must not imply a position it does not have.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 50 });
             spectator.detectChanges();
 
@@ -720,6 +760,7 @@ describe('DotContentDriveToolbarComponent', () => {
         });
 
         it('should show the position once the run reports one', () => {
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
             spectator.detectChanges();
 
@@ -732,6 +773,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should treat a reported zero as a position, not as absence', () => {
             // `processed: 0` is a run that has genuinely done nothing yet, which is different from a
             // run that cannot say. A truthiness check would collapse the two.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 0 });
             spectator.detectChanges();
 
@@ -744,6 +786,7 @@ describe('DotContentDriveToolbarComponent', () => {
         it('should keep progress updates out of the live region', () => {
             // The indicator is a polite live region. A fifty-file upload that re-announced on every
             // tick would speak fifty times; the value stays queryable instead of being pushed.
+            activeRunCountSignal.set(1);
             actionExecutionSignal.set({ actionName: 'Publish', total: 50, processed: 20 });
             spectator.detectChanges();
 
