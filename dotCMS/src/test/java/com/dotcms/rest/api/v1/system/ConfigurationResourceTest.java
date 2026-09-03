@@ -292,12 +292,13 @@ public class ConfigurationResourceTest {
      * Method to test: {@link ConfigurationResource#getConfigVariables}
      * Given scenario: {@code FEATURE_FLAG_EXPERIMENTS_PORTLET} is requested at its shipped default
      *   of {@code "false"} ({@code dotmarketing-config.properties}).
-     * Expected result: Response contains the normalised string {@code "false"}, so the frontend's
-     *   {@code === 'true'} comparison resolves the UVE Experiments entry point to the legacy
+     * Expected result: Response contains the normalised string {@code "false"} — a string, not a
+     *   JSON boolean, despite the {@code BOOLEAN_FEATURE_FLAGS} name. The frontend's
+     *   {@code === 'true'} comparison then resolves the UVE Experiments entry point to the legacy
      *   per-page screens (FR-013, FR-016).
      */
     @Test
-    void getConfigVariables_experimentsPortletFlagSetToFalse_returnsNativeBooleanFalse() {
+    void getConfigVariables_experimentsPortletFlagSetToFalse_returnsNormalisedFalseString() {
         mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
                 .thenReturn("false");
 
@@ -313,7 +314,7 @@ public class ConfigurationResourceTest {
      * Expected result: Response contains the normalised string {@code "true"} (FR-012, FR-021).
      */
     @Test
-    void getConfigVariables_experimentsPortletFlagSetToTrue_returnsNativeBooleanTrue() {
+    void getConfigVariables_experimentsPortletFlagSetToTrue_returnsNormalisedTrueString() {
         mockedConfig.when(() -> Config.getStringProperty(EXPERIMENTS_PORTLET_FLAG, null))
                 .thenReturn("true");
 

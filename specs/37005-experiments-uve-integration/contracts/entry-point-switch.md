@@ -49,7 +49,7 @@ String FEATURE_FLAG_EXPERIMENTS_PORTLET = "FEATURE_FLAG_EXPERIMENTS_PORTLET";
 
 The constant goes in **both** sets, or it does not work:
 
-- `BOOLEAN_FEATURE_FLAGS` — or it arrives as a string and `=== true` comparisons fail.
+- `BOOLEAN_FEATURE_FLAGS` — or the value is passed through unnormalised, so `"True"` / `"1"` reach the frontend verbatim and its `=== 'true'` comparison reads them as off.
 - `WHITE_LIST` — or, per the file's own maintenance rule, it is *silently excluded* from the
   response.
 
@@ -84,12 +84,22 @@ anything else reading `FEATURE_FLAG_EXPERIMENTS` (FR-014, FR-015a).
 `GET /api/v1/configuration/config?keys=FEATURE_FLAG_EXPERIMENTS_PORTLET`
 
 ```json
-{ "entity": { "FEATURE_FLAG_EXPERIMENTS_PORTLET": false } }
+{ "entity": { "FEATURE_FLAG_EXPERIMENTS_PORTLET": "false" } }
 ```
 
-A native JSON boolean, because the key is in `BOOLEAN_FEATURE_FLAGS`. No REST signature changes, no
-new endpoint, no `@Schema` change — so no `openapi.yaml` regeneration is required for the resource
-itself. (Regenerate and commit if any `@Operation`/`@Parameter` text is touched; it should not be.)
+A **string**, not a JSON boolean — the normalised lowercase `"true"` or `"false"`. Membership in
+`BOOLEAN_FEATURE_FLAGS` is what normalises the value (so `"True"`, `"TRUE"`, `"1"` all arrive as
+`"true"`); it does not change the JSON type.
+
+The set's name invites the opposite conclusion, and its javadoc opens by saying "must be serialised
+as native JSON booleans" before correcting itself two lines later: "The wire format is the
+normalised lowercase string `"true"` or `"false"` — frontend callers should compare with
+`=== 'true'`." Verified against a running instance: the endpoint returns `"true"`.
+
+Nothing downstream needs changing. `DotPropertiesService.normalizeFlagValue` coerces with
+`value.toLowerCase() === 'true'`, and the backend tests assert the string form. No REST signature
+changes, no new endpoint, no `@Schema` change — so no `openapi.yaml` regeneration is required.
+(Regenerate and commit if any `@Operation`/`@Parameter` text is touched; it should not be.)
 
 ---
 
