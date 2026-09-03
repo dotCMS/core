@@ -6,7 +6,12 @@ import { signal } from '@angular/core';
 import { Confirmation, ConfirmationService } from 'primeng/api';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { DEFAULT_VARIANT_ID, DotExperimentStatus, Variant } from '@dotcms/dotcms-models';
+import {
+    DEFAULT_VARIANT_ID,
+    DotExperimentStatus,
+    ExperimentChartDatasetColorsVariants,
+    Variant
+} from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotExperimentsResultsSummaryTableComponent } from './dot-experiments-results-summary-table.component';
@@ -179,6 +184,25 @@ describe('DotExperimentsResultsSummaryTableComponent', () => {
 
         it('chips the backend-suggested winner as leading', () => {
             expect(spectator.queryAll(byTestId('summary-row-leading-chip')).length).toBe(1);
+        });
+
+        // Asserted against the chart palette itself rather than against copied literals: the whole
+        // point of the dot is that it is the colour of that row's line, so a test holding its own
+        // copy of the values would keep passing after the two drifted apart.
+        it('dots each row in the colour its chart line is drawn in', () => {
+            const dots = spectator
+                .queryAll(byTestId('detail-row'))
+                .map((row) => row.querySelector('span[aria-hidden="true"]') as HTMLElement);
+
+            // The browser re-serialises `rgb(a,b,c)` with spaces, so both sides are compared
+            // stripped of them rather than the expectation being written in the browser's dialect.
+            const withoutSpaces = (colour: string) => colour.replace(/\s/g, '');
+
+            expect(dots.map((dot) => withoutSpaces(dot.style.backgroundColor))).toEqual(
+                ExperimentChartDatasetColorsVariants.slice(0, 2).map(({ borderColor }) =>
+                    withoutSpaces(String(borderColor))
+                )
+            );
         });
     });
 

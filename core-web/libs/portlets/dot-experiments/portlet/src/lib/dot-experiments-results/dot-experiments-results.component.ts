@@ -172,14 +172,26 @@ export class DotExperimentsResultsComponent {
 
     readonly $emptyReportTitle = this.#dotMessageService.get('experiments.results.empty.title');
 
-    readonly $emptyReportSubtitle = computed<string>(() =>
-        this.store.$isWaitingForData()
+    /**
+     * Why the body is empty, in the order the reasons override each other.
+     *
+     * A failed report comes first because it is the one case the other two would misdescribe. The
+     * screen settles as LOADED with `results: null`, which leaves `$hasEnoughSessionsForTable()`
+     * false through no fault of the session count — so without this branch a load failure read as
+     * "needs N sessions", directly under a banner saying the report could not be loaded.
+     */
+    readonly $emptyReportSubtitle = computed<string>(() => {
+        if (this.store.reportUnavailable()) {
+            return this.#dotMessageService.get('experiments.results.empty.unavailable.description');
+        }
+
+        return this.store.$isWaitingForData()
             ? this.#dotMessageService.get('experiments.results.empty.not-started.description')
             : this.#dotMessageService.get(
                   'experiments.results.empty.description',
                   String(MINIMUM_SESSIONS_TO_SHOW_CHART)
-              )
-    );
+              );
+    });
 
     constructor() {
         this.#listenForActionSuccess();
