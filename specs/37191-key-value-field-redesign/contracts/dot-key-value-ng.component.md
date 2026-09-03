@@ -82,6 +82,12 @@ directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-
 | Key at rest | not `readOnly` | plain text; becomes an input on activation | — |
 | Load-more row | more than 40 rows remain unrendered | appended after the last row; **left-aligned** "Load more", no count | FR-037 to FR-039 |
 
+### Paging is not derived from `variables`
+
+The revealed count is the editor's own state, not something computed from the input. Field Variables
+and Apps replace the array on every `updatedList`, so deriving it there collapses the table to 40 rows
+mid-edit. A new editor instance starts at page one on its own.
+
 ### Paging must not shorten the bound array
 
 Only 40 rows are rendered, but `[value]` still receives the **entire** list, with rows withheld in the

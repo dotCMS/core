@@ -1,4 +1,4 @@
-import { Subject, forkJoin, of } from 'rxjs';
+import { Observable, Subject, forkJoin, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import {
@@ -14,7 +14,7 @@ import {
     signal
 } from '@angular/core';
 
-import { catchError, finalize, take, takeUntil } from 'rxjs/operators';
+import { catchError, finalize, take, takeUntil, tap } from 'rxjs/operators';
 
 import { DotHttpErrorManagerService, DotMessageService } from '@dotcms/data-access';
 import {
@@ -169,29 +169,92 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         this.#saving.set(true);
         this.#emitDialogActions();
 
-        forkJoin([
-            ...removed.map((variable) => this.fieldVariablesService.delete(this.field, variable)),
-            ...written.map((variable) => this.fieldVariablesService.save(this.field, variable))
-        ])
+        /*
+         * Each write is tracked on its own so a partial failure stays recoverable.
+         * `forkJoin` fails the whole batch on the first error, and the earlier version
+         * left `#stored` untouched when that happened — but some deletes had already
+         * gone through. The next Save then re-issued a DELETE for a variable that was
+         * gone, which the endpoint answers with 404 (verified against the API), so the
+         * tab could never save again.
+         *
+         * Advancing `#stored` per succeeded operation means a retry only sends what is
+         * still outstanding.
+         */
+        const succeeded: DotFieldVariable[] = [];
+        const failed: HttpErrorResponse[] = [];
+
+        const track = (source: Observable<DotFieldVariable>, onDone: () => void) =>
+            source.pipe(
+                take(1),
+                tap(onDone),
+                catchError((err: HttpErrorResponse) => {
+                    failed.push(err);
+
+                    return of(null);
+                })
+            );
+
+        const operations = [
+            ...removed.map((variable) =>
+                track(this.fieldVariablesService.delete(this.field, variable), () =>
+                    succeeded.push(variable)
+                )
+            ),
+            ...written.map((variable) =>
+                track(this.fieldVariablesService.save(this.field, variable), () =>
+                    succeeded.push(variable)
+                )
+            )
+        ];
+
+        forkJoin(operations)
             .pipe(
                 take(1),
                 takeUntil(this.destroy$),
-                catchError((err: HttpErrorResponse) => {
-                    this.dotHttpErrorManagerService.handle(err).pipe(take(1)).subscribe();
-
-                    return of(null);
-                }),
                 finalize(() => {
                     this.#saving.set(false);
                     this.#emitDialogActions();
                 })
             )
-            .subscribe((result) => {
-                if (result !== null) {
-                    this.#stored.set(current);
-                    this.$save.emit();
+            .subscribe(() => {
+                this.#stored.set(this.#storedAfter(stored, current, succeeded));
+
+                if (failed.length) {
+                    this.dotHttpErrorManagerService.handle(failed[0]).pipe(take(1)).subscribe();
+
+                    return;
                 }
+
+                this.$save.emit();
             });
+    }
+
+    /**
+     * What the server holds once the operations that landed have been applied.
+     *
+     * Built from what is on screen rather than from the previous snapshot, so an added
+     * pair that landed is recorded too — otherwise a retry after a partial failure
+     * re-sent it. Anything whose write failed keeps its previous value, and a removal
+     * the server refused stays, so a retry sends exactly what is still outstanding.
+     */
+    #storedAfter(
+        stored: DotFieldVariable[],
+        current: DotFieldVariable[],
+        succeeded: DotFieldVariable[]
+    ): DotFieldVariable[] {
+        const landed = new Set(succeeded.map(({ key }) => key));
+
+        const onScreen = current
+            .map((item) =>
+                landed.has(item.key) ? item : (stored.find(({ key }) => key === item.key) ?? null)
+            )
+            .filter((item): item is DotFieldVariable => item !== null);
+
+        const notRemoved = stored.filter(
+            ({ key }) => !current.some((item) => item.key === key) && !landed.has(key)
+        );
+
+        return [...onScreen, ...notRemoved];
     }
 
     /**

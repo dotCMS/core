@@ -5,7 +5,8 @@ import {
     inject,
     input,
     linkedSignal,
-    output
+    output,
+    signal
 } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
@@ -109,13 +110,16 @@ export class DotKeyValueComponent {
     /**
      * How many rows are currently rendered.
      *
-     * Re-seeded whenever the consumer supplies a new list, so reopening a field
-     * never starts part-way down a previous one.
+     * Deliberately not derived from `$variables`. Two of the three consumers hand back
+     * a fresh array on every edit, so reacting to that input collapsed the table to the
+     * first page the moment anything changed after revealing rows — 45 rows back down
+     * to 40 on a single delete.
+     *
+     * A field opened afresh still starts at page one, because each consumer builds a
+     * new editor for it: a new dialog in Field Variables, a new panel in Apps, a new
+     * field component in Edit Content.
      */
-    $visibleCount = linkedSignal<DotKeyValue[], number>({
-        source: this.$variables,
-        computation: () => DotKeyValueComponent.PAGE_SIZE
-    });
+    $visibleCount = signal(DotKeyValueComponent.PAGE_SIZE);
 
     /** Rows still hidden below the last rendered one. */
     $remaining = computed(() => Math.max(0, this.$variableList().length - this.$visibleCount()));

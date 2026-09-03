@@ -327,8 +327,11 @@ persist.
 - **FR-040**: Withholding is a **rendering** limit only. Every pair MUST remain in the editor's list
   and in what it emits, so reorder, edit, remove and the emitted payload behave as though all rows
   were on screen. In particular, a drag MUST NOT lose the withheld rows.
-- **FR-041**: Supplying a new list to the editor MUST reset it to the first page, so reopening a field
-  never starts part-way down the previous one.
+- **FR-041**: Revealed rows MUST survive an edit. Two of the three consumers hand the editor a fresh
+  array on every change, so a count derived from that input collapses the table to the first page as
+  soon as anything is added, edited, removed or reordered. *Corrected:* this originally read "supplying
+  a new list MUST reset it to the first page", which described the defect. A field opened afresh still
+  starts at page one, because each consumer builds a new editor for it.
 
 **Pasting a block of pairs**
 

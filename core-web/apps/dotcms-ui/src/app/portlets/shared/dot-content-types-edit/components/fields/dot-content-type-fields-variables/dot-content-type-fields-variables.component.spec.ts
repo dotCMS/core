@@ -231,6 +231,58 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(saved).not.toHaveBeenCalled();
         });
 
+        it('should not re-send a write that already went through', () => {
+            /*
+             * The regression this guards: a partial failure used to leave the recorded
+             * state untouched, so the next Save re-issued a DELETE for a variable the
+             * first attempt had already removed. That endpoint answers 404 for a
+             * missing id (verified against the API), so the tab could never save again.
+             */
+            const [first, second] = mockFieldVariables;
+            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+                v.key === first.key ? of(v as DotFieldVariable) : throwError(() => httpError)
+            );
+
+            // Remove both; the first delete lands, the second fails.
+            changeTo(
+                mockFieldVariables.filter(({ key }) => ![first.key, second.key].includes(key))
+            );
+            comp.saveChanges();
+
+            (dotFieldVariableService.delete as jest.Mock).mockClear();
+            comp.saveChanges();
+
+            // Only the one that failed is retried.
+            expect(dotFieldVariableService.delete).toHaveBeenCalledTimes(1);
+            expect(dotFieldVariableService.delete).toHaveBeenCalledWith(
+                comp.field,
+                expect.objectContaining({ key: second.key })
+            );
+        });
+
+        it('should not re-send an add that already landed', () => {
+            const [first] = mockFieldVariables;
+            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+                of(v as DotFieldVariable)
+            );
+            jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
+                throwError(() => httpError)
+            );
+
+            // Add one (succeeds) and remove one (fails) in the same save.
+            changeTo([
+                ...mockFieldVariables.filter(({ key }) => key !== first.key),
+                { key: 'added', value: 'v' } as DotFieldVariable
+            ]);
+            comp.saveChanges();
+
+            (dotFieldVariableService.save as jest.Mock).mockClear();
+            comp.saveChanges();
+
+            // Only the failed delete is outstanding; the add is already stored.
+            expect(dotFieldVariableService.save).not.toHaveBeenCalled();
+        });
+
         it('should surface a failed delete and keep the edits on screen', () => {
             jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 throwError(() => httpError)

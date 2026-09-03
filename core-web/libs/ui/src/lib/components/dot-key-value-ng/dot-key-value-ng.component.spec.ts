@@ -526,16 +526,23 @@ describe('DotKeyValueComponent', () => {
             expect(spy.mock.calls[0][0]).toHaveLength(94);
         });
 
-        it('should start again at the first page when the consumer supplies a new list', () => {
+        it('should keep the revealed rows when the consumer re-feeds the list', () => {
+            /*
+             * The regression this guards: Field Variables and Apps hand back a fresh
+             * array on every edit, so deriving the count from the input collapsed the
+             * table to the first page as soon as anything changed — 45 rows back down
+             * to 40 on a single delete.
+             */
             create({ variables: manyPairs(95) });
             spectator.click(byTestId('dot-key-value-load-more'));
             spectator.detectChanges();
             expect(renderedKeys()).toHaveLength(80);
 
-            spectator.setInput('variables', manyPairs(95));
+            // A new array, as those two consumers produce on every change.
+            spectator.setInput('variables', manyPairs(94));
             spectator.detectChanges();
 
-            expect(renderedKeys()).toHaveLength(40);
+            expect(renderedKeys()).toHaveLength(80);
         });
     });
 
