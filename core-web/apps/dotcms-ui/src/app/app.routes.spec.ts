@@ -1,12 +1,13 @@
 import { Route, Routes } from '@angular/router';
 
-import { MenuGuardService } from './api/services/guards/menu-guard.service';
 import { appRoutes } from './app.routes';
 
 /**
- * Guards the portlet route registration. `MenuGuardService` validates the FIRST url segment
- * against `/api/v1/menu`, so a portlet whose path drifts from the menu entry silently stops
- * resolving — a failure that is invisible until someone opens the portlet.
+ * Guards the portlet route registration.
+ *
+ * The path itself still matters: `MenuGuardService`, where a route uses it, validates the FIRST
+ * url segment against `/api/v1/menu`, so a path that drifts from its menu entry silently stops
+ * resolving. `/experiments` deliberately does not use that guard — see the test below.
  */
 describe('appRoutes', () => {
     const flatten = (routes: Routes): Route[] =>
@@ -27,9 +28,15 @@ describe('appRoutes', () => {
             expect(experimentsRoutes[0].path).toBe('experiments');
         });
 
-        it('should be guarded by MenuGuardService on activation and child activation', () => {
-            expect(experimentsRoutes[0].canActivate).toContain(MenuGuardService);
-            expect(experimentsRoutes[0].canActivateChild).toContain(MenuGuardService);
+        it('should NOT be guarded by MenuGuardService', () => {
+            // The portlet is opt-in — declared in portlet.xml, added to a layout only by an
+            // operator who wants it — so it is legitimately absent from `/api/v1/menu` on most
+            // instances. The guard matches the first URL segment against that menu, so it turned
+            // "nobody registered the portlet" into "the UVE Experiments item ejects the editor out
+            // of UVE to the first portlet" (#37005). `/analytics` carries no guard for the same
+            // reason and is the precedent followed here.
+            expect(experimentsRoutes[0].canActivate).toBeUndefined();
+            expect(experimentsRoutes[0].canActivateChild).toBeUndefined();
         });
 
         it('should not force `reuseRoute: false` on its subtree', () => {

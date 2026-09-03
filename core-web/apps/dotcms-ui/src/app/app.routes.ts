@@ -177,8 +177,15 @@ const PORTLETS_ANGULAR: Route[] = [
     },
     {
         path: 'experiments',
-        canActivate: [MenuGuardService],
-        canActivateChild: [MenuGuardService],
+        // No `MenuGuardService`, deliberately — same as `/analytics` above.
+        //
+        // The guard validates the first URL segment against `/api/v1/menu`, and the Experiments
+        // portlet is opt-in: it is declared in `portlet.xml` but no UpgradeTask adds it to a
+        // layout, so an operator who wants it registers it themselves. With the guard in place,
+        // every instance that has not registered it answered the UVE Experiments entry point by
+        // ejecting the editor out of UVE to the first portlet in the menu (#37005) — a switch that
+        // is on but unusable, with nothing on screen to explain it.
+        //
         // No `reuseRoute: false` here, same reasoning as `/content` above: the Configure screen
         // REUSES its component across the `experiments/new → experiments/:id/configuration` swap
         // that follows creation, so the in-flight autosaves and the just-created experiment
