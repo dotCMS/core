@@ -414,24 +414,27 @@ describe('dot-auth-config.mappers', () => {
             expect(payload.values.buildRolesStrategy).toBe('idp');
         });
 
-        it('round-trips revocationUrl and groupsUrl so a save never deletes the stored secrets', () => {
+        it('round-trips revocationUrl, groupsUrl and groupsResponsePath so a save never deletes the stored secrets', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
             config.oidc.revocationUrl = 'https://idp.example/revoke';
             config.oidc.groupsUrl = 'https://idp.example/groups';
+            config.oidc.groupsResponsePath = 'memberships[].groupKey.id';
 
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBe('https://idp.example/revoke');
             expect(payload.values.groupsUrl).toBe('https://idp.example/groups');
+            expect(payload.values.groupsResponsePath).toBe('memberships[].groupKey.id');
         });
 
-        it('omits revocationUrl and groupsUrl when unset', () => {
+        it('omits revocationUrl, groupsUrl and groupsResponsePath when unset', () => {
             const config = clone(DEFAULT_CONFIG);
             config.protocol = 'oidc';
 
             const payload = toPayload(config, 'test-site-id');
             expect(payload.values.revocationUrl).toBeUndefined();
             expect(payload.values.groupsUrl).toBeUndefined();
+            expect(payload.values.groupsResponsePath).toBeUndefined();
         });
 
         it('serializes group-security fields (allowUnmappedGroups / groupFilterPattern)', () => {
