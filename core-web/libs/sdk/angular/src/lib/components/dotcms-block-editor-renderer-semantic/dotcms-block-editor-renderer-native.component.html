@@ -8,9 +8,38 @@
     </div>
 }
 
-<!-- Renders a list of nodes by dispatching each one. -->
+<!--
+    Renders a list of nodes, grouped into link runs so one logical link is one <a> (#37340).
+    Dispatching node-by-node emitted an anchor per text node, so a link split by a legacy emoji
+    node became two tab stops and two rotor entries.
+-->
 <ng-template #nodeList let-content>
-    @for (node of content; track node) {
+    @for (group of linkRuns(content); track $index) {
+        @if (group.link && group.link.attrs['href']) {
+            <a
+                [attr.href]="group.link.attrs['href']"
+                [attr.target]="group.link.attrs['target'] || null"
+                [attr.title]="group.link.attrs['title'] || null"
+                [attr.aria-label]="group.link.attrs['aria-label'] || null"
+                [attr.rel]="
+                    group.link.attrs['rel'] ||
+                    (group.link.attrs['target'] === '_blank' ? 'noopener noreferrer' : null)
+                "
+                [class]="group.link.attrs['class'] || null">
+                <ng-container
+                    *ngTemplateOutlet="dispatchList; context: { $implicit: group.nodes }" />
+            </a>
+        } @else {
+            <!-- No link, or a malformed mark with no href: a hrefless <a> is not a link to
+                 assistive tech, so skip the element and render the nodes bare. -->
+            <ng-container *ngTemplateOutlet="dispatchList; context: { $implicit: group.nodes }" />
+        }
+    }
+</ng-template>
+
+<!-- Dispatches each node of an already-grouped run. -->
+<ng-template #dispatchList let-nodes>
+    @for (node of nodes; track node) {
         <ng-container *ngTemplateOutlet="dispatch; context: { $implicit: node }" />
     }
 </ng-template>
@@ -42,6 +71,15 @@
                         textRun;
                         context: { marks: node.marks, text: node.text || '' }
                     " />
+            }
+
+            <!--
+                Legacy content only — the editor no longer creates emoji nodes (#37340). The node
+                stores a shortcode, never the character, so without this branch it fell through
+                to the unknown block and rendered nothing on the live site.
+            -->
+            @case (BLOCKS.EMOJI) {
+                <span>{{ emojiText(node) }}</span>
             }
 
             @case (BLOCKS.HEADING) {

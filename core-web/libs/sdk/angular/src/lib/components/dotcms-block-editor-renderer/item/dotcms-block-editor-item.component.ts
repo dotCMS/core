@@ -1,7 +1,8 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { Component, Input, ChangeDetectionStrategy } from '@angular/core';
 
-import { BlockEditorNode } from '@dotcms/types';
+import { groupLinkRuns, resolveEmoji, type EmojiWarnScope } from '@dotcms/client/internal';
+import { BlockEditorMark, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 
 import { DotAudioBlock } from '../blocks/audio.component';
@@ -43,8 +44,45 @@ import { CustomRenderer } from '../dotcms-block-editor-renderer.component';
     ]
 })
 export class DotCMSBlockEditorItemComponent {
-    @Input() content: BlockEditorNode[] | undefined;
+    /**
+     * Siblings grouped into link runs (#37340).
+     *
+     * Rendering node-by-node emits one `<a>` per text node, so a link split by a legacy `emoji`
+     * node became two anchors: two tab stops and two screen-reader entries for one logical link.
+     * The `link` mark is stripped from a run's children so the text component does not emit a
+     * second, nested anchor inside the one the template already provides.
+     */
+    groups: Array<{ link?: BlockEditorMark; nodes: BlockEditorNode[] }> = [];
+
+    /** One scope per component so a repeated unresolvable emoji warns once. */
+    private readonly warned: EmojiWarnScope = new Set<string>();
+
+    private contentValue: BlockEditorNode[] | undefined;
+
+    @Input()
+    set content(value: BlockEditorNode[] | undefined) {
+        this.contentValue = value;
+        this.groups = groupLinkRuns(value ?? []).map((group) => ({
+            link: group.link,
+            nodes: group.link
+                ? group.nodes.map((node) => ({
+                      ...node,
+                      marks: node.marks?.filter((mark) => mark.type !== 'link')
+                  }))
+                : group.nodes
+        }));
+    }
+
+    get content(): BlockEditorNode[] | undefined {
+        return this.contentValue;
+    }
+
     @Input() customRenderers: CustomRenderer | undefined;
+
+    /** Resolves a legacy `emoji` node to its character; see the render contract. */
+    emojiText(node: BlockEditorNode): string {
+        return resolveEmoji(node, this.warned);
+    }
 
     BLOCKS = BlockEditorDefaultBlocks;
 }

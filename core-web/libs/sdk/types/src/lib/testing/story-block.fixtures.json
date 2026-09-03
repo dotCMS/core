@@ -28,7 +28,7 @@
             }
         ],
         "expectedAnchors": 1,
-        "expectedText": "dotCMS Copyright © All rights reserved"
+        "expectedText": "dotCMS Copyright ©All rights reserved"
     },
 
     "shape2_emojiCarriesLink": {

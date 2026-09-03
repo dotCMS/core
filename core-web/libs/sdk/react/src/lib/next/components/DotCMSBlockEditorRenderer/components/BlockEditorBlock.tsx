@@ -1,3 +1,4 @@
+import { groupLinkRuns, resolveEmoji, type EmojiWarnScope } from '@dotcms/client/internal';
 import { BlockEditorNode } from '@dotcms/types';
 import { BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
@@ -9,7 +10,7 @@ import { GridBlock } from './blocks/GridBlock';
 import { DotCMSImage } from './blocks/Image';
 import { BulletList, ListItem, OrderedList } from './blocks/Lists';
 import { TableRenderer } from './blocks/Table';
-import { Heading, Paragraph, TextBlock } from './blocks/Texts';
+import { Heading, Link, Paragraph, TextBlock } from './blocks/Texts';
 import { DotCMSVideo } from './blocks/Video';
 
 import { CustomRenderer } from '../DotCMSBlockEditorRenderer';
@@ -36,9 +37,41 @@ export const BlockEditorBlock = ({
         return null;
     }
 
-    return content?.map((node: BlockEditorNode, index) => {
+    // One scope per render so a document repeating an unresolvable emoji warns once, not once
+    // per occurrence.
+    const warned: EmojiWarnScope = new Set<string>();
+
+    /**
+     * Group siblings into link runs before rendering (#37340).
+     *
+     * Rendering node-by-node emits one `<a>` per text node, so a link split by a legacy `emoji`
+     * node became two anchors: two tab stops, two screen-reader entries, one fragmented
+     * announcement. A run renders as a single `<a>` wrapping its nodes, with the `link` mark
+     * stripped from the children so the anchor is not nested inside itself.
+     */
+    return groupLinkRuns(content).flatMap((group, groupIndex) => {
+        const rendered = group.nodes.map((node, index) =>
+            renderNode(
+                group.link
+                    ? { ...node, marks: node.marks?.filter((mark) => mark.type !== 'link') }
+                    : node,
+                `${groupIndex}-${index}`
+            )
+        );
+
+        if (!group.link) {
+            return rendered;
+        }
+
+        return [
+            <Link key={`link-${groupIndex}`} attrs={group.link.attrs}>
+                {rendered}
+            </Link>
+        ];
+    });
+
+    function renderNode(node: BlockEditorNode, key: string) {
         const CustomRendererComponent = customRenderers?.[node.type];
-        const key = `${node.type}-${index}`;
 
         if (CustomRendererComponent) {
             return (
@@ -77,6 +110,12 @@ export const BlockEditorBlock = ({
 
             case BlockEditorDefaultBlocks.TEXT:
                 return <TextBlock key={key} {...node} />;
+
+            // Legacy content only — the editor no longer creates `emoji` nodes (#37340). The
+            // node stores a shortcode, never the character, so without this branch it fell
+            // through to UnknownBlock and rendered nothing on the live site.
+            case BlockEditorDefaultBlocks.EMOJI:
+                return <span key={key}>{resolveEmoji(node, warned)}</span>;
 
             case BlockEditorDefaultBlocks.BULLET_LIST:
                 return (
@@ -181,7 +220,7 @@ export const BlockEditorBlock = ({
             default:
                 return <UnknownBlock key={key} node={node} />;
         }
-    });
+    }
 };
 
 /**

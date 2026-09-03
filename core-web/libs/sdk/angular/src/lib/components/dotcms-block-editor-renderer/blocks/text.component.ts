@@ -1,5 +1,12 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, Input } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    input,
+    Input,
+    forwardRef
+} from '@angular/core';
 
 import { BlockEditorMark } from '@dotcms/types';
 
@@ -80,6 +87,11 @@ interface TextBlockProps {
 @Component({
     selector: 'dotcms-block-editor-renderer-text',
     changeDetection: ChangeDetectionStrategy.OnPush,
+    // The template recurses into itself to peel marks one at a time, so the component has to be
+    // in its own imports. Without this, any text carrying TWO OR MORE marks — bold inside a
+    // link, say — fails with NG0304 and renders nothing. `forwardRef` because the class is not
+    // initialised yet at decoration time. Pre-existing; surfaced by the #37340 renderer specs.
+    imports: [forwardRef(() => DotTextBlock)],
     template: `
         @switch (marks?.[0]?.type) {
             @case ('link') {

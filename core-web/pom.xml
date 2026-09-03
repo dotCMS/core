@@ -165,6 +165,28 @@
                         </configuration>
                     </execution>
 
+                    <!--
+                      Verifies the committed emoji shortcode map still matches
+                      @tiptap/extension-emoji (#37340). Stored `emoji` nodes carry only a
+                      shortcode, so a stale map means a renderer resolves a name the editor
+                      could produce to nothing. Runs right after install, before anything
+                      builds, so a drift fails fast and with a clear message.
+
+                      --check never writes; regenerate locally with
+                      `pnpm generate:emoji-map` and commit the result.
+                    -->
+                    <execution>
+                        <id>verify-emoji-map</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.npm.install}</skip>
+                            <commandlineArgs>generate:emoji-map:check</commandlineArgs>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>lint-test</id>
                         <goals>

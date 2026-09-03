@@ -38,7 +38,16 @@ export enum BlockEditorDefaultBlocks {
     /** Represents a grid block with columns */
     GRID_BLOCK = 'gridBlock',
     /** Represents a column inside a grid block */
-    GRID_COLUMN = 'gridColumn'
+    GRID_COLUMN = 'gridColumn',
+    /**
+     * Represents an emoji node.
+     *
+     * Legacy only — the Block Editor no longer creates these (#37340): a typed emoji stays a
+     * character in the surrounding text node. Content saved before that fix still contains them,
+     * and the node holds only a shortcode (`attrs.name`), never the character, so renderers must
+     * resolve it through the generated emoji map.
+     */
+    EMOJI = 'emoji'
 }
 
 /**

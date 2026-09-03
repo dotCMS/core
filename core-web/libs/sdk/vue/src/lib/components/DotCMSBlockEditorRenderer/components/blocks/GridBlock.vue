@@ -32,17 +32,23 @@ const gridStyle = {
 </script>
 
 <template>
-    <div data-type="gridBlock" class="grid-block" :style="gridStyle">
-        <div
-            v-for="(column, index) in node.content ?? []"
-            :key="`gridColumn-${index}`"
-            data-type="gridColumn"
-            class="grid-block__column"
-            :style="{ gridColumn: `span ${cols[index] ?? 6}` }">
-            <BlockEditorBlock
-                :content="column.content"
-                :custom-renderers="customRenderers"
-                :is-dev-mode="isDevMode" />
-        </div>
+  <div
+    data-type="gridBlock"
+    class="grid-block"
+    :style="gridStyle"
+  >
+    <div
+      v-for="(column, index) in node.content ?? []"
+      :key="`gridColumn-${index}`"
+      data-type="gridColumn"
+      class="grid-block__column"
+      :style="{ gridColumn: `span ${cols[index] ?? 6}` }"
+    >
+      <BlockEditorBlock
+        :content="column.content"
+        :custom-renderers="customRenderers"
+        :is-dev-mode="isDevMode"
+      />
     </div>
+  </div>
 </template>

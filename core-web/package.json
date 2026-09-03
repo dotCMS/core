@@ -11,6 +11,8 @@
         "start": "ng serve",
         "build": "ng build",
         "test": "nx test",
+        "generate:emoji-map": "node tools/scripts/generate-emoji-map.mjs",
+        "generate:emoji-map:check": "node tools/scripts/generate-emoji-map.mjs --check",
         "lint": "ng lint",
         "publish:dev": "rm -rf dist;npm run build:prod;cp package.json ./dist/apps/dotcms-ui/package.json;cd dist/apps/dotcms-ui",
         "build:docs:dotcms-models": "typedoc --options libs/dotcms-models/typedoc.json",

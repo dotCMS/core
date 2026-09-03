@@ -1,6 +1,7 @@
 import { AsyncPipe, NgComponentOutlet, NgTemplateOutlet } from '@angular/common';
 import { ChangeDetectionStrategy, Component, input, OnInit, signal } from '@angular/core';
 
+import { groupLinkRuns, resolveEmoji, type EmojiWarnScope } from '@dotcms/client/internal';
 import { UVE_MODE, BlockEditorNode, BlockEditorMark } from '@dotcms/types';
 import { BlockEditorState, BlockEditorDefaultBlocks } from '@dotcms/types/internal';
 import { getUVEState } from '@dotcms/uve';
@@ -101,6 +102,34 @@ export class DotCMSBlockEditorRendererNativeComponent implements OnInit {
     asLevel(level: number | string | undefined): string {
         const normalized = level != null ? String(level) : '';
         return /^[1-6]$/.test(normalized) ? normalized : '';
+    }
+
+    /** One scope per component so a repeated unresolvable emoji warns once. */
+    private readonly warned: EmojiWarnScope = new Set<string>();
+
+    /**
+     * Groups siblings into link runs so a run renders as ONE `<a>` (#37340).
+     *
+     * Dispatching node-by-node emits an anchor per text node, so a link split by a legacy
+     * `emoji` node produced two tab stops and two rotor entries for one logical link. The `link`
+     * mark is stripped from a run's children so `textRun` does not nest a second anchor inside
+     * the one `nodeList` already renders.
+     */
+    linkRuns(content: BlockEditorNode[] | undefined) {
+        return groupLinkRuns(content ?? []).map((group) => ({
+            link: group.link,
+            nodes: group.link
+                ? group.nodes.map((node) => ({
+                      ...node,
+                      marks: node.marks?.filter((mark) => mark.type !== 'link')
+                  }))
+                : group.nodes
+        }));
+    }
+
+    /** Resolves a legacy `emoji` node to its character; see the render contract. */
+    emojiText(node: BlockEditorNode): string {
+        return resolveEmoji(node, this.warned);
     }
 
     /** The marks after the current (outermost) one — used to recurse inward. */
