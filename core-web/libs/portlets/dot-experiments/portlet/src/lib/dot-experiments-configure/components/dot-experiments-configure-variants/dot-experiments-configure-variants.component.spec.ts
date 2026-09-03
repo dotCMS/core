@@ -1,21 +1,22 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
 import { Injector, WritableSignal, signal } from '@angular/core';
 import { applyEach, disabled, FieldTree, form, max, min, validate } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 
-import { Confirmation, ConfirmationService, MessageService } from 'primeng/api';
+import { Confirmation, ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
     DotExperimentStatus,
+    DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     EXPERIMENT_RETURN_PARAM,
@@ -121,7 +122,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
     let navigate: jest.SpyInstance;
     /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
-    let messageAdd: jest.SpyInstance;
+    let messagePush: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureVariantsComponent,
@@ -132,7 +133,12 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
             ConfirmationService,
-            MessageService,
+            // PrimeNG's `MessageService` is deliberately NOT provided here, and must stay
+            // unprovided: the UVE shell provides it but the `/experiments` route does not, so a
+            // component that injects it renders blank on the portlet path with NG0201. Supplying
+            // it in the spec is what hid exactly that bug. `DotMessageDisplayService` is the right
+            // channel — it is in the app-wide `providers.ts`, so it resolves on every route.
+            mockProvider(DotMessageDisplayService),
             { provide: Router, useFactory: () => ({ navigate: jest.fn() }) }
         ],
         detectChanges: false
@@ -242,7 +248,7 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
         navigate = jest.spyOn(spectator.inject(Router), 'navigate');
-        messageAdd = jest.spyOn(spectator.inject(MessageService), 'add');
+        messagePush = jest.spyOn(spectator.inject(DotMessageDisplayService), 'push');
         const confirmationService = spectator.inject(ConfirmationService, true);
         confirm = jest
             .spyOn(confirmationService, 'confirm')
@@ -1125,10 +1131,10 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
                 clickButton('variant-edit-content-btn', rows()[1]);
 
                 expect(navigate).not.toHaveBeenCalled();
-                expect(messageAdd).toHaveBeenCalledWith(
+                expect(messagePush).toHaveBeenCalledWith(
                     expect.objectContaining({
-                        severity: 'error',
-                        detail: EDIT_CONTENT_UNAVAILABLE_COPY
+                        severity: DotMessageSeverity.ERROR,
+                        message: EDIT_CONTENT_UNAVAILABLE_COPY
                     })
                 );
             });

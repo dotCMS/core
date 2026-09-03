@@ -5,7 +5,7 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FieldTree, FormField } from '@angular/forms/signals';
 import { Router } from '@angular/router';
 
-import { ConfirmationService, MenuItem, MessageService } from 'primeng/api';
+import { ConfirmationService, MenuItem } from 'primeng/api';
 import { BlockUIModule } from 'primeng/blockui';
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -19,11 +19,13 @@ import { TooltipModule } from 'primeng/tooltip';
 
 import { take } from 'rxjs/operators';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    DotMessageSeverity,
+    DotMessageType,
     EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     MAX_INPUT_TITLE_LENGTH,
     Variant,
@@ -60,6 +62,14 @@ import {
 
 /** Query string every variant preview URL carries, before `&variantName=`. */
 const PREVIEW_URL_PARAMS = 'disabledNavigateMode=true&mode=LIVE';
+
+/**
+ * How long the "cannot open this variant" toast stays up (ms).
+ *
+ * Longer than the list's success toasts: this one states a reason the editor has to read and act
+ * on, rather than confirming something they just did.
+ */
+const REFUSAL_MESSAGE_LIFE = 5000;
 
 /**
  * The single row drawn while no experiment exists yet (#37003).
@@ -303,7 +313,7 @@ export class DotExperimentsConfigureVariantsComponent {
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
     readonly #router = inject(Router);
-    readonly #messageService = inject(MessageService);
+    readonly #dotMessageDisplayService = inject(DotMessageDisplayService);
 
     constructor() {
         this.#resplitWeightsAfterAdd();
@@ -412,12 +422,17 @@ export class DotExperimentsConfigureVariantsComponent {
         });
 
         if (!link) {
-            this.#messageService.add({
-                severity: 'error',
-                summary: this.#dotMessageService.get('error'),
-                detail: this.#dotMessageService.get(
+            // `DotMessageDisplayService`, not PrimeNG's `MessageService`: the latter is provided
+            // by the UVE shell but by nothing on the `/experiments` route, so injecting it here
+            // threw NG0201 and blanked the whole Configure screen on the portlet path. This is
+            // also what the rest of the portlet already uses for toasts.
+            this.#dotMessageDisplayService.push({
+                life: REFUSAL_MESSAGE_LIFE,
+                severity: DotMessageSeverity.ERROR,
+                message: this.#dotMessageService.get(
                     'experiments.configure.variants.edit-content.unavailable'
-                )
+                ),
+                type: DotMessageType.SIMPLE_MESSAGE
             });
 
             return;
