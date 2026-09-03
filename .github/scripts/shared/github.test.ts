@@ -18,79 +18,86 @@ describe('parseRepo', () => {
 });
 
 describe('resolvePRNumbers', () => {
-  it('resolves merge-commit and branch-commit dedup, and ignores direct pushes (#37201)', async () => {
-    // aaa: feature-branch commit whose subject ended in the issue "(#37132)"
-    // bbb: the two-parent merge commit for the same PR
-    // ccc: a direct push, unassociated with any PR
-    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
-      aaa: [{ number: 37196, merged_at: '2026-08-25T00:00:00Z' }],
-      bbb: [{ number: 37196, merged_at: '2026-08-25T00:00:00Z' }],
-      ccc: [],
-    };
-    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
-      data: bySha[commit_sha] ?? [],
-    }));
-    const octokit = {
-      repos: { listPullRequestsAssociatedWithCommit: listPRs },
-    } as unknown as Octokit;
+  /** Stand-in for octokit.graphql that serves a sha -> associated PRs map. */
+  function mockGraphql(
+    bySha: Record<string, Array<{ number: number; mergedAt: string | null }>>
+  ) {
+    return jest.fn(async (query: string) => {
+      const repository: Record<string, unknown> = {};
+      for (const [sha, nodes] of Object.entries(bySha)) {
+        // Only answer for shas the query actually asked about, so the test
+        // fails if alias construction drops or mangles a commit.
+        if (query.includes(`c${sha}: object(oid: "${sha}")`)) {
+          repository[`c${sha}`] = { associatedPullRequests: { nodes } };
+        }
+      }
+      return { repository };
+    });
+  }
 
-    const commits: CommitInfo[] = [{ sha: 'aaa' }, { sha: 'bbb' }, { sha: 'ccc' }];
+  const AAA = 'a'.repeat(40); // feature-branch commit, subject ended in "(#37132)"
+  const BBB = 'b'.repeat(40); // the two-parent merge commit for the same PR
+  const CCC = 'c'.repeat(40); // a direct push, unassociated with any PR
 
-    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', commits);
+  it('dedupes merge and branch commits, and ignores direct pushes (#37201)', async () => {
+    const graphql = mockGraphql({
+      [AAA]: [{ number: 37196, mergedAt: '2026-08-25T00:00:00Z' }],
+      [BBB]: [{ number: 37196, mergedAt: '2026-08-25T00:00:00Z' }],
+      [CCC]: [],
+    });
+    const octokit = { graphql } as unknown as Octokit;
 
-    expect(prNumbers).toEqual([37196]);
-    expect(listPRs).toHaveBeenCalledTimes(3);
+    const commits: CommitInfo[] = [{ sha: AAA }, { sha: BBB }, { sha: CCC }];
+    expect(await resolvePRNumbers(octokit, 'dotCMS', 'core', commits)).toEqual([37196]);
+    // The point of the migration: three commits, one round-trip.
+    expect(graphql).toHaveBeenCalledTimes(1);
   });
 
   it('filters out unmerged PRs', async () => {
-    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
-      abc: [
-        { number: 1, merged_at: null },
-        { number: 2, merged_at: '2026-08-25T00:00:00Z' },
+    const graphql = mockGraphql({
+      [AAA]: [
+        { number: 1, mergedAt: null },
+        { number: 2, mergedAt: '2026-08-25T00:00:00Z' },
       ],
-    };
-    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
-      data: bySha[commit_sha] ?? [],
-    }));
-    const octokit = {
-      repos: { listPullRequestsAssociatedWithCommit: listPRs },
-    } as unknown as Octokit;
-
-    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [{ sha: 'abc' }]);
-
-    expect(prNumbers).toEqual([2]);
+    });
+    const octokit = { graphql } as unknown as Octokit;
+    expect(await resolvePRNumbers(octokit, 'dotCMS', 'core', [{ sha: AAA }])).toEqual([2]);
   });
 
-  // The per-commit catch is the "one bad sha can't abort the whole range" guarantee.
-  // It degrades silently, so this is the only thing that fails if it stops working.
-  it('does not abort the batch when one commit fails to resolve', async () => {
-    const stderrSpy = jest.spyOn(process.stderr, 'write').mockImplementation(() => true);
-
-    const bySha: Record<string, Array<{ number: number; merged_at: string | null }>> = {
-      good: [{ number: 42, merged_at: '2026-08-25T00:00:00Z' }],
-    };
-    const listPRs = jest.fn(async ({ commit_sha }: { commit_sha: string }) => ({
-      data: bySha[commit_sha] ?? [],
+  it('batches large ranges instead of one request per commit', async () => {
+    const commits: CommitInfo[] = Array.from({ length: 120 }, (_, i) => ({
+      sha: i.toString(16).padStart(40, '0'),
     }));
-    listPRs.mockImplementationOnce(() => Promise.reject(new Error('boom')));
-    const octokit = {
-      repos: { listPullRequestsAssociatedWithCommit: listPRs },
-    } as unknown as Octokit;
+    const graphql = jest.fn(async () => ({ repository: {} }));
+    const octokit = { graphql } as unknown as Octokit;
 
-    const prNumbers = await resolvePRNumbers(octokit, 'dotCMS', 'core', [
-      { sha: 'bad' },
-      { sha: 'good' },
+    await resolvePRNumbers(octokit, 'dotCMS', 'core', commits);
+    // 120 commits at COMMIT_BATCH=50 -> 3 queries, not 120.
+    expect(graphql).toHaveBeenCalledTimes(3);
+  });
+
+  it('skips anything that is not a real oid rather than interpolating it', async () => {
+    const graphql = jest.fn(async () => ({ repository: {} }));
+    const octokit = { graphql } as unknown as Octokit;
+
+    await resolvePRNumbers(octokit, 'dotCMS', 'core', [
+      { sha: '") { __typename } evil: object(oid: "' },
+      { sha: 'abc' },
     ]);
+    expect(graphql).not.toHaveBeenCalled();
+  });
 
-    expect(prNumbers).toEqual([42]);
-    expect(stderrSpy).toHaveBeenCalledWith(expect.stringContaining('bad'));
+  it('propagates GraphQL failures instead of silently dropping the batch', async () => {
+    const graphql = jest.fn(async () => {
+      throw new Error('502 Bad Gateway');
+    });
+    const octokit = { graphql } as unknown as Octokit;
 
-    stderrSpy.mockRestore();
+    await expect(
+      resolvePRNumbers(octokit, 'dotCMS', 'core', [{ sha: AAA }])
+    ).rejects.toThrow('502 Bad Gateway');
   });
 });
-
-// Bounds the throttling plugin's retries so an exhausted quota can't park a
-// release job indefinitely.
 
 describe('findPreviousTag', () => {
   const documented = (...tags: string[]) =>
