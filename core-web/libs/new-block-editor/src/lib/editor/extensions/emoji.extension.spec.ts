@@ -81,9 +81,15 @@ describe('emoji extension — characters stay in the text node (#37340)', () => 
 
     const anchorCount = (editor: Editor) => (editor.getHTML().match(/<a[\s>]/g) ?? []).length;
 
-    /** Force `appendTransaction` to run — it only fires when the document actually changes. */
+    /**
+     * Dirty the document so any transaction-level conversion would get a chance to run.
+     *
+     * Edits INSIDE the existing text run, not at the end: a link mark is non-inclusive, so
+     * appending at the end creates a second, unmarked text node and the node-count assertions
+     * would be measuring the helper rather than the behaviour under test.
+     */
     const touch = (editor: Editor) => {
-        editor.chain().focus('end').insertContent(' ').run();
+        editor.chain().focus().setTextSelection(2).insertContent(' ').run();
     };
 
     /**
@@ -149,9 +155,7 @@ describe('emoji extension — characters stay in the text node (#37340)', () => 
     describe('AC-001/AC-003: the link stays a single run', () => {
         const linkedDoc = (text: string) => ({
             type: 'doc',
-            content: [
-                { type: 'paragraph', content: [{ type: 'text', marks: [LINK], text }] }
-            ]
+            content: [{ type: 'paragraph', content: [{ type: 'text', marks: [LINK], text }] }]
         });
 
         it.each([
@@ -273,18 +277,23 @@ describe('emoji extension — characters stay in the text node (#37340)', () => 
 
         it('leaves linked text as a single run', () => {
             const editor = track(
-                buildEditor({
-                    type: 'doc',
-                    content: [
-                        {
-                            type: 'paragraph',
-                            content: [{ type: 'text', marks: [LINK], text: 'nice' }]
-                        }
-                    ]
-                }, EMOTICON_BLOCKS)
+                buildEditor(
+                    {
+                        type: 'doc',
+                        content: [
+                            {
+                                type: 'paragraph',
+                                content: [{ type: 'text', marks: [LINK], text: 'nice' }]
+                            }
+                        ]
+                    },
+                    EMOTICON_BLOCKS
+                )
             );
 
-            editor.commands.focus('end');
+            // Mid-run: a link mark is non-inclusive, so typing at the end lands outside it.
+            editor.commands.focus();
+            editor.commands.setTextSelection(3);
             typeText(editor, ' :) ');
 
             expect(inlineNodes(editor).filter((n) => n.type === 'text')).toHaveLength(1);

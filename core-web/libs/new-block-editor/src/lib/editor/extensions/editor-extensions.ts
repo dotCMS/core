@@ -4,7 +4,7 @@ import type { Injector } from '@angular/core';
 
 import { flattenExtensions, type AnyExtension, type Extensions } from '@tiptap/core';
 import CharacterCount from '@tiptap/extension-character-count';
-import Emoji, { emojis } from '@tiptap/extension-emoji';
+import { emojis } from '@tiptap/extension-emoji';
 import Highlight from '@tiptap/extension-highlight';
 import Placeholder from '@tiptap/extension-placeholder';
 import Subscript from '@tiptap/extension-subscript';
@@ -16,6 +16,7 @@ import StarterKit from '@tiptap/starter-kit';
 import type { DotMessageService } from '@dotcms/data-access';
 
 import { createBlockGutterDragHandle } from './block-gutter.extension';
+import { DotEmoji } from './emoji.extension';
 import { IndentExtension } from './indent.extension';
 import { DotLink } from './link.extension';
 import { AIContent } from './nodes/ai-content.extension';
@@ -166,21 +167,14 @@ export function createEditorExtensions(
         // `aiContent` block — still parses and renders. Removing it would silently drop
         // those blocks on load. See `ai-content.extension.ts` for details.
         AIContent,
-        // Always registered — see `has()`. Authoring gate: toolbar button + `enableEmoticons`.
-        // The `:` suggestion trigger is inert by design; insertion goes through the popover.
-        Emoji.configure({
+        // Always registered — see `has()`. Registration is BACKWARD COMPATIBILITY only: nothing
+        // creates `emoji` nodes any more, but stored content that already contains them must
+        // still parse. `DotEmoji` drops the upstream character-to-node conversion (#37340) and
+        // with it the inert `:` suggestion config that used to live here. Authoring gate:
+        // toolbar button + `enableEmoticons`, which now insert the literal character.
+        DotEmoji.configure({
             emojis,
-            enableEmoticons: has('emoji'),
-            suggestion: {
-                char: ':',
-                items: () => [],
-                render: () => ({
-                    onStart: () => undefined,
-                    onUpdate: () => undefined,
-                    onKeyDown: () => false,
-                    onExit: () => undefined
-                })
-            }
+            enableEmoticons: has('emoji')
         }),
         SelectionPreserveExtension,
         createSlashCommandExtension(menuService)
