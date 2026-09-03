@@ -535,9 +535,43 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * True when a request has no criterion left that requires database resolution — every field
+     * criterion routes to the index, and there is no workflow filter and no free-text/fileName
+     * term (issue #37184, FR-002). When eligible, the folder's candidate scan and its ES
+     * filtering can each run as a single pass instead of the chunked hybrid loop's default
+     * {@code BROWSER_CONTENT_CHUNK_SIZE}-sized iterations (up to ~23 of each on a sparse-match,
+     * 20,000-item folder today).
+     *
+     * <p>Takes the raw fields rather than a {@link BrowserQuery} so it stays a pure,
+     * unit-testable predicate — {@code BrowserQuery}'s constructor resolves folder/site/role via
+     * {@code APILocator} and cannot be instantiated outside a full dotCMS context.</p>
+     *
+     * @param fieldCriteria      the request's per-field search criteria
+     * @param workflowSchemeIds  workflow scheme ids the request filters by
+     * @param workflowStepIds    workflow step ids the request filters by
+     * @param filter             the free-text filter term, if any
+     * @param fileName           the fileName filter term, if any
+     * @return true iff the request can be resolved in a single pass
+     */
+    static boolean isSinglePassEligible(final List<FieldSearchCriteria> fieldCriteria,
+            final Set<String> workflowSchemeIds, final Set<String> workflowStepIds,
+            final String filter, final String fileName) {
+        return !fieldCriteria.isEmpty()
+                && fieldCriteria.stream()
+                        .allMatch(criteria -> criteria.getBucket() == FieldSearchCriteria.RoutingBucket.INDEX)
+                && workflowSchemeIds.isEmpty()
+                && workflowStepIds.isEmpty()
+                && !UtilMethods.isSet(filter)
+                && !UtilMethods.isSet(fileName);
+    }
+
+    /**
      * Hybrid Chunked DB + ES: delegates to {@link #getContentByChunks} with
      * {@code applyESFilter=true}, so each DB chunk is text-filtered through Elasticsearch before
-     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}(default 900).
+     * permission filtering. Uses a fixed chunk size driven by {@code BROWSER_CONTENT_CHUNK_SIZE}
+     * (default 900) — unless the request is {@link #isSinglePassEligible}, in which case the
+     * chunk size is widened to {@code BROWSER_DB_MAX_SCAN_ROWS} so the whole candidate set is
+     * scanned and ES-filtered in one pass (issue #37184, FR-002/SC-001).
      *
      * @param browserQuery query containing the text filter, user context, and current cursor
      * @param maxRows      maximum number of permission-visible items to return
@@ -549,9 +583,17 @@ public class BrowserAPIImpl implements BrowserAPI {
     ContentUnderParent doHybridSingleChunkedQueryES(final BrowserQuery browserQuery,
             final int maxRows, final SelectQuery sqlQuery) throws DotDataException, DotSecurityException {
 
-        final int chunkSize = Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+        final boolean singlePassEligible = isSinglePassEligible(browserQuery.getFieldCriteria(),
+                browserQuery.workflowSchemeIds, browserQuery.workflowStepIds,
+                browserQuery.filter, browserQuery.fileName);
 
-        Logger.debug(this, "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
+        final int chunkSize = singlePassEligible
+                ? Config.getIntProperty(BROWSER_DB_MAX_SCAN_ROWS_KEY, BROWSER_DB_MAX_SCAN_ROWS_DEFAULT)
+                : Config.getIntProperty("BROWSER_CONTENT_CHUNK_SIZE", 900);
+
+        Logger.debug(this, singlePassEligible
+                ? "::::: Using single-pass DB+ES query (issue #37184) ::::"
+                : "::::: Using Hybrid DB+ES Query Chunked for text filtering ::::");
         return getContentByChunks(browserQuery, maxRows, sqlQuery, chunkSize, true);
     }
 
