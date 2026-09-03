@@ -325,6 +325,73 @@ describe('DotFolderListViewComponent', () => {
      * share an identifier and differ only by inode — and inodes are what bulk actions fire on. A
      * caller that acts per variant has to be able to key on `inode` instead.
      */
+    /**
+     * Which rows an operation is currently running on. Narrower than `loading`, which says the whole
+     * listing is being fetched.
+     */
+    describe('busyRows', () => {
+        const busyItem = { ...mockItems[0], inode: 'busy-inode' };
+
+        beforeEach(() => {
+            spectator.setInput('items', [busyItem]);
+            spectator.setInput('loading', false);
+        });
+
+        it('should leave rows unmarked when nothing is running', () => {
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should mark a row whose inode is running', () => {
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeTruthy();
+        });
+
+        it('should keep a busy row readable rather than replacing it', () => {
+            // The whole point. Swapping it for a skeleton would repeat, one row at a time, the bug
+            // this feature removes: the row the author wants to watch is the one that vanishes.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('item-title-text'))).toBeTruthy();
+            expect(spectator.query(byTestId('loading-row'))).toBeFalsy();
+        });
+
+        it('should leave rows the operation is not touching alone', () => {
+            spectator.setInput('busyRows', ['some-other-inode']);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))).toBeFalsy();
+        });
+
+        it('should stop a busy row being selected into another action', () => {
+            // Asserted through the output rather than the checkbox's markup: what matters is that
+            // the row cannot join a second action while the first is still running on it.
+            const selectionChange = jest.fn();
+
+            spectator.output('selectionChange').subscribe(selectionChange);
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            spectator.click(spectator.query(byTestId('item-checkbox')));
+            spectator.detectChanges();
+
+            expect(selectionChange).not.toHaveBeenCalled();
+        });
+
+        it('should not announce each row it marks', () => {
+            // The toolbar indicator is the polite live region for a run. A row marker that also
+            // announced would repeat the same news once per row.
+            spectator.setInput('busyRows', [busyItem.inode]);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('row-busy'))?.getAttribute('aria-live')).toBe('off');
+        });
+    });
+
     describe('dataKey', () => {
         const variantA = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-en' };
         const variantB = { ...mockItems[0], identifier: 'shared-id', inode: 'inode-es' };

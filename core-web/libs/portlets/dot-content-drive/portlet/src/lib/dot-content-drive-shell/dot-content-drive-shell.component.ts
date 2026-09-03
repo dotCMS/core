@@ -200,6 +200,9 @@ export class DotContentDriveShellComponent {
      */
     readonly $canAddChildren = this.#store.$canAddChildren;
 
+    /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
+    readonly $busyRows = this.#store.busyRows;
+
     /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
      * narrow viewport, and clears the override on close. Purely derived from the panel's open

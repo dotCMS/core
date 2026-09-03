@@ -93,7 +93,11 @@
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
-                [pSelectableRowDisabled]="$disabled() || $readOnly()"
+                [pSelectableRowDisabled]="
+                    $disabled() || $readOnly() || $busyRowsSet().has(item.inode)
+                "
+                [class.opacity-60]="$busyRowsSet().has(item.inode)"
+                [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
@@ -104,7 +108,11 @@
                 (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     @if ($selectionMode() === 'multiple') {
-                        <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
+                        <!-- A busy row cannot be re-selected into another action while the current
+                             one is still running on it. -->
+                        <p-tableCheckbox
+                            [value]="item"
+                            [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
                     } @else {
                         <p-tableRadioButton [value]="item" data-testId="item-radio" />
                     }
@@ -113,26 +121,39 @@
                     <td
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
-                        <div
-                            class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
-                            (click)="onTitleClick($event, item)">
-                            @if (!isFolder) {
-                                <!-- No fieldVariable: rows are the assets themselves, so the mapper
+                        <!-- Deliberately NOT a skeleton. Swapping a busy row for placeholders
+                             repeats, at row scale, the very thing this feature removes: the row the
+                             author wants to watch is the one that disappears. It stays readable and
+                             is marked instead. -->
+                        @if ($busyRowsSet().has(item.inode)) {
+                            <i
+                                class="pi pi-spin pi-spinner text-(--color-palette-primary-500)"
+                                role="status"
+                                aria-live="off"
+                                [attr.title]="'content-drive.list-view.row-busy' | dm"
+                                data-testId="row-busy"></i>
+                        } @else {
+                            <div
+                                class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                                (click)="onTitleClick($event, item)">
+                                @if (!isFolder) {
+                                    <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                      resolves through titleImage / the default /dA path. Passing the
                                      contentType here (legacy quirk) 404s the /contentAsset-based
                                      types (SVG, PDF) — that endpoint needs the real field variable. -->
-                                <dot-content-thumbnail
-                                    [contentlet]="item"
-                                    iconSize="36px"
-                                    data-testId="contentlet-thumbnail"
-                                    [attr.data-table-id]="item.identifier" />
-                            } @else {
-                                <i
-                                    class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
-                                    data-testId="folder-icon"
-                                    [attr.data-table-id]="item.identifier"></i>
-                            }
-                        </div>
+                                    <dot-content-thumbnail
+                                        [contentlet]="item"
+                                        iconSize="36px"
+                                        data-testId="contentlet-thumbnail"
+                                        [attr.data-table-id]="item.identifier" />
+                                } @else {
+                                    <i
+                                        class="pi pi-folder flex! size-full! items-center! justify-center! text-4xl! text-gray-700"
+                                        data-testId="folder-icon"
+                                        [attr.data-table-id]="item.identifier"></i>
+                                }
+                            </div>
+                        }
                         <!-- `min-w-0` is what keeps `truncate` working on the children: a grid item
                          defaults to `min-width: auto`, so the cell would otherwise grow to the longest
                          title instead of clipping it. -->
