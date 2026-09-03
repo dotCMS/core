@@ -42,7 +42,7 @@ fixes.
 
 ### Session 2026-09-03
 
-- Q: How does the shared tree apply truncation and the tooltip to a label a consumer supplies? → A: The shared tree wraps the projected label content in its own single-line container and derives the tooltip text from what is actually rendered; consumers contribute content only.
+- Q: How does the shared tree apply truncation and the tooltip to a label a consumer supplies? → A: One shared element owns the clipping and the tooltip, and derives the tooltip text from what is actually rendered. The tree applies it to its own label; a consumer that supplies its own row places that same shared element around the part that should clip. **Amended during implementation**: the tree originally wrapped the projected content itself, but a row that carries more than a name (the Roles panel adds an icon and a user-count badge) then clipped the badge instead of the name and read the whole row out in the tooltip. Consumers still never define the behavior — they only place the one definition where it belongs.
 - Q: How is the complete name reached without a pointing device? → A: Keyboard focus opens the same tooltip that hover does. No separate accessible-name mechanism is added — the shortening is visual only, so assistive technology already receives the full name.
 - Q: When is it decided whether a name is shortened? → A: Lazily, at the moment the pointer or keyboard focus reaches the row. The state has no observable consequence at any other time, so no per-row work happens when the tree renders and width changes need no tracking.
 
@@ -169,9 +169,9 @@ all still truncates and shows the tooltip.
   of the stored folder name (the Asset Picker labels the tree's root that way). The tooltip
   follows the wording on screen, so it stays consistent with the row (FR-013).
 - **Rows carrying their own controls**: where a consumer adds elements beside the name (the Roles
-  panel adds an icon and a user-count badge), the tooltip's hover area is the whole contained row,
-  so pointing at the badge also reveals the shortened name. This is accepted: the tooltip only
-  ever appears when something is actually hidden, and it reveals the row's own name.
+  panel adds an icon and a user-count badge), only the name clips and only the name is the
+  tooltip's hover area. The controls keep their space and stay usable; pointing at the badge
+  reveals nothing.
 - **Rows that are not folder names**: the "load more" row and loading/empty states are not folder
   labels and are unaffected.
 - **Empty or missing name**: renders as today (nothing), with no tooltip.
@@ -200,10 +200,11 @@ all still truncates and shows the tooltip.
 - **FR-005a**: That decision MUST be made at the moment the pointer or keyboard focus reaches the
   row, so it always reflects the row's current width. The system MUST NOT do per-row work for it
   when the tree renders, scrolls, expands, or pages.
-- **FR-006**: The single-line truncation and the overflow tooltip MUST be provided by the shared
-  folder tree, so that a consumer inherits both without supplying styling or tooltip
-  configuration of its own. The shared tree MUST apply them by containing whatever the consumer
-  contributes for that row — a consumer contributes content, never the truncation or the tooltip.
+- **FR-006**: The single-line truncation and the overflow tooltip MUST be provided by one shared
+  element, so that a consumer gets both without supplying styling or tooltip configuration of its
+  own. The tree MUST apply it to the label it renders itself. A consumer that supplies its own row
+  MUST place that same shared element around the part of the row that should clip — it contributes
+  content and position, never the truncation or the tooltip themselves.
 - **FR-007**: Consumers that today implement their own truncation or tooltip rules for folder
   names MUST stop doing so and inherit the shared behavior, leaving exactly one definition of it
   in the product.

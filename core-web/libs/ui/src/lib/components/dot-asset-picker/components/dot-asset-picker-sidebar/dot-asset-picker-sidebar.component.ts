@@ -60,9 +60,9 @@ export class DotAssetPickerSidebarComponent {
         // the tree keeps its own inset on top of the wrapper's `px-4` and its rows sit further
         // right than the two inputs above them.
         root: { class: 'w-full h-full min-w-0 overflow-x-hidden border-none p-0!' },
-        wrapper: { class: 'min-w-0 overflow-x-hidden' },
-        nodeContent: { class: 'min-w-0' },
-        nodeLabel: { class: 'min-w-0 overflow-hidden' }
+        wrapper: { class: 'min-w-0 overflow-x-hidden' }
+        // The node-level guards that let a long label shrink instead of widening its row belong
+        // to `dot-folder-tree` now (#37363).
     };
 
     /**

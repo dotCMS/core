@@ -114,17 +114,15 @@ export class DotRolesTreeComponent {
      */
     readonly #openNodeIds = signal(new Set<string>());
 
-    // `pt.nodeLabel` only reaches the top-level tree — nested `<p-treenode>`
-    // instances fall back to PrimeNG defaults, so child labels don't
-    // truncate and the `+` button doesn't land at the trailing edge.
-    // Applying the label styles as a descendant selector on `root`
-    // cascades to every label regardless of depth.
+    // `flex-1` keeps the `+` button at the trailing edge of the row. The clipping that used to
+    // sit beside it here belongs to `dot-truncated-label` and the shared tree's own stylesheet
+    // now (#37363), which also fixes the depth problem this comment used to describe: `pt` only
+    // reaches the top-level tree, so nested labels never got these rules.
     protected readonly treePt = {
         root: {
             class:
                 'w-full h-full border-none overflow-y-auto [--p-tree-padding:0] ' +
-                '[&_.p-tree-node-label]:flex-1 [&_.p-tree-node-label]:overflow-hidden ' +
-                '[&_.p-tree-node-label]:text-ellipsis [&_.p-tree-node-label]:whitespace-nowrap'
+                '[&_.p-tree-node-label]:flex-1'
         }
     };
 

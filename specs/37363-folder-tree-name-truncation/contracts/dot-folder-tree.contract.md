@@ -25,6 +25,7 @@ A single-line label that clips with an ellipsis and reveals its full text on hov
 | Escaping | PrimeNG default `escape: true`. **Callers must not turn this off** — a folder name is user-supplied content |
 | Layout requirement on the caller | The element must be allowed to shrink: give it (or its flex parent) `min-w-0`. Inside the shared folder tree this is already guaranteed |
 | Test id | `data-testid="tree-node-label-clip"` on the clipping element. **Not** `tree-node-label` — Playwright helpers count that one (see [research.md](../research.md) R7) |
+| Focus hook | The clipping element also carries `data-dot-truncated-label`. The folder tree uses it to find the label of a focused row; it is a runtime hook, not a test id, so renaming the test id cannot silently break keyboard support |
 
 ### How to use it
 
@@ -53,20 +54,37 @@ responsibility for the node label.
 
 ### The tree now owns
 
-- The single-line clipping of the node label, for both its built-in label and any projected
-  `#folderTreeNodeLabel` template — the tree wraps whichever one renders.
-- The overflow tooltip and its suppression.
+- The single-line clipping of **its own** node label, and the overflow tooltip on it.
+- Forwarding row keyboard focus to whichever `<dot-truncated-label>` the row contains — including
+  one a consumer placed itself.
 - The PrimeNG layout guards that make clipping possible at all: `min-width: 0` on
   `.p-tree-node-content` and `.p-tree-node-label`, in the component's own SCSS.
-- Forwarding row keyboard focus to the label's tooltip.
+
+### A consumer that projects `#folderTreeNodeLabel` must
+
+Place `<dot-truncated-label>` around the part of its row that should clip, and nothing else:
+
+```html
+<ng-template #folderTreeNodeLabel let-node>
+    <dot-truncated-label>
+        <span data-testid="tree-node-label" class="font-normal">{{ node.label | dotFolderName }}</span>
+    </dot-truncated-label>
+</ng-template>
+```
+
+The tree deliberately does **not** wrap a projected template for you. It cannot: a row that
+carries more than a name — the Roles panel's `icon + name + user-count badge` — has a flex child
+that shrinks, so an outer wrapper never overflows, clips the badge rather than the name, and
+would read the whole row out in the tooltip. Only the consumer knows which part is the name.
+This was found by the Roles test in the Red phase and amended in spec.md's Clarifications.
 
 ### A consumer must no longer
 
 | No longer | Why |
 |-----------|-----|
-| Set `overflow`, `text-overflow`, `white-space` or `truncate` on the node label | Owned by the tree (FR-006/FR-007). A local rule now either duplicates it or fights it |
+| Set `overflow`, `text-overflow`, `white-space` or `truncate` on the node label | Owned by `dot-truncated-label` (FR-006/FR-007). A local rule now either duplicates it or fights it |
 | Pass `nodeLabel` / `nodeContent` `min-width` guards through `pt` | Same — and `pt` is the one channel a consumer and the tree would have to share, which is why the guards moved to SCSS |
-| Declare `[pTooltip]` / `[tooltipDisabled]` / `[showDelay]` / `pTooltipPT` on a node label | Owned by the tree. In particular the `label.length <= 10` heuristic is gone: it is wrong under indentation and at narrow panel widths |
+| Declare `[pTooltip]` / `[tooltipDisabled]` / `[showDelay]` / `pTooltipPT` on a node label | Owned by `dot-truncated-label`. In particular the `label.length <= 10` heuristic is gone: it is wrong under indentation and at narrow panel widths |
 | Reach into tree internals with `::ng-deep` for label overflow | Owned by the tree |
 
 ### A consumer still owns
@@ -97,8 +115,10 @@ responsibility for the node label.
    `.../content-drive/helpers/content-drive-tree.ts` count and index it.
 2. `grep -rn "pTooltip" ` over the five consumers' node-label templates returns nothing.
 3. `grep -rn "truncate\|text-ellipsis\|whitespace-nowrap"` over the five consumers' node-label
-   templates and `pt` objects returns nothing.
+   templates and `pt` objects returns only `<dot-truncated-label>` element tags — no CSS class and
+   no `pt` key doing the clipping locally.
 4. No consumer SCSS contains `::ng-deep` rules for `.p-tree-node-label` overflow.
 5. Content Drive's drop highlight (`.p-tree-node-content:has(span.active)`) still matches — the
-   extra wrapper is a descendant, and `:has()` matches descendants.
+   wrapper is an ancestor of the `active` span, and `:has()` matches descendants. Covered by a
+   test rather than left to inspection.
 6. `escape` is never set to `false` on the label tooltip.

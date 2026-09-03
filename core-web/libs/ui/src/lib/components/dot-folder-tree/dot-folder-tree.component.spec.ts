@@ -15,6 +15,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderTreeComponent } from './dot-folder-tree.component';
 
+import { DotTruncatedLabelComponent } from '../dot-truncated-label/dot-truncated-label.component';
+
 const LONG_FOLDER_PATH = '/application/a-very-long-folder-name-that-will-not-fit-in-the-row';
 
 /**
