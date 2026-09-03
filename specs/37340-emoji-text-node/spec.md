@@ -87,7 +87,9 @@ Decisions taken during `/speckit-clarify`. Earlier decisions from the specify se
   (3) `:name:`. Every renderer also emits a warning, in the JS SDKs via `console.warn` and in
   Java via `Logger.warn` (Constitution Principle II), with the message
   `[dotCMS Block Editor]: Emoji <name> is not supported`. Warned once per distinct name per
-  render pass so a page with repeats does not flood the console or the log.
+  render scope so a page with repeats does not flood the console or the log. The scope is
+  defined per surface (one render call in the JS SDKs; one `StoryBlockRenderHelper` instance —
+  i.e. one Story Block field render — in Java), so no request-scoped state is required.
 - Q: The two linked text nodes in the reported data are not adjacent — an unmarked `emoji` node
   sits between them. Should coalescing absorb it? → A: **Option A, narrowed to `emoji` nodes
   only.** A run of `text(link) + unmarked node + text(link)` collapses into a single `<a>` only
@@ -390,6 +392,16 @@ function.
   - The generated map is a **new drift surface**: if it falls behind the extension's `emojis`
     list, renderers resolve a `name` the editor can produce to nothing. The CI equality check in
     AC-012 is what prevents that, and is why generation is required over a hand-written table.
+  - **The cross-build handoff is the riskiest unproven mechanic in this change, and the plan
+    must prove it rather than assume it.** The map is generated from `@tiptap/extension-emoji`,
+    a `core-web` npm dependency, but consumed by `StoryBlockRenderHelper` on the Java
+    classpath. The `openapi.yaml` precedent is **not** a like-for-like comparison: that artifact
+    is generated *inside* the Maven build, whereas this one originates in the frontend
+    toolchain and must cross into Java resources. The plan must answer, concretely: which build
+    generates it, where the artifact is committed, how Java loads it, and how the CI diff-check
+    runs against a JS-produced file without requiring the frontend toolchain in the Java build.
+    If that handoff proves awkward, generating the table inside the Maven build from a
+    committed source of truth is the fallback to evaluate.
   - The map adds weight to three **published** npm packages (`@dotcms/react`, `@dotcms/vue`,
     `@dotcms/angular`). It must be tree-shakeable and must not land in `@dotcms/types`.
   - **Gap B is a consumer-visible output change** in those same published packages: content a
@@ -454,7 +466,14 @@ function.
   node's `text` when it carries one and otherwise the literal `:name:` — **never** empty
   output — and emits `[dotCMS Block Editor]: Emoji <name> is not supported` as a warning
   (`console.warn` in the JS SDKs, `Logger.warn` in Java). The warning fires once per distinct
-  unresolved name per render pass, not once per occurrence.
+  unresolved name per **render scope**, not once per occurrence. The render scope is defined
+  per surface, because "render pass" has no common meaning across them:
+  - **JS SDKs** — one render call of the block-editor renderer component.
+  - **Java / VTL** — one `StoryBlockRenderHelper` instance, i.e. one Story Block **field**
+    render including its nested blocks. `GenericRenderableImpl` creates at most one helper per
+    `toHtml` call and shares it across the recursion, so this scope needs no request-scoped
+    state. A page rendering N Story Block fields may therefore warn up to N times per distinct
+    name — bounded, and preferable to threading request state through the render path.
 
 **Renderers — Gap B (link run coalescing)**
 
@@ -506,7 +525,12 @@ function.
   rendered, never re-saved.
 - **Unit (JUnit)** for `StoryBlockRenderHelper` — the Gap B grouping and the map lookup, in
   `dotCMS/src/test/java/com/dotcms/rendering/velocity/viewtools/content/util/`, alongside the
-  existing `StoryBlockAPIImplToMapTest`. Covers AC-014, AC-017 and the no-op path.
+  existing `StoryBlockAPIImplToMapTest`. Covers **AC-014 through AC-017** — including
+  **AC-015** (an unmarked `emoji` node is absorbed into the run) and **AC-016** (a non-`emoji`
+  unmarked atom breaks it), the two behaviors this Java grouping exists to implement — plus the
+  no-op path where nothing coalesces and the input is returned unchanged. AC-018 (nested marks
+  inside the anchor) is asserted at the VTL end-to-end layer instead, since it depends on macro
+  rendering rather than on grouping.
   `./mvnw test -pl :dotcms-core -Dtest=StoryBlockRenderHelperTest`
 - **Generated map and unresolved-name fallback** — AC-012 and AC-013. A CI step regenerates the map and fails on any diff against the
   committed artifact, plus a unit test asserting VTL and the SDKs agree on a sample of names.
