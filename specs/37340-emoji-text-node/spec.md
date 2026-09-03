@@ -499,10 +499,15 @@ function.
 
 **Release**
 
-- **AC-022**: `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` each carry a minor version
-  bump and a `CHANGELOG.md` entry for this release: `### Added` for `emoji` node support,
-  `### Fixed` for link run coalescing, the latter stating explicitly that rendered HTML
-  changes for existing content.
+- **AC-022**: `@dotcms/react`, `@dotcms/vue` and `@dotcms/angular` each carry a `CHANGELOG.md`
+  entry for this release: `### Added` for `emoji` node support, `### Fixed` for link run
+  coalescing, the latter stating explicitly that rendered HTML changes for existing content.
+  **No version bump** — amended after the plan's ADR gate found the original wording conflicted
+  with accepted
+  [ADR-0019](https://github.com/dotCMS/platform-adrs/blob/main/decisions/0019-sdk-cms-date-lockstep-versioning.md):
+  the SDKs are versioned in date-lockstep with the dotCMS release, and
+  `.github/workflows/cicd_release-sdk.yml` reads the version straight off the release tag, so
+  there is no independent SDK version to bump.
 
 **Verification method**:
 
@@ -572,6 +577,12 @@ spec carries no `[NEEDS CLARIFICATION]` markers.
 | 1 | Existing stored `emoji` nodes — render-only, heal-on-edit, or migrate? | **Render-only** | Gap A + Gap B satisfy AC-019 without a re-save. No Java, no DB, not rollback-relevant. Accepted trade-off: old nodes persist, so the legacy-editor drop path and the `<img>` fallback stay live for that content. |
 | 2 | `enableEmoticons` (`:)`) — keep as text, or drop? | **Insert literal character** | Preserves a shortcut authors already use, while removing the node creation that strips marks. `:)` now yields `🙂` inside the text node. Covered by AC-006. |
 | 3 | Does AC-002's character sample need to be exhaustive? | **Representative sample** | All 3 reported symbols, ~20 further text-presentation characters, plus pictographic and multi-codepoint cases (ZWJ sequence, flag). Fast, readable, and stable across extension upgrades. |
+
+**Amended after planning**
+
+- **AC-022 no longer requires a version bump.** The plan's mandatory ADR gate found the original
+  wording conflicted with accepted ADR-0019 (date-lockstep SDK versioning). The communication
+  requirement it existed for is fully preserved by the changelog entries.
 
 **Still to confirm outside this spec** — not a clarification, an action:
 
