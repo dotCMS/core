@@ -1,0 +1,143 @@
+{
+    "$comment": "Canonical Story Block fixtures for #37340. ONE source of truth, shared by all five renderer implementations (VTL, React, Vue, Angular standard, Angular semantic) so they cannot silently diverge — see specs/37340-emoji-text-node/contracts/renderer.contract.md C4. These payloads are only ever RENDERED, never re-saved: that is what proves AC-019.",
+
+    "link": {
+        "type": "link",
+        "attrs": {
+            "href": "https://dotcms.com",
+            "target": null,
+            "rel": null,
+            "title": null,
+            "aria-label": null
+        }
+    },
+
+    "shape1_emojiSplitsLink": {
+        "$comment": "The reported customer payload. Emoji typed INTO already-linked text: the node carries NO marks and sits BETWEEN the two linked text nodes, so plain adjacency merging cannot fix it. Expect ONE <a> containing ©.",
+        "content": [
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "dotCMS Copyright "
+            },
+            { "type": "emoji", "attrs": { "name": "copyright" } },
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "All rights reserved"
+            }
+        ],
+        "expectedAnchors": 1,
+        "expectedText": "dotCMS Copyright © All rights reserved"
+    },
+
+    "shape2_emojiCarriesLink": {
+        "$comment": "Link applied OVER an existing emoji node. Already renders as one <a> today; must not regress.",
+        "content": [
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "dotCMS "
+            },
+            {
+                "type": "emoji",
+                "attrs": { "name": "copyright" },
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }]
+            },
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": " 2026"
+            }
+        ],
+        "expectedAnchors": 1
+    },
+
+    "differingLinkAttrs": {
+        "$comment": "Link marks differ by href — the run MUST break. Guards against over-eager coalescing.",
+        "content": [
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "one"
+            },
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://example.com" } }],
+                "text": "two"
+            }
+        ],
+        "expectedAnchors": 2
+    },
+
+    "nonEmojiAtomBreaksRun": {
+        "$comment": "AC-016. An intervening unmarked atom that is NOT an emoji must NOT be absorbed. Absorption is deliberately narrow.",
+        "content": [
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "one"
+            },
+            { "type": "hardBreak" },
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "two"
+            }
+        ],
+        "expectedAnchors": 2
+    },
+
+    "boldNestedInLink": {
+        "$comment": "AC-018. Other marks still nest correctly INSIDE the single coalesced <a>.",
+        "content": [
+            {
+                "type": "text",
+                "marks": [{ "type": "link", "attrs": { "href": "https://dotcms.com" } }],
+                "text": "plain "
+            },
+            {
+                "type": "text",
+                "marks": [
+                    { "type": "link", "attrs": { "href": "https://dotcms.com" } },
+                    { "type": "bold" }
+                ],
+                "text": "bold"
+            }
+        ],
+        "expectedAnchors": 1
+    },
+
+    "unresolvableName": {
+        "$comment": "AC-013 + security. `name` arrives from the Contentlet REST API with no schema validation, so it is user-controlled. The :name: fallback MUST be HTML-escaped and MUST warn once.",
+        "content": [{ "type": "emoji", "attrs": { "name": "definitely-not-a-real-shortcode" } }],
+        "expectedText": ":definitely-not-a-real-shortcode:"
+    },
+
+    "unresolvableNameWithHtml": {
+        "$comment": "XSS guard — must render escaped, never as live markup.",
+        "content": [{ "type": "emoji", "attrs": { "name": "<img src=x onerror=alert(1)>" } }]
+    },
+
+    "emojiNodeWithTextAttr": {
+        "$comment": "Fallback precedence step 2: an unresolvable name but the node carries `text`, so that wins over :name:.",
+        "content": [{ "type": "emoji", "attrs": { "name": "unknown-name", "text": "★" } }],
+        "expectedText": "★"
+    },
+
+    "mixedRepresentation": {
+        "$comment": "Contract C4. After the fix one field may hold a legacy emoji NODE and a literal CHARACTER side by side. Both halves must render identically — this is what makes mixed representation safe.",
+        "content": [
+            { "type": "text", "text": "node form: " },
+            { "type": "emoji", "attrs": { "name": "copyright" } },
+            { "type": "text", "text": " / text form: ©" }
+        ],
+        "expectedText": "node form: © / text form: ©"
+    },
+
+    "noOp": {
+        "$comment": "Nothing to coalesce. Output must be byte-identical to today — this guards the every-page render path.",
+        "content": [{ "type": "text", "text": "no links here" }],
+        "expectedAnchors": 0
+    }
+}
