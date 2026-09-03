@@ -68,7 +68,6 @@ import {
     DEFAULT_PAGINATION,
     DIALOG_TYPE,
     WARNING_MESSAGE_LIFE,
-    SUCCESS_MESSAGE_LIFE,
     ERROR_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID
 } from '../shared/constants';
@@ -105,7 +104,6 @@ describe('DotContentDriveShellComponent', () => {
     let router: SpyObject<Router>;
     let location: SpyObject<Location>;
     let messageService: SpyObject<MessageService>;
-    let dotMessageService: SpyObject<DotMessageService>;
     let uploadService: SpyObject<DotUploadFileService>;
     let navigationService: SpyObject<DotContentDriveNavigationService>;
     let filtersSignal: ReturnType<typeof signal>;
@@ -350,7 +348,6 @@ describe('DotContentDriveShellComponent', () => {
         router = spectator.inject(Router);
         location = spectator.inject(Location);
         messageService = spectator.inject(MessageService);
-        dotMessageService = spectator.inject(DotMessageService);
         uploadService = spectator.inject(DotUploadFileService);
         navigationService = spectator.inject(DotContentDriveNavigationService);
     });
@@ -367,154 +364,37 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
         };
 
-        it('should report a plain success when nothing failed or skipped', () => {
-            settle({
-                actionName: 'Publish',
-                successCount: 3,
-                skippedCount: 0,
-                failCount: 0
-            });
+        it('should stay silent on a clean success the listing already shows', () => {
+            // The rule the PM asked for: success is not announced when the author can see it. The
+            // rows published, moved or unlocked in front of them, so a notification saying so
+            // repeats what is already on screen — which is the noise this set out to remove.
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failCount: 0 });
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'success',
-                    detail: 'content-drive.action-center.toast.executed-detail'
-                })
-            );
+            expect(messageService.add).not.toHaveBeenCalled();
         });
 
-        it('should downgrade to a warning when items failed', () => {
-            // Partial failure is a normal outcome (a lock held by somebody else, a per-contentlet
-            // permission) and must not read as an unqualified success.
+        it('should still refresh and consume a silent success', () => {
+            // Only the notification is dropped. The reload is how the author actually sees it, so
+            // suppressing that too would replace a redundant message with no feedback at all.
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failCount: 0 });
+
+            expect(store.loadItems).toHaveBeenCalled();
+            expect(store.clearActionExecutionResult).toHaveBeenCalled();
+        });
+
+        it('should announce a clean success that leaves no visible trace', () => {
+            // Add to Bundle and Push Publish change nothing in the listing, so silence there is the
+            // "non-responding" complaint all over again.
             settle({
-                actionName: 'Publish',
+                actionName: 'Add to Bundle',
                 successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
-
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'warn',
-                    detail: 'content-drive.action-center.toast.executed-partial'
-                })
-            );
-        });
-
-        it('should warn when items were skipped, even though nothing failed', () => {
-            // A skip is still a shortfall from what the user asked for: those items did not get the
-            // action. A green success toast would overstate the outcome.
-            settle({
-                actionName: 'Send for Review',
-                successCount: 1,
-                skippedCount: 1,
-                failCount: 0
-            });
-
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'warn',
-                    detail: 'content-drive.action-center.toast.executed-partial'
-                })
-            );
-        });
-
-        it('should report both numbers when a run skipped some items and failed others', () => {
-            // The bug: the ladder treated these as mutually exclusive, so a mixed result showed the
-            // failure copy alone and blamed permissions or locks for the whole shortfall — when part
-            // of it was items merely sitting on a step the action does not own. The user's next move
-            // (go unlock things) was then wrong.
-            settle({
-                actionName: 'Send for Review',
-                successCount: 3,
-                skippedCount: 2,
-                failCount: 1
-            });
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.action-center.toast.executed-partial',
-                'Send for Review',
-                '3',
-                '1',
-                '2'
-            );
-        });
-
-        it('should not name a cause the result does not carry', () => {
-            // Both counts are always passed, so a fails-only run still renders "0 skipped". That is
-            // the honest reading — the message names each cause and its number, rather than
-            // attributing the whole shortfall to one of them.
-            settle({
-                actionName: 'Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.action-center.toast.executed-partial',
-                'Publish',
-                '1',
-                '1',
-                '0'
-            );
-        });
-
-        it('should use an action-specific partial copy when the result names one', () => {
-            // A reindex falls short for different reasons than a workflow fire — content that could
-            // not be read or indexed, and a cancelled run. Borrowing the default copy would blame
-            // permissions, locks and workflow steps, none of which apply, and send the user off to
-            // fix something that was never the problem.
-            settle({
-                actionName: 'Refresh',
-                successCount: 2,
-                skippedCount: 1,
-                failCount: 1,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
-            });
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.action-center.toast.refreshed-partial',
-                'Refresh',
-                '2',
-                '1',
-                '1'
-            );
-        });
-
-        it('should keep the default partial copy for results that name none', () => {
-            settle({
-                actionName: 'Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
-
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.action-center.toast.executed-partial',
-                'Publish',
-                '1',
-                '1',
-                '0'
-            );
-        });
-
-        it('should ignore the action-specific copy on a clean run', () => {
-            // Nothing fell short, so there is no cause to name — the plain success copy is right
-            // whatever the action would have said about a shortfall.
-            settle({
-                actionName: 'Refresh',
-                successCount: 3,
                 skippedCount: 0,
                 failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial'
+                confirmSuccess: true
             });
 
             expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'success',
-                    detail: 'content-drive.action-center.toast.executed-detail'
-                })
+                expect.objectContaining({ severity: 'success' })
             );
         });
 
@@ -1490,7 +1370,7 @@ describe('DotContentDriveShellComponent', () => {
             expect(addSpy).not.toHaveBeenCalledWith(expect.objectContaining({ severity: 'info' }));
         });
 
-        it('should show a success message after a successful upload', () => {
+        it('should not announce an upload the listing now shows', () => {
             uploadService.uploadFileByBaseType.mockReturnValue(
                 of({ title: 'test.jpg', contentType: 'image/jpeg' } as DotCMSContentlet)
             );
@@ -1502,12 +1382,9 @@ describe('DotContentDriveShellComponent', () => {
                 baseType: 'DOTASSET'
             });
 
-            expect(addSpy).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: SUCCESS_MESSAGE_LIFE
-            });
+            expect(addSpy).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
         });
 
         it('should show an error message on upload failure', () => {
@@ -1984,7 +1861,7 @@ describe('DotContentDriveShellComponent', () => {
                 });
             });
 
-            it('should show success message after successful move', () => {
+            it('should not announce a move the listing already shows', () => {
                 const mockDragItems = {
                     folders: [],
                     contentlets: [MOCK_ITEMS[0] as DotCMSContentlet]
@@ -2006,12 +1883,9 @@ describe('DotContentDriveShellComponent', () => {
                 const sidebar = spectator.debugElement.query(By.css('[data-testid="sidebar"]'));
                 spectator.triggerEventHandler(sidebar, 'moveItems', mockMoveEvent);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: expect.any(String),
-                    detail: expect.any(String),
-                    life: SUCCESS_MESSAGE_LIFE
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
             });
 
             it('should show message with folders when dragging folders and contentlets', () => {
@@ -2278,7 +2152,10 @@ describe('DotContentDriveShellComponent', () => {
                     (call) => call[0].severity === 'error'
                 );
 
-                expect(successCalls).toHaveLength(1);
+                // A partial move: the successes are silent (the rows left the folder in front of
+                // the author) but each failure still speaks, because a row that *stayed* is
+                // indistinguishable from one nobody tried to move.
+                expect(successCalls).toHaveLength(0);
                 expect(errorCalls).toHaveLength(1);
                 expect(store.loadItems).toHaveBeenCalled();
                 expect(store.cleanDragItems).toHaveBeenCalled();
@@ -2423,12 +2300,9 @@ describe('DotContentDriveShellComponent', () => {
             spectator.triggerEventHandler(folderListView, 'drop', folderItem);
 
             // Should show success message after successful move
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: expect.any(String),
-                detail: expect.any(String),
-                life: SUCCESS_MESSAGE_LIFE
-            });
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
+            );
 
             // Should clean drag items and reload items
             expect(store.cleanDragItems).toHaveBeenCalled();

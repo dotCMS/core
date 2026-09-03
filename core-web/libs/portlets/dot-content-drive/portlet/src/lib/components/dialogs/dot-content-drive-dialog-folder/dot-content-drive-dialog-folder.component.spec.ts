@@ -792,7 +792,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful creation', () => {
+        it('should not announce a folder the listing now shows', () => {
             const createButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -803,14 +803,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(createButton);
             spectator.detectChanges();
 
-            // `summary: 'Success'` was a hardcoded English literal in the component, not a
-            // message key — untranslatable, and FR-029 forbids it reaching the interface.
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'success',
-                    summary: 'Folder created successfully',
-                    detail: expect.stringContaining('Test Folder')
-                })
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
             );
         });
 
@@ -1377,7 +1371,7 @@ describe('DotContentDriveDialogFolderComponent', () => {
             expect(store.closeDialog).toHaveBeenCalled();
         });
 
-        it('should show success message on successful save', () => {
+        it('should not announce a rename the listing now shows', () => {
             const saveButton = spectator.query(
                 '[data-testid="content-drive-dialog-folder-create"]'
             );
@@ -1385,14 +1379,8 @@ describe('DotContentDriveDialogFolderComponent', () => {
             spectator.click(saveButton);
             spectator.detectChanges();
 
-            expect(messageService.add).toHaveBeenCalledWith(
-                expect.objectContaining({
-                    severity: 'success',
-                    summary: 'Folder saved successfully',
-                    // The form renames it to 'Updated Folder' before saving, so naming the new
-                    // title is the correct behaviour - the author needs to see what they saved.
-                    detail: expect.stringContaining('Updated Folder')
-                })
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
             );
         });
 

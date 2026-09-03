@@ -205,6 +205,20 @@ export interface DotContentDriveActionExecutionResult {
      */
     partialDetailKey?: string;
     /**
+     * Whether a clean success still needs saying.
+     *
+     * Success is silent by default: for most operations the listing visibly reflects it — the row
+     * publishes, moves, unlocks or disappears — and a notification then repeats what the author can
+     * already see. That repetition is the noise this feature set out to remove.
+     *
+     * It is not true for every operation. Add to Bundle and Push Publish change nothing in the
+     * listing, so without this the author gets a dialog that closes and no other sign anything
+     * happened — the "non-responding" complaint that started this. Those set it.
+     *
+     * A shortfall is always reported, with or without this.
+     */
+    confirmSuccess?: boolean;
+    /**
      * Whether this outcome arrived unprompted, from a job that finished in the background.
      *
      * Every other result settles a request the user is waiting on, so closing the dialog and reloading

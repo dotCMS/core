@@ -285,16 +285,8 @@ export class DotContentDriveDialogFolderComponent {
             next: () => {
                 this.#onSuccess();
 
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.create-success'
-                    ),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.create-success-detail',
-                        body.data.title
-                    )
-                });
+                // Silent on success: the listing shows it, so a notification would repeat what the
+                // author is already looking at. Failures still speak.
             },
             error: (err) => {
                 // The server's own message lives here and nowhere else now: the author is shown
@@ -326,16 +318,8 @@ export class DotContentDriveDialogFolderComponent {
             next: () => {
                 this.#onSuccess();
 
-                this.#messageService.add({
-                    severity: 'success',
-                    summary: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.save-success'
-                    ),
-                    detail: this.#dotMessageService.get(
-                        'content-drive.dialog.folder.message.save-success-detail',
-                        body.data.title
-                    )
-                });
+                // Silent on success: the listing shows it, so a notification would repeat what the
+                // author is already looking at. Failures still speak.
             },
             error: (err) => {
                 console.error('Error saving folder:', err);

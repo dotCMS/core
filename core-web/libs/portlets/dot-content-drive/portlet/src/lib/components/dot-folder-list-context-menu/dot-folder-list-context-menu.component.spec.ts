@@ -1302,7 +1302,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 );
             });
 
-            it('should show success message when lock action succeeds', async () => {
+            it('should not announce a lock the listing already shows', async () => {
                 jest.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, false)));
                 dotContentletService.lockContent.mockReturnValue(of(mockContentlet));
@@ -1322,16 +1322,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 jest.advanceTimersByTime(0);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'content-drive.toast.lock-success',
-                    detail: 'content-drive.toast.lock-success-detail'
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
 
                 jest.useRealTimers();
             });
 
-            it('should show success message when unlock action succeeds', async () => {
+            it('should not announce an unlock the listing already shows', async () => {
                 jest.useFakeTimers();
                 dotContentletService.canLock.mockReturnValue(of(createMockCanLock(true, true)));
                 dotContentletService.unlockContent.mockReturnValue(of(mockContentlet));
@@ -1351,11 +1349,9 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
                 jest.advanceTimersByTime(0);
 
-                expect(messageService.add).toHaveBeenCalledWith({
-                    severity: 'success',
-                    summary: 'content-drive.toast.unlock-success',
-                    detail: 'content-drive.toast.unlock-success-detail'
-                });
+                expect(messageService.add).not.toHaveBeenCalledWith(
+                    expect.objectContaining({ severity: 'success' })
+                );
 
                 jest.useRealTimers();
             });
@@ -1581,7 +1577,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
             });
         });
 
-        it('should show success message when workflow action succeeds', async () => {
+        it('should not announce a workflow action the listing already shows', async () => {
             jest.useFakeTimers();
             const mockWorkflowWithoutInputs = [
                 {
@@ -1604,17 +1600,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
 
             jest.advanceTimersByTime(0);
 
-            expect(messageService.add).toHaveBeenCalledWith({
-                severity: 'success',
-                summary: 'content-drive.toast.workflow-executed',
-                detail: 'content-drive.toast.workflow-executed-detail'
-            });
-            // The mocked `get` echoes the key, so the assertion above cannot tell whether the
-            // action and the item reached the copy. This is what actually proves FR-028.
-            expect(dotMessageService.get).toHaveBeenCalledWith(
-                'content-drive.toast.workflow-executed-detail',
-                'Save',
-                mockContentlet.title
+            expect(messageService.add).not.toHaveBeenCalledWith(
+                expect.objectContaining({ severity: 'success' })
             );
 
             jest.useRealTimers();
@@ -1836,7 +1823,8 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 ? 'content-drive.context-menu.unlock'
                 : 'content-drive.context-menu.lock';
 
-            component.$items()
+            component
+                .$items()
                 .find((item) => item.label === label)
                 ?.command?.({} as unknown as MenuItemCommandEvent);
 

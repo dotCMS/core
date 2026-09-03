@@ -215,7 +215,10 @@ export class DotContentDriveShellComponent {
             actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
             successCount: 1,
             skippedCount: 0,
-            failCount: 0
+            failCount: 0,
+            // Nothing in the listing changes when an asset joins a bundle, so this is one of the
+            // few successes that still has to be said out loud.
+            confirmSuccess: true
         });
     };
 
@@ -549,7 +552,8 @@ export class DotContentDriveShellComponent {
             skippedCount,
             failCount,
             partialDetailKey,
-            backgrounded
+            backgrounded,
+            confirmSuccess
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -562,6 +566,24 @@ export class DotContentDriveShellComponent {
         // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
         // cause and its number is what keeps the message honest.
         const isPartial = failCount > 0 || skippedCount > 0;
+
+        // Silent on a clean success, unless the operation leaves no visible trace.
+        //
+        // For most operations the listing already shows the outcome — the row published, moved,
+        // unlocked or disappeared — so a notification repeats what the author can see, which is the
+        // noise this feature set out to remove. A shortfall is different: the numbers and their
+        // causes are not visible anywhere, and it is the case the author has to act on.
+        //
+        // `confirmSuccess` is for the operations whose success genuinely shows nowhere, such as Add
+        // to Bundle and Push Publish.
+        //
+        // Only the *notification* is suppressed. The grid still reloads and the dialog still closes:
+        // those are how the author sees the outcome, so skipping them would replace a redundant
+        // message with no feedback at all.
+        // `backgrounded` too: that outcome arrived unprompted, minutes after the author moved on, so
+        // by definition nothing on screen reflects it — and with a dialog open the grid does not
+        // even reload. Staying silent there would mean a run finished and the author never learned.
+        const announce = isPartial || confirmSuccess || backgrounded;
 
         const detail = isPartial
             ? this.#dotMessageService.get(
@@ -579,14 +601,16 @@ export class DotContentDriveShellComponent {
                   String(successCount)
               );
 
-        this.#messageService.add({
-            // A skip is a shortfall too — those items did not get the action — so it warns rather
-            // than reporting green, which is what it used to do.
-            severity: isPartial ? 'warn' : 'success',
-            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-            detail,
-            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
-        });
+        if (announce) {
+            this.#messageService.add({
+                // A skip is a shortfall too — those items did not get the action — so it warns
+                // rather than reporting green, which is what it used to do.
+                severity: isPartial ? 'warn' : 'success',
+                summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
+                detail,
+                life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+            });
+        }
 
         untracked(() => {
             // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
@@ -1102,25 +1126,9 @@ export class DotContentDriveShellComponent {
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                next: ({ title }) => {
-                    // Tell the user which kind they uploaded (Asset vs File), based on the base
-                    // type they chose in the menu — not the raw resolved content-type variable.
-                    const typeLabel = this.#dotMessageService.get(
-                        baseType === DotCMSBaseTypesContentTypes.FILEASSET
-                            ? 'content-drive.dialog.upload-selector.file'
-                            : 'content-drive.dialog.upload-selector.asset'
-                    );
-
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.add-dotasset-success-detail',
-                            title,
-                            typeLabel
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                next: () => {
+                    // Silent on success: the row appears in the listing, so a notification
+                    // would repeat what the author is already looking at.
 
                     this.#store.loadItems();
                 },
@@ -1198,19 +1206,7 @@ export class DotContentDriveShellComponent {
                 this.#store.endExternalRun(runId);
 
                 if (successCount > 0) {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success-detail',
-                            successCount.toString(),
-                            `${successCount > 1 ? 's ' : ' '}`,
-                            folderName
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                    // Silent on success: the rows left the folder in front of the author.
                     // Quiet: the moved rows were marked busy.
                     this.#store.loadItems({ quiet: true });
                 }

@@ -44,7 +44,6 @@ import { DotJspIframeDialogComponent, DotJspIframeDialogData } from '@dotcms/ui'
 import {
     DIALOG_TYPE,
     ERROR_MESSAGE_LIFE,
-    SUCCESS_MESSAGE_LIFE,
     MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
     ROOT_PATH
 } from '../../shared/constants';
@@ -478,17 +477,8 @@ export class DotFolderListViewContextMenuComponent {
                     // after the first and would read as a jump.
                     this.#store.reloadContentDrive({ quiet: true });
 
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.toast.workflow-executed'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.toast.workflow-executed-detail',
-                            actionName,
-                            itemTitle
-                        )
-                    });
+                    // Silent on success: the listing shows it, so a notification would repeat what the
+                    // author is already looking at. Failures still speak.
                 },
                 (error) => {
                     this.#messageService.add({
@@ -531,18 +521,10 @@ export class DotFolderListViewContextMenuComponent {
                 .unlockContent(contentlet.inode)
                 .pipe(take(1))
                 .subscribe(
-                    ({ title }: DotCMSContentlet) => {
+                    () => {
                         this.#store.endExternalRun(runId);
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-success',
-                                title
-                            ),
-                            detail: this.#dotMessageService.get(
-                                'content-drive.toast.unlock-success-detail'
-                            )
-                        });
+                        // Silent on success: the listing shows it, so a notification would repeat what the
+                        // author is already looking at. Failures still speak.
 
                         // Quiet: the row was marked busy, so a skeleton here is a second load
                         // straight after the first and reads as the table blinking.
@@ -570,18 +552,10 @@ export class DotFolderListViewContextMenuComponent {
                 .lockContent(contentlet.inode)
                 .pipe(take(1))
                 .subscribe(
-                    ({ title }: DotCMSContentlet) => {
+                    () => {
                         this.#store.endExternalRun(runId);
-                        this.#messageService.add({
-                            severity: 'success',
-                            summary: this.#dotMessageService.get(
-                                'content-drive.toast.lock-success',
-                                title
-                            ),
-                            detail: this.#dotMessageService.get(
-                                'content-drive.toast.lock-success-detail'
-                            )
-                        });
+                        // Silent on success: the listing shows it, so a notification would repeat what the
+                        // author is already looking at. Failures still speak.
                         // Quiet: the row was marked busy, so a skeleton here is a second load
                         // straight after the first and reads as the table blinking.
                         this.#store.reloadContentDrive({ quiet: true });
@@ -793,17 +767,8 @@ export class DotFolderListViewContextMenuComponent {
             .subscribe({
                 next: () => {
                     this.#store.endExternalRun(runId);
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.context-menu.delete-folder'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.dialog.delete-folder.success',
-                            folder.name
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                    // Silent on success: the listing shows it, so a notification would repeat what the
+                    // author is already looking at. Failures still speak.
                     // The tree serves this menu too, so the deleted folder can be an ancestor of
                     // the one being browsed — or the browsed folder itself. Reloading the current
                     // path would then fetch a path that no longer exists, leaving an empty grid
