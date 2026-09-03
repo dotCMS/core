@@ -220,6 +220,20 @@ describe('withActionExecution', () => {
             expect(store.busyRows()).toEqual(['inode-1', 'inode-2', 'inode-3']);
         });
 
+        it('should refuse a run that overlaps items another run is already touching', () => {
+            // The key is now `operation:targets`, so Publish on [a,b] and Publish on [a] are
+            // different keys. A key match alone would let the second one through and act on `a`
+            // twice at once — the exact thing the guard exists to stop. Busy rows are
+            // non-interactive in the UI, but a disabled control is an affordance, not a lock.
+            build();
+            fireDefaultAction.mockReturnValue(new Subject());
+
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1', 'inode-2']);
+            store.executeQuickAction('lock-id', 'Lock', ['inode-1']);
+
+            expect(fireDefaultAction).toHaveBeenCalledTimes(1);
+        });
+
         it('should do nothing when there are no inodes', () => {
             build();
 

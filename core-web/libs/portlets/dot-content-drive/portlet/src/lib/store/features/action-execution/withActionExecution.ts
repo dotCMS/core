@@ -140,15 +140,28 @@ export function withActionExecution() {
                  * consumes the result, which is where the rest of the post-run UI work already lives.
                  */
                 /**
-                 * Registers a run and returns its id.
+                 * The key a run is stored under: what it is, and what it is about.
                  *
-                 * The id is allocated here rather than taken from a server handle because the window
-                 * a double-click has to fire twice is precisely the window before any handle exists.
+                 * Natural rather than generated. It has to be unique, and this already is: a second
+                 * run with the same key is exactly what {@link isRunning} refuses, so a collision
+                 * cannot arise. It also makes the guard a single lookup instead of a scan over every
+                 * live run intersecting target arrays, and leaves callers holding something readable
+                 * rather than an opaque token.
+                 *
+                 * Caveat worth knowing: a target containing the separator could in principle collide.
+                 * The colliding case is "same operation, same items", which the guard refuses anyway,
+                 * so it fails safe.
+                 */
+                const runKey = (operation: string, targets: string[]): string =>
+                    `${operation}:${targets.join(',')}`;
+
+                /**
+                 * Registers a run and returns its key.
+                 *
+                 * Also clears any pending outcome, so a stale result cannot sit next to a new run.
                  */
                 const startRun = (run: Omit<DotContentDriveRun, 'runId'>): string => {
-                    const runId = `${run.operation}-${Date.now()}-${Math.random()
-                        .toString(36)
-                        .slice(2, 8)}`;
+                    const runId = runKey(run.operation, run.targets);
 
                     patchState(store, {
                         runs: { ...store.runs(), [runId]: { ...run, runId } },
@@ -158,7 +171,7 @@ export function withActionExecution() {
                     return runId;
                 };
 
-                /** Removes a run from the registry. Safe to call for an id already gone. */
+                /** Removes one run. Safe for a key already gone. */
                 const endRun = (runId: string): void => {
                     const remaining = { ...store.runs() };
                     delete remaining[runId];
@@ -167,18 +180,30 @@ export function withActionExecution() {
                 };
 
                 /**
-                 * Whether this operation is already running over any of these items.
+                 * Whether this exact operation is already running over these items.
                  *
-                 * Scoped to the operation *and* its targets (FR-016). Firing Publish twice on the
-                 * same row is still refused; firing Lock while an upload runs is not, which is the
-                 * whole point of the change.
+                 * Scoped to the operation *and* its targets (FR-016): firing Publish twice on the
+                 * same row is refused, locking a row while an upload runs is not.
                  */
-                const isRunning = (operation: string, targets: string[]): boolean =>
-                    Object.values(store.runs()).some(
-                        (run) =>
-                            run.operation === operation &&
+                const isRunning = (operation: string, targets: string[]): boolean => {
+                    const active = Object.values(store.runs());
+
+                    // Two checks, because the natural key alone is not enough. Publish on [a,b] and
+                    // Publish on [a] are *different* keys, so a key match would let the second
+                    // through and act on row `a` twice at once. Busy rows are non-interactive in the
+                    // UI, but a disabled control is an affordance, not a lock on the store.
+                    //
+                    // The overlap check is also stronger than the operation-scoped one it replaces:
+                    // it refuses *any* run over an item another run is already touching, which is
+                    // what the row marks already tell the author. The key check is what still covers
+                    // a run with no item targets at all, such as an upload.
+                    return (
+                        runKey(operation, targets) in store.runs() ||
+                        active.some((run) =>
                             run.targets.some((target) => targets.includes(target))
+                        )
                     );
+                };
 
                 const onSettled = (
                     runId: string,
