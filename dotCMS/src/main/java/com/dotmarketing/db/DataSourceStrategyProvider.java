@@ -46,8 +46,12 @@ public class DataSourceStrategyProvider {
     }
 
     /**
-     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property
-     * is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):
+     * Method that loads the datasource using the strategy defined by the
+     * <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property, which defaults to
+     * {@link SystemEnvDataSourceStrategy} so that {@code DB_*} environment
+     * variables work out of the box. If the property is explicitly set to an
+     * empty value, the datasource is initialized using any of these
+     * implementations (respecting order):
      * <ol>
      *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} implemented by
      *     {@link DBPropertiesDataSourceStrategy}</li>
@@ -122,7 +126,7 @@ public class DataSourceStrategyProvider {
     @VisibleForTesting
     String getCustomDataSourceProvider() {
         return Config
-                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
+                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", "com.dotmarketing.db.SystemEnvDataSourceStrategy");
     }
 
     @VisibleForTesting
