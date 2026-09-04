@@ -47,9 +47,10 @@ public class DataSourceStrategyProvider {
 
     /**
      * Method that loads a datasource.
-     * <p>If <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> is explicitly configured to a custom
-     * class (other than {@link SystemEnvDataSourceStrategy}), that implementation is loaded.
-     * Otherwise, the datasource is initialized using the following precedence:
+     * <p>If <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> is explicitly configured (to any
+     * value, including {@link SystemEnvDataSourceStrategy}), that implementation is loaded
+     * directly. Otherwise (property unset), the datasource is initialized using the
+     * following precedence:
      * <ol>
      *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} (if present),
      *         implemented by {@link DBPropertiesDataSourceStrategy}</li>
@@ -76,8 +77,11 @@ public class DataSourceStrategyProvider {
         DataSource defaultDataSource = null;
 
         final String providerClassName = getCustomDataSourceProvider();
-        final boolean hasExplicitCustomProvider = UtilMethods.isSet(providerClassName)
-                && !SystemEnvDataSourceStrategy.class.getName().equals(providerClassName);
+        // An explicitly configured strategy (including an explicit
+        // SystemEnvDataSourceStrategy, as the integration test harness sets) is
+        // honored directly. Only the implicit default (property unset) walks the
+        // full precedence chain below.
+        final boolean hasExplicitCustomProvider = isDataSourceProviderExplicitlyConfigured();
 
         try {
             if (hasExplicitCustomProvider) {
@@ -127,6 +131,18 @@ public class DataSourceStrategyProvider {
     String getCustomDataSourceProvider() {
         return Config
                 .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", "com.dotmarketing.db.SystemEnvDataSourceStrategy");
+    }
+
+    /**
+     * Whether {@code DATASOURCE_PROVIDER_STRATEGY_CLASS} was explicitly configured (as
+     * opposed to falling back to the {@link SystemEnvDataSourceStrategy} default). An
+     * explicitly configured value - including an explicit {@code SystemEnvDataSourceStrategy}
+     * - is honored directly; only the implicit default walks the precedence chain.
+     */
+    @VisibleForTesting
+    boolean isDataSourceProviderExplicitlyConfigured() {
+        return UtilMethods.isSet(
+                Config.getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null));
     }
 
     @VisibleForTesting

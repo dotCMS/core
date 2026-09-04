@@ -18,7 +18,8 @@ import org.junit.jupiter.api.Test;
  *
  * <p>Verifies the datasource resolution precedence:
  * <ol>
- *   <li>Explicit custom class (if configured and != SystemEnvDataSourceStrategy)</li>
+ *   <li>Explicit custom class (if configured, including an explicit
+ *       {@link SystemEnvDataSourceStrategy} as the integration harness sets)</li>
  *   <li>{@code db.properties} file (if present)</li>
  *   <li>Docker Secrets (if present)</li>
  *   <li>{@link SystemEnvDataSourceStrategy} (the default)</li>
@@ -62,8 +63,24 @@ class DataSourceStrategyProviderTest {
         Config.setProperty(STRATEGY_PROPERTY, null);
     }
 
-    private DataSourceStrategyProvider createTestProvider() {
+    /**
+     * Builds a provider whose strategy resolution is fully controlled by the test, so the
+     * precedence logic can be asserted deterministically (the custom-strategy branch uses
+     * reflection and the Config static state is shared across tests).
+     */
+    private DataSourceStrategyProvider createTestProvider(final boolean explicit,
+            final String providerClass) {
         return new DataSourceStrategyProvider() {
+            @Override
+            String getCustomDataSourceProvider() {
+                return providerClass;
+            }
+
+            @Override
+            boolean isDataSourceProviderExplicitlyConfigured() {
+                return explicit;
+            }
+
             @Override
             DBPropertiesDataSourceStrategy getDBPropertiesInstance() {
                 return mockDbProperties;
@@ -104,11 +121,11 @@ class DataSourceStrategyProviderTest {
 
     @Test
     void get_defaultsToSystemEnvWhenNoOtherConfigPresent() throws Exception {
-        Config.setProperty(STRATEGY_PROPERTY, null);
         when(mockDbProperties.existsDBPropertiesFile()).thenReturn(false);
         when(mockDockerSecret.dockerSecretPathExists()).thenReturn(false);
 
-        DataSourceStrategyProvider provider = createTestProvider();
+        DataSourceStrategyProvider provider = createTestProvider(false,
+                SystemEnvDataSourceStrategy.class.getName());
         DataSource result = provider.get();
 
         assertSame(dsSystemEnv, result);
@@ -118,11 +135,44 @@ class DataSourceStrategyProviderTest {
     }
 
     @Test
+    void get_explicitCustomStrategyIsHonoredDirectly() throws Exception {
+        // The integration test harness sets DATASOURCE_PROVIDER_STRATEGY_CLASS explicitly
+        // (e.g. to SystemEnvDataSourceStrategy); an explicit value must run directly via
+        // the custom strategy branch, not be re-routed through the precedence chain.
+        // The custom branch instantiates the configured class via reflection, so a
+        // reflection-instantiable test strategy is used here.
+        TestStrategy.dataSource = dsSystemEnv;
+        when(mockDbProperties.existsDBPropertiesFile()).thenReturn(true);
+        when(mockDockerSecret.dockerSecretPathExists()).thenReturn(true);
+
+        DataSourceStrategyProvider provider = createTestProvider(true,
+                TestStrategy.class.getName());
+        DataSource result = provider.get();
+
+        assertSame(dsSystemEnv, result);
+        verify(mockDbProperties, never()).apply();
+        verify(mockDockerSecret, never()).apply();
+    }
+
+    /**
+     * Reflection-instantiable strategy used to exercise the explicit custom-strategy branch
+     * deterministically (the configured class is loaded via {@code Class.forName}).
+     */
+    public static class TestStrategy implements DotDataSourceStrategy {
+
+        static DataSource dataSource;
+
+        @Override
+        public DataSource apply() {
+            return dataSource;
+        }
+    }
+
+    @Test
     void get_dbPropertiesTakesPrecedenceOverDefault() throws Exception {
-        Config.setProperty(STRATEGY_PROPERTY, null);
         when(mockDbProperties.existsDBPropertiesFile()).thenReturn(true);
 
-        DataSourceStrategyProvider provider = createTestProvider();
+        DataSourceStrategyProvider provider = createTestProvider(false, null);
         DataSource result = provider.get();
 
         assertSame(dsDbProps, result);
@@ -133,11 +183,10 @@ class DataSourceStrategyProviderTest {
 
     @Test
     void get_dockerSecretTakesPrecedenceOverDefaultWhenNoDbProperties() throws Exception {
-        Config.setProperty(STRATEGY_PROPERTY, null);
         when(mockDbProperties.existsDBPropertiesFile()).thenReturn(false);
         when(mockDockerSecret.dockerSecretPathExists()).thenReturn(true);
 
-        DataSourceStrategyProvider provider = createTestProvider();
+        DataSourceStrategyProvider provider = createTestProvider(false, null);
         DataSource result = provider.get();
 
         assertSame(dsDockerSecret, result);
@@ -148,12 +197,11 @@ class DataSourceStrategyProviderTest {
 
     @Test
     void get_fallbackToTomcatWhenStrategyThrowsException() throws Exception {
-        Config.setProperty(STRATEGY_PROPERTY, null);
         when(mockDbProperties.existsDBPropertiesFile()).thenReturn(false);
         when(mockDockerSecret.dockerSecretPathExists()).thenReturn(false);
         when(mockSystemEnv.apply()).thenThrow(new RuntimeException("Connection failed"));
 
-        DataSourceStrategyProvider provider = createTestProvider();
+        DataSourceStrategyProvider provider = createTestProvider(false, null);
         DataSource result = provider.get();
 
         assertSame(dsTomcat, result);
