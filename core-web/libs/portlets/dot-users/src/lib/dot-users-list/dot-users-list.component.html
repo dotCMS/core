@@ -96,16 +96,9 @@
         table wraps its paginator in — an inline overlay would be clipped and
         cut off the second option on open, exactly the way it does in the drive.
     -->
-    <!--
-        `tableLayout: fixed` freezes column widths against the first
-        row's declared sizes so each search / page turn keeps the
-        columns exactly where the previous frame had them — a plain
-        `auto` layout renegotiates widths from row content on every
-        response, which is what caused the horizontal shift.
-    -->
     <p-table
         [value]="store.users()"
-        [tableStyle]="{ tableLayout: 'fixed', width: '100%' }"
+        [tableStyle]="{ width: '100%' }"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
@@ -128,11 +121,16 @@
         dataKey="userId"
         data-testid="users-table">
         <ng-template pTemplate="header">
+            <!--
+                Columns flow with `table-layout: auto` — the browser
+                sizes each one from its content and header text. Same
+                convention as the API tokens table.
+            -->
             <tr>
-                <th style="width: 3rem">
+                <th>
                     <p-tableHeaderCheckbox />
                 </th>
-                <th pSortableColumn="firstName" style="width: 22rem">
+                <th pSortableColumn="firstName">
                     {{ 'users.table.header.user' | dm }}
                     <p-sortIcon field="firstName" />
                 </th>
@@ -140,13 +138,13 @@
                     {{ 'users.table.header.email' | dm }}
                     <p-sortIcon field="emailAddress" />
                 </th>
-                <th style="width: 22rem">{{ 'users.table.header.roles' | dm }}</th>
-                <th style="width: 15rem">{{ 'users.table.header.access' | dm }}</th>
-                <th pSortableColumn="lastLoginDate" style="width: 12rem">
+                <th>{{ 'users.table.header.roles' | dm }}</th>
+                <th>{{ 'users.table.header.access' | dm }}</th>
+                <th pSortableColumn="lastLoginDate">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
                 </th>
-                <th style="width: 3rem"></th>
+                <th></th>
             </tr>
         </ng-template>
 
