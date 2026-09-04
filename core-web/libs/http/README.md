@@ -3,8 +3,13 @@
 The HTTP layer for talking to a dotCMS instance from Node: one `fetch`-based client, retry
 reporting, a `Result` type, and the API paths.
 
-Internal to this workspace — `package.json` is `private`, and consumers inline it at build
-time, so it is never published to npm.
+Internal to this workspace. Consumers inline it at build time, so nothing new reaches npm.
+
+What actually keeps it unpublished is its **location**: the SDK release action iterates the
+direct children of `core-web/libs/sdk/` and publishes each one, and this library deliberately
+sits outside that directory. `private: true` is declared as intent, but it is not the
+guarantee — npm only enforces `private` for *workspace* publishes (`npm publish -w`), so a
+direct `npm publish` from this folder would still go through.
 
 ## What's in it
 

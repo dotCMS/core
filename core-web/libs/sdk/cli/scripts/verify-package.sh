@@ -95,5 +95,25 @@ else
     bad "package name is '$NAME' — update .github/actions/core-cicd/deployment/deploy-javascript-sdk"
 fi
 
+# 7. No internal library has drifted under libs/sdk/.
+#
+#    The SDK release action publishes every direct child of core-web/libs/sdk/. That location
+#    IS the publish boundary — `private: true` is not, because npm only enforces it for
+#    workspace publishes (`npm publish -w`), not a direct publish from the package folder.
+#    So an internal lib moved in here would be published on the next release, silently.
+SDK_DIR="$SCRIPT_DIR/../.."
+LEAKED=""
+for d in "$SDK_DIR"/*/; do
+    [ -f "$d/package.json" ] || continue
+    if [ "$(node -p "require('$d/package.json').private === true" 2>/dev/null)" = "true" ]; then
+        LEAKED="$LEAKED $(basename "$d")"
+    fi
+done
+if [ -z "$LEAKED" ]; then
+    ok "no private/internal library sits under libs/sdk/ (the publish boundary)"
+else
+    bad "private package(s) under libs/sdk/:$LEAKED — the release action publishes every child of that directory"
+fi
+
 printf '\n\033[1mSummary\033[0m\n  %d passed, %d failed\n\n' "$PASS" "$FAIL"
 [ "$FAIL" -eq 0 ]
