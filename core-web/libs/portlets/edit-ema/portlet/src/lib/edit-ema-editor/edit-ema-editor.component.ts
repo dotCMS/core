@@ -1512,6 +1512,15 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             return;
         }
 
+        // Defense in depth for the disabled pencil. The button is already
+        // disabled when the user lacks EDIT permission on this contentlet, but
+        // the toolbar can emit from stale bounds or be driven programmatically,
+        // so the guarantee must not rest on styling alone. Fail-open: only an
+        // explicit `false` denies, because headless pages carry no permission.
+        if (contentlet.canEdit === false) {
+            return;
+        }
+
         const onMultiplePages = Number(contentlet.onNumberOfPages ?? 1) > 1;
         if (!onMultiplePages) {
             this.openContentForEdit(contentlet as unknown as DotCMSContentlet);

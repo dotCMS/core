@@ -96,8 +96,9 @@
                 }
                 <p-button
                     (click)="openFullEditor.emit(hoverContext)"
+                    [disabled]="!canEditContentlet()"
                     data-testId="hover-edit-button"
-                    [pTooltip]="'uve.tooltip.edit.full' | dm"
+                    [pTooltip]="editButtonTooltip() | dm"
                     tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-pencil" />
