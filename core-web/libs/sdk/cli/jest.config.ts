@@ -6,6 +6,9 @@ export default {
         '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
     },
     moduleFileExtensions: ['ts', 'js', 'html'],
+    // chalk 5 and ora are ESM-only. Jest skips node_modules by default, so they arrive
+    // untransformed and fail to parse. create-app solves it the same way.
+    transformIgnorePatterns: [],
     coverageDirectory: '../../../coverage/libs/sdk/cli',
     moduleNameMapper: {
         // This workspace maps aliases per-project; jest.preset.js does not read

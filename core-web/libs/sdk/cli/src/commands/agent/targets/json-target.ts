@@ -1,4 +1,5 @@
 import { type WriteResult, writeMerged } from '../../../shared/config-file';
+import { NoConfigPathError } from '../../../shared/errors';
 import { ENTRY_KEY, MCP_SERVER_PACKAGE, SERVER_ENV } from '../constants';
 
 import type { AgentTarget } from './types';
@@ -34,7 +35,7 @@ export async function writeJsonTarget(args: WriteArgs): Promise<string> {
 
 export async function writeJsonTargetDetailed(args: WriteArgs): Promise<WriteResult> {
     const file = args.target.configPath(args.scope, args.cwd);
-    if (!file) throw new Error(`${args.target.displayName} has no configuration file at ${args.scope} scope.`);
+    if (!file) throw new NoConfigPathError(args.target.displayName, args.scope);
     return writeMerged({
         file,
         containerKey: args.target.containerKey,

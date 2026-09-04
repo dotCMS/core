@@ -72,4 +72,10 @@ export interface RunOptions {
     confirmExclude?: (files: string[]) => Promise<boolean>;
     /** How to ask, when asking is needed. Injected so the rules stay testable without a terminal. */
     promptPort?: import('./prompts').PromptPort;
+    /**
+     * Progress reporting. The connection check spawns `npx`, which on a cold cache downloads
+     * the server and can run for the better part of a minute — silence there reads as a hang.
+     * Injected like promptPort so the flow stays free of terminal concerns and tests ignore it.
+     */
+    onProgress?: (step: string) => void;
 }

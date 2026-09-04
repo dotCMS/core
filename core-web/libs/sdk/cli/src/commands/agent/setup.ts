@@ -75,6 +75,9 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         opts.promptPort
     );
     const url = inputs.url;
+    const step = opts.onProgress ?? (() => undefined);
+
+    step(`Checking ${url} is reachable`);
     await checkReachable(url);
 
     // 3. Authenticate.
@@ -82,6 +85,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     if (inputs.authToken) {
         token = { value: inputs.authToken, origin: 'supplied', verified: false };
     } else {
+        step('Minting an access token');
         token = await mintToken({
             url,
             user: inputs.user as string,
@@ -90,6 +94,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     }
 
     // 4. Verify. Past this line, and only past it, may anything be written.
+    step('Verifying the token');
     token = await verifyToken(url, token);
 
     const targets = explicitTargets.length
@@ -103,6 +108,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     // 5. Write. One target's failure never stops the others and never rolls back what already
     //    succeeded (FR-020a, FR-020d) — a half-configured machine the developer can read beats
     //    an all-or-nothing unwind.
+    step(`Writing configuration for ${targets.length} editor${targets.length === 1 ? '' : 's'}`);
     const outcomes: TargetOutcome[] = [];
     const seen = new Set<string>();
     for (const target of targets) {
@@ -185,6 +191,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
             .filter((t) => t.skillsAgentId)
             .map((t) => t.skillsAgentId as string);
         if (ids.length) {
+            step('Installing the dotCMS skills');
             const skills = await installSkills({ agentIds: ids, global: scope === 'global' });
             for (const o of outcomes) {
                 if (o.result === 'failed') continue;
@@ -199,6 +206,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     let connection: SetupResult['connection'] = 'skipped';
     let connectionReason: string | undefined;
     if (!opts.skipVerify) {
+        step('Starting the server to confirm it responds (this can take a minute on a cold npx cache)');
         const result = await confirmConnection({ url, token: token.value });
         connection = result.ok ? 'ok' : 'failed';
         if (!result.ok) connectionReason = `${result.cause}: ${result.detail}`;

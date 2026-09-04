@@ -1,4 +1,6 @@
 
+import ora, { type Ora } from 'ora';
+
 import { confirmExclude, confirmOverwrite, inquirerPort } from './prompts';
 import { runSetup } from './setup';
 import { TARGET_IDS } from './targets/registry';
@@ -7,6 +9,34 @@ import { canPrompt } from '../../shared/prompts';
 import { printBanner, renderSummary, writeOut } from '../../shared/ui';
 
 import type { Command } from 'commander';
+
+/**
+ * Progress reporting.
+ *
+ * The connection check spawns `npx`, which on a cold cache downloads the server and can run
+ * for the better part of a minute — silence there reads as a hang. A spinner where someone can
+ * watch, plain lines where they cannot, so a CI log still shows movement.
+ *
+ * Wrapped in a closure rather than a bare `let`: TypeScript does not track assignments made
+ * inside a callback, so a module-level `spinner` narrows to `null` and any later `.stop()` is
+ * an error on `never`.
+ */
+function makeProgress(interactive: boolean) {
+    let spinner: Ora | null = null;
+    return {
+        step(text: string): void {
+            if (!interactive) {
+                writeOut(`  · ${text}`);
+                return;
+            }
+            spinner?.succeed();
+            spinner = ora().start(text);
+        },
+        done(): void {
+            spinner?.stop();
+        }
+    };
+}
 
 /**
  * The `agent` command group.
@@ -46,7 +76,10 @@ export function registerAgentCommand(program: Command): void {
             // Only when someone is watching — a banner in a CI log is noise.
             if (canPrompt()) printBanner();
             const interactive = canPrompt();
+            // A spinner only where someone can see it; in CI the same steps are plain lines.
+            const progress = makeProgress(interactive);
             const result = await runSetup({
+                onProgress: progress.step,
                 promptPort: interactive ? inquirerPort : undefined,
                 confirmOverwrite: interactive ? confirmOverwrite : undefined,
                 confirmExclude: interactive ? confirmExclude : undefined,
@@ -63,6 +96,7 @@ export function registerAgentCommand(program: Command): void {
                 force: Boolean(options['force'])
             });
 
+            progress.done();
             writeOut(
                 renderSummary({
                     outcomes: result.outcomes,

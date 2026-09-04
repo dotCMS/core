@@ -7,7 +7,7 @@ import * as path from 'node:path';
 import { buildEntry } from './json-target';
 
 import { ensureDir, restrictFile } from '../../../shared/config-file';
-import { MalformedConfigError } from '../../../shared/errors';
+import { MalformedConfigError, NoConfigPathError } from '../../../shared/errors';
 import { ENTRY_KEY } from '../constants';
 
 import type { AgentTarget } from './types';
@@ -32,7 +32,7 @@ export interface TomlWriteArgs {
 export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {
     const file = args.target.configPath(args.scope, args.cwd);
     if (!file) {
-        throw new Error(`${args.target.displayName} has no configuration file at ${args.scope} scope.`);
+        throw new NoConfigPathError(args.target.displayName, args.scope);
     }
 
     let existing: Record<string, unknown> = {};

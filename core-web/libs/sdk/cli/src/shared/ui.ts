@@ -1,4 +1,5 @@
 import cfonts from 'cfonts';
+import chalk from 'chalk';
 
 import type { TargetOutcome } from './types';
 
@@ -24,10 +25,10 @@ export interface SummaryInput {
 }
 
 const RESULT_MARK: Record<TargetOutcome['result'], string> = {
-    written: '✓ written',
-    replaced: '✓ replaced',
-    skipped: '· skipped',
-    failed: '✗ failed'
+    written: chalk.green('✓ written '),
+    replaced: chalk.green('✓ replaced'),
+    skipped: chalk.dim('· skipped '),
+    failed: chalk.red('✗ failed  ')
 };
 
 /**
@@ -63,19 +64,19 @@ export function renderSummary(input: SummaryInput): string {
         lines.push('');
         lines.push('  These files now contain an access token:');
         for (const f of vc.files) lines.push(`      ${f}`);
-        if (vc.excluded) lines.push('  ✓ added to .gitignore');
-        else if (vc.inRepository) lines.push('  ! not excluded from version control');
-        for (const w of vc.warnings) lines.push(`  ! ${w}`);
+        if (vc.excluded) lines.push(chalk.green('  ✓ added to .gitignore'));
+        else if (vc.inRepository) lines.push(chalk.yellow('  ! not excluded from version control'));
+        for (const w of vc.warnings) lines.push(chalk.yellow(`  ! ${w}`));
     }
 
     lines.push('');
     if (input.connection === 'ok') {
-        lines.push('  ✓ server responded');
+        lines.push(chalk.green('  ✓ server responded'));
     } else if (input.connection === 'skipped') {
         lines.push('  · connection check skipped');
     } else {
         // Deliberately avoids the word "ready" — the run did not reach that state.
-        lines.push(`  ✗ ${input.connectionReason ?? 'the server did not start'}`);
+        lines.push(chalk.red(`  ✗ ${input.connectionReason ?? 'the server did not start'}`));
         lines.push('    Configuration was written and left in place; the server did not come up.');
     }
 

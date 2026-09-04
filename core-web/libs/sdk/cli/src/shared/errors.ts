@@ -18,8 +18,11 @@ export class UsageError extends CliError {}
 
 export class InvalidUrlError extends CliError {
     constructor(value: string) {
+        // Describing the problem is not enough: with no verbose mode, the message has to
+        // carry the fix too (FR-032a).
         super(
-            `"${value}" is not a valid instance address — it needs a scheme, e.g. https://${value.replace(/^\/+/, '')}`
+            `"${value}" is not a valid instance address. Pass it with a scheme, ` +
+                `e.g. https://${value.replace(/^https?:\/\//i, '').replace(/^\/+/, '') || 'demo.dotcms.com'}`
         );
     }
 }
@@ -63,6 +66,15 @@ export class ConflictingAuthError extends UsageError {
 export class MissingInputError extends UsageError {
     constructor(what: string) {
         super(`${what} is required and there is no terminal to prompt on. Pass it as an option or set its environment variable.`);
+    }
+}
+
+export class NoConfigPathError extends CliError {
+    constructor(displayName: string, scope: string) {
+        super(
+            `${displayName} has no configuration file at ${scope} scope. ` +
+                `Re-run with ${scope === 'folder' ? '-g/--global' : '--project'}, or drop it from --agent.`
+        );
     }
 }
 

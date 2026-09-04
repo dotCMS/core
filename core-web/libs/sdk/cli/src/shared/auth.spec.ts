@@ -1,4 +1,5 @@
 import { mintToken, verifyToken } from './auth';
+import { checkReachable } from './instance';
 
 const URL_ = 'https://demo.dotcms.com';
 
@@ -83,6 +84,38 @@ describe('auth', () => {
             await expect(
                 verifyToken(URL_, { value: 'dot_x', origin: 'supplied', verified: false })
             ).rejects.toThrow(/reach|connect/i);
+        });
+    });
+});
+
+/**
+ * `fetch` fails with a famously opaque `TypeError: fetch failed`; the actionable detail lives
+ * in `error.cause.code`. With no verbose mode, letting that text reach a user is FR-032a's
+ * definition of a defect — so assert it at every network call site rather than trusting that
+ * each one remembered to wrap.
+ */
+describe('no raw fetch error ever reaches the user (FR-032a)', () => {
+    const CAUSES = ['ECONNREFUSED', 'ENOTFOUND', 'CERT_HAS_EXPIRED', 'UND_ERR_CONNECT_TIMEOUT'];
+
+    const callers: { name: string; call: () => Promise<unknown> }[] = [
+        { name: 'checkReachable', call: () => checkReachable(URL_) },
+        { name: 'mintToken', call: () => mintToken({ url: URL_, user: 'a@b.com', password: 'pw' }) },
+        {
+            name: 'verifyToken',
+            call: () => verifyToken(URL_, { value: 'x', origin: 'supplied', verified: false })
+        }
+    ];
+
+    describe.each(callers)('$name', ({ call }) => {
+        it.each(CAUSES)('translates %s into an actionable message', async (code) => {
+            jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+                Object.assign(new TypeError('fetch failed'), { cause: { code } })
+            );
+            const err = (await call().catch((e: Error) => e)) as Error;
+            expect(err.message).not.toBe('fetch failed');
+            expect(err.message).not.toMatch(/^TypeError/);
+            expect(err.message).toContain('demo.dotcms.com');
+            expect(err.message.length).toBeGreaterThan(30);
         });
     });
 });

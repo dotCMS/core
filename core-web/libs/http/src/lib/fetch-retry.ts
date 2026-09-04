@@ -41,6 +41,28 @@ export function describeRequestFailure(error: unknown): string {
             return 'Connection timeout - service too slow or not responding';
         }
 
+        // Without these the raw code reaches the user, and "ENOTFOUND" is not a sentence.
+        //
+        // These stay DIAGNOSTIC — what went wrong, not what to do about it. Callers add the
+        // remedy, and they know their own context; baking advice in here produced
+        // "Host not found - check the address... Check the address and that the instance is
+        // running." in the dotcms CLI.
+        if (error.code === 'ENOTFOUND') {
+            return 'Host not found (DNS lookup failed)';
+        }
+
+        if (error.code === 'ECONNRESET') {
+            return 'Connection reset by the server';
+        }
+
+        if (error.code === 'CERT_HAS_EXPIRED') {
+            return 'TLS certificate has expired';
+        }
+
+        if (error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' || error.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+            return 'TLS certificate is self-signed and not trusted';
+        }
+
         if (error.response) {
             return `HTTP ${error.response.status}: ${error.response.statusText}`;
         }
