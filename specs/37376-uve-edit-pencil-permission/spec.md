@@ -253,20 +253,20 @@ UI that consumed it did not survive the editor rewrite.
 
 - Jest, UVE SDK — the contentlet-dataset reader maps the permission attribute; absent, empty and
   malformed all resolve to allowed (AC-005):
-  `cd core-web && pnpm nx test sdk-uve --testPathPattern=dom`
+  `cd core-web && pnpm nx test sdk-uve --testPathPatterns=dom`
 - Jest/Spectator, toolbar component — pencil and Quick Edit disabled state, shared tooltip, and
   collapsed-menu parity across permitted / denied / attribute-absent inputs (AC-001, AC-003,
   AC-008); structural actions stay enabled (AC-010):
-  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPattern=dot-uve-contentlet-tools`
+  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPatterns=dot-uve-contentlet-tools`
 - Jest/Spectator, quick-edit panel — read-only form plus permission notice when the selection moves
   to a restricted contentlet (AC-008b):
-  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPattern=dot-uve-contentlet-quick-edit`
+  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPatterns=dot-uve-contentlet-quick-edit`
 - Jest/Spectator, editor component — the edit handler refuses a denied contentlet (AC-002), and the
   plain/WYSIWYG inline path refuses and raises the toast (AC-009):
-  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPattern=edit-ema-editor`
+  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPatterns=edit-ema-editor`
 - Jest, UVE actions handler — the `INIT_INLINE_EDITING` / `BLOCK_EDITOR` path refuses and raises the
   toast (AC-009b):
-  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPattern=dot-uve-actions-handler`
+  `cd core-web && pnpm nx test portlets-edit-ema-portlet --testPathPatterns=dot-uve-actions-handler`
 - Bundle freshness (AC-007): `pnpm nx run sdk-uve:build:js`, then confirm `git diff` on
   `dotCMS/src/main/webapp/ext/uve/dot-uve.js` is empty.
 - Manual, per the reproduction paths above, exercising both the permitted and the denied user.
