@@ -17,7 +17,7 @@ async function readJson(p: string) { return JSON.parse(await fs.readFile(p, 'utf
 describe('json target — fresh file (FR-019, FR-020)', () => {
     it('creates the file and any missing parent directories', async () => {
         const target = getTarget('cursor');
-        const written = await writeJsonTarget({ target, scope: 'folder', url: URL_, token: TOKEN });
+        const written = await writeJsonTarget({ target, scope: 'folder', url: URL_, token: TOKEN, cwd: dir });
         await expect(fs.stat(written)).resolves.toBeDefined();
     });
 

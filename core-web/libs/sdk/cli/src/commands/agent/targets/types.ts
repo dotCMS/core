@@ -30,6 +30,12 @@ export interface AgentTarget {
     entryShape: 'stdio' | 'opencode-local';
     /** Advisory only — an undetected editor is still explicitly selectable (spec Edge Cases). */
     detect(): Promise<boolean>;
-    /** `null` when the target has no file at that scope. */
-    configPath(scope: Scope): string | null;
+    /**
+     * `null` when the target has no file at that scope.
+     *
+     * `cwd` is injected rather than read from `process.cwd()` so folder scope is testable
+     * without `process.chdir()` — mutating global process state inside a test leaks between
+     * cases and is fragile if a case throws before cleanup.
+     */
+    configPath(scope: Scope, cwd?: string): string | null;
 }

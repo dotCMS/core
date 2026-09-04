@@ -47,6 +47,8 @@ export interface TargetOutcome {
  */
 export interface RunOptions {
     url: string;
+    /** Base directory for folder scope. Defaults to `process.cwd()`; injected in tests. */
+    cwd?: string;
     user?: string;
     password?: string;
     authToken?: string;

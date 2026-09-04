@@ -6,6 +6,8 @@ export interface WriteArgs {
     scope: Scope;
     url: string;
     token: string;
+    /** Base directory for folder scope. Defaults to `process.cwd()`. */
+    cwd?: string;
 }
 
 /** Write (or replace) the single `dotcms` entry, merging into whatever is already there. */

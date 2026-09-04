@@ -6,15 +6,21 @@ import { runSetup } from './setup';
 
 const URL_ = 'https://demo.dotcms.com';
 
+/**
+ * A real temp directory rather than a mocked filesystem: "nothing was written" is the
+ * assertion this whole suite turns on, and only a real empty directory proves it. Mocking
+ * `fs` would only prove that one API was not called, which a write through any other path
+ * would slip past.
+ *
+ * The directory is passed in as `cwd` rather than set with `process.chdir()`. chdir mutates
+ * global process state, leaks between cases, and is left dangling if a case throws before
+ * cleanup.
+ */
 let dir: string;
-let cwd: string;
 beforeEach(async () => {
     dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dotcms-setup-'));
-    cwd = process.cwd();
-    process.chdir(dir);
 });
 afterEach(async () => {
-    process.chdir(cwd);
     await fs.rm(dir, { recursive: true, force: true });
     jest.restoreAllMocks();
 });
@@ -34,7 +40,7 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
         // The error must identify the token rejection. `rejects.toThrow()` alone is satisfied
         // by an unimplemented stub, so it could never go Red.
         const err = await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor', 'claude-code'], scope: 'folder'
+            url: URL_, authToken: 'bad', agents: ['cursor', 'claude-code'], scope: 'folder', cwd: dir
         }).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/token/i);
         expect((err as Error).message).toMatch(/reject|invalid|not authoriz/i);
@@ -44,7 +50,7 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
     it('cannot be bypassed by --yes or --force (FR-008c)', async () => {
         mockRejectedToken();
         const err = await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', yes: true, force: true
+            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', yes: true, force: true, cwd: dir
         }).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/token/i);
         await expect(fs.readdir(dir)).resolves.toEqual([]);
@@ -52,14 +58,14 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
 
     it('reports a rejected token differently from an unreachable instance (FR-008b)', async () => {
         mockRejectedToken();
-        const rejected = await runSetup({ url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder' })
+        const rejected = await runSetup({ url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir })
             .catch((e: Error) => e.message);
 
         jest.restoreAllMocks();
         jest.spyOn(globalThis, 'fetch').mockRejectedValue(
             Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
         );
-        const unreachable = await runSetup({ url: URL_, authToken: 'x', agents: ['cursor'], scope: 'folder' })
+        const unreachable = await runSetup({ url: URL_, authToken: 'x', agents: ['cursor'], scope: 'folder', cwd: dir })
             .catch((e: Error) => e.message);
 
         expect(rejected).not.toEqual(unreachable);
@@ -69,14 +75,14 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
 describe('auth mode exclusivity (FR-003b)', () => {
     it('rejects a token supplied together with a username/password as a usage error', async () => {
         await expect(
-            runSetup({ url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor'] })
+            runSetup({ url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor'], cwd: dir })
         ).rejects.toThrow(/authToken|mutually exclusive|alternative/i);
     });
 
     it('mints nothing and writes nothing in that case', async () => {
         const fetchMock = jest.spyOn(globalThis, 'fetch');
         const err = await runSetup({
-            url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor']
+            url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor'], cwd: dir
         }).catch((e: Error) => e);
         // Naming the conflict is the point — a generic throw would pass without it.
         expect((err as Error).message).toMatch(/authToken/);

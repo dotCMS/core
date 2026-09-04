@@ -82,9 +82,9 @@ describe('target registry', () => {
 
     it('resolves folder scope relative to the working directory, not $HOME', () => {
         withPlatform('darwin', '/Users/dev', () => {
-            const p = getTarget('cursor').configPath('folder');
-            expect(p).not.toContain('/Users/dev/.cursor');
-            expect(p).toContain('.cursor');
+            const p = getTarget('cursor').configPath('folder', '/work/project');
+            expect(p).toBe('/work/project/.cursor/mcp.json');
+            expect(p).not.toContain('/Users/dev');
         });
     });
 
@@ -92,7 +92,7 @@ describe('target registry', () => {
         for (const id of ALL) {
             const t = getTarget(id);
             for (const scope of ['folder', 'global'] as const) {
-                const p = t.configPath(scope);
+                const p = t.configPath(scope, '/work/project');
                 expect(p === null || typeof p === 'string').toBe(true);
             }
         }
