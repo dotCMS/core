@@ -6,7 +6,7 @@
     (removed)="onClearAll()"
     data-testid="status-filter-chip" />
 
-<p-popover #popover>
+<p-popover #popover styleClass="dot-popover-flush">
     <div class="flex w-64 flex-col bg-white" data-testid="status-filter-panel">
         @if ($isBounded()) {
             <!-- FR-014e: a silently shorter list reads as "these states do not exist" rather than
