@@ -65,4 +65,9 @@ export interface RunOptions {
      * is testable without a terminal, and so `setup.ts` stays free of prompt mechanics.
      */
     confirmOverwrite?: (file: string) => Promise<boolean>;
+    /**
+     * Offers to keep token-bearing files out of version control (FR-023). `--yes` supplies the
+     * SAFE answer rather than bypassing the step.
+     */
+    confirmExclude?: (files: string[]) => Promise<boolean>;
 }

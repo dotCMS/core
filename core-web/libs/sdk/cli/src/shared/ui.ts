@@ -1,7 +1,15 @@
 import type { TargetOutcome } from './types';
 
+export interface VersionControlSummary {
+    files: string[];
+    inRepository: boolean;
+    excluded: boolean;
+    warnings: string[];
+}
+
 export interface SummaryInput {
     outcomes: TargetOutcome[];
+    versionControl?: VersionControlSummary;
     connection: 'ok' | 'failed' | 'skipped';
     connectionReason?: string;
     nextStep?: string;
@@ -40,6 +48,16 @@ export function renderSummary(input: SummaryInput): string {
         if (o.skillsInstalled === 'unverified') {
             lines.push('      skills location unverified for this editor — not confirmed installed');
         }
+    }
+
+    if (input.versionControl?.files.length) {
+        const vc = input.versionControl;
+        lines.push('');
+        lines.push('  These files now contain an access token:');
+        for (const f of vc.files) lines.push(`      ${f}`);
+        if (vc.excluded) lines.push('  ✓ added to .gitignore');
+        else if (vc.inRepository) lines.push('  ! not excluded from version control');
+        for (const w of vc.warnings) lines.push(`  ! ${w}`);
     }
 
     lines.push('');

@@ -2,6 +2,7 @@ import { parse as parseToml } from 'smol-toml';
 
 import { confirmConnection } from './connect';
 import { ENTRY_KEY } from './constants';
+import { protectFromVersionControl, type GitignoreOutcome } from './gitignore';
 import { installSkills } from './skills';
 import { writeJsonTargetDetailed } from './targets/json-target';
 import { getTarget, detectTargets, TARGET_IDS } from './targets/registry';
@@ -22,6 +23,8 @@ import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
 
 export interface SetupResult {
     outcomes: TargetOutcome[];
+    /** Present only for folder scope, which is the default and therefore the common case. */
+    versionControl?: GitignoreOutcome;
     connection: 'ok' | 'failed' | 'skipped';
     connectionReason?: string;
     exitCode: 0 | 1 | 2;
@@ -152,7 +155,21 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         }
     }
 
-    // 6. Skills — non-fatal by design (FR-026).
+    // 6. Version-control safety. Folder scope is the default, so a token has just landed in a
+    //    working directory on almost every run — naming the files is not optional (FR-023).
+    //    `--yes` takes the SAFE answer here rather than skipping the step: this is the one
+    //    confirmation where the conventional meaning of -y would be actively harmful.
+    let versionControl: GitignoreOutcome | undefined;
+    const written = outcomes.filter((o) => o.result !== 'failed' && o.path).map((o) => o.path as string);
+    if (scope === 'folder' && written.length) {
+        versionControl = await protectFromVersionControl({
+            files: written,
+            cwd: opts.cwd ?? process.cwd(),
+            confirmExclude: opts.yes ? async () => true : opts.confirmExclude
+        });
+    }
+
+    // 7. Skills — non-fatal by design (FR-026).
     if (!opts.skipSkills) {
         const ids = outcomes
             .filter((o) => o.result !== 'failed')
@@ -170,7 +187,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         }
     }
 
-    // 7. Prove the agent connects (FR-024a).
+    // 8. Prove the agent connects (FR-024a).
     let connection: SetupResult['connection'] = 'skipped';
     let connectionReason: string | undefined;
     if (!opts.skipVerify) {
@@ -180,5 +197,5 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     }
 
     const anyFailed = outcomes.some((o) => o.result === 'failed') || connection === 'failed';
-    return { outcomes, connection, connectionReason, exitCode: anyFailed ? 1 : 0 };
+    return { outcomes, versionControl, connection, connectionReason, exitCode: anyFailed ? 1 : 0 };
 }

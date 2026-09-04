@@ -58,6 +58,7 @@ export function registerAgentCommand(program: Command): void {
             writeOut(
                 renderSummary({
                     outcomes: result.outcomes,
+                    versionControl: result.versionControl,
                     connection: result.connection,
                     connectionReason: result.connectionReason
                 })
