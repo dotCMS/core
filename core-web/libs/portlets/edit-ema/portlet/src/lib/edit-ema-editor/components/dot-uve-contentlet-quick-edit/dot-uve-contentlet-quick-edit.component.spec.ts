@@ -304,5 +304,4 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(spectator.component.$mode()).not.toBe('no-permission');
         });
     });
-
 });

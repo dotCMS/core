@@ -2942,9 +2942,7 @@ describe('EditEmaEditorComponent', () => {
                         );
                         const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
 
-                        spectator.component['handleEditWithCopyDecision'](
-                            EDIT_ACTION_PAYLOAD_MOCK
-                        );
+                        spectator.component['handleEditWithCopyDecision'](EDIT_ACTION_PAYLOAD_MOCK);
                         spectator.detectChanges();
 
                         expect(dialogSpy).toHaveBeenCalled();
@@ -2952,187 +2950,185 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('quick edit permission (#37376)', () => {
+                const SELECTED_BOUNDS = { x: 0, y: 0, width: 0, height: 0 };
 
-                describe('quick edit permission (#37376)', () => {
-                    const SELECTED_BOUNDS = { x: 0, y: 0, width: 0, height: 0 };
-
-                    const selectContentlet = (canEdit?: boolean) => {
-                        store.setSelected({
-                            bounds: SELECTED_BOUNDS,
-                            payload: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK,
-                                contentlet: {
-                                    ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                                    ...(canEdit === undefined ? {} : { canEdit })
-                                }
+                const selectContentlet = (canEdit?: boolean) => {
+                    store.setSelected({
+                        bounds: SELECTED_BOUNDS,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...(canEdit === undefined ? {} : { canEdit })
                             }
-                        });
-                        spectator.detectChanges();
-                    };
-
-                    it('should preserve canEdit through the page-asset swap in $contentletEditData', () => {
-                        // $contentletEditData replaces the DOM payload contentlet
-                        // with the page-asset one to pick up a fresh inode after a
-                        // save. The permission exists only on the DOM payload, so
-                        // it has to survive that swap or the panel cannot be gated.
-                        //
-                        // The container is injected into the store so the swap is
-                        // guaranteed to fire — the assertion on the swapped inode
-                        // is what stops this test from passing vacuously.
-                        const componentUveStore = spectator.component['uveStore'];
-                        const pageAsset = componentUveStore.pageAsset();
-
-                        componentUveStore.updatePageResponse({
-                            ...pageAsset,
-                            containers: {
-                                'perm-container': {
-                                    container: { identifier: 'perm-container' },
-                                    containerStructures: [],
-                                    contentlets: {
-                                        'uuid-1': [
-                                            {
-                                                identifier: 'perm-contentlet',
-                                                inode: 'fresh-inode-from-page-asset',
-                                                contentType: 'test'
-                                            }
-                                        ]
-                                    }
-                                }
-                            }
-                        } as unknown as Parameters<typeof componentUveStore.updatePageResponse>[0]);
-                        spectator.detectChanges();
-
-                        componentUveStore.setSelected({
-                            bounds: SELECTED_BOUNDS,
-                            payload: {
-                                ...EDIT_ACTION_PAYLOAD_MOCK,
-                                container: {
-                                    ...EDIT_ACTION_PAYLOAD_MOCK.container,
-                                    identifier: 'perm-container',
-                                    uuid: '1'
-                                },
-                                contentlet: {
-                                    ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
-                                    identifier: 'perm-contentlet',
-                                    inode: 'stale-inode-from-dom',
-                                    canEdit: false
-                                }
-                            }
-                        });
-                        spectator.detectChanges();
-
-                        const result = spectator.component['$contentletEditData']();
-
-                        expect(result.contentlet?.inode).toBe('fresh-inode-from-page-asset');
-                        expect(result.contentlet?.canEdit).toBe(false);
-                    });
-
-                    it('should leave canEdit undefined when the payload has none', () => {
-                        selectContentlet(undefined);
-
-                        expect(
-                            spectator.component['$contentletEditData']().contentlet?.canEdit
-                        ).toBeUndefined();
-                    });
-
-                    it('should not open the quick edit panel for a denied contentlet', () => {
-                        const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
-                        selectContentlet(false);
-                        setEditPanelOpenSpy.mockClear();
-
-                        spectator.component['handleOpenQuickEdit']();
-                        spectator.detectChanges();
-
-                        expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
-                    });
-
-                    it('should open the quick edit panel when the user can edit', () => {
-                        const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
-                        selectContentlet(true);
-                        setEditPanelOpenSpy.mockClear();
-
-                        spectator.component['handleOpenQuickEdit']();
-                        spectator.detectChanges();
-
-                        expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
-                    });
-                });
-
-
-                describe('inline editing permission (#37376)', () => {
-                    /**
-                     * Build a `[data-mode]` field inside a contentlet wrapper,
-                     * mirroring what the container renderer emits.
-                     */
-                    const buildInlineTarget = (canEdit?: string): HTMLElement => {
-                        const wrapper = document.createElement('div');
-                        wrapper.dataset['dotObject'] = 'contentlet';
-                        wrapper.dataset['dotInode'] = 'inode-123';
-                        if (canEdit !== undefined) {
-                            wrapper.dataset['dotCanEdit'] = canEdit;
                         }
-
-                        const field = document.createElement('div');
-                        field.dataset['mode'] = 'minimal';
-                        field.dataset['inode'] = 'inode-123';
-                        field.dataset['fieldName'] = 'body';
-                        field.dataset['language'] = '1';
-                        wrapper.appendChild(field);
-                        document.body.appendChild(wrapper);
-
-                        return field;
-                    };
-
-                    const clickInlineField = (canEdit?: string) => {
-                        const target = buildInlineTarget(canEdit);
-                        spectator.component.handleInlineEditing({
-                            target
-                        } as unknown as MouseEvent);
-                        spectator.detectChanges();
-                    };
-
-                    it('should not start inline editing on a contentlet the user cannot edit', () => {
-                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
-                        inlineEditSpy.mockClear();
-
-                        clickInlineField('false');
-
-                        expect(inlineEditSpy).not.toHaveBeenCalled();
                     });
+                    spectator.detectChanges();
+                };
 
-                    it('should tell the user why with a toast instead of failing silently', () => {
-                        // The field has no control to grey out and no hover target
-                        // for a tooltip, so a silent no-op reads as a broken editor.
-                        addMessageSpy.mockClear();
+                it('should preserve canEdit through the page-asset swap in $contentletEditData', () => {
+                    // $contentletEditData replaces the DOM payload contentlet
+                    // with the page-asset one to pick up a fresh inode after a
+                    // save. The permission exists only on the DOM payload, so
+                    // it has to survive that swap or the panel cannot be gated.
+                    //
+                    // The container is injected into the store so the swap is
+                    // guaranteed to fire — the assertion on the swapped inode
+                    // is what stops this test from passing vacuously.
+                    const componentUveStore = spectator.component['uveStore'];
+                    const pageAsset = componentUveStore.pageAsset();
 
-                        clickInlineField('false');
+                    componentUveStore.updatePageResponse({
+                        ...pageAsset,
+                        containers: {
+                            'perm-container': {
+                                container: { identifier: 'perm-container' },
+                                containerStructures: [],
+                                contentlets: {
+                                    'uuid-1': [
+                                        {
+                                            identifier: 'perm-contentlet',
+                                            inode: 'fresh-inode-from-page-asset',
+                                            contentType: 'test'
+                                        }
+                                    ]
+                                }
+                            }
+                        }
+                    } as unknown as Parameters<typeof componentUveStore.updatePageResponse>[0]);
+                    spectator.detectChanges();
 
-                        expect(addMessageSpy).toHaveBeenCalledWith(
-                            expect.objectContaining({
-                                detail: 'uve.contentlet.no.edit.permission'
-                            })
-                        );
+                    componentUveStore.setSelected({
+                        bounds: SELECTED_BOUNDS,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            container: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.container,
+                                identifier: 'perm-container',
+                                uuid: '1'
+                            },
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                identifier: 'perm-contentlet',
+                                inode: 'stale-inode-from-dom',
+                                canEdit: false
+                            }
+                        }
                     });
+                    spectator.detectChanges();
 
-                    it('should start inline editing when the user can edit', () => {
-                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
-                        inlineEditSpy.mockClear();
+                    const result = spectator.component['$contentletEditData']();
 
-                        clickInlineField('true');
-
-                        expect(inlineEditSpy).toHaveBeenCalled();
-                    });
-
-                    it('should start inline editing when the permission attribute is absent', () => {
-                        // Headless pages never emit it; fail open.
-                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
-                        inlineEditSpy.mockClear();
-
-                        clickInlineField(undefined);
-
-                        expect(inlineEditSpy).toHaveBeenCalled();
-                    });
+                    expect(result.contentlet?.inode).toBe('fresh-inode-from-page-asset');
+                    expect(result.contentlet?.canEdit).toBe(false);
                 });
+
+                it('should leave canEdit undefined when the payload has none', () => {
+                    selectContentlet(undefined);
+
+                    expect(
+                        spectator.component['$contentletEditData']().contentlet?.canEdit
+                    ).toBeUndefined();
+                });
+
+                it('should not open the quick edit panel for a denied contentlet', () => {
+                    const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
+                    selectContentlet(false);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleOpenQuickEdit']();
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
+                });
+
+                it('should open the quick edit panel when the user can edit', () => {
+                    const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
+                    selectContentlet(true);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleOpenQuickEdit']();
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
+                });
+            });
+
+            describe('inline editing permission (#37376)', () => {
+                /**
+                 * Build a `[data-mode]` field inside a contentlet wrapper,
+                 * mirroring what the container renderer emits.
+                 */
+                const buildInlineTarget = (canEdit?: string): HTMLElement => {
+                    const wrapper = document.createElement('div');
+                    wrapper.dataset['dotObject'] = 'contentlet';
+                    wrapper.dataset['dotInode'] = 'inode-123';
+                    if (canEdit !== undefined) {
+                        wrapper.dataset['dotCanEdit'] = canEdit;
+                    }
+
+                    const field = document.createElement('div');
+                    field.dataset['mode'] = 'minimal';
+                    field.dataset['inode'] = 'inode-123';
+                    field.dataset['fieldName'] = 'body';
+                    field.dataset['language'] = '1';
+                    wrapper.appendChild(field);
+                    document.body.appendChild(wrapper);
+
+                    return field;
+                };
+
+                const clickInlineField = (canEdit?: string) => {
+                    const target = buildInlineTarget(canEdit);
+                    spectator.component.handleInlineEditing({
+                        target
+                    } as unknown as MouseEvent);
+                    spectator.detectChanges();
+                };
+
+                it('should not start inline editing on a contentlet the user cannot edit', () => {
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField('false');
+
+                    expect(inlineEditSpy).not.toHaveBeenCalled();
+                });
+
+                it('should tell the user why with a toast instead of failing silently', () => {
+                    // The field has no control to grey out and no hover target
+                    // for a tooltip, so a silent no-op reads as a broken editor.
+                    addMessageSpy.mockClear();
+
+                    clickInlineField('false');
+
+                    expect(addMessageSpy).toHaveBeenCalledWith(
+                        expect.objectContaining({
+                            detail: 'uve.contentlet.no.edit.permission'
+                        })
+                    );
+                });
+
+                it('should start inline editing when the user can edit', () => {
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField('true');
+
+                    expect(inlineEditSpy).toHaveBeenCalled();
+                });
+
+                it('should start inline editing when the permission attribute is absent', () => {
+                    // Headless pages never emit it; fail open.
+                    const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                    inlineEditSpy.mockClear();
+
+                    clickInlineField(undefined);
+
+                    expect(inlineEditSpy).toHaveBeenCalled();
+                });
+            });
 
             describe('placeItem - content-type drag', () => {
                 const contentTypeDragItem = {

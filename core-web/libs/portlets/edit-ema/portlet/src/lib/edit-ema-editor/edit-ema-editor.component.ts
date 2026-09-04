@@ -97,10 +97,7 @@ import { DotUveActionsHandlerService } from '../services/dot-uve-actions-handler
 import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-drag-drop.service';
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
-import {
-    canEditOwningContentlet,
-    notifyNoEditPermission
-} from '../shared/contentlet-permission';
+import { canEditOwningContentlet, notifyNoEditPermission } from '../shared/contentlet-permission';
 import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
