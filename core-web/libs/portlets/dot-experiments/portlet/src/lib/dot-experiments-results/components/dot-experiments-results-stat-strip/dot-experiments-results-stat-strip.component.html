@@ -28,9 +28,9 @@
                     tooltipPosition="bottom">
                     {{ $leadingVariantName() }}
                 </span>
-                @if ($canPromote()) {
+                @if ($canPromote() && $suggestedWinner(); as winner) {
                     <p-button
-                        (onClick)="promoteRequested.emit($suggestedWinner()!.variantName)"
+                        (onClick)="promoteRequested.emit(winner.variantName)"
                         [disabled]="$isSaving()"
                         [label]="'experiments.reports.promote' | dm"
                         [outlined]="true"

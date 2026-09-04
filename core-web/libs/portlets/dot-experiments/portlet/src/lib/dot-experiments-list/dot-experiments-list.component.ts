@@ -116,7 +116,9 @@ const NEW_EXPERIMENT_COMMANDS = [EXPERIMENTS_URL, NEW_EXPERIMENT_SEGMENT];
     // `providers.ts`, so the store cannot inject it unless this component provides it. The legacy
     // screens do the same in `old/dot-experiments-shell`.
     providers: [DotExperimentsListStore, ConfirmationService, DotExperimentsService],
-    host: { class: 'flex flex-col h-full min-h-0' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsListComponent {
     readonly store = inject(DotExperimentsListStore);

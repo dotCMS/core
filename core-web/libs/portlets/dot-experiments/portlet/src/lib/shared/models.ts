@@ -332,6 +332,14 @@ export interface DotExperimentsResultsViewState {
     /** `null` until the experiment has loaded, which is also what the skeleton reads (AC23). */
     experiment: DotExperiment | null;
     /**
+     * The page the experiment runs on, resolved from its `pageId`.
+     *
+     * `DotExperiment` carries the identifier and nothing else — no title, no path — so a content
+     * search resolves them. `null` while it has not resolved, and also when it cannot be: the
+     * header then reads the variant count alone rather than blocking a report that is complete.
+     */
+    page: DotExperimentConfigurePage | null;
+    /**
      * `null` while the experiment is DRAFT or SCHEDULED: `getResults` is uncached and costs two
      * analytics round-trips plus a Monte Carlo run, so it is never called before there is
      * anything to count (AC10).

@@ -11,18 +11,11 @@
  * whatever length each description happens to be. The caller decides how tall a row is — with
  * `auto-rows-fr` on the grid, that is the tallest card in the set — and this chain passes that
  * height down through the label to the card PrimeNG renders.
+ *
+ * The host and the label carry their half as utilities; only the `p-card` links below have to be
+ * stylesheet rules, for the layering reason above. The disabled cursor still wins over the label's
+ * `cursor-pointer`: an unlayered component rule beats a utility whatever the specificity.
  */
-:host {
-    display: block;
-    height: 100%;
-}
-
-.radio-card {
-    display: block;
-    height: 100%;
-    cursor: pointer;
-}
-
 p-card,
 p-card .p-card-body {
     height: 100%;

@@ -3,6 +3,8 @@ import { eventGroup } from '@ngrx/signals/events';
 
 import { DotExperiment, DotExperimentResults } from '@dotcms/dotcms-models';
 
+import { DotExperimentConfigurePage } from '../shared/models';
+
 /** What the initial load answered with: the experiment always, its results only when it has any. */
 export interface ResultsLoadPayload {
     experiment: DotExperiment;
@@ -42,6 +44,13 @@ export const dotExperimentsResultsApiEvents = eventGroup({
          * screen this one replaces degraded the same way, and blanking here would be a regression.
          */
         resultsUnavailable: type<DotExperiment>(),
+
+        /**
+         * The page the experiment runs on, once the content search resolved it. Ancillary: a page
+         * that cannot be resolved settles as `null` rather than failing the screen, so it is a
+         * success event carrying nothing rather than a failure of its own.
+         */
+        pageResolved: type<DotExperimentConfigurePage | null>(),
 
         stopSucceeded: type<DotExperiment>(),
         stopFailed: type<unknown>(),

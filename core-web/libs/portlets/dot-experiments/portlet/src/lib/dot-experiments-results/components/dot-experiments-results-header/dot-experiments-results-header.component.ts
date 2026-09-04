@@ -1,8 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
-import { Observable, of } from 'rxjs';
 
 import { Component, computed, inject } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -10,12 +8,9 @@ import { ButtonModule } from 'primeng/button';
 import { TagModule } from 'primeng/tag';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { catchError, distinctUntilChanged, map, switchMap } from 'rxjs/operators';
-
-import { DotContentSearchService, DotMessageService } from '@dotcms/data-access';
-import { DotCMSContentlet, DotExperimentStatus } from '@dotcms/dotcms-models';
+import { DotMessageService } from '@dotcms/data-access';
+import { DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
-import { isDotIdentifier } from '@dotcms/utils';
 
 import {
     EXPERIMENTS_URL,
@@ -23,16 +18,9 @@ import {
     STATUS_LABEL_KEYS,
     STATUS_SEVERITIES
 } from '../../../shared/constants';
-import { DotExperimentConfigurePage, TagSeverity } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
-import { toConfigurePage } from '../../../util/dot-experiments-configure.util';
 import { configureCommandsOf, variantsCount } from '../../../util/dot-experiments-list.util';
-
-/** Shape of the `/api/content/_search` entity the page lookup reads contentlets from. */
-interface PageLookupEntity {
-    jsonObjectView?: { contentlets?: DotCMSContentlet[] };
-}
 
 /**
  * Separator of the three parts of the subline: middle dot U+00B7 with a space either side, as the
@@ -85,27 +73,10 @@ export class DotExperimentsResultsHeaderComponent {
     readonly #router = inject(Router);
     readonly #confirmationService = inject(ConfirmationService);
     readonly #dotMessageService = inject(DotMessageService);
-    readonly #contentSearchService = inject(DotContentSearchService);
-
-    /**
-     * The page the experiment runs on, resolved from its `pageId`.
-     *
-     * `DotExperiment` carries the identifier and nothing else — no title, no path — so the same
-     * content search the list uses for its Page column resolves them here. Ancillary to the
-     * screen: a page that cannot be resolved leaves the subline reading the variant count alone
-     * rather than blocking a report that is otherwise complete.
-     */
-    readonly #page = toSignal(
-        toObservable(computed<string | null>(() => this.store.experiment()?.pageId ?? null)).pipe(
-            distinctUntilChanged(),
-            switchMap((pageId) => this.#lookupPage(pageId))
-        ),
-        { initialValue: null }
-    );
 
     /** `{pageTitle} · {pagePath} · {n} Variants`, dropping whichever parts are not known yet (AC2). */
     readonly $subline = computed<string>(() => {
-        const page = this.#page();
+        const page = this.store.page();
         const variants = variantsCount(this.store.experiment()?.trafficProportion);
 
         return [
@@ -164,20 +135,4 @@ export class DotExperimentsResultsHeaderComponent {
      * is answered as "not found" rather than widening the search — same guard the Configure screen
      * applies to the `?pageId=` it is handed.
      */
-    #lookupPage(pageId: string | null): Observable<DotExperimentConfigurePage | null> {
-        if (!pageId || !isDotIdentifier(pageId)) {
-            return of(null);
-        }
-
-        return this.#contentSearchService
-            .get<PageLookupEntity>({
-                query: `+contentType:htmlpageasset +working:true +identifier:${pageId}`,
-                limit: 1
-            })
-            .pipe(
-                map((entity) => entity?.jsonObjectView?.contentlets?.[0]),
-                map((contentlet) => (contentlet ? toConfigurePage(contentlet) : null)),
-                catchError(() => of(null))
-            );
-    }
 }

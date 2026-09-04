@@ -1,6 +1,6 @@
 import { Directive, ElementRef, Input, Renderer2, effect, inject, input } from '@angular/core';
 import { FormGroupDirective, Validators } from '@angular/forms';
-import { FieldTree } from '@angular/forms/signals';
+import { Field } from '@angular/forms/signals';
 
 /**
  * Marks a label as belonging to a mandatory field, by adding `p-label-input-required` — the class
@@ -28,10 +28,15 @@ export class DotFieldRequiredDirective {
     /**
      * The signal-forms field this label stands for, when there is one.
      *
+     * `Field`, not `FieldTree`: a `FieldTree<T>` is callable *and* carries `T`'s subfield shape, so
+     * `FieldTree<unknown>` is not a supertype — a `FieldTree<string>` does not assign to it. `Field`
+     * is the callable half, which is all this reads, and it is the type `dot-radio-card` takes for
+     * the same reason.
+     *
      * Empty string rather than `undefined` as the default: the bare attribute binds no value, and
      * the alias makes `dotFieldRequired` both the selector and this input.
      */
-    readonly $field = input<FieldTree<unknown> | ''>('', { alias: 'dotFieldRequired' });
+    readonly $field = input<Field<unknown> | ''>('', { alias: 'dotFieldRequired' });
 
     readonly #el = inject(ElementRef);
     readonly #renderer = inject(Renderer2);

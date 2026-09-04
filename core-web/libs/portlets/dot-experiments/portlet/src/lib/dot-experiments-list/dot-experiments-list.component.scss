@@ -1,25 +1,4 @@
 /**
- * Coming back from the Configure screen swaps the whole view in a single frame, which reads as a
- * jolt; the same short opacity-only fade the Configure screen enters with makes it read as
- * navigation. No translate — movement on the host would drag the toolbar along with it.
- */
-// No display here: the host's flex-column layout comes from its host classes, and a component
-// style would win over those utilities and break the table's bounded-height layout.
-:host {
-    animation: dot-experiments-screen-enter 180ms ease-out;
-}
-
-@keyframes dot-experiments-screen-enter {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-/**
  * Filtering, sorting and paging all swap the rows underneath the header. Without this the set
  * changes in a single frame, which reads as a jolt; a short fade makes it register as a change
  * rather than a flicker. Deliberately brief — this should be felt more than seen.
@@ -42,7 +21,6 @@
 
 // Motion is decoration here, so it is the first thing to drop for anyone who asked for less.
 @media (prefers-reduced-motion: reduce) {
-    :host,
     :host ::ng-deep tbody > tr {
         animation: none;
     }

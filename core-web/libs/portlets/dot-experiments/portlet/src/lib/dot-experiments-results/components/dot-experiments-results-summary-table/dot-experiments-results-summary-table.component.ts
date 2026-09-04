@@ -14,16 +14,9 @@ import { DEFAULT_VARIANT_ID, DotExperimentStatus } from '@dotcms/dotcms-models';
 import { DotEmptyContainerComponent, DotMessagePipe, PrincipalConfiguration } from '@dotcms/ui';
 
 import { RESULTS_VARIANT_COLORS } from '../../../shared/constants';
-import { DotExperimentResultVariantDetail, LiftTone } from '../../../shared/models';
+import { DotExperimentResultVariantDetail } from '../../../shared/models';
 import { dotExperimentsResultsPageEvents } from '../../../store/dot-experiments-results-page.events';
 import { DotExperimentsResultsStore } from '../../../store/dot-experiments-results.store';
-
-/** How a Lift vs Original reads: nothing to compare against, a gain, or a loss (AC16). */
-const LIFT_TONE_CLASSES: Record<LiftTone, string> = {
-    neutral: 'text-surface-400',
-    positive: 'text-green-800',
-    negative: 'text-red-700'
-};
 
 /**
  * Promote confirm copy. The first sentence says whether the result is worth promoting, and the
@@ -43,8 +36,6 @@ export interface DotExperimentsSummaryTableRow extends DotExperimentResultVarian
     color: string;
     /** True for the `DEFAULT` variant, which is never promoted and has no lift of its own. */
     isControl: boolean;
-    /** Text colour the Lift vs Original is rendered in, resolved from its tone. */
-    liftClass: string;
 }
 
 /**
@@ -100,8 +91,7 @@ export class DotExperimentsResultsSummaryTableComponent {
                 // The control is drawn first, so it always takes the first colour — the same one
                 // the charts give it, because both read the one palette.
                 color: RESULTS_VARIANT_COLORS[index % RESULTS_VARIANT_COLORS.length],
-                isControl: row.id === DEFAULT_VARIANT_ID,
-                liftClass: LIFT_TONE_CLASSES[row.liftTone]
+                isControl: row.id === DEFAULT_VARIANT_ID
             }))
     );
 
