@@ -108,10 +108,9 @@ describe('DotRolesTreeComponent', () => {
             expect(clip().textContent?.trim()).toBe(LONG_NAME);
         });
 
-        it('should keep the row icon and the user-count badge outside the clipped name', () => {
+        it('should keep the user-count badge outside the clipped name', () => {
             // FR-008: the row keeps its own structure. Only the name is allowed to shrink — the
             // badge must not be the thing that gets cut off.
-            expect(spectator.query(byTestId('node-icon-r-long'))).toBeTruthy();
             expect(spectator.query(byTestId('node-user-count-r-long'))).toBeTruthy();
             expect(clip().querySelector('[data-testid="node-user-count-r-long"]')).toBeNull();
         });

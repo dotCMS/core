@@ -54,15 +54,9 @@
             (onNodeContextMenuSelect)="onNodeContextMenu($event)">
             <ng-template #folderTreeNodeLabel let-node>
                 @let data = node.data;
-                @let isLeaf = node.leaf === true;
                 <!-- Do NOT swap the `+` for `<button pButton>` — PrimeNG's
                      ~40px min-height pushes the row past 50px. -->
                 <span class="group flex w-full items-center gap-2">
-                    <span
-                        class="material-symbols-outlined text-color-secondary text-base leading-none"
-                        [attr.data-testid]="'node-icon-' + data.id">
-                        {{ isLeaf ? 'shield_person' : 'folder' }}
-                    </span>
                     <dot-truncated-label class="min-w-0 flex-1">
                         {{ node.label }}
                     </dot-truncated-label>
