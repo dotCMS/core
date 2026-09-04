@@ -291,7 +291,7 @@ program
             const busyPorts = await findBusyPorts();
             const portOutcome = await resolvePortConflict({
                 busyPorts,
-                isInteractive: Boolean(process.stdout.isTTY) && !process.env.CI,
+                isInteractive: Boolean(process.stdout.isTTY) && !process.env['CI'],
                 host: LOCAL_DOTCMS_HOST,
                 probeInstance: async () => {
                     // Reusable means usable for what happens next: it must answer readiness AND
