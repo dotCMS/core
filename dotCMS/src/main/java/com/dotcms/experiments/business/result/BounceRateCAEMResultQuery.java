@@ -6,6 +6,8 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+import java.util.Map;
+
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code BOUNCE_RATE} goals.
  *
@@ -38,6 +40,9 @@ import com.liferay.portal.model.User;
  */
 public class BounceRateCAEMResultQuery implements ExperimentGoalResultsQuery {
 
+    private static final String SESSIONS_PATH = "/v1/analytics/sessions";
+    private static final String METRICS = "totalSessions,bounceSessions,bounceRate";
+
     private final CaemHttpClient caemHttpClient;
 
     public BounceRateCAEMResultQuery(final CaemHttpClient caemHttpClient) {
@@ -47,13 +52,24 @@ public class BounceRateCAEMResultQuery implements ExperimentGoalResultsQuery {
     @Override
     public AnalyticsResultSet executeByDay(final Experiment experiment,
                                            final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("BounceRateCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(SESSIONS_PATH, buildParams(experiment, "variant,day"), null);
     }
 
     @Override
     public AnalyticsResultSet executeAggregate(final Experiment experiment,
                                                final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("BounceRateCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(SESSIONS_PATH, buildParams(experiment, "variant"), null);
+    }
+
+    private static Map<String, String> buildParams(final Experiment experiment,
+                                                   final String dimensions) {
+        final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
+        return Map.of(
+                "experimentId", experiment.getIdentifier(),
+                "runningId",    runningId,
+                "metrics",      METRICS,
+                "dimensions",   dimensions
+        );
     }
 
 }
