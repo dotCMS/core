@@ -1546,9 +1546,7 @@ describe('DotExperimentsConfigureStore', () => {
                 title: 'Colorado & The Rockies',
                 languageId: 1
             };
-            contentSearchGet.mockReturnValue(
-                of({ jsonObjectView: { contentlets: [urlMapped] } })
-            );
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [urlMapped] } }));
 
             initNew({ pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437' });
 
