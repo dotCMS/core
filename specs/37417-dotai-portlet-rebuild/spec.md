@@ -193,7 +193,7 @@ The old screen stays reachable at a separate documented address, absent from eve
 - **FR-020**: An empty content-type selection MUST mean "all content types" and MUST NOT be sent as an explicit empty restriction.
 - **FR-021**: A cleared site selection MUST mean "all sites".
 - **FR-022**: Temperature MUST be constrained to its supported range.
-- **FR-023**: Response length MUST enforce the platform's true minimum of 128 tokens. *(The legacy screen advertises 10, which the server rejects.)*
+- **FR-023**: Response length MUST enforce the minimum of 128 tokens that the platform's own request contract declares. *(The legacy screen advertises 10. That contract minimum is not currently enforced server-side, so a smaller value is accepted silently and yields a truncated answer rather than an error — the field is the only place the declared limit can be honored.)*
 - **FR-024**: Selecting inner product MUST perform an inner-product search. *(The legacy screen sends an unrecognized value and silently falls back to cosine.)*
 
 **Embeddings**
