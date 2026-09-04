@@ -9,8 +9,10 @@ import { DotCMSContentlet, DotSite } from '@dotcms/dotcms-models';
 import {
     buildAssetPickerConfig,
     buildAssetPickerDialogConfig,
+    CONTENT_STATUS,
     DotAssetPickerBrowseOptions,
-    DotAssetPickerComponent
+    DotAssetPickerComponent,
+    DotContentStatus
 } from '@dotcms/ui';
 
 import {
@@ -579,15 +581,8 @@ export class AngularFormBridge implements FormBridge {
                                     initialAssetPath: options.path,
                                     allowedBaseTypes: baseTypesFor(options.kinds),
                                     browse: browseOptionsFor(options),
-                                    // `'archived'` seeds the Status chip rather than pinning a
-                                    // flag: it now means *archived only*, and the editor can clear
-                                    // it from inside the dialog (FR-014b).
-                                    ...(options.status === 'archived'
-                                        ? { status: ['ARCHIVED'] }
-                                        : {}),
-                                    ...(options.mimeTypes?.length
-                                        ? { mimeTypes: options.mimeTypes }
-                                        : {})
+                                    status: statusFilterFor(options.status),
+                                    mimeTypes: options.mimeTypes
                                 })
                             )
                         );
@@ -678,6 +673,17 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
             ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
             : {})
     };
+}
+
+/**
+ * The Status chip's seed.
+ *
+ * `'archived'` means *archived only*, and it travels as a seed the editor can clear from inside the
+ * dialog rather than a pinned flag (FR-014b). `'live'` and `'working'` answer the version-state
+ * question instead, which is why they are absent here and handled in {@link browseOptionsFor}.
+ */
+function statusFilterFor(status: DotBrowserOptions['status']): DotContentStatus[] | undefined {
+    return status === 'archived' ? [CONTENT_STATUS.ARCHIVED] : undefined;
 }
 
 /** What the picker returned, in the terms the item itself reports. */

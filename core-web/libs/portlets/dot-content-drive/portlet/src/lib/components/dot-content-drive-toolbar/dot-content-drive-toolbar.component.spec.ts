@@ -29,6 +29,7 @@ import {
     DOT_FILTER_FACADE,
     DotFieldFilterHost,
     DotFilterFacade,
+    DotFilterValue,
     isCanonicalChipOrder
 } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
@@ -37,7 +38,7 @@ import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.com
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
-import { DotContentDriveActionExecution } from '../../shared/models';
+import { DotContentDriveActionExecution, DotContentDriveFilters } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 import { hasNonDefaultFilters } from '../../utils/functions';
@@ -64,7 +65,7 @@ describe('DotContentDriveToolbarComponent', () => {
 
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
-    const filtersSignal = signal<Record<string, unknown>>({});
+    const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
@@ -84,7 +85,9 @@ describe('DotContentDriveToolbarComponent', () => {
             {
                 provide: DOT_FILTER_FACADE,
                 useValue: {
-                    getFilterValue: jest.fn((key: string) => filtersSignal()[key]),
+                    getFilterValue: jest.fn(
+                        (key: string): DotFilterValue | undefined => filtersSignal()[key]
+                    ),
                     patchFilters: jest.fn(),
                     removeFilter: jest.fn(),
                     clearFilters: clearFiltersSpy,
