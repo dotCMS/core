@@ -5,11 +5,15 @@
 jest.mock(
     '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component',
     () => {
-        const { Component, input, output } = jest.requireActual('@angular/core');
+        const { Component, Input, output } = jest.requireActual('@angular/core');
 
+        // `data` is a decorated property, not a signal input like the real panel's: these tests
+        // run in JIT mode, where the compiler does not see a bare `data = input(...)` field, so
+        // `ComponentRef.setInput('data')` would leave it at its initial value and any assertion on
+        // what the panel was opened with would be vacuous.
         @Component({ selector: 'dot-edit-content-side-panel', standalone: true, template: '' })
         class MockDotEditContentSidePanelComponent {
-            data = input(null);
+            @Input() data: EditContentDialogData | null = null;
             closed = output();
             saved = output();
         }
@@ -22,6 +26,7 @@ import { byTestId, createComponentFactory, mockProvider, Spectator } from '@open
 
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
+import { AbstractControl, FormControl, FormGroup, NgControl } from '@angular/forms';
 
 import { DialogService } from 'primeng/dynamicdialog';
 
@@ -37,6 +42,7 @@ import { DotRelationshipFieldComponent } from './dot-relationship-field.componen
 
 // Resolves to the mock declared in the jest.mock above (same module path the component imports).
 import { DotEditContentSidePanelComponent } from '../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component';
+import { EditContentDialogData } from '../../../../models/dot-edit-content-dialog.interface';
 import { EDIT_CONTENT_HOST } from '../../../../services/host/edit-content-host.model';
 import { DotEditContentStore } from '../../../../store/edit-content.store';
 import { TableColumn } from '../../models/relationship.models';
@@ -48,6 +54,15 @@ const ENGLISH_LANGUAGE = createFakeLanguage({
     language: 'English',
     languageCode: 'en',
     isoCode: 'en-us'
+});
+
+// A second locale so the by-id lookup is provably keyed on languageId, not just picking the
+// first entry.
+const SPANISH_LANGUAGE = createFakeLanguage({
+    id: 2,
+    language: 'Espanol',
+    languageCode: 'es',
+    isoCode: 'es-es'
 });
 
 const LANGUAGE_COLUMN: TableColumn = {
@@ -81,8 +96,45 @@ const buildItem = (overrides: Partial<DotCMSContentlet> = {}): DotCMSContentlet 
         ...overrides
     });
 
+/**
+ * Stands in for the `NgControl` that `formControlName` supplies in production. The field resolves
+ * it from its own injector to sync its value and reset the control's dirty state after a
+ * programmatic load. Defaults to no control — the same thing `#control()` sees when the field is
+ * mounted without a form around it — and tests that need a real (dirty) form assign one.
+ */
+let ngControlStub: { control: AbstractControl | null };
+
+/**
+ * Stands in for the {@link EDIT_CONTENT_HOST} the surrounding chrome provides. `inPlaceNavigation`
+ * is what tells the two chromes apart — `false` for the full-screen route, `true` for the overlay
+ * behind the side panel — and it decides whether related content opens in a panel or navigates,
+ * so tests set it before mounting. Defaults to full-screen.
+ */
+let hostStub: {
+    inPlaceNavigation: boolean;
+    setContentTitle: jest.Mock;
+    addBreadcrumb: jest.Mock;
+    goToSavedContent: jest.Mock;
+    goToRestoredVersion: jest.Mock;
+    goToRelatedContent: jest.Mock;
+    goToCrumb: jest.Mock;
+};
+
 describe('DotRelationshipFieldComponent', () => {
     let spectator: Spectator<DotRelationshipFieldComponent>;
+
+    beforeEach(() => {
+        ngControlStub = { control: null };
+        hostStub = {
+            inPlaceNavigation: false,
+            setContentTitle: jest.fn(),
+            addBreadcrumb: jest.fn(),
+            goToSavedContent: jest.fn(),
+            goToRestoredVersion: jest.fn(),
+            goToRelatedContent: jest.fn(),
+            goToCrumb: jest.fn()
+        };
+    });
 
     // i18n mock returns the key itself so header/empty-state assertions are deterministic.
     const messageServiceMock = {
@@ -107,6 +159,7 @@ describe('DotRelationshipFieldComponent', () => {
         flags: jest.fn().mockReturnValue({}),
         initialize: jest.fn(),
         setData: jest.fn(),
+        refreshItem: jest.fn(),
         deleteItem: jest.fn(),
         reorderData: jest.fn(),
         nextPage: jest.fn(),
@@ -119,6 +172,8 @@ describe('DotRelationshipFieldComponent', () => {
     const createComponent = createComponentFactory({
         component: DotRelationshipFieldComponent,
         detectChanges: false,
+        // Node-level: this is where the component's own injector looks for NgControl.
+        componentProviders: [{ provide: NgControl, useFactory: () => ngControlStub }],
         providers: [
             provideHttpClient(),
             provideHttpClientTesting(),
@@ -128,23 +183,14 @@ describe('DotRelationshipFieldComponent', () => {
                 currentLocale: jest.fn().mockReturnValue(null),
                 isCopyingLocale: jest.fn().mockReturnValue(false),
                 contentlet: jest.fn().mockReturnValue(null),
-                translationSourceInode: jest.fn().mockReturnValue(null)
+                translationSourceInode: jest.fn().mockReturnValue(null),
+                // Every system language, which is what the endpoint behind this slice returns.
+                locales: jest.fn().mockReturnValue([ENGLISH_LANGUAGE, SPANISH_LANGUAGE])
             }),
             mockProvider(DialogService, {
                 open: jest.fn()
             }),
-            {
-                provide: EDIT_CONTENT_HOST,
-                useValue: {
-                    inPlaceNavigation: false,
-                    setContentTitle: jest.fn(),
-                    addBreadcrumb: jest.fn(),
-                    goToSavedContent: jest.fn(),
-                    goToRestoredVersion: jest.fn(),
-                    goToRelatedContent: jest.fn(),
-                    goToCrumb: jest.fn()
-                }
-            }
+            { provide: EDIT_CONTENT_HOST, useFactory: () => hostStub }
         ]
     });
 
@@ -274,6 +320,34 @@ describe('DotRelationshipFieldComponent', () => {
             expect(config.data).toEqual(
                 expect.objectContaining({ mode: 'new', contentTypeId: 'ct-1' })
             );
+        });
+
+        it('resolves the language of the created content so the Locales column renders at once', async () => {
+            storeMock.flags.mockReturnValue({
+                [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true
+            });
+            storeMock.data.mockReturnValue([]);
+
+            await spectator.component.showCreateNewContentDialog();
+            spectator.detectChanges();
+
+            // What a workflow action actually returns: `languageId`, no `language` object. Passed
+            // through as-is the new row's Locales cell stays blank until the parent is saved.
+            const created = buildItem({
+                inode: 'created-inode',
+                identifier: 'created-id',
+                title: 'Just created',
+                language: undefined,
+                languageId: 1
+            });
+            spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(created);
+
+            expect(storeMock.setData).toHaveBeenCalledWith([
+                expect.objectContaining({
+                    identifier: 'created-id',
+                    language: ENGLISH_LANGUAGE
+                })
+            ]);
         });
 
         it('destroys the side panel when it emits `closed`', async () => {
@@ -489,6 +563,233 @@ describe('DotRelationshipFieldComponent', () => {
 
             expect(host.goToRelatedContent).not.toHaveBeenCalled();
             expect(host.goToCrumb).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('openRelated (side panel vs navigation)', () => {
+        const CURRENT = { inode: 'current-inode', title: 'Current content' };
+        const RELATED = buildItem({
+            inode: 'related-inode',
+            identifier: 'related-id',
+            title: 'Related content'
+        });
+
+        let host: { goToRelatedContent: jest.Mock; goToCrumb: jest.Mock };
+
+        /**
+         * Mounts the field as it is presented in one of the two editor chromes. `inPlaceNavigation`
+         * is the seam that tells them apart in production: `false` for the full-screen route
+         * (RouterEditContentHost), `true` for the overlay that backs the side panel
+         * (OverlayEditContentHost).
+         */
+        const setupIn = ({
+            inPlaceNavigation,
+            sidePanelEnabled = true
+        }: {
+            inPlaceNavigation: boolean;
+            sidePanelEnabled?: boolean;
+        }) => {
+            hostStub.inPlaceNavigation = inPlaceNavigation;
+
+            setup({
+                flags: jest
+                    .fn()
+                    .mockReturnValue(
+                        sidePanelEnabled
+                            ? { [FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL]: true }
+                            : {}
+                    ),
+                data: jest.fn().mockReturnValue([RELATED]),
+                paginatedData: jest.fn().mockReturnValue([RELATED])
+            });
+
+            host = spectator.inject(EDIT_CONTENT_HOST) as never;
+            (spectator.inject(DotEditContentStore).contentlet as jest.Mock).mockReturnValue(
+                CURRENT
+            );
+            host.goToRelatedContent.mockClear();
+            host.goToCrumb.mockClear();
+        };
+
+        describe('from the full-screen editor', () => {
+            it('opens the related content in a side panel instead of navigating', async () => {
+                setupIn({ inPlaceNavigation: false });
+
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                // The whole point: no navigation is requested, so the editor is never unmounted
+                // and whatever is unsaved in it — including a relation to content just created
+                // from this field — survives. No unsaved-changes prompt needed.
+                expect(host.goToRelatedContent).not.toHaveBeenCalled();
+                expect(host.goToCrumb).not.toHaveBeenCalled();
+                expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+            });
+
+            it('opens the panel on the clicked content, in edit mode', async () => {
+                setupIn({ inPlaceNavigation: false });
+
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                expect(spectator.query(DotEditContentSidePanelComponent)?.data).toEqual(
+                    expect.objectContaining({
+                        mode: 'edit',
+                        contentletInode: 'related-inode',
+                        title: 'Related content'
+                    })
+                );
+            });
+
+            it('opens the panel regardless of whether the form has unsaved changes', async () => {
+                // The rule is the chrome, not the form state: a pristine editor takes the panel
+                // too. Keying this on `dirty` would make the same click behave differently
+                // depending on whether anything happened to be touched first.
+                const control = new FormControl('related-id');
+                new FormGroup({ [FIELD_MOCK.variable]: control });
+                ngControlStub = { control };
+
+                setupIn({ inPlaceNavigation: false });
+
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                expect(control.dirty).toBe(false);
+                expect(host.goToRelatedContent).not.toHaveBeenCalled();
+                expect(spectator.query('dot-edit-content-side-panel')).toBeTruthy();
+            });
+
+            it('navigates instead when the side panel flag is off', async () => {
+                setupIn({ inPlaceNavigation: false, sidePanelEnabled: false });
+
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                // No panel to open without the flag, so the previous behavior must stand rather
+                // than the click becoming a silent no-op.
+                expect(host.goToRelatedContent).toHaveBeenCalledTimes(1);
+                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+            });
+        });
+
+        describe('from inside a side panel', () => {
+            it('navigates with a trail instead of opening another panel', async () => {
+                setupIn({ inPlaceNavigation: true });
+
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                // This chrome navigates in place and keeps its own crumb trail, so related
+                // content is reached through the breadcrumb — not a second panel on top.
+                expect(host.goToRelatedContent).toHaveBeenCalledWith(
+                    { inode: 'current-inode', title: 'Current content' },
+                    { inode: 'related-inode', title: 'Related content' }
+                );
+                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+            });
+        });
+
+        describe('the panel it opens', () => {
+            beforeEach(() => setupIn({ inPlaceNavigation: false }));
+
+            it('is destroyed when it emits `closed`', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                spectator.query(DotEditContentSidePanelComponent)?.closed.emit();
+                spectator.detectChanges();
+
+                expect(spectator.query('dot-edit-content-side-panel')).toBeFalsy();
+            });
+
+            it('refreshes the edited row by identifier when it reports a save', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                const saved = buildItem({
+                    inode: 'new-inode-after-save',
+                    identifier: 'related-id',
+                    title: 'Related content (edited)'
+                });
+                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+
+                // Handed to the store's in-place replace — which keeps the current page and does
+                // not dirty the form — rather than setData, which resets pagination to page 1.
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(saved);
+                expect(storeMock.setData).not.toHaveBeenCalled();
+            });
+
+            it('resolves the language of the refreshed row so the Locales column still renders', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                // A workflow action returns `languageId` but no `language` object, so passing it
+                // straight through would blank the Locales column until the parent is saved.
+                const saved = buildItem({
+                    inode: 'new-inode-after-save',
+                    identifier: 'related-id',
+                    title: 'Related content (edited)',
+                    language: undefined,
+                    languageId: 2
+                });
+                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        inode: 'new-inode-after-save',
+                        language: SPANISH_LANGUAGE
+                    })
+                );
+            });
+
+            it('leaves an already-resolved language untouched', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                const saved = buildItem({
+                    identifier: 'related-id',
+                    language: ENGLISH_LANGUAGE,
+                    languageId: 1
+                });
+                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                    expect.objectContaining({ language: ENGLISH_LANGUAGE })
+                );
+            });
+
+            it('leaves the row as-is when the language id matches no known locale', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                const saved = buildItem({
+                    identifier: 'related-id',
+                    language: undefined,
+                    languageId: 999
+                });
+                spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
+
+                // Blank column beats a wrong locale.
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                    expect.objectContaining({ language: undefined })
+                );
+            });
+
+            it('forwards the save to the store, which ignores an unrelated identifier', async () => {
+                await spectator.component.openRelated(RELATED);
+                spectator.detectChanges();
+
+                // Whether the row exists is the store's call (covered in its own spec); the
+                // component's job is only to resolve the language and hand it over.
+                spectator
+                    .query(DotEditContentSidePanelComponent)
+                    ?.data?.onContentSaved?.(buildItem({ identifier: 'someone-else' }));
+
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                    expect.objectContaining({ identifier: 'someone-else' })
+                );
+                expect(storeMock.setData).not.toHaveBeenCalled();
+            });
         });
     });
 });
