@@ -263,6 +263,19 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
+     * Tooltip key for the quick-edit button. Shares the edit button's
+     * permission message — the quick-edit form writes the same contentlet, so
+     * the same explanation applies.
+     */
+    protected readonly quickEditButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.quick';
+    });
+
+    /**
      * Tooltip key for the delete button. When the button is disabled
      * (e.g. on personalization), the tooltip explains why; otherwise
      * it just labels the action ("Remove") to match the other toolbar
@@ -335,6 +348,7 @@ export class DotUveContentletToolsComponent {
         items.push({
             label: this.#dotMessageService.get('uve.tooltip.edit.quick'),
             icon: 'pi pi-bolt',
+            disabled: !this.canEditContentlet(),
             command: () => {
                 this.promoteHoverToSelected();
                 this.openQuickEdit.emit();

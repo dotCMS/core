@@ -80,8 +80,9 @@
                 }
                 <p-button
                     (click)="promoteHoverToSelected(); openQuickEdit.emit()"
+                    [disabled]="!canEditContentlet()"
                     data-testId="hover-quick-edit-button"
-                    [pTooltip]="'uve.tooltip.edit.quick' | dm"
+                    [pTooltip]="quickEditButtonTooltip() | dm"
                     tooltipPosition="bottom"
                     [text]="true"
                     icon="pi pi-bolt" />

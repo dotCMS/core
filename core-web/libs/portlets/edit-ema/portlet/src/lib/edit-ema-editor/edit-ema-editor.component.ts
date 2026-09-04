@@ -250,7 +250,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
             );
 
             if (foundContentlet) {
-                contentlet = foundContentlet as DotCMSContentlet;
+                // The page-asset contentlet is the fresher one (new inode after
+                // a save), but it carries no permission — `canEdit` only exists
+                // on the DOM payload. Carry it across the swap or the quick-edit
+                // panel has nothing to gate on.
+                contentlet = {
+                    ...(foundContentlet as DotCMSContentlet),
+                    ...(contentletPayload?.canEdit === undefined
+                        ? {}
+                        : { canEdit: contentletPayload.canEdit })
+                };
             }
         }
 
@@ -1332,6 +1341,13 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
      * @memberof EditEmaEditorComponent
      */
     protected handleOpenQuickEdit(): void {
+        // Same defense in depth as the pencil: the quick-edit button is already
+        // disabled without EDIT permission on this contentlet, but the panel
+        // must not be reachable through a stale toolbar or a programmatic emit.
+        if (this.uveStore.editorSelected()?.payload?.contentlet?.canEdit === false) {
+            return;
+        }
+
         this.uveStore.setEditPanelOpen(true);
         patchState(this.#rightSidebarTabState, { currentTab: 0 });
     }
