@@ -255,8 +255,7 @@ describe('DotHostFolderFieldComponent', () => {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-globe',
-            collapsedIcon: 'pi pi-globe'
+            icon: 'pi pi-globe'
         });
 
         const queryInOverlay = (testId: string): Element | null =>
@@ -785,6 +784,44 @@ describe('DotHostFolderFieldComponent', () => {
             popover.show(event, trigger);
             spectator.detectChanges();
         };
+
+        it('should take its folder icons from the shared tree (#37362)', fakeAsync(() => {
+            // The icon used to be carried per-node by `dot-browsing.service`. It now comes from
+            // the shared component, so this picker has to opt in. This also covers US2: the icon
+            // is a function of the row's state, so a collapse cannot leave it stuck open.
+            const folder: TreeNodeItem = {
+                key: 'folder-parent',
+                label: 'demo.dotcms.com/parent/',
+                data: {
+                    id: 'folder-parent',
+                    hostname: 'demo.dotcms.com',
+                    path: '/parent/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [folder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const tree = queryInOverlay('host-folder-tree');
+            const icon = tree?.querySelector('[data-testid="tree-node-folder-icon"]');
+
+            expect(icon).toBeTruthy();
+            expect(icon?.getAttribute('data-expanded')).toBe('false');
+        }));
 
         it('should render its projected folder label inside the shared clipping element', fakeAsync(() => {
             // #37363: the overlay used to cut long names off with its own CSS. The shared tree

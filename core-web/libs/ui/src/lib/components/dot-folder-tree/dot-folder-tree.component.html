@@ -21,14 +21,30 @@
          instead of the name. Either way there is one definition of the behavior, and the tree
          still owns the row's focus handling for it. -->
     <ng-template let-node pTemplate="default">
-        @if (nodeLabelTemplate(); as labelTpl) {
-            <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
+        @if (showsFolderIcon(node)) {
+            <!-- The icon joins the row rather than the toggler. PrimeNG only renders a toggler for
+                 non-leaf rows, so an icon living there would vanish on exactly the childless folders
+                 that still need to look like folders.
+
+                 `gap-1` matches the `0.25rem` the theme puts between a node's own children, so this
+                 icon sits the same distance from its label as a site row's globe does from its
+                 hostname.
+
+                 The wrapper is only introduced when there is an icon to place: consumers project
+                 label templates whose root is a block element, which would drop below an
+                 inline sibling. Adding the flex row unconditionally would relayout every consumer,
+                 including the roles tree, for nothing. -->
+            <span class="flex min-w-0 items-center gap-1">
+                <i
+                    class="pi shrink-0 leading-none! text-gray-800"
+                    [class]="node.expanded ? 'pi-folder-open' : 'pi-folder'"
+                    [attr.data-expanded]="!!node.expanded"
+                    data-testid="tree-node-folder-icon"
+                    aria-hidden="true"></i>
+                <ng-container *ngTemplateOutlet="nodeLabel; context: { $implicit: node }" />
+            </span>
         } @else {
-            <dot-truncated-label>
-                <span data-testid="tree-node-label" class="font-normal">
-                    {{ node.label | dotFolderName }}
-                </span>
-            </dot-truncated-label>
+            <ng-container *ngTemplateOutlet="nodeLabel; context: { $implicit: node }" />
         }
     </ng-template>
 
@@ -76,3 +92,19 @@
         }
     </ng-template>
 </p-tree>
+
+<!-- The row's label, factored out so the folder-icon branch above and the plain branch can share
+     one definition instead of repeating it. Declared outside `<p-tree>` because PrimeNG collects
+     projected templates by the `pTemplate` directive, and this one has none — it is a local
+     reference, not a tree slot. -->
+<ng-template #nodeLabel let-node>
+    @if (nodeLabelTemplate(); as labelTpl) {
+        <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
+    } @else {
+        <dot-truncated-label>
+            <span data-testid="tree-node-label" class="font-normal">
+                {{ node.label | dotFolderName }}
+            </span>
+        </dot-truncated-label>
+    }
+</ng-template>
