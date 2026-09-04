@@ -47,11 +47,23 @@ public class DataSourceStrategyProvider {
 
     /**
      * Method that loads the datasource using the strategy defined by the
-     * <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property, which defaults to
-     * {@link SystemEnvDataSourceStrategy} so that {@code DB_*} environment
-     * variables work out of the box. If the property is explicitly set to an
-     * empty value, the datasource is initialized using any of these
-     * implementations (respecting order):
+     * <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property:
+     * <ul>
+     *     <li><b>Not set (default):</b> {@link SystemEnvDataSourceStrategy} is used,
+     *     so {@code DB_*} environment variables work out of the box. Note that if the
+     *     environment variables are absent or the datasource cannot be created, the
+     *     {@code context.xml} fallback still applies (see below).</li>
+     *     <li><b>Set to a class name:</b> that {@link DotDataSourceStrategy}
+     *     implementation is used, e.g. {@code com.dotmarketing.db.TomcatDataSourceStrategy}
+     *     (the integration test harness does this).</li>
+     *     <li><b>Set to an empty value (escape hatch):</b> the legacy ordered fallback
+     *     chain below is used instead. This exists for deployments that rely on
+     *     {@code db.properties} or Docker Secrets, which the SystemEnv default would
+     *     otherwise bypass. Set it in a properties file (e.g.
+     *     {@code dotmarketing-config.properties}) or as the env var
+     *     {@code DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS=}.</li>
+     * </ul>
+     * The legacy ordered fallback chain is:
      * <ol>
      *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} implemented by
      *     {@link DBPropertiesDataSourceStrategy}</li>

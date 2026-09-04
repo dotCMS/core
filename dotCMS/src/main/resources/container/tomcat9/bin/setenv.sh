@@ -67,7 +67,12 @@ export DOT_FELIX_FELIX_FILEINSTALL_DIR=${DOT_FELIX_FELIX_FILEINSTALL_DIR:-"/data
 export DOT_FELIX_FELIX_UPLOAD_DIR=${DOT_FELIX_FELIX_UPLOAD_DIR:-"/data/shared/felix/upload"}
 
 # Database Configuration
-export DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS="com.dotmarketing.db.SystemEnvDataSourceStrategy"
+# NOTE: DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS is intentionally NOT exported here.
+# DataSourceStrategyProvider already defaults to SystemEnvDataSourceStrategy (so
+# DB_* env vars work out of the box). Force-exporting it here would override any
+# operator-provided value and make the documented empty-value escape hatch
+# (which restores the legacy db.properties / Docker Secrets resolution order)
+# impossible to use in Dockerized environments.
 export DB_DRIVER=${DB_DRIVER:-"org.postgresql.Driver"}
 export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://db.dotcms.site/dotcms"}
 export DB_USERNAME=${DB_USERNAME:-"dotcmsdbuser"}
