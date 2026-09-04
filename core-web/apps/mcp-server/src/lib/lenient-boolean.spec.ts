@@ -1,4 +1,4 @@
-import { lenientBoolean } from './upload_assets';
+import { lenientBoolean } from './lenient-boolean';
 
 describe('lenientBoolean', () => {
     const publish = lenientBoolean(true);
