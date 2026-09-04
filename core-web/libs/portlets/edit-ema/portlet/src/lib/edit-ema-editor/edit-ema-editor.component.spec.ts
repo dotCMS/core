@@ -3130,6 +3130,53 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+            describe('style editor permission (#37376)', () => {
+                const SELECTED = { x: 0, y: 0, width: 0, height: 0 };
+
+                const selectWith = (canEdit?: boolean) => {
+                    spectator.component['uveStore'].setSelected({
+                        bounds: SELECTED,
+                        payload: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK,
+                            contentlet: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                ...(canEdit === undefined ? {} : { canEdit })
+                            }
+                        }
+                    });
+                    spectator.detectChanges();
+                };
+
+                it('should report the selected contentlet as not styleable when denied', () => {
+                    selectWith(false);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(false);
+                });
+
+                it('should allow styling when the user can edit', () => {
+                    selectWith(true);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
+                });
+
+                it('should allow styling when the permission is absent', () => {
+                    selectWith(undefined);
+
+                    expect(spectator.component['$canEditSelectedContentlet']()).toBe(true);
+                });
+
+                it('should not open the style editor panel for a denied contentlet', () => {
+                    const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
+                    selectWith(false);
+                    setEditPanelOpenSpy.mockClear();
+
+                    spectator.component['handleSelectContent'](EDIT_ACTION_PAYLOAD_MOCK);
+                    spectator.detectChanges();
+
+                    expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
+                });
+            });
+
             describe('placeItem - content-type drag', () => {
                 const contentTypeDragItem = {
                     baseType: 'CONTENT',

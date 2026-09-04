@@ -1117,6 +1117,42 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
+        describe('style editor button disabled state', () => {
+            // Style properties describe how this contentlet presents itself, so
+            // they follow contentlet permission rather than page permission.
+            const paletteButton = () =>
+                (spectator.query(byTestId('hover-palette-button')) as HTMLElement)?.querySelector(
+                    'button'
+                );
+
+            beforeEach(() => {
+                spectator.setInput('showStyleEditorOption', true);
+                spectator.detectChanges();
+            });
+
+            it('should disable the style button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(paletteButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the style button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(paletteButton()?.disabled).toBe(false);
+            });
+
+            it('should disable the Style entry in the overflow menu when canEdit is false', () => {
+                setPermission(false);
+
+                const styleItem = spectator.component
+                    .actionsMenuItems()
+                    .find((item) => item.icon === 'pi pi-palette');
+
+                expect(styleItem?.disabled).toBe(true);
+            });
+        });
+
         describe('structural page actions stay ungated', () => {
             // A user allowed into the page editor may change the page's
             // composition. Contentlet permission governs the contentlet's
