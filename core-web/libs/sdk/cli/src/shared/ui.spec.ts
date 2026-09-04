@@ -38,6 +38,27 @@ describe('renderSummary (FR-028, FR-024e, FR-027)', () => {
         expect(out).toMatch(/unverified|not confirmed/i);
     });
 
+    it('does NOT blame permissions for a target that failed to write at all', () => {
+        // A failed target has permissionsApplied false because nothing was written, not
+        // because the platform refused. Saying otherwise blamed the OS for our own error.
+        const out = renderSummary({
+            outcomes: [
+                { ...ok('cursor'), result: 'failed', reason: 'EISDIR', permissionsApplied: false }
+            ],
+            connection: 'ok'
+        });
+        expect(out).toContain('EISDIR');
+        expect(out).not.toMatch(/could not restrict/i);
+    });
+
+    it('does NOT blame permissions for a skipped target', () => {
+        const out = renderSummary({
+            outcomes: [{ ...ok('cursor'), result: 'skipped', permissionsApplied: false }],
+            connection: 'skipped'
+        });
+        expect(out).not.toMatch(/could not restrict/i);
+    });
+
     it('says when permissions could not be applied rather than implying protection', () => {
         const out = renderSummary({
             outcomes: [{ ...ok('cursor'), permissionsApplied: false }], connection: 'ok'

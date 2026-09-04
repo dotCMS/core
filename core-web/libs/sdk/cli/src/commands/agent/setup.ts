@@ -49,8 +49,16 @@ function resolveAuthMode(opts: Partial<RunOptions>): { token?: string; user?: st
     const password = opts.password ?? readEnv(ENV_KEYS.password);
     const user = opts.user;
 
-    if (opts.authToken && (opts.user || opts.password)) throw new ConflictingAuthError();
-    if (token && (user || password)) throw new ConflictingAuthError();
+    if (token && (user || password)) {
+        // Name the source the developer actually used, flag or environment variable.
+        const tokenSource = opts.authToken ? '--authToken' : ENV_KEYS.authToken;
+        const credentialSource = opts.user
+            ? '--user'
+            : opts.password
+              ? '--password'
+              : ENV_KEYS.password;
+        throw new ConflictingAuthError(tokenSource, credentialSource);
+    }
     return { token, user, password };
 }
 
@@ -155,21 +163,44 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         }
     }
 
-    if (opts.skipMcp) {
-        return { outcomes: [], connection: 'skipped', exitCode: 0 };
-    }
-
-    // 5. Write. One target's failure never stops the others and never rolls back what already
+    // 5. Write — unless asked not to. `--skip-mcp` skips WRITING, nothing else: the flags are
+    //    documented as independent, and returning here also skipped the skills install and the
+    //    summary, so `--skip-mcp` alone did nothing at all and said nothing about it.
+    //    The connection check is skipped implicitly, since there is no configuration to prove
+    //    (FR-024b). One target's failure never stops the others and never rolls back what already
     //    succeeded (FR-020a, FR-020d) — a half-configured machine the developer can read beats
     //    an all-or-nothing unwind.
-    step(`Writing configuration for ${targets.length} editor${targets.length === 1 ? '' : 's'}`);
-    const outcomes: TargetOutcome[] = [];
+    // 7. Deduplicate BEFORE counting: `--agent cursor --agent cursor` announced two editors
+    //    and wrote one, and two targets can legitimately resolve to the same file.
     const byId = new Map(targets.map((t) => [t.id as string, t]));
+    const plan: { target: (typeof targets)[number]; file: string }[] = [];
     const seen = new Set<string>();
     for (const target of targets) {
         const file = target.configPath(scope, opts.cwd);
         if (!file || seen.has(file)) continue;
         seen.add(file);
+        plan.push({ target, file });
+    }
+
+    const outcomes: TargetOutcome[] = [];
+    if (opts.skipMcp) {
+        // Say so. Returning an empty summary made `--skip-mcp` look like a no-op run.
+        for (const { target, file } of plan) {
+            outcomes.push({
+                targetId: target.id,
+                scope,
+                path: file,
+                result: 'skipped',
+                reason: 'configuration writing skipped (--skip-mcp)',
+                permissionsApplied: false,
+                skillsInstalled: 'no'
+            });
+        }
+    }
+    if (!opts.skipMcp && plan.length) {
+        step(`Writing configuration for ${plan.length} editor${plan.length === 1 ? '' : 's'}`);
+    }
+    for (const { target, file } of opts.skipMcp ? [] : plan) {
         try {
             // Ask BEFORE replacing (FR-017). --force and --yes skip the question, never the
             // token verification that already happened above.
@@ -229,7 +260,12 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     //    `--yes` takes the SAFE answer here rather than skipping the step: this is the one
     //    confirmation where the conventional meaning of -y would be actively harmful.
     let versionControl: GitignoreOutcome | undefined;
-    const written = outcomes.filter((o) => o.result !== 'failed' && o.path).map((o) => o.path as string);
+    // Only files actually written. `skipped` outcomes carry a path so the summary can name
+    // them, and including those made --skip-mcp announce "these files now contain an access
+    // token" about files that were never created.
+    const written = outcomes
+        .filter((o) => (o.result === 'written' || o.result === 'replaced') && o.path)
+        .map((o) => o.path as string);
     if (scope === 'folder' && written.length) {
         versionControl = await protectFromVersionControl({
             files: written,
@@ -240,10 +276,18 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
 
     // 7. Skills — non-fatal by design (FR-026).
     if (!opts.skipSkills) {
-        const ids = outcomes
-            .filter((o) => o.result !== 'failed')
-            .map((o) => byId.get(o.targetId))
-            .filter((t): t is NonNullable<typeof t> => Boolean(t?.skillsAgentId))
+        // Driven by the SELECTED targets, not by successful writes. Deriving it from writes
+        // meant `--skip-mcp` silently installed nothing, even though the two flags are
+        // independent. A target whose write failed is still excluded — its editor is not
+        // configured, so skills for it would be half a job.
+        const eligible = opts.skipMcp
+            ? plan.map((p) => p.target)
+            : outcomes
+                  .filter((o) => o.result !== 'failed')
+                  .map((o) => byId.get(o.targetId))
+                  .filter((t): t is NonNullable<typeof t> => Boolean(t));
+        const ids = eligible
+            .filter((t) => Boolean(t.skillsAgentId))
             .map((t) => t.skillsAgentId as string);
         if (ids.length) {
             step('Installing the dotCMS skills');
@@ -265,7 +309,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     // 8. Prove the agent connects (FR-024a).
     let connection: SetupResult['connection'] = 'skipped';
     let connectionReason: string | undefined;
-    if (!opts.skipVerify) {
+    if (!opts.skipVerify && !opts.skipMcp) {
         step('Starting the server to confirm it responds (this can take a minute on a cold npx cache)');
         const result = await confirmConnection({ url, token: token.value });
         connection = result.ok ? 'ok' : 'failed';

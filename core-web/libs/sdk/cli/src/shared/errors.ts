@@ -20,9 +20,12 @@ export class InvalidUrlError extends CliError {
     constructor(value: string) {
         // Describing the problem is not enough: with no verbose mode, the message has to
         // carry the fix too (FR-032a).
+        // Strip ANY scheme, not just http(s): stripping only http(s) turned
+        // "ftp://demo.dotcms.com" into the suggestion "https://ftp://demo.dotcms.com".
+        const host = value.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
         super(
-            `"${value}" is not a valid instance address. Pass it with a scheme, ` +
-                `e.g. https://${value.replace(/^https?:\/\//i, '').replace(/^\/+/, '') || 'demo.dotcms.com'}`
+            `"${value}" is not a valid instance address. Pass it with an http:// or https:// ` +
+                `scheme, e.g. https://${host || 'demo.dotcms.com'}`
         );
     }
 }
@@ -63,10 +66,14 @@ export class UnknownTargetError extends UsageError {
 }
 
 export class ConflictingAuthError extends UsageError {
-    constructor() {
+    /**
+     * Names the sources the developer actually used. Reporting `--authToken` to someone who set
+     * `DOTCMS_AUTH_TOKEN` and never typed a flag sends them looking for a flag that is not there.
+     */
+    constructor(tokenSource: string, credentialSource: string) {
         super(
-            '--authToken cannot be combined with --user or --password. They are alternative ways ' +
-                'to authenticate, not a fallback chain — pass one or the other. Nothing has been written.'
+            `${tokenSource} cannot be combined with ${credentialSource}. They are alternative ways ` +
+                'to authenticate, not a fallback chain — use one or the other. Nothing has been written.'
         );
     }
 }

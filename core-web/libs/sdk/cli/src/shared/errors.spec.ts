@@ -27,7 +27,7 @@ const CASES: { name: string; error: Error; mustName: string }[] = [
     { name: 'CredentialsRejectedError', error: new CredentialsRejectedError('https://x.example.com'), mustName: 'x.example.com' },
     { name: 'TokenRejectedError', error: new TokenRejectedError('https://x.example.com'), mustName: 'x.example.com' },
     { name: 'UnknownTargetError', error: new UnknownTargetError('nope', ['cursor', 'codex']), mustName: 'nope' },
-    { name: 'ConflictingAuthError', error: new ConflictingAuthError(), mustName: '--authToken' },
+    { name: 'ConflictingAuthError', error: new ConflictingAuthError('--authToken', '--password'), mustName: '--authToken' },
     { name: 'MissingInputError', error: new MissingInputError('A password'), mustName: 'A password' },
     { name: 'MalformedConfigError', error: new MalformedConfigError('/tmp/mcp.json'), mustName: '/tmp/mcp.json' },
     { name: 'NoConfigPathError', error: new NoConfigPathError('Codex', 'folder'), mustName: 'Codex' }
@@ -55,9 +55,47 @@ describe.each(CASES)('$name', ({ error, mustName }) => {
     });
 });
 
+describe('ConflictingAuthError names the source actually used', () => {
+    it('names environment variables when no flag was passed', () => {
+        // Telling someone who set DOTCMS_AUTH_TOKEN to stop passing --authToken sends them
+        // hunting for a flag they never typed.
+        const err = new ConflictingAuthError('DOTCMS_AUTH_TOKEN', 'DOTCMS_PASSWORD');
+        expect(err.message).toContain('DOTCMS_AUTH_TOKEN');
+        expect(err.message).toContain('DOTCMS_PASSWORD');
+        expect(err.message).not.toContain('--authToken');
+        expect(err.message).not.toContain('--password');
+    });
+
+    it('names flags when flags were passed', () => {
+        const err = new ConflictingAuthError('--authToken', '--user');
+        expect(err.message).toContain('--authToken');
+        expect(err.message).toContain('--user');
+    });
+});
+
+describe('InvalidUrlError suggests a usable address', () => {
+    it('strips a non-http scheme rather than prefixing https:// onto it', () => {
+        // "ftp://demo.dotcms.com" previously suggested "https://ftp://demo.dotcms.com".
+        const err = new InvalidUrlError('ftp://demo.dotcms.com');
+        expect(err.message).toContain('https://demo.dotcms.com');
+        expect(err.message).not.toContain('https://ftp://');
+    });
+
+    it.each(['file:///etc/passwd', 'javascript:alert(1)', 'ws://x.example.com'])(
+        'produces no double scheme for %s',
+        (bad) => {
+            expect(new InvalidUrlError(bad).message).not.toMatch(/https:\/\/\w+:\/\//);
+        }
+    );
+
+    it('still suggests a host for a bare address', () => {
+        expect(new InvalidUrlError('demo.dotcms.com').message).toContain('https://demo.dotcms.com');
+    });
+});
+
 describe('exit-code classification', () => {
     it('marks usage mistakes so the CLI can exit 2 rather than 1', () => {
-        expect(new ConflictingAuthError()).toBeInstanceOf(UsageError);
+        expect(new ConflictingAuthError('--authToken', '--user')).toBeInstanceOf(UsageError);
         expect(new UnknownTargetError('x', ['y'])).toBeInstanceOf(UsageError);
         expect(new MissingInputError('A password')).toBeInstanceOf(UsageError);
     });

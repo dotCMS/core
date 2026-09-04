@@ -515,3 +515,84 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
         expect(calls[0]).toBe('ask:url');
     });
 });
+
+describe('--skip-mcp is independent of --skip-skills', () => {
+    it('still installs skills when only writing is skipped', async () => {
+        mockAcceptedToken();
+        const install = jest
+            .spyOn(skills, 'installSkills')
+            .mockResolvedValue({ ok: true, command: 'npx skills add …' });
+
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipMcp: true
+        });
+        expect(install).toHaveBeenCalled();
+    });
+
+    it('writes nothing, but SAYS the write was skipped', async () => {
+        mockAcceptedToken();
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipMcp: true, skipSkills: true
+        });
+        await expect(fs.readdir(dir)).resolves.toEqual([]);
+        expect(result.outcomes).toHaveLength(1);
+        expect(result.outcomes[0].result).toBe('skipped');
+        expect(result.outcomes[0].reason).toMatch(/skip-mcp/);
+    });
+
+    it('does not claim files contain a token when none were written', async () => {
+        mockAcceptedToken();
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        const confirmExclude = jest.fn().mockResolvedValue(true);
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipMcp: true, skipSkills: true, confirmExclude
+        });
+        expect(result.versionControl).toBeUndefined();
+        expect(confirmExclude).not.toHaveBeenCalled();
+    });
+
+    it('skips the connection check too — there is no configuration to prove', async () => {
+        mockAcceptedToken();
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipMcp: true
+        });
+        expect(result.connection).toBe('skipped');
+    });
+});
+
+describe('a repeated --agent is counted once', () => {
+    it('reports one editor, not two, and writes once', async () => {
+        mockAcceptedToken();
+        const steps: string[] = [];
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor', 'cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, onProgress: (t) => steps.push(t)
+        });
+        expect(result.outcomes).toHaveLength(1);
+        expect(steps.join(' ')).toContain('1 editor');
+        expect(steps.join(' ')).not.toContain('2 editors');
+    });
+});
+
+describe('a pre-existing directory keeps its own permissions', () => {
+    it('does not widen a directory it did not create', async () => {
+        mockAcceptedToken();
+        const cursorDir = path.join(dir, '.cursor');
+        await fs.mkdir(cursorDir, { recursive: true });
+        await fs.chmod(cursorDir, 0o750);
+
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true
+        }).catch(() => undefined);
+
+        const mode = (await fs.stat(cursorDir)).mode & 0o777;
+        expect(mode).toBe(0o750);
+    });
+});

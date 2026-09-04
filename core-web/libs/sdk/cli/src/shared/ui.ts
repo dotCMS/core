@@ -51,7 +51,10 @@ export function renderSummary(input: SummaryInput): string {
         ];
         lines.push(bits.join('  '));
         if (o.result === 'failed' && o.reason) lines.push(`      ${o.reason}`);
-        if (!o.permissionsApplied && o.path) {
+        // Only where a file was actually written. A failed target has permissionsApplied
+        // false because nothing was written at all, not because the platform refused — saying
+        // otherwise blamed macOS for a permission error of our own making.
+        if (!o.permissionsApplied && o.path && o.result !== 'failed' && o.result !== 'skipped') {
             lines.push('      could not restrict file permissions on this platform');
         }
         if (o.skillsInstalled === 'unverified') {

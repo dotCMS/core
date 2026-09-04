@@ -68,9 +68,16 @@ export async function restrictFile(file: string, canRestrict = CAN_RESTRICT): Pr
     return true;
 }
 
+/**
+ * Create the directory if it is missing, and restrict ONLY what we created.
+ *
+ * Widening a directory the developer already owns is not ours to do: a `.cursor` deliberately
+ * set to 0500 was silently reopened to 0700. `mkdir` tells us whether it existed — it returns
+ * the first path created, or undefined when there was nothing to create.
+ */
 export async function ensureDir(dir: string): Promise<void> {
-    await fs.mkdir(dir, { recursive: true });
-    if (CAN_RESTRICT) await fs.chmod(dir, DIR_MODE).catch(() => undefined);
+    const created = await fs.mkdir(dir, { recursive: true });
+    if (created && CAN_RESTRICT) await fs.chmod(dir, DIR_MODE).catch(() => undefined);
 }
 
 /**

@@ -99,3 +99,77 @@ describe('toml target — malformed input (FR-018)', () => {
         expect(await fs.readFile(file, 'utf8')).toBe('this = = not toml');
     });
 });
+
+describe('comments and formatting survive (D3)', () => {
+    const handWritten = `# hand written, keep me
+model = "o3"
+
+# a comment attached to another server
+[mcp_servers.other-server]
+command = "node"   # trailing note
+
+# and one before an unrelated table
+[some.unrelated.table]
+value = 42
+`;
+
+    it('keeps a leading comment', async () => {
+        await seed(handWritten);
+        const written = await write();
+        expect(await fs.readFile(written, 'utf8')).toContain('# hand written, keep me');
+    });
+
+    it('keeps comments attached to other tables, including trailing ones', async () => {
+        await seed(handWritten);
+        const raw = await fs.readFile(await write(), 'utf8');
+        expect(raw).toContain('# a comment attached to another server');
+        expect(raw).toContain('# trailing note');
+        expect(raw).toContain('# and one before an unrelated table');
+    });
+
+    it('leaves every line outside our own tables byte-for-byte identical', async () => {
+        await seed(handWritten);
+        const raw = await fs.readFile(await write(), 'utf8');
+        for (const line of handWritten.split('\n').filter((l) => l.trim())) {
+            expect(raw).toContain(line);
+        }
+    });
+
+    it('replaces our table on a re-run without duplicating or drifting', async () => {
+        await seed(handWritten);
+        await write();
+        const first = await fs.readFile(codex().configPath('folder', dir) as string, 'utf8');
+        await write();
+        const second = await fs.readFile(codex().configPath('folder', dir) as string, 'utf8');
+        expect(second).toBe(first);
+        expect(second.match(/\[mcp_servers\.dotcms\]/g) ?? []).toHaveLength(1);
+        expect(second).toContain('# hand written, keep me');
+    });
+
+    it('replaces a hand-edited dotcms table without eating the comment after it', async () => {
+        await seed(`${handWritten}
+[mcp_servers.dotcms]
+command = "npx"
+args = ["stale"]
+
+# a comment that comes after ours
+[trailing.table]
+x = 1
+`);
+        const raw = await fs.readFile(await write(), 'utf8');
+        expect(raw).toContain('# a comment that comes after ours');
+        expect(raw).toContain('[trailing.table]');
+        expect(raw).not.toContain('stale');
+        expect(parse(raw)).toBeDefined();
+    });
+
+    it('still produces valid TOML in every case', async () => {
+        await seed(handWritten);
+        const raw = await fs.readFile(await write(), 'utf8');
+        const doc = parse(raw) as Record<string, never>;
+        expect(doc['model']).toBe('o3');
+        expect(doc['mcp_servers']['other-server']).toEqual({ command: 'node' });
+        expect(doc['mcp_servers']['dotcms']['env']['DOTCMS_URL']).toBe(URL_);
+        expect(doc['some']['unrelated']['table']).toEqual({ value: 42 });
+    });
+});
