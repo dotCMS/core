@@ -27,6 +27,22 @@ describe('instance', () => {
         it('rejects an address with no scheme rather than writing it through verbatim', async () => {
             await expect(resolveUrl({ url: 'demo.dotcms.com' })).rejects.toThrow(/scheme|protocol|https?:\/\//i);
         });
+
+        /**
+         * `new URL()` alone is not enough: it happily parses ftp:, file: and javascript:. Only
+         * an explicit http(s) check rejects those, and nothing else in the flow would — the
+         * address is handed to fetch and written into an editor's config.
+         */
+        it.each(['ftp://demo.dotcms.com', 'file:///etc/passwd', 'javascript:alert(1)'])(
+            'rejects the non-HTTP scheme %s',
+            async (bad) => {
+                await expect(resolveUrl({ url: bad })).rejects.toThrow(/scheme|protocol|https?:\/\//i);
+            }
+        );
+
+        it('accepts plain http, not only https — local instances are the common case', async () => {
+            await expect(resolveUrl({ url: 'http://localhost:8082' })).resolves.toBe('http://localhost:8082');
+        });
     });
 
     describe('checkReachable (FR-005)', () => {
