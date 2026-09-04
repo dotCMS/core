@@ -181,8 +181,12 @@ describe('DotUsersApiTokensTabComponent', () => {
             spectator.component['onShowRevokedChange'](true);
             spectator.detectChanges();
 
+            // Standard empty-state shape now renders an icon glyph + copy —
+            // scoped to the paragraph so the assertion isn't dependent on
+            // the material symbol text leaking into `textContent`.
             const empty = spectator.query(byTestId('users-api-tokens-empty'));
-            expect(empty?.textContent?.trim()).toBe('This user has no API tokens.');
+            const copy = empty?.querySelector('p');
+            expect(copy?.textContent?.trim()).toBe('This user has no API tokens.');
         });
 
         it('should reveal the JWT on row click for a valid row', () => {

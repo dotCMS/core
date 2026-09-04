@@ -126,10 +126,16 @@
                         class="flex min-h-0 flex-1 flex-col"
                         data-testid="users-dialog-permissions-tab" />
                 </p-tabpanel>
-                <p-tabpanel [value]="3" class="block min-h-0 flex-1 overflow-auto">
-                    <div class="px-7 pt-4 pb-6">
+                <!--
+                    API Tokens tab claims the tab body the same way Roles
+                    does: only the table scrolls, header stays pinned.
+                    Same tabpanel + wrapper pair as `[value]="1"`.
+                -->
+                <p-tabpanel [value]="3" class="flex min-h-0 flex-1 flex-col overflow-hidden">
+                    <div class="flex min-h-0 flex-1 flex-col px-7 pt-4">
                         <dot-users-api-tokens-tab
                             [userId]="user?.userId ?? null"
+                            class="flex min-h-0 flex-1 flex-col"
                             data-testid="users-dialog-api-tokens-tab" />
                     </div>
                 </p-tabpanel>

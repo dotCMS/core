@@ -96,8 +96,16 @@
         table wraps its paginator in — an inline overlay would be clipped and
         cut off the second option on open, exactly the way it does in the drive.
     -->
+    <!--
+        `tableLayout: fixed` freezes column widths against the first
+        row's declared sizes so each search / page turn keeps the
+        columns exactly where the previous frame had them — a plain
+        `auto` layout renegotiates widths from row content on every
+        response, which is what caused the horizontal shift.
+    -->
     <p-table
         [value]="store.users()"
+        [tableStyle]="{ tableLayout: 'fixed', width: '100%' }"
         [lazy]="true"
         (onLazyLoad)="onLazyLoad($event)"
         [paginator]="true"
@@ -124,7 +132,7 @@
                 <th style="width: 3rem">
                     <p-tableHeaderCheckbox />
                 </th>
-                <th pSortableColumn="firstName">
+                <th pSortableColumn="firstName" style="width: 22rem">
                     {{ 'users.table.header.user' | dm }}
                     <p-sortIcon field="firstName" />
                 </th>
@@ -132,8 +140,8 @@
                     {{ 'users.table.header.email' | dm }}
                     <p-sortIcon field="emailAddress" />
                 </th>
-                <th style="width: 18rem">{{ 'users.table.header.roles' | dm }}</th>
-                <th style="width: 12rem">{{ 'users.table.header.access' | dm }}</th>
+                <th style="width: 22rem">{{ 'users.table.header.roles' | dm }}</th>
+                <th style="width: 15rem">{{ 'users.table.header.access' | dm }}</th>
                 <th pSortableColumn="lastLoginDate" style="width: 12rem">
                     {{ 'users.table.header.last-login' | dm }}
                     <p-sortIcon field="lastLoginDate" />
