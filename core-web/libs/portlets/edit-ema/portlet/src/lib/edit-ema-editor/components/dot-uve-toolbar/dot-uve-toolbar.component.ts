@@ -35,6 +35,8 @@ import {
     DotLanguage,
     DEFAULT_VARIANT_ID,
     DEFAULT_VARIANT_NAME,
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
     EXPERIMENT_RETURN_PARAM,
     EXPERIMENT_RETURN_PORTLET
 } from '@dotcms/dotcms-models';
@@ -352,6 +354,18 @@ export class DotUveToolbarComponent {
         };
 
         /**
+         * Where inside Configure to land. The Variants card is where this round-trip started, and
+         * Configure is four stacked cards tall — returning to the top of it loses the reader's
+         * place. Only set on the portlet destination: the legacy screen's behaviour stays as it is
+         * (FR-018).
+         */
+        const portletReturnParams = {
+            ...clearedParams,
+            [EXPERIMENT_RETURN_PARAM]: null,
+            [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+        };
+
+        /**
          * The destination answers "where did this round-trip start?", falling back to the
          * entry-point switch only when the URL carries no answer — a pasted or bookmarked variant
          * link.
@@ -366,7 +380,7 @@ export class DotUveToolbarComponent {
                 // No `queryParamsHandling`: `url`, `language_id` and the persona key are UVE's, and
                 // the list's `parseViewState` does not recognise them — they would sit in its
                 // address indefinitely.
-                queryParams: { ...clearedParams, [EXPERIMENT_RETURN_PARAM]: null }
+                queryParams: portletReturnParams
             });
 
             return;
@@ -379,7 +393,7 @@ export class DotUveToolbarComponent {
             .subscribe((portletEntryPointEnabled) => {
                 if (portletEntryPointEnabled) {
                     this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
-                        queryParams: { ...clearedParams, [EXPERIMENT_RETURN_PARAM]: null }
+                        queryParams: portletReturnParams
                     });
 
                     return;

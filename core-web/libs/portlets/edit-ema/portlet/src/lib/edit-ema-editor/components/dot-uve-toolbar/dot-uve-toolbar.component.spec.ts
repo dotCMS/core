@@ -28,6 +28,8 @@ import { LoginService } from '@dotcms/dotcms-js';
 import {
     DotExperiment,
     DotLanguage,
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
     DEFAULT_VARIANT_ID,
     EXPERIMENT_RETURN_PARAM,
     EXPERIMENT_RETURN_PORTLET
@@ -1843,9 +1845,30 @@ describe('DotUveToolbarComponent', () => {
                                 {
                                     queryParams: {
                                         ...CLEARED,
-                                        [EXPERIMENT_RETURN_PARAM]: null
+                                        [EXPERIMENT_RETURN_PARAM]: null,
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
                                     }
                                 }
+                            );
+                        });
+
+                        // The Variants card is where the round-trip started, so returning to the
+                        // top of a four-card form loses the reader's place.
+                        it('should ask Configure to land on the Variants card', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                expect.anything(),
+                                expect.objectContaining({
+                                    queryParams: expect.objectContaining({
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+                                    })
+                                })
                             );
                         });
 

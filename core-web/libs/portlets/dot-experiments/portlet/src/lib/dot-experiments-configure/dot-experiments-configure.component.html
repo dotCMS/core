@@ -65,6 +65,7 @@
             </dot-experiments-configure-details>
             <dot-experiments-configure-goal [field]="formTree.goal" [gated]="$isGated()" />
             <dot-experiments-configure-variants
+                data-testid="configure-section-variants"
                 [field]="formTree.variantWeights"
                 [typeField]="formTree.trafficProportionType"
                 [gated]="$isGated()" />

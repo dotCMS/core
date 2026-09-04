@@ -324,3 +324,22 @@ export const EXPERIMENT_RETURN_PARAM = 'experimentReturn';
  * switch-off return destination byte-identical to today (FR-018).
  */
 export const EXPERIMENT_RETURN_PORTLET = 'portlet';
+
+/**
+ * Which section of the Configure screen to land on, when landing anywhere but the top is the point.
+ *
+ * Same reason as {@link EXPERIMENT_RETURN_PARAM} for living here: the toolbar in `edit-ema` writes
+ * it and the Configure screen in `dot-experiments` reads it, so a constant in either lib would be a
+ * cross-feature import from the other.
+ *
+ * A query param rather than navigation state: `Navigation.extras.state` is only readable while the
+ * navigation is in flight, which puts the read in a race with the component's own construction. The
+ * param is boring, survives a reload, and says what it means in the address.
+ */
+export const CONFIGURE_SECTION_PARAM = 'section';
+
+/**
+ * The Variants card. Set on the way back from editing or previewing a variant, because that card is
+ * where the round-trip started and scrolling back to the top of the form loses the reader's place.
+ */
+export const CONFIGURE_SECTION_VARIANTS = 'variants';

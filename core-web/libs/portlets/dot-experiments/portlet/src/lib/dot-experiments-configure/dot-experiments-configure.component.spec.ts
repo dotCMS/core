@@ -13,6 +13,7 @@ import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatus,
+    CONFIGURE_SECTION_VARIANTS,
     DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     ExperimentsConfigProperties,
@@ -196,10 +197,13 @@ describe('DotExperimentsConfigureComponent', () => {
      */
     const createComponentOn = ({
         experimentId,
-        configProps
+        configProps,
+        section
     }: {
         experimentId?: string;
         configProps?: Record<string, string>;
+        /** The `section` query param, set by the return leg of the variant round-trip. */
+        section?: string;
     }) =>
         createComponentFactory({
             component: DotExperimentsConfigureComponent,
@@ -219,6 +223,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap(experimentId ? { experimentId } : {}),
+                            queryParamMap: convertToParamMap(section ? { section } : {}),
                             data: configProps ? { config: configProps } : {}
                         }
                     }
@@ -969,6 +974,58 @@ describe('DotExperimentsConfigureComponent', () => {
         });
     });
 
+    // #37005. Configure is four stacked cards tall, and the variant round-trip starts and ends at
+    // the Variants card — so coming back to the top of the form loses the reader's place.
+    describe('returning from a variant', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            section: CONFIGURE_SECTION_VARIANTS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should bring the Variants card into view once the experiment is loaded', () => {
+            spectator.detectChanges();
+
+            const variants = spectator.query(byTestId('configure-section-variants')) as HTMLElement;
+            const scrollToVariants = jest.spyOn(variants, 'scrollIntoView');
+
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollToVariants).toHaveBeenCalled();
+        });
+    });
+
+    // Entering from the list, or creating one, still lands at the top of the form.
+    describe('entering Configure any other way', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should not scroll to any section', () => {
+            spectator.detectChanges();
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
+
     describe('on the creation screen', () => {
         const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
 
@@ -1127,6 +1184,9 @@ describe('DotExperimentsConfigureComponent', () => {
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
+                            // Present and empty, as `ActivatedRoute` always is: the screen reads
+                            // the `section` param from here on init.
+                            queryParamMap: convertToParamMap({}),
                             data: { config: CONFIGURED_DURATIONS }
                         }
                     }
