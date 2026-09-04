@@ -10,6 +10,7 @@ import com.dotcms.repackage.org.jsoup.Jsoup;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
+import static com.dotmarketing.portlets.contentlet.model.Contentlet.TITTLE_KEY;
 import com.dotmarketing.util.Logger;
 import com.dotmarketing.util.UtilMethods;
 import com.liferay.portal.model.User;
@@ -64,11 +65,16 @@ public class LongTextPreviewStrategy extends AbstractTransformStrategy<Contentle
         if (!UtilMethods.isSet(fields)) {
             return;
         }
-        fields.forEach(field -> Try.run(() ->
-                map.put(field.variable(), extractor.apply(map.get(field.variable()))))
-                .onFailure(e -> Logger.warn(LongTextPreviewStrategy.class, String.format(
-                        "An error occurred extracting a long-text preview for field '%s' [%s]: %s",
-                        field.variable(), field.id(), e.getMessage()))));
+        fields.stream()
+                // AC-008: the "title" key is independently populated by COMMON_PROPS from
+                // Contentlet#getTitle() -- never overwrite it with a truncated preview, even when
+                // the content type's title-source field is itself WYSIWYG/TextArea/Story Block.
+                .filter(field -> !TITTLE_KEY.equals(field.variable()))
+                .forEach(field -> Try.run(() ->
+                        map.put(field.variable(), extractor.apply(map.get(field.variable()))))
+                        .onFailure(e -> Logger.warn(LongTextPreviewStrategy.class, String.format(
+                                "An error occurred extracting a long-text preview for field '%s' [%s]: %s",
+                                field.variable(), field.id(), e.getMessage()))));
     }
 
     /** WYSIWYG/TextArea: strip HTML via Jsoup, then truncate the plain text. */

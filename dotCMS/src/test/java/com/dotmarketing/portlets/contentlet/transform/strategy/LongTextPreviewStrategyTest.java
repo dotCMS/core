@@ -228,6 +228,33 @@ public class LongTextPreviewStrategyTest {
         assertEquals("Some title", map.get("title"));
     }
 
+    /**
+     * AC-008: when a content type's title-source field is itself a WYSIWYG or TextArea field
+     * (i.e. its variable is literally {@code "title"}), the {@code title} map key -- already
+     * populated independently by {@code DefaultTransformStrategy}/{@code COMMON_PROPS} from
+     * {@code Contentlet#getTitle()} -- must NOT be overwritten with a truncated preview. Found
+     * while designing this coverage: without the guard, {@code LongTextPreviewStrategy} would
+     * match the field by its WYSIWYG type and clobber the already-correct {@code title} value.
+     */
+    @Test
+    public void transform_wysiwygFieldNamedTitle_doesNotOverwriteTitleKey() throws Exception {
+        final Field titleField = mockField(WysiwygField.class, "title");
+        final ContentType contentType = mockContentType(List.of(titleField), List.of(), List.of());
+        final Contentlet contentlet = mockContentlet(contentType);
+
+        // Simulates DefaultTransformStrategy/COMMON_PROPS having already run and populated
+        // "title" from Contentlet#getTitle() -- untruncated, HTML markup and all in this
+        // worst-case scenario, since getTitle() does not itself strip HTML.
+        final String realTitle = "<p>" + "word ".repeat(60) + "</p>";
+        final Map<String, Object> map = new HashMap<>();
+        map.put("title", realTitle);
+
+        newStrategy().transform(contentlet, map, EnumSet.noneOf(TransformOptions.class), null);
+
+        assertEquals("The 'title' key must be untouched by the long-text preview strategy",
+                realTitle, map.get("title"));
+    }
+
     // --- T012: TransformOptions ordinal placement ----------------------------------------------
 
     /**
