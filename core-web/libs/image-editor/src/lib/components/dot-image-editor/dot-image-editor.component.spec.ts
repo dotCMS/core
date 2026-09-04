@@ -7,19 +7,21 @@ import {
     SpyObject
 } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
+import { of } from 'rxjs';
 
 import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
-import { Confirmation, ConfirmationService, ConfirmEventType } from 'primeng/api';
+import { Confirmation, ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
-import { ImageEditorOpenParams } from '../../models/image-editor.models';
+import { AssetMeta, ImageEditorOpenParams } from '../../models/image-editor.models';
+import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import {
     imageEditorHistoryEvents,
     imageEditorLifecycleEvents
@@ -56,10 +58,13 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
             ],
             // `componentProviders` overrides the component's own `providers`, so
             // re-supply the real ConfirmationService (the template's
-            // `<p-confirmDialog />` subscribes to it; we spy on `confirm`) while
-            // mocking only the store.
+            // `<p-confirmDialog />` subscribes to it; we spy on `confirm`) and the
+            // MessageService backing the template's `<dot-toast />` — while mocking
+            // only the store. Host-independence of that provider is covered by the
+            // un-mocked suite at the bottom of this file, not here.
             componentProviders: [
                 ConfirmationService,
+                MessageService,
                 mockProvider(ImageEditorStore, {
                     isDirty,
                     canUndo,
@@ -346,3 +351,80 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
 describeWith('inode', { inode: 'i1', variable: 'fileAsset', fieldName: 'fileAsset' });
 describeWith('tempId', { tempId: 'temp_x', variable: 'fileAsset', fieldName: 'fileAsset' });
+
+/**
+ * Host-independence of the editor's messaging.
+ *
+ * Unlike the suites above, this one mounts the **real** child tree: no `overrideComponents`, no
+ * `MockComponent`, and no `componentProviders` (which would replace the component's own
+ * `providers` — including the very `MessageService` under test). That is deliberate and load
+ * bearing. `DotImageEditorAddressBarComponent`, nested inside the canvas, injects PrimeNG's
+ * `MessageService` non-optionally; every other spec in this library replaces one of the components
+ * on that path with a mock, so `inject(MessageService)` never actually runs unprovided and the
+ * suite stayed green while the editor was completely broken in two of its three hosts (#37398).
+ *
+ * No `MessageService` is provided here on purpose: the editor must supply its own, so it renders in
+ * any host rather than relying on an ancestor injector happening to have one.
+ */
+describe('DotImageEditorComponent (no ambient MessageService)', () => {
+    let spectator: Spectator<DotImageEditorComponent>;
+
+    const data: ImageEditorOpenParams = {
+        inode: 'i1',
+        variable: 'fileAsset',
+        fieldName: 'fileAsset'
+    };
+
+    const assetMeta: AssetMeta = {
+        naturalWidth: 800,
+        naturalHeight: 600,
+        originalBytes: 2048
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotImageEditorComponent,
+        providers: [
+            provideNoopAnimations(),
+            Dispatcher,
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            { provide: DynamicDialogConfig, useValue: { data } },
+            // Stub the boundaries the real tree reaches — HTTP and server config — so the mount
+            // needs no backend. Everything else resolves from the library itself.
+            mockProvider(DotImageEditorService, {
+                loadAssetMeta: jest.fn(() => of(assetMeta)),
+                loadPreviewImage: jest.fn(() => of('blob:preview')),
+                getFileSize: jest.fn(() => of(null)),
+                triggerDownload: jest.fn(),
+                saveEditedImage: jest.fn()
+            }),
+            mockProvider(DotPropertiesService, { getKey: jest.fn(() => of('false')) })
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createComponent();
+    });
+
+    it('should instantiate and render without an ambient MessageService', () => {
+        expect(spectator.component).toBeTruthy();
+        expect(spectator.query(byTestId('image-editor-root'))).toExist();
+    });
+
+    it('should render the real address bar, which is what injects MessageService', () => {
+        expect(spectator.query('dot-image-editor-address-bar')).toExist();
+    });
+
+    it('should provide its own MessageService rather than resolving one from the host', () => {
+        // Resolved through the component injector. Nothing in this factory's `providers`
+        // supplies one, so a successful resolution can only have come from the component's own
+        // `providers` — which is the property the host chain must no longer be asked for.
+        expect(spectator.inject(MessageService, true)).toBeTruthy();
+        // And confirm the premise: it is genuinely absent from the ambient/module injector.
+        expect(() => spectator.inject(MessageService)).toThrow();
+    });
+
+    it('should render exactly one toast outlet inside the dialog', () => {
+        expect(spectator.queryAll(byTestId('dot-toast'))).toHaveLength(1);
+    });
+});

@@ -4,7 +4,7 @@ import { DOCUMENT } from '@angular/common';
 import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
-import { ConfirmationService, ConfirmEventType } from 'primeng/api';
+import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
@@ -15,7 +15,8 @@ import {
     DotDialogContentComponent,
     DotDialogFooterComponent,
     DotDialogHeaderComponent,
-    DotMessagePipe
+    DotMessagePipe,
+    DotToastComponent
 } from '@dotcms/ui';
 
 import { imageEditorModalScaleFade } from '../../animations/image-editor.animations';
@@ -51,13 +52,22 @@ import { DotImageEditorPanelsComponent } from '../dot-image-editor-panels/dot-im
         DotImageEditorFullscreenToggleComponent,
         DotImageEditorCanvasComponent,
         DotImageEditorPanelsComponent,
-        DotImageEditorFooterComponent
+        DotImageEditorFooterComponent,
+        DotToastComponent
     ],
     providers: [
         ImageEditorStore,
         // Scoped here so the template's `<p-confirmDialog />` and the discard
         // guard share one instance; the lib has no global confirm dialog.
-        ConfirmationService
+        ConfirmationService,
+        // Scoped here — not left to the host — so the editor renders in every host rather than
+        // only the ones that happen to provide one. `DialogService` opens this dialog from the
+        // host's injector, so the address bar's `inject(MessageService)` used to walk up into the
+        // host chain: the full-screen shell had one, the UVE side panel and the centered dialog
+        // did not, and the injection threw NG0201 mid-construction — a blank white dialog (#37398).
+        // Mirrors `DotAssetPickerComponent`, and the contract `DotToastComponent` documents:
+        // the outlet's owner provides the stream. The template renders that outlet below.
+        MessageService
     ],
     templateUrl: './dot-image-editor.component.html',
     styleUrl: './dot-image-editor.component.scss',
