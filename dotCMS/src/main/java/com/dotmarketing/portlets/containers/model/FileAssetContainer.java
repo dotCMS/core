@@ -5,12 +5,17 @@ import com.dotmarketing.beans.Host;
 import com.dotmarketing.beans.Source;
 import com.dotmarketing.business.APILocator;
 import com.dotmarketing.business.DotStateException;
+import com.dotmarketing.business.Permissionable;
 import com.dotmarketing.business.Versionable;
 import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerUtil;
 import com.dotmarketing.portlets.contentlet.model.Contentlet;
 import com.dotmarketing.portlets.fileassets.business.FileAsset;
+import com.dotmarketing.portlets.folders.business.FolderAPI;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.portlets.templates.model.Template;
+import com.dotmarketing.util.UtilMethods;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.vavr.control.Try;
 
@@ -102,6 +107,72 @@ public class FileAssetContainer extends Container {
     @Override
     public String getPermissionType() {
         return Contentlet.class.getCanonicalName();
+    }
+
+    /**
+     * A File Asset Container is not a database Container: it is the {@code container.vtl} file living
+     * in a folder under {@code /application/containers/}, and that is why {@link #getPermissionType()}
+     * makes it behave as a {@link Contentlet}. Since the very same asset id is also loaded as a plain
+     * {@link Contentlet} -- whose parent Permissionable is the folder that holds it -- this Container
+     * must inherit from that same Container folder.
+     * <p>Falling back to the {@link Container} behavior (the Site) would make both views of the asset
+     * disagree: the {@code permission_reference} row is keyed by asset id alone, so whichever view
+     * resolved it last would overwrite the other one, and every permission granted on the Container
+     * folder would be silently replaced by the ones inherited from the Site.</p>
+     *
+     * @return The Container {@link Folder}, or the default {@link Container} parent Permissionable
+     * (the Site) when this instance does not hold enough information to resolve such a folder.
+     *
+     * @throws DotDataException The Container folder could not be looked up. This is deliberately
+     * not swallowed: answering with the Site after a failed lookup would persist the very
+     * {@code permission_reference} row this override exists to prevent, and it would do so
+     * silently. Failing here leaves the reference unwritten so the next request resolves it again.
+     */
+    @JsonIgnore
+    @Override
+    public Permissionable getParentPermissionable() throws DotDataException {
+        final Folder containerFolder = this.findContainerFolder();
+        return null != containerFolder ? containerFolder : super.getParentPermissionable();
+    }
+
+    /**
+     * Resolves the folder that makes up this File Asset Container. Both the Site and the path are set
+     * when the Container is built from the file system, but a partially built instance -- such as the
+     * one created when the {@code container.vtl} file is being deleted -- may have neither of them.
+     * <p>{@code null} means the folder is genuinely not there, which is the only case the caller may
+     * fall back to the Site for. A folder that cannot be <b>looked up</b> is a different thing
+     * entirely and throws: {@code FolderAPI.findFolderByPath()} returns {@code null} or an
+     * inode-less Folder when the path does not resolve, and only raises when the lookup itself
+     * fails.</p>
+     *
+     * @return The Container {@link Folder}, or {@code null} when this instance cannot name one or the
+     * named folder does not exist.
+     *
+     * @throws DotDataException The folder lookup failed.
+     */
+    @JsonIgnore
+    private Folder findContainerFolder() throws DotDataException {
+        if (null == this.host || !UtilMethods.isSet(this.path)) {
+            return null;
+        }
+        final FileAssetContainerUtil fileAssetContainerUtil = FileAssetContainerUtil.getInstance();
+        final String folderPath = fileAssetContainerUtil.isFullPath(this.path)
+                ? fileAssetContainerUtil.getRelativePath(this.path)
+                : this.path;
+        final Folder containerFolder;
+        try {
+            containerFolder = APILocator.getFolderAPI()
+                    .findFolderByPath(folderPath, this.host, APILocator.systemUser(), false);
+        } catch (final DotSecurityException e) {
+            // Unreachable for the System User, whose permission checks short-circuit. Rethrown rather
+            // than ignored so it can never turn into a silent downgrade to the Site.
+            throw new DotDataException(String.format(
+                    "Unable to resolve Container folder '%s' on Site '%s': %s",
+                    folderPath, this.host.getHostname(), e.getMessage()), e);
+        }
+        return null != containerFolder && UtilMethods.isSet(containerFolder.getInode())
+                && !FolderAPI.SYSTEM_FOLDER.equals(containerFolder.getInode())
+                ? containerFolder : null;
     }
 
     public void addMetaData(final String key, final Object value) {
