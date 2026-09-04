@@ -180,7 +180,7 @@ public class ContainerPaginator implements PaginatorOrdered<ContainerView> {
             final String hostName = container.getHostName();
             return UtilMethods.isSet(hostName) ? hostName : StringPool.BLANK;
         } catch (final Exception e) {
-            Logger.debug(this, () -> String.format(
+            Logger.warn(this, () -> String.format(
                     "Unable to determine the Site name of Container '%s': %s",
                     container.getIdentifier(), e.getMessage()));
             return StringPool.BLANK;
