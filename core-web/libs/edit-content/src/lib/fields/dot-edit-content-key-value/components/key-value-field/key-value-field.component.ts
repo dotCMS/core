@@ -8,6 +8,16 @@ import { DotKeyValue, DotKeyValueComponent } from '@dotcms/ui';
 import { parseOrderedKeyValue } from '../../../../utils/key-value-order.util';
 import { BaseControlValueAccessor } from '../../../shared/base-control-value-accesor';
 
+/**
+ * Everything the form control can hand this field.
+ *
+ * JSON **text** is what it actually carries — `getContentById` puts it there and
+ * {@link DotKeyValueFieldComponent.updateField} writes it back the same way. The
+ * object and array forms are accepted for callers outside that path, and are the
+ * reason this is a union rather than just `string`.
+ */
+export type DotKeyValueFieldValue = string | Record<string, string | null> | DotKeyValue[];
+
 @Component({
     selector: 'dot-key-value-field',
     imports: [DotKeyValueComponent],
@@ -21,9 +31,7 @@ import { BaseControlValueAccessor } from '../../../shared/base-control-value-acc
         }
     ]
 })
-export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
-    Record<string, string | null>
-> {
+export class DotKeyValueFieldComponent extends BaseControlValueAccessor<DotKeyValueFieldValue> {
     /**
      * A signal that holds the initial value of the component.
      * It is used to display the initial value in the component.
@@ -71,9 +79,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * their position; a plain object is still accepted for any caller outside that
      * path, at the cost of losing it.
      */
-    private parseToDotKeyValue(
-        data: string | Record<string, string | null> | DotKeyValue[]
-    ): DotKeyValue[] {
+    private parseToDotKeyValue(data: DotKeyValueFieldValue): DotKeyValue[] {
         if (typeof data === 'string') {
             return parseOrderedKeyValue(data);
         }
@@ -105,9 +111,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<
-        string | Record<string, string | null> | DotKeyValue[]
-    >((value) => {
+    readonly handleChangeValue = signalMethod<DotKeyValueFieldValue>((value) => {
         this.$initialValue.set(this.parseToDotKeyValue(value));
     });
 }

@@ -175,6 +175,29 @@ describe('key/value order recovery', () => {
             expect(orderedKeyValueText(contentlet, 'keyValue')).toBeNull();
         });
 
+        it('should decline it in the other direction too', () => {
+            // A key the recovered order carries but the plain parse does not. Equal
+            // counts alone would let this through and pair the values up wrongly, so
+            // the guard checks membership as well.
+            const contentlet = attachOrderedFields(
+                { keyValue: { a: '1', b: '2' } },
+                { keyValue: { a: '1', c: '2' } }
+            );
+
+            expect(orderedKeyValueText(contentlet, 'keyValue')).toBeNull();
+        });
+
+        it('should survive a key repeated in the raw text', () => {
+            // Both parses go through `JSON.parse`, which keeps the last occurrence, so
+            // the two agree on one key and the count guard is not tripped by the repeat.
+            const raw = '{"entity":{"keyValue":{"a":"first","a":"second","b":"kept"}}}';
+
+            expect(parseOrderedKeyValue(field(raw) as string)).toEqual([
+                { key: 'a', value: 'second' },
+                { key: 'b', value: 'kept' }
+            ]);
+        });
+
         it('should lose only the ordering, never a pair, if a key collides with the prefix', () => {
             // The prefix opens with NUL, which cannot be typed into the editor, but an
             // API import could still produce such a key. Prefixing then makes it identical

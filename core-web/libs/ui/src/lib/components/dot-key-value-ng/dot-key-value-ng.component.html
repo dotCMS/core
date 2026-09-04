@@ -54,6 +54,7 @@
             <tr
                 dotKeyValueTableRow
                 [pReorderableRow]="rowIndex"
+                [pReorderableRowDisabled]="readOnly"
                 (delete)="deleteVariable(rowIndex)"
                 (save)="updateKeyValue($event, rowIndex)"
                 [showHiddenField]="showHiddenField"

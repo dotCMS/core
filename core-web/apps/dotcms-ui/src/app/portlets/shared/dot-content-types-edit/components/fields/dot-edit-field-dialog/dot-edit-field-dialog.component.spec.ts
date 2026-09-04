@@ -369,6 +369,42 @@ describe('DotEditFieldDialogComponent', () => {
             expect(comp.hideButtons).toBe(false);
         });
 
+        it('should take its Save from the variables tab, and give it back on leaving', () => {
+            const variablesAction = jest.fn();
+            const variables = fixture.debugElement.query(
+                By.css('dot-content-type-fields-variables')
+            );
+
+            comp.handleTabChange(comp.variablesTabIndex);
+            variables.triggerEventHandler('$changeControls', {
+                accept: { label: 'Variables Save', action: variablesAction, disabled: false },
+                cancel: { label: 'Cancel' }
+            });
+
+            expect(comp.saveBtn.label).toBe('Variables Save');
+
+            comp.saveBtn.action();
+            expect(variablesAction).toHaveBeenCalled();
+
+            // Back on Overview the dialog's own Save must be the one wired up again.
+            comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+            comp.saveBtn.action();
+
+            expect(variablesAction).toHaveBeenCalledTimes(1);
+            expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
+        });
+
+        it('should close the dialog when the variables tab reports it saved', () => {
+            const variables = fixture.debugElement.query(
+                By.css('dot-content-type-fields-variables')
+            );
+
+            comp.handleTabChange(comp.variablesTabIndex);
+            variables.triggerEventHandler('$save');
+
+            expect(refMock.close).toHaveBeenCalledWith({ kind: 'settings-saved' });
+        });
+
         it('should NOT hide the buttons on the Settings tab for a field with settings', () => {
             comp.handleTabChange(comp.SETTINGS_TAB_INDEX);
             expect(comp.hideButtons).toBe(false);

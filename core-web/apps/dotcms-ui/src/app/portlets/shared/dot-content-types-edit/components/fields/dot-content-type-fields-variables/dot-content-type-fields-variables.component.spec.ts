@@ -283,6 +283,36 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             expect(dotFieldVariableService.save).not.toHaveBeenCalled();
         });
 
+        it('should record the id the server assigned to a newly added pair', () => {
+            /*
+             * An add carries no id until the server assigns one. Recording the request
+             * rather than the response left the stored snapshot holding an id-less pair,
+             * and removing it after a partial failure went out as `.../variables/id/undefined`.
+             */
+            const [first] = mockFieldVariables;
+            jest.spyOn(dotFieldVariableService, 'save').mockImplementation((_f, v) =>
+                of({ ...v, id: 'server-assigned-id' } as DotFieldVariable)
+            );
+            jest.spyOn(dotFieldVariableService, 'delete').mockImplementation((_f, v) =>
+                v.key === first.key ? throwError(() => httpError) : of(v as DotFieldVariable)
+            );
+
+            const withoutFirst = mockFieldVariables.filter(({ key }) => key !== first.key);
+
+            // Add one (lands) and remove one (fails), so the dialog stays open.
+            changeTo([...withoutFirst, { key: 'added', value: 'v' } as DotFieldVariable]);
+            comp.saveChanges();
+
+            // Now remove the pair that was just added.
+            changeTo(withoutFirst);
+            comp.saveChanges();
+
+            expect(dotFieldVariableService.delete).toHaveBeenCalledWith(
+                comp.field,
+                expect.objectContaining({ key: 'added', id: 'server-assigned-id' })
+            );
+        });
+
         it('should surface a failed delete and keep the edits on screen', () => {
             jest.spyOn(dotFieldVariableService, 'delete').mockReturnValue(
                 throwError(() => httpError)

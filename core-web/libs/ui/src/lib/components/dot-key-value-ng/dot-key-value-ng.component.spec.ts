@@ -413,8 +413,23 @@ describe('DotKeyValueComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-clear-all'))).toBeFalsy();
         });
 
-        it('should keep reordering, which is the one action left', () => {
-            expect(spectator.query(byTestId('dot-key-value-drag-handle'))).toBeTruthy();
+        it('should offer no way to reorder', () => {
+            // Reordering is a change like any other: a list the consumer was told cannot
+            // be edited must not be able to publish one.
+            expect(spectator.query(byTestId('dot-key-value-drag-handle'))).toBeFalsy();
+        });
+
+        it('should keep the gutter column, so header and body stay the same shape', () => {
+            expect(spectator.query('tbody .kv-gutter')).toBeTruthy();
+        });
+
+        it('should not publish a reorder even if one reaches the handler', () => {
+            const updated = jest.fn();
+            spectator.output('updatedList').subscribe(updated);
+
+            spectator.component.onRowReorder();
+
+            expect(updated).not.toHaveBeenCalled();
         });
 
         it('should not present the pairs as editable controls', () => {

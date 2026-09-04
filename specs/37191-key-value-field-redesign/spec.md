@@ -53,6 +53,19 @@ grew on top of it:
 | Read-only fields | a file asset's metadata is regenerated on save, so editing it is a lie | FR-051 to FR-054 |
 | Deferred save in Field Variables | Cancel had nothing to cancel while every keystroke was written | FR-055 to FR-059 |
 | Editable key | reverses FR-008 | FR-008, FR-008a, FR-008b |
+| Refusals that say why | code review: an invalid edit closed and discarded what was typed, silently | FR-008a |
+| Blank values refused everywhere | code review: the pasted block let one in that no other path allowed | FR-045a |
+
+### Corrected during code review
+
+Two requirements described the opposite of what the implementation needed, and were corrected in place
+rather than deleted, so the change stays auditable:
+
+- **FR-048** required the host's dialog for Clear All. Only Edit Content has one always rendered; in
+  Field Variables and Apps the confirmation reached nothing and Clear All did nothing.
+- **FR-019** was read as requiring a keyboard-operable drag handle. PrimeNG's row reorder is
+  pointer-only, so the handle had a role and a tab stop it could not honour; keyboard reordering is
+  out of scope, and the handle no longer claims otherwise.
 
 ### Key ordering defect (found during implementation)
 
@@ -251,7 +264,9 @@ persist.
   clarifications; corrected here rather than deleted so the change is auditable.
 - **FR-008a**: A rename MUST be refused when the key is empty, or when another pair already holds it —
   two pairs sharing a key collide wherever they are stored, and the entry row refuses the same thing
-  when adding. A refused rename MUST restore the original key.
+  when adding. A refused edit — a blank value included — MUST keep its input open, showing the same
+  message the entry row shows for the same refusal, so what the user typed stays on screen to be
+  corrected. Abandoning the edit MUST restore the original text.
 - **FR-008b**: A rename MUST carry the pair's value across unchanged.
 - **FR-009**: Users MUST be able to remove an existing pair.
 - **FR-010**: The editor MUST reject a new pair whose key duplicates an existing key, and MUST indicate
@@ -279,7 +294,9 @@ persist.
 - **FR-018**: The hidden-value indicator is a **state** affordance, not an action, and MUST therefore be
   permanently visible on any row whose value is hidden, independent of hover or focus.
 - **FR-019**: Every hover-revealed affordance MUST also be reachable and operable via keyboard, and
-  MUST expose an accessible name.
+  MUST expose an accessible name. An affordance that cannot be operated by keyboard MUST NOT be
+  presented as though it could: reordering is pointer-only, so its handle takes no focus and claims no
+  role. Keyboard reordering is not in this scope; until it exists, the handle is not a tab stop.
 - **FR-020**: The editor MUST render correctly and remain fully operable inside a constrained dialog
   width without introducing horizontal scrolling of the host page.
 
@@ -341,6 +358,9 @@ persist.
   **first** `=` only, and remove one matching pair of surrounding quotes from the value.
 - **FR-044**: A key the list already holds, or repeated within the paste, MUST be skipped rather than
   overwrite what is there.
+- **FR-045a**: A parsed pair whose value is blank MUST be dropped rather than added. `KEY=` is legal in
+  a `.env`, but a blank value is refused on every other path into the editor, and a paste is not a way
+  around that.
 - **FR-045**: Text that yields no assignment MUST paste normally into the input, so pasting a plain key
   still behaves like a paste.
 - **FR-046**: Multi-line values are out of scope. A certificate pasted this way would be cut at its
@@ -349,15 +369,21 @@ persist.
 **Clearing every pair**
 
 - **FR-047**: The editor MUST offer a control that removes every pair at once, behind a confirmation.
-- **FR-048**: The confirmation MUST use the host's existing dialog rather than one of the editor's own,
-  and MUST match the styling of the unsaved-changes prompt in Edit Content.
+- **FR-048**: The confirmation MUST match the styling of the unsaved-changes prompt in Edit Content, and
+  MUST appear in every consumer. It is served by a dialog the editor itself renders, scoped by key.
+  *Corrected during implementation.* It originally required the host's existing dialog; that holds only
+  in Edit Content, whose layout renders one unconditionally. In dotcms-ui the dialog exists only while
+  `DotAlertConfirmService` has a model, so an unkeyed confirmation from the editor reached nothing at
+  all and Clear All did nothing in both Field Variables and Apps. The key keeps the editor's dialog and
+  the host's from answering each other's confirmations.
 - **FR-049**: Nothing MUST be removed until the confirmation is accepted.
 - **FR-050**: The control MUST NOT be offered when there is nothing to clear.
 
 **Fields whose pairs are produced elsewhere**
 
 - **FR-051**: A field the content type marks read-only MUST render its pairs without any way to change
-  them: no entry row, no remove control, no click-to-edit, no Clear All.
+  them: no entry row, no remove control, no click-to-edit, no reordering, no Clear All. Reordering is a
+  change like any other — a read-only list must not publish one.
 - **FR-052**: Read-only MUST be taken from the field's existing `readOnly` declaration through the
   form's disabled state, not from a decision made inside the editor.
 - **FR-053**: Reading affordances MUST remain: paging, the withheld indicator, the empty state, and
@@ -415,7 +441,7 @@ user-observable behavior. All three align with existing repository standards.
 ### Key Entities
 
 - **Key/Value Pair**: the unit the editor manages. Carries a **key** (unique within one editor instance,
-  non-empty, immutable after creation), a **value** (non-empty text), an optional **hidden** flag
+  non-empty, editable in place), a **value** (non-empty text), an optional **hidden** flag
   indicating the value should be masked in the UI, and a **position** within its list.
 - **Editor Capabilities**: the per-consumer switch determining whether hidden values are offered.
   Reordering is no longer a per-consumer capability — it is universal.

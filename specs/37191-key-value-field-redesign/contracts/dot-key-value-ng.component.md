@@ -26,13 +26,14 @@ such fields `readOnly`, the form already disables their control, and Angular alr
 `setDisabledState`. The input is the last link, and the Edit Content consumer binds it from
 `$isDisabled` rather than deciding for itself.
 
-It hides the entry row, the remove control, click-to-edit and Clear All, and drops the actions
-column (`$colspan` 4 → 3). Reordering, paging, the empty state and the withheld indicator stay:
-they help read a list without pretending it can be changed.
+It hides the entry row, the remove control, click-to-edit, reordering and Clear All, and drops the
+actions column (`$colspan` 4 → 3). Paging, the empty state and the withheld indicator stay: they help
+read a list without pretending it can be changed. The gutter column stays too — read-only empties it
+rather than removing it, so header and body keep the same shape.
 
-**`dragAndDrop` was removed.** It gated whether a consumer rendered the drag handle. Reordering is
-now unconditional — every consumer has it — so the switch had nothing left to decide. `showHiddenField`
-is the only remaining per-consumer capability.
+**`dragAndDrop` was removed.** It gated whether a consumer rendered the drag handle. Reordering is now
+the default for every consumer, so the switch had nothing left to decide; `readOnly` is what withholds
+it. `showHiddenField` is the only remaining per-consumer capability.
 
 > Note: `dot-apps-configuration-detail.component.html:36` binds `[autoFocus]="false"`, an input the
 > component does not declare. It is inert today. Remove the stale binding while that template is
@@ -80,6 +81,8 @@ directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-
 | Load more | more rows are withheld | link-style button, no count | — |
 | Clear All | not `readOnly` | text button, confirms before emptying | — |
 | Key at rest | not `readOnly` | plain text; becomes an input on activation | — |
+| Drag handle | not `readOnly` | pointer-only; no role, no tab stop | FR-019 |
+| Validation message | an edit is refused | under the input, cell top-aligned; input stays open | FR-008a |
 | Load-more row | more than 40 rows remain unrendered | appended after the last row; **left-aligned** "Load more", no count | FR-037 to FR-039 |
 
 ### Paging is not derived from `variables`
@@ -151,7 +154,7 @@ All verified present in `primeng@21.1.3`. **No new component is introduced.**
 |---|---|
 | Table, header/body/empty templates | `p-table`, `#header`, `#body`, `#emptymessage` |
 | Click-to-edit | `pEditableColumn`, `p-cellEditor` with `#input` / `#output` |
-| Row reordering | `pReorderableRow`, `pReorderableRowHandle`, `(onRowReorder)` |
+| Row reordering | `pReorderableRow`, `pReorderableRowDisabled`, `pReorderableRowHandle`, `(onRowReorder)` |
 | Eye inside the value field | `p-iconfield`, `p-inputicon` |
 | Inputs and buttons | `pInputText`, `p-button` |
 

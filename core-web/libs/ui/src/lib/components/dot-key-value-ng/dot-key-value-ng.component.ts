@@ -101,8 +101,9 @@ export class DotKeyValueComponent {
     /**
      * Column count for the full-width rows.
      *
-     * Read-only drops the actions column — reordering stays, so the drag column does
-     * too — leaving three for the empty state and the foot to span.
+     * Read-only drops the actions column, leaving three for the empty state and the
+     * foot to span. The gutter column stays either way — read-only empties it rather
+     * than removing it, so the header and the body keep the same shape.
      */
     $colspan = computed(() => (this.$readOnly() ? 3 : 4));
 
@@ -163,9 +164,10 @@ export class DotKeyValueComponent {
      * `A,B,C` reads `A,B,C` and not reversed — which is what adding them one by one
      * through {@link saveVariable} would produce.
      *
-     * `save` is emitted per pair on purpose: Field Variables persists row by row
-     * through that output, so a block paste has to reach it as individual writes.
-     * `updatedList` fires once, since its consumers take the whole array.
+     * `save` is emitted per pair on purpose: it is a per-pair output, and a consumer
+     * that acts on it — as Edit Content's did before this component grew `updatedList`
+     * — has to see every pair a block paste added, not just the last. `updatedList`
+     * fires once, since its consumers take the whole array.
      */
     saveVariables(variables: DotKeyValue[]): void {
         if (!variables.length) {
@@ -196,13 +198,14 @@ export class DotKeyValueComponent {
     /**
      * Empties the list, behind a confirmation.
      *
-     * Confirmed through `ConfirmationService`, so the dialog each host already renders
-     * is the one that appears — this component brings none of its own. Its options
-     * match the unsaved-changes prompt in Edit Content: a header and no icons. The
-     * reject is a plain text button, as `dot-tags-list` does.
+     * Confirmed through `ConfirmationService`, against this component's own keyed
+     * dialog — see {@link CLEAR_ALL_KEY} for why it cannot rely on the host's. Its
+     * options match the unsaved-changes prompt in Edit Content: a header and no
+     * icons. The reject is a plain text button, as `dot-tags-list` does.
      *
-     * `delete` is emitted per pair because Field Variables persists row by row through
-     * it; `updatedList` fires once for the consumers that take the whole array.
+     * `delete` is emitted per pair to keep that output's contract — one event per pair
+     * removed, however they were removed; `updatedList` fires once for the consumers
+     * that take the whole array.
      */
     confirmClearAll(): void {
         const cleared = this.$variableList();
@@ -236,8 +239,16 @@ export class DotKeyValueComponent {
      * signal holds. So the move must NOT be applied again here; all that is left
      * is to hand out a new reference, since an in-place mutation leaves the
      * signal comparing equal and never notifying.
+     *
+     * Read-only never gets this far — the rows are bound `pReorderableRowDisabled`
+     * and render no handle — but the guard stays: this is the one path that would
+     * publish a change from a list the consumer was told cannot produce any.
      */
     onRowReorder(): void {
+        if (this.$readOnly()) {
+            return;
+        }
+
         const reordered = [...this.$variableList()];
 
         this.$variableList.set(reordered);

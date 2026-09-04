@@ -183,7 +183,10 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         const succeeded: DotFieldVariable[] = [];
         const failed: HttpErrorResponse[] = [];
 
-        const track = (source: Observable<DotFieldVariable>, onDone: () => void) =>
+        const track = (
+            source: Observable<DotFieldVariable>,
+            onDone: (result: DotFieldVariable) => void
+        ) =>
             source.pipe(
                 take(1),
                 tap(onDone),
@@ -200,9 +203,15 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                     succeeded.push(variable)
                 )
             ),
+            /*
+             * What is recorded is the *response*, not the request: a pair added in this
+             * session has no `id` until the server assigns one. Recording the request
+             * would leave `#stored` holding an id-less pair, and deleting it after a
+             * partial failure would go out as `.../variables/id/undefined`.
+             */
             ...written.map((variable) =>
-                track(this.fieldVariablesService.save(this.field, variable), () =>
-                    succeeded.push(variable)
+                track(this.fieldVariablesService.save(this.field, variable), (saved) =>
+                    succeeded.push({ ...variable, ...saved })
                 )
             )
         ];
@@ -236,17 +245,20 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
      * pair that landed is recorded too — otherwise a retry after a partial failure
      * re-sent it. Anything whose write failed keeps its previous value, and a removal
      * the server refused stays, so a retry sends exactly what is still outstanding.
+     *
+     * A pair that landed is taken from `succeeded` rather than from the screen, because
+     * only the former carries the `id` the server assigned it.
      */
     #storedAfter(
         stored: DotFieldVariable[],
         current: DotFieldVariable[],
         succeeded: DotFieldVariable[]
     ): DotFieldVariable[] {
-        const landed = new Set(succeeded.map(({ key }) => key));
+        const landed = new Map(succeeded.map((item) => [item.key, item]));
 
         const onScreen = current
-            .map((item) =>
-                landed.has(item.key) ? item : (stored.find(({ key }) => key === item.key) ?? null)
+            .map(
+                (item) => landed.get(item.key) ?? stored.find(({ key }) => key === item.key) ?? null
             )
             .filter((item): item is DotFieldVariable => item !== null);
 

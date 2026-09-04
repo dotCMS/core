@@ -202,6 +202,29 @@ describe('DotKeyValueTableHeaderRowComponent', () => {
                 'password'
             );
         });
+
+        it('should switch back, since hiding a value is no longer a one-way trip', () => {
+            // The whole point of moving this control into the field: before the redesign
+            // a value could be hidden and never revealed again while being entered.
+            setProps({ showHiddenField: true });
+            const toggle = () => {
+                spectator.click(byTestId('dot-key-value-new-visibility-toggle'));
+                spectator.detectChanges();
+            };
+
+            toggle();
+            toggle();
+
+            expect(spectator.query<HTMLInputElement>(byTestId('value-input')).type).toBe('text');
+            expect(
+                spectator
+                    .query(byTestId('dot-key-value-new-visibility-toggle'))
+                    .getAttribute('aria-pressed')
+            ).toBe('false');
+            expect(
+                spectator.query(byTestId('dot-key-value-new-visibility-toggle')).textContent.trim()
+            ).toBe('visibility');
+        });
     });
 
     describe('column alignment', () => {

@@ -14,8 +14,10 @@ const mockVariable: DotKeyValue = { key: 'name', hidden: false, value: 'John' };
 const messageServiceMock = new MockDotMessageService({
     'keyValue.value_input.placeholder': 'Enter Value',
     'keyValue.value_hidden': 'Value hidden',
-    Delete: 'Delete',
-    Reorder: 'Reorder'
+    'keyValue.value_input.required': 'This field is required',
+    'keyValue.key_input.required': 'This field is required',
+    'keyValue.key_input.duplicated': 'This key already exists',
+    'keyValue.action.delete': 'Delete'
 });
 
 describe('DotKeyValueTableRowComponent', () => {
@@ -117,6 +119,41 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
         });
 
+        it('should refuse an emptied value and say why', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
+
+            spectator.component.editControl.setValue('   ');
+            spectator.component.commitEdit();
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('dot-key-value-input'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-value-required'))).toBeTruthy();
+        });
+
+        it('should commit a value exactly as typed, spaces included', () => {
+            // Trimming decides only whether a value counts as blank; it never edits it.
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
+
+            spectator.component.editControl.setValue('John ');
+            spectator.component.commitEdit();
+
+            expect(saveSpy).toHaveBeenCalledWith({ ...mockVariable, value: 'John ' });
+        });
+
+        it('should activate the value with Space as well as Enter', () => {
+            const output = spectator.query(byTestId('dot-key-value-value-output'));
+            const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true });
+
+            output.dispatchEvent(event);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isEditing()).toBe(true);
+            expect(event.defaultPrevented).toBe(true);
+        });
+
         it('should restore the original value on Escape and emit nothing', () => {
             const saveSpy = jest.spyOn(spectator.component.save, 'emit');
             activate();
@@ -189,13 +226,21 @@ describe('DotKeyValueTableRowComponent', () => {
             }
         );
 
-        it('should expose an accessible name on every action', () => {
+        it('should expose an accessible name on the actions a keyboard can reach', () => {
             expect(
                 spectator.query(byTestId('dot-key-value-delete-button')).getAttribute('aria-label')
             ).toBeTruthy();
-            expect(
-                spectator.query(byTestId('dot-key-value-drag-handle')).getAttribute('aria-label')
-            ).toBeTruthy();
+        });
+
+        it('should not present the drag handle as an operable control', () => {
+            // PrimeNG's row reorder is pointer-driven: it binds mousedown and the HTML
+            // drag events, and nothing for Enter, Space or the arrows. A role and a tab
+            // stop here would announce a button that cannot be operated at all.
+            const handle = spectator.query(byTestId('dot-key-value-drag-handle'));
+
+            expect(handle).toBeTruthy();
+            expect(handle.getAttribute('role')).toBeNull();
+            expect(handle.getAttribute('tabindex')).toBeNull();
         });
     });
 
@@ -299,8 +344,26 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(saveSpy).not.toHaveBeenCalled();
         });
 
-        it('should not collide with itself when only whitespace is trimmed', () => {
-            // The row's own key is in the forbidden map, so it has to be excluded.
+        it('should not report the row as a duplicate of itself', () => {
+            // The row's own key is in the forbidden map, so the validator has to exclude
+            // it — otherwise the row would flag its own key the moment editing opened.
+            setProps({
+                variable: { key: 'name', value: 'John' },
+                forbiddenkeys: { name: true, taken: true }
+            });
+            startEditing();
+
+            expect(spectator.component.editControl.valid).toBe(true);
+
+            spectator.component.editControl.setValue('taken');
+            expect(spectator.component.editControl.hasError('duplicatedKey')).toBe(true);
+
+            // Back to its own key, whitespace and all: still not a collision.
+            spectator.component.editControl.setValue('  name  ');
+            expect(spectator.component.editControl.valid).toBe(true);
+        });
+
+        it('should say nothing when only whitespace was trimmed off the key', () => {
             setProps({
                 variable: { key: 'name', value: 'John' },
                 forbiddenkeys: { name: true }
@@ -313,6 +376,43 @@ describe('DotKeyValueTableRowComponent', () => {
 
             // Trimmed back to the same key: nothing changed, so nothing is reported.
             expect(saveSpy).not.toHaveBeenCalled();
+        });
+
+        it('should keep the input open and say why a rename was refused', () => {
+            setProps({ variable: mockVariable, forbiddenkeys: { taken: true } });
+            startEditing();
+
+            spectator.component.editControl.setValue('taken');
+            spectator.component.commitEdit();
+            spectator.detectChanges();
+
+            // Closing here would discard what was typed without ever saying why.
+            expect(spectator.query(byTestId('dot-key-value-key-input'))).toBeTruthy();
+            expect(spectator.component.editControl.value).toBe('taken');
+            expect(spectator.query(byTestId('dot-key-value-key-duplicated'))).toBeTruthy();
+        });
+
+        it('should keep the input open and say why an empty key was refused', () => {
+            startEditing();
+
+            spectator.component.editControl.setValue('   ');
+            spectator.component.commitEdit();
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('dot-key-value-key-input'))).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-key-required'))).toBeTruthy();
+        });
+
+        it('should activate the key with Space as well as Enter', () => {
+            const output = spectator.query(byTestId('dot-key-value-key-output'));
+            const event = new KeyboardEvent('keydown', { key: ' ', cancelable: true });
+
+            output.dispatchEvent(event);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isEditingKey()).toBe(true);
+            // Space scrolls the page on anything that is not a real button.
+            expect(event.defaultPrevented).toBe(true);
         });
 
         it('should edit the key and the value independently', () => {

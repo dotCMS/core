@@ -13,7 +13,7 @@ re-exported from `@dotcms/ui`.
 
 | Field | Type | Required | Notes |
 |---|---|---|---|
-| `key` | `string` | yes | Unique within one editor instance. Non-empty. **Immutable after creation** (FR-008) |
+| `key` | `string` | yes | Unique within one editor instance. Non-empty. **Editable in place after creation** (FR-008, FR-008a, FR-008b) |
 | `value` | `string` | yes | Non-empty (FR-011). May hold the literal `"null"` for legacy rows whose stored value was null |
 | `hidden` | `boolean` | no | Masks the value in the UI. Only meaningful in the Apps consumer (FR-024) |
 
@@ -24,13 +24,18 @@ what allows all three consumers to keep their existing payloads (FR-033 to FR-03
 
 | Rule | Enforced where | Requirement |
 |---|---|---|
-| `key` non-empty | Entry-row form, `Validators.required` | FR-011 |
-| `value` non-empty | Entry-row form, `Validators.required` | FR-011 |
-| `key` not already present | Entry-row `keyValidator()` against the container's `$forbiddenkeys` map | FR-010 |
-| `key` not editable post-creation | No editable control bound to `key` on body rows | FR-008 |
+| `key` non-empty | Entry row and in-place edit, blank-rejecting `required` | FR-011, FR-008a |
+| `value` non-empty | Entry row and in-place edit, blank-rejecting `required` | FR-011 |
+| `key` not already present | Entry-row `keyValidator()` and the row's own, both against the container's `$forbiddenkeys` map | FR-010, FR-008a |
+| A refused edit keeps its input open and states why | Row template renders the entry row's messages | FR-008a |
 
-Duplicate detection lives in the entry-row component's key validator, against the container's
-`$forbiddenkeys` map. (`DotKeyValueUtil` was deleted — it was unused.)
+Duplicate detection lives in each row's key validator, against the container's `$forbiddenkeys` map.
+The row excludes its own key from that map, so a pair does not report itself as a duplicate.
+(`DotKeyValueUtil` was deleted — it was unused.)
+
+A key commits trimmed; a value commits exactly as typed, with trimming used only to decide whether it
+counts as blank. Blank is refused on every path into the editor, the pasted block included — `KEY=`
+parses but is dropped rather than added (FR-045).
 
 ### Position
 

@@ -60,8 +60,18 @@ describe('parseKeyValueBlock', () => {
         expect(parseKeyValueBlock('A=  spaced  ')).toEqual([{ key: 'A', value: 'spaced' }]);
     });
 
-    it('should keep an empty value rather than dropping the pair', () => {
-        expect(parseKeyValueBlock('EMPTY=')).toEqual([{ key: 'EMPTY', value: '' }]);
+    it('should drop a pair whose value is blank', () => {
+        // `KEY=` is legal in a `.env`, but a blank value is refused everywhere else in
+        // the editor, and a paste is not a way around that.
+        expect(parseKeyValueBlock('EMPTY=')).toEqual([]);
+        expect(parseKeyValueBlock('EMPTY="   "')).toEqual([]);
+    });
+
+    it('should keep the pairs around a blank one', () => {
+        expect(parseKeyValueBlock('A=1\nEMPTY=\nB=2')).toEqual([
+            { key: 'A', value: '1' },
+            { key: 'B', value: '2' }
+        ]);
     });
 
     it('should drop lines that are not assignments', () => {

@@ -67,8 +67,18 @@ export const parseKeyValueBlock = (
             continue;
         }
 
+        const value = unquote(rawValue);
+
+        // `KEY=` is legal in a `.env`, but not here: the entry row refuses a blank
+        // value and so does an in-place edit, and a paste is not a way around that.
+        // Blank by the same measure they use — trimmed — so a quoted run of spaces
+        // does not slip through where a bare one is turned away.
+        if (!value.trim()) {
+            continue;
+        }
+
         seen.add(key);
-        pairs.push({ key, value: unquote(rawValue) });
+        pairs.push({ key, value });
     }
 
     return pairs;

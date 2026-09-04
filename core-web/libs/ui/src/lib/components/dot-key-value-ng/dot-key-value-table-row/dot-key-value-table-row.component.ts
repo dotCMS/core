@@ -6,12 +6,16 @@ import {
     effect,
     inject,
     input,
-    model,
     output,
     signal,
     viewChild
 } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+    AbstractControl,
+    FormBuilder,
+    ReactiveFormsModule,
+    ValidationErrors
+} from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { InputTextModule } from 'primeng/inputtext';
@@ -53,7 +57,7 @@ export class DotKeyValueTableRowComponent {
 
     $index = input.required<number>({ alias: 'index' });
 
-    $variable = model.required<DotKeyValue>({ alias: 'variable' });
+    $variable = input.required<DotKeyValue>({ alias: 'variable' });
 
     /**
      * The value input, which only exists while this row is being edited.
@@ -73,6 +77,14 @@ export class DotKeyValueTableRowComponent {
 
     $isEditingKey = computed(() => this.$editing() === 'key');
 
+    /**
+     * The text being edited, whichever cell is open.
+     *
+     * Carries the same validators the entry row applies to the same field, so adding
+     * `name` and renaming a row to `name` are refused for the same reason and say so
+     * in the same words. Which validators are attached depends on the cell, and is
+     * decided in {@link #beginEditing}.
+     */
     editControl = this.#fb.nonNullable.control('');
 
     /** Keys held by other rows, so a rename cannot collide with one. */
@@ -116,7 +128,12 @@ export class DotKeyValueTableRowComponent {
         }
 
         this.#textBeforeEdit = text;
+        this.editControl.setValidators(
+            cell === 'key' ? [this.#nonBlank, this.#keyValidator] : [this.#nonBlank]
+        );
         this.editControl.setValue(text);
+        // Pristine, so the row opens without an error on text the user has not touched.
+        this.editControl.markAsPristine();
         this.$editing.set(cell);
     }
 
@@ -125,9 +142,16 @@ export class DotKeyValueTableRowComponent {
      * only when the text actually changed, so merely tabbing through a row
      * does not look like an edit to the consumer.
      *
-     * A rename into a key another row already holds is refused and the original put
-     * back: two rows sharing a key would collide wherever the pairs are stored, and
-     * the entry row rejects the same thing when adding.
+     * An invalid edit — a blank key or value, or a rename onto a key another row
+     * already holds — keeps the input open with its message rather than closing.
+     * Closing would discard what the user typed without ever saying why it was
+     * refused, which is what this used to do. Escape still abandons the edit.
+     *
+     * Keys commit trimmed: surrounding space in a key is never meaningful, and two
+     * keys differing only by it would read as duplicates. Values commit exactly as
+     * typed, and are compared the same way, so deliberately adding a trailing space
+     * to a value is a change like any other — trimming only decides whether the
+     * value counts as blank.
      */
     commitEdit(event?: Event): void {
         event?.preventDefault();
@@ -138,21 +162,25 @@ export class DotKeyValueTableRowComponent {
             return;
         }
 
-        const text = this.editControl.value.trim();
-        const unchanged = text === this.#textBeforeEdit;
-        const rejected =
-            cell === 'key' && (!text || (text !== this.#textBeforeEdit && this.#isTaken(text)));
+        if (this.editControl.invalid) {
+            this.editControl.markAsDirty();
+
+            return;
+        }
+
+        const raw = this.editControl.value;
+        const text = cell === 'key' ? raw.trim() : raw;
 
         this.$editing.set(null);
 
-        if (unchanged || rejected) {
+        if (text === this.#textBeforeEdit) {
             return;
         }
 
         this.save.emit(
             cell === 'key'
                 ? { ...this.$variable(), key: text }
-                : { ...this.$variable(), value: this.editControl.value }
+                : { ...this.$variable(), value: text }
         );
     }
 
@@ -167,12 +195,23 @@ export class DotKeyValueTableRowComponent {
     }
 
     /**
-     * Whether *another* row already holds `key`.
-     *
-     * This row's own key is in the map too, so it has to be excluded — otherwise
-     * merely trimming whitespace off a key would count as a collision with itself.
+     * Required, reported under the same `required` error the entry row uses so both
+     * rows can render the same message. A run of spaces is not a value.
      */
-    #isTaken(key: string): boolean {
-        return key !== this.$variable().key && !!this.$forbiddenkeys()[key];
-    }
+    #nonBlank = ({ value }: AbstractControl<string>): ValidationErrors | null =>
+        value?.trim() ? null : { required: true };
+
+    /**
+     * Rejects a rename onto a key another row already holds.
+     *
+     * This row's own key is in the map too, so it has to be excluded — otherwise the
+     * row would report itself as a duplicate the moment editing opened.
+     */
+    #keyValidator = ({ value }: AbstractControl<string>): ValidationErrors | null => {
+        const key = value?.trim() ?? '';
+
+        return key !== this.$variable().key && this.$forbiddenkeys()[key]
+            ? { duplicatedKey: true }
+            : null;
+    };
 }

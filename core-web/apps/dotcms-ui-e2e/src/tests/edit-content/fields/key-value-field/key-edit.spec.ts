@@ -76,12 +76,25 @@ test.describe('editing the key in place @smoke', () => {
         expect(values).toEqual(['theValue']);
     });
 
-    test('refuses a rename onto an existing key', async ({ page }) => {
+    test('refuses a rename onto an existing key, and says why', async ({ page }) => {
         const { f, root } = await open(page);
         await f.addEntry('alpha', '1');
         await f.addEntry('beta', '2');
 
         await renameFirst(root, 'alpha');
+
+        // The refusal is stated and the typed text stays on screen to be corrected.
+        // Closing the row here would discard it without ever saying what was wrong.
+        const input = root.getByTestId('dot-key-value-key-input').first();
+        await expect(input).toBeVisible();
+        await expect(input).toHaveValue('alpha');
+        await expect(root.getByTestId('dot-key-value-key-duplicated')).toBeVisible();
+
+        // Nothing was renamed: only the other row still holds that key.
+        expect(await keys(root)).toEqual(['alpha']);
+
+        // Escape gives the row back exactly as it was.
+        await input.press('Escape');
         expect(await keys(root)).toEqual(['beta', 'alpha']);
     });
 
