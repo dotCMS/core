@@ -37,9 +37,30 @@ posix('file permissions (FR-021, SC-004)', () => {
 });
 
 describe('permission honesty (research R5)', () => {
-    it('never claims permissions were applied on a platform that cannot apply them', async () => {
-        const result = await write(path.join(dir, 'mcp.json'));
-        // The claim must track the capability, not be hard-coded true.
-        expect(result.permissionsApplied).toBe(CAN_RESTRICT);
+    /**
+     * Asserting `permissionsApplied === CAN_RESTRICT` is `true === true` on POSIX, which a
+     * hard-coded `true` satisfies — the assertion could only bite on Windows, where nothing
+     * runs it. Forcing the capability off proves the claim tracks reality instead.
+     */
+    it('does NOT claim permissions were applied when the platform cannot apply them', async () => {
+        const result = await writeMerged({
+            file: path.join(dir, 'mcp.json'),
+            containerKey: 'mcpServers',
+            entryKey: 'dotcms',
+            entry: { token: 'x' },
+            canRestrict: false
+        });
+        expect(result.permissionsApplied).toBe(false);
+    });
+
+    it('claims them when the platform can', async () => {
+        const result = await writeMerged({
+            file: path.join(dir, 'mcp.json'),
+            containerKey: 'mcpServers',
+            entryKey: 'dotcms',
+            entry: { token: 'x' },
+            canRestrict: true
+        });
+        expect(result.permissionsApplied).toBe(true);
     });
 });

@@ -62,8 +62,8 @@ export async function hasEntry(args: {
 }
 
 /** One place owns the file mode, so the JSON and TOML writers cannot drift apart on it. */
-export async function restrictFile(file: string): Promise<boolean> {
-    if (!CAN_RESTRICT) return false;
+export async function restrictFile(file: string, canRestrict = CAN_RESTRICT): Promise<boolean> {
+    if (!canRestrict) return false;
     await fs.chmod(file, FILE_MODE);
     return true;
 }
@@ -84,6 +84,9 @@ export async function writeMerged(args: {
     containerKey: string;
     entryKey: string;
     entry: unknown;
+    /** Injected so the honesty of `permissionsApplied` is testable on a platform that CAN
+     *  restrict — otherwise the assertion is `true === true` and a hard-coded claim passes. */
+    canRestrict?: boolean;
 }): Promise<WriteResult> {
     const existing = (await readJsonDocument(args.file)) ?? {};
     const container = (existing[args.containerKey] as Record<string, unknown> | undefined) ?? {};
@@ -96,6 +99,6 @@ export async function writeMerged(args: {
 
     await ensureDir(path.dirname(args.file));
     await fs.writeFile(args.file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
-    const permissionsApplied = await restrictFile(args.file);
+    const permissionsApplied = await restrictFile(args.file, args.canRestrict ?? CAN_RESTRICT);
     return { path: args.file, permissionsApplied, replacedExisting };
 }

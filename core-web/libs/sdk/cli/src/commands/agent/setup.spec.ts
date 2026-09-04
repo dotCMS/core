@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { runSetup } from './setup';
+import * as registry from './targets/registry';
 
 const URL_ = 'https://demo.dotcms.com';
 
@@ -208,5 +209,44 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
             cwd: dir, skipSkills: true, skipVerify: true
         });
         expect(result.exitCode).toBe(0);
+    });
+});
+
+describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
+    it('configures every DETECTED editor when no --agent is given', async () => {
+        mockAcceptedToken();
+        // Two detected, one not — the run must use exactly the detected set.
+        const detect = jest
+            .spyOn(registry, 'detectTargets')
+            .mockResolvedValue([registry.getTarget('cursor'), registry.getTarget('claude-code')]);
+
+        const result = await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true
+        });
+
+        expect(detect).toHaveBeenCalled();
+        expect(result.outcomes.map((o) => o.targetId).sort()).toEqual(['claude-code', 'cursor']);
+    });
+
+    it('writes nothing and does not throw when no editor is detected', async () => {
+        mockAcceptedToken();
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([]);
+        const result = await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true
+        });
+        expect(result.outcomes).toEqual([]);
+        expect(result.exitCode).toBe(0);
+    });
+
+    it('defaults to FOLDER scope, writing into the working directory rather than $HOME', async () => {
+        mockAcceptedToken();
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], cwd: dir,
+            skipSkills: true, skipVerify: true
+        });
+        expect(result.outcomes[0].scope).toBe('folder');
+        expect(result.outcomes[0].path).toContain(dir);
     });
 });
