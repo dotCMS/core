@@ -307,6 +307,28 @@ describe('DotAssetPickerSidebarComponent', () => {
         it('should render exactly one root', () => {
             expect(tree()?.$folders()).toHaveLength(1);
         });
+
+        it('should reveal the wording the root row displays, not the hostname (#37363)', () => {
+            // FR-012: this row is the reason the tooltip reads its text from what was rendered.
+            // `node.label` still carries `demo.dotcms.com`, but the row says "All".
+            jest.useFakeTimers();
+
+            const clip = spectator.queryAll(byTestId('tree-node-label-clip'))[0] as HTMLElement;
+            Object.defineProperty(clip, 'offsetWidth', { value: 10, configurable: true });
+            Object.defineProperty(clip, 'scrollWidth', { value: 400, configurable: true });
+
+            clip.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            jest.advanceTimersByTime(1000);
+
+            const text = document.querySelector('.p-tooltip-text')?.textContent?.trim();
+
+            expect(text).toBe('All');
+            expect(text).not.toBe('demo.dotcms.com');
+
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+            jest.useRealTimers();
+        });
     });
 
     describe('node interaction', () => {
