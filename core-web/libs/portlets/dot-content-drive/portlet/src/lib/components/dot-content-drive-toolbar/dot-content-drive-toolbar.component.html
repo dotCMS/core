@@ -107,7 +107,7 @@
             <!-- Sits at the end of the filter row rather than beside the search box: during a run the
                  selection still stands, so the row above is occupied by the workflow-action buttons.
                  `ml-auto` keeps it right-aligned as filter chips come and go. -->
-            @if ($actionExecution()) {
+            @if ($hasRunInFlight()) {
                 <div
                     class="ml-auto flex items-center gap-2 text-sm text-gray-700"
                     animate.enter="toolbar-enter"
@@ -117,6 +117,21 @@
                     data-testid="action-execution-indicator">
                     <i class="pi pi-spin pi-spinner text-[0.875rem]!" aria-hidden="true"></i>
                     <span [innerHTML]="$actionExecutionLabel()"></span>
+
+                    <!-- Rendered only when the run actually reports a position; a run that cannot
+                         say stays a bare spinner rather than showing a bar stuck at zero.
+
+                         `aria-live="off"` inside a polite live region: the region announces that
+                         work started and that it finished, but a fifty-file batch must not speak
+                         fifty times on the way. The value stays readable on request. -->
+                    @if ($actionExecutionPercent() !== undefined) {
+                        <span
+                            class="text-xs text-gray-600"
+                            aria-live="off"
+                            data-testid="action-execution-progress">
+                            {{ $actionExecutionPercent() }}%
+                        </span>
+                    }
                 </div>
             }
         </div>

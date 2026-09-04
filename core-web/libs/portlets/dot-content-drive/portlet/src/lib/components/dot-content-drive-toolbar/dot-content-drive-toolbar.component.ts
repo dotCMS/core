@@ -286,7 +286,16 @@ export class DotContentDriveToolbarComponent {
      * dialog. Once the user closes that dialog the toolbar is the only place still reporting the run,
      * so without this the work would continue with no indication until the completion toast fired.
      */
-    readonly $actionExecution = this.#store.actionExecution;
+    readonly $actionExecution = this.#store.toolbarRun;
+
+    /**
+     * How many runs are in flight. Drives whether the indicator is shown at all: with several runs
+     * `$actionExecution` is deliberately undefined, so keying visibility off it alone would hide the
+     * indicator exactly when the most is happening.
+     */
+    readonly $activeRunCount = this.#store.toolbarRunCount;
+
+    readonly $hasRunInFlight = computed(() => this.$activeRunCount() > 0);
 
     /**
      * Resolved indicator label. Built here rather than in the template because `DotMessagePipe` takes
@@ -302,13 +311,50 @@ export class DotContentDriveToolbarComponent {
     readonly $actionExecutionLabel = computed(() => {
         const execution = this.$actionExecution();
 
-        return execution
+        // Several at once: name none of them and report the number instead (FR-017).
+        if (!execution) {
+            return this.$activeRunCount() > 1
+                ? this.#dotMessageService.get(
+                      'content-drive.action-center.applying-many',
+                      String(this.$activeRunCount())
+                  )
+                : '';
+        }
+
+        // Both halves are escaped, and the item name matters more: `actionName` is a
+        // `WorkflowAction.name` from the backend, but a target label is content an author typed.
+        const actionName = escapeHtml(execution.actionName);
+
+        // "Applying Publish to 1 item(s)" tells an author nothing they did not already know. When
+        // the run is over one nameable thing, name it.
+        return execution.targetLabel
             ? this.#dotMessageService.get(
-                  'content-drive.action-center.applying',
-                  escapeHtml(execution.actionName),
-                  String(execution.total)
+                  'content-drive.action-center.applying-item',
+                  actionName,
+                  escapeHtml(execution.targetLabel)
               )
-            : '';
+            : this.#dotMessageService.get(
+                  'content-drive.action-center.applying',
+                  actionName,
+                  String(execution.total)
+              );
+    });
+
+    /**
+     * How far the run has got, as a percentage, or `undefined` when it does not report progress.
+     *
+     * `undefined` and `0` are deliberately different answers: a run that has done nothing yet is not
+     * the same as a run that cannot say. A truthiness check would collapse the two and show an empty
+     * bar for a run that has no bar to show.
+     */
+    readonly $actionExecutionPercent = computed(() => {
+        const execution = this.$actionExecution();
+
+        if (!execution || execution.processed === undefined || !execution.total) {
+            return undefined;
+        }
+
+        return Math.round((execution.processed / execution.total) * 100);
     });
 
     /**

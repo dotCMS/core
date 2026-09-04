@@ -201,6 +201,31 @@ export class DotContentDriveShellComponent {
     readonly $canAddChildren = this.#store.$canAddChildren;
 
     /**
+     * Reports a successful Add to Bundle through the shared outcome pipeline.
+     *
+     * An arrow property, not a method: it is handed to the dialog as data and invoked from there,
+     * so it has to carry its own `this`.
+     *
+     * Publishing a result rather than raising a toast is the point — the Workflow Center fires the
+     * same operation and its wording, severity and reload all come from one place. A second toast
+     * here would say the same thing differently and drift the moment either is edited.
+     */
+    protected readonly onBundleAdded = (): void => {
+        this.#store.reportExternalResult({
+            actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
+            successCount: 1,
+            skippedCount: 0,
+            failCount: 0,
+            // Nothing in the listing changes when an asset joins a bundle, so this is one of the
+            // few successes that still has to be said out loud.
+            confirmSuccess: true
+        });
+    };
+
+    /** Inodes any in-flight run is acting on, so the grid can mark those rows. */
+    readonly $busyRows = this.#store.busyRows;
+
+    /**
      * Forces the folder tree visually collapsed while the Edit Content side panel is open on a
      * narrow viewport, and clears the override on close. Purely derived from the panel's open
      * state each time it runs — no bookkeeping needed (unlike a real preference, "should the panel
@@ -527,7 +552,8 @@ export class DotContentDriveShellComponent {
             skippedCount,
             failCount,
             partialDetailKey,
-            backgrounded
+            backgrounded,
+            confirmSuccess
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -540,6 +566,24 @@ export class DotContentDriveShellComponent {
         // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
         // cause and its number is what keeps the message honest.
         const isPartial = failCount > 0 || skippedCount > 0;
+
+        // Silent on a clean success, unless the operation leaves no visible trace.
+        //
+        // For most operations the listing already shows the outcome — the row published, moved,
+        // unlocked or disappeared — so a notification repeats what the author can see, which is the
+        // noise this feature set out to remove. A shortfall is different: the numbers and their
+        // causes are not visible anywhere, and it is the case the author has to act on.
+        //
+        // `confirmSuccess` is for the operations whose success genuinely shows nowhere, such as Add
+        // to Bundle and Push Publish.
+        //
+        // Only the *notification* is suppressed. The grid still reloads and the dialog still closes:
+        // those are how the author sees the outcome, so skipping them would replace a redundant
+        // message with no feedback at all.
+        // `backgrounded` too: that outcome arrived unprompted, minutes after the author moved on, so
+        // by definition nothing on screen reflects it — and with a dialog open the grid does not
+        // even reload. Staying silent there would mean a run finished and the author never learned.
+        const announce = isPartial || confirmSuccess || backgrounded;
 
         const detail = isPartial
             ? this.#dotMessageService.get(
@@ -557,14 +601,16 @@ export class DotContentDriveShellComponent {
                   String(successCount)
               );
 
-        this.#messageService.add({
-            // A skip is a shortfall too — those items did not get the action — so it warns rather
-            // than reporting green, which is what it used to do.
-            severity: isPartial ? 'warn' : 'success',
-            summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
-            detail,
-            life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
-        });
+        if (announce) {
+            this.#messageService.add({
+                // A skip is a shortfall too — those items did not get the action — so it warns
+                // rather than reporting green, which is what it used to do.
+                severity: isPartial ? 'warn' : 'success',
+                summary: this.#dotMessageService.get('content-drive.action-center.toast.executed'),
+                detail,
+                life: isPartial ? WARNING_MESSAGE_LIFE : SUCCESS_MESSAGE_LIFE
+            });
+        }
 
         untracked(() => {
             // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
@@ -575,7 +621,10 @@ export class DotContentDriveShellComponent {
                 // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
                 // selection the run consumed. Skipped for a backgrounded result while a dialog is
                 // open, because reloading pulls the rows out from under the form being filled in.
-                this.#store.loadItems();
+                //
+                // Quiet: the run marked its rows, so a skeleton here would be a second load
+                // right after the first and would read as a jump.
+                this.#store.loadItems({ quiet: true });
             }
 
             if (!backgrounded) {
@@ -1054,12 +1103,6 @@ export class DotContentDriveShellComponent {
             return;
         }
 
-        this.#messageService.add({
-            severity: 'info',
-            summary: this.#dotMessageService.get('content-drive.file-upload-in-progress'),
-            detail: this.#dotMessageService.get('content-drive.file-upload-in-progress-detail')
-        });
-
         this.uploadByBaseType(files[0], baseType, targetFolder);
     }
 
@@ -1083,25 +1126,9 @@ export class DotContentDriveShellComponent {
                 indexPolicy: 'WAIT_FOR'
             })
             .subscribe({
-                next: ({ title }) => {
-                    // Tell the user which kind they uploaded (Asset vs File), based on the base
-                    // type they chose in the menu — not the raw resolved content-type variable.
-                    const typeLabel = this.#dotMessageService.get(
-                        baseType === DotCMSBaseTypesContentTypes.FILEASSET
-                            ? 'content-drive.dialog.upload-selector.file'
-                            : 'content-drive.dialog.upload-selector.asset'
-                    );
-
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get('content-drive.add-dotasset-success'),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.add-dotasset-success-detail',
-                            title,
-                            typeLabel
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
+                next: () => {
+                    // Silent on success: the row appears in the listing, so a notification
+                    // would repeat what the author is already looking at.
 
                     this.#store.loadItems();
                 },
@@ -1134,32 +1161,17 @@ export class DotContentDriveShellComponent {
         const dragItemsInodes = dragItems.contentlets.map((item) => item.inode);
         const assetContentletsCount = dragItems.contentlets.length;
 
-        if (dragItems.folders.length > 0) {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-with-folders'
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail-with-folders',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        } else {
-            this.#messageService.add({
-                severity: 'info',
-                summary: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress',
-                    folderName
-                ),
-                detail: this.#dotMessageService.get(
-                    'content-drive.move-to-folder-in-progress-detail',
-                    assetContentletsCount.toString(),
-                    `${assetContentletsCount > 1 ? 's ' : ' '}`
-                )
-            });
-        }
+        // Reports on the toolbar indicator, not as a notification announcing a start (FR-007,
+        // FR-008). The two "moving …" toasts this replaces said only that something had begun,
+        // which the indicator says better and without stacking up over the outcome that follows.
+        const runId = this.#store.startExternalRun({
+            operation: MOVE_TO_FOLDER_WORKFLOW_ACTION_ID,
+            actionName: this.#dotMessageService.get('content-drive.context-menu.move'),
+            total: assetContentletsCount,
+            targetLabel: folderName,
+            targets: dragItemsInodes
+        });
+
         this.#dotWorkflowActionsFireService
             .bulkFire({
                 additionalParams: {
@@ -1177,6 +1189,7 @@ export class DotContentDriveShellComponent {
             })
             .pipe(
                 catchError(() => {
+                    this.#store.endExternalRun(runId);
                     this.#messageService.add({
                         severity: 'error',
                         summary: this.#dotMessageService.get('content-drive.move-to-folder-error'),
@@ -1190,21 +1203,12 @@ export class DotContentDriveShellComponent {
                 })
             )
             .subscribe(({ successCount, fails }) => {
+                this.#store.endExternalRun(runId);
+
                 if (successCount > 0) {
-                    this.#messageService.add({
-                        severity: 'success',
-                        summary: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success'
-                        ),
-                        detail: this.#dotMessageService.get(
-                            'content-drive.move-to-folder-success-detail',
-                            successCount.toString(),
-                            `${successCount > 1 ? 's ' : ' '}`,
-                            folderName
-                        ),
-                        life: SUCCESS_MESSAGE_LIFE
-                    });
-                    this.#store.loadItems();
+                    // Silent on success: the rows left the folder in front of the author.
+                    // Quiet: the moved rows were marked busy.
+                    this.#store.loadItems({ quiet: true });
                 }
 
                 fails.forEach(({ errorMessage, inode }) => {

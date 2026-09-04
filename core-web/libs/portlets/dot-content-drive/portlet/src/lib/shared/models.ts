@@ -144,6 +144,43 @@ export interface DotContentDriveActionExecution {
     actionName: string;
     /** Number of contentlets the run was fired over. */
     total: number;
+    /**
+     * What the run is being applied to, when that is one nameable thing.
+     *
+     * Lets a single-item run read "Applying **Publish** to *My Page*" instead of "to 1 item(s)".
+     * Like `actionName` it reaches the indicator's `[innerHTML]`, and unlike `actionName` it is
+     * content the author typed, so escaping it is not optional.
+     */
+    targetLabel?: string;
+    /**
+     * How many items are done, when the run reports it.
+     *
+     * **Optional on purpose.** Absent means the run does not report progress, which the indicator
+     * shows as activity without a position — never as zero. Progress readback is the backend's
+     * largest piece of hidden work, so the indicator must degrade to indeterminate rather than
+     * assume a number exists.
+     */
+    processed?: number;
+}
+
+/**
+ * One run held in the store's registry.
+ *
+ * Several may be in flight at once (FR-015), so each carries its own identity and the items it is
+ * acting on. `runId` is allocated by the client at submission rather than taken from a server
+ * handle: the window a double-click has to fire twice is exactly the window before any handle has
+ * come back, so a server-side id would leave it unguarded.
+ */
+export interface DotContentDriveRun extends DotContentDriveActionExecution {
+    runId: string;
+    /**
+     * Which operation this is. Paired with {@link targets} it forms the repeat-fire guard, which is
+     * scoped to *this operation over these items* rather than to the portlet as a whole (FR-016) —
+     * so an upload running for minutes no longer blocks locking a row.
+     */
+    operation: string;
+    /** The inodes the run is acting on. Drives the guard, and the per-row busy marks. */
+    targets: string[];
 }
 
 /**
@@ -167,6 +204,20 @@ export interface DotContentDriveActionExecutionResult {
      * different supplies its own copy rather than borrowing that one.
      */
     partialDetailKey?: string;
+    /**
+     * Whether a clean success still needs saying.
+     *
+     * Success is silent by default: for most operations the listing visibly reflects it — the row
+     * publishes, moves, unlocks or disappears — and a notification then repeats what the author can
+     * already see. That repetition is the noise this feature set out to remove.
+     *
+     * It is not true for every operation. Add to Bundle and Push Publish change nothing in the
+     * listing, so without this the author gets a dialog that closes and no other sign anything
+     * happened — the "non-responding" complaint that started this. Those set it.
+     *
+     * A shortfall is always reported, with or without this.
+     */
+    confirmSuccess?: boolean;
     /**
      * Whether this outcome arrived unprompted, from a job that finished in the background.
      *

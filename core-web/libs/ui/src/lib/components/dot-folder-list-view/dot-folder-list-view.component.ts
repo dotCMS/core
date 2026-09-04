@@ -292,6 +292,22 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     protected readonly $lockedByOthersSet = computed(() => new Set(this.$lockedByOthers()));
 
     /**
+     * Inodes an operation is currently running on.
+     *
+     * The listing's own `loading` state means "the whole listing is being fetched"; this is the
+     * narrower statement, that *these rows* are busy. Keyed by **inode**, not identifier, because a
+     * multi-language view legitimately shows one identifier on several rows and marking by
+     * identifier would mark siblings nothing is happening to.
+     *
+     * @type {InputSignal<string[]>}
+     * @alias busyRows
+     */
+    readonly $busyRows = input<string[]>([], { alias: 'busyRows' });
+
+    /** Busy inodes as a set — one lookup per row instead of a scan. */
+    protected readonly $busyRowsSet = computed(() => new Set(this.$busyRows()));
+
+    /**
      * Caller-owned checked set — makes the table **controlled**: it renders this and only reports
      * changes through `selectionChange`, never applying them itself. Omit for the uncontrolled
      * table, which keeps its own set and clears it whenever `items` changes.

@@ -93,7 +93,11 @@
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
-                [pSelectableRowDisabled]="$disabled() || $readOnly()"
+                [pSelectableRowDisabled]="
+                    $disabled() || $readOnly() || $busyRowsSet().has(item.inode)
+                "
+                [class.opacity-60]="$busyRowsSet().has(item.inode)"
+                [class.pointer-events-none]="$busyRowsSet().has(item.inode)"
                 data-testId="item-row"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
@@ -104,7 +108,11 @@
                 (drop)="onDrop($event, item)">
                 <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
                     @if ($selectionMode() === 'multiple') {
-                        <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
+                        <!-- A busy row cannot be re-selected into another action while the current
+                             one is still running on it. -->
+                        <p-tableCheckbox
+                            [value]="item"
+                            [disabled]="$disabled() || $busyRowsSet().has(item.inode)" />
                     } @else {
                         <p-tableRadioButton [value]="item" data-testId="item-radio" />
                     }
@@ -113,10 +121,25 @@
                     <td
                         class="grid w-full grid-cols-[4.5rem_minmax(0,1fr)_min-content] items-center gap-3 pl-3"
                         data-testId="item-title">
+                        <!-- The busy marker swaps the thumbnail's *contents*, never its box: this
+                             is the title cell's first grid column and it is sized (4.5rem), so
+                             replacing the container collapses the column and the row loses its
+                             layout. Deliberately not a skeleton either - swapping a busy row for
+                             placeholders repeats, one row at a time, the very thing this feature
+                             removes, since the row the author wants to watch is the one that
+                             disappears. -->
                         <div
                             class="h-14 max-h-14 cursor-pointer bg-(--color-palette-primary-100) p-1"
+                            data-testId="item-thumbnail-box"
                             (click)="onTitleClick($event, item)">
-                            @if (!isFolder) {
+                            @if ($busyRowsSet().has(item.inode)) {
+                                <i
+                                    class="pi pi-spin pi-spinner flex! size-full! items-center! justify-center! text-2xl! text-(--color-palette-primary-500)"
+                                    role="status"
+                                    aria-live="off"
+                                    [attr.title]="'content-drive.list-view.row-busy' | dm"
+                                    data-testId="row-busy"></i>
+                            } @else if (!isFolder) {
                                 <!-- No fieldVariable: rows are the assets themselves, so the mapper
                                      resolves through titleImage / the default /dA path. Passing the
                                      contentType here (legacy quirk) 404s the /contentAsset-based
