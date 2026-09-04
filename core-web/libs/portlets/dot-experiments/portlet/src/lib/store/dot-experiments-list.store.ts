@@ -444,7 +444,11 @@ export const DotExperimentsListStore = signalStore(
 
                         return contentSearchService
                             .get<ContentSearchEntity>({
-                                query: `+contentType:htmlpageasset +working:true +identifier:(${pageIds.join(' ')})`,
+                                // No content-type filter: the page picker offers URL-mapped
+                                // content as an experiment's page, and this is the query that has
+                                // to read it back for the Page column and its editor link
+                                // (#37005). Identifiers come from the experiments themselves.
+                                query: `+working:true +identifier:(${pageIds.join(' ')})`,
                                 limit: pageIds.length * PAGE_LOOKUP_LANGUAGE_HEADROOM
                             })
                             .pipe(

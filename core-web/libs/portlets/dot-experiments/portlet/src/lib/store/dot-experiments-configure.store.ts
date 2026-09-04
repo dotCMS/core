@@ -667,9 +667,17 @@ export const DotExperimentsConfigureStore = signalStore(
 
                     // The page-search endpoint filters by path only, so an identifier is
                     // resolved with the same content search the list uses for its Page column.
+                    //
+                    // No content-type filter. The page picker offers URL-mapped content — a
+                    // `Destination` with a URL map renders as a page and can carry an experiment —
+                    // and filtering to `htmlpageasset` meant this lookup could never read one
+                    // back: the experiment worked right after the pick and reported its page as
+                    // missing on the next entry, on a page that was live the whole time (#37005).
+                    // Narrowing by identifier is enough; whatever the contentlet is, it is the page
+                    // the experiment stores.
                     return contentSearchService
                         .get<PageLookupEntity>({
-                            query: `+contentType:htmlpageasset +working:true +identifier:${pageId}`,
+                            query: `+working:true +identifier:${pageId}`,
                             limit: 1
                         })
                         .pipe(

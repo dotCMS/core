@@ -1521,10 +1521,43 @@ describe('DotExperimentsConfigureStore', () => {
             initNew({ pageId: PAGE.pageId });
 
             expect(contentSearchGet).toHaveBeenCalledWith({
-                query: `+contentType:htmlpageasset +working:true +identifier:${PAGE.pageId}`,
+                query: `+working:true +identifier:${PAGE.pageId}`,
                 limit: 1
             });
             expect(store.selectedPage()).toEqual(PAGE);
+            expect(store.pagePrefillError()).toBeNull();
+        });
+
+        /**
+         * #37005. The page picker offers URL-mapped content — a `Destination` with a URL map
+         * renders as a page and can carry an experiment — but this lookup filtered
+         * `+contentType:htmlpageasset`, so it could never read one back. The experiment worked
+         * right after the pick and broke on the next entry: the card reported the page as missing
+         * and Preview/Edit refused, on a page that was live the whole time.
+         *
+         * Narrowing by identifier is enough. Whatever the contentlet turns out to be, it is the
+         * page the experiment stores.
+         */
+        it('should resolve a page that is URL-mapped content rather than an htmlpageasset', () => {
+            const urlMapped = {
+                identifier: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                contentType: 'Destination',
+                url: '/destinations/colorado',
+                title: 'Colorado & The Rockies',
+                languageId: 1
+            };
+            contentSearchGet.mockReturnValue(
+                of({ jsonObjectView: { contentlets: [urlMapped] } })
+            );
+
+            initNew({ pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437' });
+
+            expect(store.selectedPage()).toEqual({
+                pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                title: 'Colorado & The Rockies',
+                path: '/destinations/colorado',
+                languageId: 1
+            });
             expect(store.pagePrefillError()).toBeNull();
         });
 

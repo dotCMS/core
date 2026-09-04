@@ -236,7 +236,9 @@ describe('DotExperimentsListStore', () => {
             initStore();
 
             expect(contentSearchGet).toHaveBeenCalledWith({
-                query: '+contentType:htmlpageasset +working:true +identifier:(page-1 page-2 page-3 page-orphan)',
+                // No content-type filter: the picker offers URL-mapped content as experiment
+                // pages, and this is the query that has to read them back (#37005).
+                query: '+working:true +identifier:(page-1 page-2 page-3 page-orphan)',
                 // Not the page count: ES holds a document per identifier *and* language, so a
                 // page-count limit truncated the response on any multilingual site.
                 limit: 4 * PAGE_LOOKUP_LANGUAGE_HEADROOM
