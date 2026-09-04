@@ -159,6 +159,7 @@ describe('DotRelationshipFieldComponent', () => {
         flags: jest.fn().mockReturnValue({}),
         initialize: jest.fn(),
         setData: jest.fn(),
+        refreshItem: jest.fn(),
         deleteItem: jest.fn(),
         reorderData: jest.fn(),
         nextPage: jest.fn(),
@@ -712,9 +713,10 @@ describe('DotRelationshipFieldComponent', () => {
                 });
                 spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
 
-                // Matched by identifier (stable across saves), so the row shows the new
-                // title/inode while the field's value — a list of identifiers — is unchanged.
-                expect(storeMock.setData).toHaveBeenCalledWith([saved]);
+                // Handed to the store's in-place replace — which keeps the current page and does
+                // not dirty the form — rather than setData, which resets pagination to page 1.
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(saved);
+                expect(storeMock.setData).not.toHaveBeenCalled();
             });
 
             it('resolves the language of the refreshed row so the Locales column still renders', async () => {
@@ -732,12 +734,12 @@ describe('DotRelationshipFieldComponent', () => {
                 });
                 spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
 
-                expect(storeMock.setData).toHaveBeenCalledWith([
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({
                         inode: 'new-inode-after-save',
                         language: SPANISH_LANGUAGE
                     })
-                ]);
+                );
             });
 
             it('leaves an already-resolved language untouched', async () => {
@@ -751,9 +753,9 @@ describe('DotRelationshipFieldComponent', () => {
                 });
                 spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
 
-                expect(storeMock.setData).toHaveBeenCalledWith([
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ language: ENGLISH_LANGUAGE })
-                ]);
+                );
             });
 
             it('leaves the row as-is when the language id matches no known locale', async () => {
@@ -768,19 +770,24 @@ describe('DotRelationshipFieldComponent', () => {
                 spectator.query(DotEditContentSidePanelComponent)?.data?.onContentSaved?.(saved);
 
                 // Blank column beats a wrong locale.
-                expect(storeMock.setData).toHaveBeenCalledWith([
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
                     expect.objectContaining({ language: undefined })
-                ]);
+                );
             });
 
-            it('leaves the table untouched when the save reports an unrelated identifier', async () => {
+            it('forwards the save to the store, which ignores an unrelated identifier', async () => {
                 await spectator.component.openRelated(RELATED);
                 spectator.detectChanges();
 
+                // Whether the row exists is the store's call (covered in its own spec); the
+                // component's job is only to resolve the language and hand it over.
                 spectator
                     .query(DotEditContentSidePanelComponent)
                     ?.data?.onContentSaved?.(buildItem({ identifier: 'someone-else' }));
 
+                expect(storeMock.refreshItem).toHaveBeenCalledWith(
+                    expect.objectContaining({ identifier: 'someone-else' })
+                );
                 expect(storeMock.setData).not.toHaveBeenCalled();
             });
         });

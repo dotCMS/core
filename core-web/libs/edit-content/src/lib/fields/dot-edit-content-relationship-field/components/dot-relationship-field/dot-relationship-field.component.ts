@@ -377,21 +377,11 @@ export class DotRelationshipFieldComponent
      * Refreshes the row of a related content that was just edited in a side panel, so the table
      * shows its new title and status instead of the version from before the edit.
      *
-     * Matched by identifier, which is stable across saves (a save mints a new inode). That keeps
-     * this field's value — a list of identifiers — unchanged, so refreshing a row never marks the
-     * form dirty on its own.
+     * The store does the replacing (see its `refreshItem`); this only resolves the language first,
+     * since that needs the editor's locales and the relationship store has no access to them.
      */
     #refreshRelatedItem(contentlet: DotCMSContentlet): void {
-        const data = this.store.data();
-        const index = data.findIndex((item) => item.identifier === contentlet.identifier);
-
-        if (index === -1) {
-            return;
-        }
-
-        this.store.setData(
-            data.map((item, i) => (i === index ? this.#withResolvedLanguage(contentlet) : item))
-        );
+        this.store.refreshItem(this.#withResolvedLanguage(contentlet));
     }
 
     /**

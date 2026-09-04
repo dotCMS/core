@@ -252,6 +252,63 @@ describe('RelationshipFieldStore', () => {
             });
         });
 
+        describe('refreshItem', () => {
+            it('should replace the matching item by identifier, keeping the current page', () => {
+                const eightItems = Array.from({ length: 8 }, (_, i) =>
+                    createFakeContentlet({
+                        inode: `refresh-inode-${i + 1}`,
+                        identifier: `refresh-identifier-${i + 1}`,
+                        id: `${i + 1}`
+                    })
+                );
+                store.setData(eightItems);
+
+                // The user is on page 2, looking at the row they just edited elsewhere.
+                store.nextPage();
+                expect(store.pagination().currentPage).toBe(2);
+
+                // A save mints a new inode; the identifier is what stays stable.
+                store.refreshItem(
+                    createFakeContentlet({
+                        inode: 'inode-after-save',
+                        identifier: 'refresh-identifier-7',
+                        title: 'Edited elsewhere'
+                    })
+                );
+
+                // Snapping back to page 1 would lose the user's place — this is why the method
+                // exists instead of reusing setData.
+                expect(store.pagination().currentPage).toBe(2);
+                expect(store.pagination().offset).toBe(6);
+                expect(store.data()[6].inode).toBe('inode-after-save');
+                expect(store.data()[6].title).toBe('Edited elsewhere');
+                expect(store.data().length).toBe(8);
+            });
+
+            it('should mark the change as a load so it never dirties the form', () => {
+                store.setData(mockData);
+                expect(store.lastChangeSource()).toBe('user');
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'new-inode', identifier: 'identifier1' })
+                );
+
+                // The relationship itself did not change — only the version of one entry.
+                expect(store.lastChangeSource()).toBe('load');
+            });
+
+            it('should be a no-op when the identifier is not in the list', () => {
+                store.setData(mockData);
+                const before = store.data();
+
+                store.refreshItem(
+                    createFakeContentlet({ inode: 'x', identifier: 'not-related-here' })
+                );
+
+                expect(store.data()).toBe(before);
+            });
+        });
+
         describe('deleteItem', () => {
             it('should delete item by inode', () => {
                 store.setData(mockData);
