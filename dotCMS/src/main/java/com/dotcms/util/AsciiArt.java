@@ -1,47 +1,61 @@
 package com.dotcms.util;
 
+import com.dotmarketing.util.Config;
 import com.dotmarketing.util.Logger;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
+import java.util.concurrent.atomic.AtomicBoolean;
 
-
+/**
+ * Prints one of the startup banners from {@code /ascii-art.txt}. Keeping the art in a resource
+ * rather than in text blocks means no backslash escaping, real trailing spaces, and nothing
+ * retained in the constant pool once startup is done.
+ */
 public class AsciiArt {
-    
-	private static boolean artDone = false;
-	
-	public static void doArt(){
-		
-		if(artDone) return;
-		
 
-		
-		artDone=true;
-		
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "           OOOO                            7777777   7777       7777     77777777  ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "           OOOO                 OO       777777777  77777      77777    77777777   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "           OOOO                OOO      77777       777777     77777   7777        ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "     OOOOOOOOOO   OOOOOOOO   OOOOOOOOO 7777         7777777   777777   7777        ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "    OOOO  OOOOO  OOOO  OOOO    OOOO    7777         7777777  7777777    777777     ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "   OOOO    OOOO  OOO    OOOO   OOOO    7777         77777777 777 7777     777777   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "   OOOO    OOOO OOOO    OOOO   OOOO    7777         777  777 777 7777        7777  ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "   OOOO    OOOO  OOO    OOOO   OOOO    77777        777  777777  7777         7777 ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "    OOOO   OOOO  OOOO   OOO    OOOO     77777       777   7777   7777        7777  ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "     OOOOOOOOOO   OOOOOOOO      OOOOO    777777777  777   7777   7777  777777777   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                         Content Management System ");
-		// Logger.info(com.dotcms.util.AsciiArt.class, "                                                        copyright " + Calendar.getInstance().get(Calendar.YEAR) + ", dotCMS LLC");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-		Logger.info(com.dotcms.util.AsciiArt.class, "                                                                                   ");
-	
-		try {
-			Thread.sleep(1000);
-		} catch (InterruptedException e) {
-			//Logger.error(AsciiArt.class,e.getMessage(),e);
+	private static final String ART_RESOURCE = "/ascii-art.txt";
+	private static final String SEPARATOR = "\n%%%\n";
+	private static final AtomicBoolean artDone = new AtomicBoolean(false);
+
+	public static void doArt() {
+
+		if (!artDone.compareAndSet(false, true)) {
+			return;
 		}
-	
+
+		final String[] art = load();
+		if (art.length == 0) {
+			return;
+		}
+
+		if (Config.getBooleanProperty("SHOW_ALL_ASCII_ART", false)) {
+			for (final String banner : art) {
+				print(banner);
+				Logger.info(AsciiArt.class, "------------------------------------");
+			}
+		} else {
+			print(art[(int) (System.currentTimeMillis() % art.length)]);
+		}
 	}
-	
-	
-	
+
+	private static String[] load() {
+		try (final InputStream in = AsciiArt.class.getResourceAsStream(ART_RESOURCE)) {
+			return in == null
+					? new String[0]
+					: new String(in.readAllBytes(), StandardCharsets.UTF_8).split(SEPARATOR);
+		} catch (final IOException e) {
+			Logger.debug(AsciiArt.class, "unable to read " + ART_RESOURCE + ": " + e.getMessage());
+			return new String[0];
+		}
+	}
+
+	/**
+	 * Leading newlines so the art starts in column 0 — otherwise the logger prefix shifts the
+	 * first row right and the banner looks broken.
+	 */
+	private static void print(final String art) {
+		Logger.info(AsciiArt.class, "\n\n" + art + "\n");
+	}
+
 }
