@@ -81,6 +81,8 @@ Because there is no verbose, debug, or log-file mode (FR-032a), stdout **is** th
 
 ## Endpoints consumed
 
+Paths are constants in `@dotcms/cli-shared/endpoints`, shared with `create-app` so the two cannot drift.
+
 | Purpose | Request | Contract |
 |---|---|---|
 | Reachability | `GET {url}/api/v1/appconfiguration` | Used instead of `/probes/alive`, whose IP ACLs fail from outside the container (see `create-app/src/constants/index.ts` and issue #34509). |
