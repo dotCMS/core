@@ -1,4 +1,4 @@
-import { expect, test } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadKeyValueField,
@@ -39,7 +39,7 @@ test.describe('editing the key in place @smoke', () => {
         }
     });
 
-    const open = async (page) => {
+    const open = async (page: Page) => {
         await page.goto(`/dotAdmin/#/content/new/${variable}`);
         await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('title').waitFor({ state: 'visible', timeout: 20000 });
@@ -49,12 +49,12 @@ test.describe('editing the key in place @smoke', () => {
         return { f, root: page.getByTestId(`field-${VAR}`) };
     };
 
-    const keys = async (root) =>
+    const keys = async (root: Locator) =>
         (await root.getByTestId('dot-key-value-key-output').allInnerTexts()).map((t: string) =>
             t.trim()
         );
 
-    const renameFirst = async (root, to: string, key = 'Enter') => {
+    const renameFirst = async (root: Locator, to: string, key = 'Enter') => {
         await root.getByTestId('dot-key-value-key-output').first().click();
         const input = root.getByTestId('dot-key-value-key-input').first();
         await expect(input).toBeVisible();
@@ -69,7 +69,7 @@ test.describe('editing the key in place @smoke', () => {
         await renameFirst(root, 'newKey');
 
         const values = (await root.getByTestId('dot-key-value-value-output').allInnerTexts()).map(
-            (t) => t.trim()
+            (t: string) => t.trim()
         );
         // The rename must carry the pair's value across, not reset it.
         expect(await keys(root)).toEqual(['newKey']);

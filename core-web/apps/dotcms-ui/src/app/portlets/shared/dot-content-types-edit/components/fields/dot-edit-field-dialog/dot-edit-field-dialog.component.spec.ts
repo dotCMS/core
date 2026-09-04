@@ -376,7 +376,7 @@ describe('DotEditFieldDialogComponent', () => {
             );
 
             comp.handleTabChange(comp.variablesTabIndex);
-            variables.triggerEventHandler('$changeControls', {
+            variables.triggerEventHandler('changeControls', {
                 accept: { label: 'Variables Save', action: variablesAction, disabled: false },
                 cancel: { label: 'Cancel' }
             });
@@ -400,7 +400,7 @@ describe('DotEditFieldDialogComponent', () => {
             );
 
             comp.handleTabChange(comp.variablesTabIndex);
-            variables.triggerEventHandler('$save');
+            variables.triggerEventHandler('save');
 
             expect(refMock.close).toHaveBeenCalledWith({ kind: 'settings-saved' });
         });

@@ -1,5 +1,4 @@
-import { expect, test } from '@playwright/test';
-import type { Page } from '@playwright/test';
+import { expect, test, type Page } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadKeyValueField,

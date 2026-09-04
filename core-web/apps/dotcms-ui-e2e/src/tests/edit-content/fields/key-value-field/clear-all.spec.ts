@@ -1,6 +1,5 @@
 import { ContentTypeBuilderPage } from '@pages';
-import { expect, test } from '@playwright/test';
-import type { Page, Locator } from '@playwright/test';
+import { expect, test, type Locator, type Page } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadKeyValueField,
