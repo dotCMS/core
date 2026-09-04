@@ -113,6 +113,9 @@ jobs:
           if [ -f .sdkmanrc ]; then
             SDKMAN_JAVA_VERSION=$(awk -F "=" '/^java=/ {print $2}' .sdkmanrc)
             echo "using default Java version from .sdkmanrc: ${SDKMAN_JAVA_VERSION}"
+            # Used as the dotcms/java-base docker tag (FROM dotcms/java-base:<tag>), which
+            # cannot contain '+' - convert SDKMAN's '+' to '-' (e.g. 25.0.4+1-ms -> 25.0.4-1-ms)
+            SDKMAN_JAVA_VERSION="${SDKMAN_JAVA_VERSION//+/-}"
             echo "SDKMAN_JAVA_VERSION=${SDKMAN_JAVA_VERSION}" >> $GITHUB_OUTPUT
           else
             echo "No .sdkmanrc file found"

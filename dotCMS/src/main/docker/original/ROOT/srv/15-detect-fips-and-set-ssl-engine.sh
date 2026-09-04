@@ -5,8 +5,11 @@
 # This script automatically detects FIPS-enabled environments and disables the
 # Tomcat Native APR SSL Engine to prevent JVM crashes with OpenSSL 3.x.
 #
-# The Tomcat Native APR library (libtcnative-1) version 1.2.35 is incompatible
-# with OpenSSL 3.x when running in FIPS mode, causing segmentation faults.
+# The Tomcat Native APR library (libtcnative-1) has historically been incompatible
+# with OpenSSL 3.x when running in FIPS mode, causing segmentation faults (e.g.
+# the libtcnative-1 1.2.35 distro package this image used to ship). The image
+# now builds the current Apache tcnative 1.x release from source (see the
+# Dockerfile), but this guard is kept as defense-in-depth for FIPS hosts.
 # Setting SSLEngine=off alone is insufficient: libtcnative-1 still loads
 # libcrypto.so.3 and calls OpenSSL for non-SSL operations (e.g. random number
 # generation), which triggers the same FIPS provider crash.
