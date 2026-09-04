@@ -11,7 +11,7 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 import { DotRolesAddComponent } from './dot-roles-add.component';
 
 import { DotRolesStore } from '../dot-roles-page/store/dot-roles.store';
-import { DotRoleNode } from '../models/dot-roles.models';
+import { DotRoleNode, ROOT_PARENT_OPTION_KEY } from '../models/dot-roles.models';
 
 const MESSAGES = {
     'roles.add.title': 'Add Role',
@@ -20,6 +20,7 @@ const MESSAGES = {
     'roles.form.name': 'Role',
     'roles.form.key': 'Key',
     'roles.form.parent': 'Parent',
+    'roles.form.parent.root': 'None (Top Level)',
     'roles.form.description': 'Description',
     'roles.form.can-grant': 'Can Grant',
     'roles.form.users': 'Users',
@@ -54,6 +55,13 @@ describe('DotRolesAddComponent', () => {
         spectator = createComponent();
     });
 
+    it('defaults the picker to "None (Top Level)" when opened from New', () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        expect(spectator.component['form'].controls.parent.value?.key).toBe(ROOT_PARENT_OPTION_KEY);
+    });
+
     describe('parent picker', () => {
         beforeEach(() => {
             // `mockProvider` builds its jest.fn()s once at factory scope, so
@@ -70,7 +78,8 @@ describe('DotRolesAddComponent', () => {
             const spectator = createComponent();
             spectator.detectChanges();
 
-            const [withChildren, withoutChildren] = spectator.component['$parentTree']();
+            // Index 0 is the pinned "None (Top Level)" entry, not a role.
+            const [, withChildren, withoutChildren] = spectator.component['$parentTree']();
             // `leaf: false` is what gives PrimeNG a toggler to click.
             expect(withChildren.leaf).toBe(false);
             expect(withoutChildren.leaf).toBe(true);
@@ -126,7 +135,11 @@ describe('DotRolesAddComponent', () => {
             spectator.detectChanges();
 
             expect(store.searchRoleTree).toHaveBeenCalledWith('fou');
-            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual(['r-found']);
+            // The root entry is a choice, not a search hit, so it survives.
+            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual([
+                ROOT_PARENT_OPTION_KEY,
+                'r-found'
+            ]);
         }));
 
         it('does not search under 3 characters and falls back to the cached tree', fakeAsync(() => {
@@ -139,7 +152,11 @@ describe('DotRolesAddComponent', () => {
             flushMicrotasks();
 
             expect(store.searchRoleTree).not.toHaveBeenCalled();
-            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual(['r-a', 'r-b']);
+            expect(spectator.component['$parentTree']().map((n) => n.key)).toEqual([
+                ROOT_PARENT_OPTION_KEY,
+                'r-a',
+                'r-b'
+            ]);
         }));
 
         it('clears the busy flag once the search resolves', fakeAsync(() => {
@@ -213,24 +230,49 @@ describe('DotRolesAddComponent', () => {
         }));
     });
 
-    it('should render the required inputs and disabled Save button', () => {
+    it('should render the required inputs and an enabled Save button', () => {
         spectator.detectChanges();
 
         expect(spectator.query(byTestId('input-role-name'))).toBeTruthy();
         expect(spectator.query(byTestId('input-description'))).toBeTruthy();
 
+        // Save is never disabled by validation — an empty form is reported in
+        // the footer on submit, not by a dead button.
         const saveBtn = spectator.query(byTestId('btn-save')) as HTMLButtonElement;
-        expect(saveBtn.disabled).toBe(true);
+        expect(saveBtn.disabled).toBe(false);
     });
 
-    it('should enable Save once the required roleName is filled', () => {
+    it('should report the missing required field in the footer instead of creating', () => {
+        const store = spectator.inject(DotRolesStore);
+        // The `mockProvider` factory reuses the same `jest.fn()` across tests
+        // in this suite, so a bare `not.toHaveBeenCalled()` would inherit
+        // earlier calls.
+        (store.createRole as jest.Mock).mockClear();
         spectator.detectChanges();
+
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
+
+        expect(store.createRole).not.toHaveBeenCalled();
+        expect(spectator.query(byTestId('add-error'))).toBeTruthy();
+        expect(spectator.component['form'].get('roleName')?.touched).toBe(true);
+    });
+
+    it('should clear the validation error once the form is completed and submitted', () => {
+        const store = spectator.inject(DotRolesStore);
+        spectator.detectChanges();
+
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
+        expect(spectator.query(byTestId('add-error'))).toBeTruthy();
 
         spectator.typeInElement('New Role', byTestId('input-role-name'));
         spectator.detectChanges();
+        spectator.click(byTestId('btn-save'));
+        spectator.detectChanges();
 
-        const saveBtn = spectator.query(byTestId('btn-save')) as HTMLButtonElement;
-        expect(saveBtn.disabled).toBe(false);
+        expect(store.createRole).toHaveBeenCalled();
+        expect(spectator.query(byTestId('add-error'))).toBeFalsy();
     });
 
     it('should close the dialog when Cancel is clicked', () => {
@@ -321,6 +363,44 @@ describe('DotRolesAddComponent (opened from inline +)', () => {
         spectator.component['form'].controls.parent.setValue(null);
         await spectator.component['onSave']();
 
+        expect(store.createRole).toHaveBeenCalledWith(
+            expect.objectContaining({ parentRoleId: null })
+        );
+    });
+
+    it('keeps the prefilled parent rather than defaulting to root', () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        // The root default must never clobber the parent the row's `+` asked
+        // for — that would silently create a root role instead of a child.
+        expect(spectator.component['form'].controls.parent.value?.key).toBe('r-categories');
+    });
+
+    it('pins "None (Top Level)" as the first option', () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        const [first] = spectator.component['$parentTree']();
+        expect(first.key).toBe(ROOT_PARENT_OPTION_KEY);
+        expect(first.label).toBe('None (Top Level)');
+        // A choice, not a branch — it must not render a toggler.
+        expect(first.leaf).toBe(true);
+    });
+
+    it('maps the "None (Top Level)" selection to a null parentRoleId, not the sentinel', async () => {
+        const spectator = createComponent();
+        spectator.detectChanges();
+
+        const store = spectator.inject(DotRolesStore, true);
+        spectator.component['form'].controls.roleName.setValue('New Root');
+        spectator.component['form'].controls.parent.setValue(
+            spectator.component['$parentTree']()[0]
+        );
+        await spectator.component['onSave']();
+
+        // Sending the sentinel through would be read as a real id and answered
+        // with a 404 "parent role not found".
         expect(store.createRole).toHaveBeenCalledWith(
             expect.objectContaining({ parentRoleId: null })
         );
