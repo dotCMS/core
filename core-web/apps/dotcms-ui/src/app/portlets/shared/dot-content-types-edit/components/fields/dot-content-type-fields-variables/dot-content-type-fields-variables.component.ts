@@ -61,10 +61,10 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
     readonly $showTable = input<boolean>(true, { alias: 'showTable' });
 
     /** Hands the dialog its footer buttons while this tab is the one on screen. */
-    readonly $changeControls = output<DotDialogActions>();
+    readonly changeControls = output<DotDialogActions>();
 
     /** Raised once every pending change has been written. */
-    readonly $save = output<void>();
+    readonly save = output<void>();
 
     /** Local snapshot of the field, updated on every `$field` change. */
     field: DotCMSContentTypeField;
@@ -161,7 +161,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
         });
 
         if (!removed.length && !written.length) {
-            this.$save.emit();
+            this.save.emit();
 
             return;
         }
@@ -234,7 +234,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
                     return;
                 }
 
-                this.$save.emit();
+                this.save.emit();
             });
     }
 
@@ -281,7 +281,7 @@ export class DotContentTypeFieldsVariablesComponent implements OnChanges, OnDest
             return;
         }
 
-        this.$changeControls.emit({
+        this.changeControls.emit({
             accept: {
                 label: this.#dotMessageService.get('contenttypes.dropzone.action.save'),
                 action: () => this.saveChanges(),

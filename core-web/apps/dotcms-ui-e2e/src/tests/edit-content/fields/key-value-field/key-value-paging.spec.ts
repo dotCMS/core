@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import type { Page } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadKeyValueField,
@@ -43,7 +44,7 @@ test.describe('key/value paging @smoke', () => {
         }
     });
 
-    async function openWith(page, count: number) {
+    async function openWith(page: Page, count: number) {
         await page.goto(`/dotAdmin/#/content/new/${variable}`);
         await page.waitForLoadState('domcontentloaded');
         await page.getByTestId('title').waitFor({ state: 'visible', timeout: 20000 });
@@ -55,7 +56,7 @@ test.describe('key/value paging @smoke', () => {
         return field;
     }
 
-    const root = (page) => page.getByTestId(`field-${VAR}`);
+    const root = (page: Page) => page.getByTestId(`field-${VAR}`);
 
     test('renders one page and reveals the rest on demand', async ({ page }) => {
         await openWith(page, 45);

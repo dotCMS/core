@@ -12,7 +12,7 @@ import {
 } from '@angular/core';
 import {
     AbstractControl,
-    FormBuilder,
+    NonNullableFormBuilder,
     ReactiveFormsModule,
     ValidationErrors
 } from '@angular/forms';
@@ -44,7 +44,7 @@ import { DotKeyValue } from '../dot-key-value-ng.component';
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotKeyValueTableRowComponent {
-    #fb = inject(FormBuilder);
+    #fb = inject(NonNullableFormBuilder);
 
     save = output<DotKeyValue>();
 
@@ -85,7 +85,7 @@ export class DotKeyValueTableRowComponent {
      * in the same words. Which validators are attached depends on the cell, and is
      * decided in {@link #beginEditing}.
      */
-    editControl = this.#fb.nonNullable.control('');
+    editControl = this.#fb.control('');
 
     /** Keys held by other rows, so a rename cannot collide with one. */
     $forbiddenkeys = input<Record<string, boolean>>({}, { alias: 'forbiddenkeys' });

@@ -10,7 +10,7 @@ import {
 } from '@angular/core';
 import {
     AbstractControl,
-    FormBuilder,
+    NonNullableFormBuilder,
     ReactiveFormsModule,
     ValidationErrors,
     ValidatorFn,
@@ -48,7 +48,7 @@ import { parseKeyValueBlock } from '../dot-key-value-paste.util';
     changeDetection: ChangeDetectionStrategy.Eager
 })
 export class DotKeyValueTableHeaderRowComponent {
-    #fb = inject(FormBuilder);
+    #fb = inject(NonNullableFormBuilder);
 
     $keyCell = viewChild.required<ElementRef<HTMLInputElement>>('keyCell');
 
@@ -64,7 +64,7 @@ export class DotKeyValueTableHeaderRowComponent {
     /** A `.env`-style block pasted into the key input, already parsed. */
     saveMany = output<DotKeyValue[]>();
 
-    form = this.#fb.nonNullable.group({
+    form = this.#fb.group({
         key: ['', [Validators.required, this.#keyValidator()]],
         value: ['', Validators.required],
         hidden: [false]

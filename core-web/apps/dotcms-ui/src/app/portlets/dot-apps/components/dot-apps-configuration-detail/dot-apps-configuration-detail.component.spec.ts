@@ -2,7 +2,7 @@ import { MarkdownService } from 'ngx-markdown';
 import { Observable, of } from 'rxjs';
 
 import { CommonModule } from '@angular/common';
-import { Component, EventEmitter, Injectable, Input, Output } from '@angular/core';
+import { Component, EventEmitter, Injectable, Input, Output, input, output } from '@angular/core';
 import { ComponentFixture, TestBed, waitForAsync } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute } from '@angular/router';
@@ -118,9 +118,9 @@ class MockDotAppsService {
     standalone: true
 })
 class MockDotKeyValueComponent {
-    @Input() showHiddenField: boolean;
-    @Input() variables: DotKeyValue[];
-    @Output() updatedList = new EventEmitter<DotKeyValue[]>();
+    $showHiddenField = input<boolean>(false, { alias: 'showHiddenField' });
+    $variables = input<DotKeyValue[]>([], { alias: 'variables' });
+    updatedList = output<DotKeyValue[]>();
 }
 
 @Component({
@@ -387,8 +387,8 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             expect(keyValue).toBeTruthy();
-            expect(keyValue.componentInstance.showHiddenField).toBe(true);
-            expect(keyValue.componentInstance.variables).toEqual([
+            expect(keyValue.componentInstance.$showHiddenField()).toBe(true);
+            expect(keyValue.componentInstance.$variables()).toEqual([
                 { key: 'custom', hidden: false, value: 'test' }
             ]);
         });

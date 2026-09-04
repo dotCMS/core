@@ -74,8 +74,8 @@
         }
         <p-tabpanel [value]="variablesTabIndex">
             <dot-content-type-fields-variables
-                ($changeControls)="changesDialogActions($event)"
-                ($save)="onSettingsSaved()"
+                (changeControls)="changesDialogActions($event)"
+                (save)="onSettingsSaved()"
                 [showTable]="activeTab === variablesTabIndex"
                 [field]="currentField" />
         </p-tabpanel>

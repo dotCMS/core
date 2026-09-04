@@ -1,5 +1,6 @@
 import { ContentTypeBuilderPage } from '@pages';
 import { expect, test } from '@playwright/test';
+import type { Page, Locator } from '@playwright/test';
 import { ContentType, createFakeContentType, deleteContentType } from '@requests/contentType';
 import {
     createFakePayloadKeyValueField,
@@ -12,7 +13,7 @@ import { KeyValueField } from './helpers/key-value-field';
 const APP_KEY = 'dotVelocitySecretApp';
 
 /** PrimeNG appends the dialog to the body, so it is located globally. */
-const confirmClear = async (page, root) => {
+const confirmClear = async (page: Page, root: Locator) => {
     await root.getByTestId('dot-key-value-clear-all').click();
     const accept = page.locator('.p-confirmdialog-accept-button');
     await expect(accept).toBeVisible({ timeout: 5000 });

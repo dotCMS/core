@@ -134,7 +134,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         it('should report back so the dialog can close', () => {
             const saved = jest.fn();
-            comp.$save.subscribe(saved);
+            comp.save.subscribe(saved);
 
             changeTo([...mockFieldVariables, { key: 'k', value: 'v' } as DotFieldVariable]);
             comp.saveChanges();
@@ -144,7 +144,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         it('should close without writing when nothing changed', () => {
             const saved = jest.fn();
-            comp.$save.subscribe(saved);
+            comp.save.subscribe(saved);
 
             comp.saveChanges();
 
@@ -170,7 +170,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
 
         it('should offer a Save the dialog can render, disabled until something changes', () => {
             const controls: DotDialogActions[] = [];
-            comp.$changeControls.subscribe((c) => controls.push(c));
+            comp.changeControls.subscribe((c) => controls.push(c));
 
             changeTo(mockFieldVariables);
             expect(controls.at(-1).accept.disabled).toBe(true);
@@ -192,7 +192,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             const controls: DotDialogActions[] = [];
 
             fixtureHost.componentInstance.showTable = false;
-            comp.$changeControls.subscribe((c) => controls.push(c));
+            comp.changeControls.subscribe((c) => controls.push(c));
             fixtureHost.detectChanges();
 
             comp.onVariablesChanged([{ key: 'fresh', value: 'v' }]);
@@ -218,7 +218,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
                 throwError(() => httpError)
             );
             const saved = jest.fn();
-            comp.$save.subscribe(saved);
+            comp.save.subscribe(saved);
 
             changeTo([
                 ...mockFieldVariables,
@@ -319,7 +319,7 @@ describe('DotContentTypeFieldsVariablesComponent', () => {
             );
             const pending = mockFieldVariables.slice(1);
             const saved = jest.fn();
-            comp.$save.subscribe(saved);
+            comp.save.subscribe(saved);
 
             changeTo(pending);
             comp.saveChanges();
