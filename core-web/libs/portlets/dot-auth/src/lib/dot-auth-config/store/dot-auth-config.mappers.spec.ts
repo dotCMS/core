@@ -2,6 +2,9 @@ import { DotAuthConfig, DotAuthConfigView, DotAuthDiscoveryView } from '@dotcms/
 
 import {
     DEFAULT_CONFIG,
+    GOOGLE_GROUPS_SCOPE,
+    GOOGLE_GROUPS_URL,
+    applyGoogleGroupsPreset,
     applyOidcDiscovery,
     applyTrustedDiscovery,
     clone,
@@ -671,6 +674,38 @@ describe('dot-auth-config.mappers', () => {
             config.oidc.issuer = 'https://original.example';
             const result = applyOidcDiscovery(config, {});
             expect(result.oidc.issuer).toBe('https://original.example');
+        });
+    });
+
+    describe('applyGoogleGroupsPreset', () => {
+        it('fills the Google groups URL and response path when both are empty', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe(GOOGLE_GROUPS_URL);
+            expect(result.oidc.groupsResponsePath).toBe('memberships[].groupKey.id');
+            expect(config.oidc.groupsUrl).toBe('');
+        });
+
+        it('leaves a customized groups URL and response path untouched', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.groupsUrl = 'https://custom.example/groups';
+            config.oidc.groupsResponsePath = 'items[].name';
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.groupsUrl).toBe('https://custom.example/groups');
+            expect(result.oidc.groupsResponsePath).toBe('items[].name');
+        });
+
+        it('appends the cloud-identity scope when absent', () => {
+            const config = clone(DEFAULT_CONFIG);
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid email profile ${GOOGLE_GROUPS_SCOPE}`);
+        });
+
+        it('does not duplicate the cloud-identity scope when already present', () => {
+            const config = clone(DEFAULT_CONFIG);
+            config.oidc.scopes = `openid ${GOOGLE_GROUPS_SCOPE} email`;
+            const result = applyGoogleGroupsPreset(config);
+            expect(result.oidc.scopes).toBe(`openid ${GOOGLE_GROUPS_SCOPE} email`);
         });
     });
 
