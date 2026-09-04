@@ -24,5 +24,11 @@
     .p-tree-node-label {
         min-width: 0;
         overflow: hidden;
+        /* Takes the width left over by the toggler and the icon. Without it the label slot is only
+         * as wide as its text, so a consumer that puts a trailing element beside the name — the
+         * Roles panel's user-count badge and add-child button — has nothing to push it against.
+         * Two consumers used to set this through their own `pt`; it belongs here with the rest of
+         * the label's layout. */
+        flex: 1 1 auto;
     }
 }

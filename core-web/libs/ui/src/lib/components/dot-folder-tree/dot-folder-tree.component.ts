@@ -189,11 +189,19 @@ export class DotFolderTreeComponent {
     }
 
     #labelOfRow(event: FocusEvent): HTMLElement | null {
-        const row = (event.target as HTMLElement | null)?.closest('[role="treeitem"]');
+        const target = event.target as HTMLElement | null;
+
+        // The row itself, never a control inside it. PrimeNG puts the tabindex on the `treeitem`,
+        // so that is what arrow-key navigation focuses; a focusable element *within* a row — the
+        // Roles panel's add-child button sits right beside the name — is a different target, and
+        // popping the row's name tooltip while the user is on that button would be wrong.
+        if (!target?.matches('[role="treeitem"]')) {
+            return null;
+        }
 
         // First match is the row's own label: PrimeNG renders the node's content before the
         // container holding its children.
-        return row?.querySelector<HTMLElement>(`[${TRUNCATED_LABEL_ATTR}]`) ?? null;
+        return target.querySelector<HTMLElement>(`[${TRUNCATED_LABEL_ATTR}]`) ?? null;
     }
 
     protected onLoadMoreClick(event: Event, node: TreeNode): void {

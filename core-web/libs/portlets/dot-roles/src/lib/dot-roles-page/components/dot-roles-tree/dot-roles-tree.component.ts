@@ -114,16 +114,12 @@ export class DotRolesTreeComponent {
      */
     readonly #openNodeIds = signal(new Set<string>());
 
-    // `flex-1` keeps the `+` button at the trailing edge of the row. The clipping that used to
-    // sit beside it here belongs to `dot-truncated-label` and the shared tree's own stylesheet
-    // now (#37363), which also fixes the depth problem this comment used to describe: `pt` only
-    // reaches the top-level tree, so nested labels never got these rules.
+    // The label's own layout — clipping, and the `flex-1` that keeps the `+` button at the
+    // trailing edge — belongs to `dot-truncated-label` and the shared tree's stylesheet now
+    // (#37363). That also fixes the depth problem this comment used to describe: `pt` only
+    // reaches the top-level tree, so nested labels never received these rules.
     protected readonly treePt = {
-        root: {
-            class:
-                'w-full h-full border-none overflow-y-auto [--p-tree-padding:0] ' +
-                '[&_.p-tree-node-label]:flex-1'
-        }
+        root: { class: 'w-full h-full border-none overflow-y-auto [--p-tree-padding:0]' }
     };
 
     protected readonly $filterInput = computed(() => this.store.filter());

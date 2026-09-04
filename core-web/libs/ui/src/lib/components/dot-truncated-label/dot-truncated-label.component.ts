@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, ElementRef, signal, viewChild } from '@angular/core';
+import { Component, ElementRef, signal, viewChild } from '@angular/core';
 
 import { Tooltip } from 'primeng/tooltip';
 
@@ -47,8 +47,7 @@ const TOOLTIP_SHOW_DELAY = 800;
             <ng-content />
         </span>
     `,
-    host: { class: 'block min-w-0' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'block min-w-0' }
 })
 export class DotTruncatedLabelComponent {
     /**

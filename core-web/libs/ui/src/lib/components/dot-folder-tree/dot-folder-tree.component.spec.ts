@@ -1,6 +1,6 @@
 import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
 
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { Component } from '@angular/core';
 
 import type { TreeNode } from 'primeng/api';
 import { Tree } from 'primeng/tree';
@@ -38,8 +38,7 @@ const LONG_FOLDER_PATH = '/application/a-very-long-folder-name-that-will-not-fit
                 </dot-truncated-label>
             </ng-template>
         </dot-folder-tree>
-    `,
-    changeDetection: ChangeDetectionStrategy.OnPush
+    `
 })
 class ProjectedLabelHostComponent {
     readonly folders: TreeNode[] = [
@@ -315,6 +314,20 @@ describe('DotFolderTreeComponent', () => {
             jest.advanceTimersByTime(1000);
 
             firstRow().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+            jest.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip')).toBeNull();
+        });
+
+        it('should not reveal the name when a control inside the row takes focus', () => {
+            // A consumer can put a focusable control beside the name (the Roles panel's add-child
+            // button). Focusing it must not pop the row's name tooltip.
+            forceOverflow(clipInFirstRow());
+            const control = document.createElement('button');
+            firstRow().querySelector('.p-tree-node-content')?.appendChild(control);
+
+            control.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+            spectator.detectChanges();
             jest.advanceTimersByTime(1000);
 
             expect(document.querySelector('.p-tooltip')).toBeNull();

@@ -56,9 +56,12 @@ responsibility for the node label.
 
 - The single-line clipping of **its own** node label, and the overflow tooltip on it.
 - Forwarding row keyboard focus to whichever `<dot-truncated-label>` the row contains — including
-  one a consumer placed itself.
-- The PrimeNG layout guards that make clipping possible at all: `min-width: 0` on
-  `.p-tree-node-content` and `.p-tree-node-label`, in the component's own SCSS.
+  one a consumer placed itself. Gated on the focus target being the `treeitem` itself: a focusable
+  control *inside* a row (the Roles panel's add-child button) must not reveal that row's name.
+- The label slot's layout, in the component's own SCSS: `min-width: 0` on
+  `.p-tree-node-content` and `.p-tree-node-label` (without which `truncate` has nothing to
+  truncate into), plus `flex: 1 1 auto` on the label so it takes the width the toggler and icon
+  leave — which is what lets a consumer push a trailing element to the end of the row.
 
 ### A consumer that projects `#folderTreeNodeLabel` must
 
@@ -83,7 +86,7 @@ This was found by the Roles test in the Red phase and amended in spec.md's Clari
 | No longer | Why |
 |-----------|-----|
 | Set `overflow`, `text-overflow`, `white-space` or `truncate` on the node label | Owned by `dot-truncated-label` (FR-006/FR-007). A local rule now either duplicates it or fights it |
-| Pass `nodeLabel` / `nodeContent` `min-width` guards through `pt` | Same — and `pt` is the one channel a consumer and the tree would have to share, which is why the guards moved to SCSS |
+| Pass `nodeLabel` / `nodeContent` layout through `pt` — `min-width`, `overflow`, or `flex-1` | Same — and `pt` is the one channel a consumer and the tree would have to share, which is why this moved to SCSS. `pt` also only reaches the top-level tree, so nested rows never received these rules |
 | Declare `[pTooltip]` / `[tooltipDisabled]` / `[showDelay]` / `pTooltipPT` on a node label | Owned by `dot-truncated-label`. In particular the `label.length <= 10` heuristic is gone: it is wrong under indentation and at narrow panel widths |
 | Reach into tree internals with `::ng-deep` for label overflow | Owned by the tree |
 
