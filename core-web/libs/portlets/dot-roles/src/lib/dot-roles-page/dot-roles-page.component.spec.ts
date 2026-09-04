@@ -49,7 +49,6 @@ function baseStoreMock(overrides: Record<string, unknown> = {}) {
         selectedRoleId: jest.fn().mockReturnValue(null),
         selectedRole: jest.fn().mockReturnValue(null),
         selectedRoleStatus: jest.fn().mockReturnValue('INIT'),
-        selectedRoleIsParent: jest.fn().mockReturnValue(false),
         activeTab: jest.fn().mockReturnValue('users'),
         status: jest.fn().mockReturnValue('LOADED'),
         membersStatus: jest.fn().mockReturnValue('LOADED'),

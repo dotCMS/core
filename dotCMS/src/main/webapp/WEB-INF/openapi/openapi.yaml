@@ -18940,8 +18940,14 @@ paths:
       - Users
   /v1/users/filter:
     get:
-      description: Returns a list of dotCMS users based on specified search criteria
-        with pagination support
+      description: "Returns a list of dotCMS users based on specified search criteria\
+        \ with pagination support. Each item is the user's data map. When `includeRoles=true`\
+        \ is passed, each item additionally carries a `roles` array listing the user's\
+        \ directly assigned roles as `{id, name, roleKey}` objects (`roleKey` may\
+        \ be null for roles created without a key); roles held through the role hierarchy\
+        \ and the user's personal role are not included. Requesting roles requires\
+        \ being a CMS Administrator or having access to both the Roles and Users portlets\
+        \ (403 otherwise). Without the flag the payload is unchanged."
       operationId: filterUsers
       parameters:
       - description: "Filter users by user ID, first name, last name, email address,\
@@ -19004,6 +19010,15 @@ paths:
           type: array
           items:
             type: string
+      - description: "When true, each user carries a `roles` array of its directly\
+          \ assigned roles as {id, name, roleKey}; inherited roles and the user's\
+          \ personal role are excluded. Requires CMS Administrator or Roles+Users\
+          \ portlet access (403 otherwise). Defaults to false (payload unchanged)"
+        in: query
+        name: includeRoles
+        schema:
+          type: boolean
+          default: false
       responses:
         "200":
           content:
@@ -19023,7 +19038,8 @@ paths:
         "403":
           content:
             application/json: {}
-          description: Forbidden - insufficient permissions
+          description: "Forbidden - insufficient permissions, or includeRoles=true\
+            \ requested without CMS Administrator / Roles+Users portlet access"
       summary: Filter users
       tags:
       - Users
