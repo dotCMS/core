@@ -96,12 +96,12 @@ describe('DotRolesTreeComponent', () => {
 
         expect(spectator.query(byTestId('tree-node-folder-icon'))).toBeNull();
 
-        // The row still draws its own Material Symbols icon. Which glyph it picks is leaf
-        // detection, covered by the `childCount` tests below — what matters here is that the icon
-        // is this portlet's and no PrimeIcons folder joined it.
-        const ownIcon = spectator.query(byTestId('node-icon-r-eco'));
-        expect(ownIcon?.classList.contains('material-symbols-outlined')).toBe(true);
-        expect(ownIcon?.querySelector('.pi')).toBeNull();
+        // The label the portlet projects still draws its own Material Symbols icons, and no
+        // PrimeIcons glyph joined them there — the only `.pi` on the row is PrimeNG's chevron,
+        // which lives outside the label in the toggle button.
+        const label = spectator.query('.p-tree-node-label');
+        expect(label?.querySelector('.material-symbols-outlined')).toBeTruthy();
+        expect(label?.querySelector('.pi')).toBeNull();
     });
 
     describe('leaf detection via childCount (#37071)', () => {
