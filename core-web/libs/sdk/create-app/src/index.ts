@@ -7,6 +7,8 @@ import ora, { Ora } from 'ora';
 
 import path from 'path';
 
+import { Ok, Err, formatRetryReport, isSuccessStatus, httpGet, type Result, type RetryReporter } from '@dotcms/http';
+
 import { DotCMSApi } from './api';
 import {
     askCloudOrLocalInstance,
@@ -32,7 +34,6 @@ import {
     recordRecoverableState
 } from './exit-state';
 import { cloneFrontEndSample, downloadDockerCompose } from './git';
-import { type Result, Ok, Err } from './result';
 import {
     checkDockerAvailability,
     displayDependencies,
@@ -48,8 +49,6 @@ import {
     findBusyPorts
 } from './utils';
 import { withComposeFileMovedAside } from './utils/compose-move';
-import { formatRetryReport, isSuccessStatus, type RetryReporter } from './utils/fetch-retry';
-import { httpGet } from './utils/http';
 import { reportInstallResult } from './utils/install';
 import { describePortOwner, resolvePortConflict } from './utils/ports';
 import { waitForReadiness } from './utils/readiness';

@@ -1,4 +1,4 @@
-import type { Result } from '../result';
+import { type Result } from '@dotcms/http';
 
 /**
  * Turns a dependency-install `Result` into an explicit report.

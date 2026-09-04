@@ -1,0 +1,24 @@
+{
+    "name": "http",
+    "$schema": "../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/http/src",
+    "projectType": "library",
+    "tags": [],
+    "// targets": "to see all targets run: nx show project http --web",
+    "targets": {
+        "build": {
+            "executor": "@nx/js:tsc",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "options": {
+                "outputPath": "dist/libs/http",
+                "main": "libs/http/src/index.ts",
+                "tsConfig": "libs/http/tsconfig.lib.json",
+                "assets": [
+                    "libs/http/*.md"
+                ]
+            }
+        }
+    }
+}

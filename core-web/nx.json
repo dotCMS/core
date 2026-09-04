@@ -250,6 +250,7 @@
                 "libs/sdk/analytics/**/*",
                 "libs/sdk/angular/**/*",
                 "libs/sdk/client/**/*",
+                "libs/http/**/*",
                 "libs/sdk/create-app/**/*",
                 "libs/sdk/experiments/**/*",
                 "libs/sdk/react/**/*",
