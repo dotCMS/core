@@ -84,6 +84,50 @@ describe('DotRolesTreeComponent', () => {
         expect(spectator.query(byTestId('tree-empty'))).toBeNull();
     });
 
+    describe('long role names (#37363)', () => {
+        const LONG_NAME = 'A-very-long-role-name-that-will-not-fit-in-the-panel';
+
+        beforeEach(() => {
+            jest.useFakeTimers();
+            const store = spectator.inject(DotRolesStore, true);
+            (store.filteredRoles as jest.Mock).mockReturnValue([
+                { id: 'r-long', name: LONG_NAME, childCount: 2, userCount: 3, roleChildren: [] }
+            ]);
+            spectator.detectChanges();
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+        });
+
+        const clip = () => spectator.query(byTestId('tree-node-label-clip')) as HTMLElement;
+
+        it('should clip the name with the shared label', () => {
+            expect(clip()).toBeTruthy();
+            expect(clip().textContent?.trim()).toBe(LONG_NAME);
+        });
+
+        it('should keep the user-count badge outside the clipped name', () => {
+            // FR-008: the row keeps its own structure. Only the name is allowed to shrink — the
+            // badge must not be the thing that gets cut off.
+            expect(spectator.query(byTestId('node-user-count-r-long'))).toBeTruthy();
+            expect(clip().querySelector('[data-testid="node-user-count-r-long"]')).toBeNull();
+        });
+
+        it('should reveal the full name on hover when it is clipped', () => {
+            const element = clip();
+            Object.defineProperty(element, 'offsetWidth', { value: 100, configurable: true });
+            Object.defineProperty(element, 'scrollWidth', { value: 400, configurable: true });
+
+            element.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            jest.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe(LONG_NAME);
+        });
+    });
+
     describe('leaf detection via childCount (#37071)', () => {
         // `$treeNodes` is protected; reach it by index so the assertions
         // target the mapping logic rather than PrimeNG's rendered DOM.

@@ -23,7 +23,7 @@ You **MUST** consider the user input before proceeding (if not empty).
 This is the **issue / bug-resolution** counterpart to `/speckit-specify`. It produces a
 defect-framed specification (problem, reproduction, root-cause hypothesis, fix scope,
 regression risk, acceptance) using the dotCMS issue template, and then feeds the normal
-`/speckit-plan` → `/speckit-tasks` → `/speckit-implement` flow — so the plan phase's
+`/speckit-plan` → `/speckit-tasks` → `/speckit-implement` → `/speckit-converge` flow — so the plan phase's
 **Legacy Impact** and **ADR Alignment** gates still apply.
 
 Use `/speckit-specify` instead when the work is a NEW FEATURE rather than fixing existing

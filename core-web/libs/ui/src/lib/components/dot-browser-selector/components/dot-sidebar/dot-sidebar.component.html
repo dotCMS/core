@@ -16,16 +16,11 @@
         (onNodeExpand)="onNodeExpand.emit($event)"
         (loadMore)="loadMore.emit($event)">
         <ng-template #folderTreeNodeLabel let-node>
-            <span
-                data-testid="tree-node-label"
-                class="block min-w-0 truncate font-normal"
-                [pTooltip]="node.label"
-                [tooltipDisabled]="!node.label || node.label.length <= 10"
-                tooltipPosition="right"
-                [pTooltipPT]="nodeTooltipPt"
-                [showDelay]="800">
-                {{ node.label | dotFolderName }}
-            </span>
+            <dot-truncated-label>
+                <span data-testid="tree-node-label" class="font-normal">
+                    {{ node.label | dotFolderName }}
+                </span>
+            </dot-truncated-label>
         </ng-template>
     </dot-folder-tree>
 } @else {

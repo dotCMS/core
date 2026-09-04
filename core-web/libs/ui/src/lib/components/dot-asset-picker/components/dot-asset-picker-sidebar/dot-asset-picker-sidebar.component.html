@@ -78,17 +78,20 @@
         (onNodeExpand)="onNodeExpand($event)"
         (loadMore)="onLoadMore($event)">
         <ng-template #folderTreeNodeLabel let-node>
-            <span class="block min-w-0 truncate font-normal" data-testid="tree-node-label">
-                @if (node.data?.type === 'site') {
-                    <!-- The one root stands for the whole site, and the selector above already names
-                     it — repeating the hostname here would say the same thing twice. Overridden at
-                     render time on purpose: `mapSiteToTreeNode` still labels site nodes with the
-                     hostname, which is what Content Drive's sidebar wants from its own root. -->
-                    {{ 'dot.asset.picker.sidebar.tree.root' | dm }}
-                } @else {
-                    {{ node.label | dotFolderName }}
-                }
-            </span>
+            <dot-truncated-label>
+                <span class="font-normal" data-testid="tree-node-label">
+                    @if (node.data?.type === 'site') {
+                        <!-- The one root stands for the whole site, and the selector above already
+                             names it — repeating the hostname here would say the same thing twice.
+                             Overridden at render time on purpose: `mapSiteToTreeNode` still labels
+                             site nodes with the hostname, which is what Content Drive's sidebar
+                             wants from its own root. -->
+                        {{ 'dot.asset.picker.sidebar.tree.root' | dm }}
+                    } @else {
+                        {{ node.label | dotFolderName }}
+                    }
+                </span>
+            </dot-truncated-label>
         </ng-template>
     </dot-folder-tree>
 }

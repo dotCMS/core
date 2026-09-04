@@ -14,13 +14,21 @@
     (onNodeExpand)="onNodeExpand.emit($event)"
     (onNodeCollapse)="onNodeCollapse.emit($event)"
     (onNodeContextMenuSelect)="onNodeContextMenuSelect.emit($event)">
+    <!-- Long names are clipped to one line and revealed on hover/focus by `dot-truncated-label`
+         (#37363). The tree applies it to its own label; a consumer that projects a template puts
+         it around the part of the row that should clip, because only the consumer knows which
+         part that is — wrapping a row of `icon + name + badge` from out here would clip the badge
+         instead of the name. Either way there is one definition of the behavior, and the tree
+         still owns the row's focus handling for it. -->
     <ng-template let-node pTemplate="default">
         @if (nodeLabelTemplate(); as labelTpl) {
             <ng-container *ngTemplateOutlet="labelTpl; context: { $implicit: node }" />
         } @else {
-            <span data-testid="tree-node-label" class="font-normal">
-                {{ node.label | dotFolderName }}
-            </span>
+            <dot-truncated-label>
+                <span data-testid="tree-node-label" class="font-normal">
+                    {{ node.label | dotFolderName }}
+                </span>
+            </dot-truncated-label>
         }
     </ng-template>
 

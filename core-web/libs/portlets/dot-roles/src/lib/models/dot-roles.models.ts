@@ -1,4 +1,30 @@
+import { TreeNode } from 'primeng/api';
+
 import { DotRole, DotToolGroup } from '@dotcms/dotcms-models';
+
+/**
+ * Key of the synthetic "None (Top Level)" entry both parent pickers prepend to
+ * their tree, so choosing a root role is an explicit pick rather than only the
+ * absence of one.
+ *
+ * It is deliberately not a UUID: it must never collide with a real role id, and
+ * it must never reach the API. {@link toParentRoleId} is what enforces the
+ * latter.
+ */
+export const ROOT_PARENT_OPTION_KEY = '__root__';
+
+/**
+ * Translate a parent-picker selection into the `parentRoleId` the API expects.
+ *
+ * Both an empty picker and the explicit "None (Top Level)" entry mean the same
+ * thing — a root role, `parentRoleId: null`. Letting the sentinel through as-is
+ * would be sent as a real id and answered with a 404 "parent role not found".
+ */
+export function toParentRoleId(parent: TreeNode | null | undefined): string | null {
+    const key = parent?.key;
+
+    return !key || key === ROOT_PARENT_OPTION_KEY ? null : key;
+}
 
 // `DotRoleFormValue` moved to `@dotcms/dotcms-models` when create/update moved
 // to the shared service. Re-exported so this portlet's call sites keep a

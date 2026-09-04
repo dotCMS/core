@@ -1,18 +1,4 @@
 :host {
     height: 100%;
     display: flex;
-
-    ::ng-deep {
-        .p-treenode-label,
-        .p-tree-node-label {
-            min-width: 0;
-            overflow: hidden;
-            max-width: 100%;
-        }
-
-        .p-treenode-content,
-        .p-tree-node-content {
-            min-width: 0;
-        }
-    }
 }

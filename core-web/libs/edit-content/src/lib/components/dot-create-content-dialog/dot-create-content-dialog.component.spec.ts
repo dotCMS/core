@@ -29,6 +29,10 @@ import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotEditContentDialogComponent } from './dot-create-content-dialog.component';
 
+import {
+    AngularImageEditorLauncher,
+    IMAGE_EDITOR_LAUNCHER
+} from '../../fields/shared/image-editor-launcher';
 import { DotEditContentService } from '../../services/dot-edit-content.service';
 import { OverlayEditContentHost } from '../../services/host/overlay-edit-content-host';
 
@@ -114,6 +118,28 @@ describe('DotEditContentDialogComponent', () => {
 
     it('should create', () => {
         expect(component).toBeTruthy();
+    });
+
+    /**
+     * This host is an Angular Edit Content host like the shell and the side panel, so it must
+     * provide the same launcher pair. `DotFileFieldComponent` injects `IMAGE_EDITOR_LAUNCHER` as
+     * `{ optional: true }`, so a missing provider is legal at the type level and degrades in
+     * silence: the Image/File field falls back to the legacy Dojo editor with a clean console.
+     * Only an explicit assertion catches that, which is why these exist (#37398).
+     */
+    describe('image editor host capability', () => {
+        it('should provide IMAGE_EDITOR_LAUNCHER so fields use the new editor, not legacy Dojo', () => {
+            const launcher = spectator.inject(IMAGE_EDITOR_LAUNCHER, true);
+
+            expect(launcher).toBeDefined();
+            expect(launcher).toBeInstanceOf(AngularImageEditorLauncher);
+        });
+
+        it('should provide the DialogService the launcher opens the editor through', () => {
+            // The launcher injects `DialogService`; without one it cannot be constructed, so the
+            // token resolving above is necessary but not sufficient on its own.
+            expect(spectator.inject(DialogService, true)).toBeTruthy();
+        });
     });
 
     it('should set loaded state for new content', () => {
