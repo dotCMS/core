@@ -266,6 +266,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
 
         return { container, contentlet };
     });
+    /**
+     * Whether the currently selected contentlet may be modified. Drives the
+     * side panel's style tab and the style-editor guard, mirroring the
+     * quick-edit gate so neither tab offers a way to change a contentlet the
+     * user has no permission on. Fail-open when the permission is absent.
+     */
+    protected readonly $canEditSelectedContentlet = computed(
+        () => this.$contentletEditData()?.contentlet?.canEdit !== false
+    );
+
     private readonly dotMessageService = inject(DotMessageService);
     private readonly confirmationService = inject(ConfirmationService);
     private readonly dotRouterService = inject(DotRouterService);
@@ -1932,6 +1942,12 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
     }
 
     protected handleSelectContent(_contentletActionPayload: ActionPayload): void {
+        // Same gate as the pencil and Quick Edit: styling changes how this
+        // contentlet presents itself, so it follows contentlet permission.
+        if (!this.$canEditSelectedContentlet()) {
+            return;
+        }
+
         // The hover toolbar's `promoteHoverToSelected` (called inline in
         // the (click) before this output fires) has already pinned the
         // contentlet as `editorSelected`. We just need to open the

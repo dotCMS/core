@@ -276,6 +276,18 @@ export class DotUveContentletToolsComponent {
     });
 
     /**
+     * Tooltip key for the style button. Style properties describe how this
+     * contentlet presents itself, so they follow contentlet permission.
+     */
+    protected readonly styleButtonTooltip = computed(() => {
+        if (!this.canEditContentlet()) {
+            return 'uve.contentlet.no.edit.permission';
+        }
+
+        return 'uve.tooltip.edit.style';
+    });
+
+    /**
      * Tooltip key for the delete button. When the button is disabled
      * (e.g. on personalization), the tooltip explains why; otherwise
      * it just labels the action ("Remove") to match the other toolbar
@@ -359,6 +371,7 @@ export class DotUveContentletToolsComponent {
             items.push({
                 label: this.#dotMessageService.get('uve.tooltip.edit.style'),
                 icon: 'pi pi-palette',
+                disabled: !this.canEditContentlet(),
                 command: () => {
                     this.promoteHoverToSelected();
                     this.selectContent.emit(context);
