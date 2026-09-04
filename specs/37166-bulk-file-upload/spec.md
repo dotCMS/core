@@ -324,8 +324,8 @@ run reports a collision failure for it.
   run MUST resolve search-index visibility **once, at the end of the batch, before the completion
   signal is emitted**. Both halves are load-bearing and both are stated here rather than left to
   the plan. The per-file wait-for policy the current one-at-a-time path uses does not merely block
-  on an index refresh — it also flushes the system-wide query cache on every file, so a 50-file
-  batch charges every other user 50 cache flushes. And deferring **alone is not sufficient**: the
+  on an index refresh — it also flushes the system-wide query cache on every file, so a full
+  batch charges every other user one cache flush per file. And deferring **alone is not sufficient**: the
   deferred policy only enqueues for reindexing and returns, so a run that reported "finished" would
   hand the author files that a filtered or text search cannot yet find. The batch-level resolution
   is what keeps "finished" meaning "visible".
@@ -334,8 +334,8 @@ run reports a collision failure for it.
 **Limits**
 
 - **FR-010**: The system MUST enforce a configurable maximum number of files per batch, defaulting
-  to **50**. Exceeding it is a submission-time refusal (FR-003). This limit is new — nothing caps a
-  selection today — and MUST be operator-configurable through the product's standard configuration
+  to **100**. Exceeding it is a submission-time refusal (FR-003). This limit is new — nothing caps
+  a selection today — and MUST be operator-configurable through the product's standard configuration
   mechanism rather than hardcoded.
 - **FR-010a**: The file-count and batch-total ceilings MUST be enforced **while the request body is
   read**, aborting as soon as either is crossed, rather than after the whole body has been
@@ -606,7 +606,7 @@ while the user is present; the durable record is the server's responsibility.
   in the target; zero files are silently discarded.
 - **SC-002**: In a batch where some files are invalid, 100% of the valid files are created and
   100% of the invalid ones appear in the outcome with a reason that distinguishes why.
-- **SC-003**: A batch of 50 files sustains a stated per-file throughput floor, set in the plan as
+- **SC-003**: A batch at the configured maximum sustains a stated per-file throughput floor, set in the plan as
   an absolute target rather than as a comparison against today's behavior — today's single-file
   upload waits for each file to become searchable, which is the very pathology FR-008 removes, so
   measuring against it would make this criterion true by construction. The batch also does not
@@ -696,8 +696,16 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
   This reverses the dependency direction #37166 states ("depends on #37062 … which the folder
   endpoints define first"). Both #37062 and #37063 are open and unbuilt, so the reversal holds —
   but **#37166 must be amended to match**, or #37062's author defines a third shape in good faith.
-- **Q2 — Limits**: A **maximum file count per batch of 50**, configurable, enforced as a
-  submission-time refusal (FR-010). A file over its applicable size ceiling is a per-file failure
+- **Q2 — Limits**: A **maximum file count per batch of 100**, configurable, enforced as a
+  submission-time refusal (FR-010).
+
+  **Raised from 50 to 100 after the Q5 restoration**, and the two are connected. Under the one-call
+  shape the whole batch travels in a single request, so the count ceiling also sets how long that
+  request stays open — which is why it was not raised further. 300 was considered and rejected on
+  two grounds: at a few megabytes per file it puts the batch past the **total** ceiling (FR-013b),
+  making the count cap decorative and the size cap the surprising one; and it makes a single
+  upload long enough to be a live risk against a proxy timeout, which is the one property the
+  two-step shape was better at. 100 keeps the realistic batch inside both ceilings. A file over its applicable size ceiling is a per-file failure
   that leaves the batch running (FR-011). **Superseded in part by Q7**: the original decision here
   was that there would be no batch-total size limit; there now is one (FR-013b).
 
@@ -763,7 +771,7 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
 - **Q6 — Interruption**: **Resumable execution.** The run records completed files durably as it
   goes, so a re-queued run continues rather than restarts (FR-036 … FR-039). The alternative —
   marking the processor no-retry so an interrupted batch simply fails — was rejected: at batch
-  sizes up to 50 it would make a restart cost the author the whole batch, and resubmitting would
+  sizes up to 100 it would make a restart cost the author the whole batch, and resubmitting would
   then collide against the files the first attempt already created.
 
   Strengthened after review: no-retry would not even have avoided the duplicates. The abandoned-job

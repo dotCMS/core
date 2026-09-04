@@ -98,8 +98,8 @@ the per-item results the outcome reports and that FR-020 entitles the author to 
 fact — deleting them on completion would delete exactly what has to remain readable. They live as
 long as their job row.
 
-Sizing, so this is a decision rather than an oversight: at 50 items per batch, a hundred batches a
-day is 5,000 narrow rows a day. That is not a growth problem on its own, and it grows in step with
+Sizing, so this is a decision rather than an oversight: at 100 items per batch, a hundred batches a
+day is 10,000 narrow rows a day. That is not a growth problem on its own, and it grows in step with
 the `job` table it hangs off. **A retention policy for finished jobs and their items is worth its
 own ticket** — it would cover bulk refresh and content import too, neither of which has one.
 

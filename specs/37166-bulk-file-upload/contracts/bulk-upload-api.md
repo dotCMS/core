@@ -184,13 +184,16 @@ durable notification so the outcome survives navigating away (FR-019 … FR-023)
 
 | Property | Default | Governs |
 |---|---|---|
-| `CONTENT_BULK_UPLOAD_MAX_FILES` | `50` | References per batch (FR-010) |
+| `CONTENT_BULK_UPLOAD_MAX_FILES` | `100` | Files per batch (FR-010) |
 | `CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES` | `1073741824` (1 GB) | Summed size per batch (FR-013b) |
 | `CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES` | `209715200` (200 MB) | Per-file ceiling **only where the content type declares none** (FR-011.2) |
 
-**Where the defaults come from.** The realistic case is an author dragging in 50 images or PDFs of
-a few megabytes each — roughly 250 MB — so 1 GB clears it with room and still bounds the
-pathological batch. The 200 MB per-file fallback is deliberately generous: it is the ceiling that
+**Where the defaults come from.** The realistic case is an author dragging in up to 100 images or
+PDFs of a few megabytes each — roughly 500 MB — so 1 GB clears it with room and still bounds the
+pathological batch. The two ceilings are chosen together: raising the file count much further would
+put a realistic batch past the *total*, which would make the count cap decorative and the size cap
+the one that surprises people. Under the one-call shape the count also governs how long a single
+request stays open, so it is not a free knob. The 200 MB per-file fallback is deliberately generous: it is the ceiling that
 makes a file fail in a batch and succeed on its own (FR-011a), so the less often it bites, the less
 it surprises. In practice the batch total is the binding constraint. **These are reasoned defaults,
 not measured ones — worth checking against what customers actually upload.**
