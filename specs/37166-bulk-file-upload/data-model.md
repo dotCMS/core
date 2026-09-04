@@ -20,22 +20,24 @@ which is why the checkpoint of §2 exists.
 | `folderId` | string, nullable | Exactly one of `folderId` / `siteId` is set |
 | `siteId` | string, nullable | |
 | `userId` | string | The submitter, so the run creates with their permissions and the completion is addressed to them (FR-021) |
-| `requestFingerPrint` | string | Captured at submission; required alongside the ids to retrieve staged content from a background thread, which has no HTTP request |
+| `requestFingerprint` | string | Captured at submission; required alongside the ids to retrieve staged content from a background thread, which has no HTTP request. Spelled to match the product's own `getRequestFingerprint` — the earlier `requestFingerPrint` was a typo in a binding field name |
 | `stagedFiles` | array | One entry per referenced file, in submission order |
-| `stagedFiles[].tempFileId` | string | The reference the client obtained from staging |
+| `stagedFiles[].tempFileId` | string | The reference the endpoint got back from the staging API when it staged that part |
 | `stagedFiles[].fileName` | string | As staging reported it; the name the asset takes, and the outcome's `key` |
 | `stagedFiles[].sizeBytes` | number | As staging **measured** it, never as a caller declared it (FR-013) |
 | `stagedFiles[].mimeType` | string | As staging **resolved** it. Lets the run name a type rejection as a fact rather than infer it from a validation exception |
 | `submissionFingerprint` | string | Stable hash over `userId` + target + the ordered `(fileName, sizeBytes)` list. Recognises a resubmission of the same batch (FR-040) |
 
 **Why the job carries references and not content**: the run executes later and possibly on another
-node, so the bytes wait on the shared assets volume. The client places them there directly (spec
-§Decisions Q5); this feature stores only the handles, the same way content import does.
+node, so the bytes wait on the shared assets volume. **The endpoint places them there itself**, as
+it reads the submission, by calling the staging API underneath (spec §Decisions Q5); the job then
+stores only the handles — the same way content import does. The client never sees a handle.
 
 **`sizeBytes` and `mimeType` are copied into the parameters at submission** rather than re-read
-from staging when the run starts. Two reasons: the batch total (FR-013b) is summed from them before
-the batch exists, and if the content later expires the run still knows what it was meant to be
-processing, so `STAGED_CONTENT_UNAVAILABLE` can name the file rather than report an anonymous gap.
+from staging when the run starts. Two reasons: the batch total (FR-013b) accumulates from them
+while the request is read, before the batch exists, and if the content later expires the run still
+knows what it was meant to be processing, so `STAGED_CONTENT_UNAVAILABLE` can name the file rather
+than report an anonymous gap.
 
 ---
 
@@ -63,16 +65,16 @@ CREATE TABLE job_item_result (
     message     TEXT,
     ref_id      VARCHAR(36),
     updated_at  timestamptz  NOT NULL,
-    PRIMARY KEY (job_id, item_key)
+    PRIMARY KEY (job_id, seq)
 );
 
-CREATE INDEX idx_job_item_result_job ON job_item_result (job_id, seq);
+CREATE INDEX idx_job_item_result_key ON job_item_result (job_id, item_key);
 ```
 
 | Column | Purpose |
 |---|---|
-| `job_id` + `item_key` | Primary key. An item appears once per job, so a resumed run's write is naturally idempotent. `item_key` is a file name here, a folder path for #37062 |
-| `seq` | Submission order, so the outcome lists results in the order the author chose the files |
+| `job_id` + `seq` | Primary key. `seq` is the submission index, which is unique within the batch **and stable across a resume**, so a resumed run's write is idempotent and the rows come back in the order the author chose the files. |
+| `item_key` | The file name here, a folder path for #37062. **Deliberately not part of the key**: spec.md §Edge Cases allows two files with the same name in one batch, so keying on it would reject the second write and leave a resume unable to tell the two apart. Indexed, not unique. |
 | `status` | `SUCCESS` · `FAILED` · `SKIPPED` — the shared `BatchItemStatus` |
 | `reason` | The machine-readable failure reason (FR-016). Null unless `FAILED` |
 | `message` | Diagnostic only; never displayed (FR-016a) |
@@ -81,7 +83,8 @@ CREATE INDEX idx_job_item_result_job ON job_item_result (job_id, seq);
 
 **Lifecycle**: one row written as each item completes, inside that item's own transaction so the
 record commits with the work it describes. On start, the run reads the rows for its `job_id` and
-skips every `SUCCESS`. At the terminal state the rows are read once to build the outcome (§3) — so
+skips every `seq` already recorded `SUCCESS` — **by `seq`, not by name**, which is what lets a batch
+containing two files of the same name resume correctly. At the terminal state the rows are read once to build the outcome (§3) — so
 the same rows serve resumability *and* per-item reporting, rather than the outcome being
 accumulated in memory and lost on interruption.
 
@@ -120,7 +123,7 @@ it for folder paths.
 | Field | Type | Notes |
 |---|---|---|
 | `total` | int | Files submitted |
-| `processed` | int | Attempted across all attempts (FR-038) |
+| `processed` | int | Files **attempted**, across all attempts (FR-038). Skipped files were never attempted, so this is `successCount + failedCount` — it equals `total` only when nothing was skipped |
 | `successCount` | int | |
 | `failedCount` | int | **`failedCount`, not `failCount`** — matches what ships (FR-018) |
 | `skippedCount` | int | Never attempted; a cancelled run's remainder (FR-028) |

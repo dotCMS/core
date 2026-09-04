@@ -259,20 +259,21 @@ run reports a collision failure for it.
   unaffected.
 - **The server restarts while a batch is running.** The run resumes and creates only what it had
   not yet created (FR-036). It does not restart from the first file, and it does not orphan.
-- **A referenced file can no longer be resolved at submission** — it expired, or was never staged.
-  Refused at submission (FR-003), not accepted and then failed per file: at submission this is a
-  malformed batch, whereas the same content vanishing *after* acceptance is the per-file failure of
-  FR-032.
-- **A submission references content staged by a different author.** Refused. The staging layer
-  scopes access to whoever placed the content, and this feature MUST NOT widen that.
+- **The submission crosses the file-count or total-size ceiling part-way through being read.** The
+  request is aborted at the ceiling and refused; whatever was staged before the abort is reclaimed
+  (FR-010a, FR-013d). No batch is created, and no more than the ceiling ever reaches disk.
+- **The request arrives from another origin, or while the staging layer is switched off.** Refused
+  (FR-003a). Neither is inherited from the staging API this endpoint calls underneath, so both are
+  this endpoint's own responsibility.
 - **The connection drops before the client learns whether its submission was accepted.** Covered by
   FR-040: the client can safely resubmit, and either gets the original batch back or sees the
   already-created files rejected as collisions. What it must never get is a silent second copy.
 - **Two batches racing for the same name in the same folder.** Exactly one wins; the other records
   a collision for that file only (FR-041, FR-042).
-- **The batch exceeds the configured total size.** Refused at submission, immediately, by summing
-  the measured sizes of the referenced content (FR-013b). Distinct from a single file exceeding the
-  per-file ceiling, which is a per-file failure inside an accepted batch.
+- **The batch exceeds the configured total size.** Refused at submission, by accumulating the
+  measured size of each file as it is staged and aborting the read at the ceiling (FR-013b,
+  FR-010a). Distinct from a single file exceeding the per-file ceiling, which is a per-file failure
+  inside an accepted batch.
 - **A file's content type declares no size ceiling.** The configurable fallback applies (FR-011.2),
   which is deliberately stricter than the single-file upload for that file — see FR-011a.
 
@@ -284,17 +285,26 @@ run reports a collision failure for it.
 
 **Submission**
 
-- **FR-001**: The system MUST accept a batch in one submission that **references several files
-  already placed on the product's file-staging layer** (Q5), carrying a target folder (or site
-  root) and one upload type for the whole batch. The submission itself carries no file content.
+- **FR-001**: The system MUST accept a batch in **one submission carrying the files themselves**
+  (Q5), together with a target folder (or site root) and one upload type for the whole batch. The
+  submission places the content on the product's file-staging layer as it reads it, and the batch
+  then runs against what was staged. The client never handles a staging reference.
 - **FR-002**: The system MUST answer a valid submission immediately, before the files are created,
   with a handle the caller can use to follow, cancel, and read the outcome of the run.
 - **FR-003**: The system MUST validate at submission — and refuse before creating any batch — a
-  submission that: references no files; references content the submitting author may not access, or
-  that the staging layer can no longer resolve; carries an upload type other than Asset or File;
-  names a target that does not exist; exceeds the configured maximum file count; exceeds the
-  configured batch total size (FR-013b); or comes from an author without permission to add children
-  to the target.
+  submission that: carries no files; carries an upload type other than Asset or File; names a
+  target that does not exist; exceeds the configured maximum file count; exceeds the configured
+  batch total size (FR-013b); or comes from an author without permission to add children to the
+  target.
+- **FR-003a**: Because this endpoint accepts file content directly rather than routing the author
+  through the staging layer's own REST resource, it MUST apply the request-level controls that
+  resource applies and that are **not** inherited by calling the staging API underneath: a
+  **same-origin check** on the request, and **honouring the staging layer's enabled/disabled
+  switch**. Neither is provided by the staging API, and no global filter supplies them — the
+  product's referer interceptor protects a fixed list of non-API paths and does not cover `/api/`.
+  Both MUST be covered by tests (SC-012). Recorded as a requirement rather than left to the plan
+  because the comparable existing endpoint (content import) omits both, so following the precedent
+  uncritically would reproduce the gap.
 - **FR-004**: A submission refused for lack of permission MUST be distinguishable from one refused
   as malformed.
 
@@ -310,6 +320,15 @@ run reports a collision failure for it.
 - **FR-007**: A file failing MUST NOT abort the run; every remaining file MUST still be attempted.
 - **FR-008**: The system MUST NOT wait for each file to become searchable before starting the
   next. Search-index visibility MUST be resolved for the batch, not serialized per file.
+- **FR-008a**: Concretely: each file MUST be created with the **deferred** index policy, and the
+  run MUST resolve search-index visibility **once, at the end of the batch, before the completion
+  signal is emitted**. Both halves are load-bearing and both are stated here rather than left to
+  the plan. The per-file wait-for policy the current one-at-a-time path uses does not merely block
+  on an index refresh — it also flushes the system-wide query cache on every file, so a 50-file
+  batch charges every other user 50 cache flushes. And deferring **alone is not sufficient**: the
+  deferred policy only enqueues for reindexing and returns, so a run that reported "finished" would
+  hand the author files that a filtered or text search cannot yet find. The batch-level resolution
+  is what keeps "finished" meaning "visible".
 - **FR-009**: The existing single-file upload endpoint and its behavior MUST be left unchanged.
 
 **Limits**
@@ -318,6 +337,13 @@ run reports a collision failure for it.
   to **50**. Exceeding it is a submission-time refusal (FR-003). This limit is new — nothing caps a
   selection today — and MUST be operator-configurable through the product's standard configuration
   mechanism rather than hardcoded.
+- **FR-010a**: The file-count and batch-total ceilings MUST be enforced **while the request body is
+  read**, aborting as soon as either is crossed, rather than after the whole body has been
+  received. A submission that exceeds them therefore cannot commit more than the ceiling to disk.
+  This is the enforcement point precisely because nothing below it provides one: the staging layer
+  caps neither the number of files nor the size of a request, and the servlet container is
+  configured with no multipart size limit, so this endpoint is the first and only bound in the
+  path.
 - **FR-011**: A file rejected for its **size** MUST be recorded as that file's own failure with a
   size-specific reason, and MUST NOT fail the batch. The applicable ceiling is resolved in this
   order:
@@ -352,14 +378,21 @@ run reports a collision failure for it.
   file the staging layer refused is not reported to the author as a content-type rule it did not
   break.
 - **FR-013b**: The system MUST enforce a configurable **maximum total size per batch**, refused at
-  submission (FR-003) by summing the measured sizes of the referenced content. Without it the batch
-  is bounded only by FR-010's file count multiplied by a per-file ceiling that may be unset, which
-  is to say not bounded at all — an authenticated author could stage unbounded bytes on shared
-  storage.
-- **FR-013c**: Because the submission carries references rather than content (Q5), that sum is
-  known **before** any batch is created, so the refusal is immediate and no partial state exists to
-  unwind. Content the author staged for a submission that is then refused is left to the staging
-  layer's own expiry; this feature does not create it and does not reclaim it.
+  submission (FR-003) by accumulating the measured size of each file as it is staged. Without it
+  the batch is bounded only by FR-010's file count multiplied by a per-file ceiling that may be
+  unset, which is to say not bounded at all — an authenticated author could stage unbounded bytes
+  on shared storage.
+- **FR-013c**: Because the submission carries the content (Q5), the total is not known before the
+  body is read. Enforcement is therefore **authoritative while reading** (FR-010a): the sum
+  accumulates as each file is staged and the request is aborted the moment the ceiling is crossed,
+  so no batch is created and no more than the ceiling reaches disk. Where a caller declares a total
+  up front it MAY be used for a fast refusal before reading — a convenience that saves an author
+  uploading gigabytes only to be refused — but it is never the enforcement point, since a caller
+  can under-declare or omit it.
+- **FR-013d**: Content already staged when a submission is refused — by FR-013c or by any other
+  submission-time refusal — MUST be reclaimed. FR-033 covers reclaim for runs that reach a terminal
+  state; a refused submission never becomes a run and would otherwise leak bytes the author cannot
+  see and no run will ever clean up.
 
 **Outcome**
 
@@ -523,23 +556,21 @@ The browser-side work is delivered by another developer against this contract. I
 so the boundary is explicit and reviewable; each item is a restatement of a requirement above,
 from the consumer's point of view.
 
-- **C-001**: **Two steps** (Q5). First the client places the content on the product's existing
-  file-staging endpoint, which already takes several files in one call and answers with a reference,
-  a measured size and a resolved media type for each. Then it submits the batch — the references
-  plus the target and the upload type, no content — and is answered immediately with a handle
-  (FR-001, FR-002).
-- **C-001a**: What the client gains from making the staging calls itself, and this half therefore
-  does not provide: **per-file upload progress** and **retry of a single file** that failed to
-  upload. Both are natural to the client and would have to be invented on the server under a
-  single-call shape.
-- **C-001b**: What the client takes on: the staging references are part of this contract, and the
-  staging layer's own expiry starts when the client stages, not when it submits. A client that
-  stages and then leaves the author on a confirmation screen for a long time can submit references
-  that have expired — refused at submission (FR-003), which is why the client should stage close
-  to submitting rather than at file-selection time.
-- **C-002**: A distinguishable submission refusal for: no files, unresolvable or inaccessible
-  staging reference, bad upload type, missing target, too many files, batch over the total size
-  ceiling, permission denied (FR-003, FR-004, FR-013b).
+- **C-001**: **One call** (Q5). The client sends the files, the target and the upload type in a
+  single multipart request and is answered immediately with a handle (FR-001, FR-002). It never
+  handles a staging reference — where the bytes wait for the run is the server's business and can
+  change without touching the client.
+- **C-001a**: What the one-call shape costs the client, recorded so it is a decision rather than a
+  surprise: **per-file upload progress** and **retry of a single file** that failed to upload. A
+  connection dropped part-way through means resending the batch, not the one file that failed. The
+  client MAY reduce the blast radius by submitting smaller batches; nothing on this half prevents
+  it.
+- **C-001b**: What the one-call shape buys the client: the staging clock starts on the **server**,
+  immediately before the batch is created, so no submission can carry content that has already
+  expired and there is no window in which an author sits on a confirmation screen while their
+  earliest files age out.
+- **C-002**: A distinguishable submission refusal for: no files, bad upload type, missing target,
+  too many files, batch over the total size ceiling, permission denied (FR-003, FR-004, FR-013b).
 - **C-002a**: A defined answer to "I lost the connection while submitting — may I retry?" The
   client MUST be able to resubmit without risking a second copy of the author's files (FR-040).
   Which mechanism provides that — the same batch handle returned, or the duplicates rejected as
@@ -579,7 +610,8 @@ while the user is present; the durable record is the server's responsibility.
   an absolute target rather than as a comparison against today's behavior — today's single-file
   upload waits for each file to become searchable, which is the very pathology FR-008 removes, so
   measuring against it would make this criterion true by construction. The batch also does not
-  serialize behind a per-file search-index wait.
+  serialize behind a per-file search-index wait — and, once the run reports finished, every created
+  file is findable by search, not merely present in the folder (FR-008a).
 - **SC-004**: An author who was not present when their batch finished can determine the outcome
   afterwards, in 100% of runs — including cancelled and failed ones.
 - **SC-005**: Cancelling a run leaves every already-created file intact and reports the point
@@ -590,15 +622,19 @@ while the user is present; the durable record is the server's responsibility.
 - **SC-007**: Existing single-file upload behavior is unchanged, verified by the existing
   single-file scenarios passing without modification.
 - **SC-008**: A submission that must be refused is refused before any work is done — no batch is
-  created and no file is created — in 100% of refusals, including the batch-total refusal. The
-  submission carries references rather than content (Q5), so every check in FR-003 is decided
-  before anything is committed.
+  created and no file is created — in 100% of refusals, including the batch-total refusal. Where
+  the refusal depends on the size of what is being sent (FR-013b), it is decided **while the body
+  is read** and the request aborted at the ceiling, so no submission can commit more than the
+  ceiling to disk (FR-010a) and anything staged before the abort is reclaimed (FR-013d).
 - **SC-009**: A batch interrupted at any point and resumed produces exactly one copy of each
   submitted file — zero duplicates, in 100% of interruptions — and notifies the submitter once.
 - **SC-010**: Two runs contending for the same file name in the same target produce exactly one
   file, in 100% of races, with the loser reporting a collision for that file only.
 - **SC-011**: No batch can commit more staged bytes than the configured total, and no file can
   exceed the ceiling that applies to it, in 100% of submissions.
+- **SC-012**: A submission arriving from another origin is refused, and a submission arriving while
+  the staging layer is disabled is refused — each verified by its own test (FR-003a). These are
+  stated as criteria rather than left implicit because the comparable shipped endpoint omits both.
 
 ---
 
@@ -683,29 +719,47 @@ Recorded from the developer's answers on 2026-08-31; the requirements above alre
   batch is created; the generic entry point has no notion of a target folder and would enqueue
   first and fail inside the run instead. Recorded here rather than left to the plan so the
   single-file constraint is not rediscovered on day one.
-- **Q5 — Client-visible submission shape**: **Two steps.** The client places the content on the
-  product's existing file-staging endpoint, which already accepts several files in one call and
-  answers with a reference, a measured size and a resolved media type for each. It then submits the
-  batch as a small body carrying those references plus the target and the upload type. The
-  submission carries no content.
+- **Q5 — Client-visible submission shape**: **One call.** The client sends the files, the target
+  and the upload type together in a single multipart request. The endpoint hands the content
+  straight to the product's file-staging API underneath and then creates the batch against what was
+  staged. Staging stays invisible to the client, which never handles a staging reference.
 
-  **Reversed after review.** The first draft chose one call, reasoning that staging should stay
-  invisible so it could change without touching the frontend. That cost is real but small, and it
-  was outweighed: the staging endpoint is the product's designed intake for files — its own
-  documentation prescribes exactly this pattern for binary fields — and it is where cross-cutting
-  file concerns belong. A second intake door would have to re-earn whatever that layer gains later.
+  **This decision was reversed and then restored; the history matters because both reversals came
+  from review, and the artifacts must not be read as though the first draft simply survived.**
 
-  Three things fall out rather than move, which is what settled it:
-  - The **media type arrives as a fact** from staging, so the reasons of FR-016 no longer need to be
-    recovered from a validation layer that distinguishes its cases by translated message text.
-  - The **batch total (FR-013b) becomes a sum** at submission, replacing a two-stage enforcement
-    that could only be authoritative part-way through reading a request body.
-  - **Per-file upload progress and per-file retry** become the client's own, at no cost to this
-    half, because the client makes the staging calls itself.
+  The first draft chose one call. After review it was changed to two steps — the client staging on
+  the file-staging endpoint itself and submitting only references — on the reasoning that a second
+  intake door would have to re-earn whatever cross-cutting file concerns that layer gains later.
+  That reasoning still holds and is not disputed.
 
-  What does not change: the batch is still one job with one handle, one authoritative outcome, one
-  durable notification, and a resumable run. Those are what a job exists for, and no amount of
-  staging reuse provides them.
+  It was restored to one call on three findings, in order of weight:
+
+  1. **The one-call shape is the shipped precedent, not a departure from it.** Content import — the
+     closest comparable feature — accepts `multipart/form-data` at its own endpoint, calls the
+     staging API internally, and stores the resulting reference in its job parameters. The two-step
+     draft described import as though the *client* staged; it does not. The shape being argued
+     against is the one already in production.
+  2. **The two-step shape introduced a defect the one-call shape does not have.** The staging
+     layer's expiry is measured per file from its own last-modified time, on a global timer with no
+     per-call override. Under two steps that clock starts when the *client* stages, so on a slow
+     connection the earliest files of a large batch can expire before the author reaches the submit
+     — and a reference that no longer resolves refuses the whole submission. Under one call the
+     clock starts on the server, immediately before the batch is created.
+  3. **Only the one-call shape can bound what reaches disk.** Nothing below this endpoint caps the
+     number of files or the size of a request. Under two steps the bytes are already written by the
+     time the batch is submitted, so the ceilings of FR-010 and FR-013b become a policy about what
+     will be *processed* rather than a bound on what can be *written*. Under one call the request
+     is aborted at the ceiling while it is read (FR-010a).
+
+  What the restoration costs, recorded rather than glossed: **per-file upload progress and per-file
+  retry** return to being unavailable (C-001a), and the endpoint does not inherit the request-level
+  controls that live on the staging layer's REST resource rather than in its API — which is why
+  FR-003a exists.
+
+  What does not change under either shape: the batch is one job with one handle, one authoritative
+  outcome, one durable notification, and a resumable run. Those are what a job exists for, and no
+  amount of staging reuse provides them. That is the part of this design the review never disputed.
+
 - **Q6 — Interruption**: **Resumable execution.** The run records completed files durably as it
   goes, so a re-queued run continues rather than restarts (FR-036 … FR-039). The alternative —
   marking the processor no-retry so an interrupted batch simply fails — was rejected: at batch
@@ -768,7 +822,20 @@ explicitly rather than meet them during implementation.
   single global value with no per-call override, so satisfying FR-031 by raising it would change
   behavior for every other consumer. The plan must choose among tolerating the ceiling and
   reporting expiry as a per-file failure, raising it globally and accepting the blast radius, or
-  taking the content out of that mechanism's reach for the duration of the run.
+  taking the content out of that mechanism's reach for the duration of the run. Note that the
+  ceiling is measured per file from its **last-modified** time, which means refreshing it for an
+  accepted batch is a cheap fourth option worth pricing — expiry is enforced only on retrieval and
+  nothing deletes the content on a schedule.
+- **Bounding the request while it is read** (FR-010a, FR-013c, FR-013d). Nothing below this
+  endpoint provides a limit — not the staging layer, not the servlet container — so the abort-at-
+  ceiling behaviour has to be built rather than configured, and it has to reclaim whatever was
+  already staged when it fires. The plan must say where in the multipart read the counter and the
+  running total live, and how the reclaim is made reliable when the abort is an exception path.
+- **The request-level controls this endpoint does not inherit** (FR-003a, SC-012). Calling the
+  staging API underneath supplies neither the same-origin check nor the enabled/disabled switch;
+  both live on the staging layer's REST resource. The plan must place them explicitly. Worth
+  noting for scope: the comparable shipped endpoint (content import) omits both, so this is a gap
+  to close here rather than a pattern to copy — and closing it there is a separate ticket.
 - **Test coverage** (Constitution V). The plan must name which layers this feature exercises and
   which it does not, with the reason for each omission. #37166 already enumerates what it expects:
   integration coverage for many files succeeding, mixed partial failure, a rejected file type, an
@@ -793,16 +860,23 @@ explicitly rather than meet them during implementation.
 
   Three controls here are new, not one: the batch file-count cap (FR-010), the per-file fallback
   ceiling (FR-011.2), and the batch total-size ceiling (FR-013b).
-- The content is staged by the **client**, on the product's existing staging endpoint, before the
-  batch is submitted (Q5). That endpoint already accepts several files at once and reports each
-  file's measured size and resolved media type, which is what lets FR-013b be a sum and FR-016's
-  type reason be a fact rather than an inference.
-- The product's existing staging mechanism carries its own size ceiling, unlimited by default and
-  narrowable per call but only downward — and narrowable by the *caller*, which is why FR-013a
-  requires the system to enforce FR-011 itself rather than delegate to it. Its content-lifetime
-  ceiling, by contrast, is a single global value with no per-call override, so it cannot be tuned
-  for this feature alone without changing it for every other consumer. That constraint is the
-  reason FR-031 and FR-032 are stated as outcomes rather than as a configuration change.
+- The content is staged by the **server**, as it reads the submission, on the product's existing
+  staging API (Q5) — the same way content import already does it. That API reports each file's
+  measured size and resolved media type as it stages, which is what lets FR-013b accumulate a
+  running total during the read and FR-016's type reason be a fact rather than an inference.
+- The product's existing staging mechanism provides **no ceiling this feature can lean on**. Its
+  per-file size limit is unlimited by default for authenticated users; it caps neither the number
+  of files nor the total size of a request; and the servlet container is configured with no
+  multipart limit either. That is pre-existing product behaviour, not something this feature
+  introduces, but it is why FR-010a places the only bound in the path at this endpoint. Where an
+  operator *has* set the staging per-file limit, it is narrowable only downward and only by the
+  caller, which is why FR-013a requires this feature to enforce FR-011 itself rather than delegate.
+- The staging mechanism's content-lifetime ceiling is a single global value with no per-call
+  override, so it cannot be tuned for this feature alone without changing it for every other
+  consumer. Under the one-call shape the clock starts at submission rather than at file selection,
+  which removes the pre-submission expiry window entirely — but a batch that waits long enough in
+  queue can still outlive it, which is why FR-031 and FR-032 remain stated as outcomes rather than
+  as a configuration change.
 - Enforcement of both limits is authoritative on the server. The client may check the file count
   to fail fast, but that check is a convenience and not the enforcement point.
 - "Durable record" (FR-020) means the submitting author can learn their own run's outcome after
