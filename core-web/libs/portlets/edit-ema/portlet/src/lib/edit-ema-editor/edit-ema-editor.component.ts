@@ -98,6 +98,10 @@ import { DotUveDragDropService } from '../services/dot-uve-drag-drop/dot-uve-dra
 import { UveIframeMessengerService } from '../services/iframe-messenger/uve-iframe-messenger.service';
 import { InlineEditService } from '../services/inline-edit/inline-edit.service';
 import {
+    canEditOwningContentlet,
+    notifyNoEditPermission
+} from '../shared/contentlet-permission';
+import {
     CONTAINER_INSERT_ERROR,
     EDITOR_STATE,
     NG_CUSTOM_EVENTS,
@@ -872,6 +876,16 @@ export class EditEmaEditorComponent implements OnDestroy, AfterViewInit {
         const element: HTMLElement = target.dataset?.mode ? target : target.closest('[data-mode]');
 
         if (!element?.dataset.mode) {
+            return;
+        }
+
+        // Inline editing writes contentlet fields, so it is gated like the
+        // pencil and Quick Edit. Unlike them there is no control to disable, so
+        // the refusal has to be announced — a click that does nothing reads as
+        // a broken editor.
+        if (!canEditOwningContentlet(element)) {
+            notifyNoEditPermission(this.messageService, this.dotMessageService);
+
             return;
         }
 
