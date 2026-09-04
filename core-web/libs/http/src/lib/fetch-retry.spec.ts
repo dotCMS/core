@@ -114,3 +114,28 @@ describe('isSuccessStatus — one rule for both callers', () => {
         expect(isSuccessStatus(204)).toBe(true);
     });
 });
+
+describe('describeRequestFailure names every transport cause we can distinguish', () => {
+    /**
+     * A bare code like "ENOTFOUND" is not a sentence. `@dotcms/create-app` shows it mid-wait,
+     * and the `dotcms` CLI has no verbose mode to fall back on, so the mapping has to be here.
+     */
+    it.each([
+        ['ENOTFOUND', /host not found/i],
+        ['ECONNRESET', /reset/i],
+        ['CERT_HAS_EXPIRED', /certificate/i],
+        ['DEPTH_ZERO_SELF_SIGNED_CERT', /self-signed/i]
+    ])('%s reads as a sentence', (code, expected) => {
+        const message = describeRequestFailure(new HttpError('x', { status: null, code }));
+        expect(message).toMatch(expected);
+        expect(message).not.toBe(code);
+        expect(message.length).toBeGreaterThan(15);
+    });
+
+    it('stays diagnostic — the caller owns the remedy, so advice is not duplicated', () => {
+        for (const code of ['ENOTFOUND', 'ECONNRESET', 'CERT_HAS_EXPIRED']) {
+            const message = describeRequestFailure(new HttpError('x', { status: null, code }));
+            expect(message).not.toMatch(/\bcheck\b|\btry\b|\bverify\b/i);
+        }
+    });
+});

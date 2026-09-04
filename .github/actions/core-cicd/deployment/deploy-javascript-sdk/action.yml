@@ -79,11 +79,14 @@ runs:
             # Pinned exact (no caret): sibling SDK packages always publish in lockstep at
             # the same version, so a range only reintroduces the ambiguity ADR-0019 removes.
             for dep in "${sdk_packages[@]}"; do
+              # Same reason as the publish step: resolve the sibling's real name rather than
+              # assuming the @dotcms/ scope, so an unscoped package is still repointed.
+              dep_name=$(jq -r '.name' "$dep/package.json" 2>/dev/null || echo "@dotcms/$dep")
               for field in dependencies peerDependencies; do
-                if jq -e ".${field}[\"@dotcms/$dep\"]" "$pkg" >/dev/null 2>&1; then
-                  jq --arg field "$field" --arg dep "@dotcms/$dep" --arg v "$RELEASE_VERSION" \
+                if jq -e ".${field}[\"$dep_name\"]" "$pkg" >/dev/null 2>&1; then
+                  jq --arg field "$field" --arg dep "$dep_name" --arg v "$RELEASE_VERSION" \
                     '.[$field][$dep] = $v' "$pkg" > tmp.$$.json && mv tmp.$$.json "$pkg"
-                  echo "    ↳ $field @dotcms/$dep -> $RELEASE_VERSION"
+                  echo "    ↳ $field $dep_name -> $RELEASE_VERSION"
                 fi
               done
             done
@@ -173,18 +176,27 @@ runs:
         PUBLISH_SUCCESS=true
 
         for sdk in $(find . -maxdepth 1 -mindepth 1 -type d -exec basename {} \;); do
-          echo "📦 Processing @dotcms/${sdk}..."
           cd "$sdk"
+
+          # The package's OWN name, never "@dotcms/<directory>".
+          #
+          # The scope used to be hardcoded here, which silently assumed every SDK is scoped.
+          # It held until `dotcms` — the unscoped CLI — where the guard below could never
+          # match: the first publish succeeded, then every re-run tried to publish a version
+          # that already existed and failed the release step. Reading `.name` makes the guard
+          # work for any naming scheme, scoped or not.
+          PKG_NAME=$(jq -r '.name' package.json)
+          echo "📦 Processing ${PKG_NAME}..."
 
           # Idempotency: the version is fixed to the dotCMS release tag and can never be
           # bumped, so if a prior (failed/cancelled) run already published this exact
           # version, npm would reject a re-publish with a hard 403 — permanently stalling
           # the release. Treat "already published" as success so a re-run can finish the
           # remaining packages instead of getting stuck.
-          if npm view "@dotcms/${sdk}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
-            echo "  ⏭️  @dotcms/${sdk}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
+          if npm view "${PKG_NAME}@${RELEASE_VERSION}" version >/dev/null 2>&1; then
+            echo "  ⏭️  ${PKG_NAME}@${RELEASE_VERSION} already published — skipping (idempotent re-run)"
           else
-            echo "  🚀 Publishing: @dotcms/${sdk}@${RELEASE_VERSION} (tag: ${NPM_TAG})"
+            echo "  🚀 Publishing: ${PKG_NAME}@${RELEASE_VERSION} (tag: ${NPM_TAG})"
             if npm publish --access public --tag "${NPM_TAG}"; then
               echo "  ✅ Published"
             else

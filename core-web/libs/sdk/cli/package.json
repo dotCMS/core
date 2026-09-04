@@ -1,0 +1,24 @@
+{
+    "name": "dotcms",
+    "version": "0.2.0",
+    "type": "module",
+    "main": "./index.js",
+    "bin": {
+        "dotcms": "./index.js"
+    },
+    "files": [
+        "*.js",
+        "README.md"
+    ],
+    "publishConfig": {
+        "access": "public"
+    },
+    "dependencies": {
+        "cfonts": "^3.3.1",
+        "chalk": "^5.6.2",
+        "commander": "^14.0.2",
+        "inquirer": "^13.0.1",
+        "ora": "^9.0.0",
+        "smol-toml": "^1.8.0"
+    }
+}

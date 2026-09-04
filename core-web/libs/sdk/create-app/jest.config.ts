@@ -22,5 +22,11 @@ export default {
      */
     transformIgnorePatterns: [],
     moduleFileExtensions: ['ts', 'js', 'html'],
-    coverageDirectory: '../../../coverage/libs/sdk/create-app'
+    coverageDirectory: '../../../coverage/libs/sdk/create-app',
+    moduleNameMapper: {
+        // This workspace maps aliases per-project; jest.preset.js does not read
+        // tsconfig.base.json paths. Without this, `@dotcms/http` resolves at compile time
+        // but not under Jest.
+        '^@dotcms/http$': '<rootDir>/../../http/src/index.ts'
+    }
 };
