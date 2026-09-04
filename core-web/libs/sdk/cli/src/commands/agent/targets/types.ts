@@ -23,6 +23,13 @@ export interface AgentTarget {
     /** The `npx skills -a` id. `null` means skills are not installable here, which the summary
      *  must reflect rather than imply success (FR-027). */
     skillsAgentId: string | null;
+    /**
+     * Has this editor been CONFIRMED to read the directory the skills installer writes to?
+     *
+     * A field rather than a hardcoded exception, so FR-027 stays meaningful for a future target
+     * whose location is only documented, and so adding an editor remains one object (FR-013).
+     */
+    skillsLocationVerified: boolean;
     format: 'json' | 'toml';
     /** `mcpServers` for most, `servers` for VS Code, `mcp` for OpenCode, `mcp_servers` for Codex. */
     containerKey: string;

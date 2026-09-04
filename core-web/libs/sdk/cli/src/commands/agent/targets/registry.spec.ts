@@ -104,6 +104,30 @@ describe('target registry', () => {
         }
     });
 
+    it('records whether each skills location is confirmed read by that editor (FR-027)', () => {
+        // Verified 2026-09-04: VS Code's docs list ~/.copilot/skills as a personal Agent Skills
+        // location for the IN-EDITOR agent, not only the Copilot CLI. If a future editor is
+        // added on documentation alone, set this false so the summary says "unverified"
+        // instead of claiming success.
+        for (const id of ALL) {
+            expect(typeof getTarget(id).skillsLocationVerified).toBe('boolean');
+        }
+        expect(getTarget('vscode').skillsLocationVerified).toBe(true);
+    });
+
+    it('points Antigravity at the shared Gemini config, not a legacy per-surface path', () => {
+        // antigravity.google/docs/mcp: Antigravity 2.x centralises MCP config for the IDE, CLI
+        // and SDK. Older builds used ~/.gemini/antigravity/mcp_config.json.
+        withPlatform('darwin', '/Users/dev', () => {
+            expect(getTarget('antigravity').configPath('global')).toBe(
+                '/Users/dev/.gemini/config/mcp_config.json'
+            );
+            expect(getTarget('antigravity').configPath('folder', '/work/p')).toBe(
+                '/work/p/.agents/mcp_config.json'
+            );
+        });
+    });
+
     it('names an unknown id rather than returning undefined (FR-032)', () => {
         expect(() => getTarget('not-an-editor' as TargetId)).toThrow(/not-an-editor/);
     });

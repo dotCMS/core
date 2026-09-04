@@ -110,6 +110,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     //    an all-or-nothing unwind.
     step(`Writing configuration for ${targets.length} editor${targets.length === 1 ? '' : 's'}`);
     const outcomes: TargetOutcome[] = [];
+    const byId = new Map(targets.map((t) => [t.id as string, t]));
     const seen = new Set<string>();
     for (const target of targets) {
         const file = target.configPath(scope, opts.cwd);
@@ -187,17 +188,22 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     if (!opts.skipSkills) {
         const ids = outcomes
             .filter((o) => o.result !== 'failed')
-            .map((o) => getTarget(o.targetId as TargetId))
-            .filter((t) => t.skillsAgentId)
+            .map((o) => byId.get(o.targetId))
+            .filter((t): t is NonNullable<typeof t> => Boolean(t?.skillsAgentId))
             .map((t) => t.skillsAgentId as string);
         if (ids.length) {
             step('Installing the dotCMS skills');
             const skills = await installSkills({ agentIds: ids, global: scope === 'global' });
             for (const o of outcomes) {
                 if (o.result === 'failed') continue;
-                // VS Code's skills location is the Copilot CLI directory and is unconfirmed for
-                // the in-editor agent, so it is never reported as installed (FR-027).
-                o.skillsInstalled = !skills.ok ? 'no' : o.targetId === 'vscode' ? 'unverified' : 'yes';
+                // FR-027: never claim skills landed where the editor is not confirmed to read
+                // them. Driven by the registry rather than a hardcoded editor id.
+                const target = byId.get(o.targetId);
+                o.skillsInstalled = !skills.ok
+                    ? 'no'
+                    : target?.skillsLocationVerified
+                      ? 'yes'
+                      : 'unverified';
             }
         }
     }

@@ -42,6 +42,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'claude-code',
         displayName: 'Claude Code',
         skillsAgentId: 'claude-code',
+        skillsLocationVerified: true,
         format: 'json',
         containerKey: 'mcpServers',
         entryShape: 'stdio',
@@ -53,6 +54,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'cursor',
         displayName: 'Cursor',
         skillsAgentId: 'cursor',
+        skillsLocationVerified: true,
         format: 'json',
         containerKey: 'mcpServers',
         entryShape: 'stdio',
@@ -66,6 +68,10 @@ export const TARGETS: readonly AgentTarget[] = [
         // Writes to ~/.copilot/skills — the Copilot CLI location. Not confirmed to be read by
         // the in-editor agent, so the summary must not claim skills landed here (FR-027).
         skillsAgentId: 'github-copilot',
+        // Confirmed 2026-09-04 against VS Code's own docs: the in-editor agent reads Agent
+        // Skills from ~/.copilot/skills (alongside ~/.claude/skills and ~/.agents/skills), the
+        // same directory `skills -a github-copilot` writes to. The spec's caveat is retired.
+        skillsLocationVerified: true,
         format: 'json',
         // NOT `mcpServers` — VS Code is the one that differs by key.
         containerKey: 'servers',
@@ -80,6 +86,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'codex',
         displayName: 'Codex',
         skillsAgentId: 'codex',
+        skillsLocationVerified: true,
         format: 'toml',
         containerKey: 'mcp_servers',
         entryShape: 'stdio',
@@ -93,6 +100,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'antigravity',
         displayName: 'Antigravity',
         skillsAgentId: 'antigravity',
+        skillsLocationVerified: true,
         format: 'json',
         containerKey: 'mcpServers',
         entryShape: 'stdio',
@@ -106,6 +114,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'devin',
         displayName: 'Devin',
         skillsAgentId: 'devin',
+        skillsLocationVerified: true,
         format: 'json',
         containerKey: 'mcpServers',
         entryShape: 'stdio',
@@ -119,6 +128,7 @@ export const TARGETS: readonly AgentTarget[] = [
         id: 'opencode',
         displayName: 'OpenCode',
         skillsAgentId: 'opencode',
+        skillsLocationVerified: true,
         format: 'json',
         // Differs by key AND by entry shape — see `entryShape`.
         containerKey: 'mcp',

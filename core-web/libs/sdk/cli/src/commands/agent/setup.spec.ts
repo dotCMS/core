@@ -3,6 +3,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 import { runSetup } from './setup';
+import * as skills from './skills';
 import * as registry from './targets/registry';
 
 const URL_ = 'https://demo.dotcms.com';
@@ -248,5 +249,30 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
         });
         expect(result.outcomes[0].scope).toBe('folder');
         expect(result.outcomes[0].path).toContain(dir);
+    });
+});
+
+describe('skills reporting honesty (FR-027)', () => {
+    it('reports "unverified" for a target whose skills location is not confirmed', async () => {
+        mockAcceptedToken();
+        // Simulate a future editor added on documentation alone.
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([
+            { ...registry.getTarget('cursor'), skillsLocationVerified: false }
+        ]);
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'npx skills add …' });
+
+        const result = await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir, skipVerify: true
+        });
+        expect(result.outcomes[0].skillsInstalled).toBe('unverified');
+    });
+
+    it('reports "yes" for a target that is confirmed', async () => {
+        mockAcceptedToken();
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'npx skills add …' });
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['vscode'], scope: 'folder', cwd: dir, skipVerify: true
+        });
+        expect(result.outcomes[0].skillsInstalled).toBe('yes');
     });
 });
