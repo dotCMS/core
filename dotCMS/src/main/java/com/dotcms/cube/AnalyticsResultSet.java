@@ -6,7 +6,7 @@ import java.util.Iterator;
 import java.util.Spliterator;
 import java.util.function.Consumer;
 
-public interface CubeJSResultSet extends Iterable<ResultSetItem>  {
+public interface AnalyticsResultSet extends Iterable<ResultSetItem>  {
 
     long size();
 

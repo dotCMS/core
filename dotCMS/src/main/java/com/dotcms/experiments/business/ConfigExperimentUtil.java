@@ -24,13 +24,16 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
 
     private static final String FEATURE_FLAG_EXPERIMENTS_KEY = FeatureFlagName.FEATURE_FLAG_EXPERIMENTS;
     private static final String ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY = "ENABLE_EXPERIMENTS_AUTO_JS_INJECTION";
+    private static final String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY = FeatureFlagName.FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS;
 
     private final AtomicBoolean featureFlagExperiments;
     private final AtomicBoolean enableExperimentsAutoJsInjection;
+    private final AtomicBoolean caemExperimentResults;
 
     ConfigExperimentUtil() {
         featureFlagExperiments = new AtomicBoolean(resolveFeatureFlag());
         enableExperimentsAutoJsInjection = new AtomicBoolean(resolveEnableAutoJsInjection());
+        caemExperimentResults = new AtomicBoolean(resolveCaemExperimentResults());
         APILocator.getLocalSystemEventsAPI().subscribe(SystemTableUpdatedKeyEvent.class, this);
     }
 
@@ -50,6 +53,15 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
     @VisibleForTesting
     public void setExperimentAutoJsInjection(final boolean enabled) {
         enableExperimentsAutoJsInjection.set(enabled);
+    }
+
+    /**
+     * Set the FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS FLAG into a Testing Environment
+     * @param enabled
+     */
+    @VisibleForTesting
+    public void setCaemExperimentResultsEnabled(final boolean enabled) {
+        caemExperimentResults.set(enabled);
     }
 
     /**
@@ -76,12 +88,26 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
         return enableExperimentsAutoJsInjection.get();
     }
 
+    /**
+     * Return true if the FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS is set to true, meaning that
+     * experiment result queries will be served from the CAEM analytics backend instead of CubeJS.
+     *
+     * The default value is FALSE
+     *
+     * @return
+     */
+    public boolean isCaemExperimentResultsEnabled() {
+        return caemExperimentResults.get();
+    }
+
     @Override
     public void notify(final SystemTableUpdatedKeyEvent event) {
         if (event.getKey().contains(FEATURE_FLAG_EXPERIMENTS_KEY)) {
             featureFlagExperiments.set(resolveFeatureFlag());
         } else if (event.getKey().contains(ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY)) {
             enableExperimentsAutoJsInjection.set(resolveEnableAutoJsInjection());
+        } else if (event.getKey().contains(FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY)) {
+            caemExperimentResults.set(resolveCaemExperimentResults());
         }
     }
 
@@ -115,5 +141,9 @@ public enum ConfigExperimentUtil implements EventSubscriber<SystemTableUpdatedKe
 
     private boolean resolveEnableAutoJsInjection() {
         return Config.getBooleanProperty(ENABLE_EXPERIMENTS_AUTO_JS_INJECTION_KEY, false);
+    }
+
+    private boolean resolveCaemExperimentResults() {
+        return Config.getBooleanProperty(FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS_KEY, false);
     }
 }
