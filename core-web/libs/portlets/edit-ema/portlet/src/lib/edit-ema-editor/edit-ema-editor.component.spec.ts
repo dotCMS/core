@@ -163,7 +163,9 @@ const mockInlineEditService = {
     enableInlineEdit: jest.fn(),
     disableInlineEdit: jest.fn(),
     injectInlineEdit: jest.fn(),
-    removeInlineEdit: jest.fn()
+    removeInlineEdit: jest.fn(),
+    handleInlineEdit: jest.fn(),
+    initEditor: jest.fn()
 };
 
 // Stub components to avoid ng-mocks signal query issues
@@ -3053,6 +3055,82 @@ describe('EditEmaEditorComponent', () => {
                         spectator.detectChanges();
 
                         expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
+                    });
+                });
+
+
+                describe('inline editing permission (#37376)', () => {
+                    /**
+                     * Build a `[data-mode]` field inside a contentlet wrapper,
+                     * mirroring what the container renderer emits.
+                     */
+                    const buildInlineTarget = (canEdit?: string): HTMLElement => {
+                        const wrapper = document.createElement('div');
+                        wrapper.dataset['dotObject'] = 'contentlet';
+                        wrapper.dataset['dotInode'] = 'inode-123';
+                        if (canEdit !== undefined) {
+                            wrapper.dataset['dotCanEdit'] = canEdit;
+                        }
+
+                        const field = document.createElement('div');
+                        field.dataset['mode'] = 'minimal';
+                        field.dataset['inode'] = 'inode-123';
+                        field.dataset['fieldName'] = 'body';
+                        field.dataset['language'] = '1';
+                        wrapper.appendChild(field);
+                        document.body.appendChild(wrapper);
+
+                        return field;
+                    };
+
+                    const clickInlineField = (canEdit?: string) => {
+                        const target = buildInlineTarget(canEdit);
+                        spectator.component.handleInlineEditing({
+                            target
+                        } as unknown as MouseEvent);
+                        spectator.detectChanges();
+                    };
+
+                    it('should not start inline editing on a contentlet the user cannot edit', () => {
+                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                        inlineEditSpy.mockClear();
+
+                        clickInlineField('false');
+
+                        expect(inlineEditSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should tell the user why with a toast instead of failing silently', () => {
+                        // The field has no control to grey out and no hover target
+                        // for a tooltip, so a silent no-op reads as a broken editor.
+                        addMessageSpy.mockClear();
+
+                        clickInlineField('false');
+
+                        expect(addMessageSpy).toHaveBeenCalledWith(
+                            expect.objectContaining({
+                                detail: 'uve.contentlet.no.edit.permission'
+                            })
+                        );
+                    });
+
+                    it('should start inline editing when the user can edit', () => {
+                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                        inlineEditSpy.mockClear();
+
+                        clickInlineField('true');
+
+                        expect(inlineEditSpy).toHaveBeenCalled();
+                    });
+
+                    it('should start inline editing when the permission attribute is absent', () => {
+                        // Headless pages never emit it; fail open.
+                        const inlineEditSpy = mockInlineEditService.handleInlineEdit;
+                        inlineEditSpy.mockClear();
+
+                        clickInlineField(undefined);
+
+                        expect(inlineEditSpy).toHaveBeenCalled();
                     });
                 });
 

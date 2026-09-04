@@ -772,3 +772,105 @@ describe('DotUveActionsHandlerService – COPY_CONTENTLET_INLINE_EDITING (field 
         expect(contentWindow.postMessage).not.toHaveBeenCalled();
     });
 });
+
+describe('DotUveActionsHandlerService – INIT_INLINE_EDITING permission gate (#37376)', () => {
+    let spectator: SpectatorService<DotUveActionsHandlerService>;
+    let service: DotUveActionsHandlerService;
+    let messageService: MessageService;
+    let blockSidebar: { open: jest.Mock };
+    let inlineEditingService: { initEditor: jest.Mock };
+
+    const createService = createServiceFactory({
+        service: DotUveActionsHandlerService,
+        providers: [
+            mockProvider(DotWorkflowActionsFireService),
+            mockProvider(DotMessageService, { get: (key: string) => key }),
+            mockProvider(MessageService),
+            mockProvider(DotCopyContentModalService),
+            { provide: UVEStore, useValue: buildMockStore() }
+        ]
+    });
+
+    /**
+     * Build an iframe-like document containing one contentlet wrapper with the
+     * given permission, mirroring what the Velocity container renderer emits.
+     */
+    const buildContentWindow = (canEdit?: string): Window => {
+        const doc = document.implementation.createHTMLDocument('iframe');
+        const wrapper = doc.createElement('div');
+        wrapper.dataset['dotObject'] = 'contentlet';
+        wrapper.dataset['dotInode'] = 'inode-123';
+        if (canEdit !== undefined) {
+            wrapper.dataset['dotCanEdit'] = canEdit;
+        }
+
+        const field = doc.createElement('div');
+        field.dataset['inode'] = 'inode-123';
+        field.dataset['fieldName'] = 'body';
+        wrapper.appendChild(field);
+        doc.body.appendChild(wrapper);
+
+        return { document: doc } as unknown as Window;
+    };
+
+    const fireBlockEditor = (canEdit?: string) => {
+        service.handleAction(
+            {
+                action: DotCMSUVEAction.INIT_INLINE_EDITING,
+                payload: {
+                    type: 'BLOCK_EDITOR',
+                    data: { inode: 'inode-123', fieldName: 'body', language: 1 }
+                }
+            } as never,
+            {
+                uveStore: buildMockStore() as never,
+                dialog: {} as never,
+                blockSidebar: blockSidebar as never,
+                inlineEditingService: inlineEditingService as never,
+                contentWindow: buildContentWindow(canEdit),
+                host: 'http://localhost',
+                onCopyContent: () => of({}) as never
+            }
+        );
+    };
+
+    beforeEach(() => {
+        jest.clearAllMocks();
+        spectator = createService();
+        service = spectator.service;
+        messageService = spectator.inject(MessageService);
+        blockSidebar = { open: jest.fn() };
+        inlineEditingService = { initEditor: jest.fn() };
+    });
+
+    it('should not open the block editor sidebar for a contentlet the user cannot edit', () => {
+        fireBlockEditor('false');
+
+        expect(blockSidebar.open).not.toHaveBeenCalled();
+    });
+
+    it('should tell the user why with a toast instead of failing silently', () => {
+        // An inline field has no control to grey out and no hover target for a
+        // tooltip. A click that does nothing reads as a broken editor and
+        // becomes a support ticket, so the refusal must be visible.
+        fireBlockEditor('false');
+
+        expect(messageService.add).toHaveBeenCalledWith(
+            expect.objectContaining({ detail: 'uve.contentlet.no.edit.permission' })
+        );
+    });
+
+    it('should open the block editor sidebar when the user can edit', () => {
+        fireBlockEditor('true');
+
+        expect(blockSidebar.open).toHaveBeenCalled();
+        expect(messageService.add).not.toHaveBeenCalled();
+    });
+
+    it('should open the block editor sidebar when the permission attribute is absent', () => {
+        // Headless pages never emit the attribute; fail open.
+        fireBlockEditor(undefined);
+
+        expect(blockSidebar.open).toHaveBeenCalled();
+    });
+});
