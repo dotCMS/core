@@ -29,8 +29,26 @@ import static org.mockito.Mockito.when;
 /**
  * Unit tests for {@link BounceRateCAEMResultQuery}.
  *
- * Verifies param construction, response parsing, empty-result handling, and error surfacing.
- * {@link CaemHttpClient} is mocked — no real CAEM service required.
+ * <p>Covers the following behaviours (see FR-003, FR-006a, FR-006b, FR-014, FR-017):</p>
+ * <ul>
+ *   <li><strong>executeByDay param construction</strong> — verifies that the CAEM request includes
+ *       {@code metrics=totalSessions,bounceSessions,bounceRate}, {@code dimensions=variant,day},
+ *       and the correct {@code experimentId} / {@code runningId}.</li>
+ *   <li><strong>executeAggregate param construction</strong> — same metrics but {@code dimensions=variant}
+ *       only (no day granularity).</li>
+ *   <li><strong>Response field mapping</strong> — confirms that a successful CAEM response is
+ *       translated into {@link com.dotcms.analytics.model.ResultSetItem} objects keyed with the
+ *       {@code Events.*} convention ({@code Events.variant}, {@code Events.day},
+ *       {@code Events.totalSessions}, {@code Events.bounceRateSuccesses},
+ *       {@code Events.bounceRateConversionRate}) expected by the existing
+ *       {@code ExperimentsAPIImpl} processing loops.</li>
+ *   <li><strong>Empty result (FR-014)</strong> — a zero-row CAEM response produces an empty
+ *       {@link com.dotcms.cube.AnalyticsResultSet} without throwing an exception.</li>
+ *   <li><strong>Error surfacing (FR-017)</strong> — a {@link com.dotmarketing.exception.DotDataException}
+ *       thrown by {@link CaemHttpClient} is propagated to the caller without being swallowed.</li>
+ * </ul>
+ *
+ * <p>{@link CaemHttpClient} is mocked — no real CAEM service or dotCMS container is required.</p>
  */
 @RunWith(MockitoJUnitRunner.Silent.class)
 public class BounceRateCAEMResultQueryTest {
@@ -62,6 +80,12 @@ public class BounceRateCAEMResultQueryTest {
     // executeByDay — param construction
     // -------------------------------------------------------------------------
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeByDay(Experiment, User)}
+     * When: called with a running experiment
+     * Should: call {@code GET /v1/analytics/sessions} with {@code dimensions=variant,day},
+     *         bounce metrics, and the correct {@code experimentId} / {@code runningId}
+     */
     @Test
     public void executeByDay_includesDayDimension() throws DotDataException, DotSecurityException {
         when(caemHttpClient.get(any(), any(), any())).thenReturn(emptyResultSet());
@@ -84,6 +108,12 @@ public class BounceRateCAEMResultQueryTest {
     // executeAggregate — param construction
     // -------------------------------------------------------------------------
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeAggregate(Experiment, User)}
+     * When: called with a running experiment
+     * Should: call {@code GET /v1/analytics/sessions} with {@code dimensions=variant} only
+     *         (no day granularity) — used by the aggregate totals loop in {@code ExperimentsAPIImpl}
+     */
     @Test
     public void executeAggregate_excludesDayDimension() throws DotDataException, DotSecurityException {
         when(caemHttpClient.get(any(), any(), any())).thenReturn(emptyResultSet());
@@ -104,6 +134,12 @@ public class BounceRateCAEMResultQueryTest {
     // Response parsing
     // -------------------------------------------------------------------------
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeByDay(Experiment, User)}
+     * When: CAEM returns a row with variant, day, and bounce metrics
+     * Should: map CAEM fields to the {@code Events.*} naming convention expected by the
+     *         {@code ExperimentsAPIImpl} processing loops
+     */
     @Test
     public void executeByDay_mapsResponseFieldsToEventsConvention() throws DotDataException, DotSecurityException {
         final AnalyticsResultSet caemResult = resultSetOf(Map.of(
@@ -130,6 +166,11 @@ public class BounceRateCAEMResultQueryTest {
     // Empty result (FR-014)
     // -------------------------------------------------------------------------
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeByDay(Experiment, User)}
+     * When: CAEM returns zero rows (no sessions recorded for the experiment run)
+     * Should: return an empty {@link AnalyticsResultSet} — not an error and not {@code null}
+     */
     @Test
     public void executeByDay_emptyCAEMResponse_returnsZeroRows() throws DotDataException, DotSecurityException {
         when(caemHttpClient.get(any(), any(), any())).thenReturn(emptyResultSet());
@@ -140,6 +181,11 @@ public class BounceRateCAEMResultQueryTest {
         assertEquals(0, result.size());
     }
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeAggregate(Experiment, User)}
+     * When: CAEM returns zero rows
+     * Should: return an empty {@link AnalyticsResultSet} — not an error and not {@code null}
+     */
     @Test
     public void executeAggregate_emptyCAEMResponse_returnsZeroRows() throws DotDataException, DotSecurityException {
         when(caemHttpClient.get(any(), any(), any())).thenReturn(emptyResultSet());
@@ -154,6 +200,12 @@ public class BounceRateCAEMResultQueryTest {
     // Error surfacing (FR-017)
     // -------------------------------------------------------------------------
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeByDay(Experiment, User)}
+     * When: {@link CaemHttpClient} throws a {@link com.dotmarketing.exception.DotDataException}
+     *       (e.g. non-2xx response or malformed body)
+     * Should: propagate the exception to the caller — never swallow it silently
+     */
     @Test(expected = DotDataException.class)
     public void executeByDay_caemClientThrows_propagatesDotDataException()
             throws DotDataException, DotSecurityException {
@@ -163,6 +215,11 @@ public class BounceRateCAEMResultQueryTest {
         query.executeByDay(experiment, user);
     }
 
+    /**
+     * Method to test: {@link BounceRateCAEMResultQuery#executeAggregate(Experiment, User)}
+     * When: {@link CaemHttpClient} throws a {@link com.dotmarketing.exception.DotDataException}
+     * Should: propagate the exception to the caller — never swallow it silently
+     */
     @Test(expected = DotDataException.class)
     public void executeAggregate_caemClientThrows_propagatesDotDataException()
             throws DotDataException, DotSecurityException {
