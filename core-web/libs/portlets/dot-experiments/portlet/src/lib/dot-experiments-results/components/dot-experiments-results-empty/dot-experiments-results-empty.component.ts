@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 import { SkeletonModule } from 'primeng/skeleton';
 
@@ -14,10 +14,8 @@ import { EMPTY_CHART_BACKGROUND_IMAGE } from '../../../shared/constants';
  */
 @Component({
     selector: 'dot-experiments-results-empty',
-    standalone: true,
     imports: [SkeletonModule],
     templateUrl: './dot-experiments-results-empty.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block w-full'
     }

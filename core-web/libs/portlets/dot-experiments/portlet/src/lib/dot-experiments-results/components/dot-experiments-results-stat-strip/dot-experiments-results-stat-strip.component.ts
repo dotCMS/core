@@ -1,5 +1,5 @@
 import { DatePipe, DecimalPipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, output } from '@angular/core';
+import { Component, computed, input, output } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { TooltipModule } from 'primeng/tooltip';
@@ -33,8 +33,7 @@ const THRESHOLD_NOT_MET_KEY = 'experiments.results.stat-strip.threshold-not-met'
 @Component({
     selector: 'dot-experiments-results-stat-strip',
     imports: [DatePipe, DecimalPipe, ButtonModule, TooltipModule, DotMessagePipe],
-    templateUrl: './dot-experiments-results-stat-strip.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    templateUrl: './dot-experiments-results-stat-strip.component.html'
 })
 export class DotExperimentsResultsStatStripComponent {
     /** Status of the experiment being reported on; decides Winner vs Leading Variant. */

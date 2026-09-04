@@ -1,6 +1,6 @@
 import { ChartData } from 'chart.js';
 
-import { ChangeDetectionStrategy, Component, computed, effect, input, signal } from '@angular/core';
+import { Component, computed, effect, input, signal } from '@angular/core';
 
 import { ChartModule } from 'primeng/chart';
 import { SkeletonModule } from 'primeng/skeleton';
@@ -33,7 +33,6 @@ function colorOf(dataset: ChartData<'line'>['datasets'][number]): string | null 
     selector: 'dot-experiments-reports-chart',
     imports: [ChartModule, SkeletonModule, TagModule, DotMessagePipe],
     templateUrl: './dot-experiments-reports-chart.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'w-full'
     }

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
 
 import { CardModule } from 'primeng/card';
 import { TabsModule } from 'primeng/tabs';
@@ -35,7 +35,6 @@ interface ChartAxisLabels {
     selector: 'dot-experiments-results-charts',
     imports: [CardModule, TabsModule, DotExperimentsReportsChartComponent, DotMessagePipe],
     templateUrl: './dot-experiments-results-charts.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: {
         class: 'block w-full'
     }

@@ -1,6 +1,6 @@
 import { injectDispatch } from '@ngrx/signals/events';
 
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -75,7 +75,6 @@ export interface DotExperimentsSummaryTableRow extends DotExperimentResultVarian
         DotMessagePipe
     ],
     templateUrl: './dot-experiments-results-summary-table.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     // Its own instance, so this confirmation and the shell's Stop confirmation never answer for
     // each other — they are two dialogs of the same kind, opened from two different places (AC21).
     providers: [ConfirmationService]
