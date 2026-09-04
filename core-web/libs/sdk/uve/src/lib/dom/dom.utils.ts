@@ -301,6 +301,11 @@ export function getDotContentletAttributes(
         'data-dot-type': contentlet?.contentType,
         'data-dot-container': container,
         'data-dot-on-number-of-pages': contentlet?.['onNumberOfPages'] || '1',
+        // Mirrors `data-dot-can-edit` from the Velocity renderer so the editor
+        // reads one attribute on both surfaces. Fails open: an older dotCMS
+        // release does not return `canEdit`, and the editor must behave as it
+        // does today rather than lock the user out.
+        'data-dot-can-edit': String(contentlet?.canEdit !== false),
         ...(contentlet?.dotStyleProperties && {
             'data-dot-style-properties': JSON.stringify(contentlet.dotStyleProperties)
         })

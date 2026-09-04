@@ -335,8 +335,16 @@ public class PageRenderUtil implements Serializable {
                     containerUuidPersona.add(container, uniqueUUIDForRender, personalizedContentlet);
 
 
+                    final boolean canEditContentlet =
+                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user);
                     contextMap.put("EDIT_CONTENT_PERMISSION" + contentlet.getIdentifier(),
-                            permissionAPI.doesUserHavePermission(contentlet, PERMISSION_WRITE, user));
+                            canEditContentlet);
+                    // Surface the same permission on the contentlet map so it reaches the Page API
+                    // JSON response and GraphQL's `_map`. Traditional pages read it from the
+                    // `data-dot-can-edit` attribute in the rendered HTML; headless pages have no
+                    // such markup and need it in the payload to gate the editor's edit affordances.
+                    // Reuses the value already computed above -- no extra permission lookup.
+                    contentlet.getMap().put("canEdit", canEditContentlet);
 
                     this.widgetPreExecute(contentlet);
                     this.addAccrueTags(contentlet);
