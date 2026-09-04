@@ -1,7 +1,7 @@
 import { Spectator, byTestId, createComponentFactory, mockProvider } from '@openng/spectator/jest';
 
 import { By } from '@angular/platform-browser';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -28,11 +28,13 @@ describe('DotEmaRunningExperimentComponent', () => {
     });
 
     beforeEach(() => {
-        spectator = createComponent({
-            props: {
-                runningExperiment: runningExperiment
-            }
-        });
+        // `setInput` with the public alias, not `props`: the input is declared as
+        // `$runningExperiment` with `alias: 'runningExperiment'`, and Spectator's typed `props`
+        // keys off the field name without mapping the alias back — it type-checks and then leaves
+        // a required input unset (NG0950).
+        spectator = createComponent({ detectChanges: false });
+        spectator.setInput('runningExperiment', runningExperiment);
+        spectator.detectChanges();
     });
     it('should render a tag', () => {
         expect(spectator.component).toBeTruthy();
@@ -53,5 +55,32 @@ describe('DotEmaRunningExperimentComponent', () => {
         // Verify that the tag element exists and has routerLink directive applied
         // The routerLink directive is applied to the p-tag element
         expect(tagDebugElement).toBeTruthy();
+    });
+
+    /**
+     * FR-017 (#37005): the reports destination must be unchanged by the entry-point switch work.
+     *
+     * The tag is deliberately NOT switched. The new portlet has no `:id/results` route —
+     * `lib.routes.ts` omits it pending #37004, "so the router surfaces an honest 404 instead of
+     * falling back to the legacy UVE screens" — so pointing an opted-in operator at it would route
+     * them into a 404. FR-017 constrains only the switch-off case and is satisfied by leaving the
+     * tag alone; Section D governs the navigation *item*, not the tag.
+     *
+     * The existing test above asserts a routerLink is *present*. This one asserts *where it goes*,
+     * which is the part that would regress silently.
+     */
+    it('should link to the legacy reports route, keyed on page and experiment', () => {
+        const tagDebugElement = spectator.debugElement.query(
+            By.css('[data-testId="runningExperimentTag"]')
+        );
+        const routerLink = tagDebugElement?.injector.get(RouterLink, null);
+
+        // `RouterLink.routerLink` is a setter and reads back undefined, so the destination is
+        // asserted through the URL the directive actually resolves.
+        const href = spectator.inject(Router).serializeUrl(routerLink.urlTree);
+
+        expect(href).toBe(
+            `/edit-page/experiments/${runningExperiment.pageId}/${runningExperiment.id}/reports`
+        );
     });
 });

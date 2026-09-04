@@ -8,6 +8,7 @@ import { HttpClientTestingModule, provideHttpClientTesting } from '@angular/comm
 import { Component, computed, EventEmitter, model, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { By } from '@angular/platform-browser';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { DatePickerModule } from 'primeng/datepicker';
@@ -20,10 +21,19 @@ import {
     DotLanguagesService,
     DotLicenseService,
     DotPersonalizeService,
+    DotPropertiesService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
-import { DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotExperiment,
+    DotLanguage,
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
+    DEFAULT_VARIANT_ID,
+    EXPERIMENT_RETURN_PARAM,
+    EXPERIMENT_RETURN_PORTLET
+} from '@dotcms/dotcms-models';
 import { UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent } from '@dotcms/ui';
 import {
@@ -97,6 +107,23 @@ jest.mock('../../../utils', () => ({
 const API_URL = '/api/v1/page/json/123-xyz-567-xxl?host_id=123-xyz-567-xxl&language_id=1';
 
 const params: DotPageAssetParams = HEADLESS_BASE_QUERY_PARAMS;
+
+/**
+ * The UVE Experiments entry-point switch, as the toolbar reads it (#37005).
+ *
+ * Only the return leg's *fallback* consults it — a variant carrying an origin marker returns to
+ * where it came from at either value (FR-027) — so most tests here leave it alone.
+ */
+const $experimentsPortletSwitchSignal = signal(false);
+
+/**
+ * The URL's query params, as `ActivatedRoute` reports them.
+ *
+ * The origin marker is read from here rather than from `store.pageParams()`: `DotPageAssetParams`
+ * is a typed page-asset shape and the marker is a routing concern that only survives that type
+ * through `#getPageParams`'s `as` cast. `ActivatedRoute` is where query params actually live.
+ */
+let routeQueryParams: Record<string, string> = {};
 const url = sanitizeURL(params?.url);
 
 const pageAPIQueryParams = getFullPageURL({ url, params });
@@ -414,6 +441,26 @@ describe('DotUveToolbarComponent', () => {
                 provide: MessageService,
                 useValue: {
                     add: jest.fn()
+                }
+            },
+            {
+                provide: Router,
+                // `useFactory`, not `useValue`: a `useValue` object literal is evaluated once at
+                // module scope, so its `jest.fn()` would accumulate calls across every test.
+                useFactory: () => ({ navigate: jest.fn() })
+            },
+            {
+                provide: ActivatedRoute,
+                useValue: {
+                    get snapshot() {
+                        return { queryParams: routeQueryParams };
+                    }
+                }
+            },
+            {
+                provide: DotPropertiesService,
+                useValue: {
+                    getFreshFeatureFlag: () => of($experimentsPortletSwitchSignal())
                 }
             },
             {
@@ -1684,6 +1731,242 @@ describe('DotUveToolbarComponent', () => {
                         );
 
                         expect(spy).not.toHaveBeenCalled();
+                    });
+
+                    /**
+                     * The inbound leg of the variant round-trip (#37005, US1/US2).
+                     *
+                     * Contract:
+                     * `specs/37005-experiments-uve-integration/contracts/navigation-destinations.md` §3.
+                     *
+                     * The destination is resolved by ORIGIN, not by the switch. A switch-only
+                     * branch makes FR-018 and FR-005/FR-027 mutually exclusive on a supported
+                     * path — switch off, portlet reached from the main navigation (FR-026),
+                     * variant opened (FR-027), return — which would land the editor on a legacy
+                     * screen they never came from. The switch is the fallback for a deep-linked
+                     * variant that carries no origin.
+                     */
+                    describe('returning from a variant', () => {
+                        const EXPERIMENT_ID = 'exp-1';
+                        const PAGE_ID = 'page-1';
+                        const CLEARED = {
+                            mode: null,
+                            variantName: null,
+                            experimentId: null
+                        };
+
+                        let navigate: jest.SpyInstance;
+
+                        const leaveVariant = () =>
+                            spectator.triggerEventHandler(
+                                DotEmaInfoDisplayComponent,
+                                'actionClicked',
+                                'variant'
+                            );
+
+                        beforeEach(() => {
+                            routeQueryParams = {};
+                            $experimentsPortletSwitchSignal.set(false);
+                            baseUVEState.pageExperiment.set({
+                                id: EXPERIMENT_ID,
+                                pageId: PAGE_ID
+                            } as DotExperiment);
+                            navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+                        });
+
+                        // #37005. Previewing the CONTROL from the portlet's Configure screen
+                        // opens UVE on the default variant, and the store's own
+                        // `$infoDisplayProps` returns null for it — so the chip, which is the only
+                        // thing that reads the origin marker and offers the way back, never
+                        // rendered. The editor arrived from a screen it cannot return to.
+                        describe('previewing the control from the portlet', () => {
+                            beforeEach(() => {
+                                infoDisplayPropsSignal.set(undefined);
+                                baseUVEState.pageExperiment.set({
+                                    id: EXPERIMENT_ID,
+                                    pageId: PAGE_ID,
+                                    trafficProportion: {
+                                        variants: [{ id: DEFAULT_VARIANT_ID, name: 'Original' }]
+                                    }
+                                } as DotExperiment);
+                            });
+
+                            it('should offer the chip, naming the control', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toEqual(
+                                    expect.objectContaining({
+                                        id: 'variant',
+                                        info: expect.objectContaining({ args: ['Original'] })
+                                    })
+                                );
+                            });
+
+                            // The legacy in-UVE screens send the same `experimentId` but never the
+                            // marker, and #37005 must leave the switch-off path exactly as it was.
+                            it('should not offer the chip without the origin marker', () => {
+                                routeQueryParams = { experimentId: EXPERIMENT_ID };
+                                spectator.detectChanges();
+
+                                expect(spectator.component.$infoDisplayProps()).toBeFalsy();
+                            });
+
+                            it('should return to Configure when the chip is used', () => {
+                                routeQueryParams = {
+                                    experimentId: EXPERIMENT_ID,
+                                    [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                                };
+                                spectator.detectChanges();
+
+                                leaveVariant();
+
+                                expect(navigate).toHaveBeenCalledWith(
+                                    ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                    expect.anything()
+                                );
+                            });
+                        });
+
+                        // T037 / FR-005, FR-006.
+                        it('should land on the portlet when the round-trip began there', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                {
+                                    queryParams: {
+                                        ...CLEARED,
+                                        [EXPERIMENT_RETURN_PARAM]: null,
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+                                    }
+                                }
+                            );
+                        });
+
+                        // The Variants card is where the round-trip started, so returning to the
+                        // top of a four-card form loses the reader's place.
+                        it('should ask Configure to land on the Variants card', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                expect.anything(),
+                                expect.objectContaining({
+                                    queryParams: expect.objectContaining({
+                                        [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+                                    })
+                                })
+                            );
+                        });
+
+                        // T037. The portlet's URL must not inherit UVE's params — `url`,
+                        // `language_id` and the persona key mean nothing to the list and its
+                        // `parseViewState` would leave them in the address indefinitely.
+                        it('should not merge UVE params into the portlet URL', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            const [, options] = navigate.mock.calls[0];
+                            expect(options.queryParamsHandling).toBeUndefined();
+                        });
+
+                        // T038 / FR-027. The case a switch-only branch gets wrong.
+                        it('should land on the portlet even with the switch off', () => {
+                            $experimentsPortletSwitchSignal.set(false);
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                expect.anything()
+                            );
+                        });
+
+                        // T039 / FR-005, SC-005. The target carries the experiment's id and no
+                        // page segment, so a page hosting two experiments returns to the right
+                        // one — US1 scenario 4.
+                        it('should key the portlet destination on the experiment, not the page', () => {
+                            routeQueryParams = {
+                                [EXPERIMENT_RETURN_PARAM]: EXPERIMENT_RETURN_PORTLET
+                            };
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            const [commands] = navigate.mock.calls[0];
+                            expect(commands).toContain(EXPERIMENT_ID);
+                            expect(commands).not.toContain(PAGE_ID);
+                        });
+
+                        // T040 / FR-018. No origin marker and the switch off — a pasted or
+                        // bookmarked variant URL on a default build. This is the existing code
+                        // path, byte-identical.
+                        it('should fall back to the legacy screen with no origin and the switch off', () => {
+                            $experimentsPortletSwitchSignal.set(false);
+                            routeQueryParams = {};
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                [
+                                    '/edit-page/experiments/',
+                                    PAGE_ID,
+                                    EXPERIMENT_ID,
+                                    'configuration'
+                                ],
+                                {
+                                    queryParams: CLEARED,
+                                    queryParamsHandling: 'merge'
+                                }
+                            );
+                        });
+
+                        // T040. No origin marker, switch on — the opted-in operator's deep link
+                        // lands somewhere coherent rather than on the screen they are migrating
+                        // away from.
+                        it('should fall back to the portlet with no origin and the switch on', () => {
+                            $experimentsPortletSwitchSignal.set(true);
+                            routeQueryParams = {};
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).toHaveBeenCalledWith(
+                                ['/experiments', EXPERIMENT_ID, 'configuration'],
+                                expect.anything()
+                            );
+                        });
+
+                        it('should do nothing when there is no experiment to return to', () => {
+                            baseUVEState.pageExperiment.set(null);
+                            spectator.detectChanges();
+
+                            leaveVariant();
+
+                            expect(navigate).not.toHaveBeenCalled();
+                        });
                     });
                 });
             });

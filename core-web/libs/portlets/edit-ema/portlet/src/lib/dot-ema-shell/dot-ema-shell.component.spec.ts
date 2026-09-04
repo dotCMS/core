@@ -8,7 +8,7 @@ import {
     mockProvider
 } from '@openng/spectator/jest';
 import { MockComponent } from 'ng-mocks';
-import { Subject, of } from 'rxjs';
+import { Subject, of, throwError } from 'rxjs';
 
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
@@ -1150,6 +1150,42 @@ describe('DotEmaShellComponent', () => {
                 );
             });
 
+            // #37005. `editEmaGuard` treats a missing persona as an incomplete URL and redirects
+            // to complete it, so a crumb without one points at an address nobody lands on: the
+            // router reports the redirected URL, it matches no crumb, and `processSpecialRoute`
+            // appends instead of truncating — leaving the screen you just left in the trail behind
+            // you. The address bar still drops the default persona; only the crumb keeps it.
+            it('should address the page with an explicit persona, so returning truncates the trail', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        url: expect.stringContaining(
+                            'com.dotmarketing.persona.id=modes.persona.no.persona'
+                        )
+                    })
+                );
+            });
+
+            // #37005. PrimeNG's breadcrumb renders `[attr.target]="item.target"`, and an item with
+            // no `target` stringifies to `target="undefined"` — a NAMED browsing context. The link
+            // then opens the editor in a new window instead of navigating, which is why clicking
+            // the page crumb appeared to do nothing while spawning a second browser. Every other
+            // crumb author in the app passes `_self`; this one did not.
+            it('should open in the same window', async () => {
+                mockGlobalStore.addNewBreadcrumb.mockClear();
+                spectator.detectChanges();
+                await spectator.fixture.whenStable();
+                spectator.detectChanges();
+
+                expect(mockGlobalStore.addNewBreadcrumb).toHaveBeenCalledWith(
+                    expect.objectContaining({ target: '_self' })
+                );
+            });
+
             it('should call addNewBreadcrumb again when page response changes', async () => {
                 mockGlobalStore.addNewBreadcrumb.mockClear();
                 spectator.detectChanges();
@@ -1482,6 +1518,104 @@ describe('DotEmaShellComponent', () => {
     });
 
     describe('Local View Models', () => {
+        /**
+         * The Experiments entry point and its switch (#37005, US2/US3).
+         *
+         * `FEATURE_FLAG_EXPERIMENTS_PORTLET` selects where the `science` item leads. Off — the
+         * shipped default — it must reach the same address as on a build without this change
+         * (FR-016); on, it reaches the new portlet's site-wide list filtered to the page
+         * (FR-021, FR-021a, FR-022).
+         *
+         * These live together because FR-016 is only assertable against a switch that exists and
+         * is being read: "off behaves as before" says nothing if there is no branch.
+         */
+        describe('Experiments entry point', () => {
+            const experimentsItem = () =>
+                spectator.component['$menuItems']().find((item) => item.id === 'experiments');
+
+            /**
+             * Sets the switch and rebuilds the shell.
+             *
+             * The rebuild is not incidental. The shell reads the switch once per construction
+             * into a signal, because the item's `href` is rendered and `$activeHref` highlights
+             * against it — a rendered destination cannot wait on an async read the way the
+             * toolbar's return action can. The spec sanctions exactly that: "the switch is read
+             * once per full application load … a stale value until the next reload is
+             * acceptable." So the unit of reversibility is a load, and a test that flipped the
+             * mock without rebuilding would be asserting live reactivity nothing promises.
+             */
+            const withSwitch = (enabled: boolean) => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(enabled));
+                spectator = createComponent();
+                spectator.detectChanges();
+            };
+
+            afterEach(() => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(of(false));
+            });
+
+            // T052 / FR-016. The exact href a build without this change produces.
+            it('should keep the legacy per-page href with the switch off', () => {
+                withSwitch(false);
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+            });
+
+            // T052 / FR-021, FR-021a, FR-022. Absolute, so `navigate()` does not prefix
+            // `edit-page`; and carrying only the page filter, since the list has no use for
+            // UVE's params.
+            it('should lead to the filtered site-wide list with the switch on', () => {
+                withSwitch(true);
+
+                expect(experimentsItem()?.href).toBe('/experiments');
+                expect(experimentsItem()?.queryParams).toEqual({
+                    pageAsset: MOCK_RESPONSE_HEADLESS.page.identifier
+                });
+            });
+
+            // T057 / FR-023. The switch changes the destination, never who may reach it.
+            it.each([false, true])(
+                'should keep the same permission rule with the switch %s',
+                (enabled) => {
+                    withSwitch(enabled);
+
+                    expect(experimentsItem()?.isDisabled).toBe(
+                        !MOCK_RESPONSE_HEADLESS.page.canEdit
+                    );
+                }
+            );
+
+            // T058 / FR-015 and the spec's unreadable-switch edge case. The item must not go
+            // inert and the editor must not be left on a blank screen — it falls to legacy.
+            it('should fall back to the legacy href when the switch cannot be read', () => {
+                dotPropertiesServiceMock.getFreshFeatureFlag.mockReturnValue(
+                    throwError(() => new Error('config read failed'))
+                );
+                spectator = createComponent();
+                spectator.detectChanges();
+
+                expect(experimentsItem()?.href).toBe(
+                    `experiments/${MOCK_RESPONSE_HEADLESS.page.identifier}`
+                );
+                expect(experimentsItem()?.isDisabled).toBe(!MOCK_RESPONSE_HEADLESS.page.canEdit);
+            });
+
+            // T059 / US2 scenario 4, SC-002. Reversible in both directions, without a redeploy —
+            // asserted as a sequence, because a one-way test would pass on a latched value.
+            it('should restore the original destination when the switch is turned back off', () => {
+                withSwitch(false);
+                const before = experimentsItem()?.href;
+
+                withSwitch(true);
+                expect(experimentsItem()?.href).toBe('/experiments');
+
+                withSwitch(false);
+                expect(experimentsItem()?.href).toBe(before);
+            });
+        });
+
         describe('$menuItems computed property', () => {
             it('should build menu items with correct structure', () => {
                 const menuItems = spectator.component['$menuItems']();

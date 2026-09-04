@@ -1,24 +1,30 @@
 import { Dispatcher } from '@ngrx/signals/events';
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { Subject } from 'rxjs';
 
 import { Injector, WritableSignal, signal } from '@angular/core';
 import { applyEach, disabled, FieldTree, form, max, min, validate } from '@angular/forms/signals';
+import { Router } from '@angular/router';
 
 import { Confirmation, ConfirmationService } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Tooltip } from 'primeng/tooltip';
 
-import { DotMessageService } from '@dotcms/data-access';
+import { DotMessageDisplayService, DotMessageService } from '@dotcms/data-access';
 import {
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DEFAULT_VARIANT_NAME,
     DotExperiment,
+    DotExperimentStatus,
+    DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
+    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
+    EXPERIMENT_RETURN_PARAM,
     MAX_VARIANTS_ALLOWED,
     TrafficProportionTypes,
     Variant
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 import { DotCopyButtonComponent } from '@dotcms/ui';
 import { getExperimentMock, MockDotMessageService } from '@dotcms/utils-testing';
 
@@ -35,6 +41,7 @@ import { dotExperimentsConfigurePageEvents } from '../../../store/dot-experiment
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { toVariantWeightRows } from '../../../util/dot-experiments-configure-form.util';
 import { totalWeight } from '../../../util/dot-experiments-configure.util';
+import { buildVariantEditorLink } from '../../../util/dot-experiments-uve-link.util';
 import {
     DotExperimentsAddVariantDialogComponent,
     DotExperimentsAddVariantDialogResult
@@ -57,13 +64,15 @@ const THREE_VARIANT_EXPERIMENT: DotExperiment = {
 const SELECTED_PAGE: DotExperimentConfigurePage = {
     pageId: EXPERIMENT.pageId,
     title: 'Blog',
-    path: '/blog/index'
+    path: '/blog/index',
+    languageId: 1
 };
 
 const ADD_DIALOG_HEADER = 'Add Variant';
 const CAP_REACHED_COPY = 'Maximum number of variants reached';
 const EDIT_CONTENT_UNAVAILABLE_COPY = 'Available soon';
 const CANT_EDIT_COPY = 'Only a draft experiment can be edited';
+const PAGE_BLOCKED_COPY = 'Another user is editing this page';
 const HINT_COPY = 'Up to {0} variants';
 
 const messageServiceMock = new MockDotMessageService({
@@ -78,7 +87,8 @@ const messageServiceMock = new MockDotMessageService({
     'experiments.configure.variants.hint': HINT_COPY,
     'experiments.configure.variants.hint.locked': 'Locked',
     'experiments.configure.variants.share-of-all': '{0}%',
-    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY
+    [EXP_CONFIG_ERROR_LABEL_CANT_EDIT]: CANT_EDIT_COPY,
+    [EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED]: PAGE_BLOCKED_COPY
 });
 
 /**
@@ -90,6 +100,10 @@ const createStoreMock = () => ({
     experiment: jest.fn().mockReturnValue(EXPERIMENT),
     $variants: jest.fn().mockReturnValue([CONTROL_VARIANT, SECOND_VARIANT]),
     $disabledTooltipKey: jest.fn().mockReturnValue(null),
+    // The two halves of read-only, kept separate on purpose: the mode is an OR across them and
+    // the control, not a read of `$disabledTooltipKey`, which reports only the strongest reason.
+    $isLocked: jest.fn().mockReturnValue(false),
+    $lockedByAnotherUser: jest.fn().mockReturnValue(false),
     $validationErrors: jest.fn().mockReturnValue([]),
     selectedPage: jest.fn().mockReturnValue(SELECTED_PAGE),
     // What the "of all traffic" column multiplies each split against.
@@ -105,6 +119,10 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     let dialogServiceMock: { open: jest.Mock };
     let weights: WritableSignal<VariantWeightFormRow[]>;
     let weightsField: FieldTree<VariantWeightFormRow[]>;
+    /** The one navigation the card makes: the variant round-trip's outbound leg (#37005). */
+    let navigate: jest.SpyInstance;
+    /** How a refused open-in-editor reaches the user, instead of a half-formed URL. */
+    let messagePush: jest.SpyInstance;
 
     const createComponent = createComponentFactory({
         component: DotExperimentsConfigureVariantsComponent,
@@ -114,7 +132,14 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         providers: [
             { provide: DotExperimentsConfigureStore, useFactory: () => storeMock },
             { provide: DotMessageService, useValue: messageServiceMock },
-            ConfirmationService
+            ConfirmationService,
+            // PrimeNG's `MessageService` is deliberately NOT provided here, and must stay
+            // unprovided: the UVE shell provides it but the `/experiments` route does not, so a
+            // component that injects it renders blank on the portlet path with NG0201. Supplying
+            // it in the spec is what hid exactly that bug. `DotMessageDisplayService` is the right
+            // channel — it is in the app-wide `providers.ts`, so it resolves on every route.
+            mockProvider(DotMessageDisplayService),
+            { provide: Router, useFactory: () => ({ navigate: jest.fn() }) }
         ],
         detectChanges: false
     });
@@ -204,10 +229,6 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
     const tooltipOf = (testId: string): Tooltip =>
         spectator.query(`[data-testid="${testId}"]`, { read: Tooltip }) as Tooltip;
 
-    /** Same tooltip on every row, so they are read as a list and indexed by row. */
-    const tooltipsOf = (testId: string): Tooltip[] =>
-        spectator.queryAll(`[data-testid="${testId}"]`, { read: Tooltip }) as Tooltip[];
-
     const isRowButtonDisabled = (rowIndex: number, testId: string): boolean =>
         (queryIn(rowIndex, testId)?.querySelector('button') as HTMLButtonElement | undefined)
             ?.disabled ?? false;
@@ -226,6 +247,8 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         dialogServiceMock = { open: jest.fn().mockReturnValue({ onClose: dialogClosed }) };
         spectator = createComponent();
         dispatch = jest.spyOn(spectator.inject(Dispatcher), 'dispatch');
+        navigate = jest.spyOn(spectator.inject(Router), 'navigate');
+        messagePush = jest.spyOn(spectator.inject(DotMessageDisplayService), 'push');
         const confirmationService = spectator.inject(ConfirmationService, true);
         confirm = jest
             .spyOn(confirmationService, 'confirm')
@@ -1007,25 +1030,279 @@ describe('DotExperimentsConfigureVariantsComponent', () => {
         });
     });
 
+    /**
+     * The outbound leg of the variant round-trip (#37005, US1).
+     *
+     * Contract: `specs/37005-experiments-uve-integration/contracts/navigation-destinations.md` §2.
+     * The URL itself is covered exhaustively in `dot-experiments-uve-link.util.spec.ts`; these
+     * tests are about the card — that the button works at all, that it hands the builder the right
+     * inputs, and that a refusal is a message rather than a navigation.
+     */
     describe('editing content', () => {
-        it('should render the control row as a disabled Preview, with a reason', () => {
+        // T035 / FR-001.
+        it('should offer a working action, not the disabled placeholder', () => {
             render();
 
-            expect(queryIn(0, 'variant-edit-content-btn')?.textContent).toContain('Preview');
-            expect(isRowButtonDisabled(0, 'variant-edit-content-btn')).toBe(true);
-            expect(tooltipsOf('variant-edit-content-tooltip')[0].content).toBe(
-                EDIT_CONTENT_UNAVAILABLE_COPY
-            );
+            expect(isRowButtonDisabled(1, 'variant-edit-content-btn')).toBe(false);
+            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit');
         });
 
-        it('should render every other row as a disabled Edit, with the same reason', () => {
-            // The UVE round-trip is out of scope for every row, control or not (AC-Var-Edit).
+        it('should no longer wrap the action in the "upcoming release" tooltip', () => {
             render();
 
-            expect(queryIn(1, 'variant-edit-content-btn')?.textContent).toContain('Edit');
-            expect(isRowButtonDisabled(1, 'variant-edit-content-btn')).toBe(true);
-            expect(tooltipsOf('variant-edit-content-tooltip')[1].content).toBe(
-                EDIT_CONTENT_UNAVAILABLE_COPY
+            expect(spectator.query(byTestId('variant-edit-content-tooltip'))).toBeNull();
+        });
+
+        // T030 / FR-002. The full param set is the builder's contract; here we assert the card
+        // navigates to what the builder produced, and to nothing else.
+        it('should navigate to the variant in the editor', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const link = buildVariantEditorLink({
+                page: SELECTED_PAGE,
+                variantId: SECOND_VARIANT.id,
+                experimentId: EXPERIMENT.id,
+                mode: UVE_MODE.EDIT
+            });
+
+            expect(navigate).toHaveBeenCalledWith(link?.commands, {
+                queryParams: link?.queryParams
+            });
+        });
+
+        // T030. `queryParamsHandling` must be absent: the portlet's own URL carries
+        // filter/orderby/pageAsset, none of which UVE wants.
+        it('should not merge the portlet URL params into the editor URL', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const [, options] = navigate.mock.calls[0];
+            expect(options.queryParamsHandling).toBeUndefined();
+        });
+
+        // T031. The page's real language, not editEmaGuard's substituted 1.
+        it('should send the page language rather than defaulting it', () => {
+            storeMock.selectedPage.mockReturnValue({ ...SELECTED_PAGE, languageId: 7 });
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            const [, options] = navigate.mock.calls[0];
+            expect(options.queryParams.language_id).toBe(7);
+        });
+
+        // T032 / FR-003. The legacy card re-parsed window.location.href; this one must not care
+        // what the address bar says.
+        it('should build the destination from the store, not from the address bar', () => {
+            const original = window.location.href;
+            window.history.replaceState({}, '', '/experiments?filter=another-page');
+
+            try {
+                render();
+                clickButton('variant-edit-content-btn', rows()[1]);
+
+                const [, options] = navigate.mock.calls[0];
+                expect(options.queryParams.url).toBe(SELECTED_PAGE.path);
+                expect(JSON.stringify(navigate.mock.calls)).not.toContain('another-page');
+            } finally {
+                window.history.replaceState({}, '', original);
+            }
+        });
+
+        // T034. The automated half of SC-004: the whole gesture is one navigation, with no address
+        // typed or pasted anywhere in it.
+        it('should reach the editor in a single navigation', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[1]);
+
+            expect(navigate).toHaveBeenCalledTimes(1);
+        });
+
+        // T033 / T041 / FR-004, SC-006. Each case would otherwise be a silent wrong-page open,
+        // because editEmaGuard completes missing params instead of rejecting.
+        describe('refusing rather than navigating', () => {
+            it.each([
+                ['the page is unresolved', null],
+                ['the page has no path', { ...SELECTED_PAGE, path: '' }],
+                ['the page has no language', { ...SELECTED_PAGE, languageId: undefined }]
+            ])('should refuse with a message when %s', (_case, page) => {
+                storeMock.selectedPage.mockReturnValue(page as DotExperimentConfigurePage | null);
+                render();
+                clickButton('variant-edit-content-btn', rows()[1]);
+
+                expect(navigate).not.toHaveBeenCalled();
+                expect(messagePush).toHaveBeenCalledWith(
+                    expect.objectContaining({
+                        severity: DotMessageSeverity.ERROR,
+                        message: EDIT_CONTENT_UNAVAILABLE_COPY
+                    })
+                );
+            });
+        });
+
+        // T036 / FR-007, FR-007a, SC-008. The card must not gain a claim about edit state now that
+        // the round-trip can make one false. Already true on `main`; this keeps it true.
+        describe('making no claim about edit state', () => {
+            it('should render no per-variant meta, badge or last-modified element', () => {
+                render();
+
+                expect(spectator.query(byTestId('variant-meta'))).toBeNull();
+                expect(spectator.query(byTestId('variant-edited-badge'))).toBeNull();
+                expect(spectator.query(byTestId('variant-last-modified'))).toBeNull();
+            });
+
+            it('should read identically for an edited and an unedited variant', () => {
+                // SC-008 asks that the edited and unedited cases read the same. Nothing in the
+                // model says which is which — FR-007a forbids adding anything that would — so the
+                // testable form is that two non-control rows differ only in the things that are
+                // legitimately theirs: name and numbers. An edited badge or meta line on one of
+                // them would survive this normalisation and fail.
+                storeMock.experiment.mockReturnValue(THREE_VARIANT_EXPERIMENT);
+                storeMock.$variants.mockReturnValue(
+                    THREE_VARIANT_EXPERIMENT.trafficProportion.variants
+                );
+                render();
+
+                const structureOf = (row: Element) =>
+                    (row.textContent ?? '')
+                        .replace(/\s+/g, ' ')
+                        .replace(/[\d.]+%?/g, '#')
+                        .replace(new RegExp(SECOND_VARIANT.name, 'gi'), 'NAME')
+                        .replace(new RegExp(THIRD_VARIANT.name, 'gi'), 'NAME')
+                        .trim();
+
+                const [, second, third] = rows();
+
+                expect(structureOf(third)).toBe(structureOf(second));
+            });
+
+            it('should say only where editing happens, never whether it has happened', () => {
+                render();
+
+                const cardText = spectator.query(byTestId('variants-card'))?.textContent ?? '';
+
+                expect(cardText).not.toMatch(/no content changes|unmodified|edited in/i);
+            });
+        });
+    });
+
+    /**
+     * Read-only vs editable (#37005, US4, FR-008 – FR-010a).
+     *
+     * `mode` is an **OR** across three independent conditions: the variant is the control, the
+     * experiment is not a draft, or the page is locked by another user. Any one of them means
+     * preview.
+     *
+     * Deliberately *not* derived from `$disabledTooltipKey()`. That computed exists to pick the
+     * single strongest *reason* to show a user — it reports the non-draft reason before the lock
+     * reason — and it does not cover the control at all, since the control is read-only on a
+     * perfectly editable draft. Reusing it would make the control editable, which is FR-008
+     * inverted and the kind of thing that only shows up when someone edits the original by
+     * accident.
+     */
+    describe('read-only vs editable', () => {
+        const modeSentTo = (rowIndex: number): string => {
+            clickButton('variant-edit-content-btn', rows()[rowIndex]);
+            const [, options] = navigate.mock.calls[0];
+
+            return options.queryParams.mode;
+        };
+
+        const CONTROL_ROW = 0;
+        const VARIANT_ROW = 1;
+
+        // FR-008. The one case no lock condition covers.
+        it('should open the control read-only even on an editable draft', () => {
+            render();
+
+            expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
+        });
+
+        // The single editable case, so the OR cannot simply be over-applied to everything.
+        it('should open a non-control variant of an unlocked draft editable', () => {
+            render();
+
+            expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
+        });
+
+        // FR-009. Every status but DRAFT, not just RUNNING: an ended or archived experiment's
+        // results are just as corruptible by an accidental edit.
+        describe.each([
+            DotExperimentStatus.RUNNING,
+            DotExperimentStatus.SCHEDULED,
+            DotExperimentStatus.ENDED,
+            DotExperimentStatus.ARCHIVED
+        ])('an experiment in %s', (status) => {
+            beforeEach(() => {
+                storeMock.experiment.mockReturnValue({ ...EXPERIMENT, status });
+                storeMock.$isLocked.mockReturnValue(true);
+                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+            });
+
+            it('should open every variant read-only', () => {
+                render();
+
+                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
+            });
+        });
+
+        // FR-010.
+        describe('a page locked by another user', () => {
+            beforeEach(() => {
+                storeMock.$lockedByAnotherUser.mockReturnValue(true);
+                storeMock.$disabledTooltipKey.mockReturnValue(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
+            });
+
+            it('should open every variant read-only', () => {
+                render();
+
+                expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.PREVIEW);
+            });
+
+            it('should state the reason to the user', () => {
+                render();
+
+                expect(spectator.query(byTestId('variants-card'))?.textContent).toContain(
+                    PAGE_BLOCKED_COPY
+                );
+            });
+        });
+
+        // The page being locked by *me* is not a reason to freeze anything: I hold the lock.
+        it('should stay editable when the page is locked by the current user', () => {
+            storeMock.$lockedByAnotherUser.mockReturnValue(false);
+            render();
+
+            expect(modeSentTo(VARIANT_ROW)).toBe(UVE_MODE.EDIT);
+        });
+
+        // The trap this whole describe exists to catch. On a draft, unlocked page
+        // `$disabledTooltipKey()` is null — so a mode derived from it would call the control
+        // editable.
+        it('should not derive the mode from the disabled-tooltip key', () => {
+            storeMock.$disabledTooltipKey.mockReturnValue(null);
+            storeMock.$isLocked.mockReturnValue(false);
+            storeMock.$lockedByAnotherUser.mockReturnValue(false);
+            render();
+
+            expect(modeSentTo(CONTROL_ROW)).toBe(UVE_MODE.PREVIEW);
+        });
+
+        // FR-010a. Read-only changes what UVE offers, not where the round-trip ends — so the
+        // outbound link still carries the same origin marker and experiment id.
+        it('should carry the same return context whether read-only or editable', () => {
+            render();
+            clickButton('variant-edit-content-btn', rows()[CONTROL_ROW]);
+            const [, readOnly] = navigate.mock.calls[0];
+
+            navigate.mockClear();
+            render();
+            clickButton('variant-edit-content-btn', rows()[VARIANT_ROW]);
+            const [, editable] = navigate.mock.calls[0];
+
+            expect(readOnly.queryParams.experimentId).toBe(editable.queryParams.experimentId);
+            expect(readOnly.queryParams[EXPERIMENT_RETURN_PARAM]).toBe(
+                editable.queryParams[EXPERIMENT_RETURN_PARAM]
             );
         });
     });

@@ -39,6 +39,8 @@ import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-con
 import { DotExperimentsChangePageDialogComponent } from '../dot-experiments-change-page-dialog/dot-experiments-change-page-dialog.component';
 
 const EMPTY_PAGE_COPY = 'No Page selected';
+const PREFILL_ERROR_KEY = 'experiments.configure.page.prefill.not-found';
+const PREFILL_ERROR_COPY = 'This Page could not be found';
 const PAGE_REQUIRED_COPY = 'Pick the page the experiment runs on';
 const LOCKED_TOOLTIP_COPY = 'This experiment can no longer be edited';
 const SELECT_PAGE_HEADER_COPY = 'Select A Page';
@@ -48,6 +50,7 @@ const TRAFFIC_HELP_ALL_COPY = 'All traffic to {0} enters the Experiment';
 const TRAFFIC_HELP_PARTIAL_COPY = '{0}% of the traffic to {1} enters the Experiment';
 
 const messageServiceMock = new MockDotMessageService({
+    [PREFILL_ERROR_KEY]: PREFILL_ERROR_COPY,
     'experiments.configure.page.empty': EMPTY_PAGE_COPY,
     'experiments.configure.page.error.required': PAGE_REQUIRED_COPY,
     'experiments.configure.page.action.select': SELECT_COPY,
@@ -62,7 +65,8 @@ const messageServiceMock = new MockDotMessageService({
 const SELECTED_PAGE: DotExperimentConfigurePage = {
     pageId: 'page-1',
     title: 'Pricing',
-    path: '/pricing/index'
+    path: '/pricing/index',
+    languageId: 1
 };
 
 /** The AssetPicker browses a site, and GlobalStore is what supplies it. */
@@ -77,7 +81,10 @@ const SITE_MOCK: DotSite = {
 const PICKED_PAGE = {
     identifier: 'page-2',
     title: 'About us',
-    url: '/about-us/index'
+    url: '/about-us/index',
+    // Real contentlets always carry a language, and the variant deep link sends it as
+    // `language_id` — so the picker's page has to reach the store with one (#37005).
+    languageId: 1
 } as DotCMSContentlet;
 
 const EXPERIMENT: DotExperiment = { ...getExperimentMock(1), trafficAllocation: 100 };
@@ -242,6 +249,29 @@ describe('DotExperimentsConfigurePageComponent', () => {
             expect(spectator.query(byTestId('experiments-configure-page-title'))).toBeNull();
         });
 
+        // #37005. The store resolves the experiment's page on load and records why when it
+        // cannot — but nothing rendered that, so an experiment whose page was deleted showed the
+        // *empty* state: "Select a Page to test", which says nobody ever picked one. The editor
+        // was then refused at Preview/Edit with no way to connect the two.
+        it('should say why the page is missing instead of looking unset', () => {
+            storeMock.pagePrefillError.set(PREFILL_ERROR_KEY);
+            spectator.detectChanges();
+
+            expect(
+                spectator.query(byTestId('experiments-configure-page-unresolved'))?.textContent
+            ).toContain(PREFILL_ERROR_COPY);
+            expect(spectator.query(byTestId('experiments-configure-page-empty'))).toBeNull();
+        });
+
+        // A page that resolved leaves no error to report, whatever came before.
+        it('should report nothing once a page is in place', () => {
+            storeMock.pagePrefillError.set(PREFILL_ERROR_KEY);
+            storeMock.selectedPage.set(SELECTED_PAGE);
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('experiments-configure-page-unresolved'))).toBeNull();
+        });
+
         it('should show the title and the path of the selected page', () => {
             storeMock.selectedPage.set(SELECTED_PAGE);
             spectator.detectChanges();
@@ -297,7 +327,8 @@ describe('DotExperimentsConfigurePageComponent', () => {
                 dotExperimentsConfigurePageEvents.pageSelected({
                     pageId: PICKED_PAGE.identifier,
                     title: PICKED_PAGE.title,
-                    path: PICKED_PAGE.url
+                    path: PICKED_PAGE.url,
+                    languageId: 1
                 })
             );
         });

@@ -71,7 +71,8 @@ const EXPERIMENT_ID = 'exp-1';
 const PAGE: DotExperimentConfigurePage = {
     pageId: '2e2e5f6a-1e17-4b21-9c1a-7d3f5b90ac41',
     title: 'Home',
-    path: '/home'
+    path: '/home',
+    languageId: 1
 };
 
 const buildVariant = (id: string, weight: number): Variant => ({ id, name: id, weight });
@@ -127,6 +128,9 @@ const buildPageContentlet = (contentlet: Partial<DotCMSContentlet> = {}): DotCMS
         identifier: PAGE.pageId,
         title: PAGE.title,
         url: PAGE.path,
+        // Real contentlets always carry a language, and `toConfigurePage` copies it through so the
+        // variant deep link can send it as `language_id` (#37005).
+        languageId: PAGE.languageId,
         ...contentlet
     }) as DotCMSContentlet;
 
@@ -623,7 +627,12 @@ describe('DotExperimentsConfigureStore', () => {
             initExisting();
 
             dispatcher.dispatch(
-                pageEvents.pageSelected({ pageId: 'page-2', title: 'Pricing', path: '/pricing' })
+                pageEvents.pageSelected({
+                    pageId: 'page-2',
+                    title: 'Pricing',
+                    path: '/pricing',
+                    languageId: 1
+                })
             );
 
             expect(store.selectedPage()).toEqual(PAGE);
@@ -634,8 +643,45 @@ describe('DotExperimentsConfigureStore', () => {
      * The screen mirrors the rule `ExperimentsAPIImpl.save()` enforces, so a page the server would
      * refuse never leaves. See `specs/37176-draft-experiment-page-change`.
      */
+    // #37005. The variant endpoints persist on their own and answer with the recomputed
+    // proportion, so the weights the card is about to mirror ARE what the server holds. The
+    // baseline was not settling with them, so adding a variant left the screen dirty: Save Draft
+    // lit up for work already written, and — worse — the `canDeactivate` guard then blocked the
+    // way to UVE, which is how "Edit variant" came back as an error instead of a navigation.
+    describe('adding a variant', () => {
+        const withNewVariant = () =>
+            buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [buildVariant('DEFAULT', 50), buildVariant('variant-new', 50)]
+                }
+            });
+
+        it('should leave the screen clean, since the endpoint already wrote it', () => {
+            initExisting();
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+            // The card mirrors the proportion that came back, as it does in the browser.
+            mirrorForm(added);
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        // Only the slice the endpoint wrote settles. A name typed and not yet sent is still work.
+        it('should keep an unsent edit dirty', () => {
+            initExisting();
+            edit({ name: 'Typed but never saved' });
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+
+            expect(store.$hasUnsavedChanges()).toBe(true);
+        });
+    });
+
     describe('changing the page of a draft', () => {
-        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing' };
+        const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing', languageId: 1 };
 
         /** A draft in the only shape that may change page: the control and nothing else. */
         const controlOnlyDraft = () =>
@@ -660,6 +706,68 @@ describe('DotExperimentsConfigureStore', () => {
                 EXPERIMENT_ID,
                 expect.objectContaining({ pageId: OTHER_PAGE.pageId })
             );
+        });
+
+        // #37005. The server takes `pageId` only while the variants are the control alone, so this
+        // precondition expires the moment a variant is added — and adding one was a single click
+        // away for the whole wait. Waiting for Save Draft left the card showing one page and the
+        // experiment sitting on another, with no PATCH able to reconcile them.
+        it('should persist the pick immediately, without waiting for Save Draft', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                pageId: OTHER_PAGE.pageId
+            });
+        });
+
+        // Variants are copies of the page; one created before the change lands is created under
+        // the old one. The Configure screen reads this to gate that card and only that card.
+        it('should report the change as in flight until it settles', () => {
+            initExisting(controlOnlyDraft());
+            // Held open, so the flight is observable: the default mock answers in the same tick.
+            const answer = pendingCall(patchExperiment);
+
+            expect(store.pageChanging()).toBe(false);
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(store.pageChanging()).toBe(true);
+
+            answer.next(buildExperiment({ pageId: OTHER_PAGE.pageId }));
+            answer.complete();
+
+            expect(store.pageChanging()).toBe(false);
+            expect(store.experiment()?.pageId).toBe(OTHER_PAGE.pageId);
+        });
+
+        it('should let the form go again when the change is refused', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+            dispatcher.dispatch(apiEvents.pageChangeFailed(new Error('boom')));
+
+            expect(store.pageChanging()).toBe(false);
+        });
+
+        // Picking the page it is already on is not a change, so nothing is sent and nothing gates.
+        it('should send nothing when the pick is the page it already has', () => {
+            const draft = controlOnlyDraft();
+            initExisting(draft);
+            patchExperiment.mockClear();
+
+            dispatcher.dispatch(
+                pageEvents.pageSelected({
+                    pageId: draft.pageId,
+                    title: 'Same',
+                    path: '/same',
+                    languageId: 1
+                })
+            );
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(store.pageChanging()).toBe(false);
         });
 
         it('should ignore a pick once the draft has a variant of its own', () => {
@@ -1413,10 +1521,41 @@ describe('DotExperimentsConfigureStore', () => {
             initNew({ pageId: PAGE.pageId });
 
             expect(contentSearchGet).toHaveBeenCalledWith({
-                query: `+contentType:htmlpageasset +working:true +identifier:${PAGE.pageId}`,
+                query: `+working:true +identifier:${PAGE.pageId}`,
                 limit: 1
             });
             expect(store.selectedPage()).toEqual(PAGE);
+            expect(store.pagePrefillError()).toBeNull();
+        });
+
+        /**
+         * #37005. The page picker offers URL-mapped content — a `Destination` with a URL map
+         * renders as a page and can carry an experiment — but this lookup filtered
+         * `+contentType:htmlpageasset`, so it could never read one back. The experiment worked
+         * right after the pick and broke on the next entry: the card reported the page as missing
+         * and Preview/Edit refused, on a page that was live the whole time.
+         *
+         * Narrowing by identifier is enough. Whatever the contentlet turns out to be, it is the
+         * page the experiment stores.
+         */
+        it('should resolve a page that is URL-mapped content rather than an htmlpageasset', () => {
+            const urlMapped = {
+                identifier: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                contentType: 'Destination',
+                url: '/destinations/colorado',
+                title: 'Colorado & The Rockies',
+                languageId: 1
+            };
+            contentSearchGet.mockReturnValue(of({ jsonObjectView: { contentlets: [urlMapped] } }));
+
+            initNew({ pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437' });
+
+            expect(store.selectedPage()).toEqual({
+                pageId: 'c56e5030-fc88-480c-9b2e-4582fd762437',
+                title: 'Colorado & The Rockies',
+                path: '/destinations/colorado',
+                languageId: 1
+            });
             expect(store.pagePrefillError()).toBeNull();
         });
 

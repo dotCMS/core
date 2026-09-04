@@ -37,6 +37,13 @@ export const dotExperimentsListPageEvents = eventGroup({
         filterChanged: type<string>(),
         statusesChanged: type<DotExperimentStatus[]>(),
         goalsChanged: type<GOAL_TYPES[]>(),
+        /**
+         * Narrows the list to one page, or clears it with `null` (#37005).
+         *
+         * Named for the param it is serialised as (`pageAsset`) rather than "page", which in this
+         * group already means the pagination cursor — see `pageChanged` below.
+         */
+        pageAssetFilterChanged: type<string | null>(),
         pageChanged: type<DotExperimentsListPageChange>(),
         sortChanged: type<DotExperimentsListSortChange>(),
         hydratedFromUrl: type<DotExperimentsListViewState>(),

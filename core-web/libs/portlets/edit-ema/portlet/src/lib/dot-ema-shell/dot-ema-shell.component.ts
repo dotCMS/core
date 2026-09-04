@@ -13,7 +13,7 @@ import {
     signal,
     ViewChild
 } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { takeUntilDestroyed, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Params, Router, RouterModule } from '@angular/router';
 
 import { ConfirmationService } from 'primeng/api';
@@ -59,6 +59,33 @@ import {
     sanitizeURL,
     shouldNavigate
 } from '../utils';
+import { readExperimentsPortletSwitch } from '../utils/experiments-portlet-switch.util';
+
+/**
+ * Query params for the breadcrumb's address — the same page, spelled the way `editEmaGuard` wants
+ * to read it.
+ *
+ * The address bar and the crumb are two different consumers. `normalizeQueryParams` shortens the
+ * address for humans, and part of that is dropping the persona when it is the default one. But
+ * `editEmaGuard` treats a missing persona as an incomplete URL and **redirects** to complete it,
+ * so a crumb built from the shortened form points at an address nobody ever lands on: the router
+ * reports the redirected URL, which no longer equals any crumb in the trail.
+ *
+ * That comparison is what `processSpecialRoute` uses to decide whether a navigation is a step
+ * *back* into the trail (truncate it) or a step forward (append). With the crumb never matching,
+ * returning to the editor from a deeper screen appended a second copy of the page instead of
+ * rewinding — leaving the screen you just left sitting in the trail behind you.
+ *
+ * So the crumb states the persona explicitly, under the key the guard looks for.
+ */
+function crumbQueryParams(cleanedParams: Params, pageParams: Params | null): Params {
+    const { personaId, ...rest } = cleanedParams;
+
+    return {
+        ...rest,
+        [PERSONA_KEY]: personaId ?? pageParams?.[PERSONA_KEY] ?? DEFAULT_PERSONA.identifier
+    };
+}
 
 /** Structural shape of `EditEmaEditorComponent.openContentForEdit` (the 'content' child route). */
 interface RouteWithOpenContentForEdit {
@@ -136,6 +163,27 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         () => this.uveStore.flags()[FeaturedFlags.FEATURE_FLAG_PAGE_SCANNER] === true
     );
 
+    /**
+     * The UVE Experiments entry-point switch (#37005), read once per shell construction.
+     *
+     * Read into a signal rather than at the click, unlike the toolbar's return leg: the item's
+     * `href` is *rendered*, and `$activeHref` highlights against it, so the value has to be known
+     * synchronously when the menu is built. An action can afford an async read; a rendered
+     * destination cannot.
+     *
+     * Once per shell is what the spec sanctions — "the switch is read once per full application
+     * load … a stale value until the next reload is acceptable" — and `getFreshFeatureFlag` is
+     * uncached, so each construction really re-fetches rather than reusing a value cached for the
+     * SPA session. An operator flips it and reloads the editor: SC-002's under a minute, no
+     * restart.
+     *
+     * A failed read resolves to `false` inside {@link readExperimentsPortletSwitch}, so the item
+     * falls back to the legacy destination rather than going inert (FR-015).
+     */
+    protected readonly $experimentsPortletEnabled = toSignal(readExperimentsPortletSwitch(), {
+        initialValue: false
+    });
+
     // Component builds its own menu items locally
     protected readonly $menuItems = computed<NavigationBarItem[]>(() => {
         const page = this.uveStore.pageAsset()?.page;
@@ -144,6 +192,7 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const templateDrawed = template?.drawed;
         const isLayoutDisabled = !this.uveStore.editorCanEditLayout();
         const canSeeRulesExists = page && 'canSeeRules' in page;
+        const experimentsPortletEnabled = this.$experimentsPortletEnabled();
 
         return [
             {
@@ -172,7 +221,15 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
             {
                 materialIcon: 'science',
                 label: 'editema.editor.navbar.experiments',
-                href: `experiments/${page?.identifier}`,
+                // The switch selects the destination and nothing else: `isDisabled` is the same
+                // rule on both sides, so an editor who cannot see experiments for this page does
+                // not gain access through the new one (FR-023).
+                ...(experimentsPortletEnabled
+                    ? {
+                          href: '/experiments',
+                          queryParams: { pageAsset: page?.identifier }
+                      }
+                    : { href: `experiments/${page?.identifier}` }),
                 id: 'experiments',
                 isDisabled: !page?.canEdit
             },
@@ -253,13 +310,20 @@ export class DotEmaShellComponent implements OnInit, OnDestroy {
         const params = this.uveStore.pageFriendlyParams();
         const baseClientHost = this.#activatedRoute.snapshot.data?.uveConfig?.url;
         const cleanedParams = normalizeQueryParams(params, baseClientHost);
-        const urlTree = this.#router.createUrlTree([], { queryParams: cleanedParams });
+        const urlTree = this.#router.createUrlTree([], {
+            queryParams: crumbQueryParams(cleanedParams, this.uveStore.pageParams())
+        });
         const urlContentMap = this.uveStore.pageAsset()?.urlContentMap;
         const label = urlContentMap?.title ?? page.title;
         const identifier = urlContentMap?.identifier ?? page.identifier;
 
         this.#globalStore.addNewBreadcrumb({
             label,
+            // Required, not decorative: PrimeNG's breadcrumb binds `[attr.target]="item.target"`,
+            // so an item without one renders `target="undefined"` — a *named browsing context*.
+            // The crumb then opened the editor in a new window instead of navigating, which read
+            // as the link doing nothing. Every other crumb author in the app passes `_self`.
+            target: '_self',
             url: `/dotAdmin/#${urlTree.toString()}`,
             id: `${identifier}`
         });

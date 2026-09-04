@@ -13,6 +13,7 @@ import {
     ComponentStatus,
     DotExperiment,
     DotExperimentStatus,
+    CONFIGURE_SECTION_VARIANTS,
     DotMessageSeverity,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
     ExperimentsConfigProperties,
@@ -180,6 +181,8 @@ const createStoreMock = () => ({
     // The weights slice is seeded from these, so they move with `experiment` (see `loadExperiment`).
     $variants: signal<Variant[]>([]),
     $disabledTooltipKey: signal<string | null>(null),
+    /** A confirmed page change in flight; gates the Variants card on its own. */
+    pageChanging: signal(false),
     draftName: signal(''),
     draftDescription: signal('')
 });
@@ -196,10 +199,13 @@ describe('DotExperimentsConfigureComponent', () => {
      */
     const createComponentOn = ({
         experimentId,
-        configProps
+        configProps,
+        section
     }: {
         experimentId?: string;
         configProps?: Record<string, string>;
+        /** The `section` query param, set by the return leg of the variant round-trip. */
+        section?: string;
     }) =>
         createComponentFactory({
             component: DotExperimentsConfigureComponent,
@@ -219,6 +225,7 @@ describe('DotExperimentsConfigureComponent', () => {
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap(experimentId ? { experimentId } : {}),
+                            queryParamMap: convertToParamMap(section ? { section } : {}),
                             data: configProps ? { config: configProps } : {}
                         }
                     }
@@ -969,6 +976,98 @@ describe('DotExperimentsConfigureComponent', () => {
         });
     });
 
+    // #37005. Variants are copies of the page, and the server takes `pageId` only while the
+    // variants are the control alone — so one created before a page change lands is created under
+    // the old page, and from then on the change can never be written.
+    describe('while a page change is in flight', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        /**
+         * Asserted on the screen's own decision rather than on the rendered card: this spec
+         * replaces the card components, so their `gated` input never reaches the DOM. Which
+         * expression feeds which card is fixed by the template; what varies, and what this covers,
+         * is that the two differ.
+         */
+        it('should gate the Variants card', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(false);
+
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(true);
+        });
+
+        // The other cards do not depend on the page, so they stay live.
+        it('should leave the rest of the form live', () => {
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isGated()).toBe(false);
+        });
+    });
+
+    // #37005. Configure is four stacked cards tall, and the variant round-trip starts and ends at
+    // the Variants card — so coming back to the top of the form loses the reader's place.
+    describe('returning from a variant', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS,
+            section: CONFIGURE_SECTION_VARIANTS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should bring the Variants card into view once the experiment is loaded', () => {
+            spectator.detectChanges();
+
+            const variants = spectator.query(byTestId('configure-section-variants')) as HTMLElement;
+            const scrollToVariants = jest.spyOn(variants, 'scrollIntoView');
+
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollToVariants).toHaveBeenCalled();
+        });
+    });
+
+    // Entering from the list, or creating one, still lands at the top of the form.
+    describe('entering Configure any other way', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        it('should not scroll to any section', () => {
+            spectator.detectChanges();
+            spectator
+                .inject(Dispatcher)
+                .dispatch(dotExperimentsConfigureApiEvents.loadSucceeded(EXPERIMENT));
+            flush();
+
+            expect(scrollIntoView).not.toHaveBeenCalled();
+        });
+    });
+
     describe('on the creation screen', () => {
         const createComponent = createComponentOn({ configProps: CONFIGURED_DURATIONS });
 
@@ -1127,6 +1226,9 @@ describe('DotExperimentsConfigureComponent', () => {
                     useValue: {
                         snapshot: {
                             paramMap: convertToParamMap({ experimentId: EXPERIMENT.id }),
+                            // Present and empty, as `ActivatedRoute` always is: the screen reads
+                            // the `section` param from here on init.
+                            queryParamMap: convertToParamMap({}),
                             data: { config: CONFIGURED_DURATIONS }
                         }
                     }

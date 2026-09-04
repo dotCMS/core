@@ -115,6 +115,78 @@ describe('EditEmaNavigationBarComponent', () => {
                 );
             });
 
+            /**
+             * The switch-off guarantee for the Experiments entry point (#37005, US2, FR-016).
+             *
+             * `navigate()` prefixes `edit-page` because every item it has ever had is a child of
+             * that route. The switch-on destination is `/experiments`, which is not — so the
+             * prefix has to become conditional. The rule chosen is the smallest one that cannot
+             * disturb an existing item: a leading `/` means absolute.
+             *
+             * FR-016 and FR-019 then hold **by construction** rather than by inspection, because
+             * none of `content`, `layout`, `rules/{id}` or `experiments/{id}` starts with `/`.
+             * That is what these two tests pin.
+             */
+            describe('absolute vs relative hrefs', () => {
+                const clickItemAt = (index: number) => {
+                    const host = spectator.queryAll(byTestId('nav-bar-item'))[index];
+                    spectator.click(host.querySelector('button'));
+                };
+
+                it.each([
+                    [0, 'content'],
+                    [2, 'rules'],
+                    [3, 'experiments']
+                ])(
+                    'should keep the edit-page prefix for the relative item at %i (%s)',
+                    (index, segment) => {
+                        const navigateSpy = jest
+                            .spyOn(spectator.inject(Router), 'navigate')
+                            .mockResolvedValue(true);
+
+                        clickItemAt(index);
+
+                        expect(navigateSpy).toHaveBeenCalledWith(
+                            ['edit-page', segment],
+                            expect.objectContaining({ queryParams: store.pageParams() })
+                        );
+                    }
+                );
+
+                /**
+                 * Asserts the RESOLVED URL, not the commands array.
+                 *
+                 * The first version of this test asserted `commands` equalled
+                 * `['', 'experiments']` — the array the implementation happened to produce by
+                 * splitting `'/experiments'` on `/`. It passed, and the button did nothing: an
+                 * empty leading segment does not start with `/`, so the router treated the whole
+                 * navigation as relative. Asserting the array locked the bug in. Resolving it
+                 * through the real router is what makes the test able to see the destination.
+                 */
+                it('should navigate to an absolute href without the edit-page prefix', () => {
+                    const router = spectator.inject(Router);
+                    const navigateSpy = jest.spyOn(router, 'navigate').mockResolvedValue(true);
+
+                    spectator.setInput('items', [
+                        {
+                            materialIcon: 'science',
+                            label: 'editema.editor.navbar.experiments',
+                            href: '/experiments',
+                            id: 'experiments',
+                            queryParams: { pageAsset: 'page-1' }
+                        }
+                    ]);
+                    spectator.detectChanges();
+
+                    clickItemAt(0);
+
+                    const [commands, extras] = navigateSpy.mock.calls[0];
+                    const url = router.serializeUrl(router.createUrlTree(commands, extras));
+
+                    expect(url).toBe('/experiments?pageAsset=page-1');
+                });
+            });
+
             it('should not navigate when item is disabled', () => {
                 const router = spectator.inject(Router);
                 const navigateSpy = jest.spyOn(router, 'navigate');

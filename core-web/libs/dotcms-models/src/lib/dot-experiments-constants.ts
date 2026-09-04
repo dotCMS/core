@@ -304,3 +304,42 @@ export const RUNNING_UNTIL_DATE_FORMAT = 'EEE, LLL dd';
 export const EXP_CONFIG_ERROR_LABEL_CANT_EDIT = 'experiment.configure.edit.only.draft.status';
 
 export const EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED = 'experiment.configure.edit.page.blocked';
+
+/**
+ * Query param naming which configuration screen opened a variant in the Universal Visual Editor,
+ * so the editor's return affordance can land back on it (#37005, FR-005).
+ *
+ * Shared rather than owned by either side because the round-trip has two halves in two libs: the
+ * Experiments portlet's Variants card writes it on the way out, and the UVE toolbar reads it on the
+ * way back. A constant in one of those libs would be a cross-feature import from the other.
+ *
+ * A query param and not storage, deliberately: it has to survive a reload and a pasted link, and it
+ * has to be *absent* rather than stale when someone deep-links straight into a variant — that
+ * absence is what makes the entry-point switch the fallback.
+ */
+export const EXPERIMENT_RETURN_PARAM = 'experimentReturn';
+
+/**
+ * The only origin value this work sets. The legacy per-page card sets none, which is what keeps the
+ * switch-off return destination byte-identical to today (FR-018).
+ */
+export const EXPERIMENT_RETURN_PORTLET = 'portlet';
+
+/**
+ * Which section of the Configure screen to land on, when landing anywhere but the top is the point.
+ *
+ * Same reason as {@link EXPERIMENT_RETURN_PARAM} for living here: the toolbar in `edit-ema` writes
+ * it and the Configure screen in `dot-experiments` reads it, so a constant in either lib would be a
+ * cross-feature import from the other.
+ *
+ * A query param rather than navigation state: `Navigation.extras.state` is only readable while the
+ * navigation is in flight, which puts the read in a race with the component's own construction. The
+ * param is boring, survives a reload, and says what it means in the address.
+ */
+export const CONFIGURE_SECTION_PARAM = 'section';
+
+/**
+ * The Variants card. Set on the way back from editing or previewing a variant, because that card is
+ * where the round-trip started and scrolling back to the top of the form loses the reader's place.
+ */
+export const CONFIGURE_SECTION_VARIANTS = 'variants';

@@ -8,6 +8,7 @@ import {
     GOAL_TYPES,
     TrafficProportionTypes
 } from '@dotcms/dotcms-models';
+import { UVE_MODE } from '@dotcms/types';
 
 /** Every action of the list gated by `AllowedActionsByExperimentStatus`. */
 export type ExperimentListAction = keyof typeof AllowedActionsByExperimentStatus;
@@ -34,6 +35,16 @@ export interface DotExperimentsListViewState {
     perPage: number;
     orderBy: string;
     direction: DotExperimentsListSortDirection;
+    /**
+     * Page the list is narrowed to, by identifier; `null` for the full site-wide list (#37005).
+     *
+     * Matched by **equality**, never as a substring of a path. The free-text `filter` above already
+     * searches the Page column, and reusing it would make `/about` match `/about-us` — which is
+     * exactly the case FR-021b rules out ("all of that page's experiments and no other page's").
+     *
+     * Serialised as `pageAsset`, not `page`: `page` is the pagination cursor two fields up.
+     */
+    selectedPageId: string | null;
 }
 
 /** Paging change emitted by the table paginator. */
@@ -99,6 +110,16 @@ export interface DotExperimentConfigurePage {
     title: string;
     /** Site-relative path, e.g. `/about-us/index`. */
     path: string;
+    /**
+     * Language the page was resolved in — the `language_id` the variant deep link carries (#37005).
+     *
+     * Not optional, and deliberately not defaulted anywhere: `editEmaGuard` *substitutes*
+     * `language_id=1` for a missing param rather than rejecting, so a page object without a
+     * language does not produce a broken link, it produces one that silently opens the wrong
+     * language's content. The deep-link builder refuses when this is absent (FR-004), which only
+     * works if the absence is allowed to reach it.
+     */
+    languageId: number;
 }
 
 /** Everything the Configure screen renders from. */
@@ -125,6 +146,12 @@ export interface DotExperimentsConfigureViewState {
     pagePrefillError: string | null;
     /** `null` until the page's lock state has been resolved, or while no page is selected. */
     pageLockInfo: DotPageLockInfo | null;
+    /**
+     * A confirmed page change is in flight. Variants are gated while it is: they are copies of the
+     * page, and creating one against a page the server has not moved yet is what strands the
+     * experiment between two pages (#37005).
+     */
+    pageChanging: boolean;
     /**
      * True while the variants that stand in the way of a page change are being deleted.
      *
@@ -303,4 +330,13 @@ export interface VariantRowViewModel {
     disabled: boolean;
     /** i18n key explaining `disabled`; `null` when the row is editable. */
     disabledTooltipKey: string | null;
+    /**
+     * Mode the Universal Visual Editor opens this variant in (#37005, FR-008 – FR-010).
+     *
+     * `PREVIEW` when **any** of: this is the control, the experiment is not a draft, or the page is
+     * locked by another user. Derived here rather than branched in the template, and deliberately
+     * not read off `disabledTooltipKey`: that key reports only the strongest *reason* and is `null`
+     * for the control on an editable draft, which would open the Original for editing.
+     */
+    editorMode: UVE_MODE;
 }

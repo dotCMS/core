@@ -58,7 +58,10 @@ export function parseViewState(reader: QueryParamReader): DotExperimentsListView
         page: parsePositiveInteger(reader.get('page'), DEFAULT_EXPERIMENTS_LIST_PAGE),
         perPage: parsePositiveInteger(reader.get('per_page'), DEFAULT_EXPERIMENTS_LIST_PER_PAGE),
         orderBy: reader.get('orderby') || DEFAULT_EXPERIMENTS_LIST_ORDER_BY,
-        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC'
+        direction: reader.get('direction')?.toUpperCase() === 'ASC' ? 'ASC' : 'DESC',
+        // `pageAsset`, not `page`: `page` is the pagination cursor a few lines up. An empty
+        // value is no filter rather than a page named "" — same rule as `filter` above.
+        selectedPageId: reader.get('pageAsset') || null
     };
 }
 
@@ -165,7 +168,8 @@ export function toQueryParams(
         goal:
             view.selectedGoals.length === DEFAULT_EXPERIMENTS_LIST_GOALS.length
                 ? null
-                : view.selectedGoals
+                : view.selectedGoals,
+        pageAsset: view.selectedPageId || null
     };
 }
 

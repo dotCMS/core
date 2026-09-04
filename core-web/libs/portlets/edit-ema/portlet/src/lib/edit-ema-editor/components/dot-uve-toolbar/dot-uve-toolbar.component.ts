@@ -11,7 +11,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
@@ -21,10 +21,25 @@ import { SplitButtonModule } from 'primeng/splitbutton';
 import { ToolbarModule } from 'primeng/toolbar';
 import { TooltipModule } from 'primeng/tooltip';
 
-import { map } from 'rxjs/operators';
+import { map, take } from 'rxjs/operators';
 
-import { DotDevicesService, DotMessageService, DotPersonalizeService } from '@dotcms/data-access';
-import { DotDeviceListItem, DotExperimentStatus, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    DotDevicesService,
+    DotMessageService,
+    DotPersonalizeService,
+    DotPropertiesService
+} from '@dotcms/data-access';
+import {
+    DotDeviceListItem,
+    DotExperimentStatus,
+    DotLanguage,
+    DEFAULT_VARIANT_ID,
+    DEFAULT_VARIANT_NAME,
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
+    EXPERIMENT_RETURN_PARAM,
+    EXPERIMENT_RETURN_PORTLET
+} from '@dotcms/dotcms-models';
 import { DotCMSPage, DotCMSURLContentMap, DotCMSViewAsPersona, UVE_MODE } from '@dotcms/types';
 import { DotLanguageSelectorComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -39,6 +54,7 @@ import { DotUveWorkflowActionsComponent } from './components/dot-uve-workflow-ac
 import { EditEmaPersonaSelectorComponent } from './components/edit-ema-persona-selector/edit-ema-persona-selector.component';
 
 import { DEFAULT_DEVICES, DEFAULT_PERSONA, PERSONA_KEY } from '../../../shared/consts';
+import { InfoOptions } from '../../../shared/models';
 import { UVEStore } from '../../../store/dot-uve.store';
 import { PageType } from '../../../store/models';
 import {
@@ -46,6 +62,7 @@ import {
     convertUTCToLocalTime,
     createFavoritePagesURL
 } from '../../../utils';
+import { readExperimentsPortletSwitch } from '../../../utils/experiments-portlet-switch.util';
 
 @Component({
     selector: 'dot-uve-toolbar',
@@ -88,6 +105,9 @@ export class DotUveToolbarComponent {
     readonly #personalizeService = inject(DotPersonalizeService);
     readonly #deviceService = inject(DotDevicesService);
     readonly #router = inject(Router);
+    readonly #activatedRoute = inject(ActivatedRoute);
+
+    readonly #propertiesService = inject(DotPropertiesService);
 
     // Expose enum for template usage
     readonly UVE_MODE = UVE_MODE;
@@ -127,7 +147,22 @@ export class DotUveToolbarComponent {
     readonly $isEditMode = this.#store.$isEditMode;
     readonly $apiURL = this.#store.$apiURL;
     readonly $personaSelectorProps = this.#store.$personaSelector;
-    readonly $infoDisplayProps = this.#store.$infoDisplayProps;
+    /**
+     * The variant chip — the store's own, plus the one case it does not cover (#37005).
+     *
+     * `$infoDisplayProps` returns `null` for the DEFAULT variant, which is right for an ordinary
+     * page: there is no variant to announce. But the portlet's Configure screen previews the
+     * CONTROL through the same door, and the chip is the only thing that reads the origin marker
+     * and offers the way back — so that preview opened the editor on a screen with no route home,
+     * while `experimentReturn=portlet` sat unread in the address.
+     *
+     * Scoped to arrivals carrying the marker. The legacy in-UVE screens send the same
+     * `experimentId` and would otherwise gain a chip they never had, and this work leaves the
+     * switch-off path exactly as it was (FR-016, FR-019).
+     */
+    readonly $infoDisplayProps = computed<InfoOptions | null>(
+        () => this.#store.$infoDisplayProps() ?? this.#controlFromPortletProps()
+    );
     readonly $socialMedia = this.#store.viewSocialMedia;
     readonly $urlContentMap = this.#store.$urlContentMap;
     readonly $isPaletteOpen = this.#store.editorPaletteOpen;
@@ -252,6 +287,44 @@ export class DotUveToolbarComponent {
      * Handle info display action event from presentational DotEmaInfoDisplayComponent
      * @param optionId The ID of the action option (e.g., 'device', 'socialMedia', 'variant')
      */
+    /**
+     * Chip for the control variant previewed from the portlet, or `null` when that is not the
+     * case. Same shape the store builds for a real variant, so the action handler and the template
+     * need no special case: the id stays `variant` and the back arrow means the same thing.
+     */
+    #controlFromPortletProps(): InfoOptions | null {
+        const { queryParams } = this.#activatedRoute.snapshot;
+
+        if (queryParams[EXPERIMENT_RETURN_PARAM] !== EXPERIMENT_RETURN_PORTLET) {
+            return null;
+        }
+
+        const experiment = this.#store.pageExperiment();
+
+        if (!experiment) {
+            return null;
+        }
+
+        const mode = this.#store.pageParams()?.mode;
+        const controlName =
+            experiment.trafficProportion?.variants?.find(
+                (variant) => variant.id === DEFAULT_VARIANT_ID
+            )?.name ?? DEFAULT_VARIANT_NAME;
+
+        return {
+            info: {
+                message:
+                    mode === UVE_MODE.PREVIEW || mode === UVE_MODE.LIVE
+                        ? 'editpage.viewing.variant'
+                        : 'editpage.editing.variant',
+                args: [controlName]
+            },
+            icon: 'pi pi-file-edit',
+            id: 'variant',
+            actionIcon: 'pi pi-arrow-left'
+        };
+    }
+
     handleInfoDisplayAction(optionId: string) {
         if (optionId === 'device' || optionId === 'socialMedia') {
             this.#store.viewClearDeviceAndSocialMedia();
@@ -262,24 +335,85 @@ export class DotUveToolbarComponent {
         // Handle variant action - navigate to experiment configuration
         const currentExperiment = this.#store.pageExperiment();
 
-        if (currentExperiment) {
-            this.#router.navigate(
-                [
-                    '/edit-page/experiments/',
-                    currentExperiment.pageId,
-                    currentExperiment.id,
-                    'configuration'
-                ],
-                {
-                    queryParams: {
-                        mode: null,
-                        variantName: null,
-                        experimentId: null
-                    },
-                    queryParamsHandling: 'merge'
-                }
-            );
+        if (!currentExperiment) {
+            return;
         }
+
+        // Which configuration screen opened this variant (#37005). Read from the route rather than
+        // from `pageParams()`: `DotPageAssetParams` is a page-asset shape that does not declare the
+        // marker, which survives `#getPageParams()` only through its `as` cast.
+        const cameFromPortlet =
+            this.#activatedRoute.snapshot.queryParams[EXPERIMENT_RETURN_PARAM] ===
+            EXPERIMENT_RETURN_PORTLET;
+
+        // Cleared either way, so no variant, experiment or mode survives the return (FR-006).
+        const clearedParams = {
+            mode: null,
+            variantName: null,
+            experimentId: null
+        };
+
+        /**
+         * Where inside Configure to land. The Variants card is where this round-trip started, and
+         * Configure is four stacked cards tall — returning to the top of it loses the reader's
+         * place. Only set on the portlet destination: the legacy screen's behaviour stays as it is
+         * (FR-018).
+         */
+        const portletReturnParams = {
+            ...clearedParams,
+            [EXPERIMENT_RETURN_PARAM]: null,
+            [CONFIGURE_SECTION_PARAM]: CONFIGURE_SECTION_VARIANTS
+        };
+
+        /**
+         * The destination answers "where did this round-trip start?", falling back to the
+         * entry-point switch only when the URL carries no answer — a pasted or bookmarked variant
+         * link.
+         *
+         * Branching on the switch alone would make FR-018 and FR-005/FR-027 mutually exclusive on
+         * a supported path: with the switch off an editor can still reach the portlet from the main
+         * navigation (FR-026) and still open a variant (FR-027), and a switch-only branch would
+         * then return them to a legacy screen they never came from.
+         */
+        if (cameFromPortlet) {
+            this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
+                // No `queryParamsHandling`: `url`, `language_id` and the persona key are UVE's, and
+                // the list's `parseViewState` does not recognise them — they would sit in its
+                // address indefinitely.
+                queryParams: portletReturnParams
+            });
+
+            return;
+        }
+
+        // No origin to honour — a pasted or bookmarked variant link. The switch decides, read now
+        // rather than at construction so an operator's flip lands on this gesture (SC-002).
+        readExperimentsPortletSwitch(this.#propertiesService)
+            .pipe(take(1))
+            .subscribe((portletEntryPointEnabled) => {
+                if (portletEntryPointEnabled) {
+                    this.#router.navigate(['/experiments', currentExperiment.id, 'configuration'], {
+                        queryParams: portletReturnParams
+                    });
+
+                    return;
+                }
+
+                // The legacy destination, untouched — which is what makes FR-018's "as before"
+                // true by construction rather than by re-derivation.
+                this.#router.navigate(
+                    [
+                        '/edit-page/experiments/',
+                        currentExperiment.pageId,
+                        currentExperiment.id,
+                        'configuration'
+                    ],
+                    {
+                        queryParams: clearedParams,
+                        queryParamsHandling: 'merge'
+                    }
+                );
+            });
     }
 
     /**

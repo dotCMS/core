@@ -228,6 +228,61 @@ describe('DotPropertiesService', () => {
         reqs.forEach((req) => req.flush(fakeResponse));
     });
 
+    describe('FEATURE_FLAG_EXPERIMENTS_PORTLET (#37005)', () => {
+        const flag = FeaturedFlags.FEATURE_FLAG_EXPERIMENTS_PORTLET;
+        const url = `/api/v1/configuration/config?keys=${flag}`;
+
+        it('should read the shipped default of false as false', (done) => {
+            service.getFreshFeatureFlag(flag).subscribe((response) => {
+                expect(response).toBe(false);
+                done();
+            });
+            httpMock.expectOne(url).flush({ entity: { [flag]: false } });
+        });
+
+        it('should read an operator-enabled switch as true', (done) => {
+            service.getFreshFeatureFlag(flag).subscribe((response) => {
+                expect(response).toBe(true);
+                done();
+            });
+            httpMock.expectOne(url).flush({ entity: { [flag]: true } });
+        });
+
+        it('should read the string "false" as false, so an env-var-driven config still resolves', (done) => {
+            service.getFreshFeatureFlag(flag).subscribe((response) => {
+                expect(response).toBe(false);
+                done();
+            });
+            httpMock.expectOne(url).flush({ entity: { [flag]: 'false' } });
+        });
+
+        // Pinned deliberately, and NOT the behaviour #37005 wants: an unset property resolves to
+        // ENABLED, per the documented platform rule. This is exactly why the explicit
+        // `FEATURE_FLAG_EXPERIMENTS_PORTLET=false` in dotmarketing-config.properties is required
+        // rather than decorative — declaring the switch without shipping a value delivers it on,
+        // which is FR-013 inverted. If this test ever starts expecting `false`, the shared reader's
+        // contract changed and every other flag's default changed with it.
+        it('should read an absent property as TRUE — which is why the shipped false is required', (done) => {
+            service.getFreshFeatureFlag(flag).subscribe((response) => {
+                expect(response).toBe(true);
+                done();
+            });
+            httpMock.expectOne(url).flush({ entity: { [flag]: FEATURE_FLAG_NOT_FOUND } });
+        });
+
+        // The same failure mode from the other side: a key omitted from ConfigurationResource's
+        // WHITE_LIST is absent from the response body, `getKey` substitutes NOT_FOUND, and the
+        // switch reads as enabled with nothing logged. The backend guard is
+        // ConfigurationResourceTest#getConfigVariables_experimentsPortletFlagIsWhitelisted_isPresentInResponse.
+        it('should read a key missing from the response as TRUE — the WHITE_LIST omission trap', (done) => {
+            service.getFreshFeatureFlag(flag).subscribe((response) => {
+                expect(response).toBe(true);
+                done();
+            });
+            httpMock.expectOne(url).flush({ entity: {} });
+        });
+    });
+
     afterEach(() => {
         httpMock.verify();
     });

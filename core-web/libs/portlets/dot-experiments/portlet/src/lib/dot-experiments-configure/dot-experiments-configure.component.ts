@@ -34,6 +34,8 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
 
+import { take } from 'rxjs/operators';
+
 import {
     DotExperimentsService,
     DotMessageDisplayService,
@@ -41,6 +43,8 @@ import {
     DotPagesBrowserService
 } from '@dotcms/data-access';
 import {
+    CONFIGURE_SECTION_PARAM,
+    CONFIGURE_SECTION_VARIANTS,
     ComponentStatus,
     CONFIGURATION_CONFIRM_DIALOG_KEY,
     DotExperiment,
@@ -89,6 +93,8 @@ const SKELETON_CARDS = [0, 1, 2];
 
 /** Route `data` key `DotExperimentsConfigResolver` publishes the backend's duration limits under. */
 const CONFIG_ROUTE_DATA_KEY = 'config';
+/** The Variants card, as this screen addresses it — the anchor lives on the element it scrolls. */
+const VARIANTS_SECTION_SELECTOR = '[data-testid="configure-section-variants"]';
 
 /**
  * Shell of the Configure screen, routed on both `/experiments/new` and
@@ -175,6 +181,19 @@ export class DotExperimentsConfigureComponent {
      * Details is the way through: it carries the Name and the Page the creation POST needs.
      */
     readonly $isGated = computed<boolean>(() => this.store.isNew());
+
+    /**
+     * Variants are gated for one more reason than the rest of the form: a confirmed page change in
+     * flight.
+     *
+     * They are copies of the page, and the server takes `pageId` only while the variants are the
+     * control alone — so a variant created before the change lands is created under the old page,
+     * and from then on the change can never be written. The other cards do not depend on the page
+     * and stay live (#37005).
+     */
+    readonly $isVariantsGated = computed<boolean>(
+        () => this.$isGated() || this.store.pageChanging()
+    );
 
     /**
      * Indeterminate bar under the header while a request is on the wire — the same affordance UVE
@@ -472,6 +491,7 @@ export class DotExperimentsConfigureComponent {
     constructor() {
         this.#listenForActionSuccess();
         this.#scrollToFirstErrorOnFailedStart();
+        this.#scrollToRequestedSection();
 
         // The form created this draft, so it already holds it: claiming it here is what stops
         // `hydrateFormEffect` from reading the POST's answer back over what is still being typed.
@@ -482,6 +502,38 @@ export class DotExperimentsConfigureComponent {
 
         // A save that settled as the screen was left would otherwise fire into a dead component.
         this.#destroyRef.onDestroy(() => this.#cancelProgressBarHide());
+    }
+
+    /**
+     * Lands on the section the caller asked for, instead of at the top of the form (#37005).
+     *
+     * Only the variant round-trip asks: it starts and ends at the Variants card, three cards down,
+     * and returning to the top of the form loses the reader's place. Everything else &mdash; the
+     * list, creating one &mdash; wants the top, and gets it by not asking.
+     *
+     * Read once from the snapshot, and keyed on `loadSucceeded` rather than on a signal: the cards
+     * only exist once the experiment is in, so searching earlier finds nothing. Same shape, and
+     * same reason, as {@link #scrollToFirstErrorOnFailedStart}.
+     */
+    #scrollToRequestedSection(): void {
+        const requested = this.#route.snapshot.queryParamMap.get(CONFIGURE_SECTION_PARAM);
+
+        if (requested !== CONFIGURE_SECTION_VARIANTS) {
+            return;
+        }
+
+        this.#events
+            .on(dotExperimentsConfigureApiEvents.loadSucceeded)
+            .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            .subscribe(() => {
+                afterNextRender(
+                    () =>
+                        this.$body()
+                            ?.nativeElement.querySelector<HTMLElement>(VARIANTS_SECTION_SELECTOR)
+                            ?.scrollIntoView({ block: 'start' }),
+                    { injector: this.#injector }
+                );
+            });
     }
 
     /**

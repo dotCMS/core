@@ -89,6 +89,7 @@ const initialState: DotExperimentsConfigureViewState = {
     selectedPage: null,
     pagePrefillError: null,
     pageLockInfo: null,
+    pageChanging: false,
     deletingVariants: false,
     deleteVariantsFailed: false,
     validationRevealed: false,
@@ -430,8 +431,19 @@ export const DotExperimentsConfigureStore = signalStore(
                 return {};
             }
 
-            return { selectedPage: payload, pagePrefillError: null };
+            // In flight only when there is an experiment to move: before creation the page travels
+            // in the POST, so nothing is pending and nothing needs gating.
+            const pageChanging = !!state.experiment && payload.pageId !== state.experiment.pageId;
+
+            return { selectedPage: payload, pagePrefillError: null, pageChanging };
         }),
+        on(apiEvents.pageChangeSucceeded, ({ payload }) => ({
+            experiment: payload,
+            pageChanging: false
+        })),
+        // The revert is the existing `revertRefusedPage$`, which re-resolves the page the
+        // experiment actually reports; this only lets the form go again.
+        on(apiEvents.pageChangeFailed, () => ({ pageChanging: false })),
         on(apiEvents.pagePrefillResolved, ({ payload }) => ({
             selectedPage: payload,
             pagePrefillError: null
@@ -500,12 +512,38 @@ export const DotExperimentsConfigureStore = signalStore(
          */
         on(apiEvents.saveSkipped, () => ({ status: ComponentStatus.LOADED })),
 
-        // Variants have their own endpoints, each answering with the recomputed proportion.
+        /**
+         * Variants have their own endpoints, each answering with the recomputed proportion.
+         *
+         * Which means that proportion is already written, so the baseline has to move with it:
+         * the card mirrors the response into the form, and a baseline left behind called that
+         * mirroring unsaved work. Save Draft lit up for something already stored, and the
+         * `canDeactivate` guard then blocked the way out — so "Edit variant" came back as a
+         * confirm dialog about losing changes instead of opening the editor (#37005).
+         *
+         * Only that slice settles. `baselineOf` would rebuild the whole baseline from the server's
+         * experiment, which would call a name or a goal typed and never sent "saved" and lose it
+         * on the way out — the same trap `saveSucceeded` documents.
+         */
         on(
             apiEvents.addVariantSucceeded,
             apiEvents.editVariantSucceeded,
             apiEvents.removeVariantSucceeded,
-            ({ payload }) => ({ experiment: payload, status: ComponentStatus.LOADED })
+            ({ payload }, state) => {
+                const settled = baselineOf(payload);
+
+                return {
+                    experiment: payload,
+                    status: ComponentStatus.LOADED,
+                    savedFormValue: state.savedFormValue
+                        ? {
+                              ...state.savedFormValue,
+                              variantWeights: settled.variantWeights,
+                              trafficProportionType: settled.trafficProportionType
+                          }
+                        : settled
+                };
+            }
         ),
         on(pageEvents.variantAdded, pageEvents.variantRenamed, pageEvents.variantDeleted, () => ({
             status: ComponentStatus.SAVING
@@ -629,9 +667,17 @@ export const DotExperimentsConfigureStore = signalStore(
 
                     // The page-search endpoint filters by path only, so an identifier is
                     // resolved with the same content search the list uses for its Page column.
+                    //
+                    // No content-type filter. The page picker offers URL-mapped content — a
+                    // `Destination` with a URL map renders as a page and can carry an experiment —
+                    // and filtering to `htmlpageasset` meant this lookup could never read one
+                    // back: the experiment worked right after the pick and reported its page as
+                    // missing on the next entry, on a page that was live the whole time (#37005).
+                    // Narrowing by identifier is enough; whatever the contentlet is, it is the page
+                    // the experiment stores.
                     return contentSearchService
                         .get<PageLookupEntity>({
-                            query: `+contentType:htmlpageasset +working:true +identifier:${pageId}`,
+                            query: `+working:true +identifier:${pageId}`,
                             limit: 1
                         })
                         .pipe(
@@ -859,7 +905,48 @@ export const DotExperimentsConfigureStore = signalStore(
                  * the user something that is not stored anywhere, so it is re-resolved from the
                  * experiment. The message explaining why was already raised by the error handler.
                  */
-                revertRefusedPage$: events.on(apiEvents.saveFailed).pipe(
+                /**
+                 * Persists a confirmed page change on its own, instead of letting it ride along
+                 * with the next Save Draft.
+                 *
+                 * The server takes `pageId` only while the experiment's variants are the control
+                 * alone, so this precondition expires the moment a variant is added — and adding
+                 * one is a single click that used to be available during the whole wait. Once it
+                 * expired, the change could never be written, and the card went on showing a page
+                 * the experiment was not on (#37005).
+                 *
+                 * `switchMap`: picking a second page while the first is still in flight makes the
+                 * first irrelevant. A partial body is what the endpoint expects — `setGoal` sends
+                 * `{ goals }` the same way.
+                 */
+                changePage$: events.on(pageEvents.pageSelected).pipe(
+                    map(({ payload }) => payload.pageId),
+                    filter((pageId) => {
+                        const experiment = store.experiment();
+
+                        // The same rule the reducer applies before recording the pick, and the one
+                        // the server enforces: a pick it declined must not be sent either.
+                        return (
+                            !!experiment &&
+                            !!pageId &&
+                            pageId !== experiment.pageId &&
+                            canChangePage(experiment)
+                        );
+                    }),
+                    switchMap((pageId) =>
+                        experimentsService.patch(store.experiment()?.id ?? '', { pageId }).pipe(
+                            mapResponse({
+                                next: (experiment) => apiEvents.pageChangeSucceeded(experiment),
+                                error: toFailure(apiEvents.pageChangeFailed)
+                            })
+                        )
+                    )
+                ),
+
+                revertRefusedPage$: merge(
+                    events.on(apiEvents.saveFailed),
+                    events.on(apiEvents.pageChangeFailed)
+                ).pipe(
                     filter(() => store.selectedPage()?.pageId !== store.experiment()?.pageId),
                     map(() => store.experiment()?.pageId),
                     filter((pageId): pageId is string => !!pageId),
