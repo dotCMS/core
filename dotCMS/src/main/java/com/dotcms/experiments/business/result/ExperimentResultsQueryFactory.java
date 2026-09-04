@@ -79,7 +79,7 @@ public enum ExperimentResultsQueryFactory {
      * Resolves the correct {@link ExperimentGoalResultsQuery} for the given metric type,
      * reading the feature flag on every call so runtime toggles take effect immediately.
      */
-    ExperimentGoalResultsQuery resolveImpl(final MetricType metricType) {
+    public ExperimentGoalResultsQuery resolveImpl(final MetricType metricType) {
         return ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()
                 ? caemQueries.get(metricType)
                 : cubeJSAdapters.get(metricType);
