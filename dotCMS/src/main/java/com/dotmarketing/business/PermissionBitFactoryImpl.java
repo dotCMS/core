@@ -15,6 +15,7 @@ import com.dotcms.contenttype.model.type.BaseContentType;
 import com.dotcms.contenttype.model.type.ContentType;
 import com.dotcms.contenttype.transform.contenttype.StructureTransformer;
 import com.dotcms.rendering.velocity.viewtools.navigation.NavResult;
+import com.google.common.annotations.VisibleForTesting;
 import com.google.common.primitives.Ints;
 import com.dotcms.system.SimpleMapAppContext;
 import com.dotmarketing.beans.Host;
@@ -1825,54 +1826,144 @@ public class PermissionBitFactoryImpl extends PermissionFactory {
 
   }
   
-  private String resolvePermissionType(final Permissionable permissionable) {
-    // Need to determine who this asset should inherit from
-    String type = permissionable.getPermissionType();
-    if (permissionable instanceof Host || (permissionable instanceof Contentlet && ((Contentlet) permissionable).getStructure() != null
-        && ((Contentlet) permissionable).getStructure().getVelocityVarName() != null
-        && ((Contentlet) permissionable).getStructure().getVelocityVarName().equals("Host"))) {
-      type = Host.class.getCanonicalName();
-    } else if (permissionable instanceof Contentlet
-        && BaseContentType.FILEASSET.getType() == ((Contentlet) permissionable).getStructure().getStructureType()) {
-      type = Contentlet.class.getCanonicalName();
-    } else if (permissionable instanceof IHTMLPage || (permissionable instanceof Contentlet
-        && BaseContentType.HTMLPAGE.getType() == ((Contentlet) permissionable).getStructure().getStructureType())) {
-      type = IHTMLPage.class.getCanonicalName();
-    } else if (permissionable instanceof Event) {
-      type = Contentlet.class.getCanonicalName();
-    } else if (permissionable instanceof Identifier) {
-      Permissionable perm = InodeFactory.getInode(permissionable.getPermissionId(), Inode.class);
-      Logger.error(this,
-          "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
-      if (perm != null) {
-        if (perm instanceof IHTMLPage || (perm instanceof Contentlet
-            && BaseContentType.HTMLPAGE.getType() == ((Contentlet) perm).getStructure().getStructureType())) {
-          type = IHTMLPage.class.getCanonicalName();
-        } else if (perm instanceof Container) {
-          type = Container.class.getCanonicalName();
-        } else if (perm instanceof Folder) {
-          type = Folder.class.getCanonicalName();
-        } else if (perm instanceof Link) {
-          type = Link.class.getCanonicalName();
-        } else if (perm instanceof Template) {
-          type = Template.class.getCanonicalName();
-        } else if (perm instanceof Structure || perm instanceof ContentType) {
-          type = Structure.class.getCanonicalName();
-        } else if (perm instanceof Contentlet || perm instanceof Event) {
-          type = Contentlet.class.getCanonicalName();
-        }
-      }
-    }
+  /**
+   * Determines the permission type an asset inherits under — the key that
+   * {@code permission_reference} rows are stored and looked up against.
+   *
+   * <p>Two families of rule apply, in this order: the type the asset inherits by virtue of
+   * <em>what it is</em> ({@link #inheritablePermissionType(Permissionable)}), and then two overrides
+   * that depend on the asset's <em>state</em> rather than its type — a drawn {@link Template} inherits
+   * as a {@link TemplateLayout}, and a {@link NavResult} defers to whatever it encloses.</p>
+   *
+   * @param permissionable the asset whose inheritance key is being resolved
+   * @return the fully qualified permission type name
+   */
+  @VisibleForTesting
+  String resolvePermissionType(final Permissionable permissionable) {
 
-    if (permissionable instanceof Template && UtilMethods.isSet(((Template) permissionable).isDrawed())
-        && ((Template) permissionable).isDrawed()) {
+    String type = inheritablePermissionType(permissionable);
+
+    if (permissionable instanceof Template template
+        && UtilMethods.isSet(template.isDrawed())
+        && template.isDrawed()) {
       type = TemplateLayout.class.getCanonicalName();
     }
 
-    if (permissionable instanceof NavResult) {
-      type = ((NavResult) permissionable).getEnclosingPermissionClassName();
+    if (permissionable instanceof NavResult navResult) {
+      type = navResult.getEnclosingPermissionClassName();
     }
+
     return type;
+  }
+
+  /**
+   * The type an asset inherits permissions under, derived purely from what the asset is.
+   *
+   * <p><strong>Case order is significant</strong> and mirrors the {@code if / else if} chain this
+   * replaced: {@link Host} extends {@link Contentlet}, so it has to be matched first, and the
+   * Host-content-type check has to precede the {@link IHTMLPage} one.</p>
+   *
+   * <p>Two branches of the original chain are deliberately absent, because they were provably
+   * redundant: they mapped a {@code FILEASSET} contentlet, and an {@link Event}, to
+   * {@code Contentlet.class.getCanonicalName()} — which is exactly what
+   * {@link Contentlet#getPermissionType()} already returns, and no {@code Contentlet} subclass
+   * overrides it. Both now fall through to {@code default} and produce the same string. The
+   * {@code FILEASSET} branch was also the one that read {@code getStructure().getStructureType()}
+   * without the null check its neighbour performed, so it could throw while computing a value that
+   * was already correct.</p>
+   *
+   * @param permissionable the asset whose inheritance key is being resolved
+   * @return the fully qualified permission type name, defaulting to the asset's own declared type
+   */
+  private String inheritablePermissionType(final Permissionable permissionable) {
+
+    return switch (permissionable) {
+
+      case Host _ -> Host.class.getCanonicalName();
+
+      case Contentlet contentlet when isOfContentType(contentlet, Host.HOST_VELOCITY_VAR_NAME)
+          -> Host.class.getCanonicalName();
+
+      case IHTMLPage _ -> IHTMLPage.class.getCanonicalName();
+
+      case Contentlet contentlet when isOfBaseType(contentlet, BaseContentType.HTMLPAGE)
+          -> IHTMLPage.class.getCanonicalName();
+
+      case Identifier identifier -> permissionTypeOfBackingInode(identifier);
+
+      default -> permissionable.getPermissionType();
+    };
+  }
+
+  /**
+   * Resolves the permission type for an {@link Identifier}, which should never reach the permission
+   * loader in the first place — the caller logs that as a defect and falls back to the inode the
+   * identifier points at.
+   *
+   * <p>The lookup can only ever hand back an {@link Inode}, which is why the local is typed as one
+   * rather than as {@link Permissionable}: it lets the compiler reject a case that cannot match.
+   * The branches the original {@code if / else if} chain spent on {@link Contentlet},
+   * {@link Folder} and {@link ContentType} are gone for exactly that reason — each is a class with
+   * no kinship to {@code Inode}, so no object could ever be both, and the shared
+   * {@code Permissionable} interface does not change that. {@link IHTMLPage} is kept as a defensive
+   * branch instead: it is an interface, so a future {@code Inode} subclass could implement it.</p>
+   *
+   * @param identifier the identifier that was passed in by mistake
+   * @return the backing inode's permission type, or the identifier's own when the inode cannot be
+   *         resolved or is of no recognised kind
+   */
+  private String permissionTypeOfBackingInode(final Identifier identifier) {
+
+    final Inode inode = InodeFactory.getInode(identifier.getPermissionId(), Inode.class);
+
+    Logger.error(this,
+        "PermissionBitFactoryImpl :  loadPermissions Method : was passed an identifier. This is a problem. We will get inode as a fallback but this should be reported");
+
+    return switch (inode) {
+
+      // No Inode implements IHTMLPage today — the only implementation, HTMLPageAsset, is a
+      // Contentlet — so this branch is unreachable. It is kept because IHTMLPage is an interface
+      // and a future Inode subclass could implement it, which is also why the compiler allows it.
+      case IHTMLPage _ -> IHTMLPage.class.getCanonicalName();
+
+      case Container _ -> Container.class.getCanonicalName();
+
+      case Link _ -> Link.class.getCanonicalName();
+
+      case Template _ -> Template.class.getCanonicalName();
+
+      case Structure _ -> Structure.class.getCanonicalName();
+
+      case null, default -> identifier.getPermissionType();
+    };
+  }
+
+  /**
+   * Whether the contentlet's content type is the one with the given velocity variable name.
+   *
+   * @param contentlet   the contentlet to inspect
+   * @param variableName the velocity variable name to match
+   * @return {@code false} when the contentlet has no resolvable content type
+   */
+  private static boolean isOfContentType(final Contentlet contentlet, final String variableName) {
+    final ContentType contentType = contentlet.getContentType();
+    return contentType != null && variableName.equals(contentType.variable());
+  }
+
+  /**
+   * Whether the contentlet's content type has the given base type.
+   *
+   * <p>{@link Contentlet#getContentType()} returns {@code null} when the contentlet has no resolvable
+   * content type, so the null check is load bearing — reading the structure type straight off it is
+   * what made the original chain throw.</p>
+   *
+   * @param contentlet the contentlet to inspect
+   * @param baseType   the base type to match
+   * @return {@code false} when the contentlet has no resolvable content type
+   */
+  private static boolean isOfBaseType(final Contentlet contentlet, final BaseContentType baseType) {
+    final ContentType contentType = contentlet.getContentType();
+    return contentType != null && baseType == contentType.baseType();
   }
 
 
