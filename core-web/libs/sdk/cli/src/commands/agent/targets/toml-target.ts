@@ -1,4 +1,4 @@
-import { parse } from 'smol-toml';
+import { parse, stringify } from 'smol-toml';
 
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
@@ -60,23 +60,19 @@ function findEntrySpan(lines: string[], containerKey: string): { start: number; 
     return { start, end };
 }
 
-/** Our tables, rendered. Only this text is ever generated; the rest of the file is the user's. */
+/**
+ * Our tables, rendered.
+ *
+ * Serialized generically from whatever `buildEntry` returns — NOT hand-emitted field by field.
+ * The first version listed `command`, `args` and `env` explicitly behind a cast, which silently
+ * dropped `type = "stdio"` and would have dropped any field added later with no compile error
+ * and no failing test. Only this block is generated, so losing comments here costs nothing;
+ * everything outside it is spliced, not re-serialized.
+ */
 function renderEntry(target: AgentTarget, url: string, token: string, containerKey: string): string {
-    const entry = buildEntry(target, url, token) as {
-        command: string;
-        args: string[];
-        env: Record<string, string>;
-    };
-    const args = entry.args.map((a) => JSON.stringify(a)).join(', ');
-    const env = Object.entries(entry.env)
-        .map(([k, v]) => `${k} = ${JSON.stringify(v)}`)
-        .join('\n');
-    return (
-        `[${containerKey}.${ENTRY_KEY}]\n` +
-        `command = ${JSON.stringify(entry.command)}\n` +
-        `args = [${args}]\n\n` +
-        `[${containerKey}.${ENTRY_KEY}.env]\n${env}\n`
-    );
+    return stringify({
+        [containerKey]: { [ENTRY_KEY]: buildEntry(target, url, token) }
+    }).trimEnd();
 }
 
 export async function writeTomlTarget(args: TomlWriteArgs): Promise<string> {

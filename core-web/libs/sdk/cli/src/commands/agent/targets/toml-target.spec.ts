@@ -5,6 +5,7 @@ import * as os from 'node:os';
 import * as path from 'node:path';
 
 
+import { buildEntry } from './json-target';
 import { getTarget } from './registry';
 import { writeTomlTarget } from './toml-target';
 
@@ -37,6 +38,34 @@ describe('toml target — fresh file', () => {
         expect(entry['command']).toBe('npx');
         expect(entry['args']).toEqual(['-y', '@dotcms/mcp-server@latest']);
         expect(entry['env']).toEqual({ DOTCMS_URL: URL_, AUTH_TOKEN: TOKEN });
+    });
+});
+
+describe('the TOML entry carries EVERY field the JSON entry does', () => {
+    it('writes type = "stdio"', async () => {
+        const doc = parse(await fs.readFile(await write(), 'utf8')) as Record<string, never>;
+        expect(doc['mcp_servers']['dotcms']['type']).toBe('stdio');
+    });
+
+    /**
+     * The structural guard, and the point of the exercise.
+     *
+     * An earlier writer hand-emitted command, args and env behind a cast. It silently dropped
+     * `type`, and would have dropped any field added to buildEntry later — no compile error, no
+     * failing test. Comparing against buildEntry itself means a new field is covered the moment
+     * it exists, without anyone remembering to extend this file.
+     */
+    it('matches buildEntry exactly — no field can be dropped in translation', async () => {
+        const doc = parse(await fs.readFile(await write(), 'utf8')) as Record<string, never>;
+        expect(doc['mcp_servers']['dotcms']).toEqual(buildEntry(codex(), URL_, TOKEN));
+    });
+
+    it('agrees with the JSON targets on the shared fields', async () => {
+        const doc = parse(await fs.readFile(await write(), 'utf8')) as Record<string, never>;
+        const json = buildEntry(getTarget('cursor'), URL_, TOKEN) as Record<string, unknown>;
+        expect(doc['mcp_servers']['dotcms']['type']).toBe(json['type']);
+        expect(doc['mcp_servers']['dotcms']['command']).toBe(json['command']);
+        expect(doc['mcp_servers']['dotcms']['args']).toEqual(json['args']);
     });
 });
 
