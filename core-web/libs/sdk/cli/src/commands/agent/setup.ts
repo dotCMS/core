@@ -11,7 +11,12 @@ import { writeTomlTarget } from './targets/toml-target';
 import { mintToken, verifyToken } from '../../shared/auth';
 import { CAN_RESTRICT, hasEntry } from '../../shared/config-file';
 import { ENV_KEYS, readEnv } from '../../shared/env';
-import { ConflictingAuthError, UnknownTargetError } from '../../shared/errors';
+import {
+    ConflictingAuthError,
+    CredentialsRejectedError,
+    TokenRejectedError,
+    UnknownTargetError
+} from '../../shared/errors';
 import { checkReachable } from '../../shared/instance';
 import { resolveRequiredInputs } from '../../shared/prompts';
 
@@ -21,6 +26,9 @@ import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
 
 
 
+
+/** Three, matching FR-007. A fourth prompt after three refusals is nagging, not helping. */
+const MAX_AUTH_ATTEMPTS = 3;
 
 export interface SetupResult {
     outcomes: TargetOutcome[];
@@ -70,7 +78,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
 
     // 2. Resolve the required inputs — prompting only for what is missing, and only where
     //    there is a terminal to ask on (FR-003i, FR-003k).
-    const inputs = await resolveRequiredInputs(
+    let inputs = await resolveRequiredInputs(
         { ...opts, authToken: auth.token, user: auth.user, password: auth.password },
         opts.promptPort
     );
@@ -80,22 +88,40 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     step(`Checking ${url} is reachable`);
     await checkReachable(url);
 
-    // 3. Authenticate.
+    // 3 + 4. Authenticate and verify, retrying a REJECTION up to three times (FR-007).
+    //
+    // Both halves are inside the loop on purpose. A supplied token that the instance refuses is
+    // the same user error as a mistyped password — asking again is obviously right, and failing
+    // outright after one bad paste is not. A rejection is retried; anything else (unreachable
+    // instance, TLS, a 500) is not, because re-typing a credential cannot fix it.
     let token: Token;
-    if (inputs.authToken) {
-        token = { value: inputs.authToken, origin: 'supplied', verified: false };
-    } else {
-        step('Minting an access token');
-        token = await mintToken({
-            url,
-            user: inputs.user as string,
-            password: inputs.password as string
-        });
-    }
+    for (let attempt = 1; ; attempt++) {
+        try {
+            if (inputs.authToken) {
+                token = { value: inputs.authToken, origin: 'supplied', verified: false };
+            } else {
+                step('Minting an access token');
+                token = await mintToken({
+                    url,
+                    user: inputs.user as string,
+                    password: inputs.password as string
+                });
+            }
 
-    // 4. Verify. Past this line, and only past it, may anything be written.
-    step('Verifying the token');
-    token = await verifyToken(url, token);
+            // Past this line, and only past it, may anything be written.
+            step('Verifying the token');
+            token = await verifyToken(url, token);
+            break;
+        } catch (error) {
+            const rejected =
+                error instanceof TokenRejectedError || error instanceof CredentialsRejectedError;
+            if (!rejected || !opts.promptPort || attempt >= MAX_AUTH_ATTEMPTS) throw error;
+
+            opts.onAuthRetry?.((error as Error).message, attempt, MAX_AUTH_ATTEMPTS);
+            // Ask again from scratch: the url is settled, the credential is what was wrong.
+            inputs = await resolveRequiredInputs({ url, cwd: opts.cwd }, opts.promptPort);
+        }
+    }
 
     // Targets: explicit --agent wins. Otherwise ASK when there is someone to ask (FR-010),
     // and fall back to every detected editor when there is not (FR-003j). Defaulting silently

@@ -34,6 +34,18 @@ function makeProgress(interactive: boolean) {
         },
         done(): void {
             spinner?.stop();
+        },
+        /** Leave the failed step visible instead of a spinner that never stops. */
+        fail(text?: string): void {
+            if (spinner) spinner.fail(text);
+            else if (text) writeOut(`  ✗ ${text}`);
+            spinner = null;
+        },
+        /** A retry notice: mark the attempt failed, then carry on. */
+        warn(text: string): void {
+            if (spinner) spinner.fail(text);
+            else writeOut(`  ✗ ${text}`);
+            spinner = null;
         }
     };
 }
@@ -78,33 +90,42 @@ export function registerAgentCommand(program: Command): void {
             const interactive = canPrompt();
             // A spinner only where someone can see it; in CI the same steps are plain lines.
             const progress = makeProgress(interactive);
-            const result = await runSetup({
-                onProgress: progress.step,
+            try {
+                const result = await runSetup({
+                    onProgress: progress.step,
+                    onAuthRetry: (message, attempt, max) =>
+                        progress.warn(`${message}  (attempt ${attempt} of ${max})`),
                 promptPort: interactive ? inquirerPort : undefined,
-                confirmOverwrite: interactive ? confirmOverwrite : undefined,
-                confirmExclude: interactive ? confirmExclude : undefined,
-                url: options['url'] as string | undefined,
-                user: options['user'] as string | undefined,
-                password: options['password'] as string | undefined,
-                authToken: options['authToken'] as string | undefined,
-                agents: options['agent'] as string[] | undefined,
-                scope: options['global'] ? 'global' : 'folder',
-                skipMcp: Boolean(options['skipMcp']),
-                skipSkills: Boolean(options['skipSkills']),
-                skipVerify: Boolean(options['skipVerify']),
-                yes: Boolean(options['yes']),
-                force: Boolean(options['force'])
-            });
+                    confirmOverwrite: interactive ? confirmOverwrite : undefined,
+                    confirmExclude: interactive ? confirmExclude : undefined,
+                    url: options['url'] as string | undefined,
+                    user: options['user'] as string | undefined,
+                    password: options['password'] as string | undefined,
+                    authToken: options['authToken'] as string | undefined,
+                    agents: options['agent'] as string[] | undefined,
+                    scope: options['global'] ? 'global' : 'folder',
+                    skipMcp: Boolean(options['skipMcp']),
+                    skipSkills: Boolean(options['skipSkills']),
+                    skipVerify: Boolean(options['skipVerify']),
+                    yes: Boolean(options['yes']),
+                    force: Boolean(options['force'])
+                });
 
-            progress.done();
-            writeOut(
-                renderSummary({
-                    outcomes: result.outcomes,
-                    versionControl: result.versionControl,
-                    connection: result.connection,
-                    connectionReason: result.connectionReason
-                })
-            );
-            process.exitCode = result.exitCode;
+                progress.done();
+                writeOut(
+                    renderSummary({
+                        outcomes: result.outcomes,
+                        versionControl: result.versionControl,
+                        connection: result.connection,
+                        connectionReason: result.connectionReason
+                    })
+                );
+                process.exitCode = result.exitCode;
+            } catch (error) {
+                // Without this the spinner spins forever under the error message — the run is
+                // over and the terminal still says it is working.
+                progress.fail();
+                throw error;
+            }
         });
 }

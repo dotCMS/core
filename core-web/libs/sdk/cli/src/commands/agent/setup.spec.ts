@@ -359,3 +359,96 @@ describe('skills reporting honesty (FR-027)', () => {
         expect(result.outcomes[0].skillsInstalled).toBe('yes');
     });
 });
+
+describe('a rejected credential is re-asked, up to three times (FR-007)', () => {
+    /** Reachable instance; the token is always refused. */
+    function alwaysRejects() {
+        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            const u = String(input);
+            if (u.includes('/appconfiguration')) {
+                return new Response(JSON.stringify({ entity: {} }), { status: 200 });
+            }
+            return new Response('', { status: 401 });
+        });
+    }
+
+    /** Refused twice, accepted on the third. */
+    function rejectsTwice() {
+        let verifyCalls = 0;
+        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            const u = String(input);
+            if (u.includes('/appconfiguration')) {
+                return new Response(JSON.stringify({ entity: {} }), { status: 200 });
+            }
+            verifyCalls += 1;
+            return verifyCalls <= 2
+                ? new Response('', { status: 401 })
+                : new Response(JSON.stringify({ entity: {} }), { status: 200 });
+        });
+    }
+
+    const portThatRetypes = (token: string) => ({
+        text: jest.fn().mockResolvedValue(URL_),
+        password: jest.fn().mockResolvedValue(token),
+        select: jest.fn().mockResolvedValue('token'),
+        multiSelect: jest.fn().mockResolvedValue(['cursor'])
+    });
+
+    it('asks again instead of giving up after one bad token', async () => {
+        rejectsTwice();
+        const port = portThatRetypes('eventually-good');
+        const onAuthRetry = jest.fn();
+
+        const result = await runSetup({
+            url: URL_, authToken: 'bad-first-try', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: port, onAuthRetry
+        });
+
+        expect(onAuthRetry).toHaveBeenCalledTimes(2);
+        expect(result.outcomes[0].result).toBe('written');
+    });
+
+    it('gives up after exactly three attempts', async () => {
+        alwaysRejects();
+        const onAuthRetry = jest.fn();
+        const err = await runSetup({
+            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('still-bad'), onAuthRetry
+        }).catch((e: Error) => e);
+
+        expect((err as Error).message).toMatch(/token/i);
+        // Two notices for attempts 1 and 2; the third failure ends the run.
+        expect(onAuthRetry).toHaveBeenCalledTimes(2);
+    });
+
+    it('writes nothing after exhausting the attempts', async () => {
+        alwaysRejects();
+        await runSetup({
+            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('still-bad')
+        }).catch(() => undefined);
+        await expect(fs.readdir(dir)).resolves.toEqual([]);
+    });
+
+    it('does NOT retry without a prompt port — a script cannot retype anything', async () => {
+        alwaysRejects();
+        const onAuthRetry = jest.fn();
+        await runSetup({
+            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, onAuthRetry
+        }).catch(() => undefined);
+        expect(onAuthRetry).not.toHaveBeenCalled();
+    });
+
+    it('does NOT retry an unreachable instance — retyping a token cannot fix that', async () => {
+        jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+            Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } })
+        );
+        const onAuthRetry = jest.fn();
+        await runSetup({
+            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('x'), onAuthRetry
+        }).catch(() => undefined);
+        expect(onAuthRetry).not.toHaveBeenCalled();
+    });
+});

@@ -78,4 +78,6 @@ export interface RunOptions {
      * Injected like promptPort so the flow stays free of terminal concerns and tests ignore it.
      */
     onProgress?: (step: string) => void;
+    /** Called when a rejected credential is about to be re-asked (FR-007). */
+    onAuthRetry?: (message: string, attempt: number, max: number) => void;
 }

@@ -47,7 +47,10 @@ export function canPrompt(): boolean {
 export async function resolveRequiredInputs(
     opts: Partial<RunOptions>,
     port?: PromptPort,
-    interactive: boolean = canPrompt()
+    // Being handed a port IS the permission to ask. The caller decides whether a terminal
+    // exists (index.ts passes no port when `canPrompt()` is false), so reading that global
+    // again here would second-guess it — and made the function untestable without a TTY.
+    interactive = Boolean(port)
 ): Promise<ResolvedInputs> {
     let prompted = false;
 
