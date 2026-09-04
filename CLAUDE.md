@@ -21,8 +21,8 @@ core/
 ## Environment Prerequisites
 
 ```bash
-sdk env install   # Java 25 via SDKMAN (.sdkmanrc) — build fails with wrong version
-nvm use           # Node 22.22.3+ via nvm (.nvmrc) — frontend build fails with wrong version
+sdk env install   # installs the Java version pinned in .sdkmanrc — build fails with wrong version
+nvm use           # installs the Node version pinned in .nvmrc — frontend build fails with wrong version
 ```
 
 ## Build & Test Commands
@@ -65,9 +65,10 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 
 - **Config/Logger only**: Never `System.out`, `System.getProperty`, or `System.getenv`
 - **Maven versions**: Add to `bom/application/pom.xml` ONLY, never `dotCMS/pom.xml`
-- **Java version**: Core modules compile to Java 25 by default (`dotcms.core.compiler.release`; override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode). Java 25 runtime. CLI may target lower for portability.
+- **Java version**: see `.sdkmanrc` for the runtime version. Core modules compile to whatever `dotcms.core.compiler.release` is set to in `parent/pom.xml` (override e.g. `-Ddotcms.core.compiler.release=11` for older bytecode); `tools/dotcms-cli` targets whatever `maven.compiler.release` is set to in its own `pom.xml`, historically lower for portability.
 - **Security**: No hardcoded secrets, validate all input, never log sensitive data
 - **REST @Schema**: Must match actual return type — see [REST API Guide](dotCMS/src/main/java/com/dotcms/rest/CLAUDE.md)
+- **Integration test registration**: A new integration test class not added to a `MainSuite*`/`Junit5Suite*` `@SuiteClasses` list compiles fine but is **silently never run in CI** (green build, zero coverage) — it only runs locally via `-Dit.test=`. See [Integration Tests → Registering Tests in a MainSuite](docs/testing/INTEGRATION_TESTS.md#registering-tests-in-a-mainsuite-ci-gate).
 - **Frontend**: See [core-web/CLAUDE.md](core-web/CLAUDE.md) for Angular/TypeScript standards
 
 ### OpenAPI / Swagger
@@ -75,7 +76,7 @@ UserAPI userAPI = APILocator.getUserAPI();   // Service access pattern
 `openapi.yaml` is **auto-generated** by `swagger-maven-plugin` at compile phase — it writes directly to `src/main/webapp/WEB-INF/openapi/openapi.yaml`. The CI verifies the committed file matches what the build produces.
 
 - All description changes must go in Java `@Operation` / `@Parameter` annotations, not in the yaml directly
-- Regenerate after annotation changes: `./mvnw compile -pl :dotcms-core -DskipTests` (no Docker needed)
+- Regenerate after annotation changes: `./mvnw compile -pl :dotcms-core --am -DskipTests` (no Docker needed; `--am` avoids the same missing-in-project-deps failure noted above)
 - Commit the regenerated yaml alongside the Java changes
 
 ### Progressive Enhancement
@@ -100,8 +101,8 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 
 ## Tech Stack
 
-- **Backend**: Java 25 (runtime + core compile target, override-able), Maven, Spring/CDI
-- **Frontend**: Angular 22+, Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
+- **Backend**: Java (see `.sdkmanrc` / `parent/pom.xml`'s `dotcms.core.compiler.release`, override-able), Maven, CDI
+- **Frontend**: Angular (see `core-web/package.json`'s `@angular/core`), Nx, PrimeNG, Tailwind CSS, Jest/Spectator — [core-web/CLAUDE.md](core-web/CLAUDE.md)
 - **Infrastructure**: Docker, PostgreSQL, Elasticsearch, GitHub Actions
 
 ## Documentation (Load On-Demand)
@@ -122,6 +123,15 @@ How it's built + upgrade re-apply notes: [.specify/CUSTOMIZATIONS.md](.specify/C
 - [Configuration Patterns](docs/backend/CONFIGURATION_PATTERNS.md) — Config.getProperty() usage
 - [Database Patterns](docs/backend/DATABASE_PATTERNS.md) — DotConnect, transactions
 - [Health Monitoring](docs/backend/HEALTH_MONITORING.md) — Health endpoints, log levels
+- [Security Patterns](docs/backend/SECURITY_BACKEND.md) — Input validation, auth, SQL/XSS prevention, secure logging
+- [Search API Migration](docs/backend/SEARCH_API_MIGRATION.md) — ES → OpenSearch: deprecated `ContentletAPI` search methods, plugin migration guide
+- [Telemetry Implementation](docs/backend/TELEMETRY_IMPLEMENTATION.md) — CDI-based metrics system, creating new metrics, `/v1/usage` endpoints
+- [Jandex Metadata Scanning](docs/backend/JANDEX_METADATA_SCANNING.md) — Fast class/annotation metadata lookup, prefer over reflection
+- **ES → OpenSearch Migration** — infra migration from ElasticSearch to OpenSearch, phased dual-write/read rollout
+  - [Migration Design](docs/backend/OPENSEARCH_MIGRATION.md) — Architecture, phased rollout, configuration
+  - [Migration Test Plan](docs/backend/OPENSEARCH_MIGRATION_TEST_PLAN.md) — QA test plan for the migration phases
+  - [Client Configuration](docs/backend/OPENSEARCH_CLIENT_CONFIGURATION.md) — `OS_*`/`ES_*` config property reference and fallback chain
+  - [Migration Tester Guide](docs/backend/OPENSEARCH_MIGRATION_TESTER_GUIDE.md) — Getting-started guide for QA testers validating the migration
 
 ### Frontend Development (Angular/TypeScript)
 - **[docs/frontend/README.md](docs/frontend/README.md) — index of all frontend docs and when to load each. Start here if unsure.**
