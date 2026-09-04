@@ -2950,6 +2950,112 @@ describe('EditEmaEditorComponent', () => {
                 });
             });
 
+
+                describe('quick edit permission (#37376)', () => {
+                    const SELECTED_BOUNDS = { x: 0, y: 0, width: 0, height: 0 };
+
+                    const selectContentlet = (canEdit?: boolean) => {
+                        store.setSelected({
+                            bounds: SELECTED_BOUNDS,
+                            payload: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK,
+                                contentlet: {
+                                    ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                    ...(canEdit === undefined ? {} : { canEdit })
+                                }
+                            }
+                        });
+                        spectator.detectChanges();
+                    };
+
+                    it('should preserve canEdit through the page-asset swap in $contentletEditData', () => {
+                        // $contentletEditData replaces the DOM payload contentlet
+                        // with the page-asset one to pick up a fresh inode after a
+                        // save. The permission exists only on the DOM payload, so
+                        // it has to survive that swap or the panel cannot be gated.
+                        //
+                        // The container is injected into the store so the swap is
+                        // guaranteed to fire — the assertion on the swapped inode
+                        // is what stops this test from passing vacuously.
+                        const componentUveStore = spectator.component['uveStore'];
+                        const pageAsset = componentUveStore.pageAsset();
+
+                        componentUveStore.updatePageResponse({
+                            ...pageAsset,
+                            containers: {
+                                'perm-container': {
+                                    container: { identifier: 'perm-container' },
+                                    containerStructures: [],
+                                    contentlets: {
+                                        'uuid-1': [
+                                            {
+                                                identifier: 'perm-contentlet',
+                                                inode: 'fresh-inode-from-page-asset',
+                                                contentType: 'test'
+                                            }
+                                        ]
+                                    }
+                                }
+                            }
+                        } as unknown as Parameters<typeof componentUveStore.updatePageResponse>[0]);
+                        spectator.detectChanges();
+
+                        componentUveStore.setSelected({
+                            bounds: SELECTED_BOUNDS,
+                            payload: {
+                                ...EDIT_ACTION_PAYLOAD_MOCK,
+                                container: {
+                                    ...EDIT_ACTION_PAYLOAD_MOCK.container,
+                                    identifier: 'perm-container',
+                                    uuid: '1'
+                                },
+                                contentlet: {
+                                    ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                                    identifier: 'perm-contentlet',
+                                    inode: 'stale-inode-from-dom',
+                                    canEdit: false
+                                }
+                            }
+                        });
+                        spectator.detectChanges();
+
+                        const result = spectator.component['$contentletEditData']();
+
+                        expect(result.contentlet?.inode).toBe('fresh-inode-from-page-asset');
+                        expect(result.contentlet?.canEdit).toBe(false);
+                    });
+
+                    it('should leave canEdit undefined when the payload has none', () => {
+                        selectContentlet(undefined);
+
+                        expect(
+                            spectator.component['$contentletEditData']().contentlet?.canEdit
+                        ).toBeUndefined();
+                    });
+
+                    it('should not open the quick edit panel for a denied contentlet', () => {
+                        const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
+                        selectContentlet(false);
+                        setEditPanelOpenSpy.mockClear();
+
+                        spectator.component['handleOpenQuickEdit']();
+                        spectator.detectChanges();
+
+                        expect(setEditPanelOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should open the quick edit panel when the user can edit', () => {
+                        const setEditPanelOpenSpy = jest.spyOn(store, 'setEditPanelOpen');
+                        selectContentlet(true);
+                        setEditPanelOpenSpy.mockClear();
+
+                        spectator.component['handleOpenQuickEdit']();
+                        spectator.detectChanges();
+
+                        expect(setEditPanelOpenSpy).toHaveBeenCalledWith(true);
+                    });
+                });
+
             describe('placeItem - content-type drag', () => {
                 const contentTypeDragItem = {
                     baseType: 'CONTENT',

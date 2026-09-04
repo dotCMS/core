@@ -1041,6 +1041,50 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
 
+        describe('quick edit button disabled state', () => {
+            // The quick-edit form writes contentlet fields via
+            // saveQuickEditFields, so leaving it reachable would defeat the
+            // pencil gate entirely.
+            const quickEditButton = () =>
+                (
+                    spectator.query(byTestId('hover-quick-edit-button')) as HTMLElement
+                )?.querySelector('button');
+
+            it('should disable the quick edit button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(quickEditButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the quick edit button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(quickEditButton()?.disabled).toBe(false);
+            });
+
+            it('should enable the quick edit button when canEdit is absent', () => {
+                setPermission(undefined);
+
+                expect(quickEditButton()?.disabled).toBe(false);
+            });
+
+            it('should explain the missing permission in the quick edit tooltip', () => {
+                setPermission(false);
+
+                expect(spectator.component['quickEditButtonTooltip']()).toBe(
+                    'uve.contentlet.no.edit.permission'
+                );
+            });
+
+            it('should show the normal quick edit label when allowed', () => {
+                setPermission(true);
+
+                expect(spectator.component['quickEditButtonTooltip']()).toBe(
+                    'uve.tooltip.edit.quick'
+                );
+            });
+        });
+
         describe('collapsed overflow menu', () => {
             const editMenuItem = () =>
                 spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-pencil');
@@ -1055,6 +1099,21 @@ describe('DotUveContentletToolsComponent', () => {
                 setPermission(true);
 
                 expect(editMenuItem()?.disabled).toBe(false);
+            });
+
+            const quickEditMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-bolt');
+
+            it('should disable the Quick Edit entry when canEdit is false', () => {
+                setPermission(false);
+
+                expect(quickEditMenuItem()?.disabled).toBe(true);
+            });
+
+            it('should keep the Quick Edit entry enabled when canEdit is true', () => {
+                setPermission(true);
+
+                expect(quickEditMenuItem()?.disabled).toBe(false);
             });
         });
 
@@ -1096,5 +1155,4 @@ describe('DotUveContentletToolsComponent', () => {
             });
         });
     });
-
 });

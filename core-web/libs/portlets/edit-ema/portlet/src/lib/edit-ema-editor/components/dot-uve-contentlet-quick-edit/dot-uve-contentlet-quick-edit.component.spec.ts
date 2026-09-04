@@ -226,4 +226,83 @@ describe('DotUveContentletQuickEditComponent', () => {
             expect(emitSpy).toHaveBeenCalled();
         });
     });
+
+    describe('contentlet edit permission (#37376)', () => {
+        // The panel follows the current selection once open, so gating only the
+        // toolbar's quick-edit button would leave a two-click bypass: open the
+        // panel on an editable contentlet, then click a restricted one.
+        it('returns "no-permission" when the selected contentlet cannot be edited', () => {
+            spectator = createComponent({
+                props: { data: makeData({ canEdit: false } as Partial<DotCMSContentlet>) }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$mode()).toBe('no-permission');
+        });
+
+        it('renders the permission notice instead of the form', () => {
+            spectator = createComponent({
+                props: { data: makeData({ canEdit: false } as Partial<DotCMSContentlet>) }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.query(byTestId('quick-edit-no-permission'))).toBeTruthy();
+            expect(spectator.query(DotUveQuickEditFormComponent)).toBeFalsy();
+        });
+
+        it('outranks the copy decision for a denied multi-page contentlet', () => {
+            // A user who cannot edit the original must not be offered the
+            // copy-and-edit path from here either.
+            spectator = createComponent({
+                props: {
+                    data: makeData({
+                        canEdit: false,
+                        onNumberOfPages: 2
+                    } as unknown as Partial<DotCMSContentlet>)
+                }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$mode()).toBe('no-permission');
+        });
+
+        it('still resolves the empty-container state before the permission gate', () => {
+            spectator = createComponent({
+                props: {
+                    data: makeData({
+                        contentType: TEMP_EMPTY_CONTENTLET_TYPE,
+                        canEdit: false
+                    } as unknown as Partial<DotCMSContentlet>)
+                }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$mode()).toBe('empty');
+        });
+
+        it('renders the form normally when the user can edit', () => {
+            contentTypeCache.set({
+                Blog: { layout: [] }
+            });
+            spectator = createComponent({
+                props: { data: makeData({ canEdit: true } as Partial<DotCMSContentlet>) }
+            });
+            spectator.detectChanges();
+
+            expect(spectator.component.$mode()).not.toBe('no-permission');
+            expect(spectator.query(byTestId('quick-edit-no-permission'))).toBeFalsy();
+        });
+
+        it('renders normally when the permission field is absent', () => {
+            // Headless payloads carry no canEdit; fail open.
+            contentTypeCache.set({
+                Blog: { layout: [] }
+            });
+            spectator = createComponent({ props: { data: makeData() } });
+            spectator.detectChanges();
+
+            expect(spectator.component.$mode()).not.toBe('no-permission');
+        });
+    });
+
 });
