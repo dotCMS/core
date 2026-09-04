@@ -113,6 +113,47 @@ PrimeNG ships two visually similar but semantically different components. Pick b
 - **Never use `p-chip` for purely informational status** — use `p-tag` with a `severity`.
 - **Never add Tailwind `!important` color overrides** (`bg-green-100!`, `text-red-700!`, etc.) to PrimeNG components. Rely on native `severity` plus the preset color tokens in `theme.config.ts`.
 
+## Form Classes
+
+Form styling is a small set of global classes in `apps/dotcms-ui/src/style.css`. Use them instead of
+restating typography, spacing or error colors on each field.
+
+```html
+<form class="form">
+  <div class="field">
+    <label for="name">Name</label>
+    <input pInputText id="name" />
+    <small class="p-field-hint">Shown under the control.</small>
+    <small class="p-field-error">Shown instead when it is wrong.</small>
+  </div>
+</form>
+```
+
+| Class | What it does | Scope |
+|-------|--------------|-------|
+| `.form` | `w-full`, 5-unit rhythm between its direct children | the form element, or a group of fields |
+| `.field` | column layout, 1-unit gap between label and control | one field |
+| `.form .field > label` | `text-sm font-medium` | labels, automatically |
+| `.form .p-field-hint` | `text-sm text-gray-500` | a field's hint |
+| `.form .p-field-error` | `text-sm text-red-500` | a field's error |
+
+### Rules
+
+- **Do not put typography on a label.** `.form .field > label` already styles it; a class there is one
+  more place the type can drift.
+- **`p-field-hint` and `p-field-error` are field-level and scoped to `.form`.** A message that is
+  not about a field — a dialog reporting that an action failed, a page-wide warning — is a
+  `p-message` with a `severity`, not a field error borrowed for the occasion.
+- **The `p-` on these two is ours, not PrimeNG's**, as it is on `p-label-input-required`. PrimeNG 21
+  claims neither name. Worth knowing when reading a template: not every `p-` class comes from the
+  library.
+- **`p-error` is dead.** No `.p-error` rule exists in PrimeNG 21, in `CustomLaraPreset`, or in the
+  global stylesheets, so an element carrying it renders as plain inherited text rather than red.
+  Use `p-field-error` inside a form, `p-message` outside one.
+- **Required labels use the `dotFieldRequired` directive**, not a hand-rolled asterisk. Bare for a
+  statically required field, `[dotFieldRequired]="field"` to follow a signal form's own `required()`,
+  or `checkIsRequiredControl="name"` for reactive forms.
+
 ## See also
 - [ANGULAR_STANDARDS.md](./ANGULAR_STANDARDS.md) — Component rules, templates
 - [docs/frontend/README.md](./README.md) — Index of all frontend docs

@@ -16,9 +16,9 @@
     </ul>
 
     @if ($hasFailed()) {
-        <small class="p-error" data-testid="change-page-error">
+        <p-message severity="error" data-testid="change-page-error">
             {{ 'experiments.configure.page.change.error' | dm }}
-        </small>
+        </p-message>
     }
 
     <div class="mt-4 flex justify-end gap-2">
