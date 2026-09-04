@@ -1,4 +1,10 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
+import {
+    byTestId,
+    createComponentFactory,
+    createHostFactory,
+    Spectator,
+    SpectatorHost
+} from '@openng/spectator/jest';
 
 import type { TreeNode } from 'primeng/api';
 import { Tree } from 'primeng/tree';
@@ -12,6 +18,10 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotFolderTreeComponent } from './dot-folder-tree.component';
+
+import { DotTruncatedLabelComponent } from '../dot-truncated-label/dot-truncated-label.component';
+
+const LONG_FOLDER_PATH = '/application/a-very-long-folder-name-that-will-not-fit-in-the-row';
 
 describe('DotFolderTreeComponent', () => {
     let spectator: Spectator<DotFolderTreeComponent>;
@@ -469,5 +479,142 @@ describe('DotFolderTreeComponent', () => {
             expect(component.tree()).toBeTruthy();
             expect(component.elementRef).toBeTruthy();
         });
+    });
+
+    describe('label truncation', () => {
+        it('should wrap the built-in label in the shared clipping element', () => {
+            const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+            expect(clips).toHaveLength(2);
+            expect(clips.map((el) => el.textContent?.trim())).toEqual(['content', 'documents']);
+        });
+
+        it('should keep exactly one tree-node-label per row', () => {
+            // e2e guard: `contentDrive.page.ts` and `content-drive-tree.ts` count this test id,
+            // so the clipping wrapper must carry its own instead of reusing it.
+            expect(spectator.queryAll(byTestId('tree-node-label'))).toHaveLength(2);
+        });
+    });
+
+    describe('keyboard focus', () => {
+        beforeEach(() => {
+            jest.useFakeTimers();
+        });
+
+        afterEach(() => {
+            jest.useRealTimers();
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+        });
+
+        const firstRow = () => spectator.query('[role="treeitem"]') as HTMLElement;
+
+        const clipInFirstRow = () =>
+            firstRow().querySelector('[data-testid="tree-node-label-clip"]') as HTMLElement;
+
+        const forceOverflow = (element: Element): void => {
+            Object.defineProperty(element, 'offsetWidth', { value: 100, configurable: true });
+            Object.defineProperty(element, 'scrollWidth', { value: 400, configurable: true });
+        };
+
+        it('should reveal a clipped name when the row receives focus', () => {
+            // PrimeNG puts the tabindex on the `treeitem`, and its Tooltip binds focus listeners
+            // to its own host — so focus never reaches the label on its own (research.md R3).
+            forceOverflow(clipInFirstRow());
+
+            firstRow().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+            spectator.detectChanges();
+            jest.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe('content');
+        });
+
+        it('should dismiss the tooltip when focus leaves the row', () => {
+            forceOverflow(clipInFirstRow());
+            firstRow().dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+            spectator.detectChanges();
+            jest.advanceTimersByTime(1000);
+
+            firstRow().dispatchEvent(new FocusEvent('focusout', { bubbles: true }));
+            jest.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip')).toBeNull();
+        });
+
+        it('should not reveal the name when a control inside the row takes focus', () => {
+            // A consumer can put a focusable control beside the name (the Roles panel's add-child
+            // button). Focusing it must not pop the row's name tooltip.
+            forceOverflow(clipInFirstRow());
+            const control = document.createElement('button');
+            firstRow().querySelector('.p-tree-node-content')?.appendChild(control);
+
+            control.dispatchEvent(new FocusEvent('focusin', { bubbles: true }));
+            spectator.detectChanges();
+            jest.advanceTimersByTime(1000);
+
+            expect(document.querySelector('.p-tooltip')).toBeNull();
+        });
+
+        it('should not add a tab stop to the label', () => {
+            // FR-013: the tree navigates with arrow keys and manages `tabIndex` on the treeitem
+            // itself. A focusable label would insert a second tab stop per row.
+            expect(clipInFirstRow().hasAttribute('tabindex')).toBe(false);
+        });
+    });
+});
+
+describe('DotFolderTreeComponent with a projected label template', () => {
+    let spectator: SpectatorHost<DotFolderTreeComponent>;
+
+    const createHost = createHostFactory({
+        component: DotFolderTreeComponent,
+        imports: [DotTruncatedLabelComponent],
+        providers: [
+            {
+                provide: DotMessageService,
+                useValue: new MockDotMessageService({})
+            }
+        ]
+    });
+
+    beforeEach(() => {
+        spectator = createHost(
+            `<dot-folder-tree [folders]="folders" [loading]="false">
+                <ng-template #folderTreeNodeLabel let-node>
+                    <dot-truncated-label>
+                        <span data-testid="tree-node-label" class="font-semibold">
+                            {{ node.label }}
+                        </span>
+                    </dot-truncated-label>
+                </ng-template>
+            </dot-folder-tree>`,
+            {
+                hostProps: {
+                    folders: [
+                        {
+                            key: '1',
+                            label: LONG_FOLDER_PATH,
+                            data: { type: 'folder', path: LONG_FOLDER_PATH, id: '1' }
+                        }
+                    ]
+                }
+            }
+        );
+    });
+
+    it('should add no wrapper of its own around a projected template', () => {
+        // One clipping element per row — the consumer's. A second wrapper from the tree would
+        // clip the whole row instead of its name, and its tooltip would read out every piece of
+        // text in the row (this is what the Roles panel showed).
+        const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+        expect(clips).toHaveLength(1);
+        expect(clips[0].querySelector('[data-testid="tree-node-label"]')).toBeTruthy();
+        expect(clips[0].textContent?.trim()).toBe(LONG_FOLDER_PATH);
+    });
+
+    it('should preserve the consumer classes on its own element', () => {
+        const label = spectator.query(byTestId('tree-node-label'));
+
+        expect(label).toHaveClass('font-semibold');
     });
 });

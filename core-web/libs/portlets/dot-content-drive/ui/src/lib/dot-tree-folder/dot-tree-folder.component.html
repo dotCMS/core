@@ -23,15 +23,17 @@
                  its icon comes from the node itself, which PrimeNG renders beside this label. Only
                  the weight sets it apart, and it is told apart by having no folder path — a tree of
                  plain folders simply has no such row. -->
-            <span
-                data-testid="tree-node-label"
-                [attr.data-json-node]="node.data | json"
-                [attr.data-id]="node?.data?.id"
-                [attr.data-node-key]="node.key"
-                [class]="node.data?.path ? 'font-normal' : 'font-semibold'"
-                [class.active]="$activeDropNode()?.id === node?.data.id">
-                {{ node.label | dotFolderName }}
-            </span>
+            <dot-truncated-label>
+                <span
+                    data-testid="tree-node-label"
+                    [attr.data-json-node]="node.data | json"
+                    [attr.data-id]="node?.data?.id"
+                    [attr.data-node-key]="node.key"
+                    [class]="node.data?.path ? 'font-normal' : 'font-semibold'"
+                    [class.active]="$activeDropNode()?.id === node?.data.id">
+                    {{ node.label | dotFolderName }}
+                </span>
+            </dot-truncated-label>
         </ng-template>
     </dot-folder-tree>
 } @else {

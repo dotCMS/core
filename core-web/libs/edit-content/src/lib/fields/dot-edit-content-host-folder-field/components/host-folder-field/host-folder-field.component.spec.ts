@@ -823,6 +823,92 @@ describe('DotHostFolderFieldComponent', () => {
             expect(icon?.getAttribute('data-expanded')).toBe('false');
         }));
 
+        it('should render its projected folder label inside the shared clipping element', fakeAsync(() => {
+            // #37363: the overlay used to cut long names off with its own CSS. The shared tree
+            // owns the clipping now, so the consumer's label must sit inside its wrapper.
+            const longFolder: TreeNodeItem = {
+                key: 'folder-long',
+                label: 'demo.dotcms.com/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                data: {
+                    id: 'folder-long',
+                    hostname: 'demo.dotcms.com',
+                    path: '/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [longFolder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const clip = queryInOverlay('tree-node-label-clip');
+
+            expect(clip).toBeTruthy();
+            expect(clip?.textContent?.trim()).toBe(
+                'a-very-long-folder-name-that-will-not-fit-in-the-overlay'
+            );
+        }));
+
+        it('should reveal a clipped folder name on hover, which the overlay had lost', fakeAsync(() => {
+            // The regression named in #37363: this overlay truncated with its own CSS and showed
+            // no tooltip at all, so a long name was simply unreadable.
+            const longFolder: TreeNodeItem = {
+                key: 'folder-long',
+                label: 'demo.dotcms.com/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                data: {
+                    id: 'folder-long',
+                    hostname: 'demo.dotcms.com',
+                    path: '/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [longFolder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const clip = queryInOverlay('tree-node-label-clip') as HTMLElement;
+            // `showOnEllipsis` compares offsetWidth against scrollWidth, and both are 0 in jsdom.
+            Object.defineProperty(clip, 'offsetWidth', { value: 100, configurable: true });
+            Object.defineProperty(clip, 'scrollWidth', { value: 400, configurable: true });
+
+            clip.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            tick(1000);
+
+            expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe(
+                'a-very-long-folder-name-that-will-not-fit-in-the-overlay'
+            );
+
+            clip.dispatchEvent(new MouseEvent('mouseleave'));
+            tick(1000);
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+        }));
+
         it('should show a spinner on the toggler while a folder expand request is pending', fakeAsync(() => {
             const parentFolder: TreeNodeItem = {
                 key: 'folder-parent',

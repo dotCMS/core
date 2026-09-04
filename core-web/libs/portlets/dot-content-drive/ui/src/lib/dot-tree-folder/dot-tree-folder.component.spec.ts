@@ -348,6 +348,31 @@ describe('DotTreeFolderComponent', () => {
             const treeElement = spectator.query('p-tree');
             expect(treeElement).toBeTruthy();
         });
+
+        it('should render its projected label inside the shared clipping element', () => {
+            // #37363: long names used to wrap onto several lines here. The shared tree owns the
+            // single-line clipping now, so this consumer's label sits inside its wrapper and the
+            // consumer keeps only what a row *says*.
+            const clips = spectator.queryAll(byTestId('tree-node-label-clip'));
+
+            expect(clips).toHaveLength(2);
+            expect(clips[0]?.querySelector('[data-testid="tree-node-label"]')).toBeTruthy();
+        });
+
+        it('should keep exactly one tree-node-label per row', () => {
+            // e2e guard: `contentDrive.page.ts` counts this test id.
+            expect(spectator.queryAll(byTestId('tree-node-label'))).toHaveLength(2);
+        });
+
+        it('should keep matching the drop-highlight selector with the label wrapper in place', () => {
+            // The highlight is `.p-tree-node-content:has(span.active)` in this consumer's SCSS.
+            // `:has()` matches descendants, so the wrapper should not break it — verified rather
+            // than assumed (research.md R7).
+            component.$activeDropNode.set(mockFolders[0].data);
+            spectator.detectChanges();
+
+            expect(spectator.query('.p-tree-node-content:has(span.active)')).toBeTruthy();
+        });
     });
 
     describe('Input Changes', () => {

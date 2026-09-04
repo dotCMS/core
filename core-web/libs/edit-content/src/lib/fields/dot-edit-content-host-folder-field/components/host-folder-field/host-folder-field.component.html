@@ -292,9 +292,9 @@
                         <ng-template #folderTreeNodeLabel let-node>
                             <!-- One line now: the two-line search row moved to the shared list, so
                                  this branch only ever renders a folder being browsed. -->
-                            <span class="block w-full min-w-0 truncate">
+                            <dot-truncated-label>
                                 {{ node.label | dotFolderName }}
-                            </span>
+                            </dot-truncated-label>
                         </ng-template>
                     </dot-folder-tree>
                 }

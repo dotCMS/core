@@ -25,6 +25,7 @@ _22 first-party · 6 external (symlinked)._
 | `speckit-clarify` | _legacy_ | — | Identify underspecified areas in the current feature spec by asking up to 5 highly targeted clarification questions and encoding answers back into the spec. | — |
 | `speckit-constitution` | _legacy_ | — | Create or update the project constitution from interactive or provided principle inputs, ensuring all dependent templates stay in sync. | — |
 | `speckit-converge` | _legacy_ | — | Assess the current codebase against the feature's spec, plan, and tasks, then append any remaining unbuilt work as new tasks to tasks.md so implement can compl… | — |
+| `speckit-docs-converge` | _legacy_ | — | Extend the convergence gap analysis to documentation drift — docs/, CLAUDE.md, openapi.yaml and REST annotations, spec/plan divergence, and Javadoc. Append-onl… | — |
 | `speckit-implement` | _legacy_ | — | Execute the implementation plan by processing and executing all tasks defined in tasks.md | — |
 | `speckit-plan` | _legacy_ | — | Execute the implementation planning workflow using the plan template to generate design artifacts. | — |
 | `speckit-specify` | _legacy_ | — | Create or update the feature specification from a natural language feature description. | — |

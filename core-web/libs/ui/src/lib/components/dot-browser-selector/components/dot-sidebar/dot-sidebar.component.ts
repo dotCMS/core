@@ -4,37 +4,33 @@ import { ChangeDetectionStrategy, Component, computed, input, output, signal } f
 
 import type { TreeNode } from 'primeng/api';
 import { SkeletonModule } from 'primeng/skeleton';
-import { Tooltip } from 'primeng/tooltip';
 import type { TreeNodeExpandEvent, TreeNodeSelectEvent } from 'primeng/types/tree';
 
 import { DotFolderNamePipe } from '../../../../pipes/dot-folder-name/dot-folder-name.pipe';
 import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
+import { DotTruncatedLabelComponent } from '../../../dot-truncated-label/dot-truncated-label.component';
 import { SYSTEM_HOST_ID } from '../../store/browser.store';
 
 @Component({
     selector: 'dot-sidebar',
-    imports: [DotFolderTreeComponent, DotFolderNamePipe, SkeletonModule, Tooltip],
+    imports: [
+        DotFolderTreeComponent,
+        DotFolderNamePipe,
+        SkeletonModule,
+        DotTruncatedLabelComponent
+    ],
     templateUrl: './dot-sidebar.component.html',
     styleUrls: ['./dot-sidebar.component.scss'],
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class DotSideBarComponent {
     /**
-     * Match Host Folder site tooltips: keep long hostnames on one line in the overlay.
-     */
-    protected readonly nodeTooltipPt = {
-        root: { style: { maxWidth: 'none' } },
-        text: { style: { whiteSpace: 'nowrap', wordBreak: 'normal' } }
-    };
-
-    /**
-     * Constrain tree node layout so label `truncate` can ellipsis instead of wrapping.
+     * Horizontal clipping for the panel itself. The node-level guards that let a long label
+     * shrink instead of widening its row belong to `dot-folder-tree` now (#37363).
      */
     protected readonly treePt = {
         root: { class: 'w-full h-full min-w-0 overflow-x-hidden' },
-        wrapper: { class: 'min-w-0 overflow-x-hidden' },
-        nodeContent: { class: 'min-w-0' },
-        nodeLabel: { class: 'min-w-0 overflow-hidden' }
+        wrapper: { class: 'min-w-0 overflow-x-hidden' }
     };
 
     /**
