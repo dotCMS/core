@@ -59,8 +59,11 @@ RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && jlink \
 # libpq-dev is purged here too because it depends on libssl-dev (purging
 # libssl-dev removes it), and the cleanup step below no longer lists it.
 # See https://tomcat.apache.org/download-native.cgi
+# downloads.apache.org only hosts the current release; older ones move to
+# archive.apache.org, so fall back there once ${TCNATIVE_VERSION} is superseded.
 RUN cd /tmp && \
-    wget -q "https://downloads.apache.org/tomcat/tomcat-connectors/native/${TCNATIVE_VERSION}/source/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" && \
+    (wget -q "https://downloads.apache.org/tomcat/tomcat-connectors/native/${TCNATIVE_VERSION}/source/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" || \
+     wget -q "https://archive.apache.org/dist/tomcat/tomcat-connectors/native/${TCNATIVE_VERSION}/source/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz") && \
     echo "${TCNATIVE_SHA512} *tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" | sha512sum -c - && \
     tar xzf "tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" && \
     cd "tomcat-native-${TCNATIVE_VERSION}-src/native" && \
