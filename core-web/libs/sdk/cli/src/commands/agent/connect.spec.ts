@@ -4,6 +4,13 @@ import { PassThrough } from 'node:stream';
 
 import { confirmConnection } from './connect';
 
+/** See registry.spec.ts — the `node:child_process` namespace is non-configurable under
+ *  ts-jest, so `jest.spyOn` on it throws. Replace the one function via a module factory. */
+jest.mock('node:child_process', () => ({
+    ...jest.requireActual('node:child_process'),
+    spawn: jest.fn()
+}));
+
 function fakeChild() {
     const child = new EventEmitter() as EventEmitter & Record<string, unknown>;
     child['stdin'] = new PassThrough();
@@ -15,14 +22,14 @@ function fakeChild() {
 
 describe('confirmConnection (FR-024a-e)', () => {
     let child: ReturnType<typeof fakeChild>;
-    let spawn: jest.SpyInstance;
+    const spawn = childProcess.spawn as unknown as jest.Mock;
 
     beforeEach(() => {
         child = fakeChild();
-        spawn = jest.spyOn(childProcess, 'spawn').mockReturnValue(child as never);
+        spawn.mockReturnValue(child as never);
     });
 
-    afterEach(() => { jest.restoreAllMocks(); });
+    afterEach(() => { jest.clearAllMocks(); });
 
     it('passes the token through the child ENVIRONMENT, never argv (FR-022)', async () => {
         void confirmConnection({ url: 'https://demo.dotcms.com', token: 'dot_secret_9999', timeoutMs: 50 });

@@ -1,0 +1,16 @@
+{
+  "servers": {
+    "dotcms": {
+      "type": "stdio",
+      "command": "npx",
+      "args": [
+        "-y",
+        "@dotcms/mcp-server@latest"
+      ],
+      "env": {
+        "DOTCMS_URL": "https://demo.dotcms.com",
+        "AUTH_TOKEN": "dot_testtoken_1234"
+      }
+    }
+  }
+}

@@ -2,6 +2,13 @@ import * as os from 'node:os';
 
 import { TARGETS, getTarget } from './registry';
 
+/**
+ * `jest.spyOn(os, 'homedir')` cannot work here: under ts-jest the `node:os` namespace object is
+ * non-configurable, so redefining a property on it throws. A module factory replaces just the
+ * one function and keeps the rest of the real module.
+ */
+jest.mock('node:os', () => ({ ...jest.requireActual('node:os'), homedir: jest.fn() }));
+
 import type { TargetId } from './types';
 
 const ALL: TargetId[] = ['claude-code', 'cursor', 'vscode', 'codex', 'antigravity', 'devin', 'opencode'];
@@ -9,15 +16,14 @@ const ALL: TargetId[] = ['claude-code', 'cursor', 'vscode', 'codex', 'antigravit
 function withPlatform(platform: NodeJS.Platform, home: string, fn: () => void) {
     const desc = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: platform, configurable: true });
-    const homeSpy = jest.spyOn(os, 'homedir').mockReturnValue(home);
+    (os.homedir as jest.Mock).mockReturnValue(home);
     try { fn(); } finally {
         if (desc) Object.defineProperty(process, 'platform', desc);
-        homeSpy.mockRestore();
     }
 }
 
 describe('target registry', () => {
-    afterEach(() => { jest.restoreAllMocks(); delete process.env['CODEX_HOME']; });
+    afterEach(() => { jest.clearAllMocks(); delete process.env['CODEX_HOME']; });
 
     it('ships exactly the seven supported editors (SC-006)', () => {
         expect(TARGETS.map((t) => t.id).sort()).toEqual([...ALL].sort());
