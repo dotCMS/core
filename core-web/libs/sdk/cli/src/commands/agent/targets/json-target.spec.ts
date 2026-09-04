@@ -23,7 +23,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
 
     it('writes the entry under the container key that editor reads', async () => {
         const written = await writeJsonTarget({
-            target: getTarget('vscode'), scope: 'folder', url: URL_, token: TOKEN
+            target: getTarget('vscode'), scope: 'folder', url: URL_, token: TOKEN, cwd: dir
         });
         const doc = await readJson(written);
         expect(doc['servers']).toBeDefined();
@@ -32,7 +32,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
 
     it('writes the standard stdio shape with the env var names the server reads', async () => {
         const written = await writeJsonTarget({
-            target: getTarget('cursor'), scope: 'folder', url: URL_, token: TOKEN
+            target: getTarget('cursor'), scope: 'folder', url: URL_, token: TOKEN, cwd: dir
         });
         const entry = (await readJson(written))['mcpServers']['dotcms'];
         expect(entry.type).toBe('stdio');
@@ -44,7 +44,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
 
     it("writes OpenCode's different shape, not merely a different key", async () => {
         const written = await writeJsonTarget({
-            target: getTarget('opencode'), scope: 'folder', url: URL_, token: TOKEN
+            target: getTarget('opencode'), scope: 'folder', url: URL_, token: TOKEN, cwd: dir
         });
         const entry = (await readJson(written))['mcp']['dotcms'];
         expect(entry.type).toBe('local');
@@ -55,7 +55,7 @@ describe('json target — fresh file (FR-019, FR-020)', () => {
 
     it('writes 2-space indented JSON', async () => {
         const written = await writeJsonTarget({
-            target: getTarget('cursor'), scope: 'folder', url: URL_, token: TOKEN
+            target: getTarget('cursor'), scope: 'folder', url: URL_, token: TOKEN, cwd: dir
         });
         expect(await fs.readFile(written, 'utf8')).toContain('\n  "mcpServers"');
     });

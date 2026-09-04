@@ -5,6 +5,7 @@ export default {
     transform: {
         '^.+\\.[tj]s$': ['ts-jest', { tsconfig: '<rootDir>/tsconfig.spec.json' }]
     },
+    setupFilesAfterEnv: ['<rootDir>/src/test-setup.ts'],
     moduleFileExtensions: ['ts', 'js', 'html'],
     // chalk 5 and ora are ESM-only. Jest skips node_modules by default, so they arrive
     // untransformed and fail to parse. create-app solves it the same way.

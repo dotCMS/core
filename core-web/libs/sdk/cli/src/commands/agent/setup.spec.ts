@@ -6,6 +6,19 @@ import { runSetup } from './setup';
 import * as skills from './skills';
 import * as registry from './targets/registry';
 
+/**
+ * setup.spec drives the WHOLE flow, including the skills install and the connection check —
+ * both of which spawn processes. Without this, `installSkills` really ran `npx skills add` and
+ * wrote skill trees into the repository while the suite stayed green.
+ */
+jest.mock('node:child_process', () => ({
+    ...jest.requireActual('node:child_process'),
+    spawn: jest.fn(() => {
+        throw new Error('spawn is not available in unit tests — mock it explicitly');
+    }),
+    spawnSync: jest.fn(() => ({ status: 0 }))
+}));
+
 const URL_ = 'https://demo.dotcms.com';
 
 /**
