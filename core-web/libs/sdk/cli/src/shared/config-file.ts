@@ -34,6 +34,40 @@ export async function readJsonDocument(file: string): Promise<Record<string, unk
     }
 }
 
+/**
+ * Does this file already carry our entry?
+ *
+ * Read-only and deliberately separate from the write: FR-017's confirmation has to happen
+ * before anything is modified, not as a rollback afterwards.
+ */
+export async function hasEntry(args: {
+    file: string;
+    containerKey: string;
+    entryKey: string;
+    parse?: (raw: string) => Record<string, unknown>;
+}): Promise<boolean> {
+    let doc: Record<string, unknown> | null;
+    if (args.parse) {
+        try {
+            const raw = await fs.readFile(args.file, 'utf8');
+            doc = raw.trim() === '' ? {} : args.parse(raw);
+        } catch {
+            return false;
+        }
+    } else {
+        doc = await readJsonDocument(args.file);
+    }
+    const container = (doc?.[args.containerKey] as Record<string, unknown> | undefined) ?? {};
+    return Object.prototype.hasOwnProperty.call(container, args.entryKey);
+}
+
+/** One place owns the file mode, so the JSON and TOML writers cannot drift apart on it. */
+export async function restrictFile(file: string): Promise<boolean> {
+    if (!CAN_RESTRICT) return false;
+    await fs.chmod(file, FILE_MODE);
+    return true;
+}
+
 export async function ensureDir(dir: string): Promise<void> {
     await fs.mkdir(dir, { recursive: true });
     if (CAN_RESTRICT) await fs.chmod(dir, DIR_MODE).catch(() => undefined);
@@ -62,10 +96,6 @@ export async function writeMerged(args: {
 
     await ensureDir(path.dirname(args.file));
     await fs.writeFile(args.file, `${JSON.stringify(next, null, 2)}\n`, 'utf8');
-    let permissionsApplied = false;
-    if (CAN_RESTRICT) {
-        await fs.chmod(args.file, FILE_MODE);
-        permissionsApplied = true;
-    }
+    const permissionsApplied = await restrictFile(args.file);
     return { path: args.file, permissionsApplied, replacedExisting };
 }

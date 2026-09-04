@@ -1,9 +1,14 @@
+import { parse as parseToml } from 'smol-toml';
+
 import { confirmConnection } from './connect';
+import { ENTRY_KEY } from './constants';
 import { installSkills } from './skills';
 import { writeJsonTargetDetailed } from './targets/json-target';
 import { getTarget, detectTargets, TARGET_IDS } from './targets/registry';
+import { writeTomlTarget } from './targets/toml-target';
 
 import { mintToken, verifyToken } from '../../shared/auth';
+import { CAN_RESTRICT, hasEntry } from '../../shared/config-file';
 import { ENV_KEYS, readEnv } from '../../shared/env';
 import { ConflictingAuthError, MissingInputError, UnknownTargetError } from '../../shared/errors';
 import { checkReachable, resolveUrl } from '../../shared/instance';
@@ -94,9 +99,37 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         if (!file || seen.has(file)) continue;
         seen.add(file);
         try {
-            const written = await writeJsonTargetDetailed({
-                target, scope, url, token: token.value, cwd: opts.cwd
+            // Ask BEFORE replacing (FR-017). --force and --yes skip the question, never the
+            // token verification that already happened above.
+            const isToml = target.format === 'toml';
+            const existing = await hasEntry({
+                file,
+                containerKey: target.containerKey,
+                entryKey: ENTRY_KEY,
+                parse: isToml ? (raw) => parseToml(raw) as Record<string, unknown> : undefined
             });
+            if (existing && !opts.force && !opts.yes && opts.confirmOverwrite) {
+                const proceed = await opts.confirmOverwrite(file);
+                if (!proceed) {
+                    outcomes.push({
+                        targetId: target.id, scope, path: file, result: 'skipped',
+                        reason: 'left the existing entry in place',
+                        permissionsApplied: false, skillsInstalled: 'no'
+                    });
+                    continue;
+                }
+            }
+
+            // The registry's `format` selects the writer; the flow branches on nothing
+            // target-specific (FR-013).
+            const written = isToml
+                ? {
+                      path: await writeTomlTarget({ target, scope, url, token: token.value, cwd: opts.cwd }),
+                      permissionsApplied: CAN_RESTRICT,
+                      replacedExisting: existing
+                  }
+                : await writeJsonTargetDetailed({ target, scope, url, token: token.value, cwd: opts.cwd });
+
             outcomes.push({
                 targetId: target.id,
                 scope,
