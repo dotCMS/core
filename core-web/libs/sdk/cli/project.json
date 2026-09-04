@@ -1,0 +1,89 @@
+{
+    "name": "sdk-cli",
+    "$schema": "../../../node_modules/nx/schemas/project-schema.json",
+    "sourceRoot": "libs/sdk/cli/src",
+    "projectType": "library",
+    "release": {
+        "version": {
+            "currentVersionResolver": "git-tag",
+            "fallbackCurrentVersionResolver": "disk",
+            "preserveLocalDependencyProtocols": false,
+            "manifestRootsToUpdate": [
+                "dist/{projectRoot}"
+            ]
+        }
+    },
+    "tags": [],
+    "targets": {
+        "build": {
+            "executor": "@nx/esbuild:esbuild",
+            "outputs": [
+                "{options.outputPath}"
+            ],
+            "defaultConfiguration": "production",
+            "options": {
+                "platform": "node",
+                "outputPath": "dist/libs/sdk/cli",
+                "format": [
+                    "esm"
+                ],
+                "bundle": true,
+                "thirdParty": true,
+                "external": [
+                    "ora",
+                    "chalk",
+                    "inquirer",
+                    "cfonts",
+                    "commander",
+                    "smol-toml"
+                ],
+                "main": "libs/sdk/cli/src/index.ts",
+                "tsConfig": "libs/sdk/cli/tsconfig.lib.json",
+                "assets": [
+                    {
+                        "input": "libs/sdk/cli",
+                        "glob": "README.md",
+                        "output": "."
+                    },
+                    {
+                        "input": "libs/sdk/cli",
+                        "glob": "package.json",
+                        "output": "."
+                    }
+                ],
+                "esbuildOptions": {
+                    "sourcemap": true,
+                    "outExtension": {
+                        ".js": ".js"
+                    }
+                }
+            },
+            "configurations": {
+                "production": {
+                    "esbuildOptions": {
+                        "sourcemap": false,
+                        "banner": {
+                            "js": "#!/usr/bin/env node"
+                        }
+                    }
+                }
+            }
+        },
+        "nx-release-publish": {
+            "options": {
+                "packageRoot": "dist/{projectRoot}"
+            }
+        },
+        "test": {
+            "options": {
+                "passWithNoTests": true
+            },
+            "configurations": {
+                "ci": {
+                    "ci": true,
+                    "coverage": true
+                }
+            }
+        }
+    }
+}

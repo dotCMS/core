@@ -1,0 +1,61 @@
+/**
+ * Shared vocabulary for a run. Types only — every module with behaviour lives behind a TDD
+ * gate in tasks.md. See specs/37390-dotcms-agent-setup/data-model.md.
+ */
+
+/**
+ * Where configuration is written.
+ *
+ * `folder` is the DEFAULT (FR-011), which inverts the intuitive choice deliberately: a folder's
+ * configuration names one dotCMS instance, and a second instance means a second folder. It also
+ * makes the credential-into-a-repo path the common one, which is why the `.gitignore` offer is
+ * load-bearing rather than a nicety.
+ */
+export type Scope = 'folder' | 'global';
+
+/** The only secret ever written into a configuration. */
+export interface Token {
+    value: string;
+    origin: 'minted' | 'supplied';
+    /**
+     * Set only by a successful `GET /api/v1/users/current`. No file is opened for writing
+     * while this is false (FR-008a) — the ordering guarantee the whole design rests on.
+     */
+    verified: boolean;
+}
+
+/** Per-target result. Drives the summary (FR-020b) and the exit code (FR-020c). */
+export interface TargetOutcome {
+    targetId: string;
+    scope: Scope;
+    /** The file written, or null when nothing was. */
+    path: string | null;
+    result: 'written' | 'replaced' | 'skipped' | 'failed';
+    /** Required when `failed`, and must be self-sufficient — there is no verbose mode (FR-032a). */
+    reason: string | null;
+    /** False on Windows, where chmod does not touch ACLs. The summary must say so rather than
+     *  imply protection (research R5). */
+    permissionsApplied: boolean;
+    /** `unverified` where the editor's skills location is unconfirmed — never reported as
+     *  installed (FR-027). */
+    skillsInstalled: 'yes' | 'no' | 'unverified';
+}
+
+/**
+ * Resolved inputs. `url` plus exactly one auth mode are the only REQUIRED inputs (FR-003i);
+ * everything else has a default and can never block a run (FR-003j).
+ */
+export interface RunOptions {
+    url: string;
+    user?: string;
+    password?: string;
+    authToken?: string;
+    agents?: string[];
+    scope: Scope;
+    skipMcp: boolean;
+    skipSkills: boolean;
+    skipVerify: boolean;
+    /** Confirmations ONLY. Never suppresses a prompt for a missing required input (FR-003l). */
+    yes: boolean;
+    force: boolean;
+}
