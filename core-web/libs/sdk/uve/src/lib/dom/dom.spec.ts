@@ -102,7 +102,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet1',
                         title: 'Contentlet 1',
                         inode: 'inode1',
-                        contentType: 'type1'
+                        contentType: 'type1',
+                        canEdit: true
                     }
                 })
             },
@@ -117,7 +118,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet2',
                         title: 'Contentlet 2',
                         inode: 'inode2',
-                        contentType: 'type2'
+                        contentType: 'type2',
+                        canEdit: true
                     }
                 })
             }
@@ -173,7 +175,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet1',
                         title: 'Contentlet 1',
                         inode: 'inode1',
-                        contentType: 'type1'
+                        contentType: 'type1',
+                        canEdit: true
                     }
                 })
             }
@@ -818,5 +821,64 @@ describe('readContentletDataset', () => {
             expect(result.dotStyleProperties).toEqual({ alignment: 'center' });
             expect(result.canEdit).toBe(true);
         });
+    });
+});
+
+describe('getDotCMSContentletsBound — edit permission (#37376)', () => {
+    // The bounds payload re-anchors the current selection whenever the iframe
+    // layout changes (opening or switching the right-hand panel resizes it).
+    // If it omits canEdit, the anchor overwrites the selection with a payload
+    // that has no permission and every gate silently reopens.
+    const containerRect = {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        top: 0,
+        right: 100,
+        bottom: 100,
+        left: 0
+    } as DOMRect;
+
+    const createContentlet = (dataset: Record<string, string>): HTMLDivElement => {
+        const contentlet = document.createElement('div');
+        contentlet.getBoundingClientRect = jest.fn(() => ({
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10
+        })) as unknown as () => DOMRect;
+        Object.keys(dataset).forEach((key) => contentlet.setAttribute(`data-${key}`, dataset[key]));
+
+        return contentlet;
+    };
+
+    const boundPermissionFor = (canEdit?: string): boolean => {
+        const dataset: Record<string, string> = {
+            'dot-container': JSON.stringify({ uuid: 'container1' }),
+            'dot-identifier': 'contentlet1',
+            'dot-title': 'Contentlet 1',
+            'dot-inode': 'inode1',
+            'dot-type': 'type1'
+        };
+        if (canEdit !== undefined) {
+            dataset['dot-can-edit'] = canEdit;
+        }
+
+        const [bound] = getDotCMSContentletsBound(containerRect, [createContentlet(dataset)]);
+
+        return JSON.parse(bound.payload).contentlet.canEdit;
+    };
+
+    it('should carry canEdit: false for a contentlet the user cannot edit', () => {
+        expect(boundPermissionFor('false')).toBe(false);
+    });
+
+    it('should carry canEdit: true when the user can edit', () => {
+        expect(boundPermissionFor('true')).toBe(true);
+    });
+
+    it('should carry canEdit: true when the attribute is absent', () => {
+        expect(boundPermissionFor(undefined)).toBe(true);
     });
 });
