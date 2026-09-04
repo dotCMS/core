@@ -1,5 +1,6 @@
-import type { TargetOutcome } from './types';
 import { renderSummary } from './ui';
+
+import type { TargetOutcome } from './types';
 
 const ok = (id: string): TargetOutcome => ({
     targetId: id, scope: 'folder', path: `/tmp/${id}.json`, result: 'written',

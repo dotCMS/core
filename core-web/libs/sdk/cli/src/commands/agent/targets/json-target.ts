@@ -1,5 +1,5 @@
-import type { Scope } from '../../../shared/types';
 import type { AgentTarget } from './types';
+import type { Scope } from '../../../shared/types';
 
 export interface WriteArgs {
     target: AgentTarget;

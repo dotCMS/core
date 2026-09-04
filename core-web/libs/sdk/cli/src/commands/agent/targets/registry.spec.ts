@@ -1,6 +1,7 @@
 import * as os from 'node:os';
 
 import { TARGETS, getTarget } from './registry';
+
 import type { TargetId } from './types';
 
 const ALL: TargetId[] = ['claude-code', 'cursor', 'vscode', 'codex', 'antigravity', 'devin', 'opencode'];
