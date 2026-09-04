@@ -1,12 +1,12 @@
-import axios from 'axios';
 import chalk from 'chalk';
 import { execa } from 'execa';
-import fs from 'fs-extra';
 
-import https from 'https';
 import net from 'net';
 import path from 'path';
 
+import { describeRequestFailure, type RetryReporter } from './fetch-retry';
+import { httpGet, isHttpError } from './http';
+import { REQUIRED_PORTS } from './ports';
 import { escapeShellPath } from './validation';
 
 import {
@@ -30,7 +30,7 @@ import type { SupportedFrontEndFrameworks } from '../types';
  * @param retries - Number of retry attempts (default: 5)
  * @param delay - Delay between retries in milliseconds (default: 5000)
  * @param requestTimeout - Per-request timeout in milliseconds (default: 10000)
- * @returns Promise resolving to axios response
+ * @returns Promise resolving to the HTTP response
  * @throws Error with detailed failure information after all retries exhausted
  *
  * @remarks
@@ -42,46 +42,35 @@ export async function fetchWithRetry(
     url: string,
     retries = 5,
     delay = 5000,
-    requestTimeout = 10000 // Per-request timeout in milliseconds
+    requestTimeout = 10000, // Per-request timeout in milliseconds
+    /**
+     * Where retry progress goes. Omitted means silent: this function must not write to stdout
+     * itself, because the caller usually has an `ora` spinner repainting the last line and
+     * concurrent writes tear it (AC-009).
+     */
+    onRetry?: RetryReporter
 ) {
     const errors: string[] = [];
     let lastError: unknown;
 
     for (let i = 0; i < retries; i++) {
         try {
-            return await axios.get(url, {
-                timeout: requestTimeout,
-                // Accept any 2xx status code as success (health endpoints may return 200, 201, 204, etc.)
-                validateStatus: (status) => status >= 200 && status < 300
-            });
+            // Any 2xx is success — the same rule isDotcmsRunning applies, so a 204 cannot be
+            // accepted here and rejected there. httpGet throws on anything else.
+            return await httpGet(url, { timeoutMs: requestTimeout });
         } catch (err) {
             lastError = err;
 
-            // Track error for debugging with more context
-            let errorMsg = '';
-            if (axios.isAxiosError(err)) {
-                if (err.code === 'ECONNREFUSED') {
-                    errorMsg = 'Connection refused - service not accepting connections';
-                } else if (err.code === 'ETIMEDOUT' || err.code === 'ECONNABORTED') {
-                    errorMsg = 'Connection timeout - service too slow or not responding';
-                } else if (err.response) {
-                    errorMsg = `HTTP ${err.response.status}: ${err.response.statusText}`;
-                } else {
-                    errorMsg = err.code || err.message;
-                }
-            } else {
-                errorMsg = String(err);
-            }
+            const errorMsg = describeRequestFailure(err);
 
             errors.push(`Attempt ${i + 1}: ${errorMsg}`);
 
             if (i === retries - 1) {
                 // Last attempt failed - provide comprehensive error
                 const errorType =
-                    axios.isAxiosError(lastError) && lastError.code === 'ECONNREFUSED'
+                    isHttpError(lastError) && lastError.code === 'ECONNREFUSED'
                         ? 'Connection Refused'
-                        : axios.isAxiosError(lastError) &&
-                            (lastError.code === 'ETIMEDOUT' || lastError.code === 'ECONNABORTED')
+                        : isHttpError(lastError) && lastError.code === 'ETIMEDOUT'
                           ? 'Timeout'
                           : 'Connection Failed';
 
@@ -108,11 +97,13 @@ export async function fetchWithRetry(
                 );
             }
 
-            console.log(
-                chalk.yellow(`⏳ dotCMS not ready (attempt ${i + 1}/${retries})`) +
-                    chalk.gray(` - ${errorMsg}`) +
-                    chalk.gray(` - Retrying in ${delay / 1000}s...`)
-            );
+            // Reported, never printed — see the onRetry doc above.
+            onRetry?.({
+                attempt: i + 1,
+                totalAttempts: retries,
+                reason: errorMsg,
+                nextDelayMs: delay
+            });
             await new Promise((r) => setTimeout(r, delay));
         }
     }
@@ -163,69 +154,84 @@ export function getDotcmsApisByBaseUrl(baseUrl: string) {
     };
 }
 
-/** Utility to download a file using https */
-export function downloadFile(url: string, dest: string): Promise<void> {
-    return new Promise((resolve, reject) => {
-        const file = fs.createWriteStream(dest);
+/**
+ * The connection details, rendered inside the Next Steps block.
+ *
+ * This used to be printed by the exit handler, which necessarily runs last — so a successful
+ * run showed its details after the summary that was supposed to contain them. It belongs here,
+ * where the reader is already looking.
+ */
+export function renderConnectionSummary(report: {
+    wroteEnv: boolean;
+    filename: string | null;
+    host: string;
+    siteId: string;
+    contents: string;
+}) {
+    if (report.wroteEnv && report.filename) {
+        console.log(
+            chalk.green(`   ✔ Your dotCMS credentials are already in ${report.filename}\n`) +
+                chalk.gray(`     host    : ${report.host}\n`) +
+                chalk.gray(`     site id : ${report.siteId}\n`)
+        );
 
-        https
-            .get(url, (response) => {
-                if (response.statusCode !== 200) {
-                    return reject(new Error(`Failed to download file: ${response.statusCode}`));
-                }
+        return;
+    }
 
-                response.pipe(file);
-                file.on('finish', () => file.close(() => resolve()));
-            })
-            .on('error', (err) => {
-                fs.unlink(dest);
-                reject(err);
-            });
-    });
+    // No file was written — the framework has none, one already exists, or the write failed.
+    console.log(
+        chalk.white(
+            report.filename
+                ? `   Add these to your ${report.filename}:\n`
+                : '   Configuration for your project:\n'
+        ) +
+            chalk.gray(
+                report.contents
+                    .trimEnd()
+                    .split('\n')
+                    .map((l) => `     ${l}`)
+                    .join('\n')
+            ) +
+            '\n'
+    );
 }
+
 export function finalStepsForNextjs({
     projectPath,
     urlDotCMSInstance,
-    siteId,
-    token
+    connection
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
-    siteId: string;
-    token: string;
+    connection?: Parameters<typeof renderConnectionSummary>[0] | null;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
     console.log(chalk.greenBright('📋 Next Steps:\n'));
 
+    if (connection) {
+        renderConnectionSummary(connection);
+    }
+
     console.log(
         chalk.white('1. Navigate to your project:\n') +
             chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
+    // No "create a .env and paste this" step: the CLI writes the file itself, and the exit
+    // handler confirms it. Telling the user to do it as well duplicated the token into
+    // scrollback and asked them to redo work that was already done.
     console.log(
-        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
-    );
-
-    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
-
-    console.log(chalk.white('──────────────────────────────────────────────\n'));
-    console.log(chalk.white(getEnvVariablesForNextJS(urlDotCMSInstance, siteId, token)));
-    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
-
-    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
-
-    console.log(
-        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
+        chalk.white('2. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
 
     console.log(
-        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+        chalk.white('3. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
     );
 
     console.log(
-        chalk.white('6. Edit your page content in dotCMS:\n') +
+        chalk.white('4. Edit your page content in dotCMS:\n') +
             chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
     );
 
@@ -239,46 +245,37 @@ export function finalStepsForNextjs({
 export function finalStepsForAstro({
     projectPath,
     urlDotCMSInstance,
-    siteId,
-    token
+    connection
 }: {
     projectPath: string;
     urlDotCMSInstance: string;
-    siteId: string;
-    token: string;
+    connection?: Parameters<typeof renderConnectionSummary>[0] | null;
 }) {
     console.log('\n');
     console.log(chalk.white('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n'));
 
     console.log(chalk.greenBright('📋 Next Steps:\n'));
 
+    if (connection) {
+        renderConnectionSummary(connection);
+    }
+
     console.log(
         chalk.white('1. Navigate to your project:\n') +
             chalk.gray(`   $ cd ${escapeShellPath(projectPath)}\n`)
     );
 
+    // The CLI writes the env file itself; see finalStepsForNextjs for why the paste step went.
     console.log(
-        chalk.white('2. Create your environment file:\n') + chalk.gray('   $ touch .env\n')
-    );
-
-    console.log(chalk.white('3. Add your dotCMS configuration to ') + chalk.green('.env') + ':\n');
-
-    console.log(chalk.white('──────────────────────────────────────────────\n'));
-    console.log(chalk.white(getEnvVariablesForAstro(urlDotCMSInstance, siteId, token)));
-    console.log(chalk.white('\n──────────────────────────────────────────────\n'));
-
-    console.log(chalk.gray('   💡 Tip: Copy the block above and paste into your .env file\n'));
-
-    console.log(
-        chalk.white('4. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
+        chalk.white('2. Start your development server:\n') + chalk.gray('   $ npm run dev\n')
     );
 
     console.log(
-        chalk.white('5. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
+        chalk.white('3. Open your browser:\n') + chalk.gray('   → http://localhost:3000\n')
     );
 
     console.log(
-        chalk.white('6. Edit your page content in dotCMS:\n') +
+        chalk.white('4. Edit your page content in dotCMS:\n') +
             chalk.gray(`   → ${urlDotCMSInstance}/dotAdmin/#/edit-page?url=/index\n`)
     );
 
@@ -346,6 +343,57 @@ export function finalStepsForAngularAndAngularSSR({
 
     console.log(chalk.blueBright('💬 Community: ') + chalk.white('https://community.dotcms.com\n'));
 }
+/**
+ * The environment a scaffolded project needs, in the shape that project actually reads.
+ *
+ * One owner for this, because there are two consumers — the block printed in the final steps
+ * and the `.env` written by the exit-state handler — and they MUST agree. They did not: the
+ * handler wrote a hand-rolled `DOTCMS_AUTH_TOKEN` while Next.js reads
+ * `NEXT_PUBLIC_DOTCMS_AUTH_TOKEN`, so the file looked right and the app could not authenticate.
+ * Found by running the CLI end to end (#37262, T054).
+ *
+ * `filename` is null for frameworks that do not use a dotenv file at all — Angular reads a
+ * TypeScript `environment` object, so writing `.env` there would be cargo-culting.
+ */
+export interface EnvFileSpec {
+    filename: string | null;
+    contents: string;
+}
+
+export function getEnvFileSpec(
+    framework: string | undefined,
+    host: string,
+    siteId: string,
+    token: string
+): EnvFileSpec {
+    if (framework === 'astro') {
+        return {
+            filename: '.env',
+            contents: dedentEnv(getEnvVariablesForAstro(host, siteId, token))
+        };
+    }
+
+    if (framework === 'angular' || framework === 'angular-ssr') {
+        return {
+            filename: null,
+            contents: dedentEnv(getEnvVariablesForAngular(host, siteId, token))
+        };
+    }
+
+    return { filename: '.env', contents: dedentEnv(getEnvVariablesForNextJS(host, siteId, token)) };
+}
+
+/** The builders below indent for terminal display; a written file must not carry that. */
+function dedentEnv(block: string): string {
+    return (
+        block
+            .split('\n')
+            .map((line) => line.trim())
+            .filter(Boolean)
+            .join('\n') + '\n'
+    );
+}
+
 function getEnvVariablesForNextJS(host: string, siteId: string, token: string) {
     return `
         NEXT_PUBLIC_DOTCMS_AUTH_TOKEN=${token}
@@ -483,23 +531,29 @@ function isPortAvailable(port: number): Promise<boolean> {
  * Checks if required dotCMS ports are available
  * @returns Result with true if all ports available, or error message with busy ports
  */
-export async function checkPortsAvailability(): Promise<Result<true, string>> {
-    const requiredPorts = [
-        { port: 8082, service: 'dotCMS HTTP' },
-        { port: 8443, service: 'dotCMS HTTPS' },
-        { port: 9200, service: 'Elasticsearch HTTP' },
-        { port: 9600, service: 'Elasticsearch Transport' }
-    ];
 
+/**
+ * Which of the required ports are taken.
+ *
+ * Separate from `checkPortsAvailability` because a busy 8082 is not automatically a conflict:
+ * it may be a dotCMS from a previous successful run, which `resolvePortConflict` can reuse
+ * rather than refuse (AC-006).
+ */
+export async function findBusyPorts(): Promise<{ port: number; service: string }[]> {
     const busyPorts: { port: number; service: string }[] = [];
 
-    // Check all ports
-    for (const { port, service } of requiredPorts) {
+    for (const { port, service } of REQUIRED_PORTS) {
         const available = await isPortAvailable(port);
         if (!available) {
             busyPorts.push({ port, service });
         }
     }
+
+    return busyPorts;
+}
+
+export async function checkPortsAvailability(): Promise<Result<true, string>> {
+    const busyPorts = await findBusyPorts();
 
     if (busyPorts.length > 0) {
         const errorMsg =
@@ -610,7 +664,9 @@ export async function getDockerDiagnostics(directory?: string): Promise<string> 
     diagnostics.push(chalk.gray('     docker logs <container-name>'));
     diagnostics.push(chalk.white('  3. Restart the containers:'));
     diagnostics.push(chalk.gray('     docker compose down && docker compose up -d'));
-    diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, 9200, and 9600 are available\n'));
+    // Must track REQUIRED_PORTS (utils/ports.ts): 9200/9600 are no longer published by the
+    // bundled stack, and 8090 now is.
+    diagnostics.push(chalk.white('  4. Check if ports 8082, 8443, and 8090 are available\n'));
 
     return diagnostics.join('\n');
 }

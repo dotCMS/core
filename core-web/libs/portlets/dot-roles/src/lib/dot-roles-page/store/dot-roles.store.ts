@@ -197,9 +197,6 @@ export const DotRolesStore = signalStore(
         /** True when the selected role can accept user grants. */
         canGrantUsers: computed(() => selectedRole()?.editUsers ?? true),
 
-        /** True when the selected role has children (folder icon in the header). */
-        selectedRoleIsParent: computed(() => (selectedRole()?.roleChildren?.length ?? 0) > 0),
-
         /** Selected role id used by consumers that need to correlate. */
         selectedIdForCorrelation: computed(() => selectedRoleId())
     })),

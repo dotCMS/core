@@ -99,9 +99,6 @@ Get up and running with the dotCMS MCP Server in minutes.
 
 The server runs on both **Node.js** (≥20) and **Bun** — the correct sandbox implementation is selected automatically at runtime.
 
-> [!NOTE]
-> This version is currently in **beta**. Once stable, replace `@dotcms/mcp-server@beta` with `@dotcms/mcp-server` in the examples below.
-
 ### Claude Desktop Setup
 
 Add the MCP server to your Claude Desktop configuration file. The configuration file location varies by operating system:
@@ -116,7 +113,7 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server@beta"],
+            "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -133,7 +130,7 @@ Add the MCP server to your Claude Desktop configuration file. The configuration 
     "mcpServers": {
         "dotcms": {
             "command": "bunx",
-            "args": ["@dotcms/mcp-server@beta"],
+            "args": ["@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -154,7 +151,7 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
     "mcpServers": {
         "dotcms": {
             "command": "npx",
-            "args": ["-y", "@dotcms/mcp-server@beta"],
+            "args": ["-y", "@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"
@@ -171,7 +168,7 @@ Add the MCP server to your Cursor configuration. Open Cursor Settings and naviga
     "mcpServers": {
         "dotcms": {
             "command": "bunx",
-            "args": ["@dotcms/mcp-server@beta"],
+            "args": ["@dotcms/mcp-server"],
             "env": {
                 "DOTCMS_URL": "https://your-dotcms-instance.com",
                 "AUTH_TOKEN": "your-api-token"

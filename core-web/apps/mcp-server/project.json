@@ -3,7 +3,7 @@
     "$schema": "../../node_modules/nx/schemas/project-schema.json",
     "sourceRoot": "apps/mcp-server/src",
     "projectType": "application",
-    "tags": ["skip:build"],
+    "tags": [],
     "targets": {
         "build": {
             "executor": "nx:run-commands",
@@ -16,6 +16,7 @@
             ],
             "options": {
                 "commands": [
+                    "node scripts/check-tools-dir.mjs",
                     "npx xmcp build",
                     "cp package.json ../../dist/apps/mcp-server/",
                     "cp README.md ../../dist/apps/mcp-server/"
@@ -40,6 +41,7 @@
         },
         "test": {
             "dependsOn": [
+                "build",
                 {
                     "target": "generate-spec",
                     "projects": ["sdk-ai"]
