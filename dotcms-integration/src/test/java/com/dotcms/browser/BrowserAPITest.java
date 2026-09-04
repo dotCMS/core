@@ -2568,29 +2568,31 @@ public class BrowserAPITest extends IntegrationTestBase {
         // 12 rows over 3 authors: hydrateContentletsInParallel's chunk size is
         // max(1, min(10, total/4)) = 3 for 12 rows, i.e. 4 parallel chunks — enough for at least
         // two chunks to need the same not-yet-cached author at the same time pre-fix.
+        //
+        // ContentletDataGen#user(User) is a no-op on this persist path: nextPersisted() with no
+        // categories calls the static checkin(Contentlet, IndexPolicy) overload
+        // (ContentletDataGen.java:317-326), which always uses AbstractDataGen's static `user`
+        // field (the system user) as the acting user, never the per-instance innerUser .user(...)
+        // sets. Every row would otherwise land with modUser=owner=system user -- one shared id
+        // that is also already cache-warm (AbstractDataGen's own static initializer resolves the
+        // system user), making the "resolves once per distinct author" assertion untestable.
+        // Reassign modUser/owner directly via SQL after creation instead.
         final List<Contentlet> created = new ArrayList<>();
+        final Set<String> expectedIds = new LinkedHashSet<>();
         for (int i = 0; i < 12; i++) {
             final User author = authors.get(i % authors.size());
-            created.add(new ContentletDataGen(contentType)
+            final Contentlet contentlet = new ContentletDataGen(contentType)
                     .setProperty("title", "warmup-" + i)
                     .host(host)
                     .folder(folder)
-                    .user(author)
                     .setPolicy(IndexPolicy.WAIT_FOR)
-                    .nextPersisted());
-        }
-
-        // Determine the REAL distinct set of modUser/owner ids the warm-up must resolve, from
-        // what was actually persisted — not assumed from the authors list, since owner assignment
-        // is not this test's concern and must not be guessed at.
-        final Set<String> expectedIds = new LinkedHashSet<>();
-        for (final Contentlet contentlet : created) {
-            if (UtilMethods.isSet(contentlet.getModUser())) {
-                expectedIds.add(contentlet.getModUser());
-            }
-            if (UtilMethods.isSet(contentlet.getOwner())) {
-                expectedIds.add(contentlet.getOwner());
-            }
+                    .nextPersisted();
+            new DotConnect().executeUpdate("update contentlet set mod_user = ? where inode = ?",
+                    author.getUserId(), contentlet.getInode());
+            new DotConnect().executeUpdate("update identifier set owner = ? where id = ?",
+                    author.getUserId(), contentlet.getIdentifier());
+            created.add(contentlet);
+            expectedIds.add(author.getUserId());
         }
         assertFalse("Expected at least one distinct author id to warm up", expectedIds.isEmpty());
 
@@ -2641,7 +2643,6 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setProperty("title", "orphan-owned")
                 .host(host)
                 .folder(folder)
-                .user(orphan)
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
         final Contentlet healthyRow = new ContentletDataGen(contentType)
@@ -2651,6 +2652,11 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .setPolicy(IndexPolicy.WAIT_FOR)
                 .nextPersisted();
 
+        // ContentletDataGen#user(User) is a no-op on this persist path (see the warm-up test's
+        // comment above for why) — reassign modUser directly via SQL instead, before orphaning it.
+        new DotConnect().executeUpdate("update contentlet set mod_user = ? where inode = ?",
+                orphan.getUserId(), orphanedRow.getInode());
+
         // Orphan the user AFTER authoring content with it, so modUser still points at an id that
         // no longer resolves in user_ — exactly the "deleted user still referenced" scenario.
         // Deliberately NOT using UserAPI#delete: every overload reassigns the deleted user's
@@ -2658,7 +2664,22 @@ public class BrowserAPITest extends IntegrationTestBase {
         // ContentletAPI#updateUserReferences), which would leave no orphan reference at all —
         // the opposite of what this test needs. A raw SQL delete reproduces the real-world
         // failure mode (a user row removed without reassigning what it authored).
-        new DotConnect().executeUpdate("delete from user_ where userid = ?", orphan.getUserId());
+        //
+        // Two FKs stand in the way of a direct delete, unlike a genuinely orphaned production
+        // row (created by a path -- e.g. cross-environment content push -- that doesn't enforce
+        // this constraint against the destination's user_ table): users_cms_roles' fkusers_cms_
+        // roles2 (role assignment) and contentlet's fk_user_contentlet (the reference this test
+        // needs to keep). Postgres registers the "no referencing rows left" check trigger for a
+        // DELETE on the *parent* table (user_), not on contentlet -- disable triggers there for
+        // just this delete, scoped with try/finally so it is always restored even if the delete
+        // or an assertion below fails.
+        new DotConnect().executeUpdate("delete from users_cms_roles where user_id = ?", orphan.getUserId());
+        new DotConnect().executeUpdate("alter table user_ disable trigger all");
+        try {
+            new DotConnect().executeUpdate("delete from user_ where userid = ?", orphan.getUserId());
+        } finally {
+            new DotConnect().executeUpdate("alter table user_ enable trigger all");
+        }
 
         final BrowserQuery browserQuery = BrowserQuery.builder()
                 .showContent(true)
