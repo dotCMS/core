@@ -165,6 +165,17 @@ describe('DotTreeFolderComponent', () => {
         it('should set scrollHeight to auto', () => {
             expect(treeComponent.scrollHeight).toBe('auto');
         });
+
+        it('should enable folder icons on the shared tree', () => {
+            // The #36848 regression: Content Drive's folder rows lost their folder icon when the
+            // four trees were unified. The icon is owned by the shared component and opted into
+            // here, not reimplemented in this portlet.
+            expect(spectator.query(DotFolderTreeComponent)?.$showFolderIcons()).toBe(true);
+        });
+
+        it('should render a folder icon on each folder row', () => {
+            expect(spectator.queryAll(byTestId('tree-node-folder-icon')).length).toBeGreaterThan(0);
+        });
     });
 
     describe('selectedNode Input', () => {
