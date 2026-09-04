@@ -56,6 +56,7 @@ it is visible on every page the affected user opens in the editor.
 - Q: How many message strings should explain the missing permission? → A: **One shared key** — `uve.contentlet.no.edit.permission` — used by the pencil tooltip, the Quick Edit tooltip, the read-only panel notice and the inline-edit toast. Keeps a single translation item and one consistent wording; the copy must therefore read acceptably in all four placements.
 - Q: Should a Playwright e2e test be part of this change? → A: **No.** Unit and component tests cover every acceptance criterion, plus the manual scenario in `quickstart.md`. No limited-permission user fixture exists and building one (user, role, content type / instance permission split, page) exceeds the fix. Recorded as the explicit developer decision required by Constitution Principle V; a reusable permissions e2e fixture should be tracked separately.
 - Q: Should a refused inline-edit click be silent? → A: **No — show a toast.** A click that does nothing reads as a broken editor and turns into a support ticket. The refusal must say why, reusing the shared permission message.
+- Q: Should headless / SDK-rendered pages be covered after all? → A: **Yes — scope amended 2026-09-04, after the spec was approved.** Two findings changed the calculus. First, the permission is *already computed* per contentlet at `PageRenderUtil:338` for the Velocity `$EDIT_CONTENT_PERMISSION` variable and simply discarded for JSON, so surfacing it costs no extra permission checks. Second, GraphQL exposes contentlets through the `_map` JSON scalar (`ContentFields:89` → `ContentMapDataFetcher`), which the client SDK spreads verbatim — so one server-side line reaches **both** `/api/v1/page/json` and GraphQL with no schema change and no SDK query change. The developer chose to keep this in the same PR rather than a follow-up, because review capacity is the scarce resource. **This spec amendment requires re-approval.**
 - Q: Does inline editing include the Block Editor? → A: **Yes, and it is a separate event.** Two distinct paths must both be gated: plain/WYSIWYG inline editing, a direct click on a `[data-mode]` element handled in the editor component; and Block Editor inline editing, where the SDK binds a click on `[data-block-editor-content]` and posts `INIT_INLINE_EDITING` with type `BLOCK_EDITOR`, handled in the UVE actions handler. Gating only the first would leave block-editor fields editable.
 
 ## Reproduction *(mandatory)*
@@ -172,6 +173,10 @@ UI that consumed it did not survive the editor rewrite.
   Both resolve the owning `[data-dot-object="contentlet"]` wrapper to read the permission.
 - Prevent each action from being dispatched even if its disabled control is bypassed (stale toolbar
   bounds, programmatic emit), so no guarantee rests on styling alone.
+- **Headless / SDK-rendered pages** *(amended scope)*: surface the already-computed permission on
+  the contentlet map so it reaches `/api/v1/page/json` and GraphQL `_map`, emit it as
+  `data-dot-can-edit` from the SDK's headless attribute builder, and bind it in the framework
+  wrappers. All four gates then work on headless pages exactly as they do on traditional ones.
 - Regenerate and commit the `dot-uve.js` bundle that ships the SDK change.
 
 **Explicitly out of scope / non-goals**:
@@ -184,8 +189,10 @@ UI that consumed it did not survive the editor rewrite.
 - **Extending the Page API (`/api/v1/page/*`) contract** to carry per-contentlet permissions. That
   is the durable fix for headless pages, and it is an API-contract change deserving its own issue
   and rollback-safety review.
-- **Headless and SDK-rendered pages** whose markup does not emit the permission attribute. They keep
-  today's behavior; the fix must not regress them.
+- **A typed `canEdit` field on the contentlet GraphQL type.** The SDK's page query has two variants
+  (`client/page/utils.ts:150`): the `_map` branch carries the permission for free, while the
+  named-field branch (`DEFAULT_PAGE_CONTENTLETS_CONTENT`) would need both a new `ContentFields`
+  entry and a query edit. Deferred until something actually needs that variant.
 - **The legacy script-injection client** (`FEATURE_FLAG_UVE_LEGACY_SCRIPT_INJECTION`, off by
   default), which is not updated.
 - **Refusing the save call server-side from the client.** `ESContentletAPIImpl.checkin` already
@@ -237,12 +244,22 @@ UI that consumed it did not survive the editor rewrite.
 - **AC-004**: A user who holds edit permission sees the pencil and Quick Edit enabled, opens the
   content editor exactly as before — including the multi-page "Edit All Pages / Copy and Edit"
   decision — and can still edit fields inline, in both inline paths.
-- **AC-005**: A contentlet whose markup does not carry the permission attribute — headless or
-  SDK-rendered pages — keeps every affordance working. Absent, empty and malformed attribute values
-  all resolve to allowed.
+- **AC-005**: A contentlet whose markup does not carry the permission attribute keeps every
+  affordance working. Absent, empty and malformed attribute values all resolve to allowed. This
+  still matters after the amended scope: a customer app on an older SDK, or any page the wrappers
+  do not stamp, must degrade to today's behavior rather than lock the editor.
 - **AC-006**: An empty container still shows its add-content affordances and is unaffected.
 - **AC-010**: Structural page actions — delete, move/drag, add content, style edit — remain fully
   available on a restricted contentlet for a user who can edit the page.
+
+### Headless coverage *(amended scope)*
+
+- **AC-011**: A contentlet returned by `GET /api/v1/page/json` carries a `canEdit` boolean
+  reflecting the requesting user's EDIT permission on that contentlet instance.
+- **AC-012**: The same value reaches a GraphQL page query through the contentlet's `_map`, with no
+  change to the SDK's query.
+- **AC-013**: A headless page rendered by the SDK stamps `data-dot-can-edit` on its contentlet
+  wrappers, and all four gates behave on it as they do on a traditional page.
 
 ### Shipping
 
