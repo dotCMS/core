@@ -78,7 +78,7 @@ public class CubeJSClientTest {
             final CubeJSClient cubeClient =  new CubeJSClient(
                 String.format("http://%s:%s", cubeServerIp, cubeJsServerPort),
                 getAccessToken());
-            final CubeJSResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
+            final AnalyticsResultSet cubeJSResultSet = cubeClient.send(cubeJSQuery);
 
             mockhttpServer.validate();
             assertEquals(3, cubeJSResultSet.size());
@@ -101,7 +101,7 @@ public class CubeJSClientTest {
     /**
      * Method to test: {@link CubeJSClient#send(CubeJSQuery)}
      * When: Send a request to Cube JS but the CubeJS Server is down
-     * Should: Return an empty {@lik CubeJSResultSet} Also it print in the console the follow:
+     * Should: Return an empty {@link AnalyticsResultSet} Also it print in the console the follow:
      * <pre>
      * Connection attempts failed Connect to 127.0.0.1:8000 [/127.0.0.1] failed: Connection refused (Connection refused)
      * </pre>

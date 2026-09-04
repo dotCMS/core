@@ -104,4 +104,11 @@ public interface FeatureFlagName {
      * Frontend equivalent: {@code FeaturedFlags.FEATURE_FLAG_DOTAI_CONFIG_UI}.
      */
     String FEATURE_FLAG_DOTAI_CONFIG_UI = "FEATURE_FLAG_DOTAI_CONFIG_UI";
+
+    /**
+     * Routes experiment result queries to the CAEM analytics backend instead of CubeJS.
+     * Off by default; enable only after CAEM endpoints (#37223, #37224) are deployed and
+     * customer data has been migrated to CAEM.
+     */
+    String FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS = "FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS";
 }

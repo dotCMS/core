@@ -8,13 +8,13 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * Represent a Result from running a CubeJS Query in a CubeJS Server.
+ * Represent a Result from running a query against an analytics backend.
  */
-public class CubeJSResultSetImpl implements CubeJSResultSet {
+public class AnalyticsResultSetImpl implements AnalyticsResultSet {
 
     private final List<ResultSetItem> data;
 
-    public CubeJSResultSetImpl(final List<Map<String, Object>> data){
+    public AnalyticsResultSetImpl(final List<Map<String, Object>> data){
         this.data = data.stream().map(ResultSetItem::new).collect(Collectors.toList());
     }
 
