@@ -2847,6 +2847,107 @@ describe('EditEmaEditorComponent', () => {
                         expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
                     });
                 });
+
+                describe('contentlet edit permission (#37376)', () => {
+                    const DENIED_PAYLOAD: ActionPayload = {
+                        ...EDIT_ACTION_PAYLOAD_MOCK,
+                        contentlet: {
+                            ...EDIT_ACTION_PAYLOAD_MOCK.contentlet,
+                            canEdit: false
+                        }
+                    };
+
+                    const DENIED_MULTI_PAGE_PAYLOAD: ActionPayload = {
+                        ...MULTI_PAGE_PAYLOAD,
+                        contentlet: {
+                            ...MULTI_PAGE_PAYLOAD.contentlet,
+                            canEdit: false
+                        }
+                    };
+
+                    it('should not open any editor for a contentlet the user cannot edit', () => {
+                        // Mock the content type so the permitted path WOULD open
+                        // the legacy dialog synchronously. Without this the test
+                        // would pass vacuously, proving nothing about the guard.
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+                        const dialogServiceOpenSpy = jest.spyOn(
+                            spectator.inject(DialogService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](DENIED_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).not.toHaveBeenCalled();
+                        expect(dialogServiceOpenSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should not open the copy decision modal for a denied multi-page contentlet', () => {
+                        // The modal is the first thing the multi-page path does,
+                        // so it must never be reached — the user cannot edit the
+                        // original nor be offered a copy of it here.
+                        const copyModalSpy = jest.spyOn(
+                            spectator.inject(DotCopyContentModalService),
+                            'open'
+                        );
+
+                        spectator.component['handleEditWithCopyDecision'](
+                            DENIED_MULTI_PAGE_PAYLOAD
+                        );
+                        spectator.detectChanges();
+
+                        expect(copyModalSpy).not.toHaveBeenCalled();
+                    });
+
+                    it('should still open the copy decision modal when the user can edit', () => {
+                        const copyModalSpy = jest
+                            .spyOn(spectator.inject(DotCopyContentModalService), 'open')
+                            .mockReturnValue(of({ shouldCopy: false }));
+
+                        spectator.component['handleEditWithCopyDecision'](MULTI_PAGE_PAYLOAD);
+                        spectator.detectChanges();
+
+                        expect(copyModalSpy).toHaveBeenCalled();
+                    });
+
+                    it('should still open the editor when the permission field is absent', () => {
+                        // Headless payloads carry no canEdit; fail open.
+                        const dotContentTypeService =
+                            spectator.debugElement.injector.get(DotContentTypeService);
+                        jest.spyOn(dotContentTypeService, 'getContentType').mockReturnValue(
+                            of(
+                                createFakeContentType({
+                                    variable: 'test',
+                                    name: 'Test',
+                                    metadata: {
+                                        [FeaturedFlags.FEATURE_FLAG_CONTENT_EDITOR2_ENABLED]: false
+                                    }
+                                })
+                            )
+                        );
+                        const dialogSpy = jest.spyOn(spectator.component.dialog, 'editContentlet');
+
+                        spectator.component['handleEditWithCopyDecision'](
+                            EDIT_ACTION_PAYLOAD_MOCK
+                        );
+                        spectator.detectChanges();
+
+                        expect(dialogSpy).toHaveBeenCalled();
+                    });
+                });
             });
 
             describe('placeItem - content-type drag', () => {

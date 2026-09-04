@@ -973,4 +973,128 @@ describe('DotUveContentletToolsComponent', () => {
             expect(spectator.component.isSameContentlet(MOCK_CONTENTLET_AREA, null)).toBe(false);
         });
     });
+
+    describe('Contentlet edit permission (#37376)', () => {
+        /**
+         * Build a hovered area whose contentlet carries an explicit `canEdit`.
+         * Passing `undefined` omits the field entirely, which is what headless
+         * and SDK-rendered pages produce.
+         */
+        const areaWithPermission = (canEdit: boolean | undefined): ContentletArea => ({
+            ...MOCK_CONTENTLET_AREA,
+            payload: {
+                ...MOCK_CONTENTLET_AREA.payload,
+                contentlet: {
+                    ...(MOCK_CONTENTLET_AREA.payload.contentlet as ContentletPayload),
+                    ...(canEdit === undefined ? {} : { canEdit })
+                }
+            }
+        });
+
+        const setPermission = (canEdit: boolean | undefined) => {
+            const area = areaWithPermission(canEdit);
+            spectator.setInput('contentletArea', area);
+            editorSelected.set(toSelected(area));
+            spectator.detectChanges();
+        };
+
+        const editButton = () =>
+            (spectator.query(byTestId('hover-edit-button')) as HTMLElement)?.querySelector(
+                'button'
+            );
+
+        describe('edit button disabled state', () => {
+            it('should disable the edit button when canEdit is false', () => {
+                setPermission(false);
+
+                expect(editButton()?.disabled).toBe(true);
+            });
+
+            it('should enable the edit button when canEdit is true', () => {
+                setPermission(true);
+
+                expect(editButton()?.disabled).toBe(false);
+            });
+
+            it('should enable the edit button when canEdit is absent', () => {
+                // Headless pages never emit `data-dot-can-edit`; the gate must
+                // fail open or every pencil on them would be greyed out.
+                setPermission(undefined);
+
+                expect(editButton()?.disabled).toBe(false);
+            });
+        });
+
+        describe('edit button tooltip', () => {
+            it('should explain the missing permission when denied', () => {
+                setPermission(false);
+
+                expect(spectator.component['editButtonTooltip']()).toBe(
+                    'uve.contentlet.no.edit.permission'
+                );
+            });
+
+            it('should show the normal edit label when allowed', () => {
+                setPermission(true);
+
+                expect(spectator.component['editButtonTooltip']()).toBe('uve.tooltip.edit.full');
+            });
+        });
+
+        describe('collapsed overflow menu', () => {
+            const editMenuItem = () =>
+                spectator.component.actionsMenuItems().find((item) => item.icon === 'pi pi-pencil');
+
+            it('should disable the Edit entry when canEdit is false', () => {
+                setPermission(false);
+
+                expect(editMenuItem()?.disabled).toBe(true);
+            });
+
+            it('should keep the Edit entry enabled when canEdit is true', () => {
+                setPermission(true);
+
+                expect(editMenuItem()?.disabled).toBe(false);
+            });
+        });
+
+        describe('structural page actions stay ungated', () => {
+            // A user allowed into the page editor may change the page's
+            // composition. Contentlet permission governs the contentlet's
+            // content, and nothing else.
+            it('should keep the delete button enabled for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                const deleteButton = (
+                    spectator.query(byTestId('hover-delete-button')) as HTMLElement
+                )?.querySelector('button');
+
+                expect(deleteButton?.disabled).toBe(false);
+            });
+
+            it('should keep the drag handle rendered for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                expect(spectator.query(byTestId('hover-drag-button'))).toBeTruthy();
+            });
+
+            it('should keep the add-content buttons rendered for a contentlet the user cannot edit', () => {
+                setPermission(false);
+
+                expect(spectator.query(byTestId('hover-add-top-button'))).toBeTruthy();
+            });
+        });
+
+        describe('empty container', () => {
+            it('should not gate an empty container, whose sentinel carries no permission', () => {
+                spectator.setInput('contentletArea', MOCK_EMPTY_CONTENTLET_AREA);
+                editorSelected.set(toSelected(MOCK_EMPTY_CONTENTLET_AREA));
+                spectator.detectChanges();
+
+                expect(spectator.component.isContainerEmpty()).toBe(true);
+                expect(spectator.component['canEditContentlet']()).toBe(true);
+            });
+        });
+    });
+
 });
