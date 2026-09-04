@@ -29,6 +29,9 @@ A developer who has just been handed a dotCMS instance wants their AI coding age
 4a. **Given** a developer supplies an expired or revoked credential directly instead of minting one, **When** setup verifies it, **Then** it fails the same way, and no configuration file for any editor has been created or modified.
 5. **Given** the developer has several supported editors installed, **When** setup detects them, **Then** all detected editors are offered pre-selected and the developer can deselect any of them before anything is written.
 6. **Given** setup completes, **When** the summary is printed, **Then** it lists each selected editor with its scope, the file written, and the outcome — and the next action the developer should take.
+7. **Given** the configurations have been written, **When** setup confirms the agent connects, **Then** it starts the configured server, reports that it responded with its tools, and only then declares the run ready to use.
+8. **Given** the configurations are written correctly but the server does not start — it cannot be fetched, or the runtime is unsupported — **When** confirmation runs, **Then** setup reports that distinctly from a credential failure, leaves the written configurations in place, does not claim the run is ready, and exits non-zero.
+9. **Given** three editors are selected and the second cannot be written because its file is not writable, **When** setup runs, **Then** the first and third are still configured, the summary marks the second as failed with the reason, and the command exits non-zero.
 
 ---
 
@@ -120,6 +123,8 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - An editor supports the server configuration but its skills location is unconfirmed — the summary must not claim the skills landed for that editor.
 - The instance is reachable but returns an unexpected response shape — the failure must name what was expected, not surface a parsing error.
 - Setup is interrupted midway — no configuration file may be left in a partially written or unparseable state.
+- An editor is running while setup writes its configuration, and rewrites that file itself afterwards — setup's entry can be lost through no fault of its own. See Assumptions: this is a documented limitation, not something setup attempts to prevent.
+- The machine is offline, or the server package cannot be fetched, at the moment the connection is confirmed — the configurations are already written and correct, so this must read as "written, but the server did not start", never as a credential problem or as a silent success.
 - The developer supplies an instance address with a trailing slash, without a scheme, or otherwise loosely formatted — it must be normalized rather than rejected or written through verbatim.
 
 ## Requirements *(mandatory)*
@@ -157,7 +162,7 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-010**: Setup MUST detect which supported editors are present on the machine and pre-select them, while allowing the developer to select any supported editor whether detected or not.
 - **FR-011**: Setup MUST offer two scopes — the developer's user account, and the current project — and MUST default to the user account.
 - **FR-012**: Setup MUST resolve each editor's configuration location correctly for the operating system it is running on, and MUST honor any documented environment override an editor provides for its own configuration location.
-- **FR-013**: Adding support for a further editor MUST require only describing that editor — its identifier, name, detection, locations, and configuration shape — and MUST NOT require changes to the setup, status, or removal flows.
+- **FR-013** *(structural constraint — verified by code review, not by test)*: Adding support for a further editor MUST require only describing that editor — its identifier, name, detection, locations, and configuration shape — and MUST NOT require changes to the setup, status, or removal flows. This constrains internal structure rather than observable behavior; the plan phase owns how it is met.
 
 **Writing the configuration**
 
@@ -168,6 +173,10 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-018**: When an existing configuration file cannot be parsed, setup MUST fail for that editor with a message naming the file and the remedy, MUST leave the file untouched, and MUST NOT overwrite it.
 - **FR-019**: Setup MUST create missing configuration files and their parent directories.
 - **FR-020**: The configuration entry MUST point the editor at the published dotCMS MCP server and supply it the instance address and credential under the exact environment variable names that server reads.
+- **FR-020a**: When writing to one target fails, setup MUST continue with the remaining targets rather than aborting. Every target that can be written MUST be written.
+- **FR-020b**: The summary MUST report a per-target outcome — written, skipped, or failed with the reason — so that a partially configured machine is legible rather than ambiguous.
+- **FR-020c**: Setup MUST exit non-zero when any selected target failed, even if others succeeded, so that scripted and CI callers detect a partial result. It MUST exit zero only when every selected target succeeded.
+- **FR-020d**: A failure writing one target MUST NOT roll back targets already written. Configurations already in place are left working, and the summary names exactly which succeeded.
 
 **Handling the credential**
 
@@ -175,7 +184,16 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-022**: The credential MUST never be written to logs or console output in full, MUST never be passed as an argument to any sub-process, and MUST be truncated wherever it has to be shown.
 - **FR-022a**: The password MUST be used only to mint a token and MUST NOT be persisted to any file, echoed at any point, or included in any summary or error message. Setup MUST NOT write the password into an editor's configuration under any circumstances — the only credential ever written is a token, whether minted or supplied.
 - **FR-023**: When the project scope is chosen, setup MUST name every file it placed a credential into and MUST offer to exclude those files from version control, defaulting to yes.
+- **FR-023a**: When the project scope is chosen in a directory that is not under version control, setup MUST still name the files it wrote a credential into and MUST warn that they are unprotected, rather than silently omitting the exclusion step.
 - **FR-024**: When the project-scoped file for an editor is one that is conventionally committed to version control, setup MUST warn explicitly that writing a credential there risks publishing it.
+
+**Confirming the agent actually connects**
+
+- **FR-024a**: After the configurations are written, setup MUST confirm that the configured MCP server actually starts and responds — launching it exactly as the written configuration specifies, with the same instance address and credential, and confirming it reports its available tools. Verifying the credential (FR-008) is not sufficient: it proves the instance accepts the token, not that the developer's agent can run the server.
+- **FR-024b**: This confirmation MUST run by default. It MUST be skippable by an explicit option for offline or air-gapped use, and MUST be skipped implicitly when configuration writing was skipped.
+- **FR-024c**: When the server does not start or does not respond, setup MUST report that outcome distinctly from success and distinctly from a credential failure — the configuration was written correctly and the server did not come up — MUST name the likely causes it can distinguish (the server package could not be fetched, the runtime is unsupported, the server exited), and MUST exit non-zero.
+- **FR-024d**: A failed confirmation MUST NOT remove or roll back the configurations already written, since they may be correct and the failure transient.
+- **FR-024e**: The summary MUST state the confirmation result explicitly, and MUST NOT report the run as ready to use when confirmation did not succeed.
 
 **Installing the skills**
 
@@ -208,13 +226,15 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 
 ### Measurable Outcomes
 
-- **SC-001**: A developer with a supported editor installed and no prior dotCMS agent configuration goes from nothing to a connected agent by answering no more than three questions, with no manual file editing at any point.
-- **SC-002**: That same journey completes in under three minutes on a reachable instance, replacing a four-step manual procedure that today requires reading documentation.
+- **SC-001** *(design intent, not an automated gate)*: A developer with a supported editor installed and no prior dotCMS agent configuration goes from nothing to a connected agent by answering no more than three questions, with no manual file editing at any point.
+- **SC-002** *(design intent, not an automated gate)*: That same journey completes in under three minutes on a reachable instance, replacing a four-step manual procedure that today requires reading documentation. Both SC-001 and SC-002 are targets to design toward and to check by hand during acceptance; neither is machine-verifiable, and neither should be treated as a blocking test.
+- **SC-002a**: A successful run ends with the configured MCP server confirmed started and reporting its tools — the run proves the agent connects, not merely that the credential is valid.
 - **SC-003**: Across every supported editor, 100% of pre-existing configuration entries survive a setup run unchanged.
 - **SC-004**: 100% of files the tool writes a credential into are restricted to their owner.
 - **SC-005**: A known credential value never appears in full in captured output, in any log, or in any process listing, across every command the tool offers.
 - **SC-005a**: A known password value never appears in captured output, in any log, or in any file the tool writes — including when it was supplied as a command-line option.
-- **SC-006**: All seven named editors are supported at ship, and adding an eighth requires describing only that editor.
+- **SC-006**: All seven named editors are supported at ship.
+- **SC-006a**: A run that fails on one target still configures every other selected target, reports the failure per target, and exits non-zero.
 - **SC-007**: For every supported editor, status reports exactly what setup wrote — no drift between what is written and what is read back.
 - **SC-008**: After removal, every touched file matches its pre-setup contents.
 - **SC-009**: Every failure path the tool can reach produces a message naming the file, address, or editor involved; no failure path produces an unhandled internal error.
@@ -240,5 +260,6 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **Credentials are written literally, by design.** No operating-system keychain integration is in scope; the mitigation is restrictive file permissions, truncation in output, never passing the credential through process arguments, and version-control exclusion for project scope.
 - **Accepting a password as a command-line option is a deliberate, qualified trade-off.** It is required for scripted and provisioning use, but a value passed that way is visible in the machine's process list for the lifetime of the process and is recorded in shell history — the same class of exposure the tool otherwise refuses for the token. It is accepted because the alternative, forcing an interactive prompt, would make the non-interactive journey impossible. The mitigations are that an environment variable is offered for every secret-bearing option and documented as preferred (FR-003e), the risk is stated in the help text rather than left for the developer to discover (FR-003f), the password is never persisted or echoed (FR-022a), and the long-lived artifact that actually reaches disk is the minted credential rather than the password.
 - **Minted credentials are long-lived.** Setup mints a token with a one-year lifetime and a label identifying its origin. Renewal is out of scope; status surfaces that a credential has stopped working, and re-running setup replaces it.
+- **Concurrent writes are a documented limitation, not a solved problem.** An editor that is running may rewrite its own configuration file and drop setup's entry, and two setup runs at once could lose one another's writes. No file locking or coordination is specified. The mitigation is that `agent status` shows the true current state and re-running setup is cheap and idempotent; the summary's next-step line is the natural place to suggest restarting the editor. Revisit only if this proves to bite in practice.
 - **The MCP server is consumed as published.** The tool points editors at the published dotCMS MCP server package rather than bundling or building it, so server updates reach developers without a new release of this tool.
 - **Existing helpers are duplicated, not extracted.** A small amount of address-validation and authentication logic already exists in the project-scaffolding tool. It is copied rather than factored into a shared library, to avoid churning that tool while work on it is in flight; consolidation is deferred to the future command merge.
