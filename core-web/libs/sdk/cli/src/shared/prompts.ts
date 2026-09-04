@@ -18,6 +18,11 @@ export interface PromptPort {
     /** MUST NOT echo (FR-003g). */
     password(message: string): Promise<string>;
     select<T extends string>(message: string, choices: { name: string; value: T }[]): Promise<T>;
+    /** Multi-select. Detected editors arrive pre-checked (FR-010). */
+    multiSelect<T extends string>(
+        message: string,
+        choices: { name: string; value: T; checked: boolean }[]
+    ): Promise<T[]>;
 }
 
 const DEFAULT_URL = 'http://localhost:8082';

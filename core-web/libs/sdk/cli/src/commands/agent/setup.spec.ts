@@ -265,6 +265,76 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
     });
 });
 
+describe('target selection (FR-010)', () => {
+    /** A silent default in an interactive run would configure editors nobody chose. */
+    it('ASKS which editors when none were named and there is a prompt port', async () => {
+        mockAcceptedToken();
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        const multiSelect = jest.fn().mockResolvedValue(['cursor']);
+
+        await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true,
+            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+        });
+        expect(multiSelect).toHaveBeenCalled();
+    });
+
+    it('offers every supported editor, with the detected ones pre-checked', async () => {
+        mockAcceptedToken();
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        const multiSelect = jest.fn().mockResolvedValue(['cursor']);
+
+        await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true,
+            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+        });
+        const choices = multiSelect.mock.calls[0][1] as { value: string; checked: boolean }[];
+        expect(choices).toHaveLength(7);
+        expect(choices.find((c) => c.value === 'cursor')?.checked).toBe(true);
+        expect(choices.find((c) => c.value === 'codex')?.checked).toBe(false);
+    });
+
+    it('honours a deselection rather than configuring it anyway', async () => {
+        mockAcceptedToken();
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([
+            registry.getTarget('cursor'),
+            registry.getTarget('claude-code')
+        ]);
+        const result = await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true,
+            promptPort: {
+                text: jest.fn(), password: jest.fn(), select: jest.fn(),
+                multiSelect: jest.fn().mockResolvedValue(['claude-code'])
+            }
+        });
+        expect(result.outcomes.map((o) => o.targetId)).toEqual(['claude-code']);
+    });
+
+    it('does NOT ask when --agent was supplied', async () => {
+        mockAcceptedToken();
+        const multiSelect = jest.fn();
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true,
+            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+        });
+        expect(multiSelect).not.toHaveBeenCalled();
+    });
+
+    it('falls back to every detected editor when there is no prompt port', async () => {
+        mockAcceptedToken();
+        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        const result = await runSetup({
+            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true
+        });
+        expect(result.outcomes.map((o) => o.targetId)).toEqual(['cursor']);
+    });
+});
+
 describe('skills reporting honesty (FR-027)', () => {
     it('reports "unverified" for a target whose skills location is not confirmed', async () => {
         mockAcceptedToken();

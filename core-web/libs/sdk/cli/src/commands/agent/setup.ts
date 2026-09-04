@@ -5,7 +5,7 @@ import { ENTRY_KEY } from './constants';
 import { protectFromVersionControl, type GitignoreOutcome } from './gitignore';
 import { installSkills } from './skills';
 import { writeJsonTargetDetailed } from './targets/json-target';
-import { getTarget, detectTargets, TARGET_IDS } from './targets/registry';
+import { getTarget, detectTargets, TARGETS, TARGET_IDS } from './targets/registry';
 import { writeTomlTarget } from './targets/toml-target';
 
 import { mintToken, verifyToken } from '../../shared/auth';
@@ -97,9 +97,32 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     step('Verifying the token');
     token = await verifyToken(url, token);
 
-    const targets = explicitTargets.length
-        ? explicitTargets.map(getTarget)
-        : await detectTargets();
+    // Targets: explicit --agent wins. Otherwise ASK when there is someone to ask (FR-010),
+    // and fall back to every detected editor when there is not (FR-003j). Defaulting silently
+    // in an interactive run would write to editors the developer never chose.
+    let targets;
+    if (explicitTargets.length) {
+        targets = explicitTargets.map(getTarget);
+    } else {
+        // Use the objects detection returned, never re-derive them from the registry by id:
+        // that silently replaces whatever the caller resolved, which is a real bug and not
+        // only a testing inconvenience.
+        const detected = await detectTargets();
+        const detectedById = new Map(detected.map((t) => [t.id as string, t]));
+        if (opts.promptPort) {
+            const chosen = await opts.promptPort.multiSelect(
+                'Which editors should we configure?',
+                TARGETS.map((t) => ({
+                    name: t.displayName,
+                    value: t.id,
+                    checked: detectedById.has(t.id)
+                }))
+            );
+            targets = chosen.map((id) => detectedById.get(id) ?? getTarget(id as TargetId));
+        } else {
+            targets = detected;
+        }
+    }
 
     if (opts.skipMcp) {
         return { outcomes: [], connection: 'skipped', exitCode: 0 };

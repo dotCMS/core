@@ -1,6 +1,5 @@
 import inquirer from 'inquirer';
 
-import type { AgentTarget } from './targets/types';
 import type { PromptPort } from '../../shared/prompts';
 
 /**
@@ -13,6 +12,15 @@ import type { PromptPort } from '../../shared/prompts';
  * already a declared dependency of this package and of `create-app`, and pulling in five more
  * would add install weight for every `npx dotcms` user to no benefit.
  */
+/**
+ * The prompt types this adapter uses.
+ *
+ * inquirer renamed `list` to `select` in v9/v10, and an unregistered type does not error — the
+ * prompt simply hangs. Exported so a test can assert every one of these is registered, which is
+ * the only way to catch that without a terminal.
+ */
+export const PROMPT_TYPES = ['input', 'password', 'select', 'checkbox', 'confirm'] as const;
+
 export const inquirerPort: PromptPort = {
     async text(message, defaultValue) {
         const { value } = await inquirer.prompt<{ value: string }>([
@@ -30,24 +38,20 @@ export const inquirerPort: PromptPort = {
     },
     async select<T extends string>(message: string, choices: { name: string; value: T }[]) {
         const { value } = await inquirer.prompt<{ value: T }>([
-            { type: 'list', name: 'value', message, choices }
+            { type: 'select', name: 'value', message, choices }
+        ]);
+        return value;
+    },
+    async multiSelect<T extends string>(
+        message: string,
+        choices: { name: string; value: T; checked: boolean }[]
+    ) {
+        const { value } = await inquirer.prompt<{ value: T[] }>([
+            { type: 'checkbox', name: 'value', message, choices }
         ]);
         return value;
     }
 };
-
-/** Detected editors arrive pre-checked; any supported editor stays selectable (FR-010). */
-export async function chooseTargets(all: AgentTarget[], detected: Set<string>): Promise<string[]> {
-    const { value } = await inquirer.prompt<{ value: string[] }>([
-        {
-            type: 'checkbox',
-            name: 'value',
-            message: 'Which editors should we configure?',
-            choices: all.map((t) => ({ name: t.displayName, value: t.id, checked: detected.has(t.id) }))
-        }
-    ]);
-    return value;
-}
 
 async function ask(message: string): Promise<boolean> {
     const { value } = await inquirer.prompt<{ value: boolean }>([
