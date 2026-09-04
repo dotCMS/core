@@ -1,7 +1,7 @@
 import { Events, injectDispatch } from '@ngrx/signals/events';
 
 import { DOCUMENT } from '@angular/common';
-import { ChangeDetectionStrategy, Component, effect, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, Renderer2 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 
 import { ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
@@ -20,7 +20,7 @@ import {
 } from '@dotcms/ui';
 
 import { imageEditorModalScaleFade } from '../../animations/image-editor.animations';
-import { DIALOG_SIZE_TRANSITION, FULLSCREEN_DIALOG_STYLE } from '../../image-editor.constants';
+import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../image-editor.constants';
 import { ImageEditorOpenParams } from '../../models/image-editor.models';
 import {
     imageEditorHistoryEvents,
@@ -91,13 +91,11 @@ export class DotImageEditorComponent {
     readonly #historyDispatch = injectDispatch(imageEditorHistoryEvents);
     readonly #events = inject(Events);
     readonly #document = inject(DOCUMENT);
+    readonly #renderer = inject(Renderer2);
     // The PrimeNG dialog hosting this editor: injectable because the dialog content
     // is declared inside `<p-dialog>` in DynamicDialog's template, so we sit in the
     // Dialog's element injector. Its `container()` signal is the `.p-dialog` element.
     readonly #dialog = inject(Dialog, { optional: true });
-
-    /** Windowed inline dialog styles saved on entering full-screen, restored on exit. */
-    #windowedStyle: Record<string, string> | null = null;
 
     /** True while the discard-confirm prompt is showing, so a repeated Esc can't re-open it. */
     #discardPromptOpen = false;
@@ -118,31 +116,42 @@ export class DotImageEditorComponent {
     }
 
     /**
-     * Expands the host dialog to the viewport (or restores it). `DialogService`
-     * sets the dialog width/height as inline styles, so we override those inline
-     * styles directly — a stylesheet rule can't win against inline without
-     * `!important` — and restore the saved values on exit.
+     * Expands the host dialog to the viewport, or restores it.
+     *
+     * Full-screen is PrimeNG's own maximized state, so there is nothing to save and restore: the
+     * theme sizes {@link MAXIMIZED_DIALOG_CLASS} with `!important`, which is what beats the
+     * width/height `DialogService` writes inline. Dropping the class hands the windowed size back.
+     *
+     * `maximize()` keeps PrimeNG's `maximized` flag in step, so its own class computation agrees with
+     * us; the class is applied here as well because the `Dialog` is `OnPush` and a toggle coming from
+     * its projected content never marks it dirty.
      */
     #applyFullscreen(on: boolean): void {
-        const dialog = this.#dialog?.container() as HTMLElement | undefined;
+        const container = this.#dialog?.container() as HTMLElement | undefined;
 
-        if (!dialog) {
+        if (!this.#dialog || !container) {
             return;
         }
 
-        // Set the size transition (idempotent) before any toggle, honouring
-        // reduced-motion. It lands on the first (windowed) effect run, so the
-        // first real toggle already animates.
-        dialog.style.transition = this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION;
+        // Set the size transition (idempotent) before any toggle, honouring reduced-motion. It
+        // lands on the first (windowed) effect run, so the first real toggle already animates.
+        this.#renderer.setStyle(
+            container,
+            'transition',
+            this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION
+        );
+
+        // `Boolean(...)`: PrimeNG leaves `maximized` UNSET until its own button is clicked, and
+        // `undefined !== false` would fire `maximize()` on the effect's first (windowed) run —
+        // flipping the flag to `true` and opening the editor full screen.
+        if (Boolean(this.#dialog.maximized) !== on) {
+            this.#dialog.maximize();
+        }
 
         if (on) {
-            this.#windowedStyle ??= Object.fromEntries(
-                Object.keys(FULLSCREEN_DIALOG_STYLE).map((prop) => [prop, dialog.style[prop]])
-            );
-            Object.assign(dialog.style, FULLSCREEN_DIALOG_STYLE);
-        } else if (this.#windowedStyle) {
-            Object.assign(dialog.style, this.#windowedStyle);
-            this.#windowedStyle = null;
+            this.#renderer.addClass(container, MAXIMIZED_DIALOG_CLASS);
+        } else {
+            this.#renderer.removeClass(container, MAXIMIZED_DIALOG_CLASS);
         }
     }
 

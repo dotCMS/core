@@ -13,6 +13,7 @@ import { signal } from '@angular/core';
 import { provideNoopAnimations } from '@angular/platform-browser/animations';
 
 import { Confirmation, ConfirmationService, ConfirmEventType, MessageService } from 'primeng/api';
+import { Dialog } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
 import { DotMessageService, DotPropertiesService } from '@dotcms/data-access';
@@ -20,6 +21,7 @@ import { DotCMSTempFile } from '@dotcms/dotcms-models';
 
 import { DotImageEditorComponent } from './dot-image-editor.component';
 
+import { DIALOG_SIZE_TRANSITION, MAXIMIZED_DIALOG_CLASS } from '../../image-editor.constants';
 import { AssetMeta, ImageEditorOpenParams } from '../../models/image-editor.models';
 import { DotImageEditorService } from '../../services/dot-image-editor.service';
 import {
@@ -351,6 +353,120 @@ function describeWith(label: string, data: ImageEditorOpenParams): void {
 
 describeWith('inode', { inode: 'i1', variable: 'fileAsset', fieldName: 'fileAsset' });
 describeWith('tempId', { tempId: 'temp_x', variable: 'fileAsset', fieldName: 'fileAsset' });
+
+describe('DotImageEditorComponent — full screen', () => {
+    let spectator: Spectator<DotImageEditorComponent>;
+    const isFullscreen = signal(false);
+    const container = document.createElement('div');
+    const dialog: {
+        maximized: boolean | undefined;
+        maximize: jest.Mock;
+        container: () => HTMLElement;
+    } = {
+        maximized: undefined,
+        maximize: jest.fn(() => (dialog.maximized = !dialog.maximized)),
+        container: () => container
+    };
+
+    const data: ImageEditorOpenParams = {
+        inode: 'i1',
+        variable: 'fileAsset',
+        fieldName: 'fileAsset'
+    };
+
+    const createComponent = createComponentFactory({
+        component: DotImageEditorComponent,
+        providers: [
+            provideNoopAnimations(),
+            Dispatcher,
+            mockProvider(DotMessageService, { get: jest.fn((key: string) => key) }),
+            mockProvider(DynamicDialogRef, { close: jest.fn() }),
+            { provide: DynamicDialogConfig, useValue: { data } }
+        ],
+        componentProviders: [
+            ConfirmationService,
+            MessageService,
+            mockProvider(ImageEditorStore, {
+                isDirty: signal(false),
+                canUndo: signal(false),
+                canRedo: signal(false),
+                isFullscreen,
+                saveStatus: signal('idle'),
+                saveError: signal(null)
+            }),
+            { provide: Dialog, useValue: dialog }
+        ],
+        overrideComponents: [
+            [
+                DotImageEditorComponent,
+                {
+                    remove: {
+                        imports: [
+                            DotImageEditorFullscreenToggleComponent,
+                            DotImageEditorCanvasComponent,
+                            DotImageEditorPanelsComponent,
+                            DotImageEditorFooterComponent
+                        ]
+                    },
+                    add: {
+                        imports: [
+                            MockComponent(DotImageEditorFullscreenToggleComponent),
+                            MockComponent(DotImageEditorCanvasComponent),
+                            MockComponent(DotImageEditorPanelsComponent),
+                            MockComponent(DotImageEditorFooterComponent)
+                        ]
+                    }
+                }
+            ]
+        ]
+    });
+
+    beforeEach(() => {
+        isFullscreen.set(false);
+        container.className = '';
+        container.style.cssText = 'width: 1040px';
+        dialog.maximized = undefined;
+        dialog.maximize.mockClear();
+
+        spectator = createComponent();
+    });
+
+    it('should open windowed, not full screen', () => {
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(false);
+        expect(dialog.maximize).not.toHaveBeenCalled();
+        expect(dialog.maximized).toBeFalsy();
+    });
+
+    it('should maximize the dialog when the flag flips', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(true);
+    });
+
+    it("should keep PrimeNG's own maximized flag in step", () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+
+        expect(dialog.maximized).toBe(true);
+        expect(dialog.maximize).toHaveBeenCalledTimes(1);
+    });
+
+    it('should hand the windowed size back on exit', () => {
+        isFullscreen.set(true);
+        spectator.detectChanges();
+        isFullscreen.set(false);
+        spectator.detectChanges();
+
+        expect(container.classList.contains(MAXIMIZED_DIALOG_CLASS)).toBe(false);
+        expect(dialog.maximized).toBe(false);
+        expect(container.style.width).toBe('1040px');
+    });
+
+    it('should animate the resize by default', () => {
+        expect(container.style.transition).toBe(DIALOG_SIZE_TRANSITION);
+    });
+});
 
 /**
  * Host-independence of the editor's messaging.
