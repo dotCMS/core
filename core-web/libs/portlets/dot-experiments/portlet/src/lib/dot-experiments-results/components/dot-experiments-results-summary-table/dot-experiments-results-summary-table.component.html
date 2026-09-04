@@ -1,5 +1,5 @@
 @if (store.$isLoading()) {
-    <div class="flex flex-col gap-2" data-testId="loading-skeleton">
+    <div class="flex flex-col gap-2" data-testid="loading-skeleton">
         <p-skeleton height="2.5rem" width="100%" />
         <p-skeleton height="12rem" width="100%" />
     </div>
@@ -35,7 +35,7 @@
         </ng-template>
 
         <ng-template pTemplate="body" let-row>
-            <tr data-testId="detail-row">
+            <tr data-testid="detail-row">
                 <td>
                     <div class="flex min-w-0 items-center gap-2">
                         <span
@@ -72,7 +72,12 @@
                 <td class="text-right!" data-testid="summary-row-conversion-rate">
                     {{ row.conversionRate }}
                 </td>
-                <td class="text-right!" [class]="row.liftClass" data-testid="summary-row-lift">
+                <td
+                    class="text-right!"
+                    [class.text-surface-400]="row.liftTone === 'neutral'"
+                    [class.text-green-800]="row.liftTone === 'positive'"
+                    [class.text-red-700]="row.liftTone === 'negative'"
+                    data-testid="summary-row-lift">
                     {{ row.liftVsOriginal }}
                 </td>
                 <td class="text-right!" data-testid="summary-row-probability">
@@ -101,7 +106,7 @@
                 <td colspan="8">
                     <div
                         class="flex h-[200px] items-center justify-center"
-                        data-testId="empty-template">
+                        data-testid="empty-template">
                         <dot-empty-container
                             [configuration]="EMPTY_CONFIGURATION"
                             [hideContactUsLink]="true" />

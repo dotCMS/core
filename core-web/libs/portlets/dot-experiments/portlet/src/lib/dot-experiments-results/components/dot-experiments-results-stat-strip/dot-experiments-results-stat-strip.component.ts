@@ -37,31 +37,31 @@ const THRESHOLD_NOT_MET_KEY = 'experiments.results.stat-strip.threshold-not-met'
 })
 export class DotExperimentsResultsStatStripComponent {
     /** Status of the experiment being reported on; decides Winner vs Leading Variant. */
-    $status = input.required<DotExperimentStatus>({ alias: 'status' });
+    readonly $status = input.required<DotExperimentStatus>({ alias: 'status' });
 
     /** The variant the backend suggested, or `null` when it suggested none. */
-    $suggestedWinner = input<DotResultVariant | null>(null, { alias: 'suggestedWinner' });
+    readonly $suggestedWinner = input<DotResultVariant | null>(null, { alias: 'suggestedWinner' });
 
     /** The already promoted variant, if any: promoting twice is not offered. */
-    $promotedVariant = input<Variant | null>(null, { alias: 'promotedVariant' });
+    readonly $promotedVariant = input<Variant | null>(null, { alias: 'promotedVariant' });
 
     /** Name of the primary goal the experiment measures. */
-    $goalName = input<string | null>(null, { alias: 'goalName' });
+    readonly $goalName = input<string | null>(null, { alias: 'goalName' });
 
     /** Start and end of the measured period. */
-    $scheduling = input<RangeOfDateAndTime | null>(null, { alias: 'scheduling' });
+    readonly $scheduling = input<RangeOfDateAndTime | null>(null, { alias: 'scheduling' });
 
     /** Sessions counted so far across every variant. */
-    $sessionsReached = input<number>(0, { alias: 'sessionsReached' });
+    readonly $sessionsReached = input<number>(0, { alias: 'sessionsReached' });
 
     /** Nothing has been measured yet, so there is no leader to name (AC10). */
-    $isWaitingForData = input<boolean>(false, { alias: 'isWaitingForData' });
+    readonly $isWaitingForData = input<boolean>(false, { alias: 'isWaitingForData' });
 
     /** A mutation is on the wire; Promote stays closed until it settles. */
-    $isSaving = input<boolean>(false, { alias: 'isSaving' });
+    readonly $isSaving = input<boolean>(false, { alias: 'isSaving' });
 
     /** Promote was pressed, carrying the id of the variant to publish. */
-    promoteRequested = output<string>();
+    readonly promoteRequested = output<string>();
 
     /** The experiment is over, so its leader is final. */
     protected readonly $isEnded = computed<boolean>(

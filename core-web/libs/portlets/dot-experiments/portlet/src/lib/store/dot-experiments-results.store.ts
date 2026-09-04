@@ -2,15 +2,16 @@ import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
 import { ChartData } from 'chart.js';
-import { of, SubscriptionLike } from 'rxjs';
+import { merge, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
-import { distinctUntilChanged, filter, map, mergeMap, switchMap } from 'rxjs/operators';
+import { catchError, distinctUntilChanged, filter, map, mergeMap, switchMap } from 'rxjs/operators';
 
 import {
+    DotContentSearchService,
     DotExperimentsService,
     DotHttpErrorManagerService,
     DotMessageService
@@ -20,6 +21,7 @@ import {
     BayesianStatusResponse,
     ComponentStatus,
     DEFAULT_VARIANT_ID,
+    DotCMSContentlet,
     DotExperimentStatus,
     DotResultVariant,
     MINIMUM_SESSIONS_TO_SHOW_CHART,
@@ -27,6 +29,7 @@ import {
     SummaryLegend,
     Variant
 } from '@dotcms/dotcms-models';
+import { isDotIdentifier } from '@dotcms/utils';
 
 import { dotExperimentsResultsApiEvents } from './dot-experiments-results-api.events';
 import { dotExperimentsResultsPageEvents } from './dot-experiments-results-page.events';
@@ -38,6 +41,7 @@ import {
     getSuggestedWinner
 } from '../shared/dot-experiment-results.utils';
 import { DotExperimentResultVariantDetail, DotExperimentsResultsViewState } from '../shared/models';
+import { toConfigurePage } from '../util/dot-experiments-configure.util';
 import { buildVariantDetails } from '../util/dot-experiments-results.util';
 
 const pageEvents = dotExperimentsResultsPageEvents;
@@ -63,8 +67,14 @@ const NO_DATA_LABEL_KEY = 'experiments.reports.not.enough.data';
 /** Word between the two bounds of the 95% conversion rate range. */
 const RANGE_SEPARATOR_LABEL_KEY = 'to';
 
+/** Shape of the `/api/content/_search` entity the page lookup reads contentlets from. */
+interface PageLookupEntity {
+    jsonObjectView?: { contentlets?: DotCMSContentlet[] };
+}
+
 const initialState: DotExperimentsResultsViewState = {
     experiment: null,
+    page: null,
     results: null,
     status: ComponentStatus.INIT,
     reportUnavailable: false
@@ -235,6 +245,7 @@ export const DotExperimentsResultsStore = signalStore(
         })),
         // The experiment itself is missing, so there is nothing to frame a report with: this is the
         // one failure that blanks the screen.
+        on(apiEvents.pageResolved, ({ payload }) => ({ page: payload })),
         on(apiEvents.loadFailed, () => ({ status: ComponentStatus.ERROR })),
         /**
          * The experiment answered but its report did not. The screen settles as LOADED with a null
@@ -273,7 +284,8 @@ export const DotExperimentsResultsStore = signalStore(
             events = inject(Events),
             experimentsService = inject(DotExperimentsService),
             httpErrorManager = inject(DotHttpErrorManagerService),
-            dotMessageService = inject(DotMessageService)
+            dotMessageService = inject(DotMessageService),
+            contentSearchService = inject(DotContentSearchService)
         ) => {
             /** Routes a failed call through the shared manager, then reports it as its event. */
             const toFailure =
@@ -304,6 +316,32 @@ export const DotExperimentsResultsStore = signalStore(
 
                     return failed(error);
                 };
+
+            /**
+             * The page behind an identifier, as the header's subline needs it.
+             *
+             * The same content search the list uses for its Page column. The identifier is checked
+             * first because this endpoint takes a Lucene string: a value carrying spaces or
+             * operators would widen the search rather than match an id.
+             */
+            const lookupPage = (pageId: string | null) => {
+                if (!pageId || !isDotIdentifier(pageId)) {
+                    return of(apiEvents.pageResolved(null));
+                }
+
+                return contentSearchService
+                    .get<PageLookupEntity>({
+                        query: `+contentType:htmlpageasset +working:true +identifier:${pageId}`,
+                        limit: 1
+                    })
+                    .pipe(
+                        map((entity) => entity?.jsonObjectView?.contentlets?.[0]),
+                        map((contentlet) =>
+                            apiEvents.pageResolved(contentlet ? toConfigurePage(contentlet) : null)
+                        ),
+                        catchError(() => of(apiEvents.pageResolved(null)))
+                    );
+            };
 
             return {
                 /**
@@ -346,6 +384,25 @@ export const DotExperimentsResultsStore = signalStore(
                             })
                         )
                     )
+                ),
+
+                /**
+                 * The page's title and path, for the header's subline.
+                 *
+                 * Off the load rather than the route: `DotExperiment` is what carries `pageId`, and
+                 * both settled loads carry an experiment — a report that failed still frames itself
+                 * with the page it ran on. Ancillary throughout, so a rejected lookup answers `null`
+                 * instead of reaching the error manager.
+                 */
+                resolvePage$: merge(
+                    events
+                        .on(apiEvents.loadSucceeded)
+                        .pipe(map(({ payload }) => payload.experiment)),
+                    events.on(apiEvents.resultsUnavailable).pipe(map(({ payload }) => payload))
+                ).pipe(
+                    map(({ pageId }) => pageId),
+                    distinctUntilChanged(),
+                    switchMap((pageId) => lookupPage(pageId))
                 ),
 
                 stop$: events.on(pageEvents.stopRequested).pipe(

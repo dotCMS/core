@@ -75,9 +75,10 @@ const EXPERIMENT_ID_ROUTE_PARAM = 'experimentId';
         DotExperimentsResultsSummaryTableComponent
     ],
     templateUrl: './dot-experiments-results.component.html',
-    styleUrl: './dot-experiments-results.component.scss',
     providers: [DotExperimentsResultsStore, ConfirmationService],
-    host: { class: 'flex flex-col h-full min-h-0 overflow-hidden' }
+    host: {
+        class: 'flex flex-col h-full min-h-0 overflow-hidden animate-fadein animate-duration-180 animate-ease-out motion-reduce:animate-none'
+    }
 })
 export class DotExperimentsResultsComponent {
     readonly store = inject(DotExperimentsResultsStore);

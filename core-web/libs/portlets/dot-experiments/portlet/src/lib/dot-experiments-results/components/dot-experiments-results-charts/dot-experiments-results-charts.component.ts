@@ -92,7 +92,13 @@ export class DotExperimentsResultsChartsComponent {
         return goal.name ? `${goal.name} · ${metric}` : metric;
     });
 
+    /**
+     * `p-tabs` reports its value as `string | number`, and the template below branches on a closed
+     * union, so anything that is not one of the two tabs is ignored rather than cast into it.
+     */
     protected selectTab(tab: string | number): void {
-        this.$activeTab.set(tab as ResultsChartTab);
+        if (tab === 'daily' || tab === 'bayesian') {
+            this.$activeTab.set(tab);
+        }
     }
 }
