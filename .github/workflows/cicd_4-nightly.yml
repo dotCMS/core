@@ -92,9 +92,10 @@ jobs:
         with:
           # Bounded shallow checkout: Find Build Commit walks `git log` on main
           # back to midnight UTC. The window that matters is commits landing
-          # between midnight and run time (~3h); max observed is ~19 commits/day,
-          # so 1000 commits is ~52 days of volume and can't realistically overrun
-          # the midnight boundary. use-latest-commit only needs HEAD. Avoids the
+          # between midnight and run time (~3h). Under merge commits every branch
+          # commit lands on main, so volume is ~40 commits/day (118 across
+          # v26.08.28-01...v26.08.31-01), making 1000 commits ~25 days — still far
+          # past the midnight boundary. use-latest-commit only needs HEAD. Avoids the
           # fetch-depth: 0 full fetch (~2k+ branches, ~1.1 GB pack) when only
           # main's recent history is consulted.
           fetch-depth: 1000
@@ -113,13 +114,17 @@ jobs:
             # Default for both scheduled and manual dispatch: use the last commit
             # at or before midnight UTC. This ensures repeatability — manually
             # re-running later in the day to investigate a failure gives the same build.
+            # --first-parent is load-bearing: squash merging is disabled, so every
+            # feature-branch commit lands on main verbatim. Without it, `git log`
+            # walks into a merged branch and can select a commit that was never
+            # main's tip — building a tree no one ever tested on main.
             MIDNIGHT=$(date -u +"%Y-%m-%dT00:00:00")
-            BUILD_REF=$(git log --before="${MIDNIGHT}" --format="%H" -1)
+            BUILD_REF=$(git log --first-parent --before="${MIDNIGHT}" --format="%H" -1)
             if [[ -z "${BUILD_REF}" ]]; then
               # No commits before today's midnight — use the absolute last commit.
               # This handles edge cases (e.g., very new repos) without falling back to
               # current HEAD which might include post-midnight commits.
-              BUILD_REF=$(git log --format="%H" -1)
+              BUILD_REF=$(git log --first-parent --format="%H" -1)
               echo "⚠️ No commit found before ${MIDNIGHT}, using last available commit: ${BUILD_REF}"
             else
               echo "Building from commit at midnight UTC (${MIDNIGHT}): ${BUILD_REF}"
