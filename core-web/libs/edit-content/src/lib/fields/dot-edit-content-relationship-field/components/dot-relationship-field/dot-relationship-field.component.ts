@@ -141,7 +141,7 @@ export class DotRelationshipFieldComponent
      */
     readonly #dialogService = inject(DialogService);
 
-    /** Used to create the Edit Content side panel imperatively (see {@link showCreateNewContentDialog}). */
+    /** Used to create the Edit Content side panel imperatively (see {@link openSidePanel}). */
     readonly #viewContainerRef = inject(ViewContainerRef);
 
     /**
@@ -288,17 +288,21 @@ export class DotRelationshipFieldComponent
 
     /**
      * Opens the editor for a related content, restoring the legacy editor's
-     * related-content navigation. The current content is seeded as the origin of
-     * the navigation trail so the "Relating content" banner shows the full path.
-     * The host performs the navigation: a route change in full-screen, an in-place
-     * reload in a dialog.
+     * related-content navigation.
+     *
+     * From the **full-screen** editor it does not navigate at all: the content opens in a side
+     * panel over the editor, which therefore stays mounted with its edits intact (see
+     * {@link opensInSidePanel}).
+     *
+     * From **inside a panel** it navigates: the host reloads in place and the current content is
+     * seeded as the origin of the trail, so the breadcrumb shows the full path.
      *
      * No-op when navigation is disabled (a disabled field), when the item has no
      * inode, or when it points at the content already open.
      *
      * @param item The related contentlet whose title was clicked.
      */
-    openRelated(item: DotCMSContentlet): void {
+    async openRelated(item: DotCMSContentlet): Promise<void> {
         if (!this.$canNavigate() || !item?.inode) {
             return;
         }
@@ -306,6 +310,19 @@ export class DotRelationshipFieldComponent
         const current = this.#editContentStore.contentlet();
         // Navigating to the content already open is a no-op.
         if (current?.inode === item.inode) {
+            return;
+        }
+
+        // From the full-screen editor, related content opens in a side panel over it instead of
+        // navigating away (see {@link opensInSidePanel}).
+        if (this.#opensInSidePanel()) {
+            await this.#openSidePanel({
+                mode: 'edit',
+                contentletInode: item.inode,
+                title: item.title ?? '',
+                onContentSaved: (contentlet) => this.#refreshRelatedItem(contentlet)
+            });
+
             return;
         }
 
@@ -331,6 +348,77 @@ export class DotRelationshipFieldComponent
             { inode: originInode, title: originTitle },
             { inode: item.inode, title: item.title ?? '' }
         );
+    }
+
+    /**
+     * Whether related content opens in a side panel instead of navigating. Decided purely by
+     * where this editor is presented:
+     *
+     * - **Full-screen** — always the panel. Navigating away would unmount the editor and discard
+     *   whatever is unsaved in it, which is what made "create content from this field, then open
+     *   it" impossible: the new relation lives only in that unsaved form. The panel opens over
+     *   the editor, so it stays mounted and closing the panel returns to it untouched. Nothing
+     *   stacks here — the layer underneath is a route, not a panel.
+     * - **Inside a panel** — never. That context navigates in place and builds its own crumb
+     *   trail, so related content is reached through the breadcrumb rather than a second panel
+     *   on top of the first.
+     *
+     * Without the side panel flag there is no panel to open, so the previous navigation (and its
+     * unsaved-changes prompt) stands.
+     */
+    #opensInSidePanel(): boolean {
+        const sidePanelEnabled =
+            this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
+
+        return sidePanelEnabled && !this.#host.inPlaceNavigation;
+    }
+
+    /**
+     * Refreshes the row of a related content that was just edited in a side panel, so the table
+     * shows its new title and status instead of the version from before the edit.
+     *
+     * Matched by identifier, which is stable across saves (a save mints a new inode). That keeps
+     * this field's value — a list of identifiers — unchanged, so refreshing a row never marks the
+     * form dirty on its own.
+     */
+    #refreshRelatedItem(contentlet: DotCMSContentlet): void {
+        const data = this.store.data();
+        const index = data.findIndex((item) => item.identifier === contentlet.identifier);
+
+        if (index === -1) {
+            return;
+        }
+
+        this.store.setData(
+            data.map((item, i) => (i === index ? this.#withResolvedLanguage(contentlet) : item))
+        );
+    }
+
+    /**
+     * Fills in a saved contentlet's `language` object so the Locales column can render it.
+     *
+     * Related items normally reach the table through the parent's `depth` fetch, where each child
+     * carries a full `DotLanguage` (`{ language: 'English', languageCode: 'en', ... }`) — which is
+     * what the `language` pipe formats. A contentlet returned by a workflow action does NOT: it
+     * carries only `languageId`, so the pipe yields an empty label and the column renders blank
+     * until the parent is saved and the field re-initializes from a depth fetch.
+     *
+     * Both paths that put a just-saved contentlet in the table (creating content from this field,
+     * and refreshing a row edited in a side panel) therefore resolve the language here, from the
+     * locales the editor has already loaded — every system language, so a lookup by id always
+     * resolves. Left untouched when the contentlet already has one, or when the id cannot be
+     * matched (the column stays blank rather than showing something wrong).
+     */
+    #withResolvedLanguage(contentlet: DotCMSContentlet): DotCMSContentlet {
+        if (contentlet.language) {
+            return contentlet;
+        }
+
+        const locale = this.#editContentStore
+            .locales()
+            ?.find((candidate) => candidate.id === contentlet.languageId);
+
+        return locale ? { ...contentlet, language: locale } : contentlet;
     }
 
     /**
@@ -455,7 +543,7 @@ export class DotRelationshipFieldComponent
             onContentSaved: (contentlet: DotCMSContentlet) => {
                 // Add the created contentlet to the relationship
                 const currentData = this.store.data();
-                this.store.setData([...currentData, contentlet]);
+                this.store.setData([...currentData, this.#withResolvedLanguage(contentlet)]);
             }
         };
 
@@ -468,7 +556,7 @@ export class DotRelationshipFieldComponent
             this.store.flags()[FeaturedFlags.FEATURE_FLAG_EDIT_CONTENT_SIDE_PANEL] ?? false;
 
         if (sidePanelEnabled) {
-            await this.#openCreateContentSidePanel(dialogData);
+            await this.#openSidePanel(dialogData);
 
             return;
         }
@@ -496,12 +584,16 @@ export class DotRelationshipFieldComponent
     }
 
     /**
-     * Creates the Edit Content side panel imperatively. The component is loaded via dynamic
+     * Creates an Edit Content side panel imperatively. The component is loaded via dynamic
      * `import()` (not a static template import) to avoid a module cycle — see the `import type`
      * note at the top of this file. The panel fires `dialogData.onContentSaved` (last save) and
      * `dialogData.onCancel` on close; `(closed)` tears the component down.
+     *
+     * Shared by both entry points: creating content to relate ({@link showCreateNewContentDialog})
+     * and opening an already-related content without leaving the full-screen editor
+     * ({@link openRelated}) — in both cases the editor behind the panel stays mounted.
      */
-    async #openCreateContentSidePanel(dialogData: EditContentDialogData): Promise<void> {
+    async #openSidePanel(dialogData: EditContentDialogData): Promise<void> {
         const { DotEditContentSidePanelComponent } =
             await import('../../../../components/dot-edit-content-side-panel/dot-edit-content-side-panel.component');
 
