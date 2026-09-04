@@ -75,7 +75,6 @@ describe('Directive: dotFieldRequired', () => {
  * `[formGroup]` anywhere above the label.
  */
 @Component({
-    standalone: true,
     imports: [DotFieldRequiredDirective],
     template: `
         <label data-testid="plainLabel" dotFieldRequired for="plain">Plain</label>
@@ -95,7 +94,6 @@ describe('Directive: dotFieldRequired (outside any form)', () => {
 });
 
 @Component({
-    standalone: true,
     imports: [DotFieldRequiredDirective],
     template: `
         <label [dotFieldRequired]="tree.name" data-testid="signalRequired">Name</label>
