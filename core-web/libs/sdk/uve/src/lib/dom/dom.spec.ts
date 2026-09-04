@@ -277,7 +277,8 @@ describe('getDotContentletAttributes', () => {
             'data-dot-inode': 'test-inode',
             'data-dot-type': 'test-type',
             'data-dot-container': 'test-container',
-            'data-dot-on-number-of-pages': '5'
+            'data-dot-on-number-of-pages': '5',
+            'data-dot-can-edit': 'true'
         });
     });
 
@@ -880,5 +881,42 @@ describe('getDotCMSContentletsBound — edit permission (#37376)', () => {
 
     it('should carry canEdit: true when the attribute is absent', () => {
         expect(boundPermissionFor(undefined)).toBe(true);
+    });
+});
+
+describe('getDotContentletAttributes — headless edit permission (#37376)', () => {
+    // Headless pages build their own contentlet wrappers from the Page API
+    // response instead of the Velocity renderer, so this is where the
+    // permission has to be stamped for the editor gates to see it there.
+    it('should emit data-dot-can-edit="false" when the contentlet cannot be edited', () => {
+        const contentlet = {
+            identifier: 'id-1',
+            canEdit: false
+        } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'false'
+        );
+    });
+
+    it('should emit data-dot-can-edit="true" when the contentlet can be edited', () => {
+        const contentlet = {
+            identifier: 'id-1',
+            canEdit: true
+        } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'true'
+        );
+    });
+
+    it('should emit data-dot-can-edit="true" when the API did not supply the permission', () => {
+        // An older dotCMS release does not return canEdit. Fail open, so the
+        // editor behaves exactly as it does today rather than locking up.
+        const contentlet = { identifier: 'id-1' } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'true'
+        );
     });
 });

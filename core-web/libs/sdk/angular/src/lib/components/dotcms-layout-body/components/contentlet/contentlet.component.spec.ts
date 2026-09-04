@@ -98,6 +98,10 @@ describe('ContentletComponent', () => {
             expect(hostAttr('data-dot-type')).toBe('test-content-type');
             expect(hostAttr('data-dot-container')).toBe(JSON.stringify(component.containerData));
             expect(hostAttr('data-dot-on-number-of-pages')).toBe('1');
+            // The editor's permission gates read this attribute off the
+            // contentlet wrapper; without it every gate fails open on headless
+            // pages. Defaults to "true" when the API did not supply canEdit.
+            expect(hostAttr('data-dot-can-edit')).toBe('true');
         });
 
         it('should emit data-dot-style-properties when the contentlet has style properties', () => {
@@ -154,6 +158,7 @@ describe('ContentletComponent', () => {
             expect(hostAttr('data-dot-object')).toBeNull();
             expect(hostAttr('data-dot-container')).toBeNull();
             expect(hostAttr('data-dot-on-number-of-pages')).toBeNull();
+            expect(hostAttr('data-dot-can-edit')).toBeNull();
             expect(hostAttr('data-dot-style-properties')).toBeNull();
         });
     });
