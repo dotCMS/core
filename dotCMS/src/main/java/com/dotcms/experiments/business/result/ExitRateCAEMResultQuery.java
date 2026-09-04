@@ -6,6 +6,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code EXIT_RATE} goals.
  *
@@ -41,6 +44,9 @@ import com.liferay.portal.model.User;
  */
 public class ExitRateCAEMResultQuery implements ExperimentGoalResultsQuery {
 
+    private static final String SESSIONS_PATH = "/v1/analytics/sessions";
+    private static final String METRICS = "totalSessions,exitSessions,exitRate";
+
     private final CaemHttpClient caemHttpClient;
 
     public ExitRateCAEMResultQuery(final CaemHttpClient caemHttpClient) {
@@ -50,13 +56,26 @@ public class ExitRateCAEMResultQuery implements ExperimentGoalResultsQuery {
     @Override
     public AnalyticsResultSet executeByDay(final Experiment experiment,
                                            final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("ExitRateCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(SESSIONS_PATH, buildParams(experiment, "variant,day"), null);
     }
 
     @Override
     public AnalyticsResultSet executeAggregate(final Experiment experiment,
                                                final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("ExitRateCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(SESSIONS_PATH, buildParams(experiment, "variant"), null);
+    }
+
+    private static Map<String, String> buildParams(final Experiment experiment,
+                                                   final String dimensions) {
+        final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
+        final Map<String, String> params = new HashMap<>();
+        params.put("experimentId", experiment.getIdentifier());
+        params.put("runningId", runningId);
+        params.put("metrics", METRICS);
+        params.put("dimensions", dimensions);
+        GoalConditionUtil.findConditionValue(experiment, "url")
+                .ifPresent(ref -> params.put("referencePage", ref));
+        return params;
     }
 
 }

@@ -6,6 +6,9 @@ import com.dotmarketing.exception.DotDataException;
 import com.dotmarketing.exception.DotSecurityException;
 import com.liferay.portal.model.User;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * CAEM-backed implementation of {@link ExperimentGoalResultsQuery} for {@code REACH_PAGE} goals.
  *
@@ -16,8 +19,8 @@ import com.liferay.portal.model.User;
  *       enforced by CAEM, not by dotCMS</li>
  *   <li>{@code experimentId} — the experiment's identifier</li>
  *   <li>{@code runningId} — the current running ID of the experiment</li>
- *   <li>{@code referencePage} — the entry page configured on the goal condition</li>
- *   <li>{@code targetUrl} — the destination page that must be visited after the reference page</li>
+ *   <li>{@code referencePage} — the entry page (condition parameter {@code "referer"})</li>
+ *   <li>{@code targetUrl} — the destination page (condition parameter {@code "url"})</li>
  *   <li>{@code dimensions=variant} for {@link #executeAggregate} (aggregate per-variant totals)</li>
  *   <li>{@code dimensions=variant,day} for {@link #executeByDay} (per-day per-variant breakdown)</li>
  * </ul>
@@ -42,6 +45,8 @@ import com.liferay.portal.model.User;
  */
 public class ReachPageCAEMResultQuery implements ExperimentGoalResultsQuery {
 
+    private static final String BEHAVIOR_PATH = "/v1/analytics/sessions/behavior";
+
     private final CaemHttpClient caemHttpClient;
 
     public ReachPageCAEMResultQuery(final CaemHttpClient caemHttpClient) {
@@ -51,13 +56,28 @@ public class ReachPageCAEMResultQuery implements ExperimentGoalResultsQuery {
     @Override
     public AnalyticsResultSet executeByDay(final Experiment experiment,
                                            final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("ReachPageCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant,day"), null);
     }
 
     @Override
     public AnalyticsResultSet executeAggregate(final Experiment experiment,
                                                final User user) throws DotDataException, DotSecurityException {
-        throw new UnsupportedOperationException("ReachPageCAEMResultQuery not yet implemented");
+        return caemHttpClient.get(BEHAVIOR_PATH, buildParams(experiment, "variant"), null);
+    }
+
+    private static Map<String, String> buildParams(final Experiment experiment,
+                                                   final String dimensions) {
+        final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
+        final Map<String, String> params = new HashMap<>();
+        params.put("experimentId", experiment.getIdentifier());
+        params.put("runningId", runningId);
+        params.put("behavior", "reachTarget");
+        params.put("dimensions", dimensions);
+        GoalConditionUtil.findConditionValue(experiment, "referer")
+                .ifPresent(ref -> params.put("referencePage", ref));
+        GoalConditionUtil.findConditionValue(experiment, "url")
+                .ifPresent(url -> params.put("targetUrl", url));
+        return params;
     }
 
 }
