@@ -1,0 +1,537 @@
+# Feature Specification: Redesigned Key/Value Field Across All Consumers
+
+**Feature Branch**: `issue-37191-key-value-field-redesign`
+
+**Created**: 2026-08-27
+
+**Status**: Draft
+
+**GitHub Issue**: [dotCMS/core#37191](https://github.com/dotCMS/core/issues/37191)
+
+**Input**: User description: "we will start working in this one https://github.com/dotCMS/core/issues/37191, there are 3 places where we use this key/value field, we are implementing this new one and it has to be used in those 3 different places: Edit content, Content Type field variable dialog, and Apps custom properties. Also we have to use PrimeNG default as the source of truth (reference mockups provided). Remember that each row can be dragged and dropped to change the order, and the icons are hidden until we hover them."
+
+---
+
+## Overview
+
+dotCMS exposes one shared Key/Value editor that lets a user maintain a list of key → value
+pairs. The same editor is embedded in three distinct product surfaces. Today each surface
+renders it with ad-hoc styling and inconsistent affordances: the value cell is always a live
+input even for rows the user is only reading, action icons compete for attention on every row,
+the "hidden value" affordance is a toggle switch in its own column rather than attached to the
+value it protects, and reordering is offered in only one of the three surfaces.
+
+This feature replaces the editor's presentation and interaction model with a single redesigned
+version and rolls that version out to all three consumers.
+
+### Scope decision on ordering (recorded)
+
+Reordering is offered in all three consumers, unconditionally — there is no per-consumer switch.
+
+### Row paging (added during implementation)
+
+Not in the original request. Raised by the developer after seeing the site/folder field page its
+results, and asked for here so a field holding dozens of pairs does not render every row at once.
+Requirements: [FR-037 to FR-041](#functional-requirements).
+
+The two are not the same mechanism, and the difference is the whole design: the site/folder selector
+pages because it **fetches** a page at a time, while a Key/Value field already holds its entire list in
+memory. Here nothing is fetched — rows are withheld from the DOM and the data is untouched. See
+[research.md R-10](./research.md#r-10--row-paging-render-limit-not-a-data-limit).
+
+### Scope added after the original spec
+
+Everything below FR-041 was asked for after the spec was written — during review of the working
+redesign, not at clarification time. Recorded here so a reader can tell the original brief from what
+grew on top of it:
+
+| Added | Why | Requirements |
+|---|---|---|
+| Row paging | a field can hold dozens of pairs | FR-037 to FR-041 |
+| Pasting a `.env` block | reviewer feedback; mirrors Vercel's env editor | FR-042 to FR-046 |
+| Clear All | reviewer feedback | FR-047 to FR-050 |
+| Read-only fields | a file asset's metadata is regenerated on save, so editing it is a lie | FR-051 to FR-054 |
+| Deferred save in Field Variables | Cancel had nothing to cancel while every keystroke was written | FR-055 to FR-059 |
+| Editable key | reverses FR-008 | FR-008, FR-008a, FR-008b |
+| Refusals that say why | code review: an invalid edit closed and discarded what was typed, silently | FR-008a |
+| Click-away abandons | an edit should leave by one door whether or not it is valid | FR-008c |
+| Blank values refused everywhere | code review: the pasted block let one in that no other path allowed | FR-045a |
+
+### Corrected during code review
+
+Two requirements described the opposite of what the implementation needed, and were corrected in place
+rather than deleted, so the change stays auditable:
+
+- **FR-048** required the host's dialog for Clear All. Only Edit Content has one always rendered; in
+  Field Variables and Apps the confirmation reached nothing and Clear All did nothing.
+- **FR-019** was read as requiring a keyboard-operable drag handle. PrimeNG's row reorder is
+  pointer-only, so the handle had a role and a tab stop it could not honour; keyboard reordering is
+  out of scope, and the handle no longer claims otherwise.
+
+### Key ordering defect (found during implementation)
+
+Reordering rows in Edit Content worked on screen, then came back wrong after a save and reload:
+keys made only of digits had jumped to the front of the list, sorted numerically, wherever the user
+had dragged them. `orden 1 · orden 2 · 123 · zzz` returned as `123 · orden 1 · orden 2 · zzz`.
+
+**This is not a backend defect.** A controlled round-trip confirmed the server stores and returns the
+order it is given, so the fix for issue #31904 is intact. The loss is a language rule: ECMAScript
+enumerates integer-like keys first, in ascending numeric order, in **any** object. The moment a
+Key/Value field is put into a JavaScript object — on the way in by `JSON.parse`, on the way out by
+building an object from the row list — those keys move, and no amount of reordering the object
+afterwards puts them back, because re-assigning them re-hoists them.
+
+The field therefore carries **JSON text**, never an object, from the response through the form control
+and back to the server. The order is only ever read from, or written to, text. Requirements are
+unchanged by this — FR-026 to FR-032 already state the guarantee; this records why meeting it in the
+browser needed more than reading the response.
+
+Covered by the ordering requirements ([FR-026 to FR-032](#functional-requirements)) and by
+[SC-002](#measurable-outcomes), whose round-trip is the check that catches this. Mechanism and the
+alternatives weighed: [research.md R-09](./research.md#r-09--key-order-survival-across-the-json-boundary).
+
+### Process note
+
+The developer has chosen to carry **spec and implementation in a single PR**, rather than the
+repository's default two-PR Spec-Kit flow (spec PR approved first, implementation PR second). The
+spec still requires review — it simply gets reviewed alongside the code it describes.
+
+---
+
+## User Scenarios & Testing *(mandatory)*
+
+### User Story 1 - Content editor maintains key/value pairs while editing content (Priority: P1)
+
+A content editor opens a contentlet that has a Key/Value field. They see a compact table with a
+KEY and a VALUE column, and a persistent entry row at the top with "Enter key" / "Enter value"
+placeholders and an add control. Existing pairs are listed below as calm, readable text — no
+input borders, no row of icons shouting for attention. Hovering a row reveals its actions.
+Clicking a value turns it into an input for editing. The editor adds a pair, corrects a typo,
+drags a row to a new position, deletes an obsolete pair, and saves.
+
+**Why this priority**: The primary surface named in the issue and the reason the redesign
+exists (part of the New Edit Contentlet effort). It is frontend-only — no persistence work —
+so it is the fastest path to demonstrable value.
+
+**Independent Test**: Open a contentlet whose content type has a Key/Value field, perform add /
+edit / reorder / delete, save, reopen — the field round-trips without loss.
+
+**Acceptance Scenarios**:
+
+1. **Given** a contentlet with an empty Key/Value field, **When** the editor types a key and a value
+   in the entry row and confirms, **Then** a new pair appears in the list and the field's value
+   reflects it.
+2. **Given** existing pairs, **When** the editor clicks an existing row's value, **Then** that value
+   becomes an editable input focused for typing.
+3. **Given** an existing row's value is being edited, **When** the editor confirms or moves focus
+   away, **Then** the change is committed and the row returns to its at-rest text presentation.
+4. **Given** an existing row's value is being edited, **When** the editor cancels, **Then** the
+   original value is restored unchanged.
+5. **Given** existing pairs, **When** the editor is not hovering any row, **Then** no per-row action
+   icons are visible; **When** they hover a row, **Then** that row's actions become visible and operable.
+6. **Given** three or more pairs, **When** the editor drags the third row above the first, **Then** the
+   new order is stored and survives a save and reload.
+7. **Given** the editor types a key that already exists, **When** they try to confirm, **Then** the entry
+   is rejected with a duplicate-key indication and no pair is added.
+8. **Given** the editor confirms with an empty key or empty value, **Then** the entry is rejected and
+   the offending control is flagged.
+9. **Given** a field with no pairs, **When** the editor views it, **Then** an illustrative icon and the
+   message "Add your key and value here." are shown in place of the row list, while the entry row
+   above remains present and usable.
+
+---
+
+### User Story 2 - Content-type admin maintains Field Variables (Priority: P2)
+
+An administrator editing a field in the Content Type portlet opens the field dialog and switches
+to the **Field Variables** tab. The same redesigned editor appears inside the dialog. They add a
+variable, edit an existing one's value, and remove one. Each change persists against the field
+immediately, and the list reflects the server's response.
+
+**Why this priority**: Second consumer named in the issue, and the surface where the editor lives
+in a constrained dialog width — it validates the redesign at its narrowest. Its per-row server
+persistence must survive the refactor untouched.
+
+**Independent Test**: Open any content-type field's Field Variables tab, add / edit / delete a
+variable, close and reopen — the variables persist and render in the new design.
+
+**Acceptance Scenarios**:
+
+1. **Given** a field with existing variables, **When** the admin opens the tab, **Then** the variables
+   render in the redesigned editor, excluding the reserved keys owned by dedicated settings
+   sections.
+2. **Given** the tab is open, **When** the admin adds a variable, **Then** it is saved against the field
+   and appears in the list.
+3. **Given** an existing variable, **When** the admin edits its value, **Then** the change is saved and
+   the list shows the updated value.
+4. **Given** an existing variable, **When** the admin removes it, **Then** it is deleted and disappears
+   from the list.
+5. **Given** a save or delete fails on the server, **When** the response returns, **Then** the failure is
+   surfaced through standard error handling and the list is not left in a misleading state.
+
+---
+
+### User Story 3 - Administrator maintains Apps custom properties, including secret values (Priority: P2)
+
+An administrator navigates to **Settings → Apps** and opens an app configuration (for example
+SSO — SAML). Below the app's declared fields, the **Custom Properties** section presents the same
+redesigned editor, with one addition: the value control carries a visibility (eye) affordance.
+Marking a value hidden masks it in the list — rendered as dots rather than plain text — and
+supporting text explains the effect. The administrator adds a hidden property and a plain one,
+and can see at a glance which are hidden.
+
+**Why this priority**: Third consumer named in the issue, and the only one exercising hidden
+values. Equal in importance to Story 2; sequenced after it only because the hidden-value
+affordance is the largest single behavioral delta in the redesign.
+
+**Independent Test**: Open an app configuration with custom properties enabled, add a hidden
+value and a plain value, reload — the hidden one renders masked, the plain one as text, both
+persist.
+
+**Acceptance Scenarios**:
+
+1. **Given** the Custom Properties editor, **When** the administrator marks a value hidden while adding
+   a pair, **Then** the pair is stored with its hidden flag and its value renders masked.
+2. **Given** a pair whose value is hidden, **When** the administrator views the list, **Then** the value is
+   masked and the hidden indicator on that row is **permanently visible** — it does not require hover,
+   because it communicates state rather than offering an action.
+3. **Given** a pair whose value is not hidden, **Then** the value is shown in plain text.
+4. **Given** the Custom Properties editor, **Then** supporting text explains the effect of hiding a value.
+5. **Given** a consumer that does not enable hidden values (Edit Content, Field Variables), **Then** no
+   visibility affordance is rendered anywhere in the editor.
+6. **Given** an app whose descriptor does not allow extra parameters, **Then** the Custom Properties
+   section is not shown at all.
+
+---
+
+### Edge Cases
+
+**Editing and validation**
+
+- **Duplicate key on entry**: rejected with a visible duplicate-key indication; the existing pair is
+  untouched.
+- **Empty key or empty value**: entry rejected, offending control flagged. Blank values are not
+  silently accepted — this matches current behavior and is preserved.
+- **Edit abandoned mid-flight**: cancelling an in-progress value edit restores the original value.
+- **Null value already stored**: pairs whose stored value is null continue to load and render rather
+  than dropping out of the list.
+- **Very long key or value**: the row does not break the layout; content wraps, truncates, or scrolls
+  within its own container rather than widening the table beyond its host.
+- **Narrow host container** (the field dialog): the editor stays usable at dialog width — entry row,
+  both columns, and actions remain reachable with no horizontal page scroll.
+- **Zero pairs**: empty-state message replaces the row list; the entry row remains available.
+
+**Accessibility and input modality**
+
+- **Keyboard-only user**: every affordance revealed on hover — row actions, drag handle, visibility
+  toggle, click-to-edit — is also reachable and operable via keyboard. Hover-only exposure would
+  otherwise strand keyboard and touch users entirely.
+- **Touch device**: hover-revealed actions remain reachable where there is no hover.
+- **Screen reader**: reordering a row announces the change; masked values are not read aloud in clear.
+
+**Ordering and persistence**
+
+- **Reorder cancelled**: a drag dropped outside a valid target, or escaped, leaves the order unchanged.
+- **Server rejects a per-row save** (Field Variables): the row does not silently appear saved.
+- **Reserved/blacklisted keys** (Field Variables): remain filtered out of the displayed list.
+
+---
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+**Single shared editor**
+
+- **FR-001**: The system MUST provide exactly one Key/Value editor, and all three consumers (Edit
+  Content field, Field Variables, Apps custom properties) MUST render that same editor.
+- **FR-002**: The editor MUST look and behave identically across the three consumers, except for the
+  capabilities each consumer explicitly enables (hidden values).
+
+**Core editing loop**
+
+- **FR-003**: The editor MUST present a persistent entry row containing a key input, a value input,
+  and an add control, positioned above the list of existing pairs.
+- **FR-004**: Users MUST be able to add a pair from the entry row, either by activating the add control
+  or by confirming from the keyboard.
+- **FR-005**: Existing rows MUST render their key and value as plain text at rest, without input
+  chrome.
+- **FR-006**: Users MUST be able to edit an existing pair's value by activating it, which converts that
+  value into a focused, editable input.
+- **FR-007**: An in-progress value edit MUST be committable (by confirming or moving focus away) and
+  cancellable (restoring the original value).
+- **FR-008**: A pair's key MUST be editable in place, activated the same way its value is. *Reversed
+  on request.* It originally read "MUST NOT be editable after creation", from the first round of
+  clarifications; corrected here rather than deleted so the change is auditable.
+- **FR-008a**: A rename MUST be refused when the key is empty, or when another pair already holds it —
+  two pairs sharing a key collide wherever they are stored, and the entry row refuses the same thing
+  when adding. A refused edit — a blank value included — MUST keep its input open, showing the same
+  message the entry row shows for the same refusal, so what the user typed stays on screen to be
+  corrected.
+- **FR-008c**: Committing an edit MUST require an explicit confirmation, and moving focus away MUST
+  abandon it and restore the original text. One rule covers both ways out — Enter writes, anything
+  else puts the row back — rather than committing a valid edit and discarding an invalid one from the
+  same gesture.
+- **FR-008b**: A rename MUST carry the pair's value across unchanged.
+- **FR-009**: Users MUST be able to remove an existing pair.
+- **FR-010**: The editor MUST reject a new pair whose key duplicates an existing key, and MUST indicate
+  why.
+- **FR-011**: The editor MUST reject a new pair with an empty key or an empty value, and MUST indicate
+  which control is at fault.
+- **FR-012**: After a successful add, the entry row MUST clear and return focus to the key input so
+  consecutive pairs can be entered without reaching for the pointer.
+- **FR-013**: The editor MUST emit the complete, current list of pairs to its host on every change
+  (add, edit, remove, reorder), and MUST additionally signal the specific add / edit / remove event so
+  consumers that persist per row can continue to do so.
+- **FR-014**: When the list is empty, the editor MUST display an empty state in place of the rows,
+  consisting of an illustrative icon above the message "Add your key and value here." The entry row
+  MUST remain present and usable above the empty state, so the empty state never blocks the only path
+  out of it. The empty state MUST render inside the same bordered container as the rows it replaces.
+
+**Presentation**
+
+- **FR-015**: The editor's visual presentation MUST derive from the platform's standard
+  component-library defaults (table, inputs, buttons) without bespoke per-consumer styling overrides.
+- **FR-016**: The editor MUST be assembled from existing shared and component-library building blocks.
+  A new bespoke component is permitted only where no existing option fits, and MUST be justified.
+- **FR-017**: Per-row **action** affordances — the drag handle and the remove control — MUST be visually
+  suppressed at rest and revealed when the row is hovered or focused.
+- **FR-018**: The hidden-value indicator is a **state** affordance, not an action, and MUST therefore be
+  permanently visible on any row whose value is hidden, independent of hover or focus.
+- **FR-019**: Every hover-revealed affordance MUST also be reachable and operable via keyboard, and
+  MUST expose an accessible name. An affordance that cannot be operated by keyboard MUST NOT be
+  presented as though it could: reordering is pointer-only, so its handle takes no focus and claims no
+  role. Keyboard reordering is not in this scope; until it exists, the handle is not a tab stop.
+- **FR-020**: The editor MUST render correctly and remain fully operable inside a constrained dialog
+  width without introducing horizontal scrolling of the host page.
+
+**Hidden values**
+
+- **FR-021**: In consumers that enable hidden values, the visibility affordance MUST be attached to the
+  value control rather than occupying its own column.
+- **FR-022**: A pair marked hidden MUST NOT render its value. The value cell states that the value is
+  withheld, under a lock icon, and offers no editing — matching the behaviour this redesign replaced.
+- **FR-023**: The withheld state MUST be permanently visible, never hover-gated (see FR-018).
+- **FR-023a**: Whether a value is hidden is chosen **when the pair is created, and never after**. The
+  entry row offers the choice; an existing row MUST offer no visibility control at all, whether it is
+  hidden or not. *Why*: the server returns a fixed mask in place of a stored secret, so revealing a
+  hidden value would display the mask rather than the secret, and saving it would overwrite the secret
+  with the mask — as would flagging a value that is already the mask. Changing a withheld value means
+  removing the pair and adding it again.
+- **FR-024**: Hidden values are enabled for the **Apps custom properties** consumer only. The Edit
+  Content field and the Field Variables editor MUST render no visibility affordance and no
+  hidden-value column.
+- **FR-025**: The hidden flag MUST be carried in the emitted pair so the consumer persists it exactly
+  as it does today.
+
+**Ordering**
+
+- **FR-026**: The editor MUST support reordering rows by dragging a row handle and dropping it at a new
+  position, as a capability of the shared editor available to **all three** consumers.
+- **FR-027**: A completed reorder MUST emit the reordered list to the host.
+- **FR-028**: A cancelled or invalid drop MUST leave the order unchanged.
+- **FR-029**: The drag handle MUST be rendered in **all three** consumers, unconditionally. There is
+  no per-consumer switch for reordering — the shared editor always offers it.
+- **FR-030**: Newly added pairs MUST take a deterministic, documented position within an existing order.
+- **FR-031**: Removing a pair MUST leave the relative order of the remaining pairs intact.
+- **FR-032**: If persisting a reorder fails, the system MUST surface the failure rather than leaving
+  the displayed order silently diverged from the stored order.
+
+**Row paging**
+
+- **FR-037**: When the list is longer than one page (40 rows), the editor MUST render only the first
+  page and withhold the rest from the DOM.
+- **FR-038**: A row MUST be appended after the last rendered one carrying a control that reveals the
+  next page. It MUST read **"Load more"**, with no count, and sit on the **left** of the row — matching
+  the site/folder selector, which is the existing precedent for this pattern in the product.
+- **FR-039**: The control MUST disappear once every row is rendered, and MUST NOT appear at all for a
+  list that fits in one page.
+- **FR-040**: Withholding is a **rendering** limit only. Every pair MUST remain in the editor's list
+  and in what it emits, so reorder, edit, remove and the emitted payload behave as though all rows
+  were on screen. In particular, a drag MUST NOT lose the withheld rows.
+- **FR-041**: Revealed rows MUST survive an edit. Two of the three consumers hand the editor a fresh
+  array on every change, so a count derived from that input collapses the table to the first page as
+  soon as anything is added, edited, removed or reordered. *Corrected:* this originally read "supplying
+  a new list MUST reset it to the first page", which described the defect. A field opened afresh still
+  starts at page one, because each consumer builds a new editor for it.
+
+**Pasting a block of pairs**
+
+- **FR-042**: Pasting text shaped like a `.env` file into the key input MUST create one pair per
+  assignment, in the order the text lists them, instead of dropping the text into the input.
+- **FR-043**: The reader MUST ignore comments and blank lines, drop an `export` prefix, split on the
+  **first** `=` only, and remove one matching pair of surrounding quotes from the value.
+- **FR-044**: A key the list already holds, or repeated within the paste, MUST be skipped rather than
+  overwrite what is there.
+- **FR-045a**: A parsed pair whose value is blank MUST be dropped rather than added. `KEY=` is legal in
+  a `.env`, but a blank value is refused on every other path into the editor, and a paste is not a way
+  around that.
+- **FR-045**: Text that yields no assignment MUST paste normally into the input, so pasting a plain key
+  still behaves like a paste.
+- **FR-046**: Multi-line values are out of scope. A certificate pasted this way would be cut at its
+  first line break, so it stays a single-pair job through the normal inputs.
+
+**Clearing every pair**
+
+- **FR-047**: The editor MUST offer a control that removes every pair at once, behind a confirmation.
+- **FR-048**: The confirmation MUST match the styling of the unsaved-changes prompt in Edit Content, and
+  MUST appear in every consumer. It is served by a dialog the editor itself renders, scoped by key.
+  *Corrected during implementation.* It originally required the host's existing dialog; that holds only
+  in Edit Content, whose layout renders one unconditionally. In dotcms-ui the dialog exists only while
+  `DotAlertConfirmService` has a model, so an unkeyed confirmation from the editor reached nothing at
+  all and Clear All did nothing in both Field Variables and Apps. The key keeps the editor's dialog and
+  the host's from answering each other's confirmations.
+- **FR-049**: Nothing MUST be removed until the confirmation is accepted.
+- **FR-050**: The control MUST NOT be offered when there is nothing to clear.
+
+**Fields whose pairs are produced elsewhere**
+
+- **FR-051**: A field the content type marks read-only MUST render its pairs without any way to change
+  them: no entry row, no remove control, no click-to-edit, no reordering, no Clear All. Reordering is a
+  change like any other — a read-only list must not publish one.
+- **FR-052**: Read-only MUST be taken from the field's existing `readOnly` declaration through the
+  form's disabled state, not from a decision made inside the editor.
+- **FR-053**: Reading affordances MUST remain: paging, the withheld indicator, the empty state, and
+  reordering.
+- **FR-054**: A read-only pair MUST NOT present itself as an interactive control — no button role and
+  not in the tab order — so keyboard users are not sent to something inert.
+
+**Deferred save in Field Variables**
+
+- **FR-055**: The Field Variables tab MUST hold every add, edit, remove and reorder until the admin
+  saves. It wrote each one immediately before, which left Cancel with nothing to cancel.
+- **FR-056**: The dialog MUST carry Cancel and Save in its footer for this tab, supplied the way the
+  Settings tabs already supply theirs.
+- **FR-057**: Save MUST be disabled until something differs from what is stored, compared by key and
+  value so that removing a pair and re-adding it does not count as a change.
+- **FR-058**: Saving MUST write only what changed: pairs removed are deleted, pairs added or edited are
+  written, untouched pairs are not re-sent.
+- **FR-059**: A failed write MUST surface the error and leave the dialog open with the edits intact, so
+  it cannot be mistaken for a save that worked.
+
+**Consumer integration & data safety**
+
+- **FR-033**: The Edit Content Key/Value field MUST continue to read its stored pairs and write them
+  back in its existing shape, with no data loss on round-trip.
+- **FR-034**: The Field Variables editor MUST persist through its existing per-variable path and MUST
+  continue to filter reserved keys out of the displayed list. *Amended:* it no longer writes as the
+  admin types — see [FR-055 to FR-059](#functional-requirements).
+- **FR-035**: The Apps custom properties editor MUST continue to read and write its pairs, including the
+  hidden flag, through its existing path, and MUST remain hidden for apps whose descriptor does not
+  allow extra parameters.
+- **FR-036**: Existing stored key/value data in every consumer MUST continue to load and save without
+  loss or silent transformation after the change.
+
+### Design Constraints (given)
+
+Stated by the requesting developer as binding constraints on *how* the redesign is built. Listed
+separately from the Functional Requirements because they name specific tooling rather than
+user-observable behavior. All three align with existing repository standards.
+
+- **DC-001 — Component library defaults are the source of truth**: presentation comes from the
+  component library's own defaults (PrimeNG 21.x, the version this workspace is on), not from
+  hand-written CSS reproducing a mockup. Where a mockup and the library default disagree on
+  incidental styling, the library default wins; where they disagree on structure or affordance
+  placement, the mockup wins.
+- **DC-002 — No unnecessary custom components**: reuse before creating, in order — existing dotCMS
+  shared components, then the component library, and only then something new, with a stated
+  justification. Reproducing something that already exists is a defect, not a feature. This mirrors
+  the repository's standing "Reuse Before Creating" rule.
+- **DC-003 — Material Symbols for icons**: all icons in authored markup use Material Symbols. This is
+  already the repository standard; PrimeIcons (`pi pi-*`) is legacy-only and the deprecated `dot-icon`
+  component must not be used. Because this work rewrites the editor's markup wholesale, every icon it
+  renders is newly authored and therefore in scope for this rule. Icons drawn internally by
+  component-library components are a theming concern and out of scope.
+
+### Key Entities
+
+- **Key/Value Pair**: the unit the editor manages. Carries a **key** (unique within one editor instance,
+  non-empty, editable in place), a **value** (non-empty text), an optional **hidden** flag
+  indicating the value should be masked in the UI, and a **position** within its list.
+- **Editor Capabilities**: the per-consumer switch determining whether hidden values are offered.
+  Reordering is no longer a per-consumer capability — it is universal.
+- **Ordered Collection**: the per-consumer store of pair positions. Each of the three consumers persists
+  this through its own mechanism; the editor itself is agnostic to how.
+
+---
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: All three consumers render the redesigned editor; a reviewer comparing them side by side
+  finds no visual or interaction differences other than the hidden-value affordance.
+- **SC-002**: 100% of existing key/value data in each of the three consumers loads and saves without
+  loss or alteration, **order included** — verified by round-tripping a populated example in each
+  surface. The example must contain at least one key made only of digits and must not be in
+  alphabetical or numeric order, or it cannot catch the defect described in
+  [Key ordering defect](#key-ordering-defect-found-during-implementation).
+- **SC-003**: A user can add a key/value pair from an empty field in under 10 seconds using only the
+  keyboard, without reaching for the pointer.
+- **SC-004**: Zero regressions in existing behavior: duplicate-key rejection, empty-input rejection,
+  per-row persistence in Field Variables, and hidden-value masking in Apps all behave as before.
+- **SC-005**: Every action available on hover is reachable by keyboard alone, verified by completing
+  add / edit / remove / reorder in each surface with the pointer unused.
+- **SC-006**: The editor is fully operable inside the field dialog at its standard width with no
+  horizontal scrolling of the host page.
+- **SC-007**: Automated unit coverage exercises add, edit, cancel-edit, remove, reorder, duplicate-key
+  rejection, empty-input rejection, hidden-value rendering, and empty-state rendering; one
+  end-to-end smoke per consumer confirms values persist across save and reload.
+- **SC-009**: Pasting a `.env` block of N assignments produces N pairs in the pasted order, and text
+  with no assignment in it still pastes into the input.
+- **SC-010**: Clearing every pair takes one action plus a confirmation, and nothing is removed if the
+  confirmation is dismissed.
+- **SC-011**: A read-only field offers no control that would change it, and a keyboard user tabbing
+  through it never lands on an inert one.
+- **SC-012**: In Field Variables, edits made and then cancelled leave the stored variables untouched —
+  verified by reopening the field.
+- **SC-008**: A field holding 70 pairs renders 40 rows and stays fully operable: revealing the rest is
+  one action, and a reorder performed while rows are withheld loses, duplicates and reorders nothing
+  outside the drag.
+
+---
+
+## Assumptions
+
+- **Visual source of truth**: see [Design Constraints](#design-constraints-given) — DC-001 through
+  DC-003 capture the component-library, reuse, and icon constraints the requester set.
+- **Empty state copy**: the empty state reads "Add your key and value here." above a key-shaped icon,
+  per the mockup. The exact glyph is a design detail to be matched against the linked design document.
+  The same empty state is used in all three consumers.
+- **Third consumer identity confirmed**: the mockup titled "Page / Container — Custom Properties" refers
+  to the **Apps** configuration screen's Custom Properties section, reached via Settings → Apps → an app
+  such as SSO — SAML. Confirmed by the requester. There is no separate Page/Container key-value surface
+  in scope.
+- **"Column" means "row"**: the request said each *column* can be dragged to change order. The editor
+  has two fixed columns (KEY, VALUE); the orderable axis is the list of pairs, so this is read as *row*
+  reordering. Column reordering is out of scope.
+- **Ordering in Edit Content — assumption corrected**: this was first recorded as "already works end to
+  end, no persistence work needed". Testing during implementation disproved it for one class of key.
+  The platform does store and return the order faithfully; the loss happened in the browser, on keys
+  made only of digits. It is corrected in place rather than deleted so the original reasoning stays
+  auditable. See [Key ordering defect](#key-ordering-defect-found-during-implementation).
+- **Hidden-value semantics are preserved**: the eye affordance in the mockup carries the same persisted
+  hidden flag the current toggle switch carries — it relocates and restyles the control rather than
+  redefining it. Masking is a UI concern, not a security boundary; the underlying value is transmitted
+  as it is today.
+- **Reserved-key filtering stays with the consumer**: the Field Variables blacklist of keys owned by
+  dedicated settings sections remains that consumer's responsibility, not the shared editor's.
+- **No API contract removals**: ordering is introduced additively. No existing endpoint, field, or
+  payload is removed or repurposed.
+- **Edit Content mockup not received**: of the reference images provided, those received cover the
+  Field Variables dialog (populated and empty) and the Apps custom properties panel. The Edit Content
+  mockup did not come through. Its layout is assumed to be the same editor inside the Edit Content
+  field card, with hidden values disabled. This should be confirmed against the linked design before
+  implementation.
+- **The linked design document** (`claude.ai/design/...Key+Value+Field.dc.html`) is the definitive visual
+  reference and takes precedence over the static screenshots where they diverge.
+
+---
+
+## Dependencies
+
+- The redesigned editor is a shared component; all three consumers must be updated and verified
+  together to avoid a period where surfaces disagree visually.
+- Field Variables depends on the existing field-variable save/delete path, unchanged by this work.
+- Apps custom properties depends on the existing app configuration save path, unchanged by this work.
+- No backend change is required for this feature.

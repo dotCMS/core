@@ -1,85 +1,86 @@
-<tr class="font-bold">
-    @if ($dragAndDrop()) {
-        <th scope="col" class="w-12 align-bottom text-left p-2" data-testId="drag-column"></th>
+<td
+    class="w-8.5 min-w-8.5 border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) py-3 pr-0! pl-4!"
+    data-testId="drag-column"></td>
+
+<!--
+    Cells align to the top rather than the middle: a message makes its own cell
+    taller, and centred content would drift, leaving the inputs on different lines.
+-->
+<td
+    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
+    <input
+        (keydown.escape)="onCancel($event)"
+        (keydown.enter)="handleKeyInputEnter($event)"
+        (paste)="handleKeyInputPaste($event)"
+        [placeholder]="'keyValue.key_input.placeholder' | dm"
+        class="w-full"
+        [formControl]="keyControl"
+        #keyCell
+        autocomplete="false"
+        data-testId="key-input"
+        pInputText
+        pSize="small"
+        type="text" />
+    @if (keyControl.dirty && keyControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500">
+            {{ 'keyValue.key_input.required' | dm }}
+        </small>
+    } @else if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
+        <small class="mt-1 block text-xs text-red-500">
+            {{ 'keyValue.key_input.duplicated' | dm }}
+        </small>
     }
-    <th class="align-bottom text-left p-2">
-        <div class="flex flex-col gap-1">
-            <label for="key-value-input-row-key-input" class="font-bold">
-                {{ 'keyValue.key_header.label' | dm }}
-            </label>
-            <input
-                (keydown.escape)="onCancel($event)"
-                (keydown.enter)="handleKeyInputEnter($event)"
-                [formControl]="keyControl"
-                [placeholder]="'keyValue.key_input.placeholder' | dm"
-                class="w-full"
-                #keyCell
-                id="key-value-input-row-key-input"
-                data-testId="key-input"
-                pInputText
-                type="text"
-                pSize="small"
-                autocomplete="false" />
-            <small class="text-red-500 text-xs h-4">
-                @if (keyControl.dirty && keyControl.hasError('required')) {
-                    {{ 'keyValue.key_input.required' | dm }}
-                } @else if (keyControl.dirty && keyControl.hasError('duplicatedKey')) {
-                    {{ 'keyValue.key_input.duplicated' | dm }}
-                }
-            </small>
-        </div>
-    </th>
-    <th class="align-bottom text-left p-2">
-        <div class="flex flex-col gap-1">
-            <label for="key-value-input-row-value-input" class="font-bold">
-                {{ 'keyValue.value_header.label' | dm }}
-            </label>
-            <input
-                (keydown.escape)="onCancel($event)"
-                (keydown.enter)="handleValueInputEnter($event)"
-                (keypress.enter)="handleValueInputEnter($event)"
-                [formControl]="valueControl"
-                [type]="hiddenControl.value ? 'password' : 'text'"
-                [placeholder]="'keyValue.value_input.placeholder' | dm"
-                class="w-full"
-                id="key-value-input-row-value-input"
-                #valueCell
-                data-testId="value-input"
-                pInputText
-                pSize="small"
-                autocomplete="false" />
-            <small class="text-red-500 text-xs h-4">
-                @if (valueControl.dirty && valueControl.hasError('required')) {
-                    {{ 'keyValue.value_input.required' | dm }}
-                }
-            </small>
-        </div>
-    </th>
-    @if ($showHiddenField()) {
-        <th class="align-bottom text-left p-2">
-            <div class="flex flex-col gap-1">
-                <label for="key-value-input-row-hidden-input" class="font-bold">
-                    {{ 'keyValue.hidden_header.label' | dm }}
-                </label>
-                <p-toggleSwitch
-                    [formControl]="hiddenControl"
-                    id="key-value-input-row-hidden-input"
-                    data-testId="hidden-switch" />
-                <small class="h-4"></small>
-            </div>
-        </th>
+</td>
+
+<td
+    class="border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
+    <p-iconfield class="block w-full">
+        <input
+            (keydown.escape)="onCancel($event)"
+            (keydown.enter)="handleValueInputEnter($event)"
+            [placeholder]="'keyValue.value_input.placeholder' | dm"
+            [type]="hiddenControl.value ? 'password' : 'text'"
+            class="w-full"
+            [formControl]="valueControl"
+            #valueCell
+            autocomplete="false"
+            data-testId="value-input"
+            pInputText
+            pSize="small" />
+        @if ($showHiddenField()) {
+            <p-inputicon>
+                <button
+                    (click)="hiddenControl.setValue(!hiddenControl.value)"
+                    [attr.aria-label]="'keyValue.hidden_header.label' | dm"
+                    [attr.aria-pressed]="hiddenControl.value"
+                    class="inline-flex size-4 cursor-pointer items-center justify-center text-surface-500 dark:text-surface-400"
+                    data-testId="dot-key-value-new-visibility-toggle"
+                    type="button">
+                    <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                        {{ hiddenControl.value ? 'visibility_off' : 'visibility' }}
+                    </span>
+                </button>
+            </p-inputicon>
+        }
+    </p-iconfield>
+    @if (valueControl.dirty && valueControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500">
+            {{ 'keyValue.value_input.required' | dm }}
+        </small>
     }
-    <th class="align-bottom text-left p-2 w-16 min-w-12" scope="col">
-        <div class="flex flex-col gap-1 justify-end h-full">
-            <p-button
-                (click)="saveVariable()"
-                icon="pi pi-plus"
-                [text]="true"
-                #saveButton
-                size="small"
-                data-testId="save-button"
-                type="button" />
-            <small class="h-4"></small>
-        </div>
-    </th>
-</tr>
+</td>
+
+<td
+    class="w-21 min-w-21 border-b border-b-(--p-datatable-border-color) bg-(--p-content-background) px-4 py-3 align-top">
+    <button
+        (click)="saveVariable()"
+        [attr.aria-label]="'keyValue.action.add' | dm"
+        [outlined]="true"
+        [rounded]="true"
+        data-testId="save-button"
+        pButton
+        size="small"
+        type="button">
+        <span class="material-symbols-outlined text-lg!" aria-hidden="true" pButtonIcon>add</span>
+    </button>
+</td>

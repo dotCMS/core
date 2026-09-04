@@ -116,6 +116,9 @@ class DotCustomFieldSettingsStubComponent {
 class DotContentTypeFieldsVariablesStubComponent {
     field = input<DotCMSContentTypeField>();
     showTable = input(false);
+    // Variables hands the dialog its own Save now, like the Settings tabs do.
+    $changeControls = output<DotDialogActions>();
+    $save = output<void>();
 }
 
 const messageServiceMock = new MockDotMessageService({
@@ -359,9 +362,47 @@ describe('DotEditFieldDialogComponent', () => {
             expect(comp.saveBtn.disabled).toBe(false);
         });
 
-        it('should hide the buttons when switching to the variables tab', () => {
+        it('should keep the buttons on the variables tab', () => {
+            // Field Variables no longer writes as you type: it hands over its own Save
+            // through `changesDialogActions`, so the footer has to stay.
             comp.handleTabChange(comp.variablesTabIndex);
-            expect(comp.hideButtons).toBe(true);
+            expect(comp.hideButtons).toBe(false);
+        });
+
+        it('should take its Save from the variables tab, and give it back on leaving', () => {
+            const variablesAction = jest.fn();
+            const variables = fixture.debugElement.query(
+                By.css('dot-content-type-fields-variables')
+            );
+
+            comp.handleTabChange(comp.variablesTabIndex);
+            variables.triggerEventHandler('changeControls', {
+                accept: { label: 'Variables Save', action: variablesAction, disabled: false },
+                cancel: { label: 'Cancel' }
+            });
+
+            expect(comp.saveBtn.label).toBe('Variables Save');
+
+            comp.saveBtn.action();
+            expect(variablesAction).toHaveBeenCalled();
+
+            // Back on Overview the dialog's own Save must be the one wired up again.
+            comp.handleTabChange(comp.OVERVIEW_TAB_INDEX);
+            comp.saveBtn.action();
+
+            expect(variablesAction).toHaveBeenCalledTimes(1);
+            expect(comp.$propertiesForm().saveFieldProperties).toHaveBeenCalled();
+        });
+
+        it('should close the dialog when the variables tab reports it saved', () => {
+            const variables = fixture.debugElement.query(
+                By.css('dot-content-type-fields-variables')
+            );
+
+            comp.handleTabChange(comp.variablesTabIndex);
+            variables.triggerEventHandler('save');
+
+            expect(refMock.close).toHaveBeenCalledWith({ kind: 'settings-saved' });
         });
 
         it('should NOT hide the buttons on the Settings tab for a field with settings', () => {

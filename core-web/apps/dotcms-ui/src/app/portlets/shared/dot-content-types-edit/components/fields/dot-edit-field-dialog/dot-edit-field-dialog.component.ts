@@ -134,8 +134,11 @@ export class DotEditFieldDialogComponent {
             this.saveBtn = this.buildOverviewSaveBtn(!this.overviewFormChanged);
         }
 
+        // Variables carries its own Save now, handed over through `changesDialogActions`,
+        // so the footer stays. Only a tab with nothing to save hides it.
         this.hideButtons =
             index !== this.OVERVIEW_TAB_INDEX &&
+            index !== this.variablesTabIndex &&
             !(index === this.SETTINGS_TAB_INDEX && this.isFieldWithSettings);
     }
 

@@ -3,6 +3,8 @@ import { createHostFactory, SpectatorHost } from '@openng/spectator';
 import { Component } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule } from '@angular/forms';
 
+import { ConfirmationService } from 'primeng/api';
+
 import { DotMessageService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { DotKeyValueComponent } from '@dotcms/ui';
@@ -41,6 +43,7 @@ describe('DotEditContentKeyValueComponent', () => {
         detectChanges: false,
         componentMocks: [DotKeyValueComponent],
         providers: [
+            ConfirmationService,
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
@@ -124,7 +127,8 @@ describe('DotEditContentKeyValueComponent', () => {
             const control = spectator.hostComponent.formGroup.get(KEY_VALUE_FIELD_MOCK.variable);
 
             control.valueChanges.subscribe((value) => {
-                expect(value).toEqual({ key14: 'value14' });
+                // JSON text, not an object, so key order survives.
+                expect(JSON.parse(value)).toEqual({ key14: 'value14' });
                 done();
             });
 
@@ -254,7 +258,7 @@ describe('DotEditContentKeyValueComponent', () => {
             spectator.detectChanges();
         });
 
-        it('should convert DotKeyValue array to object and call onChange', () => {
+        it('should report the pairs as ordered JSON and call onChange', () => {
             // Mock the callbacks
             const mockOnChange = jest.fn();
             const mockOnTouched = jest.fn();
@@ -271,7 +275,7 @@ describe('DotEditContentKeyValueComponent', () => {
 
             keyValueField.updateField(testData);
 
-            expect(mockOnChange).toHaveBeenCalledWith({ key1: 'value1', key2: 'value2' });
+            expect(mockOnChange).toHaveBeenCalledWith('{"key1":"value1","key2":"value2"}');
             expect(mockOnTouched).toHaveBeenCalled();
         });
 
@@ -287,7 +291,7 @@ describe('DotEditContentKeyValueComponent', () => {
 
             keyValueField.updateField([]);
 
-            expect(mockOnChange).toHaveBeenCalledWith({});
+            expect(JSON.parse(mockOnChange.mock.calls[0][0])).toEqual({});
             expect(mockOnTouched).toHaveBeenCalled();
         });
     });
