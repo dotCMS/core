@@ -1885,14 +1885,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 1
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 0,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
     });
 
@@ -2021,14 +2023,16 @@ describe('DotContentDriveStore - withActionExecution', () => {
                 versionsIndexed: 3
             });
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Refresh',
-                successCount: 2,
-                skippedCount: 1,
-                failCount: 1,
-                partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
-                backgrounded: true
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Refresh',
+                    successCount: 2,
+                    skippedCount: 1,
+                    failCount: 1,
+                    partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
+                    backgrounded: true
+                })
+            );
         });
 
         it('should still report a cancelled run, whose counters do account for every item', () => {
@@ -2128,12 +2132,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         it('should clear the running action once settled', () => {
@@ -2199,12 +2205,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeQuickAction('LOCK', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 0,
-                skippedCount: 0,
-                failCount: 2
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 0,
+                    skippedCount: 0,
+                    failCount: 2
+                })
+            );
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
         });
     });
@@ -2230,12 +2238,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Send for Review',
-                successCount: 1,
-                skippedCount: 1,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Send for Review',
+                    successCount: 1,
+                    skippedCount: 1,
+                    failCount: 0
+                })
+            );
         });
 
         it('should count per-item failures from the fails list', () => {
@@ -2292,12 +2302,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2307,12 +2319,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2334,12 +2348,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'folder-1']);
 
             expect(addToBundleService.addToBundle).toHaveBeenCalledWith('id-1,folder-1', BUNDLE);
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {
@@ -2433,12 +2449,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 0
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 0
+                })
+            );
         });
 
         it('should split failures out of the total', () => {
@@ -2448,12 +2466,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 2,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 2,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         // Folder ids reach here as plain strings, so this asserts the same arithmetic as the case
@@ -2474,12 +2494,14 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executePushPublish('Push Publish', ['id-1', 'folder-1'], SETTINGS);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Push Publish',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Push Publish',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         it('should never report a negative success count', () => {

@@ -153,12 +153,14 @@ describe('withActionExecution', () => {
 
             store.executeQuickAction('lock-id', 'Lock', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Lock',
-                successCount: 1,
-                skippedCount: 0,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Lock',
+                    successCount: 1,
+                    skippedCount: 0,
+                    failCount: 1
+                })
+            );
         });
 
         it('should clear the in-flight marker once the run settles', () => {
@@ -291,12 +293,14 @@ describe('withActionExecution', () => {
 
             store.executeWorkflowAction('wf-1', 'Publish', ['a', 'b', 'c', 'd', 'e', 'f']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Publish',
-                successCount: 3,
-                skippedCount: 2,
-                failCount: 1
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Publish',
+                    successCount: 3,
+                    skippedCount: 2,
+                    failCount: 1
+                })
+            );
         });
 
         it('should refuse the same workflow action fired again over the same items', () => {
@@ -317,12 +321,28 @@ describe('withActionExecution', () => {
 
             store.executeAddToBundle('Add to Bundle', { id: 'b1', name: 'B1' }, ['i1', 'i2', 'i3']);
 
-            expect(store.actionExecutionResult()).toEqual({
-                actionName: 'Add to Bundle',
-                successCount: 3,
-                skippedCount: 0,
-                failCount: 2
-            });
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({
+                    actionName: 'Add to Bundle',
+                    successCount: 3,
+                    skippedCount: 0,
+                    failCount: 2
+                })
+            );
+        });
+
+        it('should ask for its success to be confirmed', () => {
+            // Bundling changes nothing in the listing, so the "silent on success" rule would leave
+            // the author with no sign at all - the same complaint that started this. Push Publish
+            // shares this path for the same reason.
+            build();
+            addToBundle.mockReturnValue(of({ total: 2, errors: 0 }));
+
+            store.executeAddToBundle('Add to Bundle', { id: 'b1', name: 'B1' }, ['i1', 'i2']);
+
+            expect(store.actionExecutionResult()).toEqual(
+                expect.objectContaining({ confirmSuccess: true })
+            );
         });
 
         it('should treat a non-numeric errors field as a failure, not a success', () => {

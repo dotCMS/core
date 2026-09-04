@@ -143,9 +143,7 @@ export function withActionExecution() {
              * can legitimately occupy several rows and marking by identifier would mark siblings
              * that nothing is happening to.
              */
-            busyRows: computed(() =>
-                Object.values(runs()).flatMap((run) => run.targets)
-            )
+            busyRows: computed(() => Object.values(runs()).flatMap((run) => run.targets))
         })),
         withMethods(
             (
@@ -227,9 +225,7 @@ export function withActionExecution() {
                     // a run with no item targets at all, such as an upload.
                     return (
                         runKey(operation, targets) in store.runs() ||
-                        active.some((run) =>
-                            run.targets.some((target) => targets.includes(target))
-                        )
+                        active.some((run) => run.targets.some((target) => targets.includes(target)))
                     );
                 };
 
@@ -337,7 +333,12 @@ export function withActionExecution() {
                                 // successes are what is left after removing them.
                                 successCount: Math.max((result.total ?? 0) - result.errors, 0),
                                 skippedCount: 0,
-                                failCount: result.errors
+                                failCount: result.errors,
+                                // Both consumers of this path — Add to Bundle and Push Publish —
+                                // change nothing in the listing, so their success has to be said out
+                                // loud or the author gets no sign at all. The row-based operations
+                                // stay silent precisely because their rows *do* change.
+                                confirmSuccess: true
                             });
                         });
                 };
@@ -698,9 +699,7 @@ export function withActionExecution() {
                      * shell's existing effect renders it — so the same operation reads the same way
                      * whichever surface started it, and the reload behaviour matches too.
                      */
-                    reportExternalResult: (
-                        result: DotContentDriveActionExecutionResult
-                    ): void => {
+                    reportExternalResult: (result: DotContentDriveActionExecutionResult): void => {
                         patchState(store, { actionExecutionResult: result });
                     },
 
