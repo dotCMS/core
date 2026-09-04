@@ -1128,6 +1128,58 @@ public class BrowserAPIImpl implements BrowserAPI {
     }
 
     /**
+     * Collects the distinct set of {@code modUser}/{@code owner} ids a page of listing rows will
+     * need, so {@link #warmUpUserCache(List)} can resolve them once, sequentially, before
+     * {@link #hydrateContentletsInParallel} fans the same rows out into parallel chunks (issue
+     * #37186, FR-001). Pure and side-effect-free: reads fields already present on the
+     * already-loaded {@link Contentlet} objects, no I/O.
+     *
+     * <p>Deliberately does NOT include locked-by ids: resolving one costs a real per-contentlet
+     * {@code versionableAPI.getLockedBy(...)} call, not a free field read, so pulling it into this
+     * sequential warm-up would add new serial work per row instead of per distinct author —
+     * locked-by resolution stays where it already happens today, inside
+     * {@code DefaultTransformStrategy}, per-row, during the parallel phase.</p>
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     * @return the distinct, non-blank modUser/owner ids referenced by {@code contentlets}
+     */
+    static Set<String> collectWarmUpUserIds(final List<Contentlet> contentlets) {
+        final Set<String> ids = new LinkedHashSet<>();
+        for (final Contentlet contentlet : contentlets) {
+            final String modUser = contentlet.getModUser();
+            if (UtilMethods.isSet(modUser)) {
+                ids.add(modUser);
+            }
+            final String owner = contentlet.getOwner();
+            if (UtilMethods.isSet(owner)) {
+                ids.add(owner);
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * Resolves every id from {@link #collectWarmUpUserIds(List)} once, sequentially, so the
+     * `UserCache` entry for each is already warm by the time {@link #hydrateContentletsInParallel}
+     * starts — this is the fix for the concurrent thundering-herd race on
+     * {@code UserFactoryImpl#loadUserById} (issue #37186, FR-001): without it, two parallel chunks
+     * needing the same not-yet-cached id each miss the cache and query the database independently.
+     * A resolution failure for one id (e.g. an orphaned user) is logged and skipped — it must not
+     * abort the warm-up for the remaining ids, and the per-row fallback (FR-004a) still applies
+     * later during hydration for whichever row referenced it.
+     *
+     * @param contentlets the page of contentlets about to be hydrated
+     */
+    private void warmUpUserCache(final List<Contentlet> contentlets) {
+        for (final String userId : collectWarmUpUserIds(contentlets)) {
+            Try.run(() -> userAPI.loadUserById(userId))
+                    .onFailure(e -> Logger.debug(this, String.format(
+                            "Warm-up: could not resolve user '%s' ahead of parallel hydration: %s",
+                            userId, e.getMessage())));
+        }
+    }
+
+    /**
      * Hydrates contentlets in parallel using chunks for improved performance.
      *
      * @param contentlets List of contentlets to hydrate
@@ -1758,6 +1810,7 @@ public class BrowserAPIImpl implements BrowserAPI {
                 hasMoreContent = fromDB.hasMore;
                 nextContentCursor = fromDB.nextDbCursor;
 
+                warmUpUserCache(fromDB.contentlets);
                 final List<Map<String, Object>> contentlets = hydrateContentletsInParallel(fromDB.contentlets, browserQuery, roles);
                 contentCount = contentlets.size();
                 list.addAll(contentlets);
