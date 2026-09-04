@@ -22,9 +22,20 @@ const sameValue = (a?: DotFilterValue, b?: DotFilterValue): boolean => {
     return a === b;
 };
 
-/** Stored numeric keys → base-type names. Unmapped keys are dropped, not passed through. */
-const toBaseTypeNames = (raw: DotFilterValue | undefined): string[] => {
-    const keys = Array.isArray(raw) ? raw : raw ? [raw] : [];
+/**
+ * Stored numeric keys → base-type names. Unmapped keys are dropped, not passed through.
+ *
+ * Returns `undefined` for an absent key rather than an empty list. The two are different states and
+ * the facade contract calls the distinction load-bearing (O2): `undefined` is "not filtered", `[]`
+ * is "filtered to nothing selected". Mapping a list naturally produces `[]` for nothing, which is
+ * how this key came to report absence as an empty selection.
+ */
+const toBaseTypeNames = (raw: DotFilterValue | undefined): string[] | undefined => {
+    if (raw === undefined) {
+        return undefined;
+    }
+
+    const keys = Array.isArray(raw) ? raw : [raw];
 
     return keys.map((key) => MAP_NUMBERS_TO_BASE_TYPES[Number(key)]).filter(Boolean);
 };

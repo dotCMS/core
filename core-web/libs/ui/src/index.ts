@@ -29,6 +29,12 @@ export * from './lib/components/dot-binary-option-selector/dot-binary-option-sel
 export * from './lib/components/dot-chip-filter/dot-chip-filter.component';
 export * from './lib/components/dot-chip-filter/constants';
 export * from './lib/components/dot-filter-bar/constants';
+export * from './lib/components/dot-filter-bar/dot-filter-bar.component';
+export * from './lib/components/dot-filter-bar/chips/dot-content-type-filter-chip/dot-content-type-filter-chip.component';
+export * from './lib/components/dot-filter-bar/chips/dot-language-filter-chip/dot-language-filter-chip.component';
+export * from './lib/components/dot-filter-bar/chips/dot-status-filter/constants';
+export * from './lib/components/dot-filter-bar/chips/dot-status-filter/dot-status-filter.component';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/relationship-picker.token';
 export * from './lib/components/dot-filter-bar/chips/dot-shared-assets-filter/constants';
 export * from './lib/components/dot-filter-bar/chips/dot-shared-assets-filter/dot-shared-assets-filter.component';
 export * from './lib/components/dot-filter-bar/filter-facade.token';

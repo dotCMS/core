@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 
 import { DotLanguageFilterComponent } from '../../../dot-language-filter/dot-language-filter.component';
-import { DOT_FILTER_FACADE } from '../../filter-facade.token';
+import { DOT_FILTER_FACADE, toFilterValues } from '../../filter-facade.token';
 
 /**
  * Connects the presentational {@link DotLanguageFilterComponent} to whatever surface is rendering
@@ -25,7 +25,7 @@ export class DotLanguageFilterChipComponent {
     readonly #filters = inject(DOT_FILTER_FACADE);
 
     protected readonly $languageIds = computed(() =>
-        ((this.#filters.getFilterValue('languageId') as string[]) ?? []).map(Number)
+        toFilterValues(this.#filters.getFilterValue('languageId')).map(Number)
     );
 
     protected onSelectionChange(languageIds: number[]): void {

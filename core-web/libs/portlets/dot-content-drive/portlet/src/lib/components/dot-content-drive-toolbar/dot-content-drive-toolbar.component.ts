@@ -24,17 +24,18 @@ import {
 } from '@dotcms/portlets/content-drive/ui';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
 import {
+    DotContentTypeFilterChipComponent,
+    DotFilterBarComponent,
+    DotLanguageFilterChipComponent,
     DotMessagePipe,
     DotSharedAssetsFilterComponent,
+    DotStatusFilterComponent,
     DotUploadButtonComponent
 } from '@dotcms/ui';
 
-import { DotContentDriveContentTypeFilterComponent } from './components/dot-content-drive-content-type-filter/dot-content-drive-content-type-filter.component';
 import { DotContentDriveFieldFilterComponent } from './components/dot-content-drive-field-filter/dot-content-drive-field-filter.component';
 import { DotContentDriveFieldFilterMenuComponent } from './components/dot-content-drive-field-filter-menu/dot-content-drive-field-filter-menu.component';
-import { DotContentDriveLanguageFieldComponent } from './components/dot-content-drive-language-field/dot-content-drive-language-field.component';
 import { DotContentDriveSearchInputComponent } from './components/dot-content-drive-search-input/dot-content-drive-search-input.component';
-import { DotContentDriveStatusFilterComponent } from './components/dot-content-drive-status-filter/dot-content-drive-status-filter.component';
 import { DotContentDriveTreeTogglerComponent } from './components/dot-content-drive-tree-toggler/dot-content-drive-tree-toggler.component';
 import { DotContentDriveWorkflowActionsComponent } from './components/dot-content-drive-workflow-actions/dot-content-drive-workflow-actions.component';
 import { DotContentDriveWorkflowFilterComponent } from './components/dot-content-drive-workflow-filter/dot-content-drive-workflow-filter.component';
@@ -136,15 +137,16 @@ interface ToolbarAnimationState {
         DotMessagePipe,
         DotUploadButtonComponent,
         DotContentDriveTreeTogglerComponent,
-        DotContentDriveContentTypeFilterComponent,
+        DotContentTypeFilterChipComponent,
         DotContentDriveSearchInputComponent,
-        DotContentDriveLanguageFieldComponent,
+        DotLanguageFilterChipComponent,
         DotContentDriveWorkflowActionsComponent,
         DotContentDriveWorkflowFilterComponent,
         DotContentDriveFieldFilterComponent,
         DotContentDriveFieldFilterMenuComponent,
         DotSharedAssetsFilterComponent,
-        DotContentDriveStatusFilterComponent,
+        DotFilterBarComponent,
+        DotStatusFilterComponent,
         TooltipModule
     ],
     templateUrl: './dot-content-drive-toolbar.component.html',

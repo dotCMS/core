@@ -11,18 +11,12 @@
         (upload)="upload.emit($event)" />
 </div>
 
-<div class="mt-2 flex w-full flex-wrap items-center gap-2">
-    <!-- Leads the row, as it does in Content Drive: it scopes *which* assets are in play at all,
-         so it reads as a precondition for the filters that narrow within them. -->
+<!-- The same bar Content Drive renders, so the two read as one toolbar. Workflow is excluded
+     deliberately (FR-014a): choosing an asset to reference is not managing where it sits in a
+     review process, and the types a File or Image field can take carry no meaningful scheme
+     distinction. Adding it later is one element here. -->
+<dot-filter-bar class="mt-2">
     <dot-shared-assets-filter />
-
-    <dot-content-type-filter
-        [selectedBaseTypes]="$baseTypes()"
-        [selectedContentTypes]="$contentTypes()"
-        [allowedBaseTypes]="$allowedBaseTypes()"
-        (selectionChange)="onTypeChange($event)" />
-
-    <dot-language-filter
-        [selectedLanguageIds]="$languageIds()"
-        (selectionChange)="onLanguageChange($event)" />
-</div>
+    <dot-content-type-filter-chip [allowedBaseTypes]="$allowedBaseTypes()" />
+    <dot-language-filter-chip />
+</dot-filter-bar>

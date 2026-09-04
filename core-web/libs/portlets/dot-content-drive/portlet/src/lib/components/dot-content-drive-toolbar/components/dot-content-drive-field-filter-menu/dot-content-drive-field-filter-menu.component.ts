@@ -53,7 +53,11 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
     ],
     providers: [DotContentTypeService],
     templateUrl: './dot-content-drive-field-filter-menu.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush
+    changeDetection: ChangeDetectionStrategy.OnPush,
+    // The "More" menu anchors the `fieldFilters` slot in the canonical order, not the dynamic chips
+    // it mints: the order check walks ids as a subsequence, so two elements carrying the same id
+    // would fail it the moment a field filter is active.
+    host: { 'data-filter-chip': 'fieldFilters' }
 })
 export class DotContentDriveFieldFilterMenuComponent {
     readonly #store = inject(DotContentDriveStore);

@@ -10,6 +10,27 @@ import { InjectionToken, Signal } from '@angular/core';
 export type DotFilterValue = string | string[];
 
 /**
+ * Reads a filter value as the list of strings a chip works with.
+ *
+ * {@link DotFilterValue} is `string | string[]`, and both shapes really occur: a URL decoder that
+ * loses the array shape produces a bare string, which Content Drive's own status filter has
+ * documented for a while. Casting instead of narrowing does not merely mislead the type checker —
+ * `.map()` on a bare string is a `TypeError` that takes the chip down.
+ *
+ * @param value The raw filter value, or `undefined` when the filter is not set.
+ * @return The values as a list. `[]` for an unset filter, so a chip can bind it directly; use
+ *   {@link DotFilterFacade.getFilterValue} itself where "not set" and "set to nothing" must be told
+ *   apart.
+ */
+export function toFilterValues(value: DotFilterValue | undefined): string[] {
+    if (value === undefined) {
+        return [];
+    }
+
+    return Array.isArray(value) ? value : [value];
+}
+
+/**
  * What a chip reports when the request behind its options fails.
  *
  * A translation key rather than an `HttpErrorResponse`, and a small object rather than a bare

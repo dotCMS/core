@@ -6,12 +6,10 @@ import {
     TreeNodeContentData
 } from '@dotcms/dotcms-models';
 
-import {
-    DotContentTypeFilterComponent,
-    DotContentTypeFilterSelection
-} from '../../../dot-content-type-filter/dot-content-type-filter.component';
+import { DotContentTypeFilterChipComponent } from '../../../dot-filter-bar/chips/dot-content-type-filter-chip/dot-content-type-filter-chip.component';
+import { DotLanguageFilterChipComponent } from '../../../dot-filter-bar/chips/dot-language-filter-chip/dot-language-filter-chip.component';
 import { DotSharedAssetsFilterComponent } from '../../../dot-filter-bar/chips/dot-shared-assets-filter/dot-shared-assets-filter.component';
-import { DotLanguageFilterComponent } from '../../../dot-language-filter/dot-language-filter.component';
+import { DotFilterBarComponent } from '../../../dot-filter-bar/dot-filter-bar.component';
 import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-input.component';
 import { DotUploadButtonComponent } from '../../../dot-upload-button/dot-upload-button.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
@@ -30,8 +28,9 @@ import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
     imports: [
         DotSearchInputComponent,
         DotSharedAssetsFilterComponent,
-        DotContentTypeFilterComponent,
-        DotLanguageFilterComponent,
+        DotFilterBarComponent,
+        DotContentTypeFilterChipComponent,
+        DotLanguageFilterChipComponent,
         DotUploadButtonComponent
     ],
     host: { class: 'block w-full' }
@@ -43,12 +42,6 @@ export class DotAssetPickerToolbarComponent {
     readonly upload = output<MouseEvent>();
 
     protected readonly $searchTerm = computed(() => this.store.filters().title ?? '');
-    protected readonly $baseTypes = computed(() => this.store.filters().baseType ?? []);
-    protected readonly $contentTypes = computed(() => this.store.filters().contentType ?? []);
-    protected readonly $languageIds = computed(() =>
-        (this.store.filters().languageId ?? []).map(Number)
-    );
-
     /**
      * Restricts the content-type selector to what the entry point allows — neither a File nor an
      * Image field may offer Widget or Content. `null` means "no restriction".
@@ -72,28 +65,4 @@ export class DotAssetPickerToolbarComponent {
             ? ((data as TreeNodeContentData).defaultBaseType ?? null)
             : null;
     });
-
-    // Empty selections remove the key rather than setting it to `undefined`, so the filter bag
-    // stays clean — same contract as the Content Drive adapters.
-    protected onTypeChange({ baseTypes, contentTypes }: DotContentTypeFilterSelection): void {
-        if (baseTypes.length) {
-            this.store.patchFilters({ baseType: baseTypes });
-        } else {
-            this.store.removeFilter('baseType');
-        }
-
-        if (contentTypes.length) {
-            this.store.patchFilters({ contentType: contentTypes });
-        } else {
-            this.store.removeFilter('contentType');
-        }
-    }
-
-    protected onLanguageChange(languageIds: number[]): void {
-        if (languageIds.length) {
-            this.store.patchFilters({ languageId: languageIds.map(String) });
-        } else {
-            this.store.removeFilter('languageId');
-        }
-    }
 }

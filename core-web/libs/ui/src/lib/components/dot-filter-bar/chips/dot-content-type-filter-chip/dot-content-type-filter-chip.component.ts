@@ -6,7 +6,7 @@ import {
     DotContentTypeFilterComponent,
     DotContentTypeFilterSelection
 } from '../../../dot-content-type-filter/dot-content-type-filter.component';
-import { DOT_FILTER_FACADE } from '../../filter-facade.token';
+import { DOT_FILTER_FACADE, toFilterValues } from '../../filter-facade.token';
 
 /**
  * Connects the presentational {@link DotContentTypeFilterComponent} to whatever surface is
@@ -47,12 +47,12 @@ export class DotContentTypeFilterChipComponent {
         alias: 'allowedBaseTypes'
     });
 
-    protected readonly $baseTypes = computed(
-        () => (this.#filters.getFilterValue('baseType') as string[]) ?? []
+    protected readonly $baseTypes = computed(() =>
+        toFilterValues(this.#filters.getFilterValue('baseType'))
     );
 
-    protected readonly $contentTypes = computed(
-        () => (this.#filters.getFilterValue('contentType') as string[]) ?? []
+    protected readonly $contentTypes = computed(() =>
+        toFilterValues(this.#filters.getFilterValue('contentType'))
     );
 
     /**

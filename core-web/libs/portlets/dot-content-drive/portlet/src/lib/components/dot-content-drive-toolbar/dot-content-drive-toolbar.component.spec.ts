@@ -24,7 +24,7 @@ import {
 } from '@dotcms/data-access';
 import { DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DOT_FILTER_FACADE, DotFilterFacade } from '@dotcms/ui';
+import { DOT_FILTER_FACADE, DotFilterFacade, isCanonicalChipOrder } from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
@@ -34,6 +34,7 @@ import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mo
 import { DotContentDriveActionExecution } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * The creation buttons (Upload + "Add New") are driven by an animation state machine that hides
@@ -47,6 +48,9 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
     await new Promise((resolve) => setTimeout(resolve, 200));
     spectator.detectChanges();
 };
+
+/** The bar clears through the facade, so this is what the Clear all test asserts against. */
+const clearFiltersSpy = jest.fn();
 
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
@@ -70,11 +74,14 @@ describe('DotContentDriveToolbarComponent', () => {
             {
                 provide: DOT_FILTER_FACADE,
                 useValue: {
-                    getFilterValue: jest.fn(() => undefined),
+                    getFilterValue: jest.fn((key: string) => filtersSignal()[key]),
                     patchFilters: jest.fn(),
                     removeFilter: jest.fn(),
-                    clearFilters: jest.fn(),
-                    $hasNonDefaultFilters: signal(false)
+                    clearFilters: clearFiltersSpy,
+                    // "Clear all" lives in the shared bar now and keys off this. In production the
+                    // facade derives it from the same filters this suite already drives, so deriving
+                    // it here too keeps these tests driving one value rather than two.
+                    $hasNonDefaultFilters: computed(() => hasNonDefaultFilters(filtersSignal(), 1))
                 } satisfies DotFilterFacade
             },
             mockProvider(DotContentDriveStore, {
@@ -243,6 +250,33 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
+    describe('chip row', () => {
+        it('should render all six chips', () => {
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip')
+            );
+
+            expect(chips).toEqual([
+                'sharedAssets',
+                'contentType',
+                'workflow',
+                'status',
+                'language',
+                'fieldFilters'
+            ]);
+        });
+
+        it('should present them in the canonical order', () => {
+            // FR-007. The picker asserts the same thing against the same constant, which is what
+            // makes "the two toolbars read as one" a claim a test can hold rather than a promise.
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip') as string
+            );
+
+            expect(isCanonicalChipOrder(chips)).toBe(true);
+        });
+    });
+
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
@@ -278,7 +312,7 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
-        it('should call store.clearFilters when clicked', () => {
+        it('should clear through the facade when clicked', () => {
             filtersSignal.set({ contentType: ['Blog'] });
             spectator.detectChanges();
 
@@ -287,7 +321,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 ?.querySelector('button');
             spectator.click(clearButton as HTMLElement);
 
-            expect(store.clearFilters).toHaveBeenCalled();
+            expect(clearFiltersSpy).toHaveBeenCalled();
         });
     });
 

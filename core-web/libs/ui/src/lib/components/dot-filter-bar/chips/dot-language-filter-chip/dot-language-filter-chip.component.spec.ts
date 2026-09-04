@@ -58,6 +58,15 @@ describe('DotLanguageFilterChipComponent', () => {
         expect(inner()?.$selectedLanguageIds()).toEqual([1, 2]);
     });
 
+    it('should survive a single stored string rather than an array', () => {
+        // Worse here than elsewhere: `.map(Number)` on a bare string is a TypeError, so the cast
+        // does not just mislead — it crashes the chip.
+        stored.set({ languageId: '2' as unknown as string[] });
+        spectator.detectChanges();
+
+        expect(inner()?.$selectedLanguageIds()).toEqual([2]);
+    });
+
     it('should write ids back as strings', () => {
         spectator.triggerEventHandler(DotLanguageFilterComponent, 'selectionChange', [1, 2]);
 

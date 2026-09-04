@@ -153,6 +153,25 @@ export function testFilterFacadeConformance(
                 expect(facade.getFilterValue('contentType')).toEqual([]);
                 expect(facade.getFilterValue('contentType')).not.toBeUndefined();
             });
+
+            it('should report the ENCODED key as undefined once it is not set', () => {
+                // The key that crosses this surface's encoding boundary is the one most likely to
+                // lose the distinction, because a decoder that maps a list naturally returns an
+                // empty list for nothing. Probing only a plain key left exactly that hole.
+                //
+                // Removed rather than simply read: a surface may legitimately *seed* this key from
+                // its caller's config, so "never set" is not a state every implementation starts in.
+                facade.removeFilter(ctx.encodedFilter.key);
+
+                expect(facade.getFilterValue(ctx.encodedFilter.key)).toBeUndefined();
+            });
+
+            it('should report the encoded key as an empty array once set to nothing', () => {
+                facade.patchFilters({ [ctx.encodedFilter.key]: ctx.encodedFilter.value });
+                facade.patchFilters({ [ctx.encodedFilter.key]: [] });
+
+                expect(facade.getFilterValue(ctx.encodedFilter.key)).toEqual([]);
+            });
         });
 
         describe('O3 — removal deletes', () => {

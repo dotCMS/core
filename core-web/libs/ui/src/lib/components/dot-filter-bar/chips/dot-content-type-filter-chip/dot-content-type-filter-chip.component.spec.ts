@@ -72,6 +72,20 @@ describe('DotContentTypeFilterChipComponent', () => {
         expect(inner()?.$allowedBaseTypes()).toEqual([DotCMSBaseTypesContentTypes.FILEASSET]);
     });
 
+    it('should survive a single stored string rather than an array', () => {
+        // `DotFilterValue` is `string | string[]`, and Content Drive's own status filter documents
+        // that a bare string is what a URL decoder produces when it loses the array shape. A cast
+        // would let that reach the presentational filter as a non-array.
+        stored.set({
+            baseType: 'DOTASSET' as unknown as string[],
+            contentType: 'Blog' as unknown as string[]
+        });
+        spectator.detectChanges();
+
+        expect(inner()?.$baseTypes()).toEqual(['DOTASSET']);
+        expect(inner()?.$contentTypes()).toEqual(['Blog']);
+    });
+
     it('should write a selection through the facade', () => {
         spectator.triggerEventHandler(DotContentTypeFilterComponent, 'selectionChange', {
             baseTypes: [DotCMSBaseTypesContentTypes.DOTASSET],
