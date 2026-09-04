@@ -120,9 +120,17 @@ describe('DotKeyValueTableRowComponent', () => {
         });
 
         it('should never shift a column vertically, opening or refusing', () => {
-            // The row keeps the default `middle` throughout. Top-aligning moved the
-            // resting column and bought nothing: the input is taller than the key text,
-            // so matching top edges leaves their centres as far apart as centring does.
+            /*
+             * At rest the row keeps the browser default of `middle`, so nothing moves
+             * while it is only being read.
+             *
+             * The moment a cell opens, every cell top-aligns instead — and that is what
+             * holds the two columns level. A refusal renders its message inside the cell
+             * but below the band, making that cell taller than its sibling; left at
+             * `middle` the sibling would re-centre against the taller row and sit about
+             * 10px lower than the cell being edited. Anchoring both bands to the top
+             * keeps their centres at the same height however far the row grows.
+             */
             const alignment = () => [
                 spectator.query(byTestId('dot-key-value-key')).className,
                 spectator.query(byTestId('dot-key-value-editable-column')).className
@@ -131,12 +139,15 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(alignment().join()).not.toContain('align-top');
 
             activate();
-            expect(alignment().join()).not.toContain('align-top');
+            expect(alignment().every((className) => className.includes('align-top'))).toBe(true);
 
+            // Refused: the message makes this cell the taller of the two.
             spectator.component.editControl.setValue('   ');
             spectator.component.commitEdit();
             spectator.detectChanges();
-            expect(alignment().join()).not.toContain('align-top');
+
+            expect(spectator.query(byTestId('dot-key-value-value-required'))).toBeTruthy();
+            expect(alignment().every((className) => className.includes('align-top'))).toBe(true);
         });
 
         it('should discard the edit when focus leaves the input', () => {

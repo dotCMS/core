@@ -35,14 +35,15 @@
 </td>
 
 <!--
-    Cells keep the browser default of `middle`, unlike the entry row's.
+    At rest the cells keep the browser default of `middle`: nothing here is taller than
+    anything else, and top-aligning only moved the resting column for no gain.
 
-    The entry row top-aligns because it holds two inputs side by side: a message under
-    one would otherwise leave the two at different heights. A body row never has two —
-    one cell is being edited and the other is text — so there is nothing to keep level,
-    and top-aligning only moved the resting column for no gain. It does not even line
-    the key up with its input: the input is 36px tall against the key's 20, so matching
-    their top edges leaves their centres as far apart as centring does.
+    While a cell is open they all top-align, and every cell wraps its content in a band
+    of the same height. A refusal renders its message inside the cell but below that
+    band, making the cell taller than its sibling; left at `middle` the sibling would
+    re-centre against the taller row and drop about 10px below the cell being edited.
+    Anchoring the bands to the top instead keeps their centres level however far the
+    message grows the row.
 -->
 <td [class.align-top]="editing" data-testId="dot-key-value-key">
     <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
