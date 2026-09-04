@@ -62,7 +62,7 @@ public class ExperimentResultsQueryFactoryIntegrationTest {
         final Metric metric = Metric.builder()
                 .name("Testing Metric")
                 .type(MetricType.REACH_PAGE)
-                .addConditions(getUrlCondition(reachPage.getPageUrl()), getRefererCondition(experimentPage.getPageUrl()))
+                .addConditions(getUrlCondition(reachPage.getPageUrl()))
                 .build();
 
         final Goals goal = Goals.builder().primary(GoalFactory.create(metric)).build();
