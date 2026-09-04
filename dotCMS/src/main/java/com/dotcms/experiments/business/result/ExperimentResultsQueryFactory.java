@@ -1,82 +1,154 @@
 package com.dotcms.experiments.business.result;
 
 import com.dotcms.analytics.metrics.MetricType;
+import com.dotcms.cube.AnalyticsResultSet;
 import com.dotcms.cube.CubeJSQuery;
 import com.dotcms.cube.filters.Filter;
 import com.dotcms.cube.filters.SimpleFilter.Operator;
+import com.dotcms.experiments.business.ConfigExperimentUtil;
 import com.dotcms.experiments.model.AbstractExperiment.Status;
 import com.dotcms.experiments.model.Experiment;
 import com.dotcms.experiments.model.Goal;
 import com.dotcms.experiments.model.Goals;
 import com.dotcms.util.DotPreconditions;
-import io.vavr.Lazy;
+import com.dotmarketing.exception.DotDataException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.liferay.portal.model.User;
 
 import java.util.Map;
 
 /**
- * Factory to create the {@link CubeJSQuery} for a specific Experiment, this {@link CubeJSQuery} is used
- * to get all the events trigger for a specific {@link Experiment} from the CubeJS server.
+ * Factory for experiment result queries. Dispatches each call to either the CubeJS or CAEM
+ * implementation based on {@code FEATURE_FLAG_CAEM_EXPERIMENT_RESULTS}, read per call via
+ * {@link ConfigExperimentUtil#isCaemExperimentResultsEnabled()} so flag changes take effect
+ * immediately without a restart.
  *
- * The Query generated has a static part and a dynamic part:
+ * <p>Two dispatch methods ({@link #executeByDay} / {@link #executeAggregate}) replace the old
+ * {@link #create(Experiment)} / {@link #createWithDayGranularity(Experiment)} pair,
+ * which are now deprecated but retained for use by {@link CubeJSGoalResultsAdapter}.</p>
  *
- * - Static part: the format of this part is allways the same for all the {@link com.dotcms.experiments.model.Experiment}
- *
- * <code>
- * {
- +   "dimensions":[
- +       "Events.referer",
- +       "Events.experiment",
- +       "Events.variant",
- +       "Events.utcTime",
- +       "Events.url\",
- +       "Events.lookBackWindow",
- +       "Events.eventType"
- +   ],
- *   "filters": [
- *      {
- *          "member": "Events.experiment",
- *          "operator": "equals",
- *          "values": [experiment_identifier]
- *      },
- *   ],
- *   "order": {
- *       "Events.lookBackWindow': "asc",
- *       "Events.utcTime": "asc"
- *   }
- * }
- * </code>
- *
- * where:
- *
- * experiment_identifier: is the {@link Experiment}'s id.
- *
- * - Dynamic part: this part depends of the {@link com.dotcms.experiments.model.Goals} of the
- * {@link Experiment}.
- *
- * both part are merged using {@link CubeJSQuery.Builder#merge(CubeJSQuery, CubeJSQuery)} method.
- *
- * @see MetricExperimentResultsQuery
+ * @see ExperimentGoalResultsQuery
+ * @see CubeJSGoalResultsAdapter
  */
 public enum ExperimentResultsQueryFactory {
 
     INSTANCE;
 
-    final static Lazy<Map<MetricType, MetricExperimentResultsQuery>> experimentResultQueryHelpers =
-            Lazy.of(() -> createHelpersMap());
+    // CubeJS path — one adapter per goal type, wrapping existing MetricExperimentResultsQuery implementations.
+    private final Map<MetricType, ExperimentGoalResultsQuery> cubeJSAdapters;
 
+    // CAEM path — one implementation per goal type (shared CaemHttpClient instance).
+    private final Map<MetricType, ExperimentGoalResultsQuery> caemQueries;
 
-    private static Map<MetricType, MetricExperimentResultsQuery> createHelpersMap() {
-        return Map.of(
-            MetricType.EXIT_RATE, new ExitRateResultQuery(),
-            MetricType.REACH_PAGE, new ReachTargetAfterExperimentPageResultQuery(),
-            MetricType.BOUNCE_RATE, new BounceRateResultQuery(),
-            MetricType.URL_PARAMETER, new ReachTargetAfterExperimentPageResultQuery()
+    ExperimentResultsQueryFactory() {
+        cubeJSAdapters = Map.of(
+            MetricType.BOUNCE_RATE,   new CubeJSGoalResultsAdapter(new BounceRateResultQuery()),
+            MetricType.EXIT_RATE,     new CubeJSGoalResultsAdapter(new ExitRateResultQuery()),
+            MetricType.REACH_PAGE,    new CubeJSGoalResultsAdapter(new ReachTargetAfterExperimentPageResultQuery()),
+            MetricType.URL_PARAMETER, new CubeJSGoalResultsAdapter(new ReachTargetAfterExperimentPageResultQuery())
+        );
+
+        final CaemHttpClient caemHttpClient = new CaemHttpClient();
+        caemQueries = Map.of(
+            MetricType.BOUNCE_RATE,   new BounceRateCAEMResultQuery(caemHttpClient),
+            MetricType.EXIT_RATE,     new ExitRateCAEMResultQuery(caemHttpClient),
+            MetricType.REACH_PAGE,    new ReachPageCAEMResultQuery(caemHttpClient),
+            MetricType.URL_PARAMETER, new UrlParameterCAEMResultQuery(caemHttpClient)
         );
     }
 
-    private static CubeJSQuery createRootQuery(final Experiment experiment, final boolean dayGranularity) {
+    /**
+     * Returns per-day per-variant results. Replaces {@link #createWithDayGranularity(Experiment)}
+     * as the primary call site in {@code ExperimentsAPIImpl.getSummary()}.
+     */
+    public AnalyticsResultSet executeByDay(final Experiment experiment,
+                                           final User user) throws DotDataException, DotSecurityException {
+        return resolveImpl(primaryMetricType(experiment)).executeByDay(experiment, user);
+    }
 
-        DotPreconditions.isTrue(experiment.status() == Status.RUNNING || experiment.status() == Status.ENDED,
+    /**
+     * Returns aggregate per-variant totals. Replaces {@link #create(Experiment)}
+     * as the primary call site in {@code ExperimentsAPIImpl.getTotalSessions()}.
+     */
+    public AnalyticsResultSet executeAggregate(final Experiment experiment,
+                                               final User user) throws DotDataException, DotSecurityException {
+        return resolveImpl(primaryMetricType(experiment)).executeAggregate(experiment, user);
+    }
+
+    /**
+     * Resolves the correct {@link ExperimentGoalResultsQuery} for the given metric type,
+     * reading the feature flag on every call so runtime toggles take effect immediately.
+     */
+    ExperimentGoalResultsQuery resolveImpl(final MetricType metricType) {
+        return ConfigExperimentUtil.INSTANCE.isCaemExperimentResultsEnabled()
+                ? caemQueries.get(metricType)
+                : cubeJSAdapters.get(metricType);
+    }
+
+    // -------------------------------------------------------------------------
+    // Package-private helpers used by CubeJSGoalResultsAdapter
+    // -------------------------------------------------------------------------
+
+    CubeJSQuery buildDayGranularityQuery(final Experiment experiment,
+                                         final MetricExperimentResultsQuery metricQuery) {
+        return CubeJSQuery.Builder.merge(
+                metricQuery.getCubeJSQuery(experiment),
+                createRootQuery(experiment, true));
+    }
+
+    CubeJSQuery buildAggregateQuery(final Experiment experiment,
+                                    final MetricExperimentResultsQuery metricQuery) {
+        return CubeJSQuery.Builder.merge(
+                metricQuery.getCubeJSQuery(experiment),
+                createRootQuery(experiment, false));
+    }
+
+    // -------------------------------------------------------------------------
+    // Deprecated — retained for backward compatibility only
+    // -------------------------------------------------------------------------
+
+    /**
+     * @deprecated Use {@link #executeByDay(Experiment, User)} instead.
+     */
+    @Deprecated
+    public CubeJSQuery createWithDayGranularity(final Experiment experiment) {
+        return buildDayGranularityQuery(experiment, legacyCubeJSMetricQuery(experiment));
+    }
+
+    /**
+     * @deprecated Use {@link #executeAggregate(Experiment, User)} instead.
+     */
+    @Deprecated
+    public CubeJSQuery create(final Experiment experiment) {
+        return buildAggregateQuery(experiment, legacyCubeJSMetricQuery(experiment));
+    }
+
+    // -------------------------------------------------------------------------
+    // Private helpers
+    // -------------------------------------------------------------------------
+
+    private static MetricType primaryMetricType(final Experiment experiment) {
+        DotPreconditions.notNull(experiment.goals().orElse(null), "Experiment must have a Goal");
+        final Goals goals = experiment.goals()
+                .orElseThrow(() -> new IllegalArgumentException("Experiment must have a Goal"));
+        return goals.primary().getMetric().type();
+    }
+
+    private static MetricExperimentResultsQuery legacyCubeJSMetricQuery(final Experiment experiment) {
+        return switch (primaryMetricType(experiment)) {
+            case BOUNCE_RATE            -> new BounceRateResultQuery();
+            case EXIT_RATE              -> new ExitRateResultQuery();
+            case REACH_PAGE,
+                 URL_PARAMETER         -> new ReachTargetAfterExperimentPageResultQuery();
+            default -> throw new IllegalArgumentException(
+                    "Unsupported metric type: " + primaryMetricType(experiment));
+        };
+    }
+
+    static CubeJSQuery createRootQuery(final Experiment experiment,
+                                       final boolean dayGranularity) {
+        DotPreconditions.isTrue(
+                experiment.status() == Status.RUNNING || experiment.status() == Status.ENDED,
                 "Experiment must be running or Ended");
 
         final String runningId = experiment.runningIds().getCurrent().orElseThrow().id();
@@ -94,74 +166,4 @@ public enum ExperimentResultsQueryFactory {
         return builder.build();
     }
 
-    /**
-     * Create a {@link CubeJSQuery} according a {@link Experiment} creating the dynamic and static
-     * part of the Query.
-     *
-     * @param experiment {@link Experiment} to use to create the {@link CubeJSQuery}
-     * @return The {@link CubeJSQuery} generated
-     *
-     * @see {@link ExperimentResultsQueryFactory}
-     */
-    public CubeJSQuery createWithDayGranularity(final Experiment experiment){
-        final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);
-        final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment, true);
-        return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
-    }
-
-    /**
-     * Create the CubeJS Query to get the results for an Experiment, this query has two parts:
-     *
-     * - The specific Experiment's Goal query: This Query is different for each Goal.
-     * - The Root Query: This is the same no matter the Goal of the Experiment, this is the follow:
-     *
-     * <code>
-     *     {
-     *         dimensions: ['Events.variant'],
-     *         "order": {
-     *              "Events.day": "asc",
-     *          },
-     *          "filters": [
-     *              {
-     *                  "member": "Events.experiment",
-     *                  "operator": "equals",
-     *                  "values": ["[experiment_id]"]
-     *              },
-     *              {
-     *                  "member": "Events.runningId",
-     *                  "operator": "equals",
-     *                  "values": ["[current_experiment_running_id]"]
-     *              }
-     *          ]
-     *     }
-     * </code>
-     *
-     * These two queries are merge to get the Experiment Query.
-     *
-     * @see BounceRateResultQuery
-     * @see ExitRateResultQuery
-     * @see ReachTargetAfterExperimentPageResultQuery
-     *
-     * @param experiment
-     * @return
-     */
-    public CubeJSQuery create(final Experiment experiment){
-        final CubeJSQuery cubeJSQuery = getMetricCubeJSQuery(experiment);
-        final CubeJSQuery rootCubeJSQuery = createRootQuery(experiment, false);
-        return CubeJSQuery.Builder.merge(cubeJSQuery, rootCubeJSQuery);
-    }
-
-    private static CubeJSQuery getMetricCubeJSQuery(final Experiment experiment) {
-        DotPreconditions.notNull(experiment.goals(), "The must have a Goal");
-        DotPreconditions.notNull(experiment.goals().orElseThrow(), "The must have a Goal");
-        DotPreconditions.notNull(experiment.goals().orElseThrow().primary(), "The must have a Goal");
-
-        final Goals goals = experiment.goals()
-                .orElseThrow(() -> new IllegalArgumentException("The Experiment must have a Goal"));
-
-        final Goal primaryGoal = goals.primary();
-        final MetricExperimentResultsQuery metricExperimentResultQuery = experimentResultQueryHelpers.get()
-                .get(primaryGoal.getMetric().type());
-        return metricExperimentResultQuery.getCubeJSQuery(experiment);
-    }
 }
