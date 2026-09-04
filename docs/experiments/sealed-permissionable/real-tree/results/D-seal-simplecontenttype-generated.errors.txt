@@ -1,0 +1,6 @@
+# D-seal-simplecontenttype-generated
+#
+# BUILD SUCCESS
+# 0 distinct diagnostics (javac reports each twice — once per annotation-processing round)
+
+(none)

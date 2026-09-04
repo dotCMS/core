@@ -1,0 +1,7 @@
+# C-seal-contenttype
+#
+# BUILD FAILURE
+# 2 distinct diagnostics (javac reports each twice — once per annotation-processing round)
+
+dotCMS/src/main/java/com/dotcms/contenttype/transform/contenttype/StructureTransformer.java:[102,45] error: anonymous classes must not extend sealed classes
+dotCMS/src/main/java/com/dotcms/contenttype/transform/contenttype/DbContentTypeTransformer.java:[60,45] error: anonymous classes must not extend sealed classes

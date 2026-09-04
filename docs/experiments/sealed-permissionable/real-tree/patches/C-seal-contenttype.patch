@@ -1,0 +1,134 @@
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/ContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/ContentType.java
+index 72daa9c02d..afa6f58581 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/ContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/ContentType.java
+@@ -77,8 +77,10 @@ import java.util.stream.Collectors;
+         @Type(value = KeyValueContentType.class),
+         @Type(value = DotAssetContentType.class)
+ })
+-public abstract class ContentType implements Serializable, Permissionable, ContentTypeIf,
+-        ManifestItem {
++public abstract sealed class ContentType implements Serializable, Permissionable, ContentTypeIf,
++        ManifestItem permits FormContentType, KeyValueContentType, PageContentType,
++        VanityUrlContentType, DotAssetContentType, WidgetContentType, SimpleContentType,
++        FileAssetContentType, PersonaContentType {
+ 
+   @Value.Check
+   protected void check() {
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/DotAssetContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/DotAssetContentType.java
+index 663081753f..be8e5904c2 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/DotAssetContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/DotAssetContentType.java
+@@ -22,7 +22,7 @@ import org.immutables.value.Value;
+  * They not tree-able and do not have urls - can live on any host or on the system host and have five fields by default
+  * @author jsanca
+  */
+-public abstract class DotAssetContentType extends ContentType implements UrlMapable, Expireable {
++public abstract non-sealed class DotAssetContentType extends ContentType implements UrlMapable, Expireable {
+ 
+ 	public static final String ASSET_FIELD_VAR 			= "asset";
+ 	public static final String SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FileAssetContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FileAssetContentType.java
+index cdb4d1f11e..88b450766e 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FileAssetContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FileAssetContentType.java
+@@ -25,7 +25,7 @@ import java.util.List;
+ @JsonSerialize(as = ImmutableFileAssetContentType.class)
+ @JsonDeserialize(as = ImmutableFileAssetContentType.class)
+ @Value.Immutable
+-public abstract class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
++public abstract non-sealed class FileAssetContentType extends ContentType implements UrlMapable, Expireable{
+ 
+ 	public static final String FILEASSET_SITE_OR_FOLDER_FIELD_VAR = "hostFolder";
+ 	public static final String FILEASSET_FILEASSET_FIELD_VAR = "fileAsset";
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FormContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FormContentType.java
+index 24b2fc5c09..3c2c0b63bb 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FormContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/FormContentType.java
+@@ -11,7 +11,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableFormContentType.class)
+ @JsonDeserialize(as = ImmutableFormContentType.class)
+ @Value.Immutable
+-public abstract class FormContentType extends ContentType implements Expireable, EnterpriseType {
++public abstract non-sealed class FormContentType extends ContentType implements Expireable, EnterpriseType {
+ 
+ 	public abstract static class Builder implements ContentTypeBuilder {}
+ 
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/KeyValueContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/KeyValueContentType.java
+index a43775b3b8..701bab4db3 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/KeyValueContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/KeyValueContentType.java
+@@ -21,7 +21,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableKeyValueContentType.class)
+ @JsonDeserialize(as = ImmutableKeyValueContentType.class)
+ @Value.Immutable
+-public abstract class KeyValueContentType extends ContentType implements MultilinguableFallback {
++public abstract non-sealed class KeyValueContentType extends ContentType implements MultilinguableFallback {
+ 
+ 	public static final String MULTILINGUABLE_FALLBACK_KEY = "DEFAULT_CONTENT_TO_DEFAULT_LANGUAGE";
+ 
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PageContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PageContentType.java
+index 74fbfa2474..c936562854 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PageContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PageContentType.java
+@@ -26,7 +26,7 @@ import java.util.List;
+ @JsonSerialize(as = ImmutablePageContentType.class)
+ @JsonDeserialize(as = ImmutablePageContentType.class)
+ @Value.Immutable
+-public abstract class PageContentType extends ContentType implements Expireable{
++public abstract non-sealed class PageContentType extends ContentType implements Expireable{
+ 
+ 	private static final long serialVersionUID = 1L;
+ 
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PersonaContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PersonaContentType.java
+index 41b891a7f5..05e3c295a8 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PersonaContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/PersonaContentType.java
+@@ -25,7 +25,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutablePersonaContentType.class)
+ @JsonDeserialize(as = ImmutablePersonaContentType.class)
+ @Value.Immutable
+-public abstract class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
++public abstract non-sealed class PersonaContentType extends ContentType implements Expireable, EnterpriseType {
+ 
+ 	private static final long serialVersionUID = 1L;
+ 	public static final String PERSONA_HOST_FOLDER_FIELD_VAR = "hostFolder";
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
+index 214b7ccfa7..75ed14084b 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/SimpleContentType.java
+@@ -8,7 +8,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableSimpleContentType.class)
+ @JsonDeserialize(as = ImmutableSimpleContentType.class)
+ @Value.Immutable
+-public abstract class SimpleContentType extends ContentType
++public abstract non-sealed class SimpleContentType extends ContentType
+         implements UrlMapable, Serializable, Expireable {
+ 
+     private static final long serialVersionUID = 1L;
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/VanityUrlContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/VanityUrlContentType.java
+index c2e2e3bfc6..126121133d 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/VanityUrlContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/VanityUrlContentType.java
+@@ -27,7 +27,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableVanityUrlContentType.class)
+ @JsonDeserialize(as = ImmutableVanityUrlContentType.class)
+ @Value.Immutable
+-public abstract class VanityUrlContentType extends ContentType implements Expireable,
++public abstract non-sealed class VanityUrlContentType extends ContentType implements Expireable,
+ 		MultilinguableFallback {
+ 
+ 	private static final long serialVersionUID = 1L;
+diff --git a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/WidgetContentType.java b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/WidgetContentType.java
+index 2303e8af3c..6aa037d995 100644
+--- a/dotCMS/src/main/java/com/dotcms/contenttype/model/type/WidgetContentType.java
++++ b/dotCMS/src/main/java/com/dotcms/contenttype/model/type/WidgetContentType.java
+@@ -12,7 +12,7 @@ import org.immutables.value.Value;
+ @JsonSerialize(as = ImmutableWidgetContentType.class)
+ @JsonDeserialize(as = ImmutableWidgetContentType.class)
+ @Value.Immutable
+-public abstract class WidgetContentType extends ContentType implements Expireable{
++public abstract non-sealed class WidgetContentType extends ContentType implements Expireable{
+ 	
+ 	public static final String WIDGET_CODE_FIELD_NAME = "Widget Code";
+ 	public static final String WIDGET_CODE_FIELD_VAR = "widgetCode";
