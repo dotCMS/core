@@ -56,6 +56,7 @@ it is visible on every page the affected user opens in the editor.
 - Q: How many message strings should explain the missing permission? → A: **One shared key** — `uve.contentlet.no.edit.permission` — used by the pencil tooltip, the Quick Edit tooltip, the read-only panel notice and the inline-edit toast. Keeps a single translation item and one consistent wording; the copy must therefore read acceptably in all four placements.
 - Q: Should a Playwright e2e test be part of this change? → A: **No.** Unit and component tests cover every acceptance criterion, plus the manual scenario in `quickstart.md`. No limited-permission user fixture exists and building one (user, role, content type / instance permission split, page) exceeds the fix. Recorded as the explicit developer decision required by Constitution Principle V; a reusable permissions e2e fixture should be tracked separately.
 - Q: Should a refused inline-edit click be silent? → A: **No — show a toast.** A click that does nothing reads as a broken editor and turns into a support ticket. The refusal must say why, reusing the shared permission message.
+- Q: Should the style editor be gated too? → A: **Yes — the side panel must not permit editing *or* styling a contentlet the user has no permission on.** Style properties describe how *this contentlet* looks, so they belong with the contentlet rather than the page's composition. This moves style editing out of the "structural page actions" carve-out; delete, move/drag and add content stay ungated because those change which contentlets the page uses, not the contentlet itself.
 - Q: Should headless / SDK-rendered pages be covered after all? → A: **Yes — scope amended 2026-09-04, after the spec was approved.** Two findings changed the calculus. First, the permission is *already computed* per contentlet at `PageRenderUtil:338` for the Velocity `$EDIT_CONTENT_PERMISSION` variable and simply discarded for JSON, so surfacing it costs no extra permission checks. Second, GraphQL exposes contentlets through the `_map` JSON scalar (`ContentFields:89` → `ContentMapDataFetcher`), which the client SDK spreads verbatim — so one server-side line reaches **both** `/api/v1/page/json` and GraphQL with no schema change and no SDK query change. The developer chose to keep this in the same PR rather than a follow-up, because review capacity is the scarce resource. **This spec amendment requires re-approval.**
 - Q: Does inline editing include the Block Editor? → A: **Yes, and it is a separate event.** Two distinct paths must both be gated: plain/WYSIWYG inline editing, a direct click on a `[data-mode]` element handled in the editor component; and Block Editor inline editing, where the SDK binds a click on `[data-block-editor-content]` and posts `INIT_INLINE_EDITING` with type `BLOCK_EDITOR`, handled in the UVE actions handler. Gating only the first would leave block-editor fields editable.
 
@@ -164,6 +165,8 @@ UI that consumed it did not survive the editor rewrite.
 - **Quick Edit (⚡)**: same treatment in both surfaces, *and* the side panel form itself. The panel
   follows the current selection once open, so the permission must survive into the panel's own
   contentlet data; when denied it renders read-only with a permission notice and offers no save.
+- **Style editor**: same treatment — the toolbar's palette button is disabled, and the side panel's
+  style tab shows the permission notice rather than the style form.
 - **Inline field editing — both paths**: activating an inline-editable field on a denied contentlet
   does not start an editing session, and tells the user why with a toast.
   - *Plain / WYSIWYG inline*: a click on a `[data-mode]` element, handled in the editor component.
@@ -181,8 +184,8 @@ UI that consumed it did not survive the editor rewrite.
 
 **Explicitly out of scope / non-goals**:
 
-- **Structural page actions stay ungated — deliberately.** Delete, move/drag, add content and style
-  edits change the *page's composition*, not the contentlet's content. A user permitted to open the
+- **Structural page actions stay ungated — deliberately.** Delete, move/drag and add content
+  change the *page's composition*, not the contentlet's content. A user permitted to open the
   page in edit mode is entitled to do them. Contentlet-level permission governs modifying the
   contentlet, and nothing else. Gating these would misread the permission model.
 - **Any backend change.** The permission is already computed and emitted; this fix consumes it.
@@ -232,6 +235,9 @@ UI that consumed it did not survive the editor rewrite.
 - **AC-008b**: With the quick-edit panel already open on an editable contentlet, selecting a
   restricted contentlet renders the form read-only with a permission notice — fields cannot be
   changed and no save is offered.
+- **AC-014**: The style editor is gated on the same permission. Its toolbar button is disabled with
+  the permission tooltip, and the side panel's style tab renders the permission notice instead of
+  the style form — so neither panel tab offers a way to modify a restricted contentlet.
 - **AC-009**: Clicking an inline-editable field inside a restricted contentlet does not start an
   inline editing session, and surfaces a toast explaining the missing permission. Silent refusal is
   not acceptable — it reads as a broken editor.
@@ -249,8 +255,9 @@ UI that consumed it did not survive the editor rewrite.
   still matters after the amended scope: a customer app on an older SDK, or any page the wrappers
   do not stamp, must degrade to today's behavior rather than lock the editor.
 - **AC-006**: An empty container still shows its add-content affordances and is unaffected.
-- **AC-010**: Structural page actions — delete, move/drag, add content, style edit — remain fully
-  available on a restricted contentlet for a user who can edit the page.
+- **AC-010**: Structural page actions — delete, move/drag and add content — remain fully available
+  on a restricted contentlet for a user who can edit the page. These change the page's composition,
+  not the contentlet.
 
 ### Headless coverage *(amended scope)*
 
