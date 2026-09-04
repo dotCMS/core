@@ -46,30 +46,18 @@ public class DataSourceStrategyProvider {
     }
 
     /**
-     * Method that loads the datasource using the strategy defined by the
-     * <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property:
-     * <ul>
-     *     <li><b>Not set (default):</b> {@link SystemEnvDataSourceStrategy} is used,
-     *     so {@code DB_*} environment variables work out of the box. Note that if the
-     *     environment variables are absent or the datasource cannot be created, the
-     *     {@code context.xml} fallback still applies (see below).</li>
-     *     <li><b>Set to a class name:</b> that {@link DotDataSourceStrategy}
-     *     implementation is used, e.g. {@code com.dotmarketing.db.TomcatDataSourceStrategy}
-     *     (the integration test harness does this).</li>
-     *     <li><b>Set to an empty value (escape hatch):</b> the legacy ordered fallback
-     *     chain below is used instead. This exists for deployments that rely on
-     *     {@code db.properties} or Docker Secrets, which the SystemEnv default would
-     *     otherwise bypass. Set it in a properties file (e.g.
-     *     {@code dotmarketing-config.properties}) or as the env var
-     *     {@code DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS=}.</li>
-     * </ul>
-     * The legacy ordered fallback chain is:
+     * Method that loads a datasource.
+     * <p>If <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> is explicitly configured to a custom
+     * class (other than {@link SystemEnvDataSourceStrategy}), that implementation is loaded.
+     * Otherwise, the datasource is initialized using the following precedence:
      * <ol>
-     *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} implemented by
-     *     {@link DBPropertiesDataSourceStrategy}</li>
-     *     <li>Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}</li>
-     *     <li>Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}</li>
-     *     <li>A {@code context.xml} file in {@code /META-INF/}. Implementation: {@link TomcatDataSourceStrategy}</li>
+     *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} (if present),
+     *         implemented by {@link DBPropertiesDataSourceStrategy}</li>
+     *     <li>Docker Secrets (if present), implemented by {@link DockerSecretDataSourceStrategy}</li>
+     *     <li>Configuration from system environment variables (the default),
+     *         implemented by {@link SystemEnvDataSourceStrategy}</li>
+     *     <li>Fallback on failure: {@code context.xml} in {@code /META-INF/},
+     *         implemented by {@link TomcatDataSourceStrategy}</li>
      * </ol>
      * It's also worth noting that creating the {@link DataSource} instance requires the default {@link TimeZone} object
      * to be set to {@code UTC}. Otherwise, the default Time Zone will be used instead and several database operations
@@ -87,36 +75,36 @@ public class DataSourceStrategyProvider {
 
         DataSource defaultDataSource = null;
 
-        final SystemEnvironmentProperties systemEnvironmentProperties = getSystemEnvironmentProperties();
-
         final String providerClassName = getCustomDataSourceProvider();
+        final boolean hasExplicitCustomProvider = UtilMethods.isSet(providerClassName)
+                && !SystemEnvDataSourceStrategy.class.getName().equals(providerClassName);
+
         try {
-            if (!UtilMethods.isSet(providerClassName)) {
-                if (getDBPropertiesInstance()
-                        .existsDBPropertiesFile()) {
-                    defaultDataSource = getDBPropertiesInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from db.properties file");
-                } else if (systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
-                        != null) {
-                    defaultDataSource = getSystemEnvDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from system environment");
-                } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
-                    defaultDataSource = getDockerSecretDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from Docker Secret");
-                }
-            } else {
+            if (hasExplicitCustomProvider) {
                 DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
                         .forName(providerClassName)).getDeclaredConstructor().newInstance();
                 defaultDataSource = customStrategy.apply();
 
                 Logger.info(DataSourceStrategyProvider.class,
                         "Datasource loaded using custom class " + providerClassName);
+            } else {
+                if (getDBPropertiesInstance()
+                        .existsDBPropertiesFile()) {
+                    defaultDataSource = getDBPropertiesInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from db.properties file");
+                } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
+                    defaultDataSource = getDockerSecretDataSourceInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from Docker Secret");
+                } else {
+                    defaultDataSource = getSystemEnvDataSourceInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from system environment");
+                }
             }
 
         } catch(Exception e) {
