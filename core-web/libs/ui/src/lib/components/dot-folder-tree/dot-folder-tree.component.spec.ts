@@ -1,6 +1,10 @@
-import { byTestId, createComponentFactory, Spectator } from '@openng/spectator/jest';
-
-import { Component } from '@angular/core';
+import {
+    byTestId,
+    createComponentFactory,
+    createHostFactory,
+    Spectator,
+    SpectatorHost
+} from '@openng/spectator/jest';
 
 import type { TreeNode } from 'primeng/api';
 import { Tree } from 'primeng/tree';
@@ -18,37 +22,6 @@ import { DotFolderTreeComponent } from './dot-folder-tree.component';
 import { DotTruncatedLabelComponent } from '../dot-truncated-label/dot-truncated-label.component';
 
 const LONG_FOLDER_PATH = '/application/a-very-long-folder-name-that-will-not-fit-in-the-row';
-
-/**
- * Stands in for a consumer that projects its own node label (Content Drive, Asset Picker, the
- * Site/Folder Field and Roles all do) and places the shared clipping label itself — the
- * documented pattern, because only the consumer knows which part of a structured row should
- * clip. The tree adds no wrapper of its own around a projected template.
- */
-@Component({
-    selector: 'dot-projected-label-host',
-    imports: [DotFolderTreeComponent, DotTruncatedLabelComponent],
-    template: `
-        <dot-folder-tree [folders]="folders" [loading]="false">
-            <ng-template #folderTreeNodeLabel let-node>
-                <dot-truncated-label>
-                    <span data-testid="tree-node-label" class="font-semibold">
-                        {{ node.label }}
-                    </span>
-                </dot-truncated-label>
-            </ng-template>
-        </dot-folder-tree>
-    `
-})
-class ProjectedLabelHostComponent {
-    readonly folders: TreeNode[] = [
-        {
-            key: '1',
-            label: LONG_FOLDER_PATH,
-            data: { type: 'folder', path: LONG_FOLDER_PATH, id: '1' }
-        }
-    ];
-}
 
 describe('DotFolderTreeComponent', () => {
     let spectator: Spectator<DotFolderTreeComponent>;
@@ -342,22 +315,42 @@ describe('DotFolderTreeComponent', () => {
 });
 
 describe('DotFolderTreeComponent with a projected label template', () => {
-    let spectator: Spectator<ProjectedLabelHostComponent>;
+    let spectator: SpectatorHost<DotFolderTreeComponent>;
 
-    const createHost = createComponentFactory({
-        component: ProjectedLabelHostComponent,
+    const createHost = createHostFactory({
+        component: DotFolderTreeComponent,
+        imports: [DotTruncatedLabelComponent],
         providers: [
             {
                 provide: DotMessageService,
                 useValue: new MockDotMessageService({})
             }
-        ],
-        detectChanges: false
+        ]
     });
 
     beforeEach(() => {
-        spectator = createHost();
-        spectator.detectChanges();
+        spectator = createHost(
+            `<dot-folder-tree [folders]="folders" [loading]="false">
+                <ng-template #folderTreeNodeLabel let-node>
+                    <dot-truncated-label>
+                        <span data-testid="tree-node-label" class="font-semibold">
+                            {{ node.label }}
+                        </span>
+                    </dot-truncated-label>
+                </ng-template>
+            </dot-folder-tree>`,
+            {
+                hostProps: {
+                    folders: [
+                        {
+                            key: '1',
+                            label: LONG_FOLDER_PATH,
+                            data: { type: 'folder', path: LONG_FOLDER_PATH, id: '1' }
+                        }
+                    ]
+                }
+            }
+        );
     });
 
     it('should add no wrapper of its own around a projected template', () => {
