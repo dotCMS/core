@@ -463,10 +463,41 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().live).toBe(true);
         });
 
-        it('should include archived content when the caller asks for it', () => {
-            store.initPicker({ ...BROWSE_CONFIG, browse: { showArchived: true } });
+        it('should return archived content when Archived is selected, without touching the version state', () => {
+            store.initPicker(BROWSE_CONFIG);
 
-            expect(store.$request().archived).toBe(true);
+            store.patchFilters({ status: ['ARCHIVED'] });
+
+            // The selection travels through `status`, which is now content condition's only
+            // representation. Nothing pins `archived`, so nothing contradicts it (FR-014b), and
+            // `live` — the separate version-state axis — is untouched (FR-014c).
+            expect(store.$request().status).toEqual(['ARCHIVED']);
+            expect(store.$request()).not.toHaveProperty('archived');
+            expect(store.$request().live).toBeUndefined();
+        });
+
+        it('should seed the Status filter from a caller that asked for archived content', () => {
+            store.initPicker({ ...BROWSE_CONFIG, status: ['ARCHIVED'] });
+
+            // Seeded, not pinned: it shows up in the chip and "Clear all" returns to it.
+            expect(store.getFilterValue('status')).toEqual(['ARCHIVED']);
+            expect(store.$request().status).toEqual(['ARCHIVED']);
+        });
+
+        it('should never carry a published-only pin together with a working-only condition', () => {
+            store.initPicker({
+                ...BROWSE_CONFIG,
+                browse: { showWorking: false },
+                status: ['ARCHIVED']
+            });
+
+            // SC-009. The toolbar is what makes this unreachable — it withholds Archived and
+            // Unpublished from a published-only picker — but a seed arrives from the caller, so the
+            // combination is asserted here too: if it ever holds, a field can be handed the working
+            // version of content the caller asked for as published.
+            const request = store.$request();
+
+            expect(request.live && request.status?.includes('ARCHIVED')).toBeFalsy();
         });
 
         describe('three-cursor paging', () => {
@@ -702,10 +733,21 @@ describe('DotAssetPickerStore', () => {
             expect(store.$request().folderCursor).toBe(0);
         });
 
-        it('should not request archived content', () => {
+        it('should not mention archived content at all', () => {
             store.initPicker(FILE_FIELD_CONFIG);
 
-            expect(store.$request().archived).toBe(false);
+            // Not `archived: false` any more — the key is gone. The endpoint defaults it, so an
+            // unfiltered picker asks for exactly what it always did while leaving the Status chip
+            // free to say otherwise (FR-014b).
+            expect(store.$request()).not.toHaveProperty('archived');
+            expect(store.$request().status).toBeUndefined();
+        });
+
+        it('should omit userSearchable until a field filter carries a value', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            // An absent key leaves the request byte-identical to one that never mentioned it.
+            expect(store.$request().userSearchable).toBeUndefined();
         });
     });
 

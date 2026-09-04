@@ -11,12 +11,29 @@
         (upload)="upload.emit($event)" />
 </div>
 
-<!-- The same bar Content Drive renders, so the two read as one toolbar. Workflow is excluded
-     deliberately (FR-014a): choosing an asset to reference is not managing where it sits in a
-     review process, and the types a File or Image field can take carry no meaningful scheme
-     distinction. Adding it later is one element here. -->
+<!-- The same bar Content Drive renders, so the two read as one toolbar, in the same canonical
+     order. Two things are deliberately different, and both are recorded here because this is where
+     someone would come to change them:
+
+     - **No Workflow chip** (FR-014a). An editor choosing an asset for a field is choosing something
+       to reference, not managing where it sits in a review process, and the types a File or Image
+       field can take carry no meaningful scheme distinction. Adding it later is one element here.
+     - **No create-content affordance** (FR-008). Upload above stands in for Content Drive's "New";
+       the picker's job ends at picking. -->
 <dot-filter-bar class="mt-2">
     <dot-shared-assets-filter />
     <dot-content-type-filter-chip [allowedBaseTypes]="$allowedBaseTypes()" />
+    <!-- Bounded, not omitted (FR-014d): pinned to published content, only Locked can coexist with
+         that pin — neither Archived nor Unpublished has a published version, and offering them
+         would force the whole query onto the working version. -->
+    <dot-status-filter [allowedOptions]="$allowedStatuses()" />
     <dot-language-filter-chip />
+    @for (field of $activeFieldFilters(); track field.variable) {
+        <dot-field-filter [field]="field" />
+    }
+
+    <!-- Trails the row, as it does in Content Drive: the chips it mints are dynamic and come and
+         go. It reports a failed field fetch instead of handling it — this host has no access to the
+         platform's error path, so the dialog's own toast answers for it (FR-015). -->
+    <dot-field-filter-menu (error)="fieldFilterError.emit($event)" />
 </dot-filter-bar>

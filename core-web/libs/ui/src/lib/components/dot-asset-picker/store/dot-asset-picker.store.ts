@@ -14,7 +14,12 @@ import { computed, inject } from '@angular/core';
 import { catchError, switchMap, take, tap } from 'rxjs/operators';
 
 import { DotSiteService } from '@dotcms/data-access';
-import { ComponentStatus, LOAD_MORE_NODE_TYPE, TreeNodeItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentTypeField,
+    LOAD_MORE_NODE_TYPE,
+    TreeNodeItem
+} from '@dotcms/dotcms-models';
 
 import {
     DEFAULT_ASSET_PICKER_PAGE,
@@ -32,6 +37,7 @@ import {
     DotAssetPickerState
 } from './models';
 
+import { USER_SEARCHABLE_PREFIX } from '../../dot-filter-bar/chips/dot-field-filter/constants';
 import { resolveSiteId } from '../../dot-folder-tree/site-tree.utils';
 
 const initialState: DotAssetPickerState = {
@@ -40,7 +46,9 @@ const initialState: DotAssetPickerState = {
     browsingSite: undefined,
     path: undefined,
     filters: {},
-    isFullscreen: false
+    isFullscreen: false,
+    userSearchableFields: [],
+    userSearchableActive: []
 };
 
 /**
@@ -152,7 +160,11 @@ export const DotAssetPickerStore = signalStore(
                         : DEFAULT_ASSET_PICKER_SORT,
                     pages: [DEFAULT_ASSET_PICKER_PAGE],
                     items: [],
-                    selectedAsset: null
+                    selectedAsset: null,
+                    // Nothing is remembered between openings (FR-011), field chips included: the
+                    // editor is filling a different field now.
+                    userSearchableFields: [],
+                    userSearchableActive: []
                 });
 
                 if (!entrySite) {
@@ -289,6 +301,56 @@ export const DotAssetPickerStore = signalStore(
             clearFilters: (): void => {
                 patchState(store, {
                     filters: buildPickerFilterDefaults(store.config()),
+                    ...resetPaging()
+                });
+            },
+
+            /**
+             * Publishes one field fetch from the "More" overflow: the filterable fields, which the
+             * chips render controls from and `$request` reshapes values with.
+             *
+             * The raw field list has no consumer here — the picker has no results table with "Show
+             * In List" columns — so it is accepted and dropped rather than stored unused.
+             */
+            setUserSearchableFields: (fields: {
+                eligible: DotCMSContentTypeField[];
+                all: DotCMSContentTypeField[];
+            }): void => {
+                patchState(store, { userSearchableFields: fields.eligible });
+            },
+
+            /**
+             * Shows a field-filter chip without touching `filters`, so no search fires on the way
+             * in. A repeated variable is a no-op: two chips writing one key would fight over it.
+             */
+            addUserSearchableField: (variable: string): void => {
+                if (store.userSearchableActive().includes(variable)) {
+                    return;
+                }
+
+                patchState(store, {
+                    userSearchableActive: [...store.userSearchableActive(), variable]
+                });
+            },
+
+            /**
+             * Drops every `us.*` filter, every chip and the cached metadata — the active content
+             * type changed, so the previous type's fields do not exist on the new one.
+             *
+             * Resets paging like any other filter write: the result set is about to widen, and a
+             * cursor bookmark taken against the narrower one describes a query nobody made.
+             */
+            clearUserSearchableFilters: (): void => {
+                const filters = Object.fromEntries(
+                    Object.entries(store.filters()).filter(
+                        ([key]) => !key.startsWith(USER_SEARCHABLE_PREFIX)
+                    )
+                );
+
+                patchState(store, {
+                    filters,
+                    userSearchableFields: [],
+                    userSearchableActive: [],
                     ...resetPaging()
                 });
             },

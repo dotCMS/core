@@ -338,9 +338,10 @@ the chip set matches the opted-in set, in the same order, with the same labels a
     criteria already commit to "concrete chips move to the shared UI lib with a store-agnostic API".
   - #37207 established the picker's browse entry point and its opt-in browse capabilities; those
     capabilities are the caller restrictions FR-010 protects.
-  - #37066 added Content Drive's Status filter. It stays a Content Drive-only control per FR-014a;
-    if the picker ever gains an "include archived" capability, that decision is revisited there
-    rather than by adding the chip.
+  - #37066 added Content Drive's Status filter. The clarification session reversed the initial
+    "Content Drive-only" reading: content condition must have one representation, so the chip is
+    shared and the picker's `archived` pin is removed instead (FR-014b). Only **Workflow** stays a
+    Content Drive-only control (FR-014a).
   - The picker's state layer was built as a headless, URL-free counterpart to Content Drive's
     (#36834). That split — one surface owns the URL, the other does not — is the constraint any
     shared filter contract has to respect, and is why the contract cannot assume URL persistence.
@@ -366,9 +367,10 @@ the chip set matches the opted-in set, in the same order, with the same labels a
 - **No new backend work is expected.** Every filter in Content Drive's row is already expressible
   in the search request the picker builds — the picker simply pins one of the flags (shared assets)
   and never offers the rest. This is a frontend consolidation; the plan phase confirms it.
-- **The set of controls the picker offers is a product decision.** Settled during specification:
-  Shared Assets, Content Types, Locale and More; Workflow and Status excluded (FR-014a). Adding
-  either later is a configuration change on the picker, not a redesign.
+- **The set of controls the picker offers is a product decision.** Settled during specification and
+  then revised by the clarification session: Shared Assets, Content Types, **Status**, Locale and
+  More — see FR-014, which is normative. Only **Workflow** is excluded (FR-014a); adding it later is
+  a configuration change on the picker, not a redesign.
 - **Making the controls shared does not require every Content Drive control to move.** Only the
-  ones both surfaces offer must become surface-agnostic. Workflow and Status may stay where they
-  are or move for consistency — a plan-phase call, invisible to users either way.
+  ones both surfaces offer must become surface-agnostic. Workflow is the one that stays in the
+  portlet and is projected into the shared row — a plan-phase call, invisible to users either way.

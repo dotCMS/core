@@ -1,4 +1,9 @@
-import { ComponentStatus, DotContentDriveBrowseItem, TreeNodeItem } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentTypeField,
+    DotContentDriveBrowseItem,
+    TreeNodeItem
+} from '@dotcms/dotcms-models';
 
 /**
  * Everything the host hands the picker when it opens.
@@ -15,8 +20,8 @@ import { ComponentStatus, DotContentDriveBrowseItem, TreeNodeItem } from '@dotcm
 /**
  * The browse capabilities a host can opt into.
  *
- * Absent, the picker behaves exactly as it always has: assets only, no folders, no links, not
- * archived. That is the point of nesting these rather than flattening six flags onto
+ * Absent, the picker behaves exactly as it always has: assets only, no folders, no links. That is
+ * the point of nesting these rather than flattening five flags onto
  * {@link DotAssetPickerConfig} — a File-field change cannot set `showFolders` by accident, and the
  * opt-in is visible at every call site.
  *
@@ -48,9 +53,6 @@ export interface DotAssetPickerBrowseOptions {
      * `live: true`).
      */
     showWorking?: boolean;
-
-    /** Include archived content. Omit to exclude it, which is the picker's standing behaviour. */
-    showArchived?: boolean;
 
     /** Sort descending rather than ascending. */
     sortByDesc?: boolean;
@@ -130,6 +132,18 @@ export interface DotAssetPickerConfig {
      * filter bag makes that structural rather than a convention a future component could break.
      */
     mimeTypes?: string[];
+
+    /**
+     * Content conditions that start **selected** — `ARCHIVED`, `UNPUBLISHED`, `LOCKED`.
+     *
+     * A seed, not a restriction: it lands in the filter bag beside {@link baseTypes} and
+     * {@link languageId}, shows up in the Status chip, and "Clear all" returns to it. `browse`
+     * mode's `status: 'archived'` is what sets it today (FR-014b).
+     *
+     * Which conditions the chip may *offer* is a different question, bounded by the caller's
+     * version state rather than by this (FR-014d) — see the toolbar's `$allowedStatuses`.
+     */
+    status?: string[];
 
     /**
      * Browse capabilities beyond plain asset picking — folders, menu links, version state and
@@ -264,6 +278,23 @@ export interface DotAssetPickerState {
      * split as the image editor's `withView`.
      */
     isFullscreen: boolean;
+    /**
+     * Filterable fields of the single selected content type, as the "More" overflow published them.
+     *
+     * One fetch, two readers: the chips (which control each field renders) and `$request` (which
+     * reshapes a raw `us.*` string into the `userSearchable` payload). Empty whenever 0 or more than
+     * one content type is selected — the overflow is only offered for exactly one.
+     */
+    userSearchableFields: DotCMSContentTypeField[];
+    /**
+     * Field variables with a chip on screen, in the order the editor added them.
+     *
+     * Deliberately **not** in `filters`: a chip is added before it filters anything, so that adding
+     * one does not reload the list on the way in, and an empty `us.*` entry in the bag would be a
+     * filter that filters nothing — the state the facade contract forbids (O3). Content Drive keeps
+     * the same split for the same reason.
+     */
+    userSearchableActive: string[];
 }
 
 export interface DotAssetPickerBrowseState {

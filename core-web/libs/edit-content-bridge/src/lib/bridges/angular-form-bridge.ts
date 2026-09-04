@@ -579,6 +579,12 @@ export class AngularFormBridge implements FormBridge {
                                     initialAssetPath: options.path,
                                     allowedBaseTypes: baseTypesFor(options.kinds),
                                     browse: browseOptionsFor(options),
+                                    // `'archived'` seeds the Status chip rather than pinning a
+                                    // flag: it now means *archived only*, and the editor can clear
+                                    // it from inside the dialog (FR-014b).
+                                    ...(options.status === 'archived'
+                                        ? { status: ['ARCHIVED'] }
+                                        : {}),
                                     ...(options.mimeTypes?.length
                                         ? { mimeTypes: options.mimeTypes }
                                         : {})
@@ -664,9 +670,10 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     return {
         ...(kinds.includes('folder') ? { showFolders: true } : {}),
         ...(wantsLinks ? { showLinks: true } : {}),
-        // Three states, expressed as the two flags the picker already understands.
+        // Version state only. `'archived'` no longer sets a second flag here — content condition
+        // has exactly one representation now, the Status filter, seeded below (FR-014b) — so this
+        // line answers a single question: is the query narrowed to published content?
         ...(options.status ? { showWorking: options.status !== 'live' } : {}),
-        ...(options.status ? { showArchived: options.status === 'archived' } : {}),
         ...(options.sort
             ? { sortField: options.sort.field, sortByDesc: options.sort.direction === 'desc' }
             : {})

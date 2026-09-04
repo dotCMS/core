@@ -93,13 +93,18 @@
                 <dot-language-filter-chip data-testid="language-field" />
 
                 @for (field of $activeFieldFilters(); track field.variable) {
-                    <dot-content-drive-field-filter
+                    <dot-field-filter
                         animate.enter="field-filter-enter"
                         animate.leave="field-filter-leave"
                         [field]="field" />
                 }
 
-                <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
+                <!-- The menu reports a failed field fetch rather than handling it: it is shared with
+                     the picker now, and `DotHttpErrorManagerService` cannot be injected inside
+                     `@dotcms/ui`. This surface still announces it the way it always did. -->
+                <dot-field-filter-menu
+                    data-testid="field-filter-menu"
+                    (error)="onFieldFilterError($event)" />
             </dot-filter-bar>
 
             <!-- Sits at the end of the filter row rather than beside the search box: during a run the

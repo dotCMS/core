@@ -655,21 +655,19 @@ describe('Utils Functions', () => {
         });
 
         describe('No special field', () => {
-            it('should call castSingleSelectableValue', () => {
-                const value = 'value1';
-                const field = {
-                    fieldType: 'something',
-                    dataType: 'something'
-                } as DotCMSContentTypeField;
+            // Asserted through the result rather than by spying on `castSingleSelectableValue`:
+            // that function now lives in `@dotcms/ui` (the shared field filter parses the same
+            // options), so a spy on this module's re-export no longer intercepts the internal
+            // call. The cast is what the test is about, and the result shows it.
+            it.each([
+                ['something', 'value1', 'value1'],
+                ['INTEGER', '42', 42],
+                ['FLOAT', '4.5', 4.5],
+                ['BOOL', 'true', true]
+            ])('should cast the value by its %s dataType', (dataType, value, expected) => {
+                const field = { fieldType: 'something', dataType } as DotCMSContentTypeField;
 
-                const castSingleSelectableValueMock = jest.spyOn(
-                    functionsUtil,
-                    'castSingleSelectableValue'
-                );
-
-                getFinalCastedValue(value, field);
-
-                expect(castSingleSelectableValueMock).toHaveBeenCalledWith(value, field.dataType);
+                expect(getFinalCastedValue(value, field)).toBe(expected);
             });
         });
 

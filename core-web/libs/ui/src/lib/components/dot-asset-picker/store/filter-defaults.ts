@@ -4,6 +4,10 @@ import {
     SHARED_ASSETS_DISABLED_VALUE,
     SHARED_ASSETS_FILTER_KEY
 } from '../../dot-filter-bar/chips/dot-shared-assets-filter/constants';
+import {
+    DotContentStatus,
+    PUBLISHED_ONLY_STATUSES
+} from '../../dot-filter-bar/chips/dot-status-filter/constants';
 
 /**
  * The filters a picker opens with, derived from what its caller seeded.
@@ -31,10 +35,38 @@ export function buildPickerFilterDefaults(
         return {};
     }
 
+    const status = admittedStatuses(config);
+
     return {
         ...(config.languageId ? { languageId: [config.languageId] } : {}),
-        ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {})
+        ...(config.baseTypes?.length ? { baseType: config.baseTypes } : {}),
+        ...(status.length ? { status } : {})
     };
+}
+
+/**
+ * The seeded conditions the caller's own version state admits.
+ *
+ * A picker pinned to published content cannot carry Archived or Unpublished: neither has a
+ * published version, so the platform would answer with the working version instead — content
+ * described by a version the caller did not ask for (SC-009).
+ *
+ * Enforced **here**, at the seed, and not only by bounding the chip's options: a seed arrives
+ * before any chip exists, and an invariant that depends on a control being on screen is an
+ * invariant that holds by luck. The chip's bound (FR-014d) is what keeps the editor from re-adding
+ * one afterwards.
+ *
+ * @param config The picker's configuration.
+ * @return The admitted conditions, in the caller's order. Empty when nothing was seeded.
+ */
+function admittedStatuses(config: DotAssetPickerConfig): string[] {
+    const seeded = config.status ?? [];
+
+    if (!seeded.length || config.browse?.showWorking !== false) {
+        return seeded;
+    }
+
+    return seeded.filter((value) => PUBLISHED_ONLY_STATUSES.includes(value as DotContentStatus));
 }
 
 /** Whether two filter values are the same selection, order included. */

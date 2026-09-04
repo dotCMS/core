@@ -18,6 +18,7 @@ import { ActivatedRoute, Router } from '@angular/router';
 
 import { MessageService, SortEvent } from 'primeng/api';
 import { DialogModule } from 'primeng/dialog';
+import { DialogService } from 'primeng/dynamicdialog';
 import { MessageModule } from 'primeng/message';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
@@ -90,7 +91,9 @@ import {
     DotContentDriveUploadSelectorPayload
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
 import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
+import { provideContentDriveRelationshipPicker } from '../store/content-drive-relationship-picker';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
 
@@ -122,6 +125,14 @@ import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
         // written once serves this toolbar and the AssetPicker's. Must sit alongside the store, not
         // in `root`: the facade closes over whichever store instance this shell owns.
         provideContentDriveFilterFacade(),
+        // The field-filter chips' own seam: which chips are shown, and the field metadata one fetch
+        // feeds to the chips, this shell's results table and the store's request builder.
+        provideContentDriveFieldFilterHost(),
+        // The optional capability the shared field filter needs for Relationship fields. Content
+        // Drive can supply it — `DotSelectExistingContentComponent` lives in a library this portlet
+        // may import and `@dotcms/ui` may not — so the drive keeps exactly today's behaviour.
+        DialogService,
+        provideContentDriveRelationshipPicker(),
         // Component-scoped (not `root`) so it can inject the shell's DotContentDriveStore to read
         // the side-panel feature flag; shared with the child components in this shell's subtree.
         DotContentDriveNavigationService,

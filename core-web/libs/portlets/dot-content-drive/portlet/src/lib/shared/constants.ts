@@ -108,27 +108,16 @@ export const MAP_BASE_TYPES_TO_NUMBERS: Partial<Record<DotCMSBaseTypesContentTyp
         Object.entries(MAP_NUMBERS_TO_BASE_TYPES).map(([key, value]) => [value, key])
     );
 
-// Debounce time for requests
-export const DEBOUNCE_TIME = 500;
+// Also re-exported: the shared chips write these keys, and the portlet's URL layer reads them.
+export { USER_SEARCHABLE_PREFIX } from '@dotcms/ui';
 
-/**
- * Prefix that marks a filter-bag key as a per-field "user searchable" criterion, e.g. `us.title`.
- * Keeping these entries in the flat `filters` bag lets them ride the existing URL encode/decode and
- * be cleared alongside every other filter. The prefix avoids colliding with known filter keys or a
- * field whose variable happens to be `title`, `workflow`, etc.
- */
-export const USER_SEARCHABLE_PREFIX = 'us.';
-
-/**
- * Filter-bag key backing the "Show Shared Assets" toggle, which drives `includeSystemHost` on the
- * search request. It lives in the bag rather than in its own query param so it inherits the URL
- * encode/decode, the back/forward guard, and the legacy-editor `CD_` round-trip.
- *
- * Like `languageId`, it is always seeded rather than written only when it differs from the default,
- * so the state that is applied is always visible in the URL instead of being implied by absence.
- */
-// Re-exported rather than redefined: the chip that writes this key now lives in `@dotcms/ui` and
-// is shared with the AssetPicker, so one definition serves both. Kept exported from here so the
+// The "Show Shared Assets" key, which drives `includeSystemHost` on the search request. Living in
+// the filter bag rather than its own query param is what gives it the URL encode/decode, the
+// back/forward guard and the legacy-editor `CD_` round-trip for free, and it is always seeded so
+// the applied state is visible in the URL rather than implied by an absent key.
+//
+// Re-exported rather than redefined: the chip that writes it now lives in `@dotcms/ui` and is
+// shared with the AssetPicker, so one definition serves both. Kept exported from here so the
 // portlet's existing importers — the URL encode/decode pair, the back/forward guard, the legacy
 // `CD_` round-trip and `withFilterDefaults` — are untouched.
 export {
@@ -137,126 +126,38 @@ export {
     SHARED_ASSETS_FILTER_KEY
 } from '@dotcms/ui';
 
-/**
- * Content-type field types offered as Content Drive field filters (phase 1 — simple fields only).
- * The string values match the backend field-type contract (edit-content `FIELD_TYPES`). Grouped by
- * the control rendered and the value shape stored/sent:
- * - text  → single string (contains)
- * - single-select (Select/Radio) → single string (equals), options from `field.values`
- * - multi-select (Multi-Select/Checkbox) → string[], options from `field.values`
- * - date  → `{ from, to }` ISO range
- */
-export const FIELD_FILTER_TEXT_TYPES = ['Text', 'Textarea', 'WYSIWYG'] as const;
-/** Singular field-type names, matched to their native widget in the filter chip. */
-export const FIELD_FILTER_SELECT_TYPE = 'Select';
-export const FIELD_FILTER_RADIO_TYPE = 'Radio';
-export const FIELD_FILTER_MULTISELECT_TYPE = 'Multi-Select';
-export const FIELD_FILTER_CHECKBOX_TYPE = 'Checkbox';
-/** Single-value option fields (stored as one string). */
-export const FIELD_FILTER_SINGLE_SELECT_TYPES = [
-    FIELD_FILTER_SELECT_TYPE,
-    FIELD_FILTER_RADIO_TYPE
-] as const;
-/** Multi-value option fields (stored as a comma-joined list). */
-export const FIELD_FILTER_MULTI_SELECT_TYPES = [
-    FIELD_FILTER_MULTISELECT_TYPE,
-    FIELD_FILTER_CHECKBOX_TYPE
-] as const;
-/** Complex field types (own picker + fetched options), added in phase 2. */
-export const FIELD_FILTER_TAG_TYPE = 'Tag';
-export const FIELD_FILTER_CATEGORY_TYPE = 'Category';
-export const FIELD_FILTER_RELATIONSHIP_TYPE = 'Relationship';
-/**
- * Every field type whose value is a list stored comma-joined (multi-select, checkbox, tag,
- * category). Relationship is intentionally excluded — the backend only supports a single related
- * value, so it's stored as one identifier string.
- */
-export const FIELD_FILTER_MULTI_VALUE_TYPES: readonly string[] = [
-    ...FIELD_FILTER_MULTI_SELECT_TYPES,
-    FIELD_FILTER_TAG_TYPE,
-    FIELD_FILTER_CATEGORY_TYPE
-];
-export const FIELD_FILTER_DATE_TYPES = ['Date', 'Date-and-Time', 'Time'] as const;
-/** Date field type showing time; `Time` is time-only, `Date-and-Time` shows date + time. */
-export const FIELD_FILTER_TIME_ONLY_TYPE = 'Time';
-export const FIELD_FILTER_DATE_TIME_TYPE = 'Date-and-Time';
-
-/**
- * Text-backed field types the legacy content search only ever offered via a plain textbox. They
- * render the same `text` control here and filter as a single contains term against the field's
- * indexed value (JSON/Story-Block/Custom = full text, Binary = file name).
- */
-export const FIELD_FILTER_JSON_TYPE = 'JSON-Field';
-export const FIELD_FILTER_STORY_BLOCK_TYPE = 'Story-Block';
-export const FIELD_FILTER_CUSTOM_TYPE = 'Custom-Field';
-export const FIELD_FILTER_BINARY_TYPE = 'Binary';
-export const FIELD_FILTER_TEXT_FALLBACK_TYPES = [
-    FIELD_FILTER_JSON_TYPE,
-    FIELD_FILTER_STORY_BLOCK_TYPE,
-    FIELD_FILTER_CUSTOM_TYPE,
-    FIELD_FILTER_BINARY_TYPE
-] as const;
-/**
- * Key/Value field. Rendered with a single input + a `key:value` shorthand; the value is stored as
- * the user typed it and translated to the `key_value` joined term when building the search payload.
- */
-export const FIELD_FILTER_KEY_VALUE_TYPE = 'Key-Value';
-
-/** Every field type eligible to become a filter (excludes Host-Folder + out-of-scope types). */
-export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
-    ...FIELD_FILTER_TEXT_TYPES,
-    ...FIELD_FILTER_SINGLE_SELECT_TYPES,
-    ...FIELD_FILTER_MULTI_SELECT_TYPES,
-    ...FIELD_FILTER_DATE_TYPES,
-    ...FIELD_FILTER_TEXT_FALLBACK_TYPES,
-    FIELD_FILTER_TAG_TYPE,
+// Re-exported rather than redefined: the field-filter chips that read these now live in
+// `@dotcms/ui` and are shared with the AssetPicker, so one definition serves both. Kept exported
+// from here so the portlet's own importers — the URL encode/decode pair and the store's request
+// builder — are untouched.
+export {
+    FIELD_FILTER_BINARY_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
+    FIELD_FILTER_CHECKBOX_TYPE,
+    FIELD_FILTER_CUSTOM_TYPE,
+    FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_DATE_TYPES,
+    FIELD_FILTER_JSON_TYPE,
+    FIELD_FILTER_KEY_VALUE_TYPE,
+    FIELD_FILTER_MULTI_SELECT_TYPES,
+    FIELD_FILTER_MULTI_VALUE_TYPES,
+    FIELD_FILTER_MULTISELECT_TYPE,
+    FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_RELATIONSHIP_TYPE,
-    FIELD_FILTER_KEY_VALUE_TYPE
-];
+    FIELD_FILTER_SELECT_TYPE,
+    FIELD_FILTER_SINGLE_SELECT_TYPES,
+    FIELD_FILTER_STORY_BLOCK_TYPE,
+    FIELD_FILTER_TEXT_FALLBACK_TYPES,
+    FIELD_FILTER_TEXT_TYPES,
+    FIELD_FILTER_TIME_ONLY_TYPE,
+    TITLE_FIELD_VARIABLE,
+    USER_SEARCHABLE_FIELD_TYPES,
+    USER_SEARCHABLE_VALUE_SEPARATOR
+} from '@dotcms/ui';
 
-/**
- * Field variable of the content type's title field. It's already covered by the toolbar's keyword
- * search (which queries the contentlet title), so it's not offered as a redundant field filter.
- */
-export const TITLE_FIELD_VARIABLE = 'title';
-
-/** Separator joining multi-select values and date-range `from,to` in the flat filter string. */
-export const USER_SEARCHABLE_VALUE_SEPARATOR = ',';
-
-/**
- * Filter-bag key backing the Status filter (Archived / Unpublished / Locked).
- *
- * Lives in the flat `filters` bag rather than its own query param so it inherits every navigation
- * mechanism the other filters already use: deep link, reload, folder browsing, browser
- * Back/Forward, and the legacy-editor `CD_` round-trip. Giving it a dedicated param would mean
- * bespoke handling in all four places.
- *
- * Unlike `languageId` and {@link SHARED_ASSETS_FILTER_KEY}, it is deliberately NOT seeded by
- * `withFilterDefaults` — an empty selection genuinely means "no status filtering", so leaving it
- * unseeded makes "Clear all" appear and clear correctly with no extra code.
- */
-export const STATUS_FILTER_KEY = 'status';
-
-/** Content states the Status filter offers. Values match the backend `ContentStatus` enum. */
-export const CONTENT_STATUS = {
-    ARCHIVED: 'ARCHIVED',
-    UNPUBLISHED: 'UNPUBLISHED',
-    LOCKED: 'LOCKED'
-} as const;
-
-/**
- * Status options in display order. Archived leads: it is the capability people currently leave
- * Content Drive to get.
- *
- * Selections combine with OR — checking more boxes returns more content, consistent with the
- * content-type and locale filters beside it.
- */
-export const STATUS_FILTER_OPTIONS: { value: string; labelKey: string }[] = [
-    { value: CONTENT_STATUS.ARCHIVED, labelKey: 'content-drive.status-filter.archived' },
-    { value: CONTENT_STATUS.UNPUBLISHED, labelKey: 'content-drive.status-filter.unpublished' },
-    { value: CONTENT_STATUS.LOCKED, labelKey: 'content-drive.status-filter.locked' }
-];
+// Re-exported rather than redefined: the Status chip moved to `@dotcms/ui` and is shared with the
+// AssetPicker, and the portlet's URL decode layer sanitizes against the same three values.
+export { CONTENT_STATUS, STATUS_FILTER_KEY, STATUS_FILTER_OPTIONS } from '@dotcms/ui';
 
 export const PANEL_SCROLL_HEIGHT = '25rem';
 

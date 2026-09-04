@@ -22,9 +22,15 @@ import {
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
-import { DOT_FILTER_FACADE, DotFilterFacade, isCanonicalChipOrder } from '@dotcms/ui';
+import {
+    DOT_FIELD_FILTER_HOST,
+    DOT_FILTER_FACADE,
+    DotFieldFilterHost,
+    DotFilterFacade,
+    isCanonicalChipOrder
+} from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
@@ -64,6 +70,10 @@ describe('DotContentDriveToolbarComponent', () => {
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
+    // same pair off the store to render one chip per active field — so both point here.
+    const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+    const userSearchableActiveSignal = signal<string[]>([]);
     const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
 
     const createComponent = createComponentFactory({
@@ -84,6 +94,18 @@ describe('DotContentDriveToolbarComponent', () => {
                     $hasNonDefaultFilters: computed(() => hasNonDefaultFilters(filtersSignal(), 1))
                 } satisfies DotFilterFacade
             },
+            // The "More" overflow's own seam. In production the shell provides it over the same
+            // store methods this suite already mocks, so it is wired to them here too.
+            {
+                provide: DOT_FIELD_FILTER_HOST,
+                useValue: {
+                    $activeFields: userSearchableActiveSignal,
+                    $fields: userSearchableFieldsSignal,
+                    addField: jest.fn(),
+                    setFields: jest.fn(),
+                    clearFields: jest.fn()
+                } satisfies DotFieldFilterHost
+            },
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
                 // The toolbar now renders from the visual (panel-aware) computed; reusing the same
@@ -101,8 +123,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 setDialog: jest.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
-                userSearchableFields: signal([]),
-                userSearchableActive: signal<string[]>([]),
+                userSearchableFields: userSearchableFieldsSignal,
+                userSearchableActive: userSearchableActiveSignal,
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
@@ -274,6 +296,35 @@ describe('DotContentDriveToolbarComponent', () => {
             );
 
             expect(isCanonicalChipOrder(chips)).toBe(true);
+        });
+
+        // FR-018 / SC-007: the parity the picker's toolbar is measured against. Asserted on both
+        // surfaces against the same rule, so neither can drift into being mouse-only.
+        it('should put every filter control in the tab order, in the order displayed', () => {
+            const chips = Array.from(
+                spectator.element.querySelectorAll<HTMLElement>('[data-filter-chip]')
+            );
+
+            expect(chips.length).toBe(6);
+            chips.forEach((chip) => {
+                const focusable = chip.matches('[tabindex]')
+                    ? chip
+                    : chip.querySelector<HTMLElement>('[tabindex], button');
+
+                expect(focusable).toBeTruthy();
+                expect(focusable?.getAttribute('tabindex')).not.toBe('-1');
+            });
+        });
+
+        it('should open a filter panel from the keyboard alone', () => {
+            const chip = spectator.query('[data-testid="content-type-filter-chip"]') as HTMLElement;
+
+            chip.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(
+                spectator.query('.p-popover, [data-pc-name="popover"]', { root: true })
+            ).toBeTruthy();
         });
     });
 
