@@ -1,10 +1,16 @@
 package com.dotcms.browser;
 
+import static com.dotcms.browser.FieldSearchCriteria.RoutingBucket.DB;
+import static com.dotcms.browser.FieldSearchCriteria.RoutingBucket.INDEX;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 
 import java.util.List;
+import java.util.Set;
 
 import org.junit.Test;
+import org.mockito.Mockito;
 
 /**
  * Unit tests for {@link BrowserAPIImpl#jsonEscape(String)} — the escaping that lets a per-field
@@ -88,5 +94,73 @@ public class BrowserAPIImplTest {
     @Test
     public void buildMultiValueOrClause_blankValues_produceNoClause() {
         assertEquals("", BrowserAPIImpl.buildMultiValueOrClause("SSS.f", List.of("", "   ")));
+    }
+
+    // --- isSinglePassEligible (issue #37184, FR-002 single-pass eligibility predicate) --------
+    //
+    // Takes the raw fields rather than a BrowserQuery, deliberately: BrowserQuery's constructor
+    // calls APILocator (folder/host/role APIs) directly and cannot be instantiated in a pure
+    // unit test. The real call site passes browserQuery.getFieldCriteria()/workflowSchemeIds/
+    // workflowStepIds/filter/fileName straight through.
+
+    private static FieldSearchCriteria criteriaWithBucket(final FieldSearchCriteria.RoutingBucket bucket) {
+        final FieldSearchCriteria criteria = Mockito.mock(FieldSearchCriteria.class);
+        Mockito.when(criteria.getBucket()).thenReturn(bucket);
+        return criteria;
+    }
+
+    /** All-INDEX field criteria, no workflow, no free-text/fileName: the case FR-002 targets. */
+    @Test
+    public void isSinglePassEligible_allIndexCriteriaNoOtherFilters_isEligible() {
+        assertTrue(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX), criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), null, null));
+    }
+
+    /** A single DB-routed criterion (Tag/Relationship) must stay on the existing multi-scan path. */
+    @Test
+    public void isSinglePassEligible_anyDbRoutedCriterion_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX), criteriaWithBucket(DB)),
+                Set.of(), Set.of(), null, null));
+    }
+
+    /** A workflow scheme filter must stay database-first even with all-INDEX field criteria. */
+    @Test
+    public void isSinglePassEligible_workflowSchemePresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of("scheme-1"), Set.of(), null, null));
+    }
+
+    /** A workflow step filter must stay database-first even with all-INDEX field criteria. */
+    @Test
+    public void isSinglePassEligible_workflowStepPresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of("step-1"), null, null));
+    }
+
+    /** A free-text filter term must stay on the existing (correctly index-aware) text path. */
+    @Test
+    public void isSinglePassEligible_freeTextFilterPresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), "some text", null));
+    }
+
+    /** A fileName term must stay database-first. */
+    @Test
+    public void isSinglePassEligible_fileNamePresent_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(criteriaWithBucket(INDEX)),
+                Set.of(), Set.of(), null, "report.pdf"));
+    }
+
+    /** Zero field criteria means nothing is routed to the index at all — nothing to single-pass. */
+    @Test
+    public void isSinglePassEligible_noFieldCriteriaAtAll_isIneligible() {
+        assertFalse(BrowserAPIImpl.isSinglePassEligible(
+                List.of(), Set.of(), Set.of(), null, null));
     }
 }
