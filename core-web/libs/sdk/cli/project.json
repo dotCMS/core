@@ -83,7 +83,26 @@
                     "ci": true,
                     "coverage": true
                 }
-            }
+            },
+            "dependsOn": [
+                "verify-package"
+            ]
+        },
+        "verify-package": {
+            "executor": "nx:run-commands",
+            "dependsOn": [
+                "build"
+            ],
+            "options": {
+                "command": "bash libs/sdk/cli/scripts/verify-package.sh",
+                "cwd": "."
+            },
+            "cache": true,
+            "inputs": [
+                "{projectRoot}/package.json",
+                "{projectRoot}/project.json",
+                "{projectRoot}/scripts/verify-package.sh"
+            ]
         }
     }
 }
