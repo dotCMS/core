@@ -4,7 +4,7 @@ import { signal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
 
 import { DotMessageService } from '@dotcms/data-access';
-import { ComponentStatus, TreeNodeItem } from '@dotcms/dotcms-models';
+import { ComponentStatus, TreeNodeContentData, TreeNodeItem } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotAssetPickerSidebarComponent } from './dot-asset-picker-sidebar.component';
@@ -15,7 +15,10 @@ import { DotSearchInputComponent } from '../../../dot-search-input/dot-search-in
 import { DotSiteComponent } from '../../../dot-site/dot-site.component';
 import { DotAssetPickerStore } from '../../store/dot-asset-picker.store';
 
-const SITE_ROOT: TreeNodeItem = {
+/** `TreeNode.data` is optional upstream; these fixtures always carry it, so narrow it here. */
+type MockTreeNodeItem = TreeNodeItem & { data: TreeNodeContentData };
+
+const SITE_ROOT: MockTreeNodeItem = {
     key: 'site-1',
     label: 'demo.dotcms.com',
     data: { type: 'site', id: 'site-1', hostname: 'demo.dotcms.com', path: '' },
@@ -52,7 +55,7 @@ const LOAD_MORE_NODE: TreeNodeItem = {
 const createMockStore = () => ({
     folders: signal<TreeNodeItem[]>([SITE_ROOT]),
     selectedNode: signal<TreeNodeItem | null>(SITE_ROOT),
-    foldersStatus: signal(ComponentStatus.LOADED),
+    foldersStatus: signal<ComponentStatus>(ComponentStatus.LOADED),
     folderSearch: signal(''),
     searchResults: signal<TreeNodeItem[] | null>(null),
     isSearchingFolders: signal(false),
@@ -60,7 +63,7 @@ const createMockStore = () => ({
     showResultsEmptyState: signal(false),
     showRefineHint: signal(false),
     selectedResultKey: signal<string | null>(null),
-    searchStatus: signal(ComponentStatus.INIT),
+    searchStatus: signal<ComponentStatus>(ComponentStatus.INIT),
     browsingSite: signal<{ identifier: string; hostname: string } | undefined>({
         identifier: SITE_ROOT.data.id,
         hostname: SITE_ROOT.data.hostname

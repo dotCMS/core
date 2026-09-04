@@ -10,9 +10,8 @@ import { ActivatedRoute } from '@angular/router';
 import { RouterTestingModule } from '@angular/router/testing';
 
 import { DotMessageService, DotRouterService } from '@dotcms/data-access';
-import { DotcmsEventsService, LoginService } from '@dotcms/dotcms-js';
+import { LoginService } from '@dotcms/dotcms-js';
 import {
-    DotcmsEventsServiceMock,
     LoginServiceMock,
     MockDotMessageService,
     MockDotRouterService
@@ -161,7 +160,6 @@ describe('ResetPasswordComponent — HTTP contract', () => {
                 provideHttpClient(),
                 provideHttpClientTesting(),
                 { provide: DotMessageService, useValue: messageServiceMock },
-                { provide: DotcmsEventsService, useClass: DotcmsEventsServiceMock },
                 { provide: DotLoginPageStateService, useClass: MockDotLoginPageStateService },
                 { provide: DotRouterService, useClass: MockDotRouterService }
             ]

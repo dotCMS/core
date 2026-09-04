@@ -28,14 +28,19 @@ import { withHistory } from '../history/withHistory';
  */
 export interface PageLoadingConfigState {
     isClientReady: boolean;
+    /**
+     * Both are `| null`, which is what they have always held: the initial state sets them to null,
+     * `resetRequestMetadata` and `resetClientConfiguration` set them back, and the declaration
+     * simply did not say so.
+     */
     requestMetadata: {
         query: string;
         variables: Record<string, string>;
-    };
+    } | null;
     pageAssetResponse: {
         pageAsset: DotCMSPageAsset;
         content?: Record<string, unknown>;
-    };
+    } | null;
 }
 
 export type PageClientResponse = {
@@ -61,7 +66,12 @@ export interface PageComputed {
     pageURI: Signal<string>;
     pageVariantId: Signal<string>;
     pageTranslateProps: Signal<TranslateProps>;
-    pageFriendlyParams: Signal<Record<string, string>>;
+    /**
+     * Query params as they appear in the URL. Values are optional: they come from `pageParams` /
+     * `viewParams`, where most are, and `normalizeQueryParams` copies them through. Both consumers
+     * hand the result to Angular's `queryParams`, which omits keys whose value is `undefined`.
+     */
+    pageFriendlyParams: Signal<Record<string, string | null | undefined>>;
 }
 
 /**
@@ -111,7 +121,10 @@ export interface WithPageMethods extends PageComputed {
     resetHistoryToCurrent: () => void;
 
     // Computed
-    $requestWithParams: Signal<{ query: string; variables: Record<string, string> } | null>;
+    $requestWithParams: Signal<{
+        query: string;
+        variables: Record<string, string | undefined>;
+    } | null>;
 }
 
 const pageLoadingConfigState: PageLoadingConfigState = {
@@ -151,7 +164,13 @@ export function withPage() {
                 setIsClientReady: (isClientReady: boolean) => {
                     patchState(store, { isClientReady });
                 },
-                setCustomClient: ({ query, variables }) => {
+                setCustomClient: ({
+                    query,
+                    variables
+                }: {
+                    query: string;
+                    variables: Record<string, string>;
+                }) => {
                     patchState(store, {
                         requestMetadata: {
                             query,
@@ -162,7 +181,10 @@ export function withPage() {
                 resetRequestMetadata: () => {
                     patchState(store, { requestMetadata: null });
                 },
-                setPageAsset: (payload) => {
+                setPageAsset: (payload: {
+                    pageAsset: DotCMSPageAsset;
+                    content?: Record<string, unknown>;
+                }) => {
                     const current = store.pageAssetResponse();
                     const content = 'content' in payload ? payload.content : current?.content;
                     const nextResponse = {
@@ -252,17 +274,23 @@ export function withPage() {
             });
 
             const $requestWithParams = computed(() => {
-                if (!store.requestMetadata()) {
+                const requestMetadata = store.requestMetadata();
+                const params = store.pageParams();
+
+                // Read once into locals: both are nullable, and the old body re-read
+                // `requestMetadata()` twice after the guard, which narrowing does not survive.
+                // `params` had no guard at all — a request can be in flight before the params
+                // land, and there are no variables to send without them.
+                if (!requestMetadata || !params) {
                     return null;
                 }
 
-                const params = store.pageParams();
                 const { mode, language_id, url, variantName } = params;
 
                 return {
-                    ...store.requestMetadata(),
+                    ...requestMetadata,
                     variables: {
-                        ...store.requestMetadata().variables,
+                        ...requestMetadata.variables,
                         url,
                         mode,
                         languageId: language_id,
@@ -318,7 +346,7 @@ export function withPage() {
             } satisfies PageComputed & {
                 $requestWithParams: Signal<{
                     query: string;
-                    variables: Record<string, string>;
+                    variables: Record<string, string | undefined>;
                 } | null>;
             };
         })

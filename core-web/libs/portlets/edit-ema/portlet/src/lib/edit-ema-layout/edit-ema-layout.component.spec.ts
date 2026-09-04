@@ -28,6 +28,7 @@ import {
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
 import { LoginService } from '@dotcms/dotcms-js';
+import { DotTemplateDesigner } from '@dotcms/dotcms-models';
 import { GlobalStore } from '@dotcms/store';
 import { TemplateBuilderComponent } from '@dotcms/template-builder';
 import { WINDOW } from '@dotcms/utils';
@@ -35,7 +36,8 @@ import {
     CurrentUserDataMock,
     DotExperimentsServiceMock,
     DotLanguagesServiceMock,
-    MockDotRouterJestService
+    MockDotRouterJestService,
+    mockDotLayout
 } from '@dotcms/utils-testing';
 
 import { DEBOUNCE_TIME, EditEmaLayoutComponent } from './edit-ema-layout.component';
@@ -186,9 +188,17 @@ describe('EditEmaLayoutComponent', () => {
         ).componentInstance;
     });
 
+    // `EventEmitter.emit()` takes an optional argument, so these used to emit nothing: the
+    // component stored `undefined` as `lastTemplate` and the force-save-on-leave path then called
+    // `saveTemplate(undefined)`, which its own signature forbids. The real
+    // `TemplateBuilderComponent` always emits a designer object.
+    const templateChange: DotTemplateDesigner = {
+        themeId: 'test-theme',
+        layout: mockDotLayout()
+    };
     describe('Template Change', () => {
         it('should forbid navigation', () => {
-            templateBuilder.templateChange.emit();
+            templateBuilder.templateChange.emit(templateChange);
             expect(dotRouter.forbidRouteDeactivation).toHaveBeenCalled();
         });
 
@@ -206,7 +216,7 @@ describe('EditEmaLayoutComponent', () => {
         it('should trigger a save after 5 secs', fakeAsync(() => {
             const reloadSpy = jest.spyOn(store, 'pageReload');
 
-            templateBuilder.templateChange.emit();
+            templateBuilder.templateChange.emit(templateChange);
             tick(5000);
 
             expect(dotPageLayoutService.save).toHaveBeenCalled();
@@ -227,14 +237,14 @@ describe('EditEmaLayoutComponent', () => {
         }));
 
         it('should unlock navigation after saving', fakeAsync(() => {
-            templateBuilder.templateChange.emit();
+            templateBuilder.templateChange.emit(templateChange);
             tick(6000);
 
             expect(dotRouter.allowRouteDeactivation).toHaveBeenCalled();
         }));
 
         it('should set isClientReady false after saving', fakeAsync(() => {
-            templateBuilder.templateChange.emit();
+            templateBuilder.templateChange.emit(templateChange);
             tick(6000);
 
             expect(store.isClientReady()).toBe(false);
@@ -243,7 +253,7 @@ describe('EditEmaLayoutComponent', () => {
         it('should save right away if we request page leave before the 5 secs', () => {
             const saveTemplate = jest.spyOn(component, 'saveTemplate');
 
-            templateBuilder.templateChange.emit();
+            templateBuilder.templateChange.emit(templateChange);
 
             dotRouter.requestPageLeave(); // This is what the guard triggers if the page is forbid to navigate
 

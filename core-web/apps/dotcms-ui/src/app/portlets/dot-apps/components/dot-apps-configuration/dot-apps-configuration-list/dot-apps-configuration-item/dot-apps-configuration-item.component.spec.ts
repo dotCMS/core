@@ -108,7 +108,7 @@ describe('DotAppsConfigurationItemComponent', () => {
         it('should DotCopy with right properties', () => {
             const dotCopy = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
             expect(dotCopy.label).toBe(component.site().id);
-            expect(dotCopy.copy).toBe(component.site().id);
+            expect(dotCopy.copy()).toBe(component.site().id);
         });
 
         it('should have warning icon', () => {
@@ -136,7 +136,7 @@ describe('DotAppsConfigurationItemComponent', () => {
             const deleteBtn = fixture.debugElement.query(By.css('[data-testId="delete"]'));
 
             jest.spyOn(dialogService, 'confirm').mockImplementation((conf) => {
-                conf.accept();
+                conf.accept!();
             });
 
             jest.spyOn(component.delete, 'emit');

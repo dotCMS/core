@@ -6,8 +6,8 @@
                     <i
                         [style.font-size.px]="16"
                         class="material-symbols-outlined"
-                        [ngClass]="
-                            vm.trafficProportion.variants?.length > 1
+                        [class]="
+                            (vm.trafficProportion?.variants?.length ?? 0) > 1
                                 ? 'text-green-600'
                                 : 'text-gray-500'
                         "
@@ -21,13 +21,13 @@
                     </span>
                 </h2>
                 <dot-experiments-configuration-items-count
-                    [count]="vm.trafficProportion.variants?.length"
+                    [count]="vm.trafficProportion?.variants?.length ?? 0"
                     [maxLength]="maxVariantsAllowed" />
             </div>
         </ng-template>
         <div class="flex w-full flex-col gap-4">
             @for (
-                variant of vm.trafficProportion.variants;
+                variant of vm.trafficProportion?.variants ?? [];
                 track variant;
                 let first = $first;
                 let last = $last
@@ -42,9 +42,7 @@
                                     (textChanged)="
                                         editVariantName($event, variant, vm.experimentId)
                                     "
-                                    [isLoading]="
-                                        vm.status && vm.status.status === statusList.SAVING
-                                    "
+                                    [isLoading]="vm.status?.status === statusList.SAVING"
                                     [maxCharacterLength]="maxInputTitleLength"
                                     [required]="true"
                                     [showErrorMsg]="false"
@@ -61,7 +59,7 @@
                         </div>
                         <span class="mx-2 text-gray-500">|</span>
                         <div
-                            [pTooltip]="vm.disabledTooltipLabel | dm"
+                            [pTooltip]="vm.disabledTooltipLabel ?? '' | dm"
                             [tooltipDisabled]="!vm.disabledTooltipLabel"
                             data-testId="tooltip-on-disabled"
                             tooltipPosition="bottom">
@@ -81,7 +79,7 @@
                         @if (
                             variant.name === defaultVariantName ||
                             !vm.isExperimentADraft ||
-                            vm.pageSate.lockedByAnotherUser
+                            vm.pageSate?.lockedByAnotherUser
                         ) {
                             <p-button
                                 (onClick)="goToEditPageVariant(variant, dotPageMode.PREVIEW)"
@@ -103,7 +101,7 @@
                                 type="button" />
                         }
                         <div
-                            [pTooltip]="vm.disabledTooltipLabel | dm"
+                            [pTooltip]="vm.disabledTooltipLabel ?? '' | dm"
                             [tooltipDisabled]="
                                 !vm.disabledTooltipLabel || variant.name === defaultVariantName
                             "
@@ -129,10 +127,10 @@
         </div>
         <ng-template #footer>
             <div
-                [pTooltip]="vm.disabledTooltipLabel | dm"
+                [pTooltip]="vm.disabledTooltipLabel ?? '' | dm"
                 [tooltipDisabled]="
                     !vm.disabledTooltipLabel ||
-                    vm.trafficProportion.variants?.length >= maxVariantsAllowed
+                    (vm.trafficProportion?.variants?.length ?? 0) >= maxVariantsAllowed
                 "
                 class="inline-block"
                 data-testId="tooltip-on-disabled"
@@ -140,7 +138,7 @@
                 <p-button
                     (onClick)="addVariant()"
                     [disabled]="
-                        vm.trafficProportion.variants?.length >= maxVariantsAllowed ||
+                        (vm.trafficProportion?.variants?.length ?? 0) >= maxVariantsAllowed ||
                         !vm.isExperimentADraft ||
                         vm.disabledTooltipLabel
                     "

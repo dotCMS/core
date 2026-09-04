@@ -32,8 +32,10 @@ import { DotContentComparePreviewFieldComponent } from '../fields/dot-content-co
         '<dot-content-compare-table [data]="data" (bringBack)="bringBack.emit($event)" (changeDiff)="changeDiff.emit($event)" (changeVersion)="changeVersion.emit($event)" [showDiff]="showDiff" />'
 })
 class TestHostComponent {
-    @Input() data: DotContentCompareTableData;
-    @Input() showDiff: boolean;
+    @Input() data!: DotContentCompareTableData;
+    // Defaults true, matching DotContentCompareStore's initial state and the `dotDiff`
+    // pipe's own default; `false` would silently disable diffing for unbound consumers.
+    @Input() showDiff = true;
     @Output() bringBack = new EventEmitter<string>();
 
     changeDiff: EventEmitter<any> = new EventEmitter();

@@ -1,5 +1,5 @@
 import { describe, expect, it } from '@jest/globals';
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -34,6 +34,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotContentDriveFolder,
     DotContentDriveItem,
+    DotWizardInput,
     PERMISSIONS_TYPE
 } from '@dotcms/dotcms-models';
 import { DotJspIframeDialogComponent } from '@dotcms/ui';
@@ -42,7 +43,11 @@ import { createFakeContentlet, mockWorkflowsActionsWithMove } from '@dotcms/util
 import { DotFolderListViewContextMenuComponent } from './dot-folder-list-context-menu.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
-import { DotContentDriveContextMenu, DotContentDriveStatus } from '../../shared/models';
+import {
+    DotContentDriveContextMenu,
+    DotContentDriveState,
+    DotContentDriveStatus
+} from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
 
@@ -75,7 +80,7 @@ const find = (items: MenuItem[], label: string): MenuItem | undefined => {
  */
 const SEPARATOR = '\u2014 separator \u2014';
 const labels = (items: MenuItem[]): string[] =>
-    items.map((item) => (item.separator ? SEPARATOR : item.label));
+    items.map((item) => (item.separator ? SEPARATOR : (item.label ?? '')));
 
 /** Invokes a menu entry by label, wherever it lives in the tree. */
 const invoke = (items: MenuItem[], label: string) => {
@@ -134,7 +139,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 add: jest.fn()
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(Router, {
                 navigate: jest.fn().mockReturnValue(Promise.resolve(true)),
@@ -157,7 +162,14 @@ describe('DotFolderListViewContextMenuComponent', () => {
             mockProvider(DotPushPublishDialogService, { open: jest.fn() }),
             mockProvider(DotAlertConfirmService, { confirm: jest.fn() }),
             mockProvider(DotWorkflowEventHandlerService, {
-                open: jest.fn()
+                open: jest.fn(),
+                // Returns a real input, not the auto-mock's `undefined`. `#openWizard` skips the
+                // dialog when `setWizardInput` yields null (the action has no wizard steps), so an
+                // auto-mocked return made "should open the wizard" assert the opposite of its name.
+                setWizardInput: jest.fn().mockReturnValue({
+                    title: 'Workflow-Action',
+                    steps: []
+                } as DotWizardInput)
             }),
             mockProvider(ActivatedRoute, {
                 snapshot: {
@@ -928,7 +940,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 beforeEach(() => {
                     alertConfirmService = spectator.inject(DotAlertConfirmService);
                     folderService = spectator.inject(DotFolderService);
-                    folderService.deleteFolder = jest.fn().mockReturnValue(of(true));
+                    folderService.deleteFolder.mockReturnValue(of(true));
                     // The delete path is built from the browsed site, so it has to be a real one
                     // rather than the store's SYSTEM_HOST default.
                     store.initContentDrive({
@@ -1005,7 +1017,12 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // A confirmed destructive action that does nothing at all, with no message, is worse
                 // than an error. Narrow (there is normally a browsed site) but it must not be silent.
                 it('should report rather than silently skip when no site is resolved', async () => {
-                    patchState(store, { currentSite: undefined } as never);
+                    // `store` is typed `SpyObject<...>`, whose mocked members no longer match
+                    // `WritableStateSource` structurally. The instance is the real store, so
+                    // cast back to the state source `patchState` expects.
+                    patchState(store as unknown as WritableStateSource<DotContentDriveState>, {
+                        currentSite: undefined
+                    });
                     jest.spyOn(messageService, 'add');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -1019,9 +1036,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not refetch the folder tree when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
                     jest.spyOn(store, 'loadFolders');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -1047,9 +1062,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 });
 
                 it('should not reload the drive when the delete fails', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
                     jest.spyOn(store, 'reloadContentDrive');
 
                     await component.getMenuItems(folderContextMenuWithEdit);
@@ -1104,9 +1117,7 @@ describe('DotFolderListViewContextMenuComponent', () => {
                 // `handle(error)` call entirely would keep them green while the delete failed in
                 // total silence. This is the AC clause that says a failure reaches the user.
                 it('should surface a failed delete through the HTTP error handler', async () => {
-                    folderService.deleteFolder = jest
-                        .fn()
-                        .mockReturnValue(throwError(() => new Error('nope')));
+                    folderService.deleteFolder.mockReturnValue(throwError(() => new Error('nope')));
 
                     await component.getMenuItems(folderContextMenuWithEdit);
                     deleteItem()?.command?.({} as unknown as MenuItemCommandEvent);

@@ -21,11 +21,17 @@
                 <label class="text-sm font-semibold text-surface-900" for="experiments-start-date">
                     {{ 'experiments.configure.scheduling.start.time' | dm }}
                 </label>
+                <!--
+                    `$any()` on [formField]: PrimeNG's DatePicker extends BaseInput, whose min/max
+                    (number) and pattern (string) are incompatible with the constraint types signal
+                    forms derives from the field. strictTemplates rejects the binding; runtime is
+                    unaffected. Same reason as the p-select bindings in the goal card.
+                -->
                 <p-datepicker
                     inputId="experiments-start-date"
                     inputStyleClass="w-full"
                     styleClass="w-full"
-                    [formField]="$field().startDate"
+                    [formField]="$any($field().startDate)"
                     [defaultDate]="$bounds().initialStartDate"
                     [minDate]="$bounds().initialStartDate"
                     [showTime]="true"
@@ -52,7 +58,7 @@
                     inputId="experiments-end-date"
                     inputStyleClass="w-full"
                     styleClass="w-full"
-                    [formField]="$field().endDate"
+                    [formField]="$any($field().endDate)"
                     [defaultDate]="$bounds().minEndDate"
                     [minDate]="$bounds().minEndDate"
                     [maxDate]="$bounds().maxEndDate"

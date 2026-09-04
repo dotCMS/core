@@ -1,5 +1,5 @@
 import { ComponentStore } from '@ngrx/component-store';
-import { Observable, of } from 'rxjs';
+import { EMPTY, Observable, of } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
@@ -27,7 +27,8 @@ export interface DotContentCompareTableData {
 }
 
 export interface DotContentCompareState {
-    data: DotContentCompareTableData;
+    /** Null until `loadData` resolves; the constructor seeds it. */
+    data: DotContentCompareTableData | null;
     showDiff: boolean;
 }
 
@@ -69,9 +70,14 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
     private dotFormatDateService = inject(DotFormatDateService);
     private httpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    systemTime;
+    systemTime: string | undefined;
     readonly vm$ = this.state$;
     readonly updateCompare = this.updater((state, compare: DotCMSContentlet) => {
+        // Nothing to switch the comparison to before the table data has loaded.
+        if (!state.data) {
+            return state;
+        }
+
         return { ...state, data: { ...state.data, compare } };
     });
     readonly updateShowDiff = this.updater((state, showDiff: boolean) => {
@@ -90,7 +96,11 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                     .pipe(
                         take(1),
                         catchError((err: HttpErrorResponse) => {
-                            return this.httpErrorManagerService.handle(err);
+                            this.httpErrorManagerService.handle(err);
+
+                            // Completes rather than forwarding the handled error, which the
+                            // switchMap below would have read as a contentlet array.
+                            return EMPTY;
                         }),
                         switchMap((contents: DotCMSContentlet[]) => {
                             return this.dotContentTypeService
@@ -121,7 +131,11 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                                   };
                                               }),
                                               catchError((err: HttpErrorResponse) => {
-                                                  return this.httpErrorManagerService.handle(err);
+                                                  this.httpErrorManagerService.handle(err);
+
+                                                  // Same reason as above: the handled error is
+                                                  // not a `{ contentType, contents }` pair.
+                                                  return EMPTY;
                                               })
                                           )
                                     : of(value);
@@ -142,9 +156,17 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                                 value.contents,
                                 fields
                             );
+                            const working = this.getWorkingVersion(formattedContents);
+                            const compare = this.getContentByInode(data.inode, formattedContents);
+
+                            // Without both sides there is nothing to compare.
+                            if (!working || !compare) {
+                                return;
+                            }
+
                             this.updateData({
-                                working: this.getWorkingVersion(formattedContents),
-                                compare: this.getContentByInode(data.inode, formattedContents),
+                                working,
+                                compare,
                                 versions: formattedContents.filter(
                                     (content) => content.working === false
                                 ),
@@ -165,14 +187,19 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
     }
 
     private filterFields(contentType: DotCMSContentType): DotCMSContentTypeField[] {
-        return contentType.fields.filter((field) => FieldWhiteList[field.fieldType] != undefined);
+        return contentType.fields.filter(
+            (field) => FieldWhiteList[field.fieldType as keyof typeof FieldWhiteList] != undefined
+        );
     }
 
-    private getContentByInode(inode: string, contents: DotCMSContentlet[]): DotCMSContentlet {
+    private getContentByInode(
+        inode: string,
+        contents: DotCMSContentlet[]
+    ): DotCMSContentlet | undefined {
         return contents.find((content) => content.inode === inode);
     }
 
-    private getWorkingVersion(contents: DotCMSContentlet[]): DotCMSContentlet {
+    private getWorkingVersion(contents: DotCMSContentlet[]): DotCMSContentlet | undefined {
         return contents.find((content) => content.working === true);
     }
 
@@ -203,7 +230,7 @@ export class DotContentCompareStore extends ComponentStore<DotContentCompareStat
                     //is a Date related field.
                     return this.dotFormatDateService.formatTZ(
                         new Date(value as string),
-                        DateFormat[fieldType]
+                        DateFormat[fieldType as keyof typeof DateFormat]
                     );
                 }
             }

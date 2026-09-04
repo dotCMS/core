@@ -44,14 +44,19 @@ import {
 } from '../../shared/dot-experiment.utils';
 
 export interface DotExperimentsConfigurationState {
-    experiment: DotExperiment;
+    /** Undefined until `loadExperiment` resolves; `status` is `LOADING` for that window. */
+    experiment: DotExperiment | undefined;
     status: ComponentStatus;
     stepStatusSidebar: StepStatus;
-    configProps: Record<string, string | boolean>;
+    /** Null until the config props are fetched. */
+    configProps: Record<string, string | boolean> | null;
     hasEnterpriseLicense: boolean;
-    addToBundleContentId: string;
-    pushPublishEnvironments: DotEnvironment[];
-    dotPageRenderState: DotPageRenderState;
+    /** Null except while the Add-to-Bundle dialog is open for a specific experiment. */
+    addToBundleContentId: string | null;
+    /** Null until the route snapshot supplies them, and on a non-Enterprise licence. */
+    pushPublishEnvironments: DotEnvironment[] | null;
+    /** Null until resolved off the parent route. */
+    dotPageRenderState: DotPageRenderState | null;
 }
 
 const initialState: DotExperimentsConfigurationState = {
@@ -70,35 +75,39 @@ const initialState: DotExperimentsConfigurationState = {
 };
 
 export interface ConfigurationViewModel {
-    experiment: DotExperiment;
+    /** Undefined while the experiment is still loading; `isLoading` covers that window. */
+    experiment: DotExperiment | undefined;
     stepStatusSidebar: StepStatus;
     isLoading: boolean;
     isExperimentADraft: boolean;
     disabledStartExperiment: boolean;
     showExperimentSummary: boolean;
-    experimentStatus: DotExperimentStatus;
+    /** Undefined while the experiment is still loading. */
+    experimentStatus: DotExperimentStatus | undefined;
     isSaving: boolean;
     isDescriptionSaving: boolean;
     menuItems: MenuItem[];
-    addToBundleContentId: string;
+    addToBundleContentId: string | null;
     disabledTooltipLabel: string | null;
 }
 
 export interface ConfigurationVariantStepViewModel {
     experimentId: string;
-    trafficProportion: TrafficProportion;
-    status: StepStatus;
+    /** Null before the experiment resolves — see `trafficProportion$`. */
+    trafficProportion: TrafficProportion | null;
+    status: StepStatus | null;
     isExperimentADraft: boolean;
-    canLockPage: boolean;
-    pageSate: DotPageState;
+    /** Undefined until the page render state is resolved off the parent route. */
+    canLockPage: boolean | undefined;
+    pageSate: DotPageState | undefined;
     disabledTooltipLabel: string | null;
 }
 
 export interface ConfigurationTrafficStepViewModel {
     experimentId: string;
-    trafficProportion: TrafficProportion;
-    trafficAllocation: number;
-    status: StepStatus;
+    trafficProportion: TrafficProportion | null;
+    trafficAllocation: number | null;
+    status: StepStatus | null;
     isExperimentADraft: boolean;
     disabledTooltipLabel: string | null;
 }
@@ -120,7 +129,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     readonly isSaving$: Observable<boolean> = this.select(
         ({ status }) => status === ComponentStatus.SAVING
     );
-    readonly getExperimentId$: Observable<string> = this.select(({ experiment }) => experiment.id);
+    /** Empty string before the experiment resolves — `isExperimentADraft$` below already reads it
+     * with `?.` for the same reason. */
+    readonly getExperimentId$: Observable<string> = this.select(
+        ({ experiment }) => experiment?.id ?? ''
+    );
 
     readonly isExperimentADraft$: Observable<boolean> = this.select(
         ({ experiment }) => experiment?.status === DotExperimentStatus.DRAFT
@@ -129,7 +142,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         this.disableStartExperiment(experiment)
     );
 
-    readonly getExperimentStatus$: Observable<DotExperimentStatus> = this.select(
+    readonly getExperimentStatus$: Observable<DotExperimentStatus | undefined> = this.select(
         ({ experiment }) => experiment?.status
     );
 
@@ -138,7 +151,9 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             DotExperimentStatus.ENDED,
             DotExperimentStatus.RUNNING,
             DotExperimentStatus.ARCHIVED
-        ]).includes(experiment?.status)
+            // `as` on the array, not on the value: an unloaded experiment has no status and simply
+            // is not one of the three, which is the answer `includes` already gave.
+        ] as (DotExperimentStatus | undefined)[]).includes(experiment?.status)
     );
 
     readonly variantsStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
@@ -163,8 +178,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     // Goals Step //
-    readonly goals$: Observable<Goals> = this.select(({ experiment }) => {
-        return experiment.goals
+    readonly goals$: Observable<Goals | null> = this.select(({ experiment }) => {
+        return experiment?.goals
             ? {
                   ...experiment.goals,
                   primary: {
@@ -179,8 +194,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     // Scheduling Step //
-    readonly scheduling$: Observable<RangeOfDateAndTime> = this.select(({ experiment }) =>
-        experiment.scheduling ? experiment.scheduling : null
+    readonly scheduling$: Observable<RangeOfDateAndTime | null> = this.select(({ experiment }) =>
+        experiment?.scheduling ? experiment.scheduling : null
     );
     readonly schedulingStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
         stepStatusSidebar.experimentStep === ExperimentSteps.SCHEDULING ? stepStatusSidebar : null
@@ -191,11 +206,11 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     );
 
     //Traffic Step
-    readonly trafficProportion$: Observable<TrafficProportion> = this.select(({ experiment }) =>
-        experiment.trafficProportion ? experiment.trafficProportion : null
+    readonly trafficProportion$: Observable<TrafficProportion | null> = this.select(
+        ({ experiment }) => (experiment?.trafficProportion ? experiment.trafficProportion : null)
     );
-    readonly trafficAllocation$: Observable<number> = this.select(({ experiment }) =>
-        experiment.trafficAllocation ? experiment.trafficAllocation : null
+    readonly trafficAllocation$: Observable<number | null> = this.select(({ experiment }) =>
+        experiment?.trafficAllocation ? experiment.trafficAllocation : null
     );
 
     readonly trafficLoadStatus$ = this.select(this.state$, ({ stepStatusSidebar }) =>
@@ -248,22 +263,30 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly setTrafficProportion = this.updater((state, trafficProportion: TrafficProportion) => ({
         ...state,
-        experiment: { ...state.experiment, trafficProportion }
+        // Guarded rather than spread blind: `{ ...undefined }` would build a partial
+        // `DotExperiment`. Every caller runs from an effect that has just loaded one.
+        experiment: state.experiment ? { ...state.experiment, trafficProportion } : state.experiment
     }));
 
-    readonly setGoals = this.updater((state, goals: Goals) => ({
+    readonly setGoals = this.updater((state, goals: Goals | null) => ({
         ...state,
-        experiment: { ...state.experiment, goals }
+        // Guarded rather than spread blind: `{ ...undefined }` would build a partial
+        // `DotExperiment`. Every caller runs from an effect that has just loaded one.
+        experiment: state.experiment ? { ...state.experiment, goals } : state.experiment
     }));
 
-    readonly setScheduling = this.updater((state, scheduling: RangeOfDateAndTime) => ({
+    readonly setScheduling = this.updater((state, scheduling: RangeOfDateAndTime | null) => ({
         ...state,
-        experiment: { ...state.experiment, scheduling }
+        // Guarded rather than spread blind: `{ ...undefined }` would build a partial
+        // `DotExperiment`. Every caller runs from an effect that has just loaded one.
+        experiment: state.experiment ? { ...state.experiment, scheduling } : state.experiment
     }));
 
     readonly setTrafficAllocation = this.updater((state, trafficAllocation: number) => ({
         ...state,
-        experiment: { ...state.experiment, trafficAllocation }
+        // Guarded rather than spread blind: `{ ...undefined }` would build a partial
+        // `DotExperiment`. Every caller runs from an effect that has just loaded one.
+        experiment: state.experiment ? { ...state.experiment, trafficAllocation } : state.experiment
     }));
 
     readonly showAddToBundle = this.updater((state, addToBundleContentId: string) => ({
@@ -867,15 +890,15 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             status,
             isExperimentADraft,
             canLockPage: dotPageRenderState?.page?.canLock,
-            pageSate: dotPageRenderState.state,
+            pageSate: dotPageRenderState?.state,
             disabledTooltipLabel
         })
     );
 
     readonly goalsStepVm$: Observable<{
         experimentId: string;
-        goals: Goals;
-        status: StepStatus;
+        goals: Goals | null;
+        status: StepStatus | null;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
     }> = this.select(
@@ -895,8 +918,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly schedulingStepVm$: Observable<{
         experimentId: string;
-        scheduling: RangeOfDateAndTime;
-        status: StepStatus;
+        scheduling: RangeOfDateAndTime | null;
+        status: StepStatus | null;
         schedulingBoundaries: Record<string, number>;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
@@ -926,7 +949,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     readonly targetStepVm$: Observable<{
         experimentId: string;
-        status: StepStatus;
+        status: StepStatus | null;
         isExperimentADraft: boolean;
         disabledTooltipLabel: string | null;
     }> = this.select(
@@ -970,10 +993,13 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
 
     constructor() {
         const route = inject(ActivatedRoute);
-        const dotPageRenderState = route.parent.parent.snapshot.data['content'];
+        // `parent` is null at the root of a routing tree. These come from ancestors this portlet is
+        // always mounted under, so the chain resolves in practice — the `?.` states what the type
+        // system can actually see, and the state members below all admit the absent case.
+        const dotPageRenderState = route.parent?.parent?.snapshot.data['content'];
         const configProps = route.snapshot.data['config'];
-        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
-        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+        const hasEnterpriseLicense = route.parent?.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent?.snapshot.data['pushPublishEnvironments'];
 
         super({
             ...initialState,
@@ -984,8 +1010,8 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         });
     }
 
-    private updateTabTitle(experiment: DotExperiment) {
-        this.title.setTitle(`${experiment.name} - ${this.title.getTitle()}`);
+    private updateTabTitle(experiment: DotExperiment | undefined) {
+        this.title.setTitle(`${experiment?.name} - ${this.title.getTitle()}`);
     }
 
     private filterConditionsByGoal(goal: Goal): Goal {
@@ -1001,13 +1027,16 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         };
     }
 
-    private disableStartExperiment(experiment: DotExperiment): boolean {
-        return experiment?.trafficProportion.variants.length < 2 || !experiment?.goals;
+    private disableStartExperiment(experiment: DotExperiment | undefined): boolean {
+        // The whole chain, not just the first hop: `trafficProportion` is present on a loaded
+        // experiment but the `?.` above only guards `experiment` itself. An unloaded experiment
+        // cannot be started, which is what the `< 2` comparison against undefined already yielded.
+        return (experiment?.trafficProportion?.variants?.length ?? 0) < 2 || !experiment?.goals;
     }
 
     private getDisabledTooltipLabel(
-        experiment: DotExperiment,
-        dotPageRenderState: DotPageRenderState
+        experiment: DotExperiment | undefined,
+        dotPageRenderState: DotPageRenderState | null
     ): string | null {
         return experiment?.status !== DotExperimentStatus.DRAFT
             ? EXP_CONFIG_ERROR_LABEL_CANT_EDIT
@@ -1017,10 +1046,18 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
     }
 
     private getMenuItems(
-        experiment: DotExperiment,
+        experiment: DotExperiment | undefined,
         hasEnterpriseLicense: boolean,
-        pushPublishEnvironments: DotEnvironment[]
+        pushPublishEnvironments: DotEnvironment[] | null
     ): MenuItem[] {
+        if (!experiment) {
+            // Nothing actionable without an experiment. Every entry below is gated on its status or
+            // reads its id, so this is what the `visible: experiment?.status === …` checks already
+            // resolved to — except for the two enterprise entries, which were visible and would
+            // have thrown on click.
+            return [];
+        }
+
         return [
             // Start experiment
             {
@@ -1075,7 +1112,7 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
             // Push Publish
             {
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments?.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
                         assetIdentifier: experiment.id,
@@ -1091,10 +1128,12 @@ export class DotExperimentsConfigurationStore extends ComponentStore<DotExperime
         ];
     }
 
-    private setStartLabel(experiment: DotExperiment): string {
+    private setStartLabel(experiment: DotExperiment | undefined): string {
         const { scheduling } = experiment ? experiment : { scheduling: null };
 
-        return scheduling === null || Object.values(experiment.scheduling).includes(null)
+        // Reads `scheduling`, not `experiment.scheduling`: the destructure above exists precisely to
+        // supply the null fallback, and the second read went around it.
+        return scheduling === null || Object.values(scheduling).includes(null)
             ? this.dotMessageService.get('experiments.action.start-experiment')
             : this.dotMessageService.get('experiments.action.schedule-experiment');
     }

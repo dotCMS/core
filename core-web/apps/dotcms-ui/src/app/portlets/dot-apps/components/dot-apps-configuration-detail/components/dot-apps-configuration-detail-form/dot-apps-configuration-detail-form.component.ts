@@ -41,6 +41,13 @@ enum FieldStatus {
     DISABLED_WITH_MESSAGE
 }
 
+/**
+ * What a secret contributes to its form control: a plain value, or the
+ * `{ value, disabled }` form a reactive control also accepts — which is what the `STRING`
+ * transform below returns so the control can be disabled at construction.
+ */
+type DotAppsFieldValue = string | boolean | { value: string; disabled: boolean };
+
 @Component({
     selector: 'dot-apps-configuration-detail-form',
     templateUrl: './dot-apps-configuration-detail-form.component.html',
@@ -95,7 +102,7 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
     }
 
     ngOnInit() {
-        const group = {};
+        const group: Record<string, UntypedFormControl> = {};
 
         this.$formFields()
             .filter((field: DotAppsSecret) => field.type !== 'HEADING' && field.type !== 'INFO')
@@ -125,12 +132,15 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
         window.open(url, '_blank');
     }
 
-    private getFieldValueFn = {
+    private getFieldValueFn: Record<
+        string,
+        ((field: DotAppsSecret, status: FieldStatus) => DotAppsFieldValue) | undefined
+    > = {
         BOOL: (field: DotAppsSecret) => {
             return field.value ? JSON.parse(field.value) : field.value;
         },
         SELECT: (field: DotAppsSecret) => {
-            return field.value === '' ? field.options[0].value : field.value;
+            return field.value === '' ? (field.options?.[0]?.value ?? '') : field.value;
         },
         STRING: (field: DotAppsSecret, status: FieldStatus) => {
             const fieldValue =
@@ -146,10 +156,11 @@ export class DotAppsConfigurationDetailFormComponent implements OnInit, OnDestro
         }
     };
 
-    private getFieldValue(field: DotAppsSecret, status: FieldStatus): string | boolean {
-        return this.getFieldValueFn[field.type]
-            ? this.getFieldValueFn[field.type](field, status)
-            : field.value;
+    private getFieldValue(field: DotAppsSecret, status: FieldStatus): DotAppsFieldValue {
+        // Keyed by the server's field type, of which only the three above have a transform.
+        const transform = this.getFieldValueFn[field.type];
+
+        return transform ? transform(field, status) : field.value;
     }
 
     private emitValues(): void {

@@ -4,10 +4,15 @@ import { DotCMSUVEAction } from '@dotcms/types';
 
 import { InlineEditingContentletDataset } from '../../edit-ema-editor/components/ema-page-dropzone/types';
 
+import type { Editor, TinyMCE } from 'tinymce';
+
 declare global {
     interface Window {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        tinymce: any;
+        // Typed rather than `any`: TinyMCE ships its own types, which `libs/edit-content` already
+        // imports. `any` here also defeated every annotation downstream — an intersection with
+        // `any` is `any`, so `tinymce.init(...).then(([ed]) => ...)` inferred `ed` as `any` no
+        // matter what this service declared.
+        tinymce: TinyMCE;
     }
 }
 
@@ -95,7 +100,9 @@ export class InlineEditService {
         this.$iframeWindow.set(iframe.nativeElement.contentWindow);
         this.$isInlineEditingEnable.set(true);
 
-        if (doc.querySelector('script[data-inline="true"]')) {
+        // `contentDocument` is null until the iframe has a document of its own; there is nothing
+        // to inject into yet, and the caller re-runs this on load.
+        if (!doc || doc.querySelector('script[data-inline="true"]')) {
             return;
         }
 
@@ -106,12 +113,18 @@ export class InlineEditService {
     removeInlineEdit(iframe: ElementRef<HTMLIFrameElement>) {
         const doc = iframe.nativeElement.contentDocument;
 
-        doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
-        doc.querySelectorAll('style').forEach((style) => {
-            if (style.textContent.includes('[data-inode][data-field-name][data-mode]')) {
-                style.remove();
-            }
-        });
+        // Nothing was injected into a document that does not exist, but the flag still has to come
+        // down: the caller is tearing inline editing off this iframe either way.
+        if (doc) {
+            doc.querySelectorAll('script[data-inline="true"]').forEach((script) => script.remove());
+            doc.querySelectorAll('style').forEach((style) => {
+                if (
+                    (style.textContent ?? '').includes('[data-inode][data-field-name][data-mode]')
+                ) {
+                    style.remove();
+                }
+            });
+        }
 
         this.$isInlineEditingEnable.set(false);
     }
@@ -130,12 +143,14 @@ export class InlineEditService {
 
         this.$inlineEditingTargetDataset.set(dataset);
 
-        if (this.isInMultiplePages(this.$inlineEditingTargetDataset())) {
+        // Reads `dataset` rather than the signal it was just written to: the signal is nullable
+        // and the argument is not, and the two cannot differ here.
+        if (this.isInMultiplePages(dataset)) {
             window.parent.postMessage(
                 {
                     action: 'copy-contentlet-inline-editing',
                     payload: {
-                        dataset: { ...this.$inlineEditingTargetDataset() }
+                        dataset: { ...dataset }
                     }
                 },
                 '*'
@@ -164,12 +179,22 @@ export class InlineEditService {
         }
 
         const dataset = this.$inlineEditingTargetDataset();
+        const iframeWindow = this.$iframeWindow();
+
+        // Both are set by the time the parent answers INIT_INLINE_EDITING, but neither is
+        // guaranteed by a type: the dataset is cleared between edits and the window is null until
+        // an iframe is injected.
+        if (!dataset || !iframeWindow) {
+            return;
+        }
 
         const dataSelector = `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`;
+        // `mode` is a free-form dataset string; only these two configurations exist.
+        const mode = dataset.mode === 'full' ? 'full' : 'minimal';
 
-        this.$iframeWindow()
-            .tinymce.init({
-                ...this.TINYMCE_CONFIG[dataset.mode || 'minimal'],
+        iframeWindow.tinymce
+            .init({
+                ...this.TINYMCE_CONFIG[mode],
                 selector: dataSelector
             })
             .then(([ed]) => {
@@ -212,7 +237,7 @@ export class InlineEditService {
 
     #addScript(doc: Document, src: string) {
         const script = doc.createElement('script');
-        script.dataset.inline = 'true';
+        script.dataset['inline'] = 'true';
         script.src = src;
         doc.body?.appendChild(script);
     }
@@ -222,7 +247,7 @@ export class InlineEditService {
      *
      * @param {Editor} editor - The editor instance.
      */
-    #handleInlineEditEvents(editor) {
+    #handleInlineEditEvents(editor: Editor) {
         editor.on('blur', (e) => {
             const { target: ed, type: eventType } = e;
             const dataset = ed.targetElm.dataset;
@@ -231,13 +256,15 @@ export class InlineEditService {
             // For full editor we are adding pointer-events: none to all it children,
             // this is the way we can capture the click to init in the editor itself, after the editor
             // is initialized and clicked we set the pointer-events: auto so users can use the editor as intended.
-            if (eventType === 'focus' && dataset.mode) {
-                container.classList.add('inline-editing');
+            // `closest` finds nothing when the field is not inside a container — a page rendered
+            // without the container wrapper. The editor still works; only the highlight is skipped.
+            if (eventType === 'focus' && dataset['mode']) {
+                container?.classList.add('inline-editing');
                 ed.bodyElement.classList.add('active');
             }
 
             if (eventType === 'blur' && ed.bodyElement.classList.contains('active')) {
-                container.classList.remove('inline-editing');
+                container?.classList.remove('inline-editing');
                 ed.bodyElement.classList.remove('active');
             }
 
@@ -283,12 +310,18 @@ export class InlineEditService {
      * @returns A boolean indicating whether the contentlet is present in multiple pages.
      */
     private isInMultiplePages(dataset: InlineEditingContentletDataset) {
-        const targetElement = this.$iframeWindow().document.querySelector(
+        const iframeWindow = this.$iframeWindow();
+        const targetElement = iframeWindow?.document.querySelector(
             `[data-inode="${dataset.inode}"][data-field-name="${dataset.fieldName}"]`
         );
 
-        const contentlet = targetElement.closest('[data-dot-object="contentlet"]') as HTMLElement;
+        const contentlet = targetElement?.closest('[data-dot-object="contentlet"]') as
+            | HTMLElement
+            | null
+            | undefined;
 
-        return Number(contentlet.dataset.dotOnNumberOfPages || 0) > 1;
+        // A field we cannot locate, or one outside any contentlet, is not on multiple pages — and
+        // reading `dataset` off nothing is what used to throw here.
+        return Number(contentlet?.dataset['dotOnNumberOfPages'] || 0) > 1;
     }
 }

@@ -3,7 +3,7 @@
         (onClick)="byClick.emit()"
         [disabled]="isCompleted || isLoading"
         [loading]="isLoading"
-        [ngClass]="{ completed: isCompleted }">
+        [class.completed]="isCompleted">
         @if (isCompleted) {
             <i class="pi pi-check"></i>
         }

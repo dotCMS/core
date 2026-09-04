@@ -52,10 +52,10 @@ const UPDATED_ROWS_MOCK: DotGridStackWidget[] = [
         y: 0, // This sets the order of the rows
         subGridOpts: {
             ...ROWS_MINIMAL_MOCK[1].subGridOpts,
-            children: ROWS_MINIMAL_MOCK[1].subGridOpts.children.map((col) => ({
+            children: ROWS_MINIMAL_MOCK[1].subGridOpts!.children!.map((col) => ({
                 ...col,
                 id: 'hello there 2',
-                containers: col.containers.map((child, i) => ({
+                containers: col.containers!.map((child, i) => ({
                     ...child,
                     uuid: `${i + 1}` // 1 for the 0 index
                 }))
@@ -68,10 +68,10 @@ const UPDATED_ROWS_MOCK: DotGridStackWidget[] = [
         y: 1, // This sets the order of the rows
         subGridOpts: {
             ...ROWS_MINIMAL_MOCK[0].subGridOpts,
-            children: ROWS_MINIMAL_MOCK[0].subGridOpts.children.map((col) => ({
+            children: ROWS_MINIMAL_MOCK[0].subGridOpts!.children!.map((col) => ({
                 ...col,
                 id: 'hello there 1',
-                containers: col.containers.map((child, i) => ({
+                containers: col.containers!.map((child, i) => ({
                     ...child,
                     uuid: `${i + 3}` // 1 for the 0 index and 2 for the first 2 containers
                 }))
@@ -86,9 +86,9 @@ const RESULT_AFTER_MERGE_MOCK = [
         y: 0, // This sets the order of the rows
         subGridOpts: {
             ...ROWS_MINIMAL_MOCK[1].subGridOpts,
-            children: ROWS_MINIMAL_MOCK[1].subGridOpts.children.map((col) => ({
+            children: ROWS_MINIMAL_MOCK[1].subGridOpts!.children!.map((col) => ({
                 ...col,
-                containers: col.containers.map((child, i) => ({
+                containers: col.containers!.map((child, i) => ({
                     ...child,
                     uuid: `${i + 1}` // 1 for the 0 index
                 }))
@@ -100,10 +100,10 @@ const RESULT_AFTER_MERGE_MOCK = [
         y: 1, // This sets the order of the rows
         subGridOpts: {
             ...ROWS_MINIMAL_MOCK[0].subGridOpts,
-            children: ROWS_MINIMAL_MOCK[0].subGridOpts.children.map((col) => ({
+            children: ROWS_MINIMAL_MOCK[0].subGridOpts!.children!.map((col) => ({
                 ...col,
 
-                containers: col.containers.map((child, i) => ({
+                containers: col.containers!.map((child, i) => ({
                     ...child,
                     uuid: `${i + 3}` // 1 for the 0 index and 2 for the first 2 containers
                 }))
@@ -187,8 +187,8 @@ describe('DotTemplateBuilderStore', () => {
 
         rows$.subscribe(({ rows, shouldEmit }) => {
             expect(rows.length).toBeGreaterThan(initialState.rows.length);
-            expect(rows[3].subGridOpts.children[0].w).toBe(3);
-            expect(rows[3].subGridOpts.children[0].containers).toEqual([]);
+            expect(rows[3].subGridOpts!.children[0]!.w).toBe(3);
+            expect(rows[3].subGridOpts!.children[0]!.containers).toEqual([]);
             expect(shouldEmit).toEqual(true);
             done();
         });
@@ -398,7 +398,7 @@ describe('DotTemplateBuilderStore', () => {
 
         rows$.subscribe(({ rows, shouldEmit }) => {
             const row = rows.find((item) => item.id === parentId);
-            expect(row.subGridOpts.children[0].w).toEqual(newWidth);
+            expect(row!.subGridOpts!.children[0].w).toEqual(newWidth);
             expect(shouldEmit).toEqual(true);
             done();
         });
@@ -515,7 +515,7 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         service.addSidebarContainer(mockContainer);
         service.vm$.subscribe(({ layoutProperties }) => {
-            expect(layoutProperties.sidebar.containers[0]).toEqual(minDataMockContainer);
+            expect(layoutProperties.sidebar!.containers![0]).toEqual(minDataMockContainer);
             done();
         });
     });
@@ -524,7 +524,7 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(1);
         service.addSidebarContainer(mockContainer);
         service.vm$.subscribe(({ containerMap }) => {
-            expect(containerMap[mockContainer.identifier]).toEqual(mockContainer);
+            expect(containerMap[mockContainer.identifier!]).toEqual(mockContainer);
             done();
         });
     });
@@ -533,9 +533,9 @@ describe('DotTemplateBuilderStore', () => {
         expect.assertions(2);
         service.addSidebarContainer(mockContainer);
         service.vm$.pipe(take(1)).subscribe(({ layoutProperties }) => {
-            expect(layoutProperties.sidebar.containers).toContainEqual(minDataMockContainer);
+            expect(layoutProperties.sidebar!.containers).toContainEqual(minDataMockContainer);
             service.deleteSidebarContainer(0);
-            expect(layoutProperties.sidebar.containers).not.toContain(minDataMockContainer);
+            expect(layoutProperties.sidebar!.containers).not.toContain(minDataMockContainer);
             done();
         });
     });
@@ -556,7 +556,7 @@ describe('DotTemplateBuilderStore', () => {
         addContainer();
 
         containerMap$.subscribe((containerMap) => {
-            expect(containerMap).toHaveProperty(mockContainer.identifier);
+            expect(containerMap).toHaveProperty(mockContainer.identifier!);
             done();
         });
     });
@@ -659,10 +659,10 @@ describe('DotTemplateBuilderStore', () => {
                 y: 0, // This sets the order of the rows
                 subGridOpts: {
                     ...ROWS_MINIMAL_MOCK[1].subGridOpts,
-                    children: ROWS_MINIMAL_MOCK[1].subGridOpts.children.map((col) => ({
+                    children: ROWS_MINIMAL_MOCK[1].subGridOpts!.children!.map((col) => ({
                         ...col,
                         id: 'hello there 2',
-                        containers: col.containers.map((child, i) => ({
+                        containers: col.containers!.map((child, i) => ({
                             ...child,
                             uuid: `${i + 1}` // 1 for the 0 index
                         }))
@@ -675,10 +675,10 @@ describe('DotTemplateBuilderStore', () => {
                 y: 1, // This sets the order of the rows
                 subGridOpts: {
                     ...ROWS_MINIMAL_MOCK[0].subGridOpts,
-                    children: ROWS_MINIMAL_MOCK[0].subGridOpts.children.map((col) => ({
+                    children: ROWS_MINIMAL_MOCK[0].subGridOpts!.children!.map((col) => ({
                         ...col,
                         id: 'hello there 1',
-                        containers: col.containers.map((child, i) => ({
+                        containers: col.containers!.map((child, i) => ({
                             ...child,
                             uuid: `${i + 3}` // 1 for the 0 index and 2 for the first 2 containers
                         }))
@@ -739,7 +739,7 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows, shouldEmit }) => {
                 const newRow = rows[rows.length - 1];
-                expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                expect(newRow!.subGridOpts!.children[0].containers![0].identifier).toBe(
                     mockDefaultContainerWithPath.path
                 );
                 expect(shouldEmit).toEqual(true);
@@ -771,7 +771,7 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows }) => {
                 const newRow = rows[rows.length - 1];
-                expect(newRow.subGridOpts.children[0].containers[0].identifier).toBe(
+                expect(newRow!.subGridOpts!.children[0].containers![0]!.identifier).toBe(
                     mockDefaultContainerWithoutPath.identifier
                 );
                 done();
@@ -802,7 +802,7 @@ describe('DotTemplateBuilderStore', () => {
 
             rows$.subscribe(({ rows }) => {
                 const newRow = rows[rows.length - 1];
-                expect(newRow.subGridOpts.children[0].containers).toEqual([]);
+                expect(newRow.subGridOpts!.children[0].containers).toEqual([]);
                 done();
             });
         });
@@ -844,7 +844,7 @@ describe('DotTemplateBuilderStore', () => {
                 const addedColumn = row?.subGridOpts?.children.find(
                     (child) => child.id === newColumn.id
                 );
-                expect(addedColumn?.containers[0].identifier).toBe(
+                expect(addedColumn?.containers![0].identifier).toBe(
                     mockDefaultContainerWithPath.path
                 );
                 done();

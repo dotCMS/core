@@ -7,7 +7,7 @@
 
 // The sort indicator's spacing nominally belongs to `dotcms-theme/components/_datatable.scss`, but a
 // rule there is inert: the theme is not in the build at all, because
-// `dotcms-scss/angular/styles.scss` has its `@import "dotcms-theme/theme"` commented out. It also
+// `dotcms-scss/angular/styles.scss` has its `@use "dotcms-theme/theme"` commented out. It also
 // still targets the pre-PrimeNG-21 `.p-sortable-column-icon` rather than `.p-datatable-sort-icon`.
 // PrimeNG 21 already centres the glyph itself with `vertical-align: middle`, so only the gap is
 // missing, and it is missing because this header renders the label and the icon directly into the

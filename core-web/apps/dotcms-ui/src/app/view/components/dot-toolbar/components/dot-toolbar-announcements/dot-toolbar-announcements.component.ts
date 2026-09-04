@@ -122,7 +122,7 @@ export class DotToolbarAnnouncementsComponent implements OnInit {
      *
      * @readonly
      */
-    typesIcons = {
+    typesIcons: Record<string, TypesIcons> = {
         tip: TypesIcons.Tip,
         release: TypesIcons.Release,
         announcement: TypesIcons.Announcement,

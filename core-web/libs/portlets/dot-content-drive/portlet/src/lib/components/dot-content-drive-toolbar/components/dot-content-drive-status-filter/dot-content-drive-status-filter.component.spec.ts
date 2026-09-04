@@ -95,7 +95,7 @@ describe('DotContentDriveStatusFilterComponent', () => {
     const openPanel = () => {
         // A real event: PrimeNG calls stopPropagation on it. The explicit target is what the
         // overlay anchors to, standing in for the chip element the template passes.
-        spectator.query(Popover).toggle(new MouseEvent('click'), spectator.element);
+        spectator.query(Popover)!.toggle(new MouseEvent('click'), spectator.element);
         spectator.detectChanges();
     };
 
@@ -106,7 +106,7 @@ describe('DotContentDriveStatusFilterComponent', () => {
     const toggleOption = (value: string) => {
         // Click the real input inside p-checkbox. The overlay lives outside the fixture, so
         // triggerEventHandler cannot reach it — and a click is what a user actually does.
-        option(value).querySelector('input').click();
+        option(value)!.querySelector('input')!.click();
         spectator.detectChanges();
     };
 
@@ -151,7 +151,9 @@ describe('DotContentDriveStatusFilterComponent', () => {
         // Regression: the listbox had [ngModel] but no (ngModelChange), so clicking the row or its
         // label did nothing and only the checkbox itself responded.
         openPanel();
-        option(CONTENT_STATUS.ARCHIVED).querySelector('dot-filter-list-item').click();
+        option(CONTENT_STATUS.ARCHIVED)!
+            .querySelector<HTMLElement>('dot-filter-list-item')!
+            .click();
         spectator.detectChanges();
 
         expect(store.patchFilters).toHaveBeenCalledWith({
@@ -192,12 +194,12 @@ describe('DotContentDriveStatusFilterComponent', () => {
     it('should show the restored selection as chip values on init', async () => {
         await recreateWith([CONTENT_STATUS.ARCHIVED]);
 
-        expect(spectator.query(DotChipFilterComponent).selections()).toEqual(['Archived']);
+        expect(spectator.query(DotChipFilterComponent)!.selections()).toEqual(['Archived']);
     });
 
     it('should carry an accessible label on the chip', () => {
         expect(
-            spectator.query(byTestId('status-filter-chip')).getAttribute('aria-label')
+            spectator.query(byTestId('status-filter-chip'))!.getAttribute('aria-label')
         ).toBeTruthy();
     });
 });

@@ -74,7 +74,7 @@ describe('AddStyleClassesDialogComponent', () => {
 
             jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
-            autocomplete = spectator.query(AutoComplete);
+            autocomplete = spectator.query(AutoComplete)!;
             mockMatchMedia();
         });
 
@@ -121,7 +121,7 @@ describe('AddStyleClassesDialogComponent', () => {
         it('should add class on keyup.enter', () => {
             spectator.detectChanges();
 
-            const input = spectator.query('input#auto-complete-input');
+            const input = spectator.query('input#auto-complete-input')!;
 
             spectator.typeInElement('new value', input);
             spectator.dispatchKeyboardEvent(input, 'keyup', 'Enter', input);
@@ -141,7 +141,7 @@ describe('AddStyleClassesDialogComponent', () => {
             spectator.detectChanges();
             const list = spectator.query(byTestId('list'));
 
-            expect(list.textContent).toContain('has suggestions');
+            expect(list!.textContent).toContain('has suggestions');
         });
     });
 
@@ -171,7 +171,7 @@ describe('AddStyleClassesDialogComponent', () => {
 
             jsonClassesService = spectator.inject(JsonClassesService, true);
             dialogRef = spectator.inject(DynamicDialogRef);
-            autocomplete = spectator.query(AutoComplete);
+            autocomplete = spectator.query(AutoComplete)!;
         });
 
         it('should set dropdown to false in autocomplete', () => {
@@ -189,7 +189,7 @@ describe('AddStyleClassesDialogComponent', () => {
             spectator.detectChanges();
             const list = spectator.query(byTestId('list'));
 
-            expect(list.textContent).toContain('no suggestions setup suggestions');
+            expect(list!.textContent).toContain('no suggestions setup suggestions');
         });
     });
 });

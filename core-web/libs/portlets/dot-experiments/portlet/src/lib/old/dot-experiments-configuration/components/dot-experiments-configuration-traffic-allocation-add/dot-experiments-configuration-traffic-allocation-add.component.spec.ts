@@ -81,8 +81,8 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should load allocation value', () => {
-        const slider: Slider = spectator.query(Slider);
-        const input: HTMLInputElement = spectator.query(byTestId('traffic-allocation-input'));
+        const slider: Slider = spectator.query(Slider)!;
+        const input: HTMLInputElement = spectator.query(byTestId('traffic-allocation-input'))!;
 
         expect(slider.value).toEqual(EXPERIMENT_MOCK.trafficAllocation);
         expect(parseInt(input.value)).toEqual(EXPERIMENT_MOCK.trafficAllocation);
@@ -91,9 +91,9 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     it('should save form when is valid ', () => {
         jest.spyOn(store, 'setSelectedAllocation');
         const submitButtonWrapper = spectator.query(byTestId('add-trafficAllocation-button'));
-        const submitButton = submitButtonWrapper.querySelector('button') || submitButtonWrapper;
+        const submitButton = submitButtonWrapper!.querySelector('button')! || submitButtonWrapper;
 
-        expect(submitButton.hasAttribute('disabled')).toBe(false);
+        expect(submitButton.hasAttribute('disabled')!).toBe(false);
         expect(submitButtonWrapper).toContainText('Done');
         expect(spectator.component.form.valid).toEqual(true);
 
@@ -105,7 +105,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
     });
 
     it('should set inputs limits', () => {
-        const slider: Slider = spectator.query(Slider);
+        const slider: Slider = spectator.query(Slider)!;
 
         expect(slider.min).toEqual(1);
         expect(slider.max).toEqual(100);
@@ -113,7 +113,7 @@ describe('DotExperimentsConfigurationTrafficAllocationAddComponent', () => {
 
     it('should close sidebar ', () => {
         jest.spyOn(store, 'closeSidebar');
-        sidebar = spectator.query(Drawer);
+        sidebar = spectator.query(Drawer)!;
         sidebar.hide();
 
         expect(store.closeSidebar).toHaveBeenCalledTimes(1);

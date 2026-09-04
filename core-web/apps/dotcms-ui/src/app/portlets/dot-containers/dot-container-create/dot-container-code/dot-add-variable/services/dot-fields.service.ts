@@ -11,7 +11,13 @@ export class DotFieldsService {
     private dotMessage = inject(DotMessageService);
 
     // You can add here a new variable and add the custom code that it has
-    private readonly getCodeTemplate: Record<string, (variable: string) => string> = {
+    /**
+     * `satisfies` rather than a `Record<string, …>` annotation: the annotation is an index signature,
+     * so every named read below — `.default`, `.binary`, `.blockEditor` — became a bracket access
+     * under `noPropertyAccessFromIndexSignature`. This keeps the shape constraint and the literal
+     * keys, which is what the eighteen call sites actually rely on.
+     */
+    private readonly getCodeTemplate = {
         image: (variable) =>
             `#if ($!{${DOT_CONTENT_MAP}.${variable}.rawUri})\n    <img src="$!{${DOT_CONTENT_MAP}.${variable}.rawUri}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}" />\n#elseif($!{${DOT_CONTENT_MAP}.${variable}.identifier})\n    <img src="/dA/\${${DOT_CONTENT_MAP}.${variable}.identifier}" alt="$!{${DOT_CONTENT_MAP}.${variable}.title}"/>\n#end`,
         file: (variable) =>
@@ -30,7 +36,7 @@ export class DotFieldsService {
             `$date.format("M-dd-yyyy H:m:s", $${DOT_CONTENT_MAP}.${variable})`,
         time: (variable) => `$date.format("H:m:s", $${DOT_CONTENT_MAP}.${variable})`,
         default: (variable) => `$!{${DOT_CONTENT_MAP}.${variable}}`
-    };
+    } satisfies Record<string, (variable: string) => string>;
 
     readonly contentIdentifierField: DotFieldContent = {
         name: this.dotMessage.get('Content-Identifier-value'),

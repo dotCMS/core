@@ -26,7 +26,7 @@ export class DotDropdownDirective {
     private readonly primeMultiSelect = inject(MultiSelect, { optional: true, self: true });
     private readonly dotMessageService = inject(DotMessageService);
 
-    control: Select | MultiSelect;
+    control: Select | MultiSelect | null;
 
     constructor() {
         this.control = this.primeDropdown ? this.primeDropdown : this.primeMultiSelect;
@@ -54,6 +54,10 @@ export class DotDropdownDirective {
     }
 
     private setOptions(options: Array<DotDropdownSelectOption<string>>) {
+        if (!this.control) {
+            return;
+        }
+
         this.control.options = options.map((opt) => {
             return {
                 ...opt,

@@ -1,5 +1,8 @@
 import { DotFolder } from '@dotcms/dotcms-models';
-import { DotFolderTreeNodeItem } from '@dotcms/portlets/content-drive/ui';
+import {
+    DotFolderTreeNodeContentData,
+    DotFolderTreeNodeItem
+} from '@dotcms/portlets/content-drive/ui';
 import { createFakeSite } from '@dotcms/utils-testing';
 
 import {
@@ -23,18 +26,18 @@ describe('Sidebar Utils', () => {
 
             expect(node.label).toBe('demo.dotcms.com');
             expect(node.key).toBe('site-123');
-            expect(node.data.id).toBe('site-123');
-            expect(node.data.hostname).toBe('demo.dotcms.com');
+            expect(node.data!.id).toBe('site-123');
+            expect(node.data!.hostname).toBe('demo.dotcms.com');
         });
 
         it('should carry no folder path, which is what tells it apart from a folder', () => {
-            expect(createSiteNode(SITE).data.path).toBe('');
+            expect(createSiteNode(SITE).data!.path).toBe('');
         });
 
         it('should be an expandable, expanded folder row, since the site opens showing its folders', () => {
             const node = createSiteNode(SITE);
 
-            expect(node.data.type).toBe('folder');
+            expect(node.data!.type).toBe('folder');
             expect(node.leaf).toBe(false);
             expect(node.expanded).toBe(true);
         });
@@ -168,7 +171,7 @@ describe('Sidebar Utils', () => {
 
         it('should carry the folder defaultBaseType onto the node data', () => {
             const result = createTreeNode({ ...mockFolder, defaultBaseType: 'FILEASSET' });
-            expect(result.data.defaultBaseType).toBe('FILEASSET');
+            expect((result.data as DotFolderTreeNodeContentData).defaultBaseType).toBe('FILEASSET');
         });
 
         it('should use folder path as label', () => {
@@ -196,7 +199,7 @@ describe('Sidebar Utils', () => {
 
             const result = createTreeNode(folderWithDifferentHost);
 
-            expect(result.data.hostname).toBe('other.dotcms.com');
+            expect(result.data!.hostname).toBe('other.dotcms.com');
         });
 
         it('should handle folder with empty path', () => {
@@ -208,7 +211,7 @@ describe('Sidebar Utils', () => {
             const result = createTreeNode(folderWithEmptyPath);
 
             expect(result.label).toBe('');
-            expect(result.data.path).toBe('');
+            expect(result.data!.path).toBe('');
         });
 
         it('should maintain parent reference correctly', () => {
@@ -444,7 +447,7 @@ describe('Sidebar Utils', () => {
 
             // Selected node should be the application folder
             expect(result.selectedNode?.key).toBe('83bb5752-4264-43c4-84c8-28176603431a');
-            expect(result.selectedNode?.data.path).toBe('/application/');
+            expect(result.selectedNode?.data?.path).toBe('/application/');
         });
 
         it('should handle deeper nested path selection', () => {

@@ -47,14 +47,16 @@ describe('ValidContentletGuardService', () => {
         contentletGuardService = TestBed.inject(ContentletGuardService);
         dotContentletService = TestBed.inject(DotContentTypeService);
         dotNavigationService = TestBed.inject(DotNavigationService);
-        mockRouterStateSnapshot = jest.fn<RouterStateSnapshot>('RouterStateSnapshot', ['toString']);
-        mockActivatedRouteSnapshot = jest.fn<ActivatedRouteSnapshot>('ActivatedRouteSnapshot', [
-            'toString'
-        ]);
+        // Minimal snapshots rather than `jest.fn<T>(name, methods)`: that shape is
+        // `jasmine.createSpyObj` migrated mechanically, and `jest.fn` takes neither argument — it
+        // produced a `jest.Mock` standing in for a router snapshot, which is why these two
+        // declarations reported ~30 missing properties. The specs only ever read `url` and `params`.
+        mockRouterStateSnapshot = { url: '' } as RouterStateSnapshot;
+        mockActivatedRouteSnapshot = { params: {} } as ActivatedRouteSnapshot;
     });
 
     it('should allow children access to Content Types Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
         jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(true));
         contentletGuardService
@@ -66,7 +68,7 @@ describe('ValidContentletGuardService', () => {
     });
 
     it('should prevent children access to Content Types Portlets', () => {
-        let result: boolean;
+        let result: boolean | undefined;
         mockActivatedRouteSnapshot.params = { id: 'banner' };
         jest.spyOn(dotContentletService, 'isContentTypeInMenu').mockReturnValue(of(false));
         contentletGuardService

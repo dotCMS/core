@@ -39,8 +39,8 @@ class DotContentletEditorServiceMock {
     template: ``
 })
 class DotIframeMockComponent {
-    @Input() url;
-    @Input() header;
+    @Input() url!: string;
+    @Input() header!: string;
 }
 
 describe('DotCreateContentletComponent', () => {

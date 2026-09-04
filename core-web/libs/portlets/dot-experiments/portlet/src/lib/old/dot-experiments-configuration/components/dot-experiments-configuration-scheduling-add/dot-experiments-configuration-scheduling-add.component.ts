@@ -43,20 +43,20 @@ import { DotExperimentsConfigurationStore } from '../../store/dot-experiments-co
 export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit {
     private readonly dotExperimentsConfigurationStore = inject(DotExperimentsConfigurationStore);
 
-    form: FormGroup;
-    scheduling: RangeOfDateAndTime;
+    form!: FormGroup;
+    scheduling!: RangeOfDateAndTime;
     stepStatus = ComponentStatus;
     sidebarSizes = SIDEBAR_SIZES;
 
     today = new Date();
     initialDate = new Date();
-    maxEndDate: Date;
-    minEndDate: Date;
+    maxEndDate!: Date;
+    minEndDate!: Date;
 
     vm$: Observable<{
         experimentId: string;
-        scheduling: RangeOfDateAndTime;
-        status: StepStatus;
+        scheduling: RangeOfDateAndTime | null;
+        status: StepStatus | null;
         schedulingBoundaries: Record<string, number>;
     }> = this.dotExperimentsConfigurationStore.schedulingStepVm$;
 
@@ -106,10 +106,12 @@ export class DotExperimentsConfigurationSchedulingAddComponent implements OnInit
     private initForm() {
         this.vm$.pipe(take(1)).subscribe((data) => {
             this.form = new FormGroup({
-                startDate: new FormControl<Date>(
+                // `Date | null`, not `Date`: an unscheduled experiment has neither bound, which is
+                // the null both branches already produce.
+                startDate: new FormControl<Date | null>(
                     data.scheduling?.startDate ? new Date(data.scheduling.startDate) : null
                 ),
-                endDate: new FormControl<Date>(
+                endDate: new FormControl<Date | null>(
                     data.scheduling?.endDate ? new Date(data.scheduling.endDate) : null
                 )
             });

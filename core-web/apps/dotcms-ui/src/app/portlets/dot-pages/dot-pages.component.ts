@@ -12,11 +12,12 @@ import {
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { RouterOutlet } from '@angular/router';
 
-import { LazyLoadEvent, MenuItem } from 'primeng/api';
+import { MenuItem } from 'primeng/api';
 import { DialogService } from 'primeng/dynamicdialog';
 import { Menu, MenuModule } from 'primeng/menu';
 import { ProgressSpinnerModule } from 'primeng/progressspinner';
 import { TieredMenu } from 'primeng/tieredmenu';
+import { TableLazyLoadEvent } from 'primeng/types/table';
 
 import { take } from 'rxjs/operators';
 
@@ -36,7 +37,6 @@ import {
 } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
-    DotEvent,
     DotMessageSeverity,
     DotMessageType,
     DotSystemLanguage
@@ -139,7 +139,7 @@ export class DotPagesComponent {
      */
     protected navigateToPage(url: string): void {
         const splittedUrl = url.split('?');
-        const urlParams = { url: splittedUrl[0] };
+        const urlParams: Record<string, string> = { url: splittedUrl[0] };
         const searchParams = new URLSearchParams(splittedUrl[1]);
 
         for (const entry of searchParams) {
@@ -203,7 +203,7 @@ export class DotPagesComponent {
      * @param {number} languageId
      * @memberof DotPagesComponent
      */
-    protected onLanguageChange(languageId: number): void {
+    protected onLanguageChange(languageId: number | null): void {
         this.#dotCMSPagesStore.filterByLanguage(languageId);
     }
 
@@ -220,10 +220,10 @@ export class DotPagesComponent {
     /**
      * Lazy load pages
      *
-     * @param {LazyLoadEvent} event
+     * @param {TableLazyLoadEvent} event
      * @memberof DotPagesComponent
      */
-    protected onLazyLoad(event: LazyLoadEvent): void {
+    protected onLazyLoad(event: TableLazyLoadEvent): void {
         this.#dotCMSPagesStore.onLazyLoad(event);
     }
 
@@ -243,15 +243,20 @@ export class DotPagesComponent {
      */
     private listenSavePageEvent(): void {
         this.#dotEventsService
-            .listen('save-page')
+            .listen<SavePageEventData>('save-page')
             .pipe(takeUntilDestroyed(this.#destroyRef))
-            .subscribe((event: DotEvent<SavePageEventData>) => {
-                const { data } = event;
-                const { value, payload } = data;
+            .subscribe((event) => {
+                const { value, payload } = event.data ?? {};
                 const { contentletIdentifier, identifier, contentletType, contentType } =
                     payload ?? {};
                 const baseType = contentType ?? contentletType;
                 const baseIdentifier = identifier ?? contentletIdentifier;
+
+                // Every key on the payload is optional; without an identifier there is no node to
+                // refresh, so the event is not about a page this portlet shows.
+                if (!baseIdentifier) {
+                    return;
+                }
 
                 if (baseType === 'dotFavoritePage') {
                     this.#dotCMSPagesStore.updateFavoritePageNode(baseIdentifier);
@@ -261,7 +266,7 @@ export class DotPagesComponent {
 
                 this.#dotMessageDisplayService.push({
                     life: 3000,
-                    message: value,
+                    message: value ?? '',
                     severity: DotMessageSeverity.SUCCESS,
                     type: DotMessageType.SIMPLE_MESSAGE
                 });

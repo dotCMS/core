@@ -2,7 +2,7 @@
     (switch)="triggerChanged($event.relationship)"
     (filterChange)="handleFilterChange($event)"
     (pageChange)="handlePageChange($event)"
-    [data]="currentPage | async"
+    [data]="(currentPage | async) ?? []"
     [pageLinkSize]="dotPaginatorService.maxLinksPage"
     [rows]="dotPaginatorService.paginationPerPage"
     [totalRecords]="dotPaginatorService.totalRecords"

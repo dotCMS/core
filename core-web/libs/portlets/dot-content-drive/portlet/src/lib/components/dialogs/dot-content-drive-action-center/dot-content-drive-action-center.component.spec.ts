@@ -2,7 +2,7 @@ import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals
 import { createComponentFactory, mockProvider, Spectator, SpyObject } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { provideHttpClient } from '@angular/common/http';
+import { HttpErrorResponse, provideHttpClient } from '@angular/common/http';
 import { signal } from '@angular/core';
 
 import { MessageService } from 'primeng/api';
@@ -208,7 +208,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             // which in the app resolves to the shell's instance so the toast outlives this dialog.
             mockProvider(MessageService, { add: jest.fn() }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             // Pulled in by the Content Drive grid, which the action preview renders for real.
             mockProvider(DotLanguagesService, { get: jest.fn(() => of([])) }),
@@ -328,7 +328,7 @@ describe('DotContentDriveActionCenterComponent', () => {
 
     /** Clicks a preview row's real checkbox, toggling it in or out of the included set. */
     const toggleRow = (index: number): void => {
-        spectator.click(previewRows()[index].querySelector('input'));
+        spectator.click(previewRows()[index].querySelector('input')!);
         spectator.detectChanges();
     };
 
@@ -1277,8 +1277,8 @@ describe('DotContentDriveActionCenterComponent', () => {
             // redundant and made the button grow with the action name.
             const execute = spectator.query('[data-testid="action-preview-execute"]');
 
-            expect(execute.textContent).toContain('Execute');
-            expect(execute.textContent).not.toContain('Send for Review');
+            expect(execute!.textContent).toContain('Execute');
+            expect(execute!.textContent).not.toContain('Send for Review');
         });
 
         it('should keep the published header count in step with the checked rows', () => {
@@ -1334,7 +1334,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             const [, , contentletIds] = (store.executeWorkflowAction as unknown as jest.Mock).mock
                 .calls[0] as [string, string, string[]];
 
-            expect(contentletIds.length).toBe(Number(badge.textContent.trim()));
+            expect(contentletIds.length).toBe(Number(badge!.textContent.trim()));
         });
 
         it('should disable Execute once nothing is included', () => {
@@ -1702,7 +1702,7 @@ describe('DotContentDriveActionCenterComponent', () => {
             expect(rows.length).toBe(1);
             // Identified by the title the row renders rather than an inode attribute: the grid
             // carries no per-row identity attribute, and the title is what the user reads anyway.
-            expect(rows[0].querySelector('[data-testid="item-title-text"]').textContent).toContain(
+            expect(rows[0].querySelector('[data-testid="item-title-text"]')!.textContent).toContain(
                 'Title blog-1'
             );
         });

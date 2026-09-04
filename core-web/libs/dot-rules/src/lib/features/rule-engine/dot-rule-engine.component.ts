@@ -25,7 +25,10 @@ import { ServerSideTypeModel } from '../../services/api/serverside-field/ServerS
 import { I18nService } from '../../services/i18n/i18n.service';
 import {
     ConditionActionEvent,
+    ConditionCreateEvent,
+    ConditionDeleteEvent,
     ConditionGroupActionEvent,
+    ConditionGroupCreateEvent,
     RuleActionActionEvent,
     RuleActionEvent
 } from '../../services/models/rule-event.model';
@@ -78,18 +81,18 @@ export class DotRuleEngineComponent {
     readonly updateFireOn = output<RuleActionEvent>();
 
     // Outputs - Rule Action Events
-    readonly createRuleAction = output<RuleActionActionEvent>();
+    readonly createRuleAction = output<RuleActionEvent>();
     readonly deleteRuleAction = output<RuleActionActionEvent>();
     readonly updateRuleActionType = output<RuleActionActionEvent>();
     readonly updateRuleActionParameter = output<RuleActionActionEvent>();
 
     // Outputs - Condition Group Events
-    readonly createConditionGroup = output<ConditionGroupActionEvent>();
+    readonly createConditionGroup = output<ConditionGroupCreateEvent>();
     readonly updateConditionGroupOperator = output<ConditionGroupActionEvent>();
 
     // Outputs - Condition Events
-    readonly createCondition = output<ConditionActionEvent>();
-    readonly deleteCondition = output<ConditionActionEvent>();
+    readonly createCondition = output<ConditionCreateEvent>();
+    readonly deleteCondition = output<ConditionDeleteEvent>();
     readonly updateConditionType = output<ConditionActionEvent>();
     readonly updateConditionParameter = output<ConditionActionEvent>();
     readonly updateConditionOperator = output<ConditionActionEvent>();

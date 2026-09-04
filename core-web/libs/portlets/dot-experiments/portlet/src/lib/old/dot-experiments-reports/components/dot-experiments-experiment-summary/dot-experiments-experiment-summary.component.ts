@@ -14,8 +14,10 @@ import { DotMessagePipe } from '@dotcms/ui';
     }
 })
 export class DotExperimentsExperimentSummaryComponent {
-    $goals = input.required<Goals>({ alias: 'goals' });
-    $scheduling = input.required<RangeOfDateAndTime>({ alias: 'scheduling' });
+    // Nullable on `DotExperiment` itself, and the template already guarded both with `@if` and
+    // then re-asserted with `!`. Declaring the null lets those assertions go.
+    $goals = input.required<Goals | null>({ alias: 'goals' });
+    $scheduling = input.required<RangeOfDateAndTime | null>({ alias: 'scheduling' });
     $sessionsReached = input.required<number>({ alias: 'sessionsReached' });
     $suggestedWinner = input<SummaryLegend | null>(null, { alias: 'suggestedWinner' });
 

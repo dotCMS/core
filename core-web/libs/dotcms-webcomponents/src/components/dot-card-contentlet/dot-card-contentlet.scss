@@ -1,9 +1,9 @@
-@import "../../global/variables";
-@import "../../../../dotcms-scss/shared/colors";
-@import "../../../../dotcms-scss/shared/fonts";
+@use "../../global/variables";
+@use "../../../../dotcms-scss/shared/colors";
+@use "../../../../dotcms-scss/shared/fonts";
 
 :host {
-    @include mwc-dotcms-theme;
+    @include variables.mwc-dotcms-theme;
 
     *,
     *:after,
@@ -40,7 +40,7 @@ dot-contentlet-lock-icon {
 }
 
 header {
-    border-top: solid 1px $color-palette-black-op-10;
+    border-top: solid 1px colors.$color-palette-black-op-10;
     display: flex;
     padding: var(--basic-padding);
     flex-direction: column;
@@ -50,7 +50,7 @@ label {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: $font-size-md;
+    font-size: fonts.$font-size-md;
 }
 
 .main,

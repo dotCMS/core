@@ -83,7 +83,12 @@ export const DEFAULT_PAGE: DotContentDrivePage = {
 };
 
 // Map numbers to base types, ticket: https://github.com/dotCMS/core/issues/32991
-export const MAP_NUMBERS_TO_BASE_TYPES = {
+/**
+ * `Partial` because the key comes from a URL filter value — any number can arrive. The two callers
+ * already handle a miss: one `.filter(Boolean)`s the result, the other passes it to a search request
+ * that ignores undefined entries.
+ */
+export const MAP_NUMBERS_TO_BASE_TYPES: Partial<Record<number, DotCMSBaseTypesContentTypes>> = {
     1: DotCMSBaseTypesContentTypes.CONTENT,
     2: DotCMSBaseTypesContentTypes.WIDGET,
     3: DotCMSBaseTypesContentTypes.FORM,

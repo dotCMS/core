@@ -71,7 +71,7 @@ export const LoaderNode = Node.create({
 
             dom.classList.add('loader-style');
 
-            if (node.attrs.isLoading) {
+            if (node.attrs['isLoading']) {
                 const spinner = document.createElement('div');
                 spinner.classList.add('p-progress-spinner');
                 dom.append(spinner);

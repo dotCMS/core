@@ -21,8 +21,8 @@ export class RegexCheckPropertyComponent implements OnInit {
 
     regexCheckTemplates: RegexTemplate[] = [];
 
-    property: FieldProperty;
-    group: UntypedFormGroup;
+    property!: FieldProperty;
+    group!: UntypedFormGroup;
 
     ngOnInit() {
         this.regexCheckTemplates = [
@@ -85,7 +85,7 @@ export class RegexCheckPropertyComponent implements OnInit {
         ];
     }
 
-    templateSelect(event): void {
+    templateSelect(event: { value: string }): void {
         this.group.controls[this.property.name].setValue(event.value);
     }
 }

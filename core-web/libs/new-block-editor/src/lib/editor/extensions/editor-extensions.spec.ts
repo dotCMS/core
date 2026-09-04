@@ -209,7 +209,7 @@ describe('createEditorExtensions', () => {
             getSchema(createEditorExtensions(menuService, RESTRICTED, injector, messageService));
 
         /** Two paragraphs so a partial load is distinguishable from a total abort. */
-        const storedDoc = (mark: Record<string, unknown>) => ({
+        const storedDoc = (mark: { type: string; attrs?: Record<string, unknown> }) => ({
             type: 'doc',
             content: [
                 {

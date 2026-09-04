@@ -818,7 +818,7 @@ describe('DotExperimentsConfigureStore', () => {
                     variants: [buildVariant('DEFAULT', 50), buildVariant('variant-c', 50)]
                 }
             });
-            let failure: { experiment: DotExperiment | null } | null = null;
+            const failures: { experiment: DotExperiment | null }[] = [];
 
             initExisting(draftWithTwoVariants());
             removeVariant
@@ -826,13 +826,13 @@ describe('DotExperimentsConfigureStore', () => {
                 .mockReturnValueOnce(throwError(() => httpError(400)));
             events
                 .on(apiEvents.deleteVariantsFailed)
-                .subscribe(({ payload }) => (failure = payload));
+                .subscribe(({ payload }) => failures.push(payload));
 
             dispatcher.dispatch(pageEvents.pageChangeConfirmed());
 
             expect(store.experiment()).toEqual(afterFirst);
             expect(store.status()).toBe(ComponentStatus.LOADED);
-            expect(failure?.experiment).toEqual(afterFirst);
+            expect(failures.at(-1)?.experiment).toEqual(afterFirst);
         });
 
         /** The confirmation stays open on it, so the message has to outlive the run. */
@@ -876,18 +876,18 @@ describe('DotExperimentsConfigureStore', () => {
         });
 
         it('should report no experiment when the very first deletion is refused', () => {
-            let failure: { experiment: DotExperiment | null } | null = null;
+            const failures: { experiment: DotExperiment | null }[] = [];
             const draft = draftWithTwoVariants();
 
             initExisting(draft);
             removeVariant.mockReturnValue(throwError(() => httpError(500)));
             events
                 .on(apiEvents.deleteVariantsFailed)
-                .subscribe(({ payload }) => (failure = payload));
+                .subscribe(({ payload }) => failures.push(payload));
 
             dispatcher.dispatch(pageEvents.pageChangeConfirmed());
 
-            expect(failure?.experiment).toBeNull();
+            expect(failures.at(-1)?.experiment).toBeNull();
             expect(store.experiment()).toEqual(draft);
         });
 

@@ -187,7 +187,7 @@ describe('DotContentDriveStore', () => {
             // The role is fixed for the session, so state changes that re-run the store's effects
             // must not re-request it. Measured as a delta rather than an absolute count: the spy is
             // shared by the factory, so it carries calls from earlier tests.
-            const { getCurrentUser } = spectator.inject(DotCurrentUserService, true);
+            const { getCurrentUser } = spectator.inject(DotCurrentUserService);
             const callsAfterInit = getCurrentUser.mock.calls.length;
 
             store.initContentDrive({
@@ -883,7 +883,11 @@ describe('DotContentDriveStore', () => {
                     withSeeded({ languageId: ['1'], contentType: ['Blog'] })
                 );
 
-                store.patchFilters({ contentType: undefined });
+                // `DotContentDriveFilters` forbids undefined values, so this input is outside the
+                // declared contract — hence the cast. Kept as-is because it pins what happens when
+                // a caller builds one anyway: the key survives holding `undefined`, which `toEqual`
+                // reports as absent. `removeFilter` is the API that actually deletes a key.
+                store.patchFilters({ contentType: undefined } as unknown as DotContentDriveFilters);
                 expect(store.filters()).toEqual(withSeeded({ languageId: ['1'] }));
             });
 
@@ -2215,7 +2219,9 @@ describe('DotContentDriveStore - withActionExecution', () => {
         beforeEach(() => {
             addToBundleService = spectator.inject(AddToBundleService);
             addToBundleService.addToBundle.mockReturnValue(
-                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+                // `_body` is required on `DotAjaxActionResponseView` — the raw legacy AJAX
+                // payload, which nothing in this flow reads.
+                of({ _body: null, total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
             );
         });
 
@@ -2231,7 +2237,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
             // The server dedupes by identifier and drops anything already in the bundle, so `total`
             // can be lower than what was posted. Reporting the input would overstate the result.
             addToBundleService.addToBundle.mockReturnValue(
-                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+                of({ _body: null, total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
             );
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2']);
@@ -2246,7 +2252,13 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         it('should split failures out of the total', () => {
             addToBundleService.addToBundle.mockReturnValue(
-                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+                of({
+                    _body: null,
+                    total: 3,
+                    errors: 1,
+                    errorMessages: ['nope'],
+                    bundleId: 'bundle-1'
+                })
             );
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1', 'id-2', 'id-3']);
@@ -2268,6 +2280,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report a denied folder as a failure rather than dropping it', () => {
             addToBundleService.addToBundle.mockReturnValue(
                 of({
+                    _body: null,
                     total: 2,
                     errors: 1,
                     errorMessages: ['User does not have permission to publish folder'],
@@ -2289,7 +2302,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should never report a negative success count', () => {
             // Defends the subtraction: `errors` exceeding `total` would otherwise read as "-1 added".
             addToBundleService.addToBundle.mockReturnValue(
-                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+                of({ _body: null, total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
             );
 
             store.executeAddToBundle('Add to Bundle', BUNDLE, ['id-1']);
@@ -2343,7 +2356,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         beforeEach(() => {
             pushPublishService = spectator.inject(PushPublishService);
             pushPublishService.pushPublishAssets.mockReturnValue(
-                of({ total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+                of({ _body: null, total: 2, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
             );
         });
 
@@ -2359,7 +2372,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         it('should report the server count, not the number sent', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(
-                of({ total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
+                of({ _body: null, total: 1, errors: 0, errorMessages: [], bundleId: 'bundle-1' })
             );
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2'], SETTINGS);
@@ -2374,7 +2387,13 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
         it('should split failures out of the total', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(
-                of({ total: 3, errors: 1, errorMessages: ['nope'], bundleId: 'bundle-1' })
+                of({
+                    _body: null,
+                    total: 3,
+                    errors: 1,
+                    errorMessages: ['nope'],
+                    bundleId: 'bundle-1'
+                })
             );
 
             store.executePushPublish('Push Publish', ['id-1', 'id-2', 'id-3'], SETTINGS);
@@ -2396,6 +2415,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should report a denied folder as a failure rather than dropping it', () => {
             pushPublishService.pushPublishAssets.mockReturnValue(
                 of({
+                    _body: null,
                     total: 2,
                     errors: 1,
                     errorMessages: ['User does not have permission to publish folder'],
@@ -2416,7 +2436,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
         it('should never report a negative success count', () => {
             // Defends the subtraction: `errors` exceeding `total` would read as "-2 pushed".
             pushPublishService.pushPublishAssets.mockReturnValue(
-                of({ total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
+                of({ _body: null, total: 1, errors: 3, errorMessages: [], bundleId: 'bundle-1' })
             );
 
             store.executePushPublish('Push Publish', ['id-1'], SETTINGS);

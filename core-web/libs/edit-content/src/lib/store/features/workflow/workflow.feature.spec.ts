@@ -15,6 +15,7 @@ import {
     DotContentTypeService,
     DotHttpErrorManagerService,
     DotMessageService,
+    DotRenderMode,
     DotSiteService,
     DotSystemConfigService,
     DotWorkflowActionsFireService,
@@ -71,7 +72,7 @@ describe('WorkflowFeature', () => {
             withContent(),
             withWorkflow(),
             withMethods((store) => ({
-                updateContent: (content) => {
+                updateContent: (content: DotCMSContentlet) => {
                     patchState(store, { contentlet: content });
                 }
             }))
@@ -277,7 +278,7 @@ describe('WorkflowFeature', () => {
                 // Verify the effect called updateCurrentContentActions
                 expect(workflowActionService.getByInode).toHaveBeenCalledWith(
                     updatedContentlet.inode,
-                    'EDITING'
+                    DotRenderMode.EDITING
                 );
 
                 // Verify the state was updated with the new actions

@@ -11,7 +11,7 @@ import { of, throwError } from 'rxjs';
 import { Location } from '@angular/common';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
-import { signal, WritableSignal } from '@angular/core';
+import { signal, Signal, WritableSignal } from '@angular/core';
 import { By } from '@angular/platform-browser';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -158,7 +158,7 @@ describe('DotContentDriveShellComponent', () => {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),
@@ -245,7 +245,11 @@ describe('DotContentDriveShellComponent', () => {
                     // is gated, which is all the shell's own tests need.
                     hasPushPublishEnvironments: jest.fn().mockReturnValue(false),
                     patchFilters: jest.fn(),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    contextMenu: jest.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: dialogSignal,
                     dialogDrillDown: dialogDrillDownSignal,
                     // Read by the toolbar, which the shell renders for real.
@@ -1097,7 +1101,7 @@ describe('DotContentDriveShellComponent', () => {
             const listView = spectator.query(DotFolderListViewComponent);
 
             expect(listView).toBeTruthy();
-            expect(listView.$selection()).toEqual([MOCK_ITEMS[0]]);
+            expect(listView!.$selection()).toEqual([MOCK_ITEMS[0]]);
 
             // Not asserting the clear here: `selectedItems` is mocked as a plain jest.fn rather than a
             // signal, so changing its return value cannot notify change detection. What matters is
@@ -1290,7 +1294,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -1306,8 +1310,8 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$files()).toBe(files);
-            expect(selector.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
+            expect(selector!.$files()).toBe(files);
+            expect(selector!.$targetFolder()).toEqual(TARGET_FOLDER_DATA);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -1323,7 +1327,7 @@ describe('DotContentDriveShellComponent', () => {
 
             const selector = spectator.query(DotUploadTypeSelectorComponent);
             expect(selector).toBeTruthy();
-            expect(selector.$files()).toBe(files);
+            expect(selector!.$files()).toBe(files);
             expect(uploadService.uploadFileByBaseType).not.toHaveBeenCalled();
         });
 
@@ -1371,7 +1375,7 @@ describe('DotContentDriveShellComponent', () => {
 
         it('should hide the button popover when a drag-and-drop opens the modal', () => {
             openViaButton(TARGET_FOLDER_DATA);
-            const hideSpy = jest.spyOn(spectator.component.$uploadSelectorPopover(), 'hide');
+            const hideSpy = jest.spyOn(spectator.component.$uploadSelectorPopover()!, 'hide');
 
             dropFiles();
             spectator.detectChanges();
@@ -2599,8 +2603,11 @@ describe('DotContentDriveShellComponent', () => {
             expect(store.setPath).toHaveBeenCalledWith('/documents/');
         });
 
-        it('should not set path when selectedNode is null', () => {
-            store.selectedNode.mockReturnValue(null);
+        it('should not set path when the selected node carries no data', () => {
+            // Not `null`: the state seeds `ALL_FOLDER` and `setSelectedNode` takes a required node,
+            // so a missing node is unreachable. A node without `data` is the case the effect's
+            // `!selectedNode?.data` guard actually exists for.
+            store.selectedNode.mockReturnValue({ key: 'no-data', label: '', leaf: true });
             store.setPath.mockClear();
 
             spectator.detectChanges();
@@ -2868,6 +2875,24 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         describe('browser Back (popstate)', () => {
+            /**
+             * Replaces the `$sidePanel` view child with a stub.
+             *
+             * The cast is what makes this possible: `$sidePanel` is `protected` on the component, so
+             * it is absent from the public type `spectator.component` exposes and `jest.spyOn` has no
+             * overload that accepts its name. Casting to a one-member shape keeps the spy honest
+             * about the signal's type without widening the component's visibility for the tests.
+             */
+            const stubSidePanel = (panel: DotEditContentSidePanelComponent) =>
+                jest
+                    .spyOn(
+                        spectator.component as unknown as {
+                            $sidePanel: Signal<DotEditContentSidePanelComponent | undefined>;
+                        },
+                        '$sidePanel'
+                    )
+                    .mockReturnValue(panel);
+
             const getPopstateHandler = () =>
                 (location.subscribe as jest.Mock).mock.calls[0][0] as (event: {
                     url: string;
@@ -2875,9 +2900,7 @@ describe('DotContentDriveShellComponent', () => {
 
             it('routes Back through the panel close guard (does not discard silently)', () => {
                 const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                stubSidePanel({ requestClose } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?path=/foo' });
@@ -2891,9 +2914,7 @@ describe('DotContentDriveShellComponent', () => {
 
             it('keeps the panel open when Back preserves the same editContent param', () => {
                 const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                stubSidePanel({ requestClose } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest(EDIT_REQUEST);
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=id-1' });
@@ -2904,9 +2925,7 @@ describe('DotContentDriveShellComponent', () => {
 
             it('routes Back through the guard for an open new-mode panel too (AC8)', () => {
                 const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                stubSidePanel({ requestClose } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
                 // Back removed the `new` marker entirely — the popstate handler must still close
@@ -2920,9 +2939,7 @@ describe('DotContentDriveShellComponent', () => {
 
             it('keeps a new-mode panel open when Back preserves the editContent=new marker', () => {
                 const requestClose = jest.fn();
-                jest.spyOn(spectator.component, '$sidePanel').mockReturnValue({
-                    requestClose
-                } as unknown as DotEditContentSidePanelComponent);
+                stubSidePanel({ requestClose } as unknown as DotEditContentSidePanelComponent);
                 setPanelRequest({ mode: 'new', contentTypeId: 'ct-1', title: 'New content' });
 
                 getPopstateHandler()({ url: '/c/content-drive?editContent=new' });
@@ -3137,7 +3154,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 getFeatureFlags: jest.fn().mockReturnValue(of({}))
             }),
             mockProvider(DotMessageService, {
-                get: jest.fn().mockImplementation((key: string) => key)
+                get: jest.fn().mockImplementation((key) => key as string)
             }),
             mockProvider(DotContentDriveNavigationService, {
                 editContent: jest.fn(),
@@ -3201,7 +3218,11 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                         .mockReturnValue({ field: 'modDate', order: DotContentDriveSortOrder.ASC }),
                     pages: jest.fn().mockReturnValue([DEFAULT_PAGE]),
                     selectedItems: jest.fn().mockReturnValue([]),
-                    contextMenu: jest.fn().mockReturnValue(null),
+                    contextMenu: jest.fn().mockReturnValue({
+                        triggeredEvent: null,
+                        contentlet: null,
+                        showAddToBundle: false
+                    }),
                     dialog: signal(undefined),
                     dragItems: jest.fn().mockReturnValue({ folders: [], contentlets: [] }),
                     userSearchableFields: jest.fn().mockReturnValue([]),
@@ -3283,7 +3304,7 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
         });
 
     it('opens the panel by identifier from a shared ?editContent= link on construction', () => {
-        deepLinkQueryParams.editContent = 'id-1';
+        deepLinkQueryParams['editContent'] = 'id-1';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
@@ -3292,23 +3313,23 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
     it('forwards the language from the link so the exact version reopens', () => {
         // An identifier has one version per language, so without this the resolver can only guess —
         // and it runs before the store's languages request has resolved.
-        deepLinkQueryParams.editContent = 'id-1';
-        deepLinkQueryParams.editContentLang = '2';
+        deepLinkQueryParams['editContent'] = 'id-1';
+        deepLinkQueryParams['editContentLang'] = '2';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', 2);
     });
 
     it('ignores a non-numeric language on the link', () => {
-        deepLinkQueryParams.editContent = 'id-1';
-        deepLinkQueryParams.editContentLang = 'nope';
+        deepLinkQueryParams['editContent'] = 'id-1';
+        deepLinkQueryParams['editContentLang'] = 'nope';
         mountShell();
 
         expect(openEditByIdentifier).toHaveBeenCalledWith('id-1', undefined);
     });
 
     it('ignores the non-shareable `new` marker on construction', () => {
-        deepLinkQueryParams.editContent = 'new';
+        deepLinkQueryParams['editContent'] = 'new';
         mountShell();
 
         expect(openEditByIdentifier).not.toHaveBeenCalled();

@@ -1,7 +1,7 @@
-@import "../../../../dotcms-scss/shared/colors";
+@use "../../../../dotcms-scss/shared/colors";
 
 :host {
-    background-color: $white;
+    background-color: colors.$white;
     border-radius: var(--border-radius);
     box-shadow: var(--md-shadow-1);
     display: block;

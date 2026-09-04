@@ -1,5 +1,5 @@
 import { expect } from '@jest/globals';
-import { patchState } from '@ngrx/signals';
+import { patchState, WritableStateSource } from '@ngrx/signals';
 import {
     byTestId,
     createComponentFactory,
@@ -12,7 +12,7 @@ import { of } from 'rxjs';
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { fakeAsync, flush, tick } from '@angular/core/testing';
-import { Validators } from '@angular/forms';
+import { FormGroup, Validators } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 
 import { ConfirmationService, MessageService } from 'primeng/api';
@@ -105,7 +105,15 @@ describe('DotFormComponent', () => {
             mockProvider(MessageService),
             ConfirmationService,
             mockProvider(DialogService),
-            mockProvider(DotWorkflowEventHandlerService),
+            mockProvider(DotWorkflowEventHandlerService, {
+                // `mockProvider` alone returns undefined, which the component now correctly
+                // reads as "this action has no wizard steps" and skips the dialog. These
+                // specs are about actions that DO have inputs, so the mock must say so.
+                setWizardInput: jest.fn().mockReturnValue({
+                    title: 'Workflow-Action',
+                    steps: [{ component: 'commentAndAssign', data: {} }]
+                })
+            }),
             mockProvider(DotWizardService, {
                 open: jest.fn().mockReturnValue(of({}))
             }),
@@ -216,18 +224,18 @@ describe('DotFormComponent', () => {
         });
 
         it('should initialize form with existing content values', () => {
-            expect(component.form.get('text1').value).toBe('content text 1');
-            expect(component.form.get('text2').value).toBe('content text 2');
-            expect(component.form.get('text3').value).toBe('default value modified');
+            expect(component.form.get('text1')!.value).toBe('content text 1');
+            expect(component.form.get('text2')!.value).toBe('content text 2');
+            expect(component.form.get('text3')!.value).toBe('default value modified');
         });
 
         it('should override default values with content values', () => {
             // text3 had a default value, but it should be overridden
-            expect(component.form.get('text3').value).toBe('default value modified');
+            expect(component.form.get('text3')!.value).toBe('default value modified');
         });
 
         it('should maintain required validators for existing content', () => {
-            expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
+            expect(component.form.get('text1')!.hasValidator(Validators.required)).toBe(true);
         });
 
         it('should not create form controls for non-field properties', () => {
@@ -264,20 +272,20 @@ describe('DotFormComponent', () => {
             spectator.detectChanges();
         });
         it('should initialize text3 with its default value', () => {
-            expect(component.form.get('text3').value).toBe('default value');
+            expect(component.form.get('text3')!.value).toBe('default value');
         });
 
         it('should initialize the form with empty values', () => {
-            expect(component.form.get('text1').value).toBeNull();
-            expect(component.form.get('text2').value).toBeNull();
-            expect(component.form.get('text3').value).not.toBeNull(); // has default value
+            expect(component.form.get('text1')!.value).toBeNull();
+            expect(component.form.get('text2')!.value).toBeNull();
+            expect(component.form.get('text3')!.value).not.toBeNull(); // has default value
             expect(component.form.get('nonexistentField')).toBeFalsy();
         });
 
         it('should apply validators correctly', () => {
-            expect(component.form.get('text1').hasValidator(Validators.required)).toBe(true);
-            expect(component.form.get('text2').hasValidator(Validators.required)).toBe(false);
-            expect(component.form.get('text3').hasValidator(Validators.required)).toBe(false);
+            expect(component.form.get('text1')!.hasValidator(Validators.required)).toBe(true);
+            expect(component.form.get('text2')!.hasValidator(Validators.required)).toBe(false);
+            expect(component.form.get('text3')!.hasValidator(Validators.required)).toBe(false);
         });
 
         it('should create disabledWYSIWYG form control with empty array for new content', () => {
@@ -347,8 +355,8 @@ describe('DotFormComponent', () => {
             const singleColumnContentType: DotCMSContentType = {
                 ...MOCK_CONTENTTYPE_1_TAB,
                 layout: [
-                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[0]] },
-                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns[1]] }
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns![0]] },
+                    { divider: singleColumnRow.divider, columns: [singleColumnRow.columns![1]] }
                 ]
             };
 
@@ -453,7 +461,7 @@ describe('DotFormComponent', () => {
 
                 const toggleSidebarSpy = jest.spyOn(store, 'toggleSidebar');
 
-                spectator.click(sidebarButton);
+                spectator.click(sidebarButton!);
 
                 expect(toggleSidebarSpy).toHaveBeenCalled();
             });
@@ -755,13 +763,13 @@ describe('DotFormComponent', () => {
                 spectator.detectChanges();
             });
             it('should render the preview button when $showPreviewLink is true', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeTruthy();
             });
 
             it('should call showPreview when the preview button is clicked', () => {
                 const showPreviewSpy = jest.spyOn(component, 'showPreview');
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
 
                 spectator.click(previewButton);
 
@@ -808,7 +816,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should not render the preview button when $showPreviewLink is false', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeFalsy();
             });
         });
@@ -845,7 +853,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should render the preview button for an HTML page', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeTruthy();
             });
 
@@ -881,7 +889,7 @@ describe('DotFormComponent', () => {
             });
 
             it('should not render the preview button for new content', () => {
-                const previewButton = spectator.query(byTestId('preview-button'));
+                const previewButton = spectator.query(byTestId('preview-button'))!;
                 expect(previewButton).toBeFalsy();
             });
         });
@@ -1400,7 +1408,9 @@ describe('DotFormComponent', () => {
 
             it('should not throw error when onDisabledWYSIWYGChange is called and form does not exist', () => {
                 // Set form to null to simulate case where form doesn't exist
-                component.form = null;
+                // Deliberately invalid: `form` is definitely assigned by `buildForm`. This
+                // drives the `if (this.form && ...)` guard in `onDisabledWYSIWYGChange`.
+                component.form = null as unknown as FormGroup;
 
                 expect(() => {
                     component.onDisabledWYSIWYGChange(['test']);
@@ -1418,7 +1428,7 @@ describe('DotFormComponent', () => {
 
             it('should emit event when disabledWYSIWYG form control value changes', () => {
                 const disabledWYSIWYGControl = component.form.get('disabledWYSIWYG');
-                const spy = jest.spyOn(disabledWYSIWYGControl, 'setValue');
+                const spy = jest.spyOn(disabledWYSIWYGControl!, 'setValue');
 
                 component.onDisabledWYSIWYGChange(['newField']);
 
@@ -1754,25 +1764,31 @@ describe('DotFormComponent', () => {
         });
 
         it('should toggle $shouldRenderFields false then back to true when isManualTranslation is true', fakeAsync(() => {
-            patchState(store, { initialContentletState: 'copy', isManualTranslation: true });
+            patchState(store as unknown as WritableStateSource<object>, {
+                initialContentletState: 'copy',
+                isManualTranslation: true
+            });
             spectator.detectChanges();
 
-            expect(component.$shouldRenderFields()).toBe(false);
+            expect(component['$shouldRenderFields']()).toBe(false);
 
             tick(); // advance past the setTimeout(0)
 
-            expect(component.$shouldRenderFields()).toBe(true);
+            expect(component['$shouldRenderFields']()).toBe(true);
         }));
 
         it('should toggle $shouldRenderFields false then back to true when isManualTranslation is false (populate)', fakeAsync(() => {
-            patchState(store, { initialContentletState: 'copy', isManualTranslation: false });
+            patchState(store as unknown as WritableStateSource<object>, {
+                initialContentletState: 'copy',
+                isManualTranslation: false
+            });
             spectator.detectChanges();
 
-            expect(component.$shouldRenderFields()).toBe(false);
+            expect(component['$shouldRenderFields']()).toBe(false);
 
             tick();
 
-            expect(component.$shouldRenderFields()).toBe(true);
+            expect(component['$shouldRenderFields']()).toBe(true);
         }));
     });
 });

@@ -198,9 +198,9 @@ describe('Activities Feature Store', () => {
             });
 
             const activities = store.activities();
-            expect(activities.some((activity) => activity.commentDescription === mockComment)).toBe(
-                true
-            );
+            expect(
+                activities.some((activity: Activity) => activity.commentDescription === mockComment)
+            ).toBe(true);
             expect(store.activitiesStatus()).toEqual({
                 status: ComponentStatus.IDLE,
                 error: null

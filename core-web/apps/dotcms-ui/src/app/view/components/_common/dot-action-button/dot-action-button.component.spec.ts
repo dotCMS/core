@@ -52,7 +52,7 @@ describe('DotActionButtonComponent', () => {
         ];
 
         spectator.setInput('model', model);
-        const menu = spectator.query(Menu);
+        const menu = spectator.query(Menu)!;
         expect(menu).toExist();
         expect(menu.model).toEqual(model);
     });
@@ -85,7 +85,7 @@ describe('DotActionButtonComponent', () => {
         spectator.setInput('disabled', true);
         spectator.setInput('label', 'Label');
 
-        const button = spectator.query(Button);
+        const button = spectator.query(Button)!;
         const label = spectator.query(byTestId('dot-action-button-label'));
 
         expect(button.disabled).toBe(true);

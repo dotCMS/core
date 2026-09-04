@@ -30,7 +30,7 @@ import { EditorModalDirective } from '../../../../directive/editor-modal.directi
 })
 export class DotImageEditorPopoverComponent {
     @ViewChild('popover', { read: EditorModalDirective })
-    private readonly popover: EditorModalDirective;
+    private readonly popover?: EditorModalDirective;
     @ViewChild('input', { read: ElementRef })
     private readonly urlInput?: ElementRef<HTMLInputElement>;
 
@@ -50,11 +50,9 @@ export class DotImageEditorPopoverComponent {
         onShown: this.focusSearchInput.bind(this)
     };
 
-    @HostListener('document:keydown.escape', ['$event'])
-    protected onEscapeKey(event: KeyboardEvent) {
-        if (event.key === 'Escape') {
-            this.cancelImageEditing();
-        }
+    @HostListener('document:keydown.escape')
+    protected onEscapeKey() {
+        this.cancelImageEditing();
     }
 
     /**

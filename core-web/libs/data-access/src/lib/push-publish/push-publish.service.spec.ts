@@ -64,7 +64,8 @@ describe('PushPublishService', () => {
             givenName: 'John',
             surname: 'Doe',
             userId: '1234',
-            roleId: '1234'
+            roleId: '1234',
+            loginAs: false
         };
         jest.spyOn(dotCurrentUserService, 'getCurrentUser').mockReturnValue(of(user));
 

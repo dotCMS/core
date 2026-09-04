@@ -31,7 +31,7 @@ import flatpickr from 'flatpickr';
 })
 export class DotDateRangeComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** (optional) Value formatted with start and end date splitted with a comma */
     @Prop({ mutable: true, reflect: true })
@@ -103,12 +103,12 @@ export class DotDateRangeComponent {
     presetLabel = 'Presets';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     private flatpickr: any;
     private defaultPresets = [
@@ -166,12 +166,23 @@ export class DotDateRangeComponent {
     }
 
     componentDidLoad(): void {
-        this.flatpickr = flatpickr(`#${getId(this.name)}`, {
+        // `getId` can report undefined for an unnamed field, and flatpickr's string overload does
+        // not accept a template that might interpolate one. Resolving the element first also means a
+        // missing input is visible here rather than as an empty selector match inside the library.
+        const input = this.el.querySelector<HTMLInputElement>(`#${getId(this.name)}`);
+
+        if (!input) {
+            return;
+        }
+
+        this.flatpickr = flatpickr(input, {
             mode: 'range',
             altFormat: this.displayFormat,
             altInput: true,
-            maxDate: this.max ? this.parseDate(this.max) : null,
-            minDate: this.min ? this.parseDate(this.min) : null,
+            // `undefined`, not null: flatpickr's `DateOption` is `Date | string | number`, and an
+            // absent key is how it expresses "no limit".
+            maxDate: this.max ? this.parseDate(this.max) : undefined,
+            minDate: this.min ? this.parseDate(this.min) : undefined,
             onChange: this.setValue.bind(this)
         });
         this.validateProps();
@@ -183,13 +194,13 @@ export class DotDateRangeComponent {
                 <dot-label label={this.label} required={this.required} name={this.name}>
                     <div
                         aria-describedby={getHintId(this.hint)}
-                        tabIndex={this.hint ? 0 : null}
+                        tabIndex={this.hint ? 0 : undefined}
                         class="dot-range__body">
                         <input
                             class={getErrorClass(this.status.dotValid)}
                             disabled={this.isDisabled()}
                             id={getId(this.name)}
-                            required={this.required || null}
+                            required={this.required || undefined}
                             type="text"
                             value={this.value}
                         />
@@ -221,16 +232,20 @@ export class DotDateRangeComponent {
         this.valueWatch();
     }
 
-    private isDisabled(): boolean {
-        return this.disabled || null;
+    private isDisabled(): boolean | undefined {
+        return this.disabled || undefined;
     }
 
-    private setPreset(event) {
+    private setPreset(event: Event) {
         const dateRange = [];
         const dt = new Date();
-        dt.setDate(dt.getDate() + parseInt(event.target.value, 10));
+        // Bound once: `Event.target` is `EventTarget | null` and carries no `value`, and this
+        // handler is wired to the presets `<select>`.
+        const { value } = event.target as HTMLSelectElement;
 
-        if (event.target.value.indexOf('-') > -1) {
+        dt.setDate(dt.getDate() + parseInt(value, 10));
+
+        if (value.indexOf('-') > -1) {
             dateRange.push(dt);
             dateRange.push(new Date());
         } else {
@@ -249,7 +264,7 @@ export class DotDateRangeComponent {
         return selectedDates && selectedDates.length === 2;
     }
 
-    private setValue(selectedDates: Date[], _dateStr: string, _instance): void {
+    private setValue(selectedDates: Date[], _dateStr: string, _instance?: unknown): void {
         this.value = this.isDateRangeValid(selectedDates)
             ? `${selectedDates[0].toISOString().split('T')[0]},${
                   selectedDates[1].toISOString().split('T')[0]
@@ -265,7 +280,7 @@ export class DotDateRangeComponent {
     }
 
     private showErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {

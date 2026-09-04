@@ -40,7 +40,7 @@ export class DotEditContentMultiSelectFieldComponent extends BaseWrapperField {
     /**
      * Input contentlet DotCMSContentlet
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Computed signal that holds the options for the multi select field.
      */

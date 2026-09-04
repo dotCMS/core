@@ -623,7 +623,7 @@ describe('AngularFormBridge', () => {
                 // Simulate the race condition: the control is not yet in the form when subscribe runs.
                 mockFormGroup.get.mockReturnValueOnce(null);
                 const formSubscribe = mockFormGroup.events.subscribe as jest.Mock;
-                let reconcileOnFormEvent: (() => void) | null = null;
+                let reconcileOnFormEvent!: (() => void) | null;
                 formSubscribe.mockImplementationOnce((cb: () => void) => {
                     reconcileOnFormEvent = cb;
                     return { unsubscribe: jest.fn() };

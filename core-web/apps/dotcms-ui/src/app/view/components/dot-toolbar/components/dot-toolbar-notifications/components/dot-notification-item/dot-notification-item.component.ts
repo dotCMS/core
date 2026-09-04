@@ -52,21 +52,23 @@ export class DotNotificationItemComponent {
 
     /**
      * Computed property that determines whether to show the link action button.
-     * Returns true if the notification has a valid LINK action with text and URL.
+     * The notification's LINK action, or null when there is none to show.
      *
-     * @returns {boolean} True if link action should be displayed
+     * Returns the action itself rather than a boolean so the template renders the very object
+     * this validated. It previously guarded on `data.actions` while the template read
+     * `data.notificationData.actions` — the same list by way of a derived getter on the server,
+     * but through an untyped `Record<string, unknown>` bag.
+     *
+     * @returns {INotification['actions'][number] | null} The link action, or null
      */
-    $showLinkAction = computed(() => {
-        const data = this.$data();
-        const actions = data?.actions ? data.actions[0] : null;
+    $linkAction = computed(() => {
+        const action = this.$data()?.actions?.[0];
 
-        return (
-            actions &&
-            actions?.actionType === 'LINK' &&
-            actions?.text !== '' &&
-            actions?.action &&
-            actions?.action !== ''
-        );
+        if (!action || action.actionType !== 'LINK' || !action.text || !action.action) {
+            return null;
+        }
+
+        return action;
     });
 
     /**

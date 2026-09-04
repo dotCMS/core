@@ -22,10 +22,10 @@ import { IframeComponent } from '../_common/iframe/iframe-component/iframe.compo
 })
 export class DotIframeDialogComponent implements OnChanges {
     @ViewChild('dialog', { static: true })
-    dotDialog: Dialog;
+    dotDialog!: Dialog;
 
     @Input()
-    url: string;
+    url: string | null = null;
 
     @Input()
     header = '';
@@ -42,20 +42,20 @@ export class DotIframeDialogComponent implements OnChanges {
     custom: EventEmitter<CustomEvent<Record<string, unknown>>> = new EventEmitter();
 
     @Output()
-    charge: EventEmitter<unknown> = new EventEmitter();
+    charge: EventEmitter<Event> = new EventEmitter();
 
     @Output()
     keyWasDown: EventEmitter<KeyboardEvent> = new EventEmitter();
 
-    show: boolean;
+    show = false;
 
     ngOnChanges(changes: SimpleChanges) {
-        if (changes.url) {
-            this.show = !!changes.url.currentValue;
+        if (changes['url']) {
+            this.show = !!changes['url'].currentValue;
         }
 
-        if (changes.header) {
-            this.header = changes.header.currentValue;
+        if (changes['header']) {
+            this.header = changes['header'].currentValue;
         }
     }
 
@@ -79,8 +79,9 @@ export class DotIframeDialogComponent implements OnChanges {
      * @param * $event
      * @memberof DotIframeDialogComponent
      */
-    onLoad($event: { target: HTMLIFrameElement }): void {
-        $event.target.contentWindow.focus();
+    onLoad($event: Event): void {
+        // `Event.target` is `EventTarget | null`; only the iframe raises this event.
+        ($event.target as HTMLIFrameElement | null)?.contentWindow?.focus();
         this.charge.emit($event);
     }
 

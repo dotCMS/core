@@ -63,15 +63,15 @@ class EmptyMockComponent {}
     standalone: false
 })
 class TestHostComponent {
-    @Input() columns: DataTableColumn[];
+    @Input() columns!: DataTableColumn[];
     @Input() url = '/api/data';
-    @Input() actionHeaderOptions: ActionHeaderOptions;
+    @Input() actionHeaderOptions!: ActionHeaderOptions;
     @Input() buttonActions: ButtonAction[] = [];
-    @Input() sortOrder: string;
-    @Input() sortField: string;
+    @Input() sortOrder!: string;
+    @Input() sortField!: string;
     @Input() multipleSelection = false;
     @Input() paginationPerPage = 40;
-    @Input() actions: DotActionMenuItem[];
+    @Input() actions!: DotActionMenuItem[];
     @Input() dataKey = '';
     @Input() checkbox = false;
     @Input() paginatorExtraParams: { [key: string]: string } = {};
@@ -108,15 +108,30 @@ Object.defineProperty(window, 'matchMedia', {
     }))
 });
 
+/** The rows this spec feeds the table; `identifier` marks the ones the table disables. */
+type ListingRow = {
+    field1: string;
+    field2: string;
+    /** A number when the column is rendered with the `date` format. */
+    field3: string | number;
+    nEntries: string;
+    variable: string;
+    identifier?: string;
+    /** Added by the host's `mapItems`, not present in the seeded rows. */
+    disableInteraction?: boolean;
+    /** The assertions look rows up by the column's `fieldName`, which is a plain string. */
+    [key: string]: string | number | boolean | undefined;
+};
+
 describe('DotListingDataTableComponent', () => {
     let comp: DotListingDataTableComponent;
     let hostFixture: ComponentFixture<TestHostComponent>;
     let hostComponent: TestHostComponent;
     let de: DebugElement;
     let el: HTMLElement;
-    let items;
-    let enabledItems;
-    let disabledItems;
+    let items: ListingRow[];
+    let enabledItems: ListingRow[];
+    let disabledItems: ListingRow[];
     let httpMock: HttpTestingController;
     const favoritePagesItem = {
         field1: 'item7-value1',
@@ -301,7 +316,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
@@ -317,13 +332,13 @@ describe('DotListingDataTableComponent', () => {
                 const item = items[rowIndex];
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 3) {
-                        expect(cells[cellIndex].querySelector('span').textContent).toContain(
+                        expect(cells[cellIndex].querySelector('span')!.textContent).toContain(
                             item[hostComponent.columns[cellIndex].fieldName]
                         );
                     }
 
                     if (cellIndex === 3) {
-                        const anchor = cells[cellIndex].querySelector('a');
+                        const anchor = cells[cellIndex].querySelector('a')!;
                         expect(anchor.textContent).toContain(
                             `View (${item[hostComponent.columns[cellIndex].fieldName]})`
                         );
@@ -355,7 +370,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
 
@@ -371,16 +386,17 @@ describe('DotListingDataTableComponent', () => {
                 cells.forEach((_cell, cellIndex) => {
                     if (cellIndex < 4) {
                         const textContent = cells[cellIndex].textContent;
+                        const cellValue = item[comp.columns()[cellIndex].fieldName];
                         const itemContent =
-                            comp.columns[cellIndex].format === 'date'
-                                ? new Date(
-                                      item[comp.columns[cellIndex].fieldName]
-                                  ).toLocaleDateString('en-US', {
+                            comp.columns()[cellIndex].format === 'date'
+                                ? // A `date` column is seeded with a timestamp; `boolean` is only
+                                  // in the row's index signature for `disableInteraction`.
+                                  new Date(cellValue as number).toLocaleDateString('en-US', {
                                       month: '2-digit',
                                       day: '2-digit',
                                       year: 'numeric'
                                   })
-                                : item[comp.columns[cellIndex].fieldName];
+                                : cellValue;
                         expect(textContent).toContain(itemContent);
                     }
                 });
@@ -399,7 +415,7 @@ describe('DotListingDataTableComponent', () => {
         const rows = el.querySelectorAll('[data-testclass="testTableRow"]');
         expect(items.length).toEqual(rows.length);
 
-        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]');
+        const headRow = el.querySelector('[data-testclass="testHeadTableRow"]')!;
         const headers = headRow.querySelectorAll('th');
         expect(5).toEqual(headers.length);
     }));
@@ -487,7 +503,7 @@ describe('DotListingDataTableComponent', () => {
         comp.globalSearch.nativeElement.dispatchEvent(
             new KeyboardEvent('keydown', { key: 'arrowDown' })
         );
-        expect(comp.dataTable.tableViewChild.nativeElement.rows[1]).toBe(document.activeElement);
+        expect(comp.dataTable.tableViewChild!.nativeElement.rows[1]).toBe(document.activeElement);
     }));
 
     it('should set the pagination size in the Table', fakeAsync(() => {
@@ -557,7 +573,7 @@ describe('DotListingDataTableComponent', () => {
 
         // The SYSTEM_TEMPLATE row should have disableInteraction (disabled)
         const disabledRowData = items.find((item) => item.identifier === 'SYSTEM_TEMPLATE');
-        expect(disabledRowData.disableInteraction).toBe(true);
+        expect(disabledRowData?.disableInteraction).toBe(true);
     }));
 
     describe('with checkBox', () => {

@@ -203,7 +203,7 @@ export class DotWysiwygPluginService implements OnDestroy {
     private openImagePicker(editor: Editor, site: DotSite): void {
         this.trackImagePicker(
             editor,
-            this.assetPickerLauncher.open(
+            this.assetPickerLauncher?.open(
                 // The launcher borrows this service's `DialogService` so the picker stays scoped to
                 // this field — see `ASSET_PICKER_LAUNCHER`.
                 this.dialogService,
@@ -243,7 +243,16 @@ export class DotWysiwygPluginService implements OnDestroy {
      * Holds the live ref and inserts whatever the dialog closes with. Shared by both pickers: they
      * differ in what the user browses, not in what a selection means.
      */
-    private trackImagePicker(editor: Editor, ref: DynamicDialogRef): void {
+    private trackImagePicker(editor: Editor, ref: DynamicDialogRef | null | undefined): void {
+        // `DialogService.open` returns `null` when it refuses to open a duplicate of a component it
+        // already has open. Nothing is tracked in that case, so the busy flag has to be released
+        // here — no `onClose` will ever fire to do it.
+        if (!ref) {
+            this.imagePickerBusy = false;
+
+            return;
+        }
+
         this.pickerRef = ref;
 
         this.pickerCloseSub = ref.onClose.subscribe((asset: DotCMSContentlet) => {
@@ -299,10 +308,12 @@ export class DotWysiwygPluginService implements OnDestroy {
      */
     private handleImageDrop(editor: Editor) {
         editor.on('drop', (event) => {
-            const file = event.dataTransfer.files[0];
+            // A drop need not carry a DataTransfer at all, and one that does need not carry files
+            // — dragging selected text inside the editor is the common case.
+            const file = event.dataTransfer?.files[0];
 
             // Check if the file is an image
-            if (!file.type.includes('image')) {
+            if (!file?.type.includes('image')) {
                 return;
             }
 

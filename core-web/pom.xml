@@ -165,6 +165,35 @@
                         </configuration>
                     </execution>
 
+                    <!-- Runs before lint: it covers 4 projects against lint's 47 and comes back
+                         in roughly half the time, so a type error surfaces sooner. Vite projects
+                         build with esbuild, which does not type check, so `build` never catches
+                         them and this target is their only gate.
+
+                         The root `core-web` project carries skip:typecheck: its target is
+                         `tsc -p tsconfig.base.json` with no emit, which compiles the whole workspace
+                         as one program (specs and scripts included) and reports ~2570 errors. It
+                         has never passed and is not a per-project gate. -->
+                    <execution>
+                        <id>typecheck-test</id>
+                        <goals>
+                            <goal>exec</goal>
+                        </goals>
+                        <phase>generate-resources</phase>
+                        <configuration>
+                            <skip>${skip.validate}</skip>
+                            <arguments>
+                                <argument>exec</argument>
+                                <argument>nx</argument>
+                                <argument>affected</argument>
+                                <argument>-t</argument>
+                                <argument>typecheck</argument>
+                                <argument>--base=${git.origin.branch}</argument>
+                                <argument>--exclude=tag:skip:typecheck</argument>
+                            </arguments>
+                        </configuration>
+                    </execution>
+
                     <execution>
                         <id>lint-test</id>
                         <goals>

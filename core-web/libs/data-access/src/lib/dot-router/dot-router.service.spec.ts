@@ -20,19 +20,21 @@ class RouterMock {
         }
     };
 
-    navigate = jest.fn(() => {
+    // Signatures are explicit: a bare `jest.fn(() => ...)` infers zero parameters,
+    // which makes every toHaveBeenCalledWith assertion below a type error.
+    navigate = jest.fn<Promise<boolean>, [commands: unknown[], extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    navigateByUrl = jest.fn(() => {
+    navigateByUrl = jest.fn<Promise<boolean>, [url: unknown, extras?: unknown]>(() => {
         return new Promise((resolve) => {
             resolve(true);
         });
     });
 
-    createUrlTree = jest.fn((link) => {
+    createUrlTree = jest.fn((link: unknown, _extras?: unknown) => {
         return link;
     });
 

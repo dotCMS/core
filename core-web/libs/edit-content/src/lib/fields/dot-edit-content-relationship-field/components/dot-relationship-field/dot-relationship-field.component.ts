@@ -194,7 +194,7 @@ export class DotRelationshipFieldComponent
      *
      * @memberof DotEditContentRelationshipFieldComponent
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * Signal that tracks whether the component has an error.
      *
@@ -227,7 +227,10 @@ export class DotRelationshipFieldComponent
             field: this.$field(),
             contentlet: this.$contentlet(),
             targetLanguageId: locale?.id,
-            targetLanguage: locale
+            // `?? undefined` collapses the store's null into the single "absent" value this
+            // object already uses — `targetLanguageId` above does the same via `?.`, and
+            // `initialize` declares both members as optional rather than nullable.
+            targetLanguage: locale ?? undefined
         };
     });
 
@@ -390,6 +393,12 @@ export class DotRelationshipFieldComponent
                 footer: FooterComponent
             }
         });
+
+        // `DialogService.open` returns null when it refuses to open a duplicate — the existing
+        // content selector is already up and the user's selection will arrive through it.
+        if (!this.#dialogRef) {
+            return;
+        }
 
         this.#dialogRef.onClose
             .pipe(
@@ -564,7 +573,8 @@ export class DotRelationshipFieldComponent
      */
     readonly initialize = signalMethod<{
         field: DotCMSContentTypeField;
-        contentlet: DotCMSContentlet;
+        // Mirrors `store.initialize`, which this only forwards to: null in manual translation.
+        contentlet: DotCMSContentlet | null;
         targetLanguageId?: number;
         targetLanguage?: DotLanguage;
     }>((params) => {

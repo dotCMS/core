@@ -361,7 +361,7 @@ export class DotFormFileEditorComponent implements OnInit {
      */
     #initValuesForm({ source, file }: UploadedFile): void {
         this.form.patchValue({
-            name: source === 'temp' ? file.fileName : (file.metaData?.name ?? file.title),
+            name: source === 'temp' ? file.fileName : (file['metaData']?.name ?? file.title),
             content: file.content
         });
     }
@@ -401,8 +401,14 @@ export class DotFormFileEditorComponent implements OnInit {
         dialog.style.transition = this.#prefersReducedMotion() ? '' : DIALOG_SIZE_TRANSITION;
 
         if (on) {
+            // `CSSStyleDeclaration` declares each camelCase property individually and carries
+            // only a *numeric* index signature, so a `string` index is an implicit any. The
+            // keys of FULLSCREEN_DIALOG_STYLE are camelCase JS property names (`maxWidth`),
+            // not CSS property names, so `getPropertyValue` is not the alternative — it
+            // expects kebab-case and would silently return '' for every one of them.
+            const currentStyle = dialog.style as unknown as Record<string, string>;
             this.#windowedStyle ??= Object.fromEntries(
-                Object.keys(FULLSCREEN_DIALOG_STYLE).map((prop) => [prop, dialog.style[prop]])
+                Object.keys(FULLSCREEN_DIALOG_STYLE).map((prop) => [prop, currentStyle[prop]])
             );
             Object.assign(dialog.style, FULLSCREEN_DIALOG_STYLE);
         } else if (this.#windowedStyle) {

@@ -36,7 +36,7 @@ import { setDotAttributesToElement, getDotAttributesFromElement } from '../dot-f
 })
 export class DotTextfieldComponent {
     @Element()
-    el: HTMLElement;
+    el!: HTMLElement;
 
     /** Value specifies the value of the input element */
     @Prop({ mutable: true })
@@ -83,12 +83,12 @@ export class DotTextfieldComponent {
     type = 'text';
 
     @State()
-    status: DotFieldStatus;
+    status!: DotFieldStatus;
 
     @Event()
-    dotValueChange: EventEmitter<DotFieldValueEvent>;
+    dotValueChange!: EventEmitter<DotFieldValueEvent>;
     @Event()
-    dotStatusChange: EventEmitter<DotFieldStatusEvent>;
+    dotStatusChange!: EventEmitter<DotFieldStatusEvent>;
 
     /**
      * Reset properties of the field, clear value and emit events.
@@ -117,12 +117,12 @@ export class DotTextfieldComponent {
 
     @Watch('regexCheck')
     regexCheckWatch(): void {
-        this.regexCheck = checkProp<DotTextfieldComponent, string>(this, 'regexCheck');
+        this.regexCheck = checkProp<DotTextfieldComponent, string>(this, 'regexCheck') ?? '';
     }
 
     @Watch('type')
     typeWatch(): void {
-        this.type = checkProp<DotTextfieldComponent, string>(this, 'type');
+        this.type = checkProp<DotTextfieldComponent, string>(this, 'type') ?? '';
     }
 
     render() {
@@ -134,12 +134,12 @@ export class DotTextfieldComponent {
                     <input
                         aria-describedby={getHintId(this.hint)}
                         class={getErrorClass(this.status.dotValid)}
-                        disabled={this.disabled || null}
+                        disabled={this.disabled || undefined}
                         id={getId(this.name)}
                         onBlur={() => this.blurHandler()}
                         onInput={(event: Event) => this.setValue(event)}
                         placeholder={this.placeholder}
-                        required={this.required || null}
+                        required={this.required || undefined}
                         type={this.type}
                         value={this.value}
                     />
@@ -172,7 +172,7 @@ export class DotTextfieldComponent {
     }
 
     private shouldShowErrorMessage(): boolean {
-        return this.getErrorMessage() && !this.status.dotPristine;
+        return !!this.getErrorMessage() && !this.status.dotPristine;
     }
 
     private getErrorMessage(): string {
@@ -192,8 +192,8 @@ export class DotTextfieldComponent {
         }
     }
 
-    private setValue(event): void {
-        this.value = event.target.value.toString();
+    private setValue(event: Event): void {
+        this.value = (event.target as HTMLInputElement).value.toString();
         this.status = updateStatus(this.status, {
             dotTouched: true,
             dotPristine: false,

@@ -23,7 +23,7 @@ export class DynamicDialogButtonComponent implements OnDestroy {
     dialogService = inject(DialogService);
     messageService = inject(MessageService);
 
-    ref: DynamicDialogRef;
+    ref: DynamicDialogRef | null = null;
 
     show() {
         this.ref = this.dialogService.open(DynamicDialogProductsComponent, {
@@ -33,7 +33,7 @@ export class DynamicDialogButtonComponent implements OnDestroy {
             baseZIndex: 10000
         });
 
-        this.ref.onClose.subscribe((product: Product) => {
+        this.ref?.onClose.subscribe((product: Product) => {
             if (product) {
                 this.messageService.add({
                     severity: 'info',

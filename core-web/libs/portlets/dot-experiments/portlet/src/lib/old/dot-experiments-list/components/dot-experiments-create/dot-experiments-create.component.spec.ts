@@ -8,6 +8,7 @@ import { InputTextModule } from 'primeng/inputtext';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotExperimentsService, DotMessageService } from '@dotcms/data-access';
+import { DotExperiment } from '@dotcms/dotcms-models';
 import {
     DotFieldValidationMessageComponent,
     DotSidebarDirective,
@@ -32,7 +33,7 @@ const messageServiceMock = new MockDotMessageService({
 });
 
 const dotExperimentsServiceMock = {
-    add: (experiment) => of({ entity: experiment })
+    add: (experiment: Partial<DotExperiment>) => of({ entity: experiment })
 };
 
 describe('DotExperimentsCreateComponent', () => {
@@ -76,8 +77,8 @@ describe('DotExperimentsCreateComponent', () => {
     it('should has Sidebar Component (PrimeNg) and DotSidebarDirective', () => {
         spectator.detectChanges();
 
-        primeNgSidebar = spectator.query(Drawer);
-        dotSidebarDirective = spectator.query(DotSidebarDirective);
+        primeNgSidebar = spectator.query(Drawer)!;
+        dotSidebarDirective = spectator.query(DotSidebarDirective)!;
 
         expect(primeNgSidebar).toExist();
         expect(dotSidebarDirective).toExist();
@@ -91,12 +92,12 @@ describe('DotExperimentsCreateComponent', () => {
         expect(primeNgSidebar.closeOnEscape).toBe(false);
     });
     it('should has DotSidebarHeaderComponent', () => {
-        dotSidebarHeaderComponent = spectator.query(DotSidebarHeaderComponent);
+        dotSidebarHeaderComponent = spectator.query(DotSidebarHeaderComponent)!;
         expect(dotSidebarHeaderComponent).toExist();
     });
 
     it('should open the sidebar', () => {
-        primeNgSidebar = spectator.query(Drawer);
+        primeNgSidebar = spectator.query(Drawer)!;
         expect(primeNgSidebar.visible).toBe(true);
     });
 
@@ -114,7 +115,7 @@ describe('DotExperimentsCreateComponent', () => {
         spectator.detectChanges();
         const submitButton = spectator.query<HTMLButtonElement>(byTestId('add-experiment-button'));
         expect(submitButton).toExist();
-        expect(submitButton.getAttribute('type')).toBe('button');
+        expect(submitButton!.getAttribute('type')!).toBe('button');
     });
 
     describe('Form', () => {
@@ -136,15 +137,18 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.detectComponentChanges();
 
             const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
-            const submitButton =
-                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
+            // Cast on the fallback too: `spectator.query` gives an `Element`, which the `??` widens
+            // the narrowed `querySelector<HTMLButtonElement>` back to. PrimeNG renders the real
+            // `<button>` inside its host, and the host itself carries the attribute when it does not.
+            const submitButton = (submitButtonHost?.querySelector<HTMLButtonElement>('button') ??
+                submitButtonHost) as HTMLButtonElement | null;
 
             expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(false);
             expect(submitButtonHost).toContainText('Add');
             expect(spectator.component.form.valid).toEqual(true);
 
             const handleSubmitSpy = jest.spyOn(spectator.component, 'handleSubmit');
-            spectator.click(submitButtonHost);
+            spectator.click(submitButtonHost!);
             spectator.detectComponentChanges();
 
             expect(handleSubmitSpy).toHaveBeenCalled();
@@ -163,8 +167,11 @@ describe('DotExperimentsCreateComponent', () => {
             spectator.detectComponentChanges();
 
             const submitButtonHost = spectator.query(byTestId('add-experiment-button'));
-            const submitButton =
-                submitButtonHost?.querySelector<HTMLButtonElement>('button') ?? submitButtonHost;
+            // Cast on the fallback too: `spectator.query` gives an `Element`, which the `??` widens
+            // the narrowed `querySelector<HTMLButtonElement>` back to. PrimeNG renders the real
+            // `<button>` inside its host, and the host itself carries the attribute when it does not.
+            const submitButton = (submitButtonHost?.querySelector<HTMLButtonElement>('button') ??
+                submitButtonHost) as HTMLButtonElement | null;
 
             expect(submitButton?.hasAttribute('disabled') || submitButton?.disabled).toBe(true);
             expect(submitButtonHost).toContainText('Add');

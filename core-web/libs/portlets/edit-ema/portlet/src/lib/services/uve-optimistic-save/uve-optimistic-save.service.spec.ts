@@ -7,11 +7,11 @@ import { DotCMSPageAsset } from '@dotcms/types';
 
 import { UveOptimisticSaveService } from './uve-optimistic-save.service';
 
-import { ActionPayload } from '../../shared/models';
+import { ActionPayload, ContentletActionPayload } from '../../shared/models';
 import { UVEStore } from '../../store/dot-uve.store';
 import { UveIframeMessengerService } from '../iframe-messenger/uve-iframe-messenger.service';
 
-const MOCK_ACTIVE_CONTENTLET: ActionPayload = {
+const MOCK_ACTIVE_CONTENTLET: ContentletActionPayload = {
     contentlet: {
         identifier: 'contentlet-id',
         inode: 'contentlet-inode',
@@ -28,7 +28,7 @@ const MOCK_ACTIVE_CONTENTLET: ActionPayload = {
     language_id: '1',
     pageContainers: [],
     pageId: 'page-id'
-} as unknown as ActionPayload;
+} as unknown as ContentletActionPayload;
 
 const createMockPageAsset = (testPropValue = 'initial-value'): DotCMSPageAsset =>
     ({
@@ -57,7 +57,9 @@ describe('UveOptimisticSaveService', () => {
     let includeClientResponse: ReturnType<typeof signal<boolean>>;
     let mockUveStore: {
         pageAsset: ReturnType<typeof computed>;
-        setPageAsset: jest.Mock;
+        // Declared with the implementation's own signature: a bare `jest.Mock` is
+        // `Mock<UnknownFunction>`, and a `jest.fn` with a typed parameter is not assignable to it.
+        setPageAsset: jest.Mock<(payload: { pageAsset: DotCMSPageAsset | null }) => void>;
     };
     let mockIframeMessenger: { sendPageData: jest.Mock };
 
@@ -111,7 +113,7 @@ describe('UveOptimisticSaveService', () => {
         it('should do nothing when activeContentlet is null', () => {
             pageAssetSignal.set(createMockPageAsset());
 
-            service.updateIframeOptimistically(null as unknown as ActionPayload, {
+            service.updateIframeOptimistically(null as unknown as ContentletActionPayload, {
                 testProp: 'new-value'
             });
 

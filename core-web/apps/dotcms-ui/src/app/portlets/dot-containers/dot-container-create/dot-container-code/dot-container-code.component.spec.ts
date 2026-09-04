@@ -1,5 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
+import { MonacoStandaloneCodeEditor } from '@materia-ui/ngx-monaco-editor';
+
 import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import {
@@ -125,31 +127,31 @@ class HostTestComponent {
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
     @Input()
-    code;
+    code!: { mode: string; options: Record<string, unknown> };
 
     @Input()
-    height;
+    height!: string;
 
     @Input()
-    show;
+    show!: string[];
 
     @Input()
-    value;
+    value!: string;
 
     @Input()
-    width;
+    width!: string;
 
     @Input()
-    customStyles;
+    customStyles!: Record<string, unknown>;
 
     @Input()
-    editorName;
+    editorName!: string;
 
     @Output()
     monacoInit = new EventEmitter();
 
     @Input()
-    language;
+    language!: string;
 
     writeValue() {
         //
@@ -272,12 +274,12 @@ describe('DotContentEditorComponent', () => {
             });
 
             it('should have add content type', fakeAsync(() => {
-                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model![0].command!({ originalEvent: createFakeEvent('click') });
                 hostFixture.detectChanges();
                 const contentTypes = de.queryAll(By.css('p-tabpanel'));
                 const code = de.query(By.css(`[data-testid="${mockContentTypes[0].id}"]`));
                 code.triggerEventHandler('monacoInit', {
-                    name: menu.model[0].label,
+                    name: menu.model![0].label,
                     editor: {
                         focus: jest.fn()
                     }
@@ -285,8 +287,8 @@ describe('DotContentEditorComponent', () => {
                 hostFixture.detectChanges();
                 tick(100);
                 expect(code).not.toBeNull();
-                expect(code.attributes.formControlName).toBe('code');
-                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['formControlName']).toBe('code');
+                expect(code.attributes['language']).toBe('html');
                 // In Angular 20, ng-reflect-* attributes are not available
                 // Verify the show property directly on the component instance
                 const codeComponent = code.componentInstance;
@@ -297,7 +299,7 @@ describe('DotContentEditorComponent', () => {
                 );
                 expect(
                     (hostComponent.form.get('containerStructures') as FormArray).controls[0]
-                        .get('code')
+                        .get('code')!
                         .hasValidator(Validators.required)
                 ).toEqual(false);
                 expect(hostComponent.form.valid).toEqual(true);
@@ -318,7 +320,7 @@ describe('DotContentEditorComponent', () => {
 
             it('should have select content type and focus on field', fakeAsync(() => {
                 // Add first content type
-                menu.model[0].command({ originalEvent: createFakeEvent('click') });
+                menu.model![0].command!({ originalEvent: createFakeEvent('click') });
                 flush();
                 hostFixture.detectChanges(false);
 
@@ -335,8 +337,8 @@ describe('DotContentEditorComponent', () => {
                 hostFixture.detectChanges(false);
 
                 // Verify first content type was added correctly
-                expect(code.attributes.formControlName).toBe('code');
-                expect(code.attributes.language).toBe('html');
+                expect(code.attributes['formControlName']).toBe('code');
+                expect(code.attributes['language']).toBe('html');
                 const codeComponent = code.componentInstance;
                 expect(codeComponent?.show).toEqual(['code']);
 
@@ -353,7 +355,7 @@ describe('DotContentEditorComponent', () => {
         it('shoud not have required code field on default content type', () => {
             expect(
                 (hostComponent.form.get('containerStructures') as FormArray).controls[0]
-                    .get('code')
+                    .get('code')!
                     .hasValidator(Validators.required)
             ).toEqual(false);
             expect(hostComponent.form.valid).toEqual(true);
@@ -361,7 +363,7 @@ describe('DotContentEditorComponent', () => {
 
         it('should disable add content type button when content types is empty', () => {
             // remove all content types
-            comp.contentTypes = [];
+            hostComponent.contentTypes = [];
             // Use detectChanges(false) to skip checkNoChanges which causes ExpressionChangedAfterItHasBeenCheckedError
             hostFixture.detectChanges(false);
             const addButton = de.query(By.css('[data-testId="add-content-type-button"]'));
@@ -438,10 +440,12 @@ describe('DotContentEditorComponent', () => {
 
         it('should initialize monaco editor correctly', fakeAsync(() => {
             const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            // Stubbed to the two methods `monacoInit` touches, out of the 111 on
+            // `MonacoStandaloneCodeEditor`.
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor
-            };
+            } as unknown as { name: string; editor: MonacoStandaloneCodeEditor };
 
             comp.monacoInit(monacoInstance);
             // Trigger requestAnimationFrame
@@ -453,13 +457,21 @@ describe('DotContentEditorComponent', () => {
 
         it('should set monaco editor to readonly when no content types', fakeAsync(() => {
             const mockEditor = { focus: jest.fn(), updateOptions: jest.fn() };
+            // Stubbed to the two methods `monacoInit` touches, out of the 111 on
+            // `MonacoStandaloneCodeEditor`.
             const monacoInstance = {
                 name: 'testEditor',
                 editor: mockEditor
-            };
+            } as unknown as { name: string; editor: MonacoStandaloneCodeEditor };
 
-            comp.contentTypes = [];
-            comp.monacoInit(monacoInstance);
+            // `contentTypes` is a signal input, so drive it through the component's own
+            // ComponentRef rather than mutating a host property.
+            const emptyFixture = TestBed.createComponent(DotContentEditorComponent);
+            emptyFixture.componentRef.setInput('contentTypes', []);
+            emptyFixture.componentRef.setInput('fg', hostComponent.form);
+            emptyFixture.detectChanges();
+
+            emptyFixture.componentInstance.monacoInit(monacoInstance);
             tick(16); // Simulate one frame (16ms)
 
             expect(mockEditor.updateOptions).toHaveBeenCalledWith({ readOnly: true });

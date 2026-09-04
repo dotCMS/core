@@ -48,9 +48,10 @@ describe('TemplateBuilderSidebarComponent', () => {
 
     beforeEach(() => {
         spectator = createHost(
-            `<dotcms-template-builder-sidebar [sidebarProperties]="sidebarProperties"></dotcms-template-builder-sidebar>`,
+            `<dotcms-template-builder-sidebar [sidebarProperties]="sidebarProperties" [containerMap]="containerMap"></dotcms-template-builder-sidebar>`,
             {
                 hostProps: {
+                    containerMap: {},
                     sidebarProperties: {
                         location: 'left',
                         width: 'medium',
@@ -62,7 +63,7 @@ describe('TemplateBuilderSidebarComponent', () => {
 
         store = spectator.inject(DotTemplateBuilderStore);
 
-        boxComponent = spectator.query(TemplateBuilderBoxComponent);
+        boxComponent = spectator.query(TemplateBuilderBoxComponent)!;
 
         store.setState({
             ...INITIAL_STATE_MOCK,
@@ -83,7 +84,7 @@ describe('TemplateBuilderSidebarComponent', () => {
 
     it('should emit widthChange when a width is selected in the dropdown', () => {
         const sidebarUpdateMock = jest.spyOn(store, 'updateSidebarWidth');
-        const dropdown = spectator.query(byTestId('select-sidebar-width'));
+        const dropdown = spectator.query(byTestId('select-sidebar-width'))!;
 
         spectator.dispatchFakeEvent(dropdown, 'onChange');
 

@@ -14,18 +14,20 @@ import { delay, filter, takeUntil, tap } from 'rxjs/operators';
 export class DotMaxlengthDirective implements OnInit, OnDestroy {
     private el = inject(ElementRef);
 
-    private _maxLength: number;
+    private _maxLength!: number;
     private events = ['paste', 'keypress'];
     private destroy$: Subject<boolean> = new Subject<boolean>();
     private allowedEvents = ['Backspace', 'ArrowLeft', 'ArrowUp', 'ArrowRight', 'ArrowDown'];
 
     ngOnInit() {
-        const eventStreams = this.events.map((ev) => fromEvent(this.el.nativeElement, ev));
+        const eventStreams = this.events.map((ev) =>
+            fromEvent<KeyboardEvent>(this.el.nativeElement, ev)
+        );
         const allEvents$ = merge(...eventStreams);
         allEvents$
             .pipe(
                 takeUntil(this.destroy$),
-                tap((keyboardEvent: KeyboardEvent) => {
+                tap((keyboardEvent) => {
                     if (!this.isValidAction(keyboardEvent)) {
                         keyboardEvent.preventDefault();
                     }
@@ -52,7 +54,7 @@ export class DotMaxlengthDirective implements OnInit, OnDestroy {
         return (
             this.el.nativeElement.textContent.length < this._maxLength ||
             this.isAllowedKeyCode(event) ||
-            !!window.getSelection().toString()
+            !!window.getSelection()?.toString()
         );
     }
     private reduceText(): void {

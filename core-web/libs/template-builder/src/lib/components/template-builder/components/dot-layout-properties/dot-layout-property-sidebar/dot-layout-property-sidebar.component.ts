@@ -22,12 +22,12 @@ import { DotLayoutPropertiesItemComponent } from '../dot-layout-properties-item/
 })
 export class DotLayoutSidebarComponent implements ControlValueAccessor {
     @ViewChild('propertyItemLeft', { static: true })
-    propertyItemLeft: DotLayoutPropertiesItemComponent;
+    propertyItemLeft!: DotLayoutPropertiesItemComponent;
 
     @ViewChild('propertyItemRight', { static: true })
-    propertyItemRight: DotLayoutPropertiesItemComponent;
+    propertyItemRight!: DotLayoutPropertiesItemComponent;
 
-    value: DotLayoutSideBar;
+    value!: DotLayoutSideBar;
 
     propagateChange = (_: unknown) => {
         /* */
@@ -38,7 +38,7 @@ export class DotLayoutSidebarComponent implements ControlValueAccessor {
      * @param any DotLayoutSideBar
      * @memberof DotLayoutSidebarComponent
      */
-    writeValue(value): void {
+    writeValue(value: DotLayoutSideBar | null): void {
         if (value) {
             this.value = value;
         }

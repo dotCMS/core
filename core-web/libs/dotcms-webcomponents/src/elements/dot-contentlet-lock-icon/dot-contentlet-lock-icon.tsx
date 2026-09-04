@@ -7,7 +7,7 @@ import '@material/mwc-icon';
     shadow: true
 })
 export class DotContentletLockIcon {
-    @Prop() locked: boolean;
+    @Prop() locked?: boolean;
     @Prop() size = '16px';
 
     render() {

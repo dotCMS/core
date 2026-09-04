@@ -1,6 +1,6 @@
 import { Observable } from 'rxjs';
 
-import { NgClass, AsyncPipe, DecimalPipe } from '@angular/common';
+import { AsyncPipe, DecimalPipe } from '@angular/common';
 import { ChangeDetectionStrategy, Component, ComponentRef, inject, viewChild } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
@@ -53,8 +53,7 @@ import { DotExperimentsConfigurationVariantsAddComponent } from '../dot-experime
         AutoFocusModule,
         DotExperimentsInlineEditTextComponent,
         AsyncPipe,
-        DecimalPipe,
-        NgClass
+        DecimalPipe
     ],
     templateUrl: './dot-experiments-configuration-variants.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
@@ -77,7 +76,7 @@ export class DotExperimentsConfigurationVariantsComponent {
     protected readonly defaultVariantName = DEFAULT_VARIANT_NAME;
     protected readonly maxInputTitleLength = MAX_INPUT_TITLE_LENGTH;
     protected readonly DotExperimentStatusList = DotExperimentStatus;
-    private componentRef: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
+    private componentRef!: ComponentRef<DotExperimentsConfigurationVariantsAddComponent>;
     protected readonly url = this.getUrl();
 
     /**
@@ -124,7 +123,7 @@ export class DotExperimentsConfigurationVariantsComponent {
      */
     deleteVariant(event: { $event: MouseEvent; variant: Variant }, experimentId: string) {
         this.confirmationService.confirm({
-            target: event.$event.target,
+            target: event.$event.target ?? undefined,
             message: this.dotMessageService.get('experiments.configure.variant.delete.confirm'),
             icon: 'pi pi-exclamation-triangle',
             acceptLabel: this.dotMessageService.get('delete'),
@@ -156,7 +155,7 @@ export class DotExperimentsConfigurationVariantsComponent {
         });
     }
 
-    private handleSidebar(status: StepStatus) {
+    private handleSidebar(status: StepStatus | null) {
         if (status && status.isOpen && status.status != ComponentStatus.SAVING) {
             this.loadSidebarComponent();
         } else {
@@ -205,8 +204,6 @@ export class DotExperimentsConfigurationVariantsComponent {
             .replace(/%3A/g, ':')
             .replace(/%2F/g, '/');
 
-        let finalUrl: string;
-
         let url: URL;
 
         try {
@@ -226,10 +223,12 @@ export class DotExperimentsConfigurationVariantsComponent {
                     processedUrl.indexOf('?') != -1 ? '&' : '?'
                 }disabledNavigateMode=true&mode=LIVE`
             );
-        } finally {
-            finalUrl = url.toString();
         }
 
-        return finalUrl;
+        // Was a `finally` reading `url`, which is unassigned if the catch block's own `new URL` also
+        // throws — that would have masked the real failure with "url is undefined". Both branches
+        // assign it, so returning after the try/catch says the same thing and lets a genuine
+        // failure propagate.
+        return url.toString();
     }
 }

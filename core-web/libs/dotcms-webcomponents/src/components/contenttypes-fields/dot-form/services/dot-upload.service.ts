@@ -1,6 +1,10 @@
 import { DotCMSTempFile, DotHttpErrorResponse, DotHttpRequestOptions } from '@dotcms/dotcms-models';
 
-export const fallbackErrorMessages = {
+/**
+ * Indexed by whatever status the server returned, so a miss is expected — every call site writes
+ * `getErrorMessage(message) || fallbackErrorMessages[status]` for exactly that reason.
+ */
+export const fallbackErrorMessages: Record<number, string | undefined> = {
     500: '500 Internal Server Error',
     400: '400 Bad Request',
     401: '401 Unauthorized Error'
@@ -21,7 +25,9 @@ export class DotUploadService {
         if (typeof file === 'string') {
             return this.uploadFileByURL(file);
         } else {
-            return this.uploadBinaryFile(file, maxSize) as Promise<DotCMSTempFile>;
+            // `undefined` for the progress callback: `maxSize` belongs in the third slot. Passing it
+            // second meant `maxFileLength` was never sent and the callback got a string instead.
+            return this.uploadBinaryFile(file, undefined, maxSize) as Promise<DotCMSTempFile>;
         }
     }
 
@@ -57,7 +63,7 @@ export class DotUploadService {
      */
     uploadBinaryFile(
         data: File | File[],
-        progressCallBack?,
+        progressCallBack?: (progress: number) => void,
         maxSize?: string
     ): Promise<DotCMSTempFile | DotCMSTempFile[]> {
         let path = TEMP_API_URL;
@@ -94,7 +100,7 @@ export class DotUploadService {
     private dotRequest(
         url: string,
         opts: DotHttpRequestOptions,
-        progressCallBack: (progress: number) => {}
+        progressCallBack?: (progress: number) => void
     ): Promise<XMLHttpRequest> {
         return new Promise((res, rej) => {
             const xhr = new XMLHttpRequest();
@@ -119,7 +125,7 @@ export class DotUploadService {
         try {
             message = response.message || response.errors[0].message;
         } catch (e) {
-            message = fallbackErrorMessages[status || 500];
+            message = fallbackErrorMessages[status || 500] ?? '';
         }
         return {
             message: message,

@@ -1,6 +1,6 @@
 import { GridItemHTMLElement } from 'gridstack';
 
-import { ChangeDetectionStrategy, Component, ElementRef, Input, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, ElementRef, inject, input } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 import { DialogService } from 'primeng/dynamicdialog';
@@ -28,9 +28,9 @@ export class TemplateBuilderRowComponent {
     private dialogService = inject(DialogService);
     private dotMessage = inject(DotMessageService);
 
-    @Input() row: DotGridStackWidget;
+    readonly row = input.required<DotGridStackWidget>();
 
-    @Input() isResizing = false;
+    readonly isResizing = input(false);
 
     get nativeElement(): GridItemHTMLElement {
         return this.el.nativeElement;
@@ -45,10 +45,15 @@ export class TemplateBuilderRowComponent {
         const ref = this.dialogService.open(AddStyleClassesDialogComponent, {
             header: this.dotMessage.get('dot.template.builder.classes.dialog.header.label'),
             data: {
-                selectedClasses: this.row.styleClass || []
+                selectedClasses: this.row().styleClass || []
             },
             resizable: false
         });
+
+        // `open()` can return null when the dialog cannot be created.
+        if (!ref) {
+            return;
+        }
 
         ref.onClose
             .pipe(
@@ -56,7 +61,7 @@ export class TemplateBuilderRowComponent {
                 filter((styleClasses) => styleClasses)
             )
             .subscribe((styleClasses) => {
-                this.store.updateRow({ id: this.row.id as string, styleClass: styleClasses });
+                this.store.updateRow({ id: this.row().id as string, styleClass: styleClasses });
             });
     }
 
@@ -66,6 +71,6 @@ export class TemplateBuilderRowComponent {
      * @memberof TemplateBuilderRowComponent
      */
     deleteRow() {
-        this.store.removeRow(this.row.id as string);
+        this.store.removeRow(this.row().id as string);
     }
 }

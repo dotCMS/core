@@ -74,7 +74,7 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         expect(spectator.query(byTestId('targeting-card-name'))).toHaveText('Targeting');
         expect(spectator.query(byTestId('targeting-add-button'))).toExist();
 
-        expect(spectator.query(Tooltip).disabled).toEqual(true);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(true);
     });
 
     it('should disable button and show tooltip when experiment is not on draft', () => {
@@ -90,8 +90,8 @@ describe('DotExperimentsConfigurationTargetingComponent', () => {
         spectator.detectChanges();
 
         const addButton = spectator.query(byTestId('targeting-add-button'));
-        const button = addButton.querySelector('button') || addButton;
-        expect(button.hasAttribute('disabled')).toBe(true);
-        expect(spectator.query(Tooltip).disabled).toEqual(false);
+        const button = addButton!.querySelector('button')! || addButton;
+        expect(button.hasAttribute('disabled')!).toBe(true);
+        expect(spectator.query(Tooltip)!.disabled!).toEqual(false);
     });
 });

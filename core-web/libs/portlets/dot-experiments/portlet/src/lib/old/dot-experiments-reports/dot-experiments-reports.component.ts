@@ -75,7 +75,9 @@ export class DotExperimentsReportsComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsReportsComponent
      */
-    goToExperimentList(pageId: string) {
+    // `pageId` is absent while the experiment is still loading; the header's back button is
+    // rendered in that window too.
+    goToExperimentList(pageId: string | undefined) {
         this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 mode: null,
@@ -96,7 +98,7 @@ export class DotExperimentsReportsComponent implements OnInit {
      */
     promoteVariant($event: MouseEvent, experimentId: string, variant: DotExperimentVariantDetail) {
         this.confirmationService.confirm({
-            target: $event.target,
+            target: $event.target ?? undefined,
             message: this.dotMessageService.get('experiment.reports.promote.warning'),
             icon: 'pi pi-info-circle',
             acceptLabel: this.dotMessageService.get('Yes'),

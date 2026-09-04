@@ -6,7 +6,8 @@ import {
     DotMessageDisplayService,
     DotMessageService,
     DotRoleUserResult,
-    DotRolesService
+    DotRolesService,
+    DotRoleUsersRemovalResult
 } from '@dotcms/data-access';
 
 import { DotRolesStore } from './dot-roles.store';
@@ -540,11 +541,11 @@ describe('DotRolesStore', () => {
             // The DELETE resolves after the admin has moved on. `u-1` is a
             // member of r-categories too, so pruning against the live slice
             // would strip a user that role still grants.
-            let resolveRemoval: (value: unknown) => void = () => {
+            let resolveRemoval: (value: DotRoleUsersRemovalResult) => void = () => {
                 /* replaced below */
             };
             service.removeUsers.mockReturnValue(
-                new Observable((subscriber) => {
+                new Observable<DotRoleUsersRemovalResult>((subscriber) => {
                     resolveRemoval = (value) => {
                         subscriber.next(value);
                         subscriber.complete();

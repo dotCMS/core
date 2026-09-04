@@ -14,7 +14,12 @@ import {
     DotMessageService,
     DotWorkflowsActionsService
 } from '@dotcms/data-access';
-import { ComponentStatus, DotCMSContentlet, DotLanguage } from '@dotcms/dotcms-models';
+import {
+    ComponentStatus,
+    DotCMSContentlet,
+    DotCMSContentType,
+    DotLanguage
+} from '@dotcms/dotcms-models';
 import { MOCK_SINGLE_WORKFLOW_ACTIONS } from '@dotcms/utils-testing';
 
 import { withLocales } from './locales.feature';
@@ -41,8 +46,11 @@ const withTest = () =>
             formValues: {}
         }),
         withMethods((store) => ({
-            updateContent: (content) => {
+            updateContent: (content: DotCMSContentlet) => {
                 patchState(store, { contentlet: content });
+            },
+            updateContentType: (contentType: DotCMSContentType) => {
+                patchState(store, { contentType });
             }
         }))
     );
@@ -135,6 +143,12 @@ describe('LocalesFeature', () => {
             dotContentletService.getLanguages.mockReturnValue(of(MOCK_LANGUAGES));
             dotLanguagesService.getDefault.mockReturnValue(of(MOCK_LANGUAGES[0]));
             store.updateContent({ identifier: '123', languageId: 1 } as DotCMSContentlet);
+            // Loaded content always has a content type, and the untranslated-locale flow reads its
+            // `variable` to fetch the default workflow actions.
+            store.updateContentType({
+                variable: 'Blog',
+                fields: []
+            } as unknown as DotCMSContentType);
         });
 
         it('should delegate a translated-locale switch to the host', fakeAsync(() => {
@@ -170,7 +184,8 @@ describe('LocalesFeature', () => {
                 inode: undefined,
                 locked: false,
                 lockedBy: undefined
-            } as DotCMSContentlet;
+                // Partial on purpose: this is the expected value for a `toEqual`, not a contentlet.
+            } as unknown as DotCMSContentlet;
 
             expect(store.currentLocale()).toEqual(MOCK_LANGUAGES[2]);
             expect(store.initialContentletState()).toEqual('copy');

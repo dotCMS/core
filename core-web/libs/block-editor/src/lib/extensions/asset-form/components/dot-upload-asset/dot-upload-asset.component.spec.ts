@@ -6,11 +6,10 @@ import { By, DomSanitizer } from '@angular/platform-browser';
 
 import { delay } from 'rxjs/operators';
 
+import { DotUploadFileService } from '@dotcms/data-access';
 import { DotCMSContentlet } from '@dotcms/dotcms-models';
 
 import { DotUploadAssetComponent, STATUS } from './dot-upload-asset.component';
-
-import { DotUploadFileService } from '../../../../shared';
 
 @Component({
     // eslint-disable-next-line @angular-eslint/component-selector

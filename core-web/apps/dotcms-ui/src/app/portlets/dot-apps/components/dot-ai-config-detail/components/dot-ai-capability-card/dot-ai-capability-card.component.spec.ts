@@ -80,7 +80,7 @@ describe('DotAiCapabilityCardComponent', () => {
 
             spectator.component.selectProvider(googleAiProvider);
 
-            const values = spectator.component.fieldsGroup().value;
+            const values = spectator.component.fieldsGroup().value as Record<string, unknown>;
             expect(values['apiKey']).toBeNull();
             expect(values['model']).toBeNull();
         });
@@ -102,7 +102,8 @@ describe('DotAiCapabilityCardComponent', () => {
 
             spectator.component.selectProvider(openAiProvider);
 
-            expect(spectator.component.fieldsGroup().value['apiKey']).toBe('sk-openai-secret');
+            const openAiValues = spectator.component.fieldsGroup().value as Record<string, unknown>;
+            expect(openAiValues['apiKey']).toBe('sk-openai-secret');
         });
 
         it('clears additional properties carried over from the previous provider', () => {
@@ -233,10 +234,10 @@ describe('DotAiCapabilityCardComponent', () => {
             });
             hydrated.detectChanges();
 
-            const propertyGroup = hydrated.component.additionalProperties.at(0);
+            const propertyGroup = hydrated.component.additionalProperties.at(0)!;
             expect(propertyGroup.value.key).toBe('listenerIndexer');
             expect(propertyGroup.value.value).not.toBe('[object Object]');
-            expect(JSON.parse(propertyGroup.value.value)).toEqual({
+            expect(JSON.parse(propertyGroup.value.value ?? '')).toEqual({
                 enabled: true,
                 batchSize: 10
             });

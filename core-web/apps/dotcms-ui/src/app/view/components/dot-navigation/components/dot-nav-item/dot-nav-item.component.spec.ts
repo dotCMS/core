@@ -149,7 +149,7 @@ describe('DotNavItemComponent', () => {
         host = spectator.component;
         host.menu = { ...defaultMenu };
         host.collapsed = false;
-        component = spectator.query(DotNavItemComponent);
+        component = spectator.query(DotNavItemComponent)!;
         globalStore = spectator.inject(GlobalStore);
         globalStore.loadMenu([menuForStore]);
         spectator.detectChanges();
@@ -252,7 +252,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -279,7 +279,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -314,7 +314,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -325,10 +325,10 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should set data correctly', () => {
-            expect(subNavDe?.componentInstance?.data).toEqual(
+            expect(subNavDe?.componentInstance?.data()).toEqual(
                 expect.objectContaining({ id: '123', label: 'Name' })
             );
-            expect(subNavDe?.componentInstance?.collapsed).toBe(false);
+            expect(subNavDe?.componentInstance?.collapsed()).toBe(false);
         });
 
         it('should emit itemClick on dot-sub-nav itemClick', () => {
@@ -348,7 +348,7 @@ describe('DotNavItemComponent', () => {
             host = spectator.component;
             host.menu = { ...defaultMenu };
             host.collapsed = true;
-            component = spectator.query(DotNavItemComponent);
+            component = spectator.query(DotNavItemComponent)!;
             globalStore = spectator.inject(GlobalStore);
             globalStore.loadMenu([menuForStore]);
             spectator.detectChanges();
@@ -356,7 +356,7 @@ describe('DotNavItemComponent', () => {
         });
 
         it('should set data correctly on sub-nav', () => {
-            expect(subNavDe?.componentInstance?.collapsed).toBe(true);
+            expect(subNavDe?.componentInstance?.collapsed()).toBe(true);
         });
     });
 });

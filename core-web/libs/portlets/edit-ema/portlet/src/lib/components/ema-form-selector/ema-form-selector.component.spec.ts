@@ -99,7 +99,7 @@ describe('EmaFormSelectorComponent', () => {
     it('should call getContentTypesWithPagination with filter after debounce', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
-        spectator.component.searchControl.setValue('test form');
+        spectator.component['searchControl'].setValue('test form');
         jest.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'test form', page: 1 })
@@ -109,7 +109,7 @@ describe('EmaFormSelectorComponent', () => {
     it('should reset to page 1 and re-fetch when search changes', () => {
         const service = spectator.debugElement.injector.get(DotContentTypeService);
         (service.getContentTypesWithPagination as jest.Mock).mockClear();
-        spectator.component.searchControl.setValue('form');
+        spectator.component['searchControl'].setValue('form');
         jest.advanceTimersByTime(300);
         expect(service.getContentTypesWithPagination).toHaveBeenCalledWith(
             expect.objectContaining({ filter: 'form', page: 1 })

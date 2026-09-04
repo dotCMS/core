@@ -23,7 +23,7 @@
                 [pTooltip]="'uve.toolbar.page.api.url' | dm"
                 tooltipPosition="bottom"
                 pButton
-                class="text-(--color-palette-primary)! visited:text-(--color-palette-primary)! no-underline!"
+                class="text-(--color-palette-primary)! no-underline! visited:text-(--color-palette-primary)!"
                 target="_blank"
                 data-testId="uve-toolbar-api-link"
                 [href]="$apiURL()">
@@ -33,14 +33,13 @@
             @if ($showDeviceSelector()) {
                 <dot-uve-device-selector
                     [state]="$deviceSelectorState()"
-                    [devices]="$devices()"
+                    [devices]="$devices() ?? []"
                     [isTraditionalPage]="isTraditionalPage()"
                     (stateChange)="deviceSelectorChange.emit($event)"
                     data-testId="uve-toolbar-device-selector" />
             }
 
-            @if ($showUrlContentMap()) {
-                @let urlContentMap = $urlContentMap();
+            @if ($showUrlContentMap() && $urlContentMap(); as urlContentMap) {
                 <p-button
                     (click)="editUrlContentMap.emit(urlContentMap)"
                     [pTooltip]="
@@ -81,7 +80,7 @@
     </ng-template>
 
     <ng-template #end>
-        <div class="flex items-center gap-1 uve-toolbar-end-actions">
+        <div class="uve-toolbar-end-actions flex items-center gap-1">
             @if ($lockOptions(); as lockOptions) {
                 @if (lockOptions.shouldShowButton) {
                     <dot-toggle-lock-button
@@ -98,7 +97,7 @@
             }
             <dot-language-selector
                 #languageSelector
-                [value]="$toolbar().currentLanguage"
+                [value]="$toolbar().currentLanguage ?? null"
                 (onLanguageChange)="onLanguageSelected($event)"
                 data-testId="uve-toolbar-language-selector" />
 

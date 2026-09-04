@@ -27,7 +27,22 @@ import {
 
 import { DotFieldVariablesService } from '../fields/dot-content-type-fields-variables/services/dot-field-variables.service';
 
-type BlockOption = { label: string; code: string };
+/**
+ * A selectable block.
+ *
+ * Both fields are optional because `getEditorBlockOptions` maps from `DotMenuItem`, whose `label`
+ * and `id` are — its own sort already reads the label as `label ?? ''`.
+ */
+type BlockOption = { label?: string; code?: string };
+
+/** One row of {@link DotBlockEditorSettingsComponent.settingsMap}. */
+interface BlockEditorSetting {
+    label: string;
+    placeholder: string;
+    options: BlockOption[];
+    key: string;
+    variable: DotFieldVariable | null;
+}
 
 function getCustomBlockOptions(field: DotCMSContentTypeField): BlockOption[] {
     const raw = field?.fieldVariables?.find((variable) => variable.key === 'customBlocks')?.value;
@@ -48,16 +63,19 @@ function getCustomBlockOptions(field: DotCMSContentTypeField): BlockOption[] {
         return (parsed.extensions || []).flatMap((extension) =>
             (extension.actions || []).flatMap((action) => {
                 const name = action?.name?.trim();
-                // `menuLabel` was optional in existing payloads; when it is missing, empty,
-                // or whitespace-only, fall back to the required TipTap node name so
-                // preserved remote blocks remain selectable in settings.
-                const label = action?.menuLabel?.trim() || name;
 
                 if (!name) {
                     console.warn(REMOTE_BLOCK_NAME_REQUIRED_WARNING);
 
                     return [];
                 }
+
+                // `menuLabel` was optional in existing payloads; when it is missing, empty,
+                // or whitespace-only, fall back to the required TipTap node name so
+                // preserved remote blocks remain selectable in settings. Computed after the guard
+                // above, which is what makes the fallback a `string` rather than `string |
+                // undefined`.
+                const label = action?.menuLabel?.trim() || name;
 
                 return [{ code: name, label }];
             })
@@ -111,8 +129,8 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
     readonly $field = input.required<DotCMSContentTypeField>({ alias: 'field' });
     readonly $isVisible = input<boolean>(false, { alias: 'isVisible' });
-    public form: FormGroup;
-    public settingsMap = {
+    public form!: FormGroup;
+    public settingsMap: { allowedBlocks: BlockEditorSetting } = {
         allowedBlocks: {
             label: 'Allowed Blocks',
             placeholder: 'Select Blocks',
@@ -151,10 +169,14 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
             .subscribe((fieldVariables: DotFieldVariable[]) => {
                 fieldVariables.forEach((variable) => {
                     const { key, value } = variable;
+                    // Matched against the settings rather than indexed by key: the key comes from
+                    // the saved field variable, which need not name a setting this form shows.
+                    const setting = this.settings.find((item) => item.key === key);
+                    const control = this.form.get(key);
 
-                    if (this.form.get(key)) {
-                        this.settingsMap[key].variable = variable;
-                        this.form.get(key)?.setValue(value.split(','));
+                    if (setting && control) {
+                        setting.variable = variable;
+                        control.setValue(value.split(','));
                     }
                 });
             });
@@ -182,8 +204,9 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
 
     saveSettings(): void {
         forkJoin(
-            this.settings.map(({ variable, key }) => {
-                const value = this.form.get(key).value?.join(',');
+            this.settings.map((setting) => {
+                const { variable, key } = setting;
+                const value = this.form.get(key)?.value?.join(',');
                 const fieldVariable = {
                     ...variable,
                     key,
@@ -201,7 +224,7 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     value
                         ? this.fieldVariablesService.save(this.$field(), fieldVariable)
                         : this.fieldVariablesService.delete(this.$field(), fieldVariable)
-                ).pipe(tap((variable) => (this.settingsMap[key].variable = variable))); // Update Variable Reference
+                ).pipe(tap((saved) => (setting.variable = saved))); // Update Variable Reference
             })
         )
             .pipe(
@@ -210,8 +233,8 @@ export class DotBlockEditorSettingsComponent implements OnInit, OnDestroy, OnCha
                     this.dotHttpErrorManagerService.handle(err).pipe(take(1))
                 )
             )
-            .subscribe((value: DotFieldVariable[]) => {
-                this.$save.emit(value);
+            .subscribe((value) => {
+                this.$save.emit(value as DotFieldVariable[]);
                 this.form.markAsPristine();
             });
     }

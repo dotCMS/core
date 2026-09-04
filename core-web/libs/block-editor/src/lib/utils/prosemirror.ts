@@ -25,7 +25,7 @@ export const getCurrentLeafBlock = (editor: Editor) => {
     const { anchor } = selection;
 
     let name = '';
-    let parentNode = null;
+    let parentNode: Node | null = null;
 
     state.doc.descendants((node, pos, parent) => {
         const hasAnchor = anchor >= pos && anchor <= pos + node.nodeSize;
@@ -45,8 +45,12 @@ export const getCurrentLeafBlock = (editor: Editor) => {
         return true;
     });
 
-    if (parentNode?.type.name === 'heading') {
-        return getNodeTypeWithLevel(parentNode);
+    // `parentNode` is written inside the `descendants` callback; TypeScript's control-flow
+    // analysis does not track closure writes, so it still sees the `null` initializer here.
+    const leafParent = parentNode as Node | null;
+
+    if (leafParent?.type.name === 'heading') {
+        return getNodeTypeWithLevel(leafParent);
     }
 
     return name;
@@ -71,8 +75,8 @@ export const getCurrentLeafBlock = (editor: Editor) => {
  * ```
  */
 const getNodeTypeWithLevel = (node: Node): string => {
-    const hasLevelAttribute = node.attrs.level;
+    const hasLevelAttribute = node.attrs['level'];
     const baseNodeType = node.type.name;
 
-    return hasLevelAttribute ? `${baseNodeType}${node.attrs.level}` : baseNodeType;
+    return hasLevelAttribute ? `${baseNodeType}${node.attrs['level']}` : baseNodeType;
 };

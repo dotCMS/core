@@ -107,6 +107,13 @@ export async function fetchWithRetry(
             await new Promise((r) => setTimeout(r, delay));
         }
     }
+
+    // Only reachable when retries < 1, in which case the loop never runs. Throwing keeps the
+    // return type free of `undefined` and surfaces the bad argument instead of hiding it.
+    // Note `retries` is the total attempt count, not the number of retries after the first try.
+    throw new Error(
+        chalk.red(`\n❌ fetchWithRetry requires at least 1 attempt, received ${retries}\n`)
+    );
 }
 
 export function getUVEConfigValue(frontEndUrl: string) {

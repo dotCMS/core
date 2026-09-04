@@ -77,7 +77,9 @@ interface WorkflowPageApiDeps {
     requestMetadata: () => { query: string; variables: Record<string, string> } | null;
     $requestWithParams: () => {
         query: string;
-        variables: Record<string, string>;
+        // Optional values: see the note on `getGraphQLPage`. `withPage` produces them and this
+        // declaration has to match, or the whole store composition fails to type.
+        variables: Record<string, string | undefined>;
     } | null;
     setPageAsset: (payload: {
         pageAsset: DotCMSPageAsset;
@@ -118,7 +120,12 @@ export function withWorkflow() {
                 return computeIsPageLocked(store.pageAsset()?.page ?? null, store.uveCurrentUser());
             });
 
-            const $lockFeatureEnabled = computed(() => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK);
+            // `?? false`: `UVEFeatureFlags` is `Partial<Record<flag, boolean>>` and the state seeds
+            // it to `{}`, so the flag reads `undefined` until the fetch lands. Not-yet-known is not
+            // enabled, which is what every consumer of this signal already assumes.
+            const $lockFeatureEnabled = computed(
+                () => store.flags().FEATURE_FLAG_UVE_TOGGLE_LOCK ?? false
+            );
 
             const $lockOptions = computed<WorkflowLockOptions | null>(() => {
                 const page = store.pageAsset()?.page;

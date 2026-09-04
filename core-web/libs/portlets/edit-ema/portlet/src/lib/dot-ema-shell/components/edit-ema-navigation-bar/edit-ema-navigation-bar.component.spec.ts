@@ -95,7 +95,7 @@ describe('EditEmaNavigationBarComponent', () => {
             });
 
             it('should have a <nav> with aria-label "Page editor navigation"', () => {
-                const nav = spectator.query('nav');
+                const nav = spectator.query('nav')!;
                 expect(nav.getAttribute('aria-label')).toBe('Page editor navigation');
             });
         });
@@ -107,7 +107,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
                 const innerButton = contentHost.querySelector('button');
-                spectator.click(innerButton);
+                spectator.click(innerButton!);
 
                 expect(navigateSpy).toHaveBeenCalledWith(
                     ['edit-page', 'content'],
@@ -121,7 +121,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 const layoutHost = spectator.queryAll(byTestId('nav-bar-item'))[1];
                 const innerButton = layoutHost.querySelector('button');
-                spectator.click(innerButton);
+                spectator.click(innerButton!);
 
                 expect(navigateSpy).not.toHaveBeenCalled();
             });
@@ -131,7 +131,7 @@ describe('EditEmaNavigationBarComponent', () => {
 
                 const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
                 const innerButton = actionHost.querySelector('button');
-                spectator.click(innerButton);
+                spectator.click(innerButton!);
 
                 expect(emitSpy).toHaveBeenCalledWith('action');
             });
@@ -144,19 +144,19 @@ describe('EditEmaNavigationBarComponent', () => {
                 spectator.detectChanges();
 
                 const contentHost = spectator.queryAll(byTestId('nav-bar-item'))[0];
-                const indicator = contentHost.parentElement.querySelector('span');
+                const indicator = contentHost!.parentElement!.querySelector('span')!;
                 expect(indicator.style.opacity).toBe('1');
             });
 
             it('should set opacity 0 on the indicator span of inactive items', () => {
                 const rulesHost = spectator.queryAll(byTestId('nav-bar-item'))[2];
-                const indicator = rulesHost.parentElement.querySelector('span');
+                const indicator = rulesHost!.parentElement!.querySelector('span')!;
                 expect(indicator.style.opacity).toBe('0');
             });
 
             it('should set opacity 0 on the indicator span of action items (no href)', () => {
                 const actionHost = spectator.queryAll(byTestId('nav-bar-item'))[4];
-                const indicator = actionHost.parentElement.querySelector('span');
+                const indicator = actionHost!.parentElement!.querySelector('span')!;
                 expect(indicator.style.opacity).toBe('0');
             });
         });

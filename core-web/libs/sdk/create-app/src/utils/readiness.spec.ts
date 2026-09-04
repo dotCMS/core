@@ -248,7 +248,7 @@ describe('probeReadiness', () => {
     });
 
     describe('contract X2 — the probe returns a value, it never exits and never throws', () => {
-        const everyPath = [
+        const everyPath: Record<string, number | Error>[] = [
             { [READYZ_URL]: 200 },
             { [READYZ_URL]: 204 },
             { [READYZ_URL]: 503 },

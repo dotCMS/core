@@ -59,10 +59,10 @@
 
 <dot-toast position="top-center" />
 
-@if ($contextMenuData()?.showAddToBundle) {
+@if ($contextMenuData().showAddToBundle) {
     <dot-add-to-bundle
         (cancel)="cancelAddToBundle()"
-        [assetIdentifier]="$contextMenuData().contentlet.identifier" />
+        [assetIdentifier]="$contextMenuData().contentlet?.identifier ?? ''" />
 }
 
 <!-- Just placeholders for now. Let's leave it here so we can maintain the layout. But we are not going to use for this version. -->

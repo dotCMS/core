@@ -23,12 +23,12 @@ class AddToBundleServiceMock {
     template: '<dot-add-to-bundle [assetIdentifier]="addToBundleIdentifier" />'
 })
 class TestHostComponent {
-    addToBundleIdentifier: string;
+    addToBundleIdentifier = '';
 }
 
 xdescribe('DotAddToBundleComponent', () => {
     let comp: DotAddToBundleComponent;
-    let fixture: ComponentFixture<TestHostComponent>;
+    let fixture!: ComponentFixture<TestHostComponent>;
     let de: DebugElement;
     let addToBundleServiceMock: AddToBundleServiceMock;
 
@@ -68,7 +68,7 @@ xdescribe('DotAddToBundleComponent', () => {
 
     it('should be valid if bundle field is added', () => {
         fixture.detectChanges();
-        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
+        comp.form.get('addBundle')!.setValue({ id: '12345', name: 'my bundle' });
         expect(comp.form.valid).toEqual(true);
     });
 
@@ -97,11 +97,11 @@ xdescribe('DotAddToBundleComponent', () => {
             By.css('.add-to-bundle__form-cancel')
         );
 
-        comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
+        comp.form.get('addBundle')!.setValue({ id: '12345', name: 'my bundle' });
 
         cancelButton.nativeElement.click();
 
-        expect(comp.form.get('addBundle').value).toEqual('');
+        expect(comp.form.get('addBundle')!.value).toEqual('');
     });
 
     it('should call submitBundle() on submit event', () => {
@@ -126,7 +126,7 @@ xdescribe('DotAddToBundleComponent', () => {
 
     it('should create bundle object if type bundle name in the dropdown', () => {
         fixture.detectChanges();
-        comp.form.get('addBundle').setValue('my new bundle');
+        comp.form.get('addBundle')!.setValue('my new bundle');
 
         fixture.componentInstance.addToBundleIdentifier = '123ad979-89a-123456';
         fixture.detectChanges();
@@ -192,7 +192,7 @@ xdescribe('DotAddToBundleComponent', () => {
             form = fixture.debugElement.query(By.css('form'));
 
             fixture.componentInstance.addToBundleIdentifier = '7ad979-89a-97ada9d9ad';
-            comp.form.get('addBundle').setValue({ id: '12345', name: 'my bundle' });
+            comp.form.get('addBundle')!.setValue({ id: '12345', name: 'my bundle' });
 
             fixture.detectChanges();
         });

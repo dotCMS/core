@@ -5,10 +5,10 @@ import {
     computed,
     ElementRef,
     inject,
-    Input,
     OnChanges,
     signal,
-    ViewChild
+    ViewChild,
+    input
 } from '@angular/core';
 
 import { DotCMSBasicContentlet, EditableContainerData } from '@dotcms/types';
@@ -39,12 +39,12 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
             <ng-container
                 *ngComponentOutlet="
                     $UserComponent() | async;
-                    inputs: { contentlet: $contentlet() ?? contentlet }
+                    inputs: { contentlet: $contentlet() ?? contentlet() }
                 " />
         } @else if ($isDevMode()) {
             <dotcms-fallback-component
                 [UserNoComponent]="$UserNoComponent()"
-                [contentlet]="$contentlet() ?? contentlet" />
+                [contentlet]="$contentlet() ?? contentlet()" />
         }
     `,
     // Editor-only metadata (data-dot-object, data-dot-container, etc.) is bound
@@ -66,8 +66,8 @@ import { FallbackComponent } from '../fallback-component/fallback-component.comp
     changeDetection: ChangeDetectionStrategy.OnPush
 })
 export class ContentletComponent implements OnChanges {
-    @Input({ required: true }) contentlet!: DotCMSBasicContentlet;
-    @Input({ required: true }) containerData!: EditableContainerData;
+    readonly contentlet = input.required<DotCMSBasicContentlet>();
+    readonly containerData = input.required<EditableContainerData>();
     @ViewChild('contentletRef') contentletRef!: ElementRef;
 
     #dotCMSStore = inject(DotCMSStore);
@@ -86,7 +86,7 @@ export class ContentletComponent implements OnChanges {
         if (!contentlet) return {} as DotContentletAttributes;
 
         if (this.$isDevMode()) {
-            return getDotContentletAttributes(contentlet, this.containerData.identifier);
+            return getDotContentletAttributes(contentlet, this.containerData().identifier);
         }
 
         if (this.$isAnalyticsActive()) {
@@ -97,7 +97,7 @@ export class ContentletComponent implements OnChanges {
     });
 
     ngOnChanges() {
-        this.$contentlet.set(this.contentlet);
+        this.$contentlet.set(this.contentlet());
         this.setupComponents();
     }
 
@@ -106,7 +106,7 @@ export class ContentletComponent implements OnChanges {
      * Only consumed by the host binding while in edit mode.
      */
     getContainerAttribute(): string {
-        return JSON.stringify(this.containerData);
+        return JSON.stringify(this.containerData());
     }
 
     ngAfterViewInit() {
@@ -119,7 +119,7 @@ export class ContentletComponent implements OnChanges {
 
         if (!store?.components) return;
 
-        this.$UserComponent.set(store.components[this.contentlet?.contentType]);
+        this.$UserComponent.set(store.components[this.contentlet()?.contentType]);
         this.$UserNoComponent.set(store.components[CUSTOM_NO_COMPONENT]);
     }
 

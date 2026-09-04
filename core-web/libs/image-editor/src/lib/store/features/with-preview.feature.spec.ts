@@ -1,4 +1,4 @@
-import { patchState, signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, WritableStateSource, withState } from '@ngrx/signals';
 import { Dispatcher, injectDispatch } from '@ngrx/signals/events';
 import { of } from 'rxjs';
 
@@ -45,7 +45,11 @@ describe('withPreview - isDirty with focal point', () => {
         });
 
         // Seed a baseline focal point so a move-and-back can be detected as pristine.
-        patchState(store, {
+        //
+        // The cast is unavoidable: `signalStore` exposes its state as readonly deep signals, so the
+        // instance type does not satisfy `WritableStateSource` even though `patchState` is designed
+        // to write to exactly this object.
+        patchState(store as unknown as WritableStateSource<object>, {
             focalPoint: { x: 0.4, y: 0.6 },
             seededFocalPoint: { x: 0.4, y: 0.6 }
         });

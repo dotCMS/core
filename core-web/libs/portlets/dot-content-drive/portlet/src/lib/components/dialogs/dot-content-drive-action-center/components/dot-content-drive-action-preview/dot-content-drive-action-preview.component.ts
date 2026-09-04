@@ -1,10 +1,12 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotContentDriveBrowseItem, DotContentDriveItem } from '@dotcms/dotcms-models';
 import {
     DotFolderListViewColumnField,
     DotFolderListViewComponent
 } from '@dotcms/portlets/content-drive/ui';
+
+import { excludeLinks } from '../../../../../utils/functions';
 
 /**
  * The contentlets a workflow action is about to run on, as a checkable table.
@@ -60,7 +62,7 @@ export class DotContentDriveActionPreviewComponent {
      * Bundle and Push Publish accept them, so narrowing back to `DotCMSContentlet` here would be a
      * lie the cast used to hide.
      */
-    protected onSelectionChange(selection: DotContentDriveItem[]): void {
-        this.selectionChange.emit(selection);
+    protected onSelectionChange(selection: DotContentDriveBrowseItem[]): void {
+        this.selectionChange.emit(excludeLinks(selection));
     }
 }

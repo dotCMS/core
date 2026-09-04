@@ -291,7 +291,7 @@ program
             const busyPorts = await findBusyPorts();
             const portOutcome = await resolvePortConflict({
                 busyPorts,
-                isInteractive: Boolean(process.stdout.isTTY) && !process.env.CI,
+                isInteractive: Boolean(process.stdout.isTTY) && !process.env['CI'],
                 host: LOCAL_DOTCMS_HOST,
                 probeInstance: async () => {
                     // Reusable means usable for what happens next: it must answer readiness AND
@@ -512,7 +512,7 @@ program
             if (error instanceof Error) {
                 console.error(error.message);
                 // Preserve stack trace for debugging when DEBUG mode is enabled
-                if (process.env.DEBUG) {
+                if (process.env['DEBUG']) {
                     console.error('\n' + chalk.gray('Stack trace:'));
                     console.error(chalk.gray(error.stack || 'No stack trace available'));
                 }

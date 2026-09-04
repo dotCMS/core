@@ -76,37 +76,42 @@ export class DotPushPublishFormComponent
     readonly #dotMessageService = inject(DotMessageService);
 
     dateFieldMinDate = new Date();
-    form: UntypedFormGroup;
-    pushActions: SelectItem[];
-    filterOptions: SelectItem[] = null;
-    timeZoneOptions: SelectItem[] = null;
+    form!: UntypedFormGroup;
+    pushActions: SelectItem[] = [];
+    filterOptions: SelectItem[] = [];
+    timeZoneOptions: SelectItem[] = [];
     eventData: DotPushPublishDialogData = { assetIdentifier: '', title: '' };
-    assetIdentifier: string;
-    localTimezone: string;
+    assetIdentifier!: string;
+    localTimezone!: string;
     showTimezonePicker = false;
     changeTimezoneActionLabel = this.#dotMessageService.get('Change');
 
-    @Input() data: DotPushPublishDialogData;
+    @Input() data?: DotPushPublishDialogData;
 
     @Output() value = new EventEmitter<DotPushPublishData>();
     @Output() valid = new EventEmitter<boolean>();
 
-    @ViewChild('customCode', { static: true }) customCodeContainer: ElementRef;
+    @ViewChild('customCode', { static: true }) customCodeContainer!: ElementRef;
 
-    private defaultFilterKey: string;
-    private _filterOptions: SelectItem[] = null;
+    private defaultFilterKey!: string;
+    private _filterOptions: SelectItem[] = [];
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
     ngOnInit() {
-        if (this.data) {
+        // Held in a local so the narrowing survives into the `loadFilters` callback below.
+        const data = this.data;
+        if (data) {
             this.setPreviousDayToMinDate();
-            if (this.filterOptions) {
-                this.loadData(this.data);
+            // `.length`, not truthiness: this branch means "filters are already loaded", and an
+            // empty array is truthy — so it would have skipped the fetch and rendered no filters.
+            // No test covers this path.
+            if (this.filterOptions.length) {
+                this.loadData(data);
             } else {
                 this.loadFilters()
                     .pipe(take(1))
                     .subscribe(() => {
-                        this.loadData(this.data);
+                        this.loadData(data);
                     });
             }
         }
@@ -132,7 +137,8 @@ export class DotPushPublishFormComponent
      * @memberof DotPushPublishFormComponent
      */
     updateTimezoneLabel(timezone: string): void {
-        this.localTimezone = this.timeZoneOptions.find(({ value }) => value === timezone)['label'];
+        this.localTimezone =
+            this.timeZoneOptions.find(({ value }) => value === timezone)?.label ?? '';
     }
 
     /**
@@ -175,20 +181,26 @@ export class DotPushPublishFormComponent
 
     private loadCustomCode(): void {
         this.dotParseHtmlService.parse(
-            this.eventData.customCode,
+            this.eventData.customCode ?? '',
             this.customCodeContainer.nativeElement,
             true
         );
     }
 
     private setUsersTimeZone(): void {
-        const ppTimezone = this.form.get('timezoneId');
+        const ppTimezone = this.form.controls['timezoneId'];
 
         const localTZItem = this.timeZoneOptions.find(
             ({ value }) => value === Intl.DateTimeFormat().resolvedOptions().timeZone
         );
+        // The list comes from the server; it need not carry the browser's resolved zone, in which
+        // case the form keeps whatever default it was built with.
+        if (!localTZItem) {
+            return;
+        }
+
         ppTimezone.setValue(localTZItem.value);
-        this.localTimezone = localTZItem.label;
+        this.localTimezone = localTZItem.label ?? '';
     }
 
     private loadTimezones(): void {
@@ -241,9 +253,9 @@ export class DotPushPublishFormComponent
             environment: ['', [Validators.required]]
         });
 
-        const publishDate = this.form.get('publishDate');
-        const expireDate = this.form.get('expireDate');
-        const ppFilter = this.form.get('filterKey');
+        const publishDate = this.form.controls['publishDate'];
+        const expireDate = this.form.controls['expireDate'];
+        const ppFilter = this.form.controls['filterKey'];
 
         const enableFilters = () => {
             ppFilter.enable();
@@ -251,17 +263,15 @@ export class DotPushPublishFormComponent
             ppFilter.setValue(this.defaultFilterKey);
         };
 
-        this.form
-            .get('filterKey')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['filterKey'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .pipe(filter((value: string) => !!value))
             .subscribe((filterSelected: string) => {
                 this.defaultFilterKey = filterSelected;
             });
 
-        this.form
-            .get('pushActionSelected')
-            .valueChanges.pipe(takeUntil(this.destroy$))
+        this.form.controls['pushActionSelected'].valueChanges
+            .pipe(takeUntil(this.destroy$))
             .subscribe((pushActionSelected: string) => {
                 switch (pushActionSelected) {
                     case 'publish': {

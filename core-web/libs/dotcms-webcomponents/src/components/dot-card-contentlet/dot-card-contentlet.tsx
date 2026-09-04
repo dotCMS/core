@@ -16,9 +16,14 @@ import { DotContentState } from '@dotcms/dotcms-models';
     shadow: true
 })
 export class DotCardContentlet {
-    @Element() el: HTMLDotCardContentletElement;
+    @Element() el!: HTMLDotCardContentletElement;
 
-    @Prop() item: DotCardContentletItem;
+    /**
+     * Required in practice, not optional: `render` reads `contentlet.language` and
+     * `contentlet.locked` with no guard, so a missing item has always thrown. Third component with
+     * this shape, after `dot-contentlet-thumbnail` and `dot-video-thumbnail`.
+     */
+    @Prop() item!: DotCardContentletItem;
 
     @Prop() thumbnailSize = '260';
     @Prop() iconSize = '96px';
@@ -27,30 +32,31 @@ export class DotCardContentlet {
         reflect: true,
         mutable: true
     })
-    checked: boolean;
+    checked?: boolean;
 
     @Prop() showVideoThumbnail = false;
 
-    @Event() checkboxChange: EventEmitter<DotCardContentletEvent>;
-    @Event() contextMenuClick: EventEmitter<MouseEvent>;
+    @Event() checkboxChange!: EventEmitter<DotCardContentletEvent>;
+    @Event() contextMenuClick!: EventEmitter<MouseEvent>;
 
-    private menu: HTMLDotContextMenuElement;
+    /** Resolved from the shadow root in `componentDidLoad`; absent until then. */
+    private menu: HTMLDotContextMenuElement | null = null;
 
     private isShiftKey = false;
 
     @Method()
     async showMenu(x: number, y: number) {
         const { left, top } = this.el.getBoundingClientRect();
-        this.menu.show(x - left, y - top);
+        this.menu?.show(x - left, y - top);
     }
 
     @Method()
     async hideMenu() {
-        this.menu.hide();
+        this.menu?.hide();
     }
 
     componentDidLoad() {
-        this.menu = this.el.shadowRoot.querySelector('dot-context-menu');
+        this.menu = this.el.shadowRoot?.querySelector('dot-context-menu') ?? null;
     }
 
     render() {
@@ -78,7 +84,7 @@ export class DotCardContentlet {
                             onChange={(e: MouseEvent) => {
                                 const target = e.target as Checkbox;
                                 this.checked = target.checked;
-                                this.menu.hide();
+                                this.menu?.hide();
 
                                 this.checkboxChange.emit({
                                     originalTarget: this.el,

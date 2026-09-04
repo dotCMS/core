@@ -13,6 +13,14 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotCategoriesListStore } from './dot-categories-list.store';
 
+// DotCMSAPIResponse carries these alongside `entity`; the fixtures only care about entity.
+const API_ENVELOPE = {
+    errors: [],
+    messages: [],
+    permissions: [],
+    i18nMessagesMap: {}
+};
+
 const MOCK_CATEGORIES: DotCategory[] = [
     {
         categoryName: 'Category 1',
@@ -47,6 +55,7 @@ const MOCK_CATEGORIES: DotCategory[] = [
 ];
 
 const MOCK_PAGINATED_RESPONSE = {
+    ...API_ENVELOPE,
     entity: MOCK_CATEGORIES,
     pagination: { currentPage: 1, perPage: 25, totalEntries: 100 }
 };
@@ -345,6 +354,7 @@ describe('DotCategoriesListStore', () => {
         it('should report descendants separately when the cascade removed more than was selected', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 1,
                         skippedCount: 0,
@@ -366,6 +376,7 @@ describe('DotCategoriesListStore', () => {
         it('should use the plain success message when the categories had no descendants', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 2,
                         skippedCount: 0,
@@ -386,7 +397,10 @@ describe('DotCategoriesListStore', () => {
 
         it('should fall back to the selected count when the backend omits deletedCount', () => {
             categoriesService.deleteCategories.mockReturnValue(
-                of({ entity: { successCount: 2, skippedCount: 0, fails: [] } })
+                of({
+                    ...API_ENVELOPE,
+                    entity: { successCount: 2, skippedCount: 0, deletedCount: 0, fails: [] }
+                })
             );
             store.setSelectedCategories(MOCK_CATEGORIES);
 
@@ -401,6 +415,7 @@ describe('DotCategoriesListStore', () => {
         it('should report descendants on a partial failure too', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 1,
                         skippedCount: 0,
@@ -424,9 +439,11 @@ describe('DotCategoriesListStore', () => {
         it('should show a warning toast with deduped reasons on a partial failure', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 1,
                         skippedCount: 0,
+                        deletedCount: 0,
                         fails: [
                             { element: 'inode-2', errorMessage: 'Category does not exist' },
                             { element: 'inode-3', errorMessage: 'Category does not exist' }
@@ -450,9 +467,11 @@ describe('DotCategoriesListStore', () => {
         it('should show an error toast when nothing was deleted', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 0,
                         skippedCount: 0,
+                        deletedCount: 0,
                         fails: [
                             {
                                 element: 'inode-1',
@@ -478,9 +497,11 @@ describe('DotCategoriesListStore', () => {
         it('should reload the list even when some categories failed to delete', () => {
             categoriesService.deleteCategories.mockReturnValue(
                 of({
+                    ...API_ENVELOPE,
                     entity: {
                         successCount: 1,
                         skippedCount: 0,
+                        deletedCount: 0,
                         fails: [{ element: 'inode-2', errorMessage: 'Category does not exist' }]
                     }
                 })

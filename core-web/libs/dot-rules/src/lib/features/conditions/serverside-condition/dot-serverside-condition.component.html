@@ -1,5 +1,5 @@
 <div class="w-full">
-    <div class="w-full gap-3 items-center flex flex-row flex-1">
+    <div class="flex w-full flex-1 flex-row items-center gap-3">
         @for (input of inputs; track $index) {
             @if (input.type === 'spacer') {
                 <div class="dot-rules-input dot-rules-input-placeholder flex-1">&nbsp;</div>
@@ -9,35 +9,33 @@
                     (onChange)="onDropdownChange(input, $event.value)"
                     [ngModel]="input.value"
                     [ngModelOptions]="{ standalone: true }"
-                    [options]="input.options$ | async"
+                    [options]="(input.options$ | async) ?? undefined"
                     [style]="{ width: '100%' }"
-                    [required]="input.required"
-                    [placeholder]="input.placeholder | async"
+                    [required]="input.required ?? false"
+                    [placeholder]="(input.placeholder | async) ?? undefined"
                     [editable]="input.allowAdditions"
                     [filter]="true"
                     [class.min-w-24]="input.name === 'comparison'"
                     [class.max-w-24]="input.name === 'comparison'"
                     [class.flex-none]="input.name === 'comparison'"
                     [class.dot-rules-last]="isLast"
-                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                    [hidden]="isArgHidden(input)"
                     class="dot-rules-input flex-1"
                     appendTo="body" />
             }
             @if (input.type === 'restDropdown') {
                 <div
                     [class.dot-rules-last]="isLast"
-                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
-                    @if (input.maxSelections > 1) {
+                    class="dot-rules-input flex min-h-full w-full flex-1 flex-col">
+                    @if ((input.maxSelections ?? 0) > 1) {
                         <p-multiSelect
                             (onChange)="onRestDropdownChange(input, $event.value)"
                             [ngModel]="input.modelValue"
                             [ngModelOptions]="{ standalone: true }"
-                            [options]="input.options$ | async"
+                            [options]="(input.options$ | async) ?? undefined"
                             [style]="{ width: '100%' }"
-                            [placeholder]="input.placeholder | async"
-                            [hidden]="
-                                input.argIndex !== null && input.argIndex >= rightHandArgCount
-                            "
+                            [placeholder]="(input.placeholder | async) ?? undefined"
+                            [hidden]="isArgHidden(input)"
                             [class.min-w-24]="input.name === 'comparison'"
                             [class.max-w-24]="input.name === 'comparison'"
                             [class.flex-none]="input.name === 'comparison'"
@@ -48,9 +46,9 @@
                         @if (
                             (rdInputMulti.touched || input.control.touched) &&
                             (!rdInputMulti.valid || input.control.errors) &&
-                            (input.argIndex === null || input.argIndex < rightHandArgCount)
+                            !isArgHidden(input)
                         ) {
-                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                            <div class="name dot-rules-warn basic label max-w-1/2 basis-1/2">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -59,15 +57,13 @@
                             (onChange)="onRestDropdownChange(input, $event.value)"
                             [ngModel]="input.value"
                             [ngModelOptions]="{ standalone: true }"
-                            [options]="input.options$ | async"
+                            [options]="(input.options$ | async) ?? undefined"
                             [style]="{ width: '100%' }"
-                            [required]="input.required"
-                            [placeholder]="input.placeholder | async"
+                            [required]="input.required ?? false"
+                            [placeholder]="(input.placeholder | async) ?? undefined"
                             [editable]="input.allowAdditions"
                             [filter]="true"
-                            [hidden]="
-                                input.argIndex !== null && input.argIndex >= rightHandArgCount
-                            "
+                            [hidden]="isArgHidden(input)"
                             [class.min-w-24]="input.name === 'comparison'"
                             [class.max-w-24]="input.name === 'comparison'"
                             [class.flex-none]="input.name === 'comparison'"
@@ -75,12 +71,8 @@
                             class="dot-rules-input flex-1"
                             appendTo="body"
                             #rdInputSingle="ngModel" />
-                        @if (
-                            rdInputSingle.touched &&
-                            !rdInputSingle.valid &&
-                            (input.argIndex === null || input.argIndex < rightHandArgCount)
-                        ) {
-                            <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                        @if (rdInputSingle.touched && !rdInputSingle.valid && !isArgHidden(input)) {
+                            <div class="name dot-rules-warn basic label max-w-1/2 basis-1/2">
                                 {{ getErrorMessage(input) }}
                             </div>
                         }
@@ -90,21 +82,17 @@
             @if (input.type === 'text' || input.type === 'number') {
                 <div
                     [class.dot-rules-last]="isLast"
-                    class="dot-rules-input flex-1 w-full min-h-full flex flex-col">
+                    class="dot-rules-input flex min-h-full w-full flex-1 flex-col">
                     <input
                         (blur)="onBlur(input)"
-                        [placeholder]="input.placeholder | async"
+                        [placeholder]="(input.placeholder | async) ?? undefined"
                         [formControl]="input.control"
                         [type]="input.type"
-                        [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                        [hidden]="isArgHidden(input)"
                         pInputText
                         #fInput="ngForm" />
-                    @if (
-                        fInput.touched &&
-                        !fInput.valid &&
-                        (input.argIndex === null || input.argIndex < rightHandArgCount)
-                    ) {
-                        <div class="name dot-rules-warn basic label basis-1/2 max-w-1/2">
+                    @if (fInput.touched && !fInput.valid && !isArgHidden(input)) {
+                        <div class="name dot-rules-warn basic label max-w-1/2 basis-1/2">
                             {{ getErrorMessage(input) }}
                         </div>
                     }
@@ -118,9 +106,9 @@
                     [showTime]="true"
                     [showButtonBar]="true"
                     [class.dot-rules-last]="isLast"
-                    [hidden]="input.argIndex !== null && input.argIndex >= rightHandArgCount"
+                    [hidden]="isArgHidden(input)"
                     hourFormat="12"
-                    class="dot-rules-input flex-1 w-full min-h-full"
+                    class="dot-rules-input min-h-full w-full flex-1"
                     appendTo="body" />
             }
         }

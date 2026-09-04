@@ -66,7 +66,7 @@ class DotWorkflowsActionsSelectorFieldServiceMock {
 class FakeFormComponent implements OnInit {
     private fb = inject(UntypedFormBuilder);
 
-    form: UntypedFormGroup;
+    form!: UntypedFormGroup;
     workflows: DotCMSWorkflow[] = [];
 
     ngOnInit() {

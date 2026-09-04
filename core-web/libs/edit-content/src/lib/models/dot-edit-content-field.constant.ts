@@ -83,11 +83,16 @@ export const DEFAULT_MONACO_CONFIG: MonacoEditorConstructionOptions = {
 /**
  * Represent the able messages to use in the component DotEmptyContainerComponent
  */
+/**
+ * `subtitle` is narrowed to required: it is optional on `PrincipalConfiguration` in general, but
+ * all three configurations here supply one, and both consumers pass it straight to
+ * `DotMessageService.get`, which takes a `string`.
+ */
 export const CATEGORY_FIELD_EMPTY_MESSAGES: Record<
     // `typeof` because ComponentStatus is an `as const` object, not an enum: its members are
     // values, so the member's type is reached through `typeof` rather than directly.
     typeof ComponentStatus.ERROR | 'empty' | 'noResults',
-    PrincipalConfiguration
+    PrincipalConfiguration & { subtitle: string }
 > = {
     empty: {
         title: 'edit.content.category-field.search.empty.title',

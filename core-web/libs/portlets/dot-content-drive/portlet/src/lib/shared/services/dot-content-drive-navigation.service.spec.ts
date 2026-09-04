@@ -87,7 +87,7 @@ describe('DotContentDriveNavigationService', () => {
         location = spectator.inject(Location);
         httpErrorManager = spectator.inject(DotHttpErrorManagerService);
         contentSearch = spectator.inject(DotContentSearchService);
-        store = spectator.inject(DotContentDriveStore, true);
+        store = spectator.inject(DotContentDriveStore);
     });
 
     afterEach(() => {

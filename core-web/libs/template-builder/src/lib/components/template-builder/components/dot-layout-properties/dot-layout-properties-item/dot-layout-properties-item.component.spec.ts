@@ -71,9 +71,9 @@ describe('DotLayoutPropertiesItemComponent', () => {
     });
 
     it('should emit switch value on host click', () => {
-        let res: boolean;
+        let res: boolean | undefined;
 
-        comp.switch.subscribe((value) => (res = value));
+        comp.switch.subscribe((value: boolean) => (res = value));
         de.nativeElement.click();
 
         expect(res).toEqual(true);

@@ -2,7 +2,7 @@
     name="thumbnail"
     (dotValueChange)="onThumbnailChange($event)"
     [disabled]="loading"
-    [previewImageUrl]="asset?.inode ? '/dA/' + asset?.inode : null"
+    [previewImageUrl]="asset?.inode ? '/dA/' + asset.inode : null"
     [previewImageName]="asset?.name"
     [style.height.rem]="asset ? '7.14' : '3.35'"
     [placeholder]="'templates.properties.form.thumbnail.placeholder' | dm"

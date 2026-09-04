@@ -20,7 +20,7 @@ interface ResponseEntityView<T> {
     entity: T;
 }
 
-export { DotAiProviderConfig };
+export type { DotAiProviderConfig };
 
 export const AI_PLUGIN_KEY = {
     NOT_SET: 'NOT SET'

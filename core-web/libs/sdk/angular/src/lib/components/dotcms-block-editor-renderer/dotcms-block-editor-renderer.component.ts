@@ -1,4 +1,4 @@
-import { Component, Input, signal, ChangeDetectionStrategy } from '@angular/core';
+import { Component, signal, ChangeDetectionStrategy, input } from '@angular/core';
 
 import { UVE_MODE, BlockEditorNode } from '@dotcms/types';
 import { BlockEditorState } from '@dotcms/types/internal';
@@ -50,21 +50,24 @@ export type CustomRenderer = Record<string, DynamicComponentEntity>;
     imports: [DotCMSBlockEditorItemComponent]
 })
 export class DotCMSBlockEditorRendererComponent {
-    @Input() blocks!: BlockEditorNode;
-    @Input() customRenderers: CustomRenderer | undefined;
-    @Input() class: string | undefined;
-    @Input() style: string | Record<string, string> | undefined;
+    readonly blocks = input<BlockEditorNode>();
+    readonly customRenderers = input<CustomRenderer>();
+    readonly class = input<string>();
+    readonly style = input<string | Record<string, string>>();
 
     $blockEditorState = signal<BlockEditorState>({ error: null });
     $isInEditMode = signal(getUVEState()?.mode === UVE_MODE.EDIT);
 
     ngOnInit() {
-        const state = isValidBlocks(this.blocks);
+        // `isValidBlocks` declares `blocks: BlockEditorNode` but its first guard
+        // handles `undefined`, and the component renders its error branch for a
+        // missing value — same treatment as the -native renderer.
+        const state = isValidBlocks(this.blocks() as BlockEditorNode);
 
         if (state.error) {
             console.error('Error in dotcms-block-editor-renderer: ', state.error);
         }
 
-        this.$blockEditorState.set(isValidBlocks(this.blocks));
+        this.$blockEditorState.set(state);
     }
 }

@@ -1,6 +1,6 @@
-import { Observable } from 'rxjs';
+import { EMPTY, Observable } from 'rxjs';
 
-import { AsyncPipe, NgClass, TitleCasePipe } from '@angular/common';
+import { AsyncPipe, TitleCasePipe } from '@angular/common';
 import {
     ChangeDetectionStrategy,
     Component,
@@ -30,7 +30,6 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
 @Component({
     selector: 'dot-results-seo-tool',
     imports: [
-        NgClass,
         CardModule,
         TitleCasePipe,
         AsyncPipe,
@@ -48,14 +47,18 @@ import { DotSeoImagePreviewComponent } from '../dot-seo-image-preview/dot-seo-im
 export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     private dotSeoMetaTagsUtilService = inject(DotSeoMetaTagsUtilService);
 
-    @Input() hostName: string;
-    @Input() seoMedia: string;
+    @Input() hostName = '';
+    /**
+     * `SEO_MEDIA_TYPES` rather than `string`: it keys `readMoreValues`, and `''` is the
+     * "nothing selected yet" value the template's `@for` reads as an empty list.
+     */
+    @Input() seoMedia: SEO_MEDIA_TYPES | '' = '';
     @Input() seoOGTags?: SeoMetaTags;
-    @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[]>;
-    currentResults$: Observable<SeoMetaTagsResult[]>;
-    readMoreValues: Record<SEO_MEDIA_TYPES, string[]>;
-    allPreview: MetaTagsPreview[];
-    mainPreview: MetaTagsPreview;
+    @Input() seoOGTagsResults?: Observable<SeoMetaTagsResult[] | null>;
+    currentResults$!: Observable<SeoMetaTagsResult[]>;
+    readMoreValues!: Record<SEO_MEDIA_TYPES, string[]>;
+    allPreview: MetaTagsPreview[] = [];
+    mainPreview!: MetaTagsPreview;
     seoMediaTypes = SEO_MEDIA_TYPES;
     noFavicon = false;
 
@@ -78,13 +81,19 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
 
         const twitterDescription = twitterDescriptionProperties
             .map((property) =>
-                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH)
+                ellipsizeText(
+                    this.seoOGTags?.[property as keyof SeoMetaTags] as string | undefined,
+                    SEO_LIMITS.MAX_TWITTER_DESCRIPTION_LENGTH
+                )
             )
             .find((value) => value !== undefined && value.length > 0);
 
         const twitterTitle = twitterTitleProperties
             .map((property) =>
-                ellipsizeText(this.seoOGTags?.[property], SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH)
+                ellipsizeText(
+                    this.seoOGTags?.[property as keyof SeoMetaTags] as string | undefined,
+                    SEO_LIMITS.MAX_TWITTER_TITLE_LENGTH
+                )
             )
             .find((value) => value !== undefined && value.length > 0);
 
@@ -116,10 +125,10 @@ export class DotResultsSeoToolComponent implements OnInit, OnChanges {
     }
 
     ngOnChanges() {
-        this.currentResults$ = this.seoOGTagsResults?.pipe(
+        this.currentResults$ = (this.seoOGTagsResults ?? EMPTY).pipe(
             map((tags) => {
                 return this.dotSeoMetaTagsUtilService.getFilteredMetaTagsByMedia(
-                    tags,
+                    tags ?? [],
                     this.seoMedia
                 );
             })

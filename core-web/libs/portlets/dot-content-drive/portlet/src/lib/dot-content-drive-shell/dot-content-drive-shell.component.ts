@@ -41,7 +41,9 @@ import {
     DotCMSFieldTypes,
     DotContentDriveActionableFolder,
     DotContentDriveItem,
-    DotContentDrivePaginateEvent
+    DotContentDrivePaginateEvent,
+    DotContentDriveBrowseItem,
+    isTreeNodeContentData
 } from '@dotcms/dotcms-models';
 import { DotEditContentSidePanelComponent, DotSidePanelNavController } from '@dotcms/edit-content';
 import {
@@ -91,7 +93,13 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
+import {
+    canAddChildrenTo,
+    encodeFilters,
+    excludeLinks,
+    isFolder,
+    isLink
+} from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -735,13 +743,21 @@ export class DotContentDriveShellComponent {
      * Handles double click event on a content item
      * @param contentlet The content item that was double clicked
      */
-    protected onDoubleClick(contentlet: DotContentDriveItem) {
+    protected onDoubleClick(contentlet: DotContentDriveBrowseItem) {
+        // Content Drive never asks for links, so this is unreachable — but the shared list view's
+        // output says it is possible, and nothing below this line handles a third row kind.
+        if (isLink(contentlet)) {
+            return;
+        }
+
         if (isFolder(contentlet)) {
             this.#store.setSelectedNode({
                 data: {
                     type: 'folder',
                     path: contentlet.path,
-                    hostname: this.#store.currentSite()?.hostname,
+                    // Empty string, not undefined: `hostname` is required on the node
+                    // data and the site may not have resolved yet.
+                    hostname: this.#store.currentSite()?.hostname ?? '',
                     id: contentlet.identifier,
                     inode: contentlet.inode,
                     // Carry the folder's upload preference so the Upload button reflects it right
@@ -1237,7 +1253,7 @@ export class DotContentDriveShellComponent {
             targetFolder: {
                 type: 'folder',
                 path: event.path,
-                hostname: this.#store.currentSite()?.hostname,
+                hostname: this.#store.currentSite()?.hostname ?? '',
                 id: event.identifier
             }
         });
@@ -1246,9 +1262,16 @@ export class DotContentDriveShellComponent {
     protected getMoveMetadata(event: DotContentDriveMoveItems) {
         const dragItems = this.#store.dragItems();
 
-        const path = event.targetFolder.path?.length > 0 ? event.targetFolder.path : '/';
+        // Narrowed through the model's own discriminant: `targetFolder` is a union and a load-more
+        // sentinel carries neither a path nor a hostname, which the two template strings below need.
+        // `targetFolder` is optional on the shared `DotUploadFiles`: a drop can land before any
+        // folder has been chosen.
+        const dropTarget = event.targetFolder;
+        const targetFolder =
+            dropTarget && isTreeNodeContentData(dropTarget) ? dropTarget : undefined;
+        const path = targetFolder?.path?.length ? targetFolder.path : '/';
 
-        const pathToMove = `//${event.targetFolder.hostname}${path}`;
+        const pathToMove = `//${targetFolder?.hostname ?? ''}${path}`;
 
         const cleanPath = path.includes('/') ? path.split('/').filter(Boolean).pop() : path;
 
@@ -1262,8 +1285,8 @@ export class DotContentDriveShellComponent {
         };
     }
 
-    protected onSelectItems(items: DotContentDriveItem[]) {
-        this.#store.setSelectedItems(items);
+    protected onSelectItems(items: DotContentDriveBrowseItem[]) {
+        this.#store.setSelectedItems(excludeLinks(items));
     }
 
     protected onTableScroll() {

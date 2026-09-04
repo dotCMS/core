@@ -51,14 +51,14 @@ class DotTestHostComponent {
     standalone: false
 })
 export class DotTextareaContentMockComponent implements ControlValueAccessor {
-    @Input() show;
-    @Input() height;
+    @Input() show!: string[];
+    @Input() height!: string;
 
     propagateChange = (_: unknown) => {
         //
     };
 
-    registerOnChange(fn): void {
+    registerOnChange(fn: (value: unknown) => void): void {
         this.propagateChange = fn;
     }
 

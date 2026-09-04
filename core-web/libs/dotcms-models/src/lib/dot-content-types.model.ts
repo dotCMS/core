@@ -145,7 +145,8 @@ export interface DotCMSContentType {
     fields: DotCMSContentTypeField[];
     fixed: boolean;
     folder: string;
-    host: string;
+    /** Null on a content type that is not scoped to a site. */
+    host: string | null;
     iDate: number;
     id: string;
     layout: DotCMSContentTypeLayoutRow[];
@@ -173,7 +174,8 @@ export interface DotCMSContentTypeBaseField {
     clazz: DotCMSClazz;
     contentTypeId: string;
     dataType: DotCMSDataType;
-    defaultValue?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    defaultValue?: string | null;
     fieldContentTypeProperties?: string[];
     fieldVariables: DotCMSContentTypeFieldVariable[];
     fieldType: DotCMSFieldType;
@@ -196,7 +198,8 @@ export interface DotCMSContentTypeBaseField {
     variable: string;
     velocityVarName?: string;
     metadata?: DotCMSContentTypeFieldMetadata;
-    values?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    values?: string | null;
 }
 
 // Layout Fields
@@ -317,7 +320,8 @@ export interface ContentTypeCustomField extends DotCMSContentTypeBaseField {
     clazz: typeof DotCMSClazzes.CUSTOM_FIELD;
     values: string;
     regexCheck?: string;
-    rendered?: string;
+    /** Null when the field has no rendered output; the endpoint sends null, not an absent key. */
+    rendered?: string | null;
 }
 
 /**
@@ -542,7 +546,8 @@ export interface DotCMSContentTypeField {
     clazz: DotCMSClazz;
     contentTypeId: string;
     dataType: string;
-    defaultValue?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    defaultValue?: string | null;
     fieldType: string;
     fieldTypeLabel: string;
     fieldVariables: DotCMSContentTypeFieldVariable[];
@@ -561,13 +566,15 @@ export interface DotCMSContentTypeField {
     searchable: boolean;
     sortOrder: number;
     unique: boolean;
-    values?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    values?: string | null;
     variable: string;
     forceIncludeInApi?: boolean;
     fieldContentTypeProperties?: string[];
     skipRelationshipCreation?: boolean;
     metadata?: { [key: string]: string | number | boolean };
-    rendered?: string;
+    /** Null when the field has no rendered output; the endpoint sends null, not an absent key. */
+    rendered?: string | null;
 }
 
 export interface DotCMSContentTypeLayoutTab {
@@ -587,7 +594,8 @@ export interface DotCMSContentTypeLayoutColumn {
 
 export interface DotCMSContentTypeFieldCategories {
     categoryName: string;
-    description?: string;
+    /** Null when unset — the content-type endpoint sends null rather than omitting the key. */
+    description?: string | null;
     inode: string;
     key: string;
     keywords?: string;
@@ -630,7 +638,8 @@ export type DotCopyContentTypeDialogFormFields = {
     name: string;
     variable: string;
     folder: string;
-    host: string;
+    /** Null on a content type that is not scoped to a site. */
+    host: string | null;
     icon: string;
 };
 

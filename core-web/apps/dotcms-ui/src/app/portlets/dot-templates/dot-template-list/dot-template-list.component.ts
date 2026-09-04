@@ -288,9 +288,7 @@ export class DotTemplateListComponent implements OnInit {
         this.contextMenuItems = this.setTemplateActions(template).map(
             ({ menuItem }: DotActionMenuItem) => menuItem
         );
-        if (this.contextMenu()) {
-            this.contextMenu().show(event);
-        }
+        this.contextMenu()?.show(event);
     }
 
     /**
@@ -300,7 +298,14 @@ export class DotTemplateListComponent implements OnInit {
      * @memberof DotTemplateListComponent
      */
     getTemplateState({ live, working, deleted, hasLiveVersion }: DotTemplate): DotContentState {
-        return { live, working, deleted, hasLiveVersion };
+        // `live`, `working` and `hasLiveVersion` are required on `DotContentState` and optional on
+        // `DotTemplate`; a flag the endpoint omits means the template is not in that state.
+        return {
+            live: live ?? false,
+            working: working ?? false,
+            deleted,
+            hasLiveVersion: hasLiveVersion ?? false
+        };
     }
 
     /**
@@ -439,7 +444,7 @@ export class DotTemplateListComponent implements OnInit {
                               this.dotTemplatesService
                                   .copy(template.identifier)
                                   .pipe(take(1))
-                                  .subscribe((response: DotTemplate) => {
+                                  .subscribe((response: DotTemplate | null) => {
                                       if (response) {
                                           this.showToastNotification(
                                               this.dotMessageService.get('message.template.copy')
@@ -600,7 +605,7 @@ export class DotTemplateListComponent implements OnInit {
                 this.dotTemplatesService
                     .delete(identifiers)
                     .pipe(take(1))
-                    .subscribe((response: DotActionBulkResult) => {
+                    .subscribe((response: DotActionBulkResult | null) => {
                         this.notifyResult(response, 'message.template.full_delete');
                     });
             },
@@ -616,7 +621,7 @@ export class DotTemplateListComponent implements OnInit {
         this.dotTemplatesService
             .publish(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
+            .subscribe((response: DotActionBulkResult | null) => {
                 this.notifyResult(response, 'message.template_list.published');
             });
     }
@@ -625,7 +630,7 @@ export class DotTemplateListComponent implements OnInit {
         this.dotTemplatesService
             .unPublish(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
+            .subscribe((response: DotActionBulkResult | null) => {
                 this.notifyResult(response, 'message.template.unpublished');
             });
     }
@@ -634,7 +639,7 @@ export class DotTemplateListComponent implements OnInit {
         this.dotTemplatesService
             .unArchive(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
+            .subscribe((response: DotActionBulkResult | null) => {
                 this.notifyResult(response, 'message.template.undelete');
             });
     }
@@ -643,12 +648,18 @@ export class DotTemplateListComponent implements OnInit {
         this.dotTemplatesService
             .archive(identifiers)
             .pipe(take(1))
-            .subscribe((response: DotActionBulkResult) => {
+            .subscribe((response: DotActionBulkResult | null) => {
                 this.notifyResult(response, 'message.template.delete');
             });
     }
 
-    private notifyResult(response: DotActionBulkResult, messageKey: string): void {
+    private notifyResult(response: DotActionBulkResult | null, messageKey: string): void {
+        // `null` arrives when the request failed — `DotTemplatesService.handleError` sends it down
+        // the stream — and there is nothing to report on either channel.
+        if (!response) {
+            return;
+        }
+
         if (response.fails.length) {
             this.showErrorDialog({
                 ...response,
@@ -684,7 +695,7 @@ export class DotTemplateListComponent implements OnInit {
 
     private getFailsInfo(items: DotBulkFailItem[]): DotBulkFailItem[] {
         return items.map((item: DotBulkFailItem) => {
-            return { ...item, description: this.getTemplateName(item.element) };
+            return { ...item, description: this.getTemplateName(item.element ?? '') };
         });
     }
 
@@ -785,8 +796,10 @@ export class DotTemplateListComponent implements OnInit {
     clearSelection(): void {
         this.selectedTemplates = [];
         patchState(this.$state, { selectedTemplates: [] });
-        if (this.dataTable()) {
-            this.dataTable().selection = [];
+        const dataTable = this.dataTable();
+
+        if (dataTable) {
+            dataTable.selection = [];
         }
     }
 

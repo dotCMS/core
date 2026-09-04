@@ -131,6 +131,11 @@ export class DotBrowserSelectorComponent implements OnInit {
      */
     addContent(): void {
         const content = this.store.selectedContent();
+
+        if (!content) {
+            return;
+        }
+
         this.#dotContentletService
             .getContentletByInodeWithContent(content.inode)
             .subscribe((content) => {

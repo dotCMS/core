@@ -88,13 +88,24 @@ export class DotEditContentSidebarComponent {
     /**
      * Computed property that returns the workflow state of the content.
      */
-    readonly $workflow = computed<DotWorkflowState>(() => ({
-        scheme: this.$store.getScheme(),
-        step: this.$store.getCurrentStep(),
-        task: this.$store.lastTask(),
-        contentState: this.$store.initialContentletState(),
-        resetAction: this.$store.getResetWorkflowAction()
-    }));
+    readonly $workflow = computed<DotWorkflowState | null>(() => {
+        const scheme = this.$store.getScheme();
+
+        // Null until a scheme is resolved — new content has none until the user picks one, and
+        // `DotWorkflowState.scheme` is required. The consuming component already declares this
+        // input as `DotWorkflowState | null` and renders nothing without it.
+        if (!scheme) {
+            return null;
+        }
+
+        return {
+            scheme,
+            step: this.$store.getCurrentStep() ?? null,
+            task: this.$store.lastTask(),
+            contentState: this.$store.initialContentletState(),
+            resetAction: this.$store.getResetWorkflowAction()
+        };
+    });
 
     /**
      * Computed property that returns the workflow selection state.
@@ -128,13 +139,23 @@ export class DotEditContentSidebarComponent {
      * @param actionId - The ID of the reset workflow action to fire.
      */
     fireResetWorkflowAction(actionId: string): void {
+        const contentlet = this.$contentlet();
+        const contentType = this.$contentType();
+
+        // A reset action only exists for content that has already entered a workflow, so both are
+        // present whenever the button that calls this is rendered. Guarding rather than asserting
+        // keeps it that way: firing with an undefined inode would reset the wrong thing.
+        if (!contentlet || !contentType) {
+            return;
+        }
+
         this.$store.fireWorkflowAction({
             actionId,
-            inode: this.$contentlet().inode,
+            inode: contentlet.inode,
             data: {
                 contentlet: {
                     ...this.$formValues(),
-                    contentType: this.$contentType().variable
+                    contentType: contentType.variable
                 }
             }
         });
@@ -183,7 +204,7 @@ export class DotEditContentSidebarComponent {
      * Handles the active index change event from the sidebar tabs.
      * @param value - The index of the active tab
      */
-    onActiveIndexChange(value: number | string) {
+    onActiveIndexChange(value: number | string | undefined) {
         const numberValue = Number(value);
         if (isNaN(numberValue)) {
             return;
@@ -196,7 +217,12 @@ export class DotEditContentSidebarComponent {
      * @param $event - The event object containing the comment.
      */
     onCommentSubmitted($event: string) {
+        // Deliberately NOT guarded on `identifier`, unlike the three history handlers below.
+        // `should still call addComment when onCommentSubmitted is called even if identifier is
+        // undefined` asserts this exact call, and the suite guards the history handlers in the
+        // adjacent tests — the asymmetry is intentional. `addComment` takes an optional identifier.
         const identifier = this.$identifier();
+
         this.$store.addComment({
             comment: $event,
             identifier

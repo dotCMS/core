@@ -147,7 +147,13 @@ describe('DotFolderService', () => {
                 name: 'folder1',
                 path: '/',
                 addChildrenAllowed: true,
-                hasChildren: true
+                hasChildren: true,
+                title: 'folder1',
+                sortOrder: 0,
+                filesMasks: '',
+                defaultFileType: '',
+                showOnMenu: true,
+                permissions: null
             },
             {
                 id: '2',
@@ -155,7 +161,13 @@ describe('DotFolderService', () => {
                 name: 'folder2',
                 path: '/',
                 addChildrenAllowed: false,
-                hasChildren: false
+                hasChildren: false,
+                title: 'folder2',
+                sortOrder: 0,
+                filesMasks: '',
+                defaultFileType: '',
+                showOnMenu: true,
+                permissions: null
             }
         ];
         const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };

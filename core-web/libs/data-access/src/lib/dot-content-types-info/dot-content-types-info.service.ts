@@ -143,8 +143,13 @@ export class DotContentTypesInfoService {
     }
 
     // tslint:disable-next-line:cyclomatic-complexity
-    private getItem(type: string, prop: string): string {
-        let result: string;
+    private getItem(
+        type: string,
+        prop: keyof (typeof this.contentTypeInfoCollection)[number]
+    ): string {
+        // Empty string rather than undefined keeps the public `string` contract of
+        // getIcon/getClazz/getLabel, and is falsy exactly like the previous value.
+        let result = '';
         // TODO: Remove this when set Material Design icons on NgPrime native components - BEGIN
         let oldValue = false;
         if (type.indexOf('_old') > 0) {

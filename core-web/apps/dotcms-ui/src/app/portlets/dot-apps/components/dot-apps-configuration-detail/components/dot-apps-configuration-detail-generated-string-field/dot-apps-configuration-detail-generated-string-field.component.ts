@@ -40,8 +40,8 @@ interface GeneratedStringField {
     required: boolean;
     type: string;
     value?: string;
-    buttonLabel: string;
-    buttonEndpoint: string;
+    buttonLabel?: string;
+    buttonEndpoint?: string;
 }
 
 /**
@@ -244,6 +244,11 @@ export class DotAppsConfigurationDetailGeneratedStringFieldComponent
      */
     private generateFromBackend(): void {
         const endpoint = this.$field().buttonEndpoint;
+
+        // Nothing to call when the server did not decorate the secret with an endpoint.
+        if (!endpoint) {
+            return;
+        }
 
         this.$isLoading.set(true);
 

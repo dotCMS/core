@@ -35,9 +35,9 @@
                         [value]="
                             $checkedBundleIds().length === 1
                                 ? ('publishing-queue.select-bundle.bundle-count.singular'
-                                  | dm: $checkedBundleIds().length.toString())
+                                  | dm: [$checkedBundleIds().length.toString()])
                                 : ('publishing-queue.select-bundle.bundle-count.plural'
-                                  | dm: $checkedBundleIds().length.toString())
+                                  | dm: [$checkedBundleIds().length.toString()])
                         "
                         styleClass="text-xs font-medium px-2 py-0.5"
                         data-testid="pq-select-bundle-configure-count" />

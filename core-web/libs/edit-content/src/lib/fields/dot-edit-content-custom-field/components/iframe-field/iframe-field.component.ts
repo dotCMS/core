@@ -20,7 +20,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
+import { createFormBridge, DotCustomFieldApiWindow, FormBridge } from '@dotcms/edit-content-bridge';
 import { SafeUrlPipe } from '@dotcms/ui';
 import { WINDOW } from '@dotcms/utils';
 
@@ -61,11 +61,11 @@ export class IframeFieldComponent implements OnDestroy {
     /**
      * The field to render.
      */
-    $field = input<DotCMSContentTypeField>(null, { alias: 'field' });
+    $field = input<DotCMSContentTypeField | null>(null, { alias: 'field' });
     /**
      * The content type to render the field for.
      */
-    $contentType = input<string>(null, { alias: 'contentType' });
+    $contentType = input<string | null>(null, { alias: 'contentType' });
     /**
      * The iframe element to render the custom field in.
      */
@@ -73,7 +73,7 @@ export class IframeFieldComponent implements OnDestroy {
     /**
      * The contentlet to render the field for.
      */
-    $contentlet = input<DotCMSContentlet>(null, { alias: 'contentlet' });
+    $contentlet = input<DotCMSContentlet | null>(null, { alias: 'contentlet' });
     /**
      * Whether to show the label.
      */
@@ -161,8 +161,12 @@ export class IframeFieldComponent implements OnDestroy {
 
     /**
      * The form bridge to communicate with the custom field.
+     *
+     * `| undefined` until the iframe loads and `createFormBridge` runs — which the two consumers
+     * already assume: one throws `'Form bridge not initialized'` and the other guards before
+     * calling `destroy()`.
      */
-    #formBridge: FormBridge;
+    #formBridge: FormBridge | undefined;
     /**
      * The control container to get the form.
      */
@@ -256,7 +260,7 @@ export class IframeFieldComponent implements OnDestroy {
 
         // Update iframe height smoothly
         iframeEl.style.height = `${height}px`;
-        iframeEl.dataset.lastHeight = height.toString();
+        iframeEl.dataset['lastHeight'] = height.toString();
 
         // Ensure iframe allows dropdowns to be visible
         iframeEl.style.overflow = 'visible';
@@ -287,7 +291,9 @@ export class IframeFieldComponent implements OnDestroy {
      * @returns The variables for the custom field.
      */
     private initializeVariables(): Record<string, string> {
-        return this.$field().fieldVariables.reduce(
+        // `field` is an optional input defaulting to null; with no field there are no variables
+        // to hand the custom field.
+        return (this.$field()?.fieldVariables ?? []).reduce(
             (acc, { key, value }) => {
                 acc[key] = value;
 
@@ -343,7 +349,7 @@ export class IframeFieldComponent implements OnDestroy {
             if (!this.#formBridge) throw new Error('Form bridge not initialized');
 
             // Assign API only to iframe
-            iframeWindow['DotCustomFieldApi'] = this.#formBridge;
+            (iframeWindow as DotCustomFieldApiWindow).DotCustomFieldApi = this.#formBridge;
 
             // Notify that the API is ready
             iframeWindow.postMessage({ type: 'dotcms:form:loaded' }, this.#window.location.origin);

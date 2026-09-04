@@ -27,10 +27,10 @@ import {
 import { DotcmsConfigService, LoginService } from '@dotcms/dotcms-js';
 import { DotPushPublishDialogData } from '@dotcms/dotcms-models';
 import {
-    DotDialogModule,
     DotFieldValidationMessageComponent,
     DotMessagePipe,
-    DotSafeHtmlPipe
+    DotSafeHtmlPipe,
+    PushPublishEnvSelectorComponent
 } from '@dotcms/ui';
 import {
     DotcmsConfigServiceMock,
@@ -61,8 +61,8 @@ const messageServiceMock = new MockDotMessageService({
     standalone: false
 })
 class TestHostComponent {
-    @Input() data: DotPushPublishDialogData;
-    valid: boolean;
+    @Input() data?: DotPushPublishDialogData;
+    valid!: boolean;
     value: any;
 }
 
@@ -143,7 +143,6 @@ xdescribe('DotPushPublishFormComponent', () => {
                 AutoFocusModule,
                 FormsModule,
                 DatePickerModule,
-                DotDialogModule,
                 PushPublishEnvSelectorComponent,
                 ReactiveFormsModule,
                 SelectModule,
@@ -156,9 +155,11 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     beforeEach(() => {
-        jest.spyOn<any>(Intl, 'DateTimeFormat').mockReturnValue({
+        // No type argument: `jest.spyOn` takes either none or two (`<T, K extends keyof T>`), and
+        // only `resolvedOptions` is read from the stub — the rest of `DateTimeFormat` is not.
+        jest.spyOn(Intl, 'DateTimeFormat').mockReturnValue({
             resolvedOptions: () => ({ timeZone: localTZ })
-        });
+        } as unknown as Intl.DateTimeFormat);
         jest.useFakeTimers();
         jest.setSystemTime(mockDate);
         fixture = TestBed.createComponent(TestHostComponent);
@@ -206,9 +207,9 @@ xdescribe('DotPushPublishFormComponent', () => {
             By.css('.push-publish-dialog__timezone-label span')
         ).nativeElement;
         expect(timezoneDropDownContainer.attributes['hidden']).toBeDefined();
-        expect(timezoneDropDown.options.length).toEqual(mockDotTimeZones.length);
+        expect(timezoneDropDown.options!.length).toEqual(mockDotTimeZones.length);
         expect(timeZoneLabel.outerText).toEqual(
-            pushPublishForm.timeZoneOptions.find(({ value }) => value === localTZ)['label']
+            pushPublishForm.timeZoneOptions.find(({ value }) => value === localTZ)!.label
         );
     });
 
@@ -243,7 +244,7 @@ xdescribe('DotPushPublishFormComponent', () => {
             By.css('.push-publish-dialog__timezone-label span')
         ).nativeElement;
         expect(timeZoneLabel.outerText).toEqual(
-            pushPublishForm.timeZoneOptions.find(({ value }) => value === changedTZ)['label']
+            pushPublishForm.timeZoneOptions.find(({ value }) => value === changedTZ)!.label
         );
     });
 
@@ -289,7 +290,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable publish expired on removeOnly data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { removeOnly: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -300,7 +301,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable remove and publish expired on restricted data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { restricted: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -312,7 +313,7 @@ xdescribe('DotPushPublishFormComponent', () => {
         });
 
         it('should disable remove and publish expired on cats data ', () => {
-            hostComponent.data = null;
+            hostComponent.data = undefined;
             fixture.detectChanges();
             hostComponent.data = { cats: true, ...mockPublishFormData };
             fixture.detectChanges();
@@ -331,7 +332,7 @@ xdescribe('DotPushPublishFormComponent', () => {
             customCode: '<h1>Code</h1>',
             ...mockPublishFormData
         };
-        hostComponent.data = null;
+        hostComponent.data = undefined;
         fixture.detectChanges();
         hostComponent.data = mockCustomCode;
         fixture.detectChanges();
@@ -347,7 +348,7 @@ xdescribe('DotPushPublishFormComponent', () => {
     });
 
     it('should be valid when environment selected', () => {
-        pushPublishForm.form.get('environment').setValue(['123']);
+        pushPublishForm.form.get('environment')!.setValue(['123']);
         expect(hostComponent.valid).toEqual(true);
         expect(hostComponent.value).toEqual({
             ...mockFormInitialValue,
@@ -358,17 +359,17 @@ xdescribe('DotPushPublishFormComponent', () => {
     it('should show error messages', () => {
         selectActionButtons = fixture.debugElement.queryAll(By.css('p-selectbutton .p-button'));
         selectActionButtons[2].triggerEventHandler('click', {});
-        pushPublishForm.form.get('environment').setValue(null);
-        pushPublishForm.form.get('environment').markAsDirty();
-        pushPublishForm.form.get('environment').updateValueAndValidity();
+        pushPublishForm.form.get('environment')!.setValue(null);
+        pushPublishForm.form.get('environment')!.markAsDirty();
+        pushPublishForm.form.get('environment')!.updateValueAndValidity();
 
-        pushPublishForm.form.get('publishDate').setValue(null);
-        pushPublishForm.form.get('publishDate').markAsDirty();
-        pushPublishForm.form.get('publishDate').updateValueAndValidity();
+        pushPublishForm.form.get('publishDate')!.setValue(null);
+        pushPublishForm.form.get('publishDate')!.markAsDirty();
+        pushPublishForm.form.get('publishDate')!.updateValueAndValidity();
 
-        pushPublishForm.form.get('expireDate').setValue(null);
-        pushPublishForm.form.get('expireDate').markAsDirty();
-        pushPublishForm.form.get('expireDate').updateValueAndValidity();
+        pushPublishForm.form.get('expireDate')!.setValue(null);
+        pushPublishForm.form.get('expireDate')!.markAsDirty();
+        pushPublishForm.form.get('expireDate')!.updateValueAndValidity();
 
         fixture.detectChanges();
         const errorMessages = fixture.debugElement.queryAll(By.css('.p-invalid'));

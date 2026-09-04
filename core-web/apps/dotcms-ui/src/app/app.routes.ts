@@ -121,7 +121,7 @@ const PORTLETS_ANGULAR: Route[] = [
         },
         resolve: {
             uveConfig: (route: ActivatedRouteSnapshot) => {
-                return inject(EmaAppConfigurationService).get(route.queryParams.url);
+                return inject(EmaAppConfigurationService).get(route.queryParams['url']);
             }
         },
         loadChildren: () => import('@dotcms/portlets/dot-ema').then((m) => m.dotEmaRoutes)

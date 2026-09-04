@@ -42,7 +42,8 @@ describe('DotUsageShellComponent', () => {
                     displayLabel: 'usage.metric.LANGUAGES_COUNT'
                 }
             }
-        }
+        },
+        lastUpdated: '2026-08-17T00:00:00Z'
     };
 
     const createMockService = () => ({

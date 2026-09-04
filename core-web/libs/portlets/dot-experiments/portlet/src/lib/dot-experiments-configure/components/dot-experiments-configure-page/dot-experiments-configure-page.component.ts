@@ -279,7 +279,7 @@ export class DotExperimentsConfigurePageComponent {
             inputValues
         });
 
-        this.#changePageRef.onClose
+        this.#changePageRef?.onClose
             .pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((result?: DotExperimentsChangePageDialogResult) => {
                 this.#changePageRef = null;
@@ -355,7 +355,7 @@ export class DotExperimentsConfigurePageComponent {
                 allowedBaseTypes: [DotCMSBaseTypesContentTypes.HTMLPAGE],
                 browse: SELECT_PAGE_BROWSER_PARAMS
             })
-            .onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
+            ?.onClose.pipe(take(1), takeUntilDestroyed(this.#destroyRef))
             .subscribe((page: DotCMSContentlet | undefined) => {
                 if (!page) {
                     return;

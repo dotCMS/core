@@ -1,14 +1,14 @@
 @let action = $action();
 
-<div class="min-w-16 w-16"></div>
+<div class="w-16 min-w-16"></div>
 <p-select
     (onChange)="onTypeChange($event.value)"
-    [ngModel]="action.type?.key"
+    [ngModel]="action.type.key"
     [options]="typeDropdownOptions$ | async"
     [style]="{ width: '100%' }"
     [placeholder]="$actionTypePlaceholder()"
     [filter]="true"
-    class="min-w-48 max-w-48"
+    class="max-w-48 min-w-48"
     appendTo="body" />
 <dot-serverside-condition
     (parameterValueChange)="onParameterValueChange($event)"

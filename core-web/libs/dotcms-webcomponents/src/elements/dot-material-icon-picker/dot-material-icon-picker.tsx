@@ -17,11 +17,13 @@ import '@material/mwc-icon';
     styleUrl: 'dot-material-icon-picker.scss'
 })
 export class DotMaterialIcon {
-    @Element() element: HTMLElement;
+    @Element() element!: HTMLElement;
 
-    @State() showSuggestions: boolean;
+    /** Never assigned before the first render; the two consumers below both treat it as falsy. */
+    @State() showSuggestions = false;
     @State() suggestionArr: string[] = [];
-    @State() selectedSuggestionIndex: number;
+    /** Undefined when no suggestion is highlighted, which is what the three clears below set. */
+    @State() selectedSuggestionIndex?: number;
 
     /** Value for input placeholder */
     @Prop({ reflect: true }) placeholder: string = '';
@@ -35,10 +37,10 @@ export class DotMaterialIcon {
     value = '';
 
     /** Size value set for font-size */
-    @Prop({ mutable: true, reflect: true }) size: string = null;
+    @Prop({ mutable: true, reflect: true }) size?: string;
 
     /** Show/Hide color picker */
-    @Prop({ mutable: true, reflect: true }) showColor: string = null;
+    @Prop({ mutable: true, reflect: true }) showColor?: string;
 
     /** Color value set from the input */
     @Prop({ mutable: true, reflect: true })
@@ -52,7 +54,7 @@ export class DotMaterialIcon {
     @Prop({ reflect: true }) suggestionlist: string[] = MaterialIconClasses;
 
     @Event()
-    dotValueChange: EventEmitter<{ name: string; value: string; colorValue: string }>;
+    dotValueChange!: EventEmitter<{ name: string; value: string; colorValue: string }>;
 
     @Listen('click', { target: 'window' })
     handleWindowClick(e: Event) {
@@ -91,8 +93,8 @@ export class DotMaterialIcon {
         this.suggestionArr = this.findMatch(match);
 
         if (resetSearch) {
-            const input: HTMLInputElement = this.element.querySelector('.dot-material-icon__input');
-            input.focus();
+            // Absent before the first render; there is nothing to focus then.
+            this.element.querySelector<HTMLInputElement>('.dot-material-icon__input')?.focus();
         }
     };
 
@@ -244,7 +246,7 @@ export class DotMaterialIcon {
         });
     }
 
-    private getColorPicker(show: string) {
+    private getColorPicker(show: string | undefined) {
         return show === 'true' ? (
             <div>
                 <label htmlFor="iconColor" class="dot-material-icon__color-label">

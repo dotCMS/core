@@ -52,17 +52,17 @@ describe('DotAnalyticsErrorComponent', () => {
         });
 
         it('should have analytics error container', () => {
-            const errorContainer = spectator.query(byTestId('analytics-error'));
+            const errorContainer = spectator.query(byTestId('analytics-error'))!;
             expect(errorContainer).toExist();
         });
 
         it('should render dot-empty-container', () => {
-            const emptyContainer = spectator.query(DotEmptyContainerComponent);
+            const emptyContainer = spectator.query(DotEmptyContainerComponent)!;
             expect(emptyContainer).toExist();
         });
 
         it('should pass correct configuration to dot-empty-container', () => {
-            const emptyContainer = spectator.query(DotEmptyContainerComponent);
+            const emptyContainer = spectator.query(DotEmptyContainerComponent)!;
             expect(emptyContainer).toExist();
             expect(emptyContainer.configuration).toBeDefined();
             expect(emptyContainer.hideContactUsLink).toBe(true);

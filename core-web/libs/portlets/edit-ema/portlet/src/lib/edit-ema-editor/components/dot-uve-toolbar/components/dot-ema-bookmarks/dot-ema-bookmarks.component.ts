@@ -37,7 +37,11 @@ export class DotEmaBookmarksComponent implements OnInit {
     private readonly destroyRef = inject(DestroyRef);
     protected readonly store = inject(UVEStore);
 
-    favoritePage: DotCMSContentlet;
+    /**
+     * The bookmark for the current page, or `undefined` when there is none — the fetch reads
+     * `contentlets[0]` of a possibly-empty list, which is exactly what `bookmarked` reflects.
+     */
+    favoritePage?: DotCMSContentlet;
 
     bookmarked = signal(false);
     loading = signal(false);
@@ -81,12 +85,22 @@ export class DotEmaBookmarksComponent implements OnInit {
      * @memberof DotEmaBookmarksComponent
      */
     private fetchFavoritePage(url: string): void {
+        const userId = this.store.uveCurrentUser()?.userId;
+
+        // The service interpolates this straight into an Elasticsearch query as `+owner:${userId}`,
+        // so an absent user would send `+owner:` — malformed rather than empty. With no current user
+        // there are no favourites to fetch, and the loading flag is left off rather than started and
+        // never resolved.
+        if (!userId) {
+            return;
+        }
+
         this.loading.set(true);
 
         this.dotFavoritePageService
             .get({
                 url,
-                userId: this.store.uveCurrentUser()?.userId,
+                userId,
                 limit: 10
             })
             .pipe(

@@ -37,10 +37,18 @@ import {
 
 import { DEFAULT_PERSONA, PERSONA_KEY } from '../shared/consts';
 import { dotPageContainerStructureMock } from '../shared/mocks';
-import { ContentletDragPayload, ContentTypeDragPayload } from '../shared/models';
+import { ContentletDragPayload, ContentTypeDragPayload, PageContainer } from '../shared/models';
 import { Orientation } from '../store/models';
 
-const generatePageAndUser = ({ locked, lockedBy, userId }) => ({
+const generatePageAndUser = ({
+    locked,
+    lockedBy,
+    userId
+}: {
+    locked: boolean;
+    lockedBy: string;
+    userId: string;
+}) => ({
     page: {
         locked,
         lockedBy
@@ -372,7 +380,7 @@ describe('utils functions', () => {
 
         it('should add container to pageContainers if it does not exist - issue #31790', () => {
             // Current page with no containers
-            const pageContainers = [];
+            const pageContainers: PageContainer[] = [];
 
             // Container where we want to delete the contentlet
             const container = {
@@ -565,7 +573,7 @@ describe('utils functions', () => {
 
         it('should add container to pageContainers if it does not exist - issue #31790', () => {
             // Current page with no containers
-            const pageContainers = [];
+            const pageContainers: PageContainer[] = [];
 
             // Container where we want to insert the contentlet
             const container = {
@@ -611,7 +619,7 @@ describe('utils functions', () => {
 
         it('should add container to pageContainers and insert in specific position - issue #31790', () => {
             // Current page with no containers
-            const pageContainers = [];
+            const pageContainers: PageContainer[] = [];
 
             // Container where we want to insert the contentlet
             const container = {

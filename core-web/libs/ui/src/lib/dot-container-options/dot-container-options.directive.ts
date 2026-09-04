@@ -34,7 +34,7 @@ export class DotContainerOptionsDirective implements OnInit {
     private readonly dotMessageService = inject(DotMessageService);
     private readonly changeDetectorRef = inject(ChangeDetectorRef);
 
-    private readonly control: Select;
+    private readonly control: Select | null;
     // Fetch a generous page so every matching Container is shown in the grouped dropdown.
     // The dropdown also filters server-side as the user types (see onFilter), so this is
     // the upper bound of options shown at once, not the total the user can reach.
@@ -70,7 +70,12 @@ export class DotContainerOptionsDirective implements OnInit {
 
     ngOnInit() {
         this.fetchContainerOptions().subscribe((options) => {
-            this.control.options = this.control.options || options; // avoid overwriting if they were already set
+            if (!this.control) {
+                return;
+            }
+
+            // avoid overwriting if they were already set
+            this.control.options = this.control.options || options;
         });
     }
 
@@ -81,7 +86,7 @@ export class DotContainerOptionsDirective implements OnInit {
             map((containerEntities) => {
                 const options = containerEntities
                     .map((container) => ({
-                        label: container.title,
+                        label: container.title ?? '',
                         value: container,
                         inactive: false
                     }))
@@ -105,6 +110,10 @@ export class DotContainerOptionsDirective implements OnInit {
     }
 
     private setOptions(options: Array<DotDropdownGroupSelectOption<DotContainer>>) {
+        if (!this.control) {
+            return;
+        }
+
         this.control.options = [...options];
         this.changeDetectorRef.detectChanges();
     }
@@ -141,7 +150,9 @@ export class DotContainerOptionsDirective implements OnInit {
     private getContainerGroupedByHost(options: DotDropdownSelectOption<DotContainer>[]): {
         [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
     } {
-        return options.reduce((acc, option) => {
+        return options.reduce<{
+            [key: string]: { items: DotDropdownSelectOption<DotContainer>[] };
+        }>((acc, option) => {
             const hostname = option.value.hostName || DEFAULT_HOST_NAME;
 
             if (!acc[hostname]) {

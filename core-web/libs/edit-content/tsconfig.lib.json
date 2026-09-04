@@ -7,6 +7,25 @@
         "inlineSources": true,
         "types": []
     },
-    "exclude": ["src/test-setup.ts", "src/**/*.spec.ts", "jest.config.ts", "src/**/*.test.ts"],
+    // Test fixtures are excluded alongside the specs. They import `@dotcms/utils-testing`,
+    // which references `jest`, and this config sets `types: []` — so as root files of the
+    // production program they reported 27 `Cannot find name 'jest'` errors that had nothing
+    // to do with this library's sources. They are still fully type-checked, by
+    // tsconfig.spec.json, where the jest types exist.
+    //
+    // Note this only removes them as *root* files: `exclude` filters the `include` glob and
+    // does not stop tsc from pulling a file in when something imports it. That is what makes
+    // the change safe — no production file imports any of these fixtures, so nothing that
+    // ships stops being checked.
+    "exclude": [
+        "src/test-setup.ts",
+        "src/**/*.spec.ts",
+        "jest.config.ts",
+        "src/**/*.test.ts",
+        "src/**/mocks.ts",
+        "src/**/mocks/*.ts",
+        "src/**/*.mock.ts",
+        "src/**/*.mocks.ts"
+    ],
     "include": ["src/**/*.ts"]
 }

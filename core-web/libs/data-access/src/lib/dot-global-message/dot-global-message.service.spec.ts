@@ -7,8 +7,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotGlobalMessageService } from './dot-global-message.service';
 
-import { DotMessageService } from '../dot-alert-confirm/dot-alert-confirm.service';
 import { DotEventsService } from '../dot-events/dot-events.service';
+import { DotMessageService } from '../dot-messages/dot-messages.service';
 
 xdescribe('DotGlobalMessageService', () => {
     let dotGlobalMessageService: DotGlobalMessageService;

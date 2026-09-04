@@ -38,10 +38,10 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
     destroy$ = this.destroy.asObservable();
 
     @Input()
-    saveButtonDisabled: boolean;
+    saveButtonDisabled = false;
 
     @Input()
-    saveButtonLoading: boolean;
+    saveButtonLoading = false;
 
     @Output()
     save: EventEmitter<MouseEvent | KeyboardEvent> = new EventEmitter();
@@ -58,11 +58,11 @@ export class DotFormDialogComponent implements OnInit, OnDestroy {
                 .subscribe((e: Event) => {
                     const pos = this.getYPosition(e);
                     const target = e.target as HTMLDivElement;
-                    target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : null;
+                    target.style.boxShadow = pos > 10 ? 'inset 0px 3px 20px 0 #00000026' : '';
                 });
         }
 
-        fromEvent(this.el.nativeElement, 'keydown')
+        fromEvent<KeyboardEvent>(this.el.nativeElement, 'keydown')
             .pipe(takeUntil(this.destroy$))
             .subscribe((keyboardEvent: KeyboardEvent) => {
                 const nodeName = (keyboardEvent.target as Element).nodeName;

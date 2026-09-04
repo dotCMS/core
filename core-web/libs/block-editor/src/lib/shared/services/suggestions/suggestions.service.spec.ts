@@ -1,4 +1,8 @@
-import { HttpClientTestingModule, HttpTestingController } from '@angular/common/http/testing';
+import {
+    HttpClientTestingModule,
+    HttpTestingController,
+    TestRequest
+} from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 
 import { SuggestionsService } from './suggestions.service';
@@ -26,7 +30,7 @@ describe('SuggestionsService', () => {
     });
 
     describe('getContentlets', () => {
-        const flushEmpty = (req: { flush: (body: unknown) => void }) =>
+        const flushEmpty = (req: TestRequest) =>
             req.flush({ entity: { jsonObjectView: { contentlets: [] } } });
 
         it('builds a multi-token query that requires ALL tokens (AC2)', () => {

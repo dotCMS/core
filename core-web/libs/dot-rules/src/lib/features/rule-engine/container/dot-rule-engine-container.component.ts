@@ -6,7 +6,7 @@ import { ActivatedRoute, Params } from '@angular/router';
 
 import { filter, map, mergeMap, reduce, take, takeUntil } from 'rxjs/operators';
 
-import { CwError, HttpCode, LoggerService } from '@dotcms/dotcms-js';
+import { HttpCode, LoggerService } from '@dotcms/dotcms-js';
 
 import { ActionService } from '../../../services/api/action/Action';
 import { BundleService, IPublishEnvironment } from '../../../services/api/bundle/bundle-service';
@@ -22,20 +22,34 @@ import {
 import { ServerSideTypeModel } from '../../../services/api/serverside-field/ServerSideFieldModel';
 import {
     ConditionActionEvent,
+    ConditionCreateEvent,
+    ConditionDeleteEvent,
     ConditionGroupActionEvent,
+    ConditionGroupCreateEvent,
     RuleActionActionEvent,
     RuleActionEvent
 } from '../../../services/models/rule-event.model';
 import { RuleViewService } from '../../../services/ui/dot-view-rule-service';
 import { DotRuleEngineComponent } from '../dot-rule-engine.component';
 
-// Re-export for backward compatibility
-export {
+// Re-export for backward compatibility. `export type` because `isolatedModules` is on: the
+// compiler cannot tell a re-exported interface from a re-exported value without it.
+export type {
     ConditionActionEvent,
     ConditionGroupActionEvent,
     RuleActionActionEvent,
     RuleActionEvent
 } from '../../../services/models/rule-event.model';
+
+/**
+ * The shape `_handle403Error` actually reads. Declared structurally rather than as
+ * `HttpErrorResponse` so a test can hand it a literal, and so it is obvious that a status and a
+ * nested error string are the only things consulted.
+ */
+interface ForbiddenErrorResponse {
+    status?: number;
+    error?: { error?: string };
+}
 
 /**
  * Container component for the rule engine that manages all state and API calls
@@ -68,7 +82,8 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     saving = signal(false);
     pageId = signal('');
     isContentletHost = signal(false);
-    globalError = signal<string>(null);
+    /** `null` when there is nothing to show; the template reads it through `@if`. */
+    globalError = signal<string | null>(null);
 
     private destroy$: Subject<boolean> = new Subject<boolean>();
 
@@ -120,7 +135,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             });
     }
 
-    alphaSort(key): (a, b) => number {
+    alphaSort<T>(key: keyof T): (a: T, b: T) => number {
         return (a, b) => {
             let x;
             if (a[key] > b[key]) {
@@ -144,7 +159,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
      *
      * @param event
      */
-    onCreateRule(event): void {
+    onCreateRule(event: { type: string }): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onCreateRule', event);
         const currentRules = this.rules();
         const priority = currentRules.length ? currentRules[0].priority + 1 : 1;
@@ -171,7 +186,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     const newRules = this.rules().filter((arrayRule) => arrayRule.key !== rule.key);
                     this.rules.set(newRules);
                 },
-                (e: CwError) => {
+                (e: HttpErrorResponse) => {
                     return this._handle403Error(e) ? null : { invalid: e.message };
                 }
             );
@@ -199,7 +214,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         rule._expanded = <boolean>event.payload.value;
         if (rule._expanded) {
             let obs2: Observable<ConditionGroupModel>;
-            if (rule._conditionGroups.length === 0) {
+            if (rule._conditionGroups.length === 0 && rule.isPersisted()) {
                 const obs: Observable<ConditionGroupModel[]> =
                     this._conditionGroupService.allAsArray(
                         rule.key,
@@ -222,8 +237,12 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     (group: ConditionGroupModel, conditions: ConditionModel[]) => {
                         if (conditions) {
                             conditions.forEach((condition: ConditionModel) => {
-                                condition.type =
-                                    this._ruleService._conditionTypes[condition.conditionlet];
+                                // A condition the user has not typed yet has no conditionlet;
+                                // leaving `type` alone keeps its 'NoSelection' default.
+                                if (condition.conditionlet) {
+                                    condition.type =
+                                        this._ruleService._conditionTypes[condition.conditionlet];
+                                }
                             });
                         }
 
@@ -282,7 +301,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                 }
             );
 
-            if (rule._ruleActions.length === 0) {
+            if (rule._ruleActions.length === 0 && rule.isPersisted()) {
                 this._ruleActionService
                     .allAsArray(
                         rule.key,
@@ -304,7 +323,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         }
     }
 
-    onCreateRuleAction(event: RuleActionActionEvent): void {
+    onCreateRuleAction(event: RuleActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onCreateRuleAction', event);
         const rule = event.payload.rule;
         const priority = rule._ruleActions.length
@@ -321,7 +340,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onDeleteRuleAction', event);
         const rule = event.payload.rule;
         const ruleAction = event.payload.ruleAction;
-        if (ruleAction.isPersisted()) {
+        if (ruleAction.isPersisted() && rule.isPersisted()) {
             this._ruleActionService.remove(rule.key, ruleAction).subscribe((_result) => {
                 rule._ruleActions = rule._ruleActions.filter((aryAction) => {
                     return aryAction.key !== ruleAction.key;
@@ -352,11 +371,11 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onUpdateRuleActionParameter(event: RuleActionActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onUpdateRuleActionParameter');
         const ruleAction = event.payload.ruleAction;
-        ruleAction.setParameter(event.payload.name, String(event.payload.value));
+        ruleAction.setParameter(event.payload.name ?? '', String(event.payload.value));
         this.patchAction(event.payload.rule, ruleAction);
     }
 
-    onCreateConditionGroup(event: ConditionGroupActionEvent): void {
+    onCreateConditionGroup(event: ConditionGroupCreateEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onCreateConditionGroup');
         const rule = event.payload.rule;
         const priority = rule._conditionGroups.length
@@ -388,16 +407,18 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onDeleteConditionGroup(event: ConditionGroupActionEvent): void {
         const rule = event.payload.rule;
         const group = event.payload.conditionGroup;
-        this._conditionGroupService.remove(rule.key, group).subscribe(() => {
-            this.refreshRules();
-        });
+        if (rule.isPersisted()) {
+            this._conditionGroupService.remove(rule.key, group).subscribe(() => {
+                this.refreshRules();
+            });
+        }
         rule._conditionGroups = rule._conditionGroups.filter(
             (aryGroup) => aryGroup.key !== group.key
         );
         this.refreshRules();
     }
 
-    onCreateCondition(event: ConditionActionEvent): void {
+    onCreateCondition(event: ConditionCreateEvent): void {
         const rule = event.payload.rule;
         this.ruleUpdating(rule, true);
         try {
@@ -431,7 +452,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             // replace the condition rather than mutate it to force event for 'onPush' NG2 components.
             condition = new ConditionModel({
                 _type: type,
-                id: condition.key,
+                id: condition.key ?? undefined,
                 operator: condition.operator,
                 priority: condition.priority
             });
@@ -445,7 +466,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     onUpdateConditionParameter(event: ConditionActionEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onUpdateConditionParameter');
         const condition = event.payload.condition;
-        condition.setParameter(event.payload.name, String(event.payload.value));
+        condition.setParameter(event.payload.name ?? '', String(event.payload.value));
         this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
     }
 
@@ -456,7 +477,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.patchCondition(event.payload.rule, event.payload.conditionGroup, condition);
     }
 
-    onDeleteCondition(event: ConditionActionEvent): void {
+    onDeleteCondition(event: ConditionDeleteEvent): void {
         this.loggerService.info('DotRuleEngineContainerComponent', 'onDeleteCondition', event);
         const rule = event.payload.rule;
         const group = event.payload.conditionGroup;
@@ -472,7 +493,9 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                         'condition',
                         'Remove Condition and remove Groups is empty'
                     );
-                    this._conditionGroupService.remove(rule.key, group).subscribe();
+                    if (rule.isPersisted()) {
+                        this._conditionGroupService.remove(rule.key, group).subscribe();
+                    }
                     rule._conditionGroups = rule._conditionGroups.filter(
                         (aryGroup) => aryGroup.key !== group.key
                     );
@@ -502,7 +525,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         }
     }
 
-    ruleUpdating(rule, disable = true): void {
+    ruleUpdating(rule: RuleModel, disable = true): void {
         if (disable && rule.enabled && rule.key) {
             this.loggerService.info(
                 'DotRuleEngineContainerComponent',
@@ -517,7 +540,11 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         rule._errors = null;
     }
 
-    ruleUpdated(rule: RuleModel, errors?: { [key: string]: string | Error }): void {
+    /**
+     * `errors` is `null` when a 403 was already surfaced by `_handle403Error` — every error
+     * callback here passes `handled ? null : { invalid: e.message }`, so the type has to allow it.
+     */
+    ruleUpdated(rule: RuleModel, errors?: { [key: string]: string | Error } | null): void {
         rule._saving = false;
         if (!errors) {
             rule._saved = true;
@@ -531,6 +558,19 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.ruleUpdating(rule, false);
         if (disable && rule.enabled) {
             rule.enabled = false;
+        }
+
+        if (!rule.isPersisted()) {
+            // An unsaved rule has no server-side id. This used to interpolate `null` straight
+            // into `/rules/null/conditionGroups/`, which could only 404. Unreachable in practice
+            // — a group only has a key once its rule was saved — but now it says so.
+            this.loggerService.info(
+                'DotRuleEngineContainerComponent',
+                'patchConditionGroup',
+                'rule is not saved yet'
+            );
+
+            return;
         }
 
         this._conditionGroupService.updateConditionGroup(rule.key, group).subscribe((_result) => {
@@ -550,7 +590,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     () => {
                         this.ruleUpdated(rule);
                     },
-                    (e: CwError) => {
+                    (e: HttpErrorResponse) => {
                         const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
                         this.ruleUpdated(rule, ruleError);
                         this.initRules();
@@ -561,7 +601,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     () => {
                         this.ruleUpdated(rule);
                     },
-                    (e: CwError) => {
+                    (e: HttpErrorResponse) => {
                         const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
                         this.ruleUpdated(rule, ruleError);
                         this.initRules();
@@ -578,12 +618,23 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
     patchAction(rule: RuleModel, ruleAction: ActionModel): void {
         if (ruleAction.isValid()) {
             this.ruleUpdating(rule, false);
+            if (!rule.isPersisted()) {
+                // The rule id goes out as `owningRule` in the request body; sending `null` there
+                // would orphan the action. See `patchConditionGroup` for the same guard.
+                this.loggerService.info(
+                    'DotRuleEngineContainerComponent',
+                    'patchAction',
+                    'rule is not saved yet'
+                );
+
+                return;
+            }
             if (!ruleAction.isPersisted()) {
                 this._ruleActionService.createRuleAction(rule.key, ruleAction).subscribe(
                     (_) => {
                         this.ruleUpdated(rule);
                     },
-                    (e: CwError) => {
+                    (e: HttpErrorResponse) => {
                         const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
                         this.ruleUpdated(rule, ruleError);
                     }
@@ -593,7 +644,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     (_result) => {
                         this.ruleUpdated(rule);
                     },
-                    (e: CwError) => {
+                    (e: HttpErrorResponse) => {
                         const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
                         this.ruleUpdated(rule, ruleError);
                     }
@@ -611,12 +662,23 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         try {
             if (condition.isValid()) {
                 this.ruleUpdating(rule, false);
-                if (condition.isPersisted()) {
+                if (!group.isPersisted() && condition.isPersisted()) {
+                    // A saved condition always sits in a saved group.
+                    this.loggerService.info(
+                        'DotRuleEngineContainerComponent',
+                        'patchCondition',
+                        'condition is saved but its group is not'
+                    );
+
+                    return;
+                }
+
+                if (condition.isPersisted() && group.isPersisted()) {
                     this._conditionService.save(group.key, condition).subscribe(
                         (_result) => {
                             this.ruleUpdated(rule);
                         },
-                        (e: CwError) => {
+                        (e: HttpErrorResponse) => {
                             const ruleError = this._handle403Error(e)
                                 ? null
                                 : { invalid: e.message };
@@ -625,35 +687,25 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
                     );
                 } else {
                     if (!group.isPersisted()) {
+                        if (!rule.isPersisted()) {
+                            this.loggerService.info(
+                                'DotRuleEngineContainerComponent',
+                                'patchCondition',
+                                'rule is not saved yet'
+                            );
+
+                            return;
+                        }
+
                         this._conditionGroupService
                             .createConditionGroup(rule.key, group)
-                            .subscribe((_foo) => {
-                                this._conditionService.add(group.key, condition).subscribe(
-                                    () => {
-                                        group.conditions[condition.key] = true;
-                                        this.ruleUpdated(rule);
-                                    },
-                                    (e: CwError) => {
-                                        const ruleError = this._handle403Error(e)
-                                            ? null
-                                            : { invalid: e.message };
-                                        this.ruleUpdated(rule, ruleError);
-                                    }
-                                );
+                            .subscribe((savedGroup) => {
+                                // Read the key off the create's own result rather than the model
+                                // captured above: `createConditionGroup` is what assigns it.
+                                this.addCondition(rule, savedGroup, condition);
                             });
                     } else {
-                        this._conditionService.add(group.key, condition).subscribe(
-                            () => {
-                                group.conditions[condition.key] = true;
-                                this.ruleUpdated(rule);
-                            },
-                            (e: CwError) => {
-                                const ruleError = this._handle403Error(e)
-                                    ? null
-                                    : { invalid: e.message };
-                                this.ruleUpdated(rule, ruleError);
-                            }
-                        );
+                        this.addCondition(rule, group, condition);
                     }
                 }
             } else {
@@ -668,8 +720,42 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
             }
         } catch (e) {
             this.loggerService.error(e);
-            this.ruleUpdated(rule, { invalid: e.message });
+            this.ruleUpdated(rule, { invalid: e instanceof Error ? e.message : String(e) });
         }
+    }
+
+    /**
+     * Add a condition to a group that is already saved, and record it on the group once the
+     * server has given it a key. Lifted out of `patchCondition`, where the same block appeared
+     * twice with the second copy reading a key the first had only just set.
+     */
+    private addCondition(
+        rule: RuleModel,
+        group: ConditionGroupModel,
+        condition: ConditionModel
+    ): void {
+        if (!group.isPersisted()) {
+            this.loggerService.info(
+                'DotRuleEngineContainerComponent',
+                'addCondition',
+                'group was not saved'
+            );
+
+            return;
+        }
+
+        this._conditionService.add(group.key, condition).subscribe(
+            (savedCondition) => {
+                if (savedCondition.key) {
+                    group.conditions[savedCondition.key] = true;
+                }
+                this.ruleUpdated(rule);
+            },
+            (e: HttpErrorResponse) => {
+                const ruleError = this._handle403Error(e) ? null : { invalid: e.message };
+                this.ruleUpdated(rule, ruleError);
+            }
+        );
     }
 
     prioritySortFn<T extends { priority: number }>(a: T, b: T): number {
@@ -681,8 +767,8 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
 
         this.pageId.set('');
 
-        const pageIdParams = this.route.params.pipe(map((params: Params) => params.pageId));
-        const queryParams = this.route.queryParams.pipe(map((params: Params) => params.realmId));
+        const pageIdParams = this.route.params.pipe(map((params: Params) => params['pageId']));
+        const queryParams = this.route.queryParams.pipe(map((params: Params) => params['realmId']));
 
         merge(pageIdParams, queryParams)
             .pipe(
@@ -703,7 +789,7 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.route.queryParams
             .pipe(take(1))
             .subscribe((params: Params) =>
-                this.isContentletHost.set(params.isContentletHost === 'true')
+                this.isContentletHost.set(params['isContentletHost'] === 'true')
             );
     }
 
@@ -713,9 +799,8 @@ export class DotRuleEngineContainerComponent implements OnDestroy {
         this.loading.set(false);
     }
 
-    private _handle403Error(e: CwError): boolean {
+    private _handle403Error(error: ForbiddenErrorResponse): boolean {
         let handled = false;
-        const error = e as unknown as HttpErrorResponse;
         try {
             if (error && error?.status === HttpCode.FORBIDDEN) {
                 const errorJson = error.error;

@@ -1,16 +1,19 @@
+import { Chart, LegendItem } from 'chart.js';
+
 const COLOR_PALETTE_GRAY_100 = getComputedStyle(document.body).getPropertyValue(
     '--color-palette-black-op-10'
 );
 
-const getOrCreateLegendList = (chart) => {
+const getOrCreateLegendList = (chart: Chart) => {
     if (!chart || !chart.canvas) {
         return null;
     }
 
     // Start from the canvas and traverse up to find the parent container
     // The legend-wrapper is a sibling of the p-chart component
-    let current = chart.canvas;
-    let legendContainer = null;
+    // `HTMLElement`, not the canvas's own type: the loop below walks up through plain elements.
+    let current: HTMLElement | null = chart.canvas;
+    let legendContainer: Element | null = null;
 
     // Traverse up the DOM tree to find a parent that contains the legend-wrapper
     while (current && current.parentElement && !legendContainer) {
@@ -73,7 +76,7 @@ const getOrCreateLegendList = (chart) => {
  */
 export const htmlLegendPlugin = {
     id: 'dotHtmlLegend',
-    afterUpdate(chart) {
+    afterUpdate(chart: Chart) {
         const ul = getOrCreateLegendList(chart);
 
         // If legend container not found, skip rendering
@@ -85,27 +88,37 @@ export const htmlLegendPlugin = {
             ul.firstChild.remove();
         }
 
-        const items = chart.options.plugins.legend.labels.generateLabels(chart);
+        // Every hop is optional in chart.js's option types; the default legend plugin supplies
+        // `generateLabels`, and with no labels to generate there is no legend to render.
+        const items = chart.options.plugins?.legend?.labels?.generateLabels?.(chart) ?? [];
 
-        items.forEach((item) => {
+        items.forEach((item: LegendItem) => {
             const li = document.createElement('li');
             li.style.cursor = 'pointer';
             li.style.padding = '.5rem';
-            li.style.background = item.fillStyle;
+            // chart.js types these `Color | undefined`; only a string means anything as CSS.
+            li.style.background = String(item.fillStyle ?? '');
             li.style.borderRadius = '8px';
-            li.style.backgroundColor = item.hidden ? COLOR_PALETTE_GRAY_100 : item.fillStyle;
+            li.style.backgroundColor = item.hidden
+                ? COLOR_PALETTE_GRAY_100
+                : String(item.fillStyle ?? '');
 
             li.onclick = () => {
-                chart.setDatasetVisibility(
-                    item.datasetIndex,
-                    !chart.isDatasetVisible(item.datasetIndex)
-                );
+                // `datasetIndex` is optional on a `LegendItem` — it is absent for a legend entry that
+                // does not map to a dataset, and there is nothing to toggle for one of those.
+                const { datasetIndex } = item;
+
+                if (datasetIndex === undefined) {
+                    return;
+                }
+
+                chart.setDatasetVisibility(datasetIndex, !chart.isDatasetVisible(datasetIndex));
 
                 chart.update();
             };
 
             const textContainer = document.createElement('p');
-            textContainer.style.color = item.fontColor;
+            textContainer.style.color = String(item.fontColor ?? '');
             textContainer.style.margin = '0';
             textContainer.style.padding = '0';
 

@@ -1,29 +1,21 @@
 import { describe, expect, it } from '@jest/globals';
 import { signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
-import { NEVER, of, throwError } from 'rxjs';
+import { NEVER, Observable, of, throwError } from 'rxjs';
 
 import { PushPublishService } from '@dotcms/data-access';
 import { DotEnvironment } from '@dotcms/dotcms-models';
 
 import { withPushPublishEnvironments } from './withPushPublishEnvironments';
 
-import {
-    DotContentDriveSortOrder,
-    DotContentDriveState,
-    DotContentDriveStatus
-} from '../../../shared/models';
+import { DotContentDriveState } from '../../../shared/models';
+import { DOT_CONTENT_DRIVE_INITIAL_STATE } from '../../dot-content-drive.store';
 
 const initialState: DotContentDriveState = {
-    currentSite: null,
+    // Seeded from the store's own initial state so this fixture cannot drift from it; only the
+    // keys this feature's tests care about are overridden.
+    ...DOT_CONTENT_DRIVE_INITIAL_STATE,
     path: '',
-    filters: {},
-    items: [],
-    selectedItems: [],
-    status: DotContentDriveStatus.LOADING,
-    totalItems: 0,
-    pagination: { limit: 40, offset: 0 },
-    sort: { field: 'modDate', order: DotContentDriveSortOrder.ASC },
     isTreeExpanded: true
 };
 
@@ -47,7 +39,7 @@ describe('withPushPublishEnvironments', () => {
     });
 
     // Never emits: the lookup is in flight, which is what the third state stands for.
-    const build = (environments = NEVER) => {
+    const build = (environments: Observable<DotEnvironment[]> = NEVER) => {
         getEnvironments.mockReturnValue(environments);
         spectator = createService();
         store = spectator.service;

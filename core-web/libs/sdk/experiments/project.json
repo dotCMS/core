@@ -43,6 +43,9 @@
                     "coverage": true
                 }
             }
+        },
+        "typecheck": {
+            "dependsOn": ["^build"]
         }
     }
 }

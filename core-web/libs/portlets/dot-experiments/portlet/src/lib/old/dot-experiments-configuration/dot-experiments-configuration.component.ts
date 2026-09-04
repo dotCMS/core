@@ -81,7 +81,8 @@ export class DotExperimentsConfigurationComponent implements OnInit {
      * @returns void
      * @memberof DotExperimentsConfigurationComponent
      */
-    goToExperimentList(pageId: string) {
+    // Absent while the experiment loads; the header's back button renders in that window.
+    goToExperimentList(pageId: string | undefined) {
         this.router.navigate(['/edit-page/experiments/', pageId], {
             queryParams: {
                 mode: null,

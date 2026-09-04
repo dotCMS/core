@@ -24,7 +24,7 @@ export class AngularAssetPickerLauncher implements DotAssetPickerLauncher {
         dialogService: DialogService,
         options: DotAssetPickerEntryOptions,
         overrides?: Pick<DynamicDialogConfig, 'baseZIndex'>
-    ): DynamicDialogRef {
+    ): DynamicDialogRef | null {
         return dialogService.open(
             DotAssetPickerComponent,
             buildAssetPickerDialogConfig(buildAssetPickerConfig(options), overrides)

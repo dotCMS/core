@@ -15,7 +15,7 @@ export class DotWorkflowsActionsSelectorFieldService {
     private dotWorkflowsActionsService = inject(DotWorkflowsActionsService);
     private dotHttpErrorManagerService = inject(DotHttpErrorManagerService);
 
-    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject([]);
+    private data$: BehaviorSubject<SelectItemGroup[]> = new BehaviorSubject<SelectItemGroup[]>([]);
 
     /**
      * Get actions grouped by workflows
@@ -62,7 +62,8 @@ export class DotWorkflowsActionsSelectorFieldService {
             const { label, value } = this.getSelectItem(workflow);
 
             return {
-                label,
+                // `SelectItemGroup.label` is required where `SelectItem.label` is not.
+                label: label ?? '',
                 value,
                 items: this.getActionsByWorkflowId(workflow, actions).map(this.getSelectItem)
             };
@@ -71,7 +72,7 @@ export class DotWorkflowsActionsSelectorFieldService {
 
     private getSelectItem({ name, id }: DotCMSWorkflowAction | DotCMSWorkflow): SelectItem {
         return {
-            label: name,
+            label: name ?? '',
             value: id
         };
     }

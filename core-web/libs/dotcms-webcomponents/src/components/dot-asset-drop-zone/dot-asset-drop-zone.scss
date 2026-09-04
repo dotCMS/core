@@ -1,13 +1,13 @@
-@import "../../global/variables";
-@import "../../../../dotcms-scss/shared/colors";
-@import "../../../../dotcms-scss/shared/fonts";
+@use "../../global/variables";
+@use "../../../../dotcms-scss/shared/colors";
+@use "../../../../dotcms-scss/shared/fonts";
 
 dot-asset-drop-zone {
     .dot-asset-drop-zone__indicators {
         --mdc-dialog-scrim-color: transparent;
         --mdc-dialog-max-width: 400px;
         align-items: center;
-        background-color: $color-palette-white-op-80;
+        background-color: colors.$color-palette-white-op-80;
         border: 3px solid transparent;
         bottom: 0;
         display: flex;
@@ -25,7 +25,7 @@ dot-asset-drop-zone {
         &.drag-enter,
         &.active {
             pointer-events: all;
-            border: 3px dashed $color-palette-secondary-500;
+            border: 3px dashed colors.$color-palette-secondary-500;
             opacity: 1;
 
             .dot-asset-drop-zone__icon {
@@ -47,9 +47,9 @@ dot-asset-drop-zone {
 
             span {
                 display: block;
-                color: $color-palette-secondary-500;
+                color: colors.$color-palette-secondary-500;
                 margin-top: -20px;
-                font-size: $font-size-lmd;
+                font-size: fonts.$font-size-lmd;
                 text-align: center;
             }
         }
@@ -59,7 +59,7 @@ dot-asset-drop-zone {
             display: none;
 
             span {
-                font-size: $font-size-md;
+                font-size: fonts.$font-size-md;
             }
         }
     }
@@ -71,11 +71,11 @@ dot-asset-drop-zone {
     }
 
     mwc-icon {
-        color: $color-palette-secondary-500;
+        color: colors.$color-palette-secondary-500;
         --mdc-icon-size: 200px;
     }
 
     mwc-button {
-        @include mwc-dotcms-theme;
+        @include variables.mwc-dotcms-theme;
     }
 }

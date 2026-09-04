@@ -49,9 +49,9 @@ const mockSystemWideConfig = { systemWideOption: 'value' };
 })
 export class MockFormComponent {
     // Host Props
-    formGroup: FormGroup;
-    field: DotCMSContentTypeField;
-    contentlet: DotCMSContentlet;
+    formGroup!: FormGroup;
+    field!: DotCMSContentTypeField;
+    contentlet!: DotCMSContentlet;
 }
 
 describe('DotEditContentWYSIWYGFieldComponent', () => {
@@ -128,11 +128,11 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
         });
 
         it('should render editor selection dropdown', () => {
-            const select = spectator.query(Select);
+            const select = spectator.query(Select)!;
             expect(select).toBeTruthy();
             expect(spectator.query(byTestId('editor-selector'))).toBeTruthy();
             expect(select.options).toEqual(EditorOptions);
-            expect(select.options.length).toBe(EditorOptions.length);
+            expect(select.options!.length).toBe(EditorOptions.length);
         });
 
         it('should render editor selection dropdown and switch to Monaco editor when selected', () => {
@@ -145,7 +145,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const monacoOption = EditorOptions.find((opt) => opt.value === AvailableEditor.Monaco);
             expect(monacoOption).toBeTruthy();
 
-            spectator.triggerEventHandler(Select, 'onChange', { value: monacoOption.value });
+            spectator.triggerEventHandler(Select, 'onChange', { value: monacoOption!.value });
             spectator.detectChanges();
 
             const content = spectator.component.$fieldContent();
@@ -177,7 +177,7 @@ describe('DotEditContentWYSIWYGFieldComponent', () => {
             const spy = jest.spyOn(spectator.component, 'onSelectLanguageVariable');
 
             // Get language variable selector component
-            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent);
+            const languageVariableSelector = spectator.query(DotLanguageVariableSelectorComponent)!;
 
             // Trigger onSelectLanguageVariable event
             const testVariable = '${languageVariable}';

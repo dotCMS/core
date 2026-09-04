@@ -118,9 +118,8 @@ class MockDotAppsService {
     standalone: true
 })
 class MockDotKeyValueComponent {
-    @Input() autoFocus: boolean;
-    @Input() showHiddenField: string;
-    @Input() variables: DotKeyValue[];
+    @Input() showHiddenField!: string;
+    @Input() variables!: DotKeyValue[];
     @Output() updatedList = new EventEmitter<DotKeyValue[]>();
 }
 
@@ -130,8 +129,8 @@ class MockDotKeyValueComponent {
     standalone: true
 })
 class MockDotAppsConfigurationDetailFormComponent {
-    @Input() appConfigured: boolean;
-    @Input() formFields: DotAppsSecret[];
+    @Input() appConfigured!: boolean;
+    @Input() formFields!: DotAppsSecret[];
     @Output() data = new EventEmitter<{ [key: string]: string }>();
     @Output() valid = new EventEmitter<boolean>();
 }
@@ -250,7 +249,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             expect(
                 fixture.debugElement.query(By.css('.dot-apps-configuration-detail__host-name'))
                     .nativeElement.textContent
-            ).toContain(component.apps.sites[0].name);
+            ).toContain(component.apps.sites![0].name);
             expect(fixture.debugElement.query(By.css('dot-key-value-ng'))).toBeFalsy();
         });
 
@@ -297,7 +296,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
 
         it('should have dot-copy-link with appKey value', () => {
             const copyBtn = fixture.debugElement.query(By.css('dot-copy-link')).componentInstance;
-            expect(copyBtn.copy).toBe(component.apps.key);
+            expect(copyBtn.copy()).toBe(component.apps.key);
             expect(copyBtn.label).toBe(component.apps.key);
         });
 
@@ -331,9 +330,13 @@ describe('DotAppsConfigurationDetailComponent', () => {
             const saveBtn = fixture.debugElement.query(By.css('[data-testid="saveBtn"]'));
             saveBtn.triggerEventHandler('click', {});
 
-            expect<(appKey: string, id: string, params: DotAppsSaveData) => Observable<string>>(
-                appsServices.saveSiteConfiguration
-            ).toHaveBeenCalledWith(component.apps.key, component.apps.sites[0].id, transformedData);
+            expect<
+                (appKey: string, id: string, params: DotAppsSaveData) => Observable<string | null>
+            >(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
+                component.apps.key,
+                component.apps.sites![0].id,
+                transformedData
+            );
         });
     });
 
@@ -382,7 +385,6 @@ describe('DotAppsConfigurationDetailComponent', () => {
         it('should show DotKeyValue component with right values', () => {
             const keyValue = fixture.debugElement.query(By.css('dot-key-value-ng'));
             expect(keyValue).toBeTruthy();
-            expect(keyValue.componentInstance.autoFocus).toBe(false);
             expect(keyValue.componentInstance.showHiddenField).toBe(true);
             expect(keyValue.componentInstance.variables).toEqual([
                 { key: 'custom', hidden: false, value: 'test' }
@@ -437,7 +439,7 @@ describe('DotAppsConfigurationDetailComponent', () => {
             saveBtn.triggerEventHandler('click', {});
             expect(appsServices.saveSiteConfiguration).toHaveBeenCalledWith(
                 component.apps.key,
-                component.apps.sites[0].id,
+                component.apps.sites![0].id,
                 transformedData
             );
         });

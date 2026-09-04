@@ -36,8 +36,10 @@ export interface DotExperimentsState {
     status: ComponentStatus;
     sidebar: SidebarStatus;
     hasEnterpriseLicense: boolean;
-    addToBundleContentId: string;
-    pushPublishEnvironments: DotEnvironment[];
+    /** Null except while the Add-to-Bundle dialog is open for a specific experiment. */
+    addToBundleContentId: string | null;
+    /** Null until the route snapshot supplies them, and on a non-Enterprise licence. */
+    pushPublishEnvironments: DotEnvironment[] | null;
 }
 
 const initialState: DotExperimentsState = {
@@ -67,7 +69,8 @@ export interface VmListExperiments {
     sidebar: SidebarStatus;
     pageId: string;
     pageTitle: string;
-    addToBundleContentId: string;
+    /** Null except while the Add-to-Bundle dialog is open. */
+    addToBundleContentId: string | null;
 }
 
 export interface VmCreateExperiments {
@@ -125,7 +128,12 @@ export class DotExperimentsListStore
 
                 if (experimentsWithActions.length) {
                     Object.keys(DotExperimentStatus).forEach((key) =>
-                        grouped.push({ status: DotExperimentStatus[key], experiments: [] })
+                        grouped.push({
+                            // `Object.keys` gives `string[]`, so the lookup needs the enum's own key
+                            // type — every key here comes from that same enum.
+                            status: DotExperimentStatus[key as keyof typeof DotExperimentStatus],
+                            experiments: []
+                        })
                     );
 
                     experimentsWithActions
@@ -466,8 +474,10 @@ export class DotExperimentsListStore
 
     constructor() {
         const route = inject(ActivatedRoute);
-        const hasEnterpriseLicense = route.parent.snapshot.data['isEnterprise'];
-        const pushPublishEnvironments = route.parent.snapshot.data['pushPublishEnvironments'];
+        // `parent` is null at the root of a routing tree. Both come from an ancestor this portlet is
+        // always mounted under, and the state members above admit the absent case.
+        const hasEnterpriseLicense = route.parent?.snapshot.data['isEnterprise'];
+        const pushPublishEnvironments = route.parent?.snapshot.data['pushPublishEnvironments'];
         super({
             ...initialState,
             hasEnterpriseLicense,
@@ -483,7 +493,7 @@ export class DotExperimentsListStore
     private getActionMenuItemsByExperiment(
         experiment: DotExperiment,
         hasEnterpriseLicense: boolean,
-        pushPublishEnvironments: DotEnvironment[]
+        pushPublishEnvironments: DotEnvironment[] | null
     ): MenuItem[] {
         return [
             // Go to Configuration Action
@@ -619,7 +629,7 @@ export class DotExperimentsListStore
             // Push Publish Action
             {
                 label: this.dotMessageService.get('contenttypes.content.push_publish'),
-                visible: hasEnterpriseLicense && !!pushPublishEnvironments.length,
+                visible: hasEnterpriseLicense && !!pushPublishEnvironments?.length,
                 command: () =>
                     this.dotPushPublishDialogService.open({
                         assetIdentifier: experiment.id,

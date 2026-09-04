@@ -105,7 +105,7 @@ describe('DefaultValuePropertyComponent', () => {
         const fieldValidationmessage: DebugElement = fixture.debugElement.query(
             By.css('dot-field-validation-message')
         );
-        comp.group.get('name').setValue('');
+        comp.group.get('name')!.setValue('');
         fixture.detectChanges();
 
         expect(fieldValidationmessage.componentInstance.defaultMessage).toContain('default error');

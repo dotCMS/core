@@ -49,7 +49,11 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         });
     }));
 
-    function createComponent(field: DotCMSContentTypeField, isSmall = false) {
+    /** Nullable per field: two tests build one whose `variable` is missing or null. */
+    function createComponent(
+        field: Partial<{ [K in keyof DotCMSContentTypeField]: DotCMSContentTypeField[K] | null }>,
+        isSmall = false
+    ) {
         fixture = TestBed.createComponent(ContentTypesFieldDragabbleItemComponent);
         fixture.componentRef.setInput('field', field);
         fixture.componentRef.setInput('isSmall', isSmall);
@@ -96,7 +100,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         fixture.detectChanges();
 
         const copyButton: DebugElement = de.query(By.css('dot-copy-link'));
-        expect(copyButton.componentInstance.copy).toBe('test');
+        expect(copyButton.componentInstance.copy()).toBe('test');
         expect(copyButton.componentInstance.label).toBe('test');
     });
 
@@ -161,7 +165,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
         expect(button).not.toBeNull();
         expect(button.attributes['icon']).toEqual('pi pi-trash');
 
-        let resp: DotCMSContentTypeField;
+        let resp: DotCMSContentTypeField | undefined;
         comp.remove.subscribe((fieldItem) => (resp = fieldItem));
         button.triggerEventHandler('click', {
             stopPropagation: () => {
@@ -203,7 +207,7 @@ describe('ContentTypesFieldDragabbleItemComponent', () => {
 
         createComponent(mockField);
 
-        let resp: DotCMSContentTypeField;
+        let resp: DotCMSContentTypeField | undefined;
         comp.edit.subscribe((field) => (resp = field));
 
         de.triggerEventHandler('click', {

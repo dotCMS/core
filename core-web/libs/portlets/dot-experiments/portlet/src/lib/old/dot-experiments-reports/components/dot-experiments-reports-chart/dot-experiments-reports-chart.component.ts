@@ -24,7 +24,9 @@ import { getRandomUUID } from '../../../shared/dot-experiment.utils';
 export class DotExperimentsReportsChartComponent {
     $isEmpty = input(true, { alias: 'isEmpty' });
     $isLoading = input(true, { alias: 'isLoading' });
-    $config = input<{ xAxisLabel: string; yAxisLabel: string }>(null, { alias: 'config' });
+    $config = input<{ xAxisLabel: string; yAxisLabel: string } | null>(null, {
+        alias: 'config'
+    });
     $data = input<ChartData<'line'> | null>(null, { alias: 'data' });
     $isLinearAxis = input(false, { alias: 'isLinearAxis' });
 

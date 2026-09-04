@@ -44,7 +44,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * It is used to update the field.
      */
     updateField(value: DotKeyValue[]): void {
-        const keyValue = value.reduce((acc, item) => {
+        // The accumulator's type has to be given explicitly: from the `{}` seed alone TS infers
+        // `{}`, which has no index signature to write to.
+        const keyValue = value.reduce<Record<string, string>>((acc, item) => {
             acc[item.key] = item.value;
 
             return acc;
@@ -58,7 +60,7 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Parses the data to a DotKeyValue array.
      * It is used to parse the data to a DotKeyValue array.
      */
-    private parseToDotKeyValue(data: Record<string, string | null>): DotKeyValue[] {
+    private parseToDotKeyValue(data: Record<string, string | null> | null): DotKeyValue[] {
         if (!data || typeof data !== 'object' || Array.isArray(data)) {
             return [];
         }
@@ -73,7 +75,9 @@ export class DotKeyValueFieldComponent extends BaseControlValueAccessor<
      * Handles the change value of the component.
      * It is used to update the initial value of the component.
      */
-    readonly handleChangeValue = signalMethod<Record<string, string | null>>((value) => {
+    // `| null` because this is called with the accessor's `$value`, which is null until the form
+    // writes one — `parseToDotKeyValue` returns `[]` for it.
+    readonly handleChangeValue = signalMethod<Record<string, string | null> | null>((value) => {
         const initialValue = this.parseToDotKeyValue(value);
         this.$initialValue.set(initialValue);
     });

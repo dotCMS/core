@@ -31,7 +31,10 @@ export class SiteService {
     private http = inject(HttpClient);
     private loggerService = inject(LoggerService);
 
-    private selectedSite: Site;
+    // TODO(#35939): assigned by `setCurrentSite()` during init, never in the constructor.
+    // Same trade-off as `LoginService._auth`: the public `currentSite` getter is widely
+    // consumed, so widening it to `Site | undefined` belongs in its own issue.
+    private selectedSite!: Site;
     private urls: { currentSiteUrl: string; sitesUrl: string; switchSiteUrl: string };
     private events: string[] = [
         'SAVE_SITE',
@@ -174,7 +177,7 @@ export class SiteService {
      * @return {*}  {Observable<Site>}
      * @memberof SiteService
      */
-    switchSiteById(id: string): Observable<Site> {
+    switchSiteById(id: string): Observable<Site | null> {
         this.loggerService.debug('Applying a Site Switch');
 
         return this.getSiteById(id).pipe(

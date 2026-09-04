@@ -65,7 +65,7 @@ describe('DotStarterComponent', () => {
         });
 
         it('should show onboarding-dev and hide profile selection when developer card is clicked', () => {
-            spectator.click(spectator.query('[data-testid="developer-card"]'));
+            spectator.click(spectator.query('[data-testid="developer-card"]')!);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="profile-selection"]')).toBeFalsy();
@@ -75,7 +75,7 @@ describe('DotStarterComponent', () => {
         });
 
         it('should show onboarding-author and hide profile selection when marketer card is clicked', () => {
-            spectator.click(spectator.query('[data-testid="marketer-card"]'));
+            spectator.click(spectator.query('[data-testid="marketer-card"]')!);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="profile-selection"]')).toBeFalsy();
@@ -123,7 +123,7 @@ describe('DotStarterComponent', () => {
         it('should show profile selection and hide onboarding when reset button is clicked', () => {
             expect(spectator.query('[data-testid="onboarding-dev"]')).toBeTruthy();
 
-            spectator.click(spectator.query('[data-testid="reset-profile"]'));
+            spectator.click(spectator.query('[data-testid="reset-profile"]')!);
             spectator.detectChanges();
 
             expect(spectator.query('[data-testid="profile-selection"]')).toBeTruthy();

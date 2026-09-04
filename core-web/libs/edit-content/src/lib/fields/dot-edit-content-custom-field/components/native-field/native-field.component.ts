@@ -24,7 +24,7 @@ import { InputTextModule } from 'primeng/inputtext';
 
 import { DotSiteService } from '@dotcms/data-access';
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import { createFormBridge, FormBridge } from '@dotcms/edit-content-bridge';
+import { createFormBridge, DotCustomFieldApiWindow, FormBridge } from '@dotcms/edit-content-bridge';
 import { WINDOW } from '@dotcms/utils';
 
 import { DotEditContentStore } from '../../../../store/edit-content.store';
@@ -72,7 +72,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
     /**
      * The content type to render the field for.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
     /**
      * A readonly field that holds an instance of the DialogService.
      * This service is injected using Angular's dependency injection mechanism.
@@ -142,7 +142,7 @@ export class NativeFieldComponent implements OnInit, OnDestroy {
             }
         });
 
-        this.#window['DotCustomFieldApi'] = this.#formBridge;
+        (this.#window as DotCustomFieldApiWindow).DotCustomFieldApi = this.#formBridge;
         this.$isBridgeReady.set(true);
     }
 

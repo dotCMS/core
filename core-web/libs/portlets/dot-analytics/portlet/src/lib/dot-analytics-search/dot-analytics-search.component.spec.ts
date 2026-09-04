@@ -67,7 +67,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
     it('should render dot-empty-container with the correct configuration', () => {
         spectator.detectChanges();
-        const dotEmptyContainer = spectator.query(DotEmptyContainerComponent);
+        const dotEmptyContainer = spectator.query(DotEmptyContainerComponent)!;
         expect(dotEmptyContainer).toExist();
         expect(dotEmptyContainer.configuration).toEqual({
             subtitle: 'Execute a query to get results',
@@ -78,7 +78,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
     it('should render the Splitter component', () => {
         spectator.detectChanges();
-        expect(spectator.query(Splitter)).toExist();
+        expect(spectator.query(Splitter)!).toExist();
     });
 
     it('should call getResults with valid JSON', () => {
@@ -88,7 +88,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
         spectator.detectChanges();
 
-        const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
+        const button = spectator.query(byTestId('run-query'))! as HTMLButtonElement;
         spectator.click(button);
 
         expect(getResultsSpy).toHaveBeenCalled();
@@ -99,7 +99,7 @@ describe('DotAnalyticsSearchComponent', () => {
 
         spectator.detectChanges();
 
-        const button = spectator.query(byTestId('run-query')) as HTMLButtonElement;
+        const button = spectator.query(byTestId('run-query'))! as HTMLButtonElement;
         spectator.click(button);
 
         expect(button).toBeDisabled();
@@ -107,34 +107,34 @@ describe('DotAnalyticsSearchComponent', () => {
 
     describe('Help Dialog', () => {
         it('should display the help dialog when the help button is clicked', fakeAsync(() => {
-            const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+            const helpButton = spectator.query(byTestId('help-button'))! as HTMLButtonElement;
             spectator.click(helpButton);
 
             tick();
             spectator.detectChanges();
 
-            const dialog = spectator.query(Dialog);
+            const dialog = spectator.query(Dialog)!;
 
             expect(dialog).toExist();
             expect(dialog).toBeVisible();
         }));
 
         it('should display the correct number of query examples in the dialog', fakeAsync(() => {
-            const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+            const helpButton = spectator.query(byTestId('help-button'))! as HTMLButtonElement;
             spectator.click(helpButton);
 
             tick();
             spectator.detectChanges();
 
             const queryExamples = store.queryExamples();
-            const exampleElements = spectator.queryAll(byTestId('query-example-container'));
+            const exampleElements = spectator.queryAll(byTestId('query-example-container'))!;
             expect(exampleElements.length).toEqual(queryExamples.length);
         }));
 
         it('should call setQuery when a query example button is clicked', fakeAsync(() => {
             const setQuerySpy = jest.spyOn(store, 'setQuery');
             const queryExamples = store.queryExamples();
-            const helpButton = spectator.query(byTestId('help-button')) as HTMLButtonElement;
+            const helpButton = spectator.query(byTestId('help-button'))! as HTMLButtonElement;
             spectator.click(helpButton);
 
             tick();

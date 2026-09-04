@@ -126,18 +126,7 @@ const templatesMock: DotTemplate[] = [
             inode: '123',
             themeThumbnail: 'test',
             hostId: '123',
-            host: {
-                hostName: 'test',
-                inode: '123',
-                identifier: '123'
-            },
-            defaultFileType: 'test',
-            filesMasks: 'test',
-            modDate: 123,
-            path: 'test',
-            sortOrder: 123,
-            showOnMenu: true,
-            type: 'test'
+            path: 'test'
         }
     },
     {
@@ -165,18 +154,7 @@ const templatesMock: DotTemplate[] = [
             inode: 'SYSTEM_THEME',
             themeThumbnail: 'System Theme',
             hostId: '123',
-            host: {
-                hostName: 'System Theme',
-                inode: '123',
-                identifier: '123'
-            },
-            defaultFileType: 'System Theme',
-            filesMasks: 'System Theme',
-            modDate: 123,
-            path: 'System Theme',
-            sortOrder: 123,
-            showOnMenu: true,
-            type: 'System Theme'
+            path: 'System Theme'
         }
     },
     {
@@ -203,18 +181,7 @@ const templatesMock: DotTemplate[] = [
             inode: '123',
             themeThumbnail: 'test-2',
             hostId: '123',
-            host: {
-                hostName: 'test-2',
-                inode: '123',
-                identifier: '123'
-            },
-            defaultFileType: 'test-2',
-            filesMasks: 'test-2',
-            modDate: 123,
-            path: 'test-2',
-            sortOrder: 123,
-            showOnMenu: true,
-            type: 'test-2'
+            path: 'test-2'
         }
     },
     {
@@ -240,18 +207,7 @@ const templatesMock: DotTemplate[] = [
             inode: '123',
             themeThumbnail: 'test-3',
             hostId: '123',
-            host: {
-                hostName: 'test-3',
-                inode: '123',
-                identifier: '123'
-            },
-            defaultFileType: 'test-3',
-            filesMasks: 'test-3',
-            modDate: 123,
-            path: 'test-3',
-            sortOrder: 123,
-            showOnMenu: true,
-            type: 'test-3'
+            path: 'test-3'
         }
     },
     {
@@ -278,18 +234,7 @@ const templatesMock: DotTemplate[] = [
             inode: '123',
             themeThumbnail: 'test-4',
             hostId: '123',
-            host: {
-                hostName: 'test-4',
-                inode: '123',
-                identifier: '123'
-            },
-            defaultFileType: 'test-4',
-            filesMasks: 'test-4',
-            modDate: 123,
-            path: 'test-4',
-            sortOrder: 123,
-            showOnMenu: true,
-            type: 'test-4'
+            path: 'test-4'
         }
     },
     {
@@ -437,12 +382,16 @@ describe('DotTemplateListComponent', () => {
     let dotTemplatesService: DotTemplatesServiceSpy;
     let dotMessageDisplayService: DotMessageDisplayService;
     let dotPushPublishDialogService: DotPushPublishDialogService;
-    let dotRouterService: DotRouterService;
-    let dialogService: DialogService;
+    let dotRouterService: {
+        gotoPortlet: jest.Mock;
+        goToEditTemplate: jest.Mock;
+        goToSiteBrowser: jest.Mock;
+    };
+    let dialogService: { open: jest.Mock };
 
     let comp: DotTemplateListComponent;
     let dotAlertConfirmService: DotAlertConfirmService;
-    let dotSiteBrowserService: DotSiteBrowserService;
+    let dotSiteBrowserService: { setSelectedFolder: jest.Mock };
     let mockGoToFolder: jest.SpyInstance;
 
     const messageServiceMock = new MockDotMessageService(messages);
@@ -634,7 +583,7 @@ describe('DotTemplateListComponent', () => {
                 links.every(
                     (link, i) =>
                         link.nativeElement.textContent.trim() ===
-                        templatesWithoutSystem[i].themeInfo.title
+                        templatesWithoutSystem[i].themeInfo!.title
                 )
             ).toBe(true);
         }));
@@ -679,7 +628,7 @@ describe('DotTemplateListComponent', () => {
             const lastCell = cells.pop();
             expect(lastCell).toBeTruthy();
 
-            expect(lastCell.nativeElement.textContent.trim()).toEqual('');
+            expect(lastCell!.nativeElement.textContent.trim()).toEqual('');
         }));
 
         it('should not trigger goToFolder when the theme is null or undefined', fakeAsync(() => {
@@ -691,7 +640,7 @@ describe('DotTemplateListComponent', () => {
             const lastCell = cells.pop();
             expect(lastCell).toBeTruthy();
 
-            lastCell.nativeElement.click();
+            lastCell!.nativeElement.click();
 
             expect(mockGoToFolder).not.toHaveBeenCalled();
         }));
@@ -836,7 +785,7 @@ describe('DotTemplateListComponent', () => {
                 jest.spyOn(comp, 'loadCurrentPage');
             }));
 
-            const getActionIndex = (labels: string[], label: string) =>
+            const getActionIndex = (labels: (string | undefined)[], label: string) =>
                 labels.findIndex((l) => l === label);
 
             it('should open add to bundle dialog', () => {
@@ -947,7 +896,7 @@ describe('DotTemplateListComponent', () => {
             it('should call delete api, send notification and reload current page', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 openRowContextMenu('123Archived');
                 const deleteIdx = getActionIndex(
@@ -965,7 +914,7 @@ describe('DotTemplateListComponent', () => {
             it('should handle error request', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockSingleResponseFail));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 openRowContextMenu('123Archived');
                 const deleteIdx = getActionIndex(
@@ -1093,7 +1042,7 @@ describe('DotTemplateListComponent', () => {
             it('should execute Delete action', () => {
                 dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseSuccess));
                 jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                    conf.accept();
+                    conf.accept!();
                 });
                 getBulkActions()[bulkActionIndex('Delete')].command!({
                     originalEvent: createFakeEvent('click')
@@ -1150,7 +1099,7 @@ describe('DotTemplateListComponent', () => {
                 it('should fire exception on delete', () => {
                     dotTemplatesService.delete.mockReturnValue(of(mockBulkResponseFail));
                     jest.spyOn(dotAlertConfirmService, 'confirm').mockImplementation((conf) => {
-                        conf.accept();
+                        conf.accept!();
                     });
                     getBulkActions()[bulkActionIndex('Delete')].command!({
                         originalEvent: createFakeEvent('click')

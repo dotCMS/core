@@ -46,7 +46,7 @@ export class DotEditContentRadioFieldComponent extends BaseWrapperField {
      * A signal that holds the contentlet.
      * It is used to display the contentlet in the component.
      */
-    $contentlet = input.required<DotCMSContentlet>({ alias: 'contentlet' });
+    $contentlet = input.required<DotCMSContentlet | null>({ alias: 'contentlet' });
 
     /**
      * Returns the options for the radio field.

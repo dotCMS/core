@@ -4,11 +4,11 @@ import { AsyncPipe } from '@angular/common';
 import {
     Component,
     EventEmitter,
-    Input,
     OnInit,
     Output,
     inject,
-    ChangeDetectionStrategy
+    ChangeDetectionStrategy,
+    input
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
@@ -31,10 +31,10 @@ export class DotBaseTypeSelectorComponent implements OnInit {
     private dotContentTypeService = inject(DotContentTypeService);
     private dotMessageService = inject(DotMessageService);
 
-    @Input() value: SelectItem;
+    readonly value = input<SelectItem>();
     @Output() selected = new EventEmitter<string>();
 
-    options: Observable<SelectItem[]>;
+    options!: Observable<SelectItem[]>;
 
     ngOnInit() {
         this.options = this.dotContentTypeService.getAllContentTypes().pipe(

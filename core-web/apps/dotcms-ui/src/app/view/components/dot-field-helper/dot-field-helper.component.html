@@ -3,5 +3,5 @@
     icon="pi pi-question-circle"
     styleClass="p-button-rounded p-button-md p-button-text" />
 <p-popover [dismissable]="true" [style]="{ width: '350px' }" #hint appendTo="body">
-    <div [innerHTML]="message"></div>
+    <div [innerHTML]="message()"></div>
 </p-popover>

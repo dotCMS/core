@@ -1,6 +1,6 @@
 @let condition = $condition();
 
-<div class="min-w-16 w-16">
+<div class="w-16 min-w-16">
     @if ($index() !== 0) {
         <button
             (click)="toggleOperator()"
@@ -14,15 +14,15 @@
 </div>
 <p-select
     (onChange)="onTypeChange($event.value)"
-    [ngModel]="condition.type?.key"
+    [ngModel]="condition.type.key"
     [options]="typeDropdownOptions$ | async"
     [style]="{ width: '100%' }"
     [placeholder]="$conditionTypePlaceholder()"
     [filter]="true"
-    class="min-w-48 max-w-48"
+    class="max-w-48 min-w-48"
     appendTo="body" />
 <div class="flex-1">
-    @switch (condition.type?.key) {
+    @switch (condition.type.key) {
         @case ('NoSelection') {
             <div></div>
         }

@@ -25,6 +25,15 @@ import { GoalFormSlice } from '../../../shared/models';
 import { DotExperimentsConfigureStore } from '../../../store/dot-experiments-configure.store';
 import { CONDITION_PARAMETER_BY_TYPE } from '../../../util/dot-experiments-configure-form.util';
 
+/**
+ * `GoalsConditionsOperatorsListByType` only lists the goal types that have a condition panel, so its
+ * inferred type has no key for the rest. Widened here so a lookup by any `GOAL_TYPES` is a miss that
+ * yields `undefined` rather than a type error.
+ */
+const OPERATOR_OPTIONS_BY_TYPE: Partial<
+    Record<GOAL_TYPES, Array<DotDropdownSelectOption<GOAL_OPERATORS>>>
+> = GoalsConditionsOperatorsListByType;
+
 /** Operator each condition panel opens on, so the panel is usable without touching the select. */
 const DEFAULT_OPERATOR_BY_TYPE: Partial<Record<GOAL_TYPES, GOAL_OPERATORS>> = {
     [GOAL_TYPES.REACH_PAGE]: GOAL_OPERATORS.CONTAINS,
@@ -127,7 +136,7 @@ export class DotExperimentsConfigureGoalComponent {
     protected readonly $operatorOptions = computed<Array<DotDropdownSelectOption<string>>>(() => {
         const type = this.$goalType();
 
-        return type ? this.#translateOptions(GoalsConditionsOperatorsListByType[type]) : [];
+        return type ? this.#translateOptions(OPERATOR_OPTIONS_BY_TYPE[type]) : [];
     });
 
     protected readonly $showGoalTypeError = computed<boolean>(

@@ -107,7 +107,9 @@ export class DotEditContentSidebarWorkflowComponent {
      * @type {boolean}
      * @memberof DotEditContentSidebarWorkflowComponent
      */
-    $resetWorkflowAction = input<DotCMSWorkflowAction | null>(null, {
+    // `| undefined` too: the store's `getResetWorkflowAction` is a `find()`, which yields
+    // undefined when no action has the reset actionlet.
+    $resetWorkflowAction = input<DotCMSWorkflowAction | null | undefined>(null, {
         alias: 'resetWorkflowAction'
     });
 
@@ -117,6 +119,13 @@ export class DotEditContentSidebarWorkflowComponent {
     $showWorkflowSelection = computed(() => {
         const { schemeOptions } = this.$workflowSelection();
         const workflow = this.$workflow();
+
+        // No workflow state yet means nothing has resolved a scheme, so there is nothing to
+        // offer a choice between. The input defaults to null and stays null for new content
+        // until a scheme is picked.
+        if (!workflow) {
+            return false;
+        }
 
         const hasMultipleWorkflows = schemeOptions.length > 1;
         const isResetOrNew = workflow.contentState === 'reset' || workflow.contentState === 'new';
@@ -141,7 +150,17 @@ export class DotEditContentSidebarWorkflowComponent {
      */
     selectWorkflow() {
         this.$showDialog.set(false);
-        this.onSelectWorkflow.emit(this.$selectedWorkflow().value);
+
+        // `model<SelectItem | null>()` has no default, so this is undefined until the user picks
+        // one — and the Select button is not disabled, so they can get here without picking.
+        // Emitting then would have sent `undefined` out through an `output<string>()`.
+        const selected = this.$selectedWorkflow();
+
+        if (!selected) {
+            return;
+        }
+
+        this.onSelectWorkflow.emit(selected.value);
     }
 
     /**

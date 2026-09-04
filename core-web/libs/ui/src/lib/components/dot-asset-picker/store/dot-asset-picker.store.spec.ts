@@ -14,6 +14,7 @@ import { DotContentDriveService, DotFolderService, DotSiteService } from '@dotcm
 import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
+    DotCMSContentlet,
     DotContentDriveItem,
     DotContentDriveSearchResponse,
     DotPagination,
@@ -33,6 +34,12 @@ const SITE: DotSite = {
     aliases: null,
     archived: false
 };
+
+/**
+ * A contentlet stub. `DotCMSContentlet` has far more required fields than any of these tests
+ * reads — they only ever look at `inode` — so the shape is asserted once here.
+ */
+const asset = (inode = ''): DotCMSContentlet => ({ inode }) as DotCMSContentlet;
 
 const EMPTY_RESPONSE: DotContentDriveSearchResponse = {
     folderCount: 0,
@@ -322,7 +329,7 @@ describe('DotAssetPickerStore', () => {
 
         it('should store the returned items and mark itself loaded', () => {
             contentDriveService.search.mockReturnValue(
-                of({ ...EMPTY_RESPONSE, list: [{ inode: 'a' }], contentCount: 1 })
+                of({ ...EMPTY_RESPONSE, list: [asset('a')], contentCount: 1 })
             );
             store.initPicker(FILE_FIELD_CONFIG);
             spectator.flushEffects();
@@ -555,7 +562,7 @@ describe('DotAssetPickerStore', () => {
         };
 
         beforeEach(() => {
-            siteService.getCurrentSite = jest.fn().mockReturnValue(of(SITE));
+            siteService.getCurrentSite.mockReturnValue(of(SITE));
         });
 
         it('should not ask the server when the caller already supplied a site', () => {
@@ -578,7 +585,7 @@ describe('DotAssetPickerStore', () => {
         it('should not search until a site is known', () => {
             // `$isBrowsable` already guards on `browsingSite`, so the request simply waits rather
             // than firing against an undefined path.
-            siteService.getCurrentSite = jest.fn().mockReturnValue(NEVER);
+            siteService.getCurrentSite.mockReturnValue(NEVER);
 
             store.initPicker(NO_SITE_CONFIG);
             spectator.flushEffects();
@@ -590,9 +597,7 @@ describe('DotAssetPickerStore', () => {
         it('should still open when the lookup fails, leaving the site tree unselected', () => {
             // Opening on the site tree with nothing chosen beats not opening at all — the sidebar
             // lists every site the user can browse, so they can pick one.
-            siteService.getCurrentSite = jest
-                .fn()
-                .mockReturnValue(throwError(() => new Error('offline')));
+            siteService.getCurrentSite.mockReturnValue(throwError(() => new Error('offline')));
 
             store.initPicker(NO_SITE_CONFIG);
             spectator.flushEffects();
