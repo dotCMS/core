@@ -80,4 +80,6 @@ export interface RunOptions {
     onProgress?: (step: string) => void;
     /** Called when a rejected credential is about to be re-asked (FR-007). */
     onAuthRetry?: (message: string, attempt: number, max: number) => void;
+    /** A non-fatal notice, e.g. the instance being older than this tool (FR-005a). */
+    onWarning?: (message: string) => void;
 }

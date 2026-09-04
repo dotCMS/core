@@ -95,6 +95,7 @@ export function registerAgentCommand(program: Command): void {
                     onProgress: progress.step,
                     onAuthRetry: (message, attempt, max) =>
                         progress.warn(`${message}  (attempt ${attempt} of ${max})`),
+                    onWarning: (message) => progress.warn(message),
                 promptPort: interactive ? inquirerPort : undefined,
                     confirmOverwrite: interactive ? confirmOverwrite : undefined,
                     confirmExclude: interactive ? confirmExclude : undefined,
@@ -116,6 +117,7 @@ export function registerAgentCommand(program: Command): void {
                     renderSummary({
                         outcomes: result.outcomes,
                         versionControl: result.versionControl,
+                        warnings: result.warnings,
                         connection: result.connection,
                         connectionReason: result.connectionReason
                     })

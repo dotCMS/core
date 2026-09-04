@@ -110,18 +110,34 @@ export async function resolveRequiredInputs(
     if (!interactive || !port) {
         throw new MissingInputError('A username and password, or an authentication token,');
     }
-    prompted = true;
+    return { url, ...(await promptForAuth(port)), prompted: true };
+}
+
+/** Just the credential half of {@link resolveRequiredInputs}. */
+export interface PromptedAuth {
+    user?: string;
+    password?: string;
+    authToken?: string;
+}
+
+/**
+ * Ask a human for a credential, consulting nothing else.
+ *
+ * Deliberately reads neither options nor the environment. The retry path needs exactly this:
+ * after the instance has rejected a credential, re-resolving would hand back the same value
+ * from `DOTCMS_AUTH_TOKEN` or `DOTCMS_PASSWORD` and burn every attempt without ever asking.
+ * When a credential has just been refused, the only source worth consulting is the person.
+ */
+export async function promptForAuth(port: PromptPort): Promise<PromptedAuth> {
     const mode = await port.select('How should we authenticate?', [
         { name: 'Sign in with a username and password', value: 'signin' as const },
         { name: 'Paste an existing authentication token', value: 'token' as const }
     ]);
     if (mode === 'token') {
-        return { url, authToken: await port.password('Authentication token'), prompted };
+        return { authToken: await port.password('Authentication token') };
     }
     return {
-        url,
         user: await port.text('Username'),
-        password: await port.password('Password'),
-        prompted
+        password: await port.password('Password')
     };
 }

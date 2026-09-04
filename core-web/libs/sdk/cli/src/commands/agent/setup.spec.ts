@@ -2,12 +2,15 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-
 import { runSetup } from './setup';
 import * as skills from './skills';
 import * as registry from './targets/registry';
 
-import { appConfigurationResponse } from '../../shared/__fixtures__/appconfiguration';
+import {
+    appConfiguration,
+    appConfigurationResponse
+} from '../../shared/__fixtures__/appconfiguration';
+import { TOOL_VERSION } from '../../shared/version';
 
 import type { PromptPort } from '../../shared/prompts';
 
@@ -60,7 +63,11 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
         // The error must identify the token rejection. `rejects.toThrow()` alone is satisfied
         // by an unimplemented stub, so it could never go Red.
         const err = await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor', 'claude-code'], scope: 'folder', cwd: dir
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor', 'claude-code'],
+            scope: 'folder',
+            cwd: dir
         }).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/token/i);
         expect((err as Error).message).toMatch(/reject|invalid|not authoriz/i);
@@ -70,7 +77,13 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
     it('cannot be bypassed by --yes or --force (FR-008c)', async () => {
         mockRejectedToken();
         const err = await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', yes: true, force: true, cwd: dir
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            yes: true,
+            force: true,
+            cwd: dir
         }).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/token/i);
         await expect(fs.readdir(dir)).resolves.toEqual([]);
@@ -78,15 +91,25 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
 
     it('reports a rejected token differently from an unreachable instance (FR-008b)', async () => {
         mockRejectedToken();
-        const rejected = await runSetup({ url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir })
-            .catch((e: Error) => e.message);
+        const rejected = await runSetup({
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir
+        }).catch((e: Error) => e.message);
 
         jest.restoreAllMocks();
         jest.spyOn(globalThis, 'fetch').mockRejectedValue(
             Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
         );
-        const unreachable = await runSetup({ url: URL_, authToken: 'x', agents: ['cursor'], scope: 'folder', cwd: dir })
-            .catch((e: Error) => e.message);
+        const unreachable = await runSetup({
+            url: URL_,
+            authToken: 'x',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir
+        }).catch((e: Error) => e.message);
 
         expect(rejected).not.toEqual(unreachable);
     });
@@ -95,14 +118,26 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
 describe('auth mode exclusivity (FR-003b)', () => {
     it('rejects a token supplied together with a username/password as a usage error', async () => {
         await expect(
-            runSetup({ url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor'], cwd: dir })
+            runSetup({
+                url: URL_,
+                authToken: 'tok',
+                user: 'a@b.com',
+                password: 'pw',
+                agents: ['cursor'],
+                cwd: dir
+            })
         ).rejects.toThrow(/authToken|mutually exclusive|alternative/i);
     });
 
     it('mints nothing and writes nothing in that case', async () => {
         const fetchMock = jest.spyOn(globalThis, 'fetch');
         const err = await runSetup({
-            url: URL_, authToken: 'tok', user: 'a@b.com', password: 'pw', agents: ['cursor'], cwd: dir
+            url: URL_,
+            authToken: 'tok',
+            user: 'a@b.com',
+            password: 'pw',
+            agents: ['cursor'],
+            cwd: dir
         }).catch((e: Error) => e);
         // Naming the conflict is the point — a generic throw would pass without it.
         expect((err as Error).message).toMatch(/authToken/);
@@ -133,11 +168,21 @@ describe('overwrite confirmation (FR-017)', () => {
         const confirm = jest.fn().mockResolvedValue(true);
         const file = path.join(dir, '.cursor', 'mcp.json');
         await fs.mkdir(path.dirname(file), { recursive: true });
-        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+        await fs.writeFile(
+            file,
+            JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }),
+            'utf8'
+        );
 
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, confirmOverwrite: confirm
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            confirmOverwrite: confirm
         });
         expect(confirm).toHaveBeenCalled();
     });
@@ -147,11 +192,22 @@ describe('overwrite confirmation (FR-017)', () => {
         const confirm = jest.fn().mockResolvedValue(true);
         const file = path.join(dir, '.cursor', 'mcp.json');
         await fs.mkdir(path.dirname(file), { recursive: true });
-        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+        await fs.writeFile(
+            file,
+            JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }),
+            'utf8'
+        );
 
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir, force: true,
-            skipSkills: true, skipVerify: true, confirmOverwrite: confirm
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            force: true,
+            skipSkills: true,
+            skipVerify: true,
+            confirmOverwrite: confirm
         });
         expect(confirm).not.toHaveBeenCalled();
         // The positive half: `not.toHaveBeenCalled()` alone is satisfied while the feature does
@@ -164,11 +220,21 @@ describe('overwrite confirmation (FR-017)', () => {
         mockAcceptedToken();
         const file = path.join(dir, '.cursor', 'mcp.json');
         await fs.mkdir(path.dirname(file), { recursive: true });
-        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+        await fs.writeFile(
+            file,
+            JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }),
+            'utf8'
+        );
 
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, confirmOverwrite: async () => false
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            confirmOverwrite: async () => false
         });
         const doc = JSON.parse(await fs.readFile(file, 'utf8'));
         expect(doc.mcpServers.dotcms.command).toBe('old');
@@ -187,8 +253,13 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
         mockAcceptedToken();
         await makeCursorUnwritable();
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
-            cwd: dir, skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor', 'claude-code'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         const claude = result.outcomes.find((o) => o.targetId === 'claude-code');
         expect(claude?.result).toBe('written');
@@ -199,8 +270,13 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
         mockAcceptedToken();
         await makeCursorUnwritable();
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
-            cwd: dir, skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor', 'claude-code'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         const cursor = result.outcomes.find((o) => o.targetId === 'cursor');
         expect(cursor?.result).toBe('failed');
@@ -211,8 +287,13 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
         mockAcceptedToken();
         await makeCursorUnwritable();
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
-            cwd: dir, skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor', 'claude-code'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         expect(result.exitCode).toBe(1);
     });
@@ -221,8 +302,13 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
         mockAcceptedToken();
         await makeCursorUnwritable();
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['claude-code', 'cursor'], scope: 'folder',
-            cwd: dir, skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['claude-code', 'cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         // claude-code was written BEFORE cursor failed, and must survive it.
         await expect(fs.stat(path.join(dir, '.mcp.json'))).resolves.toBeDefined();
@@ -231,8 +317,13 @@ describe('partial failure (FR-020a-d, SC-006a)', () => {
     it('exits zero when every selected target succeeded', async () => {
         mockAcceptedToken();
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
-            cwd: dir, skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor', 'claude-code'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         expect(result.exitCode).toBe(0);
     });
@@ -247,8 +338,12 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
             .mockResolvedValue([registry.getTarget('cursor'), registry.getTarget('claude-code')]);
 
         const result = await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
 
         expect(detect).toHaveBeenCalled();
@@ -259,8 +354,12 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
         mockAcceptedToken();
         jest.spyOn(registry, 'detectTargets').mockResolvedValue([]);
         const result = await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         expect(result.outcomes).toEqual([]);
         expect(result.exitCode).toBe(0);
@@ -269,8 +368,12 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
     it('defaults to FOLDER scope, writing into the working directory rather than $HOME', async () => {
         mockAcceptedToken();
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], cwd: dir,
-            skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         expect(result.outcomes[0].scope).toBe('folder');
         expect(result.outcomes[0].path).toContain(dir);
@@ -285,8 +388,12 @@ describe('target selection (FR-010)', () => {
         const multiSelect = jest.fn().mockResolvedValue(['cursor']);
 
         await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true,
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
             promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
         });
         expect(multiSelect).toHaveBeenCalled();
@@ -298,8 +405,12 @@ describe('target selection (FR-010)', () => {
         const multiSelect = jest.fn().mockResolvedValue(['cursor']);
 
         await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true,
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
             promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
         });
         const choices = multiSelect.mock.calls[0][1] as { value: string; checked: boolean }[];
@@ -315,10 +426,16 @@ describe('target selection (FR-010)', () => {
             registry.getTarget('claude-code')
         ]);
         const result = await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true,
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
             promptPort: {
-                text: jest.fn(), password: jest.fn(), select: jest.fn(),
+                text: jest.fn(),
+                password: jest.fn(),
+                select: jest.fn(),
                 multiSelect: jest.fn().mockResolvedValue(['claude-code'])
             }
         });
@@ -329,8 +446,13 @@ describe('target selection (FR-010)', () => {
         mockAcceptedToken();
         const multiSelect = jest.fn();
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true,
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
             promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
         });
         expect(multiSelect).not.toHaveBeenCalled();
@@ -340,8 +462,12 @@ describe('target selection (FR-010)', () => {
         mockAcceptedToken();
         jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
         const result = await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         });
         expect(result.outcomes.map((o) => o.targetId)).toEqual(['cursor']);
     });
@@ -354,19 +480,34 @@ describe('skills reporting honesty (FR-027)', () => {
         jest.spyOn(registry, 'detectTargets').mockResolvedValue([
             { ...registry.getTarget('cursor'), skillsLocationVerified: false }
         ]);
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'npx skills add …' });
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({
+            ok: true,
+            command: 'npx skills add …'
+        });
 
         const result = await runSetup({
-            url: URL_, authToken: 'good', scope: 'folder', cwd: dir, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            scope: 'folder',
+            cwd: dir,
+            skipVerify: true
         });
         expect(result.outcomes[0].skillsInstalled).toBe('unverified');
     });
 
     it('reports "yes" for a target that is confirmed', async () => {
         mockAcceptedToken();
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'npx skills add …' });
+        jest.spyOn(skills, 'installSkills').mockResolvedValue({
+            ok: true,
+            command: 'npx skills add …'
+        });
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['vscode'], scope: 'folder', cwd: dir, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['vscode'],
+            scope: 'folder',
+            cwd: dir,
+            skipVerify: true
         });
         expect(result.outcomes[0].skillsInstalled).toBe('yes');
     });
@@ -412,8 +553,15 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         const onAuthRetry = jest.fn();
 
         const result = await runSetup({
-            url: URL_, authToken: 'bad-first-try', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: port, onAuthRetry
+            url: URL_,
+            authToken: 'bad-first-try',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: port,
+            onAuthRetry
         });
 
         expect(onAuthRetry).toHaveBeenCalledTimes(2);
@@ -424,8 +572,15 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         alwaysRejects();
         const onAuthRetry = jest.fn();
         const err = await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('still-bad'), onAuthRetry
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: portThatRetypes('still-bad'),
+            onAuthRetry
         }).catch((e: Error) => e);
 
         expect((err as Error).message).toMatch(/token/i);
@@ -436,8 +591,14 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
     it('writes nothing after exhausting the attempts', async () => {
         alwaysRejects();
         await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('still-bad')
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: portThatRetypes('still-bad')
         }).catch(() => undefined);
         await expect(fs.readdir(dir)).resolves.toEqual([]);
     });
@@ -446,8 +607,14 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         alwaysRejects();
         const onAuthRetry = jest.fn();
         await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, onAuthRetry
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            onAuthRetry
         }).catch(() => undefined);
         expect(onAuthRetry).not.toHaveBeenCalled();
     });
@@ -458,8 +625,15 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         );
         const onAuthRetry = jest.fn();
         await runSetup({
-            url: URL_, authToken: 'bad', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: portThatRetypes('x'), onAuthRetry
+            url: URL_,
+            authToken: 'bad',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: portThatRetypes('x'),
+            onAuthRetry
         }).catch(() => undefined);
         expect(onAuthRetry).not.toHaveBeenCalled();
     });
@@ -472,18 +646,37 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
     // the calls, not their types.
     const trackingPort = (calls: string[]) =>
         ({
-            text: jest.fn(async () => { calls.push('ask:url'); return URL_; }),
-            password: jest.fn(async () => { calls.push('ask:password'); return 'pw'; }),
-            select: jest.fn(async () => { calls.push('ask:mode'); return 'signin'; }),
-            multiSelect: jest.fn(async () => { calls.push('ask:targets'); return ['cursor']; })
+            text: jest.fn(async () => {
+                calls.push('ask:url');
+                return URL_;
+            }),
+            password: jest.fn(async () => {
+                calls.push('ask:password');
+                return 'pw';
+            }),
+            select: jest.fn(async () => {
+                calls.push('ask:mode');
+                return 'signin';
+            }),
+            multiSelect: jest.fn(async () => {
+                calls.push('ask:targets');
+                return ['cursor'];
+            })
         }) as unknown as PromptPort;
 
     it('never asks for a password when the address is not dotCMS', async () => {
-        jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
+        jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response('Not Found', { status: 404 })
+        );
         const calls: string[] = [];
         const err = await runSetup({
-            url: 'https://example.com', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+            url: 'https://example.com',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: trackingPort(calls)
         }).catch((e: Error) => e);
 
         expect((err as Error).message).toMatch(/not a valid dotCMS instance/i);
@@ -497,8 +690,13 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
         );
         const calls: string[] = [];
         await runSetup({
-            url: 'https://nope.invalid', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+            url: 'https://nope.invalid',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: trackingPort(calls)
         }).catch(() => undefined);
 
         expect(calls).not.toContain('ask:password');
@@ -508,8 +706,13 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
         mockAcceptedToken();
         const calls: string[] = [];
         await runSetup({
-            authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: trackingPort(calls)
         }).catch(() => undefined);
 
         expect(calls[0]).toBe('ask:url');
@@ -524,7 +727,11 @@ describe('--skip-mcp is independent of --skip-skills', () => {
             .mockResolvedValue({ ok: true, command: 'npx skills add …' });
 
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
             skipMcp: true
         });
         expect(install).toHaveBeenCalled();
@@ -534,8 +741,13 @@ describe('--skip-mcp is independent of --skip-skills', () => {
         mockAcceptedToken();
         jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipMcp: true, skipSkills: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipMcp: true,
+            skipSkills: true
         });
         await expect(fs.readdir(dir)).resolves.toEqual([]);
         expect(result.outcomes).toHaveLength(1);
@@ -548,8 +760,14 @@ describe('--skip-mcp is independent of --skip-skills', () => {
         jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
         const confirmExclude = jest.fn().mockResolvedValue(true);
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipMcp: true, skipSkills: true, confirmExclude
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipMcp: true,
+            skipSkills: true,
+            confirmExclude
         });
         expect(result.versionControl).toBeUndefined();
         expect(confirmExclude).not.toHaveBeenCalled();
@@ -559,7 +777,11 @@ describe('--skip-mcp is independent of --skip-skills', () => {
         mockAcceptedToken();
         jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
             skipMcp: true
         });
         expect(result.connection).toBe('skipped');
@@ -571,8 +793,14 @@ describe('a repeated --agent is counted once', () => {
         mockAcceptedToken();
         const steps: string[] = [];
         const result = await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor', 'cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true, onProgress: (t) => steps.push(t)
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor', 'cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            onProgress: (t) => steps.push(t)
         });
         expect(result.outcomes).toHaveLength(1);
         expect(steps.join(' ')).toContain('1 editor');
@@ -588,11 +816,167 @@ describe('a pre-existing directory keeps its own permissions', () => {
         await fs.chmod(cursorDir, 0o750);
 
         await runSetup({
-            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
-            skipSkills: true, skipVerify: true
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true
         }).catch(() => undefined);
 
         const mode = (await fs.stat(cursorDir)).mode & 0o777;
         expect(mode).toBe(0o750);
+    });
+});
+
+describe('FR-005a compatibility warning actually reaches the developer', () => {
+    /**
+     * The machinery existed and was unit-tested; nothing joined it up. These assert the WIRING
+     * end to end — checkReachable's version reaching compatibilityWarning reaching the caller —
+     * because testing compatibilityWarning() alone is exactly what let this ship dead twice.
+     */
+    /**
+     * Both versions are DERIVED from TOOL_VERSION, never hardcoded. The release pipeline
+     * rewrites `.version` to the dotCMS release tag at build time, so a literal like '1.0.0'
+     * is "older" today (tool is 0.2.0) and "newer" after the first release — the test would
+     * silently invert. Deriving keeps each case meaning what its name says.
+     */
+    const major = Number(TOOL_VERSION.split('.')[0]);
+    const OLDER = `${Math.max(major - 1, 0)}.0.0`;
+    const NEWER = `${major + 1}.0.0`;
+
+    /** Serves an appconfiguration whose reported version is `version`, or none at all. */
+    function instanceAt(version: string | null) {
+        const body = appConfiguration(version ?? undefined);
+        if (version === null) {
+            delete (body.entity.config as Partial<typeof body.entity.config>).releaseInfo;
+        }
+        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+            String(input).includes('/appconfiguration')
+                ? new Response(JSON.stringify(body), { status: 200 })
+                : new Response(JSON.stringify({ entity: {} }), { status: 200 })
+        );
+    }
+
+    const run = (onWarning?: jest.Mock) =>
+        runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            onWarning
+        });
+
+    it('warns when the instance is OLDER than this tool', async () => {
+        instanceAt(OLDER);
+        const onWarning = jest.fn();
+        const result = await run(onWarning);
+        expect(result.warnings).toHaveLength(1);
+        expect(result.warnings[0]).toContain(OLDER);
+        expect(result.warnings[0]).toContain(TOOL_VERSION);
+        expect(onWarning).toHaveBeenCalledWith(result.warnings[0]);
+    });
+
+    it('stays silent when the instance is NEWER', async () => {
+        instanceAt(NEWER);
+        const result = await run();
+        expect(result.warnings).toEqual([]);
+    });
+
+    it('stays silent, and never throws, when the instance reports no version', async () => {
+        instanceAt(null);
+        const result = await run();
+        expect(result.warnings).toEqual([]);
+    });
+
+    it('never blocks the run — the configuration is still written alongside a warning', async () => {
+        instanceAt(OLDER);
+        const result = await run();
+        expect(result.outcomes[0].result).toBe('written');
+        expect(result.exitCode).toBe(0);
+    });
+});
+
+describe('an auth retry asks the human, it does not re-read the environment', () => {
+    const OLD_ENV = process.env;
+    beforeEach(() => {
+        process.env = { ...OLD_ENV };
+    });
+    afterAll(() => {
+        process.env = OLD_ENV;
+    });
+
+    /** Rejects the first two credentials, accepts the third. */
+    function rejectsTwice() {
+        let verifies = 0;
+        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+            if (String(input).includes('/appconfiguration')) return appConfigurationResponse();
+            verifies += 1;
+            return verifies <= 2
+                ? new Response('', { status: 401 })
+                : new Response(JSON.stringify({ entity: {} }), { status: 200 });
+        });
+    }
+
+    it('prompts for a fresh credential when the rejected one came from the ENVIRONMENT', async () => {
+        // The regression: resolveRequiredInputs consults the env first, so the same rejected
+        // token was re-submitted until the attempts ran out, with no prompt ever shown.
+        process.env['DOTCMS_AUTH_TOKEN'] = 'rejected-env-token';
+        rejectsTwice();
+        const password = jest.fn().mockResolvedValue('typed-by-hand');
+        const port = {
+            text: jest.fn(),
+            password,
+            select: jest.fn().mockResolvedValue('token'),
+            multiSelect: jest.fn().mockResolvedValue(['cursor'])
+        } as unknown as PromptPort;
+
+        const result = await runSetup({
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: port,
+            url: URL_
+        });
+
+        expect(password).toHaveBeenCalled();
+        expect(result.outcomes[0].result).toBe('written');
+    });
+
+    it('does not re-submit the env value on the retry', async () => {
+        process.env['DOTCMS_AUTH_TOKEN'] = 'rejected-env-token';
+        rejectsTwice();
+        const fetchSpy = globalThis.fetch as jest.Mock;
+        const port = {
+            text: jest.fn(),
+            password: jest.fn().mockResolvedValue('typed-by-hand'),
+            select: jest.fn().mockResolvedValue('token'),
+            multiSelect: jest.fn().mockResolvedValue(['cursor'])
+        } as unknown as PromptPort;
+
+        await runSetup({
+            url: URL_,
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            promptPort: port
+        });
+
+        const bearers = fetchSpy.mock.calls
+            .map((c) => new Headers((c[1] as RequestInit)?.headers).get('authorization'))
+            .filter(Boolean);
+        // The rejected env token must appear at most once — the first attempt.
+        expect(bearers.filter((b) => b === 'Bearer rejected-env-token').length).toBeLessThanOrEqual(
+            1
+        );
+        expect(bearers).toContain('Bearer typed-by-hand');
     });
 });

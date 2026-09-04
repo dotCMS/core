@@ -3,13 +3,21 @@ import { renderSummary } from './ui';
 import type { TargetOutcome } from './types';
 
 const ok = (id: string): TargetOutcome => ({
-    targetId: id, scope: 'folder', path: `/tmp/${id}.json`, result: 'written',
-    reason: null, permissionsApplied: true, skillsInstalled: 'yes'
+    targetId: id,
+    scope: 'folder',
+    path: `/tmp/${id}.json`,
+    result: 'written',
+    reason: null,
+    permissionsApplied: true,
+    skillsInstalled: 'yes'
 });
 
 describe('renderSummary (FR-028, FR-024e, FR-027)', () => {
     it('lists each target with its scope, file and result', () => {
-        const out = renderSummary({ outcomes: [ok('cursor'), ok('claude-code')], connection: 'ok' });
+        const out = renderSummary({
+            outcomes: [ok('cursor'), ok('claude-code')],
+            connection: 'ok'
+        });
         expect(out).toContain('cursor');
         expect(out).toContain('claude-code');
         expect(out).toContain('/tmp/cursor.json');
@@ -25,7 +33,9 @@ describe('renderSummary (FR-028, FR-024e, FR-027)', () => {
 
     it('does NOT report the run ready when the connection check failed', () => {
         const out = renderSummary({
-            outcomes: [ok('cursor')], connection: 'failed', connectionReason: 'server did not start'
+            outcomes: [ok('cursor')],
+            connection: 'failed',
+            connectionReason: 'server did not start'
         });
         expect(out).toMatch(/did not start/i);
         expect(out).not.toMatch(/\bready\b/i);
@@ -33,7 +43,8 @@ describe('renderSummary (FR-028, FR-024e, FR-027)', () => {
 
     it('never claims skills landed for a target whose location is unconfirmed', () => {
         const out = renderSummary({
-            outcomes: [{ ...ok('vscode'), skillsInstalled: 'unverified' }], connection: 'ok'
+            outcomes: [{ ...ok('vscode'), skillsInstalled: 'unverified' }],
+            connection: 'ok'
         });
         expect(out).toMatch(/unverified|not confirmed/i);
     });
@@ -61,8 +72,33 @@ describe('renderSummary (FR-028, FR-024e, FR-027)', () => {
 
     it('says when permissions could not be applied rather than implying protection', () => {
         const out = renderSummary({
-            outcomes: [{ ...ok('cursor'), permissionsApplied: false }], connection: 'ok'
+            outcomes: [{ ...ok('cursor'), permissionsApplied: false }],
+            connection: 'ok'
         });
         expect(out).toMatch(/permission|restrict/i);
+    });
+});
+
+describe('warnings reach the summary (FR-005a)', () => {
+    // The FR-005a defect was a value produced and never consumed. Asserting `runSetup`
+    // returns a warning proves half of it; this asserts the other half — that the summary
+    // the developer actually reads prints it.
+    it('prints each warning', () => {
+        const out = renderSummary({
+            outcomes: [ok('cursor')],
+            connection: 'ok',
+            warnings: ['This tool targets dotCMS 26.09.03, but the instance reports 25.01.01.']
+        });
+        expect(out).toContain('the instance reports 25.01.01');
+    });
+
+    it('prints nothing extra when there are none', () => {
+        const withNone = renderSummary({
+            outcomes: [ok('cursor')],
+            connection: 'ok',
+            warnings: []
+        });
+        const withUndefined = renderSummary({ outcomes: [ok('cursor')], connection: 'ok' });
+        expect(withNone).toBe(withUndefined);
     });
 });

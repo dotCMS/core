@@ -17,21 +17,20 @@ import {
     TokenRejectedError,
     UnknownTargetError
 } from '../../shared/errors';
-import { checkReachable } from '../../shared/instance';
-import { resolveInstanceUrl, resolveRequiredInputs } from '../../shared/prompts';
+import { checkReachable, compatibilityWarning } from '../../shared/instance';
+import { promptForAuth, resolveInstanceUrl, resolveRequiredInputs } from '../../shared/prompts';
+import { TOOL_VERSION } from '../../shared/version';
 
 import type { TargetId } from './targets/types';
 import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
-
-
-
-
 
 /** Three, matching FR-007. A fourth prompt after three refusals is nagging, not helping. */
 const MAX_AUTH_ATTEMPTS = 3;
 
 export interface SetupResult {
     outcomes: TargetOutcome[];
+    /** Non-fatal notices, e.g. the ADR-0019 instance-version warning (FR-005a). */
+    warnings: string[];
     /** Present only for folder scope, which is the default and therefore the common case. */
     versionControl?: GitignoreOutcome;
     connection: 'ok' | 'failed' | 'skipped';
@@ -44,7 +43,11 @@ export interface SetupResult {
  * (FR-003a/b). Supplying both is a usage error rather than a silent preference: silent
  * precedence hides a mistake in exactly the scripted runs these options exist for.
  */
-function resolveAuthMode(opts: Partial<RunOptions>): { token?: string; user?: string; password?: string } {
+function resolveAuthMode(opts: Partial<RunOptions>): {
+    token?: string;
+    user?: string;
+    password?: string;
+} {
     const token = opts.authToken ?? readEnv(ENV_KEYS.authToken);
     const password = opts.password ?? readEnv(ENV_KEYS.password);
     const user = opts.user;
@@ -85,6 +88,7 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     const scope = opts.scope ?? 'folder';
 
     const step = opts.onProgress ?? (() => undefined);
+    const warnings: string[] = [];
 
     // 2. The address first, and CHECKED first. Only once the instance is confirmed to be a
     //    real dotCMS is anyone asked for a credential: a password typed against a wrong
@@ -92,7 +96,17 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     //    before it.
     const url = await resolveInstanceUrl(opts, opts.promptPort);
     step(`Checking ${url}`);
-    await checkReachable(url);
+    const instance = await checkReachable(url);
+
+    // FR-005a / ADR-0019. The version and the comparison both existed and were unit-tested,
+    // but nothing joined them: `checkReachable`'s result was discarded, so the warning could
+    // never reach a developer. Fail-open by construction — `compatibilityWarning` returns null
+    // for an absent or unparseable version, and this never throws or blocks.
+    const warning = compatibilityWarning(instance.version, TOOL_VERSION);
+    if (warning) {
+        warnings.push(warning);
+        opts.onWarning?.(warning);
+    }
 
     // 3. Now the credential — prompting only for what is missing, and only where there is a
     //    terminal to ask on (FR-003i, FR-003k).
@@ -131,8 +145,13 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
             if (!rejected || !opts.promptPort || attempt >= MAX_AUTH_ATTEMPTS) throw error;
 
             opts.onAuthRetry?.((error as Error).message, attempt, MAX_AUTH_ATTEMPTS);
-            // Ask again from scratch: the url is settled, the credential is what was wrong.
-            inputs = await resolveRequiredInputs({ url, cwd: opts.cwd }, opts.promptPort);
+            // ASK — do not resolve. `resolveRequiredInputs` consults options and the
+            // environment first, so a credential that came from DOTCMS_AUTH_TOKEN or
+            // DOTCMS_PASSWORD was re-read unchanged and re-submitted until the attempts ran
+            // out, without ever prompting. For a credential the instance has just rejected,
+            // the only useful source is the human.
+            const fresh = await promptForAuth(opts.promptPort);
+            inputs = { url, ...fresh, prompted: true };
         }
     }
 
@@ -215,9 +234,13 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
                 const proceed = await opts.confirmOverwrite(file);
                 if (!proceed) {
                     outcomes.push({
-                        targetId: target.id, scope, path: file, result: 'skipped',
+                        targetId: target.id,
+                        scope,
+                        path: file,
+                        result: 'skipped',
                         reason: 'left the existing entry in place',
-                        permissionsApplied: false, skillsInstalled: 'no'
+                        permissionsApplied: false,
+                        skillsInstalled: 'no'
                     });
                     continue;
                 }
@@ -227,11 +250,23 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
             // target-specific (FR-013).
             const written = isToml
                 ? {
-                      path: await writeTomlTarget({ target, scope, url, token: token.value, cwd: opts.cwd }),
+                      path: await writeTomlTarget({
+                          target,
+                          scope,
+                          url,
+                          token: token.value,
+                          cwd: opts.cwd
+                      }),
                       permissionsApplied: CAN_RESTRICT,
                       replacedExisting: existing
                   }
-                : await writeJsonTargetDetailed({ target, scope, url, token: token.value, cwd: opts.cwd });
+                : await writeJsonTargetDetailed({
+                      target,
+                      scope,
+                      url,
+                      token: token.value,
+                      cwd: opts.cwd
+                  });
 
             outcomes.push({
                 targetId: target.id,
@@ -310,12 +345,21 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     let connection: SetupResult['connection'] = 'skipped';
     let connectionReason: string | undefined;
     if (!opts.skipVerify && !opts.skipMcp) {
-        step('Starting the server to confirm it responds (this can take a minute on a cold npx cache)');
+        step(
+            'Starting the server to confirm it responds (this can take a minute on a cold npx cache)'
+        );
         const result = await confirmConnection({ url, token: token.value });
         connection = result.ok ? 'ok' : 'failed';
         if (!result.ok) connectionReason = `${result.cause}: ${result.detail}`;
     }
 
     const anyFailed = outcomes.some((o) => o.result === 'failed') || connection === 'failed';
-    return { outcomes, versionControl, connection, connectionReason, exitCode: anyFailed ? 1 : 0 };
+    return {
+        outcomes,
+        versionControl,
+        warnings,
+        connection,
+        connectionReason,
+        exitCode: anyFailed ? 1 : 0
+    };
 }

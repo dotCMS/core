@@ -18,6 +18,8 @@ export interface VersionControlSummary {
 
 export interface SummaryInput {
     outcomes: TargetOutcome[];
+    /** Non-fatal notices, e.g. the instance being older than this tool (FR-005a). */
+    warnings?: string[];
     versionControl?: VersionControlSummary;
     connection: 'ok' | 'failed' | 'skipped';
     connectionReason?: string;
@@ -58,8 +60,14 @@ export function renderSummary(input: SummaryInput): string {
             lines.push('      could not restrict file permissions on this platform');
         }
         if (o.skillsInstalled === 'unverified') {
-            lines.push('      skills location unverified for this editor — not confirmed installed');
+            lines.push(
+                '      skills location unverified for this editor — not confirmed installed'
+            );
         }
+    }
+
+    for (const w of input.warnings ?? []) {
+        lines.push(chalk.yellow(`  ! ${w}`));
     }
 
     if (input.versionControl?.files.length) {
@@ -83,8 +91,7 @@ export function renderSummary(input: SummaryInput): string {
         lines.push('    Configuration was written and left in place; the server did not come up.');
     }
 
-    const allGood =
-        input.connection === 'ok' && input.outcomes.every((o) => o.result !== 'failed');
+    const allGood = input.connection === 'ok' && input.outcomes.every((o) => o.result !== 'failed');
     if (allGood) {
         lines.push('');
         lines.push(`  Ready — ${input.nextStep ?? 'open your editor and start using dotCMS.'}`);
