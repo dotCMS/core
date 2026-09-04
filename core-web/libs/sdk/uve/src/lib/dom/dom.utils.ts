@@ -439,6 +439,13 @@ export function getDotContainerAttributes({
  * normalized contentlet object. Mirrors the shape consumed by the editor's
  * SET_BOUNDS and CONTENTLET_CLICKED events. Optionally parses the
  * `dotStyleProperties` JSON when present.
+ *
+ * `canEdit` reflects `data-dot-can-edit`, which the Velocity container renderer
+ * stamps on every contentlet in EDIT mode from a WRITE-level permission check
+ * against the contentlet instance. It **fails open**: only the literal `"false"`
+ * denies. Headless and SDK-rendered pages build their own wrappers and never
+ * emit the attribute, so treating a missing value as denied would disable every
+ * edit affordance on all of them.
  */
 export function readContentletDataset(element: HTMLElement) {
     const dataset = element.dataset ?? {};
@@ -450,6 +457,7 @@ export function readContentletDataset(element: HTMLElement) {
         baseType: dataset['dotBasetype'],
         widgetTitle: dataset['dotWidgetTitle'],
         onNumberOfPages: dataset['dotOnNumberOfPages'],
+        canEdit: dataset['dotCanEdit'] !== 'false',
         ...(dataset['dotStyleProperties'] && {
             dotStyleProperties: JSON.parse(dataset['dotStyleProperties'])
         })
