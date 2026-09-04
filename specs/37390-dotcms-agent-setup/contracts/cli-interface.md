@@ -39,7 +39,7 @@ npx dotcms agent setup [options]
 | `DOTCMS_AUTH_TOKEN` | auth token | after `--authToken`, before prompt |
 | `CODEX_HOME` | Codex config location | honoured when set |
 
-All environment reads are confined to `src/utils/env.ts`. Env vars are the **documented preferred** way to supply a secret, because unlike options they do not appear in the process list (FR-003f).
+All environment reads are confined to `src/shared/env.ts`. Env vars are the **documented preferred** way to supply a secret, because unlike options they do not appear in the process list (FR-003f).
 
 ## Exit codes
 
@@ -84,7 +84,7 @@ Because there is no verbose, debug, or log-file mode (FR-032a), stdout **is** th
 | Purpose | Request | Contract |
 |---|---|---|
 | Reachability | `GET {url}/api/v1/appconfiguration` | Used instead of `/probes/alive`, whose IP ACLs fail from outside the container (see `create-app/src/constants/index.ts` and issue #34509). |
-| CMS compatibility | same response | Compare CMS version to the build-injected CLI version; **warn fail-open**, never block (ADR-0019). |
+| CMS compatibility | same response | Compare CMS version to the build-injected CLI version; **warn fail-open**, never block (FR-005a, ADR-0019). |
 | Mint token | `POST {url}/api/v1/authentication/api-token` — `{ user, password, expirationDays: '365', label: … }` → `entity.token` | `expirationDays` is a **string**. Shape follows `create-app`'s `DotCMSApi.getAuthToken`. 3 attempts on rejection. |
 | Verify token | `GET {url}/api/v1/users/current` with `Authorization: Bearer <token>` | Applies to every token source, minted or supplied (FR-008). |
 

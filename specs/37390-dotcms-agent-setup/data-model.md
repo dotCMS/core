@@ -6,7 +6,7 @@ No database and no persisted state of the tool's own. The "data model" is the in
 
 ## `AgentTarget`
 
-One per supported editor. **The only place an editor is described** — `commands/setup.ts` branches on none of these fields (FR-013).
+One per supported editor. **The only place an editor is described** — `commands/agent/setup.ts` branches on none of these fields (FR-013), and `shared/` never learns that editors exist.
 
 | Field | Type | Notes |
 |---|---|---|
