@@ -12,10 +12,15 @@ import {
     DotCMSContentlet,
     DotFolder,
     DotPagination,
-    FolderSearchView,
-    SiteEntity
+    DotSite,
+    FolderSearchView
 } from '@dotcms/dotcms-models';
-import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    createFakeFolder,
+    createFakeFolderSearchView,
+    createFakeSite
+} from '@dotcms/utils-testing';
 
 import {
     DotBrowsingService,
@@ -72,7 +77,7 @@ describe('DotBrowsingService', () => {
 
     describe('getSitesTreePath', () => {
         it('should transform sites into TreeNodeItems', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'example.com' }),
                 createFakeSite({ identifier: 'site-2', hostname: 'test.com' })
             ];
@@ -117,7 +122,7 @@ describe('DotBrowsingService', () => {
         });
 
         it('should pass perPage and page parameters to getSites', (done) => {
-            const mockSites: SiteEntity[] = [createFakeSite()];
+            const mockSites: DotSite[] = [createFakeSite()];
             dotSiteService.getSites.mockReturnValue(
                 of({ sites: mockSites, pagination: mockPagination })
             );
@@ -161,7 +166,7 @@ describe('DotBrowsingService', () => {
 
     describe('getSitesPage', () => {
         it('should return sites and pagination metadata', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'example.com' })
             ];
 
@@ -187,7 +192,7 @@ describe('DotBrowsingService', () => {
 
     describe('resolveSiteByHostname', () => {
         it('should return the site with an exact hostname match', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'demo.com' }),
                 createFakeSite({ identifier: 'site-2', hostname: 'demo.com.other' })
             ];
@@ -208,7 +213,7 @@ describe('DotBrowsingService', () => {
         });
 
         it('should return null when no exact hostname match exists', (done) => {
-            const mockSites: SiteEntity[] = [
+            const mockSites: DotSite[] = [
                 createFakeSite({ identifier: 'site-1', hostname: 'other.com' })
             ];
 
@@ -376,22 +381,22 @@ describe('DotBrowsingService', () => {
     describe('searchFolders', () => {
         it('should transform FolderSearchView results into TreeNodeItems using the given hostname', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-1',
                     inode: 'inode-1',
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
                     hasChildren: true
-                },
-                {
+                }),
+                createFakeFolderSearchView({
                     id: 'folder-2',
                     inode: 'inode-2',
                     name: 'folder2',
                     path: '/',
                     addChildrenAllowed: false,
                     hasChildren: false
-                }
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
 
@@ -436,14 +441,14 @@ describe('DotBrowsingService', () => {
 
         it('should set leaf from hasChildren, not addChildrenAllowed', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-3',
                     inode: 'inode-3',
                     name: 'allowed-but-empty',
                     path: '/',
                     addChildrenAllowed: true,
                     hasChildren: false
-                }
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -461,14 +466,14 @@ describe('DotBrowsingService', () => {
 
         it('should mark recursive search results as leaves even when hasChildren is true', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-1',
                     inode: 'inode-1',
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
                     hasChildren: true
-                }
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -486,14 +491,14 @@ describe('DotBrowsingService', () => {
 
         it('should build nested folder paths from a non-root parent path', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-3',
                     inode: 'inode-3',
                     name: 'child',
                     path: '/level1',
                     addChildrenAllowed: true,
                     hasChildren: true
-                }
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -548,14 +553,15 @@ describe('DotBrowsingService', () => {
             name: string;
             path: string;
             hasChildren?: boolean;
-        }): FolderSearchView => ({
-            id: options.id,
-            inode: `${options.id}-inode`,
-            name: options.name,
-            path: options.path,
-            addChildrenAllowed: true,
-            hasChildren: options.hasChildren ?? false
-        });
+        }): FolderSearchView =>
+            createFakeFolderSearchView({
+                id: options.id,
+                inode: `${options.id}-inode`,
+                name: options.name,
+                path: options.path,
+                addChildrenAllowed: true,
+                hasChildren: options.hasChildren ?? false
+            });
 
         it('should build hierarchical tree structure from folder path using searchFolders', (done) => {
             const folderPath = '/level1/level2/';
@@ -924,7 +930,7 @@ describe('DotBrowsingService', () => {
 
     describe('getCurrentSiteAsTreeNodeItem', () => {
         it('should transform current site into TreeNodeItem', (done) => {
-            const mockSite: SiteEntity = createFakeSite({
+            const mockSite: DotSite = createFakeSite({
                 identifier: 'site-1',
                 hostname: 'example.com'
             });

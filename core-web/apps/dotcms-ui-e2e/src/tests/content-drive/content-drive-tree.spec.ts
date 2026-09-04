@@ -48,7 +48,7 @@ test.describe('Content Drive Folder Tree', () => {
         await tree.expectFolderVisible(childName);
     });
 
-    test('shows a folder icon that opens and closes with the row @critical', async ({
+    test('shows a folder icon that opens and closes with the row', async ({
         adminPage,
         apiHelpers,
         testSuffix
