@@ -37,6 +37,9 @@ export function canEditContentletByInode(
     doc: Document | null | undefined,
     inode: string | undefined
 ): boolean {
+    // Not being able to look the contentlet up isn't the same as being denied.
+    // The iframe document is unreachable on cross-origin headless pages, and the
+    // server still enforces the real permission on save — so allow it here.
     if (!doc || !inode) {
         return true;
     }
