@@ -6,11 +6,11 @@
 
 **Status**: Draft
 
-**Type**: Spike (time-boxed research — 4h)
+**Type**: Spike (time-boxed research)
 
 **Related GitHub Issue**: dotCMS/core#37401
 
-**Input**: User description: "https://github.com/dotCMS/core/issues/37401 — strict mode: validate a diff-scoped strict typecheck gate to stop new non-strict code landing on main"
+**Input**: User description: "https://github.com/dotCMS/core/issues/37401 — strict mode: validate a diff-scoped strict typecheck gate to stop new non-strict code landing on main", extended in conversation to cover Angular template strictness (`angularCompilerOptions`) as a P3 arm of the same spike.
 
 ## Problem Statement *(mandatory)*
 
@@ -31,10 +31,18 @@ files of `libs/portlets/dot-locales/portlet` drags in 387 files from six depende
 of those libs (`dotcms-models`, `data-access`, `ui`) are imported by 585–1130 files each, so
 any opt-in upstream of them drowns in inherited errors.
 
-**The question this spike answers**: can the gate stop *counting* dependency errors instead of
-waiting for them to be fixed? That is, run each project's existing config with strict forced on,
-then discard every diagnostic whose file is not part of the pull request's diff. If that works,
-`main` stops accumulating strict debt today, decoupled from the migration PR's timeline.
+The same shape repeats one layer up, in Angular templates. 30 project configs already declare
+`strictTemplates: true`, but the **four applications** — including `dotcms-ui`, the main one —
+carry `strictTemplates: false` behind a `TODO(#35930): re-enable once Angular 22 template errors
+are fixed per app`. Those apps cannot flip the flag wholesale, so today there is no gate at all
+on the layer where the most user-facing code lives.
+
+**The question this spike answers**: can the gate stop *counting* dependency and pre-existing
+errors instead of waiting for them to be fixed? That is, run each project's existing
+configuration with strictness forced on, then discard every diagnostic whose file is not part of
+the pull request's diff. If that works, `main` stops accumulating strict debt today, decoupled
+from the migration PR's timeline — and the same filter may extend to template diagnostics, which
+is the secondary question this spike also probes.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -122,7 +130,47 @@ measurement, and a single recommendation for each of the three decisions.
 
 ---
 
-### User Story 4 - The finding is handed off (Priority: P3)
+### User Story 4 - Angular template strictness is assessed and decided (Priority: P3)
+
+A contributor changes an Angular component template in one of the four applications where
+template strictness is currently switched off. The harness reports the template's own strict
+violations — and only those, not the app's accumulated template debt.
+
+Reaching this requires a second execution mode. Angular's strictness settings are **not**
+TypeScript compiler options and cannot be forced from the command line the way `--strict` can;
+they must be supplied through configuration the compiler reads. This story establishes whether
+that second mode is worth its cost.
+
+**Why this priority**: Templates are where the most user-facing code lives and where there is
+currently no gate at all, so the upside is real. But it is a distinct mechanism from the
+TypeScript arm, its runtime cost is unmeasured and expected to be materially higher, and the
+TypeScript arm must stand on its own regardless of how this resolves. It carries its own
+go/no-go and may be deferred to the follow-up task without weakening Stories 1–3.
+
+**Independent Test**: Run the template-aware mode against a merged pull request that changed a
+template in one of the four non-strict applications, and confirm it reports that template's
+violations while discarding the app's pre-existing template debt. Produces the cost figure and
+the recommendation on its own.
+
+**Acceptance Scenarios**:
+
+1. **Given** a project whose configuration disables template strictness, **When** the harness
+   runs in template-aware mode, **Then** template strictness is in force for that run **without
+   any edit to a version-controlled configuration file**.
+2. **Given** a pull request that changed a template in one of the four non-strict applications,
+   **When** the harness runs, **Then** violations in the changed template are reported and the
+   application's pre-existing template debt is discarded, with the discarded count reported.
+3. **Given** the template-aware mode, **When** it runs on a project that is not an Angular
+   project, **Then** it falls back to the TypeScript-only mode explicitly, never silently.
+4. **Given** the sample pull requests, **When** the template-aware mode runs, **Then** its
+   wall-clock cost is measured against the TypeScript-only mode, and the additional Angular
+   strictness options are each assessed for whether they belong in a blocking gate.
+5. **Given** the measurements, **When** the write-up is produced, **Then** it states an explicit
+   go / no-go on including templates in the gate, separate from the Story 2 decision.
+
+---
+
+### User Story 5 - The finding is handed off (Priority: P3)
 
 The strict-mode effort's owner reads a single write-up on the issue and knows whether to build
 the gate, in what shape, and where the work is tracked — without re-deriving anything.
@@ -137,10 +185,11 @@ reason the approach cannot work.
 **Acceptance Scenarios**:
 
 1. **Given** the spike is complete, **When** issue #37401 is read, **Then** it carries the
-   findings, the three decisions with their measurements, and an explicit recommendation.
+   findings, every decision with its measurements, and an explicit recommendation.
 2. **Given** the recommendation is "build it", **When** the issue is closed, **Then** a
    follow-up task exists covering the production gate — the durable script, the continuous
-   integration hook, and the local pre-commit hook.
+   integration hook, and the local pre-commit hook — and states whether templates are in or out
+   of its first version.
 3. **Given** the recommendation is "do not build it", **When** the issue is closed, **Then** it
    states the specific reason the approach fails, in enough detail that nobody re-opens the same
    question blind.
@@ -149,8 +198,8 @@ reason the approach cannot work.
 
 ### Edge Cases
 
-- **A pull request changes no TypeScript at all** → the gate is a no-op and passes; it must not
-  fail, and must not spend meaningful time deciding there is nothing to do.
+- **A pull request changes no TypeScript and no template at all** → the gate is a no-op and
+  passes; it must not fail, and must not spend meaningful time deciding there is nothing to do.
 - **The diff contains deleted or renamed files** → no crash and no phantom failure against a
   path that no longer exists at the head commit.
 - **The diff touches a shared configuration file** (the workspace TypeScript baseline, or the
@@ -168,18 +217,30 @@ reason the approach cannot work.
   mistakenly report "nothing changed" when the base ref is missing.
 - **The same file is claimed by more than one project config** (a source file included by both
   a library and a spec config) → the finding is reported once, not duplicated per config.
+- **A component's template is inline rather than a separate file** → the diagnostic's
+  originating file is the component source, not a template file, and must still be matched
+  against the changed-file set correctly.
+- **A pull request changes only a template file and no source file** → the owning project is
+  still identified and checked; a template-only change must not slip through as "no TypeScript
+  changed".
+- **A framework upgrade introduces new diagnostics** → the gate must not start failing pull
+  requests for diagnostics unrelated to what they changed; the chosen configuration is assessed
+  for this fragility (see FR-018).
 
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
 
-- **FR-001**: The evaluation harness MUST determine the set of changed TypeScript source files
-  for a pull request by comparing its head against its merge-base with the target branch,
-  including added, copied, modified and renamed files, and excluding deleted ones.
+#### Core gate (Stories 1–3)
+
+- **FR-001**: The evaluation harness MUST determine the set of changed files for a pull request
+  by comparing its head against its merge-base with the target branch, including added, copied,
+  modified and renamed files, and excluding deleted ones. The set MUST cover TypeScript sources,
+  and MUST cover Angular template files when the template-aware mode is in use.
 - **FR-002**: The harness MUST map each changed file to the workspace project that owns it, and
   MUST report any changed file it cannot map rather than discarding it.
 - **FR-003**: The harness MUST type-check each owning project under strict settings **without
-  requiring any edit to any existing TypeScript configuration file in the repository** —
+  requiring any edit to any version-controlled configuration file in the repository** —
   strictness is imposed at invocation time only.
 - **FR-004**: The harness MUST discard every diagnostic whose originating file is not in the
   changed-file set, and MUST report the number discarded per run.
@@ -198,35 +259,63 @@ reason the approach cannot work.
   NOT expand to the entire workspace when only a shared configuration file changed.
 - **FR-011**: The harness MUST run correctly when the target branch ref is not already present
   locally, fetching it if required.
+
+#### Template arm (Story 4)
+
+- **FR-014**: The harness MUST be able to impose Angular's template-strictness settings on a
+  project whose own configuration disables them, satisfying FR-003 — no version-controlled
+  configuration file is edited.
+- **FR-015**: The harness MUST apply FR-004's filter to template diagnostics on the same terms
+  as source diagnostics, and MUST report the discarded count separately for them.
+- **FR-016**: The harness MUST detect whether a project is an Angular project and select the
+  template-aware or TypeScript-only mode accordingly, reporting the choice rather than making
+  it silently.
+- **FR-017**: The harness MUST measure the template-aware mode's wall-clock cost separately
+  from the TypeScript-only mode's, on the same sample.
+- **FR-018**: The spike MUST assess each candidate Angular strictness option for whether it
+  belongs in a blocking gate, explicitly including whether promoting a whole category of
+  diagnostics to errors makes the gate fragile across framework upgrades.
+
+#### Deliverable
+
 - **FR-012**: The spike MUST produce a written record covering: the per-pull-request results,
-  the false-positive rate, the discarded-diagnostic counts, the three decisions with their
+  the false-positive rate, the discarded-diagnostic counts, every decision with its
   measurements, and an explicit go/no-go on blocking merges from day one.
-- **FR-013**: The spike MUST end with either a follow-up task for the production gate or a
-  documented reason the approach does not work.
+- **FR-013**: The spike MUST end with either a follow-up task for the production gate — stating
+  whether templates are in scope for its first version — or a documented reason the approach
+  does not work.
 
 ### Out of Scope
 
 - Shipping the production gate itself — the durable script, its continuous-integration hook and
   its local pre-commit hook. This spike produces the evidence and the decision; the build is the
   follow-up task (FR-013).
-- Any change to existing TypeScript configuration files, to the workspace build definition, or
-  to continuous-integration workflow files.
-- Migrating any library to strict mode, and any dependency on PR #37198 landing.
-- Angular template type checking — the type checker does not read HTML, and template strictness
-  is a separate gate.
+- Any change to version-controlled configuration files, to the workspace build definition, or to
+  continuous-integration workflow files.
+- Migrating any library or application to strict mode, re-enabling template strictness in the
+  four applications that disabled it, and any dependency on PR #37198 landing.
+- Fixing the accumulated template debt that `TODO(#35930)` refers to. The gate's purpose is to
+  stop that debt growing, not to pay it down.
 - Catching loose types that *flow in* from non-strict dependencies. While the high-fan-in
-  libraries stay non-strict, sloppy types cross into strict files unflagged. This is a known,
-  accepted weakness of the approach, not a defect of it.
+  libraries stay non-strict, sloppy types cross into strict files unflagged — and the same
+  weakness suppresses template findings, since a value typed loosely upstream satisfies a strict
+  template check. This is a known, accepted limitation of the approach, not a defect of it, and
+  it means the template arm's signal is weakest in exactly the applications that need it most.
 - Detecting pre-existing strict debt in files a pull request does not touch.
+- Framework settings that are not about strictness (message-identifier formats, emit behavior),
+  even where they appear alongside strictness settings in existing configuration.
 
 ### Key Entities
 
-- **Changed-file set**: the TypeScript files a pull request added, copied, modified or renamed,
-  relative to its merge-base with the target branch. The unit the whole gate is scoped by.
+- **Changed-file set**: the files a pull request added, copied, modified or renamed, relative to
+  its merge-base with the target branch. The unit the whole gate is scoped by.
 - **Owning project**: the workspace project whose configuration includes a given changed file;
-  the unit that type checking is actually invoked on.
-- **Diagnostic**: a single type error, carrying an originating file, a line and a code. Either
-  survives the filter (it is in the changed-file set) or is discarded (it came from a dependency).
+  the unit that checking is actually invoked on.
+- **Diagnostic**: a single reported error, carrying an originating file, a line and a code.
+  Either survives the filter (its file is in the changed-file set) or is discarded (it came from
+  a dependency or from untouched code).
+- **Execution mode**: TypeScript-only, or template-aware. Determined per project by whether it
+  is an Angular project, and reported per run.
 - **Sample pull request**: a merged pull request replayed at its merge-base and merge commit,
   labelled up-front as carrying strict debt or not, and used as the evidence base for both the
   detection and the false-positive claims.
@@ -241,21 +330,30 @@ reason the approach cannot work.
   produces **zero** findings — a measured false-positive rate of 0 on that sample.
 - **SC-003**: Every finding reported across the full sample is individually adjudicated real or
   spurious, with the adjudication written down; no finding is left unexplained.
-- **SC-004**: For every run, the count of diagnostics discarded as dependency-origin is
-  reported, and at least one run demonstrates a program dominated by dependency files (on the
-  order of the measured 387-from-6-libs case) passing because of the filter.
+- **SC-004**: For every run, the count of diagnostics discarded as dependency-origin or
+  untouched-code-origin is reported, and at least one run demonstrates a program dominated by
+  dependency files (on the order of the measured 387-from-6-libs case) passing because of the
+  filter.
 - **SC-005**: A pull request touching 1–3 projects completes in **10 seconds or less** of
-  wall-clock time.
-- **SC-006**: All 7 edge cases listed above are exercised and their observed behavior recorded;
+  wall-clock time in TypeScript-only mode.
+- **SC-006**: All 10 edge cases listed above are exercised and their observed behavior recorded;
   none produces a crash, and none produces a silent skip.
-- **SC-007**: Each of the three decisions — flag set, granularity, runtime cost — carries a
+- **SC-007**: Each of the three core decisions — flag set, granularity, runtime cost — carries a
   single stated recommendation backed by a number measured on the sample.
 - **SC-008**: An explicit go / no-go on blocking merges from day one is recorded, with a named
   fallback posture if the answer is no-go.
-- **SC-009**: The spike is delivered within its 4-hour timebox, or the overrun and its cause are
+- **SC-009**: The spike is delivered within its timebox, or the overrun and its cause are
   recorded on the issue.
-- **SC-010**: The repository's tracked TypeScript configuration files are byte-identical before
+- **SC-010**: The repository's version-controlled configuration files are byte-identical before
   and after the spike.
+- **SC-011**: Template strictness is demonstrated in force on at least one of the four
+  applications that currently disable it, with SC-010 still holding.
+- **SC-012**: For at least one pull request that changed a template in a non-strict application,
+  the changed template's violations are reported and the application's pre-existing template
+  debt is fully discarded, with both counts recorded.
+- **SC-013**: The template-aware mode's wall-clock cost is recorded against the TypeScript-only
+  mode's on the same sample, and an explicit go / no-go on including templates in the gate is
+  stated — separate from SC-008, so a no-go here does not block the core gate.
 
 ## Legacy Considerations *(dotCMS-specific — mandatory)*
 
@@ -270,7 +368,10 @@ reason the approach cannot work.
   than blocking on it — eight lint-suppression files exist, declared as inputs to the lint task.
   A type-checking equivalent would follow an established precedent, not introduce a new one. A
   project-scoped typecheck gate already exists on the strict-mode branch but has never landed on
-  `main`; the plan phase will formally consult `dotCMS/platform-adrs`.
+  `main`. Template strictness was deliberately switched off in the four applications during the
+  framework 22 upgrade, tracked as `TODO(#35930)`; this spike must not disturb that decision,
+  only measure whether a diff-scoped gate can coexist with it. The plan phase will formally
+  consult `dotCMS/platform-adrs`.
 
 ## Assumptions
 
@@ -278,16 +379,27 @@ reason the approach cannot work.
   throwaway script plus a write-up, with the production gate handed to a follow-up task. This
   spec follows that framing; the durable script, CI hook and pre-commit hook are out of scope
   here.
-- **Command-line strictness overrides inherited configuration.** This was verified against a
-  synthetic project before the spike and is treated as a given; FR-003 depends on it, and
-  confirming it on a real workspace project is the first thing the spike does.
+- **Command-line strictness overrides inherited configuration for TypeScript options.** This was
+  verified against a synthetic project before the spike and is treated as a given; FR-003's
+  TypeScript arm depends on it, and confirming it on a real workspace project is the first thing
+  the spike does.
+- **The same is *not* true of Angular's strictness settings.** They are not TypeScript compiler
+  options and are rejected by the compiler's command-line parser, which accepts only a small
+  fixed set of non-TypeScript options. FR-014 therefore requires a different mechanism —
+  supplying the settings through configuration the compiler reads, without editing any
+  version-controlled file. Two viable approaches are known; choosing between them is plan-phase
+  work, not spec-phase.
+- **The template arm raises the timebox.** The issue's 4 hours cover Stories 1–3. Story 4 is
+  expected to add roughly 2 hours. If the core arm consumes the original budget, Story 4 is
+  deferred to the follow-up task with its findings-to-date recorded — it is P3 precisely so this
+  is possible without weakening the deliverable.
 - **The PR #37262 case is still reproducible.** The three violations are reported as still
   present on `main`. If they have since been repaired, an equivalent regression case is
   substituted and the substitution recorded.
-- **Sample pull requests are chosen from recently merged work** touching `core-web` TypeScript,
-  labelled as debt-carrying or clean *before* the harness is run against them, so the sample is
-  not selected to fit the result.
-- **A sample of six or so pull requests is sufficient** for a 4-hour timebox to support a
+- **Sample pull requests are chosen from recently merged work** touching `core-web` TypeScript
+  and templates, labelled as debt-carrying or clean *before* the harness is run against them, so
+  the sample is not selected to fit the result.
+- **A sample of six or so pull requests is sufficient** for a time-boxed spike to support a
   go/no-go recommendation. It is not a statistical claim, and the write-up says so.
 - **The base ref for diff computation is available or fetchable in every context the gate would
   eventually run in.** The existing pipeline already fetches it for the affected-project
