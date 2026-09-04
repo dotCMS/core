@@ -60,4 +60,9 @@ export interface RunOptions {
     /** Confirmations ONLY. Never suppresses a prompt for a missing required input (FR-003l). */
     yes: boolean;
     force: boolean;
+    /**
+     * Asks before replacing an existing `dotcms` entry (FR-017). Injected so the confirmation
+     * is testable without a terminal, and so `setup.ts` stays free of prompt mechanics.
+     */
+    confirmOverwrite?: (file: string) => Promise<boolean>;
 }

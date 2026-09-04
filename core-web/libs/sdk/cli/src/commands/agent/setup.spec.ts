@@ -91,3 +91,122 @@ describe('auth mode exclusivity (FR-003b)', () => {
         await expect(fs.readdir(dir)).resolves.toEqual([]);
     });
 });
+
+/** A reachable instance that accepts the token — so the run gets past verification and
+ *  actually reaches the write step. */
+function mockAcceptedToken() {
+    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+        new Response(JSON.stringify({ entity: { token: 'dot_ok' } }), { status: 200 })
+    );
+}
+
+describe('overwrite confirmation (FR-017)', () => {
+    it('asks before replacing an existing dotcms entry', async () => {
+        mockAcceptedToken();
+        const confirm = jest.fn().mockResolvedValue(true);
+        const file = path.join(dir, '.cursor', 'mcp.json');
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, confirmOverwrite: confirm
+        });
+        expect(confirm).toHaveBeenCalled();
+    });
+
+    it('does not ask when --force is supplied', async () => {
+        mockAcceptedToken();
+        const confirm = jest.fn().mockResolvedValue(true);
+        const file = path.join(dir, '.cursor', 'mcp.json');
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir, force: true,
+            skipSkills: true, skipVerify: true, confirmOverwrite: confirm
+        });
+        expect(confirm).not.toHaveBeenCalled();
+        // The positive half: `not.toHaveBeenCalled()` alone is satisfied while the feature does
+        // not exist at all, so assert the entry was actually replaced.
+        const doc = JSON.parse(await fs.readFile(file, 'utf8'));
+        expect(doc.mcpServers.dotcms.args).toEqual(['-y', '@dotcms/mcp-server@latest']);
+    });
+
+    it('leaves the existing entry alone when the developer declines', async () => {
+        mockAcceptedToken();
+        const file = path.join(dir, '.cursor', 'mcp.json');
+        await fs.mkdir(path.dirname(file), { recursive: true });
+        await fs.writeFile(file, JSON.stringify({ mcpServers: { dotcms: { command: 'old' } } }), 'utf8');
+
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, confirmOverwrite: async () => false
+        });
+        const doc = JSON.parse(await fs.readFile(file, 'utf8'));
+        expect(doc.mcpServers.dotcms.command).toBe('old');
+        expect(result.outcomes[0].result).toBe('skipped');
+    });
+});
+
+describe('partial failure (FR-020a-d, SC-006a)', () => {
+    /** Make one target unwritable by putting a read-only DIRECTORY where its file must go. */
+    async function makeCursorUnwritable() {
+        const file = path.join(dir, '.cursor', 'mcp.json');
+        await fs.mkdir(file, { recursive: true }); // a directory where a file belongs
+    }
+
+    it('still configures the other targets when one fails', async () => {
+        mockAcceptedToken();
+        await makeCursorUnwritable();
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
+            cwd: dir, skipSkills: true, skipVerify: true
+        });
+        const claude = result.outcomes.find((o) => o.targetId === 'claude-code');
+        expect(claude?.result).toBe('written');
+        await expect(fs.stat(path.join(dir, '.mcp.json'))).resolves.toBeDefined();
+    });
+
+    it('reports the failing target with a reason', async () => {
+        mockAcceptedToken();
+        await makeCursorUnwritable();
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
+            cwd: dir, skipSkills: true, skipVerify: true
+        });
+        const cursor = result.outcomes.find((o) => o.targetId === 'cursor');
+        expect(cursor?.result).toBe('failed');
+        expect(cursor?.reason).toBeTruthy();
+    });
+
+    it('exits non-zero when any target failed, even though others succeeded', async () => {
+        mockAcceptedToken();
+        await makeCursorUnwritable();
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
+            cwd: dir, skipSkills: true, skipVerify: true
+        });
+        expect(result.exitCode).toBe(1);
+    });
+
+    it('does not roll back what already succeeded', async () => {
+        mockAcceptedToken();
+        await makeCursorUnwritable();
+        await runSetup({
+            url: URL_, authToken: 'good', agents: ['claude-code', 'cursor'], scope: 'folder',
+            cwd: dir, skipSkills: true, skipVerify: true
+        });
+        // claude-code was written BEFORE cursor failed, and must survive it.
+        await expect(fs.stat(path.join(dir, '.mcp.json'))).resolves.toBeDefined();
+    });
+
+    it('exits zero when every selected target succeeded', async () => {
+        mockAcceptedToken();
+        const result = await runSetup({
+            url: URL_, authToken: 'good', agents: ['cursor', 'claude-code'], scope: 'folder',
+            cwd: dir, skipSkills: true, skipVerify: true
+        });
+        expect(result.exitCode).toBe(0);
+    });
+});
