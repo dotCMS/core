@@ -1,9 +1,22 @@
-<dot-chip-filter
-    [title]="$chipTitle()"
-    [selections]="$chipSelections()"
-    (clicked)="$isRelationship() ? openRelationshipDialog() : popover.toggle($event)"
-    (removed)="onRemove()"
-    [attr.data-testid]="'field-filter-chip-' + $field().variable" />
+<!-- The tooltip sits on a wrapper and is disabled unless the control is genuinely unavailable, so
+     one chip element serves both states. A Relationship field on a surface with no picker keeps its
+     chip (a restored value must stay clearable) and says why it cannot open (FR-020). -->
+<span
+    [pTooltip]="'content-drive.field-filter.relationship.unavailable' | dm"
+    [tooltipDisabled]="!$relationshipUnavailable()"
+    tooltipPosition="top"
+    [class.opacity-60]="$relationshipUnavailable()"
+    class="inline-flex"
+    [attr.data-testid]="
+        $relationshipUnavailable() ? 'field-filter-unavailable-' + $field().variable : null
+    ">
+    <dot-chip-filter
+        [title]="$chipTitle()"
+        [selections]="$chipSelections()"
+        (clicked)="$isRelationship() ? openRelationshipDialog() : popover.toggle($event)"
+        (removed)="onRemove()"
+        [attr.data-testid]="'field-filter-chip-' + $field().variable" />
+</span>
 
 <p-popover #popover (onShow)="$popoverOpen.set(true)" (onHide)="$popoverOpen.set(false)">
     @if ($popoverOpen()) {
@@ -86,7 +99,7 @@
                 </p-listbox>
             }
             @case ('lazy-multiselect') {
-                <dot-content-drive-lazy-multiselect
+                <dot-lazy-multiselect
                     [loadPage]="$lazyLoader()"
                     [selectedValues]="$multiValue()"
                     (selectionChange)="onLazySelectionChange($event)"

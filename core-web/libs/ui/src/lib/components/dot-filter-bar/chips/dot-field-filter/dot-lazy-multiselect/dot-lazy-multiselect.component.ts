@@ -22,9 +22,10 @@ import { ScrollerLazyLoadEvent } from 'primeng/scroller';
 
 import { catchError, debounceTime, take, takeUntil } from 'rxjs/operators';
 
-import { DotFilterListItemComponent, DotMessagePipe, LISTBOX_OPTION_HEIGHT } from '@dotcms/ui';
-
-import { DEBOUNCE_TIME, PANEL_SCROLL_HEIGHT } from '../../../../shared/constants';
+import { DotMessagePipe } from '../../../../../dot-message/dot-message.pipe';
+import { LISTBOX_OPTION_HEIGHT } from '../../../../../theme/theme.config';
+import { DotFilterListItemComponent } from '../../../../dot-filter-list-item/dot-filter-list-item.component';
+import { FIELD_FILTER_DEBOUNCE_TIME, FIELD_FILTER_PANEL_SCROLL_HEIGHT } from '../constants';
 
 export interface DotLazyMultiselectOption {
     label: string;
@@ -72,7 +73,7 @@ interface State {
  * virtual scroller measures a zero-height viewport and renders an empty list.
  */
 @Component({
-    selector: 'dot-content-drive-lazy-multiselect',
+    selector: 'dot-lazy-multiselect',
     imports: [
         FormsModule,
         IconFieldModule,
@@ -82,10 +83,10 @@ interface State {
         DotFilterListItemComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-content-drive-lazy-multiselect.component.html',
+    templateUrl: './dot-lazy-multiselect.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class DotContentDriveLazyMultiselectComponent implements OnInit {
+export class DotLazyMultiselectComponent implements OnInit {
     readonly #destroyRef = inject(DestroyRef);
 
     /** Loads a page of options; provided by the consumer (bound to the Tag/Category service). */
@@ -94,7 +95,7 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
     readonly $selectedValues = input<string[]>([], { alias: 'selectedValues' });
     /** Emits the selected options (value + label) whenever the selection changes. */
     readonly selectionChange = output<DotLazyMultiselectOption[]>();
-    protected readonly SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly SCROLL_HEIGHT = FIELD_FILTER_PANEL_SCROLL_HEIGHT;
     protected readonly ITEM_HEIGHT = ITEM_HEIGHT;
 
     readonly $state = signalState<State>({
@@ -123,7 +124,7 @@ export class DotContentDriveLazyMultiselectComponent implements OnInit {
 
     constructor() {
         this.#search$
-            .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
+            .pipe(debounceTime(FIELD_FILTER_DEBOUNCE_TIME), takeUntilDestroyed(this.#destroyRef))
             .subscribe((filter) => {
                 this.#cancel$.next();
                 patchState(this.$state, {

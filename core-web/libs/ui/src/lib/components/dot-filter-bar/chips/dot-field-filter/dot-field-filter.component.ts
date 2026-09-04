@@ -16,11 +16,11 @@ import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 
 import { DatePickerModule } from 'primeng/datepicker';
-import { DialogService } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
 import { ListboxModule } from 'primeng/listbox';
 import { PopoverModule } from 'primeng/popover';
 import { RadioButtonModule } from 'primeng/radiobutton';
+import { TooltipModule } from 'primeng/tooltip';
 
 import { catchError, debounceTime, filter, map, take, tap } from 'rxjs/operators';
 
@@ -31,52 +31,48 @@ import {
     DotTagsService
 } from '@dotcms/data-access';
 import { DotCategory, DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
-import {
-    DotSelectExistingContentComponent,
-    getContentTypeIdFromRelationship,
-    getSingleSelectableFieldOptions
-} from '@dotcms/edit-content';
-import {
-    CHIP_FILTER_LISTBOX_PT,
-    CHIP_FILTER_POPOVER_PT,
-    DotChipFilterComponent,
-    DotFilterListItemComponent,
-    DotMessagePipe
-} from '@dotcms/ui';
-
-import { DotContentDriveRelationshipFooterComponent } from './dot-content-drive-relationship-footer/dot-content-drive-relationship-footer.component';
 
 import {
-    DEBOUNCE_TIME,
     FIELD_FILTER_BINARY_TYPE,
     FIELD_FILTER_CATEGORY_TYPE,
     FIELD_FILTER_CHECKBOX_TYPE,
     FIELD_FILTER_DATE_TIME_TYPE,
+    FIELD_FILTER_DEBOUNCE_TIME,
     FIELD_FILTER_JSON_TYPE,
     FIELD_FILTER_KEY_VALUE_TYPE,
     FIELD_FILTER_MULTISELECT_TYPE,
+    FIELD_FILTER_PANEL_SCROLL_HEIGHT,
     FIELD_FILTER_RADIO_TYPE,
     FIELD_FILTER_RELATIONSHIP_TYPE,
     FIELD_FILTER_SELECT_TYPE,
     FIELD_FILTER_STORY_BLOCK_TYPE,
     FIELD_FILTER_TAG_TYPE,
     FIELD_FILTER_TIME_ONLY_TYPE,
-    PANEL_SCROLL_HEIGHT,
     USER_SEARCHABLE_PREFIX,
     USER_SEARCHABLE_VALUE_SEPARATOR
-} from '../../../../shared/constants';
-import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
+} from './constants';
+import {
+    DotLazyMultiselectComponent,
+    DotLazyMultiselectLoader,
+    DotLazyMultiselectOption
+} from './dot-lazy-multiselect/dot-lazy-multiselect.component';
+import {
+    getContentTypeIdFromRelationship,
+    getSingleSelectableFieldOptions
+} from './field-options.util';
+import { DOT_RELATIONSHIP_PICKER } from './relationship-picker.token';
 import {
     isDateFieldFilterType,
     parseMultiValue,
     serializeUserSearchableValue,
     toLocalIsoString
-} from '../../../../utils/functions';
-import {
-    DotContentDriveLazyMultiselectComponent,
-    DotLazyMultiselectLoader,
-    DotLazyMultiselectOption
-} from '../dot-content-drive-lazy-multiselect/dot-content-drive-lazy-multiselect.component';
+} from './user-searchable.util';
+
+import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
+import { CHIP_FILTER_LISTBOX_PT, CHIP_FILTER_POPOVER_PT } from '../../../dot-chip-filter/constants';
+import { DotChipFilterComponent } from '../../../dot-chip-filter/dot-chip-filter.component';
+import { DotFilterListItemComponent } from '../../../dot-filter-list-item/dot-filter-list-item.component';
+import { DOT_FILTER_FACADE } from '../../filter-facade.token';
 
 /** Which control a field renders and how its value is stored. */
 type FieldFilterControl =
@@ -97,14 +93,21 @@ interface FieldFilterOption {
 }
 
 /**
- * One dynamic field-based filter chip for the Content Drive toolbar. Reuses the shared
- * `dot-chip-filter` + `p-popover` pattern and renders a lean *selection* control matching the
- * content-type field type — text input, single/multi select, or a date range picker. The value is
- * stored raw in the store's flat filter bag under `us.<variable>`; the store reshapes it into the
- * `userSearchable` payload and the URL round-trip is handled by the shared encode/decode.
+ * One dynamic field-based filter chip, shared by every surface that offers the "More" overflow.
+ *
+ * Reuses the `dot-chip-filter` + `p-popover` pattern and renders a lean *selection* control matched
+ * to the content-type field type — text input, single/multi select, a lazy list, or a date range
+ * picker. The value is written raw through {@link DOT_FILTER_FACADE} under `us.<variable>`; the
+ * surface reshapes it into the `userSearchable` payload (`buildUserSearchablePayload`) and owns
+ * whatever persistence it has — Content Drive's URL round-trip included.
+ *
+ * The one field type that needs something a surface may not have is Relationship, which opens a
+ * content-selection dialog. That arrives as the optional {@link DOT_RELATIONSHIP_PICKER}
+ * capability rather than an import, because the dialog lives in a library that already depends on
+ * this one (FR-020).
  */
 @Component({
-    selector: 'dot-content-drive-field-filter',
+    selector: 'dot-field-filter',
     imports: [
         FormsModule,
         InputTextModule,
@@ -112,30 +115,41 @@ interface FieldFilterOption {
         RadioButtonModule,
         DatePickerModule,
         PopoverModule,
+        TooltipModule,
         DotChipFilterComponent,
         DotFilterListItemComponent,
-        DotContentDriveLazyMultiselectComponent,
+        DotLazyMultiselectComponent,
         DotMessagePipe
     ],
-    templateUrl: './dot-content-drive-field-filter.component.html',
+    templateUrl: './dot-field-filter.component.html',
     changeDetection: ChangeDetectionStrategy.OnPush,
     // inline-flex so the enter/leave animation can collapse the chip's width and let neighbours
     // (the "More" button) slide smoothly instead of snapping.
-    host: { class: 'inline-flex' },
-    providers: [DialogService]
+    //
+    // Deliberately carries NO `data-filter-chip`: the "More" menu anchors the `fieldFilters` slot
+    // in the canonical order for the whole group, and the order check walks ids as a subsequence —
+    // so a second element repeating the id would fail it the moment a field filter is active.
+    host: { class: 'inline-flex' }
 })
-export class DotContentDriveFieldFilterComponent {
-    readonly #store = inject(DotContentDriveStore);
+export class DotFieldFilterComponent {
+    readonly #filters = inject(DOT_FILTER_FACADE);
+    /**
+     * The surface's content-selection dialog, when it has one (FR-020).
+     *
+     * Optional on purpose: every other field type works without it, so a surface that cannot supply
+     * one — the AssetPicker, which is bundled into a legacy host with no access to the dialog's
+     * library — still gets a fully working field filter, and only the Relationship type degrades.
+     */
+    readonly #relationshipPicker = inject(DOT_RELATIONSHIP_PICKER, { optional: true });
     readonly #dotMessageService = inject(DotMessageService);
     readonly #tagsService = inject(DotTagsService);
     readonly #categoriesService = inject(DotCategoriesService);
     readonly #contentletService = inject(DotContentletService);
-    readonly #dialogService = inject(DialogService);
     readonly #destroyRef = inject(DestroyRef);
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
-    protected readonly LISTBOX_SCROLL_HEIGHT = PANEL_SCROLL_HEIGHT;
+    protected readonly LISTBOX_SCROLL_HEIGHT = FIELD_FILTER_PANEL_SCROLL_HEIGHT;
     /**
      * Flattens the inline date picker's own panel chrome (border/shadow/rounding) so it blends into
      * the chip popover as a single surface instead of a panel-inside-a-panel.
@@ -177,7 +191,7 @@ export class DotContentDriveFieldFilterComponent {
 
     /** Raw stored value; re-reads on external changes (URL restore, clear-all, reset). */
     protected readonly $rawValue = linkedSignal<string>(() => {
-        const raw = this.#store.getFilterValue(this.$key());
+        const raw = this.#filters.getFilterValue(this.$key());
 
         return typeof raw === 'string' ? raw : '';
     });
@@ -444,6 +458,17 @@ export class DotContentDriveFieldFilterComponent {
 
     /** Relationship is picked in a full dialog, so the chip opens it instead of a popover. */
     protected readonly $isRelationship = computed(() => this.$control() === 'relationship');
+
+    /**
+     * A Relationship field on a surface that supplies no picker.
+     *
+     * The chip still renders — dropping it would leave a restored `us.*` value filtering with
+     * nothing on screen to clear it — but it says it cannot be opened here rather than opening a
+     * panel with no control in it (FR-020, FR-014e).
+     */
+    protected readonly $relationshipUnavailable = computed(
+        () => this.$isRelationship() && !this.#relationshipPicker
+    );
     /**
      * The picked related contentlet, keyed by identifier. The stored filter value is the identifier
      * (per the search contract); we keep the whole contentlet so we can derive its title (chip
@@ -519,8 +544,8 @@ export class DotContentDriveFieldFilterComponent {
 
     constructor() {
         this.#patch$
-            .pipe(debounceTime(DEBOUNCE_TIME), takeUntilDestroyed())
-            .subscribe((raw) => this.#store.patchFilters({ [this.$key()]: raw }));
+            .pipe(debounceTime(FIELD_FILTER_DEBOUNCE_TIME), takeUntilDestroyed())
+            .subscribe((raw) => this.#filters.patchFilters({ [this.$key()]: raw }));
 
         // Resolve the related contentlet for a stored identifier we don't hold yet (cold URL
         // restore). Caching it fills the chip title and lets the picker preselect it by inode.
@@ -657,13 +682,22 @@ export class DotContentDriveFieldFilterComponent {
     }
 
     /**
-     * Opens the reused "select existing content" dialog to pick related content. Only the target
-     * content type is derived from the relationship field; the chosen contentlets' inodes become the
-     * filter value. Cardinality/parent context are intentionally NOT passed — those drive the
-     * edit-time "already related elsewhere" constraint that disables rows, which is irrelevant to a
-     * filter. Selection is always multiple so the user can match any of several values.
+     * Asks the surface to open its content-selection dialog and stores what comes back.
+     *
+     * Only the target content type is derived from the relationship field. Cardinality and parent
+     * context are intentionally NOT passed — those drive the edit-time "already related elsewhere"
+     * constraint that disables rows, which is irrelevant to a filter.
+     *
+     * No-op without a {@link DOT_RELATIONSHIP_PICKER} (FR-020): the chip is already showing that
+     * the control is unavailable on this surface, so a click has nothing to do rather than
+     * something to fail at.
      */
     protected openRelationshipDialog(): void {
+        const picker = this.#relationshipPicker;
+        if (!picker) {
+            return;
+        }
+
         const field = this.$field();
         const contentTypeId = getContentTypeIdFromRelationship(field);
         if (!contentTypeId) {
@@ -680,24 +714,8 @@ export class DotContentDriveFieldFilterComponent {
             : undefined;
         const currentItemsIds = currentInode ? [currentInode] : [];
 
-        const ref = this.#dialogService.open(DotSelectExistingContentComponent, {
-            header: field.name,
-            width: '90%',
-            height: '90%',
-            modal: true,
-            appendTo: 'body',
-            baseZIndex: 10000,
-            maskStyleClass: 'p-dialog-mask-dynamic p-dialog-relationship-field',
-            style: { 'max-width': '1040px', 'max-height': '800px' },
-            templates: { footer: DotContentDriveRelationshipFooterComponent },
-            data: {
-                contentTypeId,
-                selectionMode: 'single',
-                currentItemsIds
-            }
-        });
-
-        ref?.onClose
+        picker
+            .open(field, currentItemsIds)
             .pipe(
                 filter((items): items is DotCMSContentlet[] => Array.isArray(items)),
                 take(1),

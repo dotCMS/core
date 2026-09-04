@@ -34,7 +34,14 @@ export * from './lib/components/dot-filter-bar/chips/dot-content-type-filter-chi
 export * from './lib/components/dot-filter-bar/chips/dot-language-filter-chip/dot-language-filter-chip.component';
 export * from './lib/components/dot-filter-bar/chips/dot-status-filter/constants';
 export * from './lib/components/dot-filter-bar/chips/dot-status-filter/dot-status-filter.component';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/constants';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/dot-field-filter.component';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/dot-lazy-multiselect/dot-lazy-multiselect.component';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/field-filter-host.token';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/field-options.util';
 export * from './lib/components/dot-filter-bar/chips/dot-field-filter/relationship-picker.token';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter/user-searchable.util';
+export * from './lib/components/dot-filter-bar/chips/dot-field-filter-menu/dot-field-filter-menu.component';
 export * from './lib/components/dot-filter-bar/chips/dot-shared-assets-filter/constants';
 export * from './lib/components/dot-filter-bar/chips/dot-shared-assets-filter/dot-shared-assets-filter.component';
 export * from './lib/components/dot-filter-bar/filter-facade.token';

@@ -5,21 +5,21 @@ import { DotMessageService } from '@dotcms/data-access';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import {
-    DotContentDriveLazyMultiselectComponent,
+    DotLazyMultiselectComponent,
     DotLazyMultiselectLoader,
     DotLazyMultiselectOption
-} from './dot-content-drive-lazy-multiselect.component';
+} from './dot-lazy-multiselect.component';
 
-import { DEBOUNCE_TIME } from '../../../../shared/constants';
+import { FIELD_FILTER_DEBOUNCE_TIME } from '../constants';
 
 const page = (options: DotLazyMultiselectOption[], hasMore = false) => of({ options, hasMore });
 
-describe('DotContentDriveLazyMultiselectComponent', () => {
-    let spectator: Spectator<DotContentDriveLazyMultiselectComponent>;
+describe('DotLazyMultiselectComponent', () => {
+    let spectator: Spectator<DotLazyMultiselectComponent>;
     let loadPage: jest.Mock;
 
     const createComponent = createComponentFactory({
-        component: DotContentDriveLazyMultiselectComponent,
+        component: DotLazyMultiselectComponent,
         providers: [
             {
                 provide: DotMessageService,
@@ -55,7 +55,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
 
             const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
             spectator.typeInElement('ang', input);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(loadPage).toHaveBeenCalledWith({ page: 1, perPage: 20, filter: 'ang' });
         });
@@ -126,7 +126,7 @@ describe('DotContentDriveLazyMultiselectComponent', () => {
             // Search resets the option list to a page that no longer contains 'a'.
             const input = spectator.query(byTestId('lazy-multiselect-search')) as HTMLInputElement;
             spectator.typeInElement('b', input);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             const emitted: DotLazyMultiselectOption[][] = [];
             spectator.component.selectionChange.subscribe((value) => emitted.push(value));

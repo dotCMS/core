@@ -7,8 +7,6 @@ import {
 } from '@openng/spectator/jest';
 import { of, Subject, throwError } from 'rxjs';
 
-import { DialogService } from 'primeng/dynamicdialog';
-
 import {
     DotCategoriesService,
     DotContentletService,
@@ -18,11 +16,12 @@ import {
 import { DotCMSContentlet, DotCMSContentTypeField } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
 
-import { DotContentDriveFieldFilterComponent } from './dot-content-drive-field-filter.component';
+import { FIELD_FILTER_DEBOUNCE_TIME } from './constants';
+import { DotFieldFilterComponent } from './dot-field-filter.component';
+import { DOT_RELATIONSHIP_PICKER, DotRelationshipPicker } from './relationship-picker.token';
+import { toLocalIsoString } from './user-searchable.util';
 
-import { DEBOUNCE_TIME } from '../../../../shared/constants';
-import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
-import { toLocalIsoString } from '../../../../utils/functions';
+import { DOT_FILTER_FACADE, DotFilterFacade } from '../../filter-facade.token';
 
 const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
     ({
@@ -34,20 +33,23 @@ const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTy
         ...overrides
     }) as DotCMSContentTypeField;
 
-describe('DotContentDriveFieldFilterComponent', () => {
-    let spectator: Spectator<DotContentDriveFieldFilterComponent>;
-    let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
-    let dialogService: SpyObject<DialogService>;
+/** The chip reaches its surface only through the facade, so the whole surface is these two mocks. */
+const filterFacade = (): jest.Mocked<Pick<DotFilterFacade, 'getFilterValue' | 'patchFilters'>> => ({
+    getFilterValue: jest.fn().mockReturnValue(undefined),
+    patchFilters: jest.fn()
+});
+
+describe('DotFieldFilterComponent', () => {
+    let spectator: Spectator<DotFieldFilterComponent>;
+    let store: ReturnType<typeof filterFacade>;
+    let relationshipPicker: jest.Mocked<DotRelationshipPicker>;
     let contentletService: SpyObject<DotContentletService>;
     let categoriesService: SpyObject<DotCategoriesService>;
 
     const createComponent = createComponentFactory({
-        component: DotContentDriveFieldFilterComponent,
+        component: DotFieldFilterComponent,
         providers: [
-            mockProvider(DotContentDriveStore, {
-                getFilterValue: jest.fn().mockReturnValue(undefined),
-                patchFilters: jest.fn()
-            }),
+            { provide: DOT_FILTER_FACADE, useFactory: filterFacade },
             mockProvider(DotTagsService, {
                 getTagsPaginated: jest.fn().mockReturnValue(of({ entity: [{ label: 'angular' }] }))
             }),
@@ -72,14 +74,21 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 })
             }
         ],
-        componentProviders: [mockProvider(DialogService, { open: jest.fn() })],
+        componentProviders: [
+            { provide: DOT_RELATIONSHIP_PICKER, useFactory: () => ({ open: jest.fn() }) }
+        ],
         detectChanges: false
     });
 
     beforeEach(() => {
         spectator = createComponent({ props: { field: field() } as never });
-        store = spectator.inject(DotContentDriveStore, true);
-        dialogService = spectator.inject(DialogService, true);
+        store = spectator.inject(DOT_FILTER_FACADE) as ReturnType<typeof filterFacade>;
+        // From the COMPONENT injector: the capability is provided per surface, and the chip
+        // resolves it there.
+        relationshipPicker = spectator.inject(
+            DOT_RELATIONSHIP_PICKER,
+            true
+        ) as jest.Mocked<DotRelationshipPicker>;
         contentletService = spectator.inject(DotContentletService, true);
         categoriesService = spectator.inject(DotCategoriesService, true);
     });
@@ -209,7 +218,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
                 const input = spectator.query(byTestId('field-filter-text'), { root: true });
                 spectator.typeInElement('hello', input as HTMLInputElement);
-                jest.advanceTimersByTime(DEBOUNCE_TIME);
+                jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
                 expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'hello' });
             });
@@ -240,7 +249,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             const input = spectator.query(byTestId('field-filter-key-value'), { root: true });
             spectator.typeInElement('color:red', input as HTMLInputElement);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // The chip/URL keep the user's text; the `:`→`_` join is applied downstream.
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.meta': 'color:red' });
@@ -314,7 +323,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             spectator.detectChanges();
 
             spectator.triggerEventHandler('dot-chip-filter', 'removed', undefined);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
             jest.useRealTimers();
@@ -383,30 +392,28 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 relationships: { velocityVar: 'Author.blogs', cardinality: 1, isParentField: true }
             } as Partial<DotCMSContentTypeField>);
 
-        it('should open the picker dialog when the chip is clicked', () => {
-            dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);
+        it('should ask the surface to open its picker when the chip is clicked', () => {
+            relationshipPicker.open.mockReturnValue(of([]));
             spectator.setInput('field', relationshipField());
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('field-filter-chip-author')) as Element);
 
-            expect(dialogService.open).toHaveBeenCalled();
+            expect(relationshipPicker.open).toHaveBeenCalled();
         });
 
         it('should resolve the stored identifier to its inode and preselect it after a reload', () => {
             store.getFilterValue.mockReturnValue('id-1');
-            dialogService.open.mockReturnValue({ onClose: of(undefined) } as never);
+            relationshipPicker.open.mockReturnValue(of([]));
             spectator.setInput('field', relationshipField());
             spectator.detectChanges();
 
             spectator.click(spectator.query(byTestId('field-filter-chip-author')) as Element);
 
             expect(contentletService.getContentletByInode).toHaveBeenCalledWith('id-1');
-            expect(dialogService.open).toHaveBeenCalledWith(
-                expect.anything(),
-                expect.objectContaining({
-                    data: expect.objectContaining({ currentItemsIds: ['inode-1'] })
-                })
+            expect(relationshipPicker.open).toHaveBeenCalledWith(
+                expect.objectContaining({ variable: 'author' }),
+                ['inode-1']
             );
         });
 
@@ -421,7 +428,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
         it('should store the selected contentlet identifiers on close', () => {
             jest.useFakeTimers();
             const onClose = new Subject<DotCMSContentlet[]>();
-            dialogService.open.mockReturnValue({ onClose } as never);
+            relationshipPicker.open.mockReturnValue(onClose);
             spectator.setInput('field', relationshipField());
             spectator.detectChanges();
 
@@ -429,7 +436,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             onClose.next([
                 { identifier: 'id-1', inode: 'inode-1', title: 'First' } as DotCMSContentlet
             ]);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.author': 'id-1' });
             jest.useRealTimers();
@@ -459,7 +466,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             // Still inverted: from 17:00 is after the new to 08:00.
             emitOnControl('field-filter-time-to', 'ngModelChange', new Date(2024, 0, 1, 8, 0, 0));
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).not.toHaveBeenCalled();
         });
@@ -469,7 +476,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             const correctedTo = new Date(2024, 0, 1, 18, 0, 0);
             emitOnControl('field-filter-time-to', 'ngModelChange', correctedTo);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -486,7 +493,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             const to = new Date(2024, 0, 1, 17, 0, 0);
             emitOnControl('field-filter-time-from', 'ngModelChange', from);
             emitOnControl('field-filter-time-to', 'ngModelChange', to);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -519,7 +526,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 new Date(2024, 2, 5),
                 new Date(2024, 2, 25)
             ]);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // Dates change to Mar 5 / Mar 25, but the seeded times (08:00 / 18:00) are kept.
             const expectedFrom = new Date(2024, 2, 5, 8, 0, 0);
@@ -538,7 +545,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 'ngModelChange',
                 new Date(2024, 5, 15, 10, 30, 0)
             );
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // Time changes to 10:30, the seeded from date (Jan 10) is kept; to bound unchanged.
             const expectedFrom = new Date(2024, 0, 10, 10, 30, 0);
@@ -555,7 +562,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 'ngModelChange',
                 new Date(2024, 5, 15, 20, 45, 0)
             );
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             const expectedTo = new Date(2024, 0, 20, 20, 45, 0);
             expect(store.patchFilters).toHaveBeenCalledWith({
@@ -603,7 +610,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             emitOnControl('field-filter-text', 'ngModelChange', 'a');
             emitOnControl('field-filter-text', 'ngModelChange', 'ab');
             emitOnControl('field-filter-text', 'ngModelChange', 'abc');
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledTimes(1);
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'abc' });
@@ -626,7 +633,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             const from = new Date(2024, 0, 1);
             const to = new Date(2024, 0, 31);
             emitOnControl('field-filter-date', 'ngModelChange', [from, to]);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({
                 'us.body': `${toLocalIsoString(from)},${toLocalIsoString(to)}`
@@ -637,7 +644,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openDateField();
 
             emitOnControl('field-filter-date', 'ngModelChange', null);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
         });
@@ -656,7 +663,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-select', 'ngModelChange', 'a');
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'a' });
         });
@@ -670,7 +677,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-select', 'ngModelChange', null);
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': '' });
         });
@@ -684,7 +691,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-radio', 'ngModelChange', 'b');
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'b' });
         });
@@ -726,7 +733,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             emitOnControl('field-filter-radio', 'ngModelChange', 'true');
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             // `true`, not `1`: the backend coerces a BOOL field's value on save, so the indexed value
             // is a real boolean (verified against a running instance).
@@ -743,7 +750,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
 
             emitOnControl('field-filter-multi-select', 'ngModelChange', ['a', 'b']);
             emitOnControl('field-filter-multi-select', 'onChange', {});
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'a,b' });
         });
@@ -759,7 +766,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
             openPopover();
 
             spectator.triggerEventHandler(
-                'dot-content-drive-lazy-multiselect',
+                'dot-lazy-multiselect',
                 'selectionChange',
                 [
                     { label: 'angular', value: 'angular' },
@@ -767,7 +774,7 @@ describe('DotContentDriveFieldFilterComponent', () => {
                 ],
                 { root: true }
             );
-            jest.advanceTimersByTime(DEBOUNCE_TIME);
+            jest.advanceTimersByTime(FIELD_FILTER_DEBOUNCE_TIME);
 
             expect(store.patchFilters).toHaveBeenCalledWith({ 'us.body': 'angular,nx' });
         });
