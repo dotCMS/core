@@ -12,7 +12,8 @@ import {
     getDotCMSContentletsBound,
     getDotContainerAttributes,
     getDotContentletAttributes,
-    isDotAnalyticsActive
+    isDotAnalyticsActive,
+    readContentletDataset
 } from './dom.utils';
 
 import { ANALYTICS_ACTIVE_WINDOW_KEY } from '../../internal/constants';
@@ -723,5 +724,99 @@ describe('findDotCMSElement', () => {
 
         const result = findDotCMSElement(level0);
         expect(result).toBe(level4);
+    });
+});
+
+describe('readContentletDataset', () => {
+    const createContentletElement = (dataset: Record<string, string> = {}): HTMLElement => {
+        const element = document.createElement('div');
+        Object.entries(dataset).forEach(([key, value]) => {
+            element.dataset[key] = value;
+        });
+
+        return element;
+    };
+
+    describe('canEdit', () => {
+        // The gate must FAIL OPEN. Headless and SDK-rendered pages never emit
+        // `data-dot-can-edit`, so anything other than the literal "false" has
+        // to resolve to "allowed" — inverting this disables every edit
+        // affordance on every headless page.
+        it('should be false only when the attribute is exactly "false"', () => {
+            const element = createContentletElement({ dotCanEdit: 'false' });
+
+            expect(readContentletDataset(element).canEdit).toBe(false);
+        });
+
+        it('should be true when the attribute is "true"', () => {
+            const element = createContentletElement({ dotCanEdit: 'true' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is absent', () => {
+            const element = createContentletElement();
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is an empty string', () => {
+            const element = createContentletElement({ dotCanEdit: '' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is malformed', () => {
+            const element = createContentletElement({ dotCanEdit: 'nope' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the element has no dataset at all', () => {
+            const element = { dataset: undefined } as unknown as HTMLElement;
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+    });
+
+    describe('existing fields', () => {
+        // Regression guard: this reader feeds every contentlet interaction in
+        // the editor (hover, selection, drag), so adding canEdit must not
+        // disturb anything already on the payload.
+        it('should keep mapping every previously supported attribute', () => {
+            const element = createContentletElement({
+                dotIdentifier: 'identifier-123',
+                dotTitle: 'Test Contentlet',
+                dotInode: 'inode-123',
+                dotType: 'test-content-type',
+                dotBasetype: 'CONTENT',
+                dotWidgetTitle: 'Widget Title',
+                dotOnNumberOfPages: '3',
+                dotCanEdit: 'false'
+            });
+
+            expect(readContentletDataset(element)).toEqual({
+                identifier: 'identifier-123',
+                title: 'Test Contentlet',
+                inode: 'inode-123',
+                contentType: 'test-content-type',
+                baseType: 'CONTENT',
+                widgetTitle: 'Widget Title',
+                onNumberOfPages: '3',
+                canEdit: false
+            });
+        });
+
+        it('should still parse dotStyleProperties when present', () => {
+            const element = createContentletElement({
+                dotIdentifier: 'identifier-123',
+                dotStyleProperties: JSON.stringify({ alignment: 'center' })
+            });
+
+            const result = readContentletDataset(element);
+
+            expect(result.dotStyleProperties).toEqual({ alignment: 'center' });
+            expect(result.canEdit).toBe(true);
+        });
     });
 });
