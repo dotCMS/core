@@ -18,7 +18,7 @@ import {
     UnknownTargetError
 } from '../../shared/errors';
 import { checkReachable } from '../../shared/instance';
-import { resolveRequiredInputs } from '../../shared/prompts';
+import { resolveInstanceUrl, resolveRequiredInputs } from '../../shared/prompts';
 
 import type { TargetId } from './targets/types';
 import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
@@ -76,19 +76,24 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     const explicitTargets = resolveTargets(opts);
     const scope = opts.scope ?? 'folder';
 
-    // 2. Resolve the required inputs — prompting only for what is missing, and only where
-    //    there is a terminal to ask on (FR-003i, FR-003k).
-    let inputs = await resolveRequiredInputs(
-        { ...opts, authToken: auth.token, user: auth.user, password: auth.password },
-        opts.promptPort
-    );
-    const url = inputs.url;
     const step = opts.onProgress ?? (() => undefined);
 
-    step(`Checking ${url} is reachable`);
+    // 2. The address first, and CHECKED first. Only once the instance is confirmed to be a
+    //    real dotCMS is anyone asked for a credential: a password typed against a wrong
+    //    address is wasted effort, and the failure would land after the work rather than
+    //    before it.
+    const url = await resolveInstanceUrl(opts, opts.promptPort);
+    step(`Checking ${url}`);
     await checkReachable(url);
 
-    // 3 + 4. Authenticate and verify, retrying a REJECTION up to three times (FR-007).
+    // 3. Now the credential — prompting only for what is missing, and only where there is a
+    //    terminal to ask on (FR-003i, FR-003k).
+    let inputs = await resolveRequiredInputs(
+        { ...opts, url, authToken: auth.token, user: auth.user, password: auth.password },
+        opts.promptPort
+    );
+
+    // 4. Authenticate and verify, retrying a REJECTION up to three times (FR-007).
     //
     // Both halves are inside the loop on purpose. A supplied token that the instance refuses is
     // the same user error as a mistyped password — asking again is obviously right, and failing

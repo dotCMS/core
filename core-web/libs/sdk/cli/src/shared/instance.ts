@@ -65,7 +65,7 @@ export async function checkReachable(url: string): Promise<InstanceInfo> {
     }
 
     if (!isDotCmsConfiguration(response.data)) {
-        throw new NotADotCmsInstanceError(url, response.status);
+        throw new NotADotCmsInstanceError(url);
     }
 
     return { url, version: readVersion(response.data) };

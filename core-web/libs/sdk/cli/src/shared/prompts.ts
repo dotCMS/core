@@ -44,6 +44,29 @@ export function canPrompt(): boolean {
  *    everything", which here would silently skip a required input. It must not shortcut this
  *    function at all (FR-003l).
  */
+/**
+ * The instance address, on its own.
+ *
+ * Split from authentication deliberately: the address is checked against the live instance
+ * BEFORE anyone is asked for a username and password. Asking for credentials and only then
+ * revealing that the address was wrong wastes the developer's effort on a question that could
+ * never have mattered.
+ */
+export async function resolveInstanceUrl(
+    opts: Partial<RunOptions>,
+    port?: PromptPort,
+    interactive = Boolean(port)
+): Promise<string> {
+    let url = opts.url ?? readEnv(ENV_KEYS.url);
+    if (!url) {
+        if (!interactive || !port) throw new MissingInputError('An instance address');
+        url = await port.text('dotCMS instance address', DEFAULT_URL);
+    }
+    url = normalizeUrl(url);
+    validateUrl(url);
+    return url;
+}
+
 export async function resolveRequiredInputs(
     opts: Partial<RunOptions>,
     port?: PromptPort,
@@ -60,15 +83,10 @@ export async function resolveRequiredInputs(
         return run();
     };
 
-    // --- instance address ---
-    let url = opts.url ?? readEnv(ENV_KEYS.url);
-    if (!url) {
-        url = await ask('An instance address', () =>
-            (port as PromptPort).text('dotCMS instance address', DEFAULT_URL)
-        );
-    }
-    url = normalizeUrl(url);
-    validateUrl(url);
+    // Already resolved and validated by the caller in the normal flow; re-resolving here is
+    // cheap and keeps this function usable on its own.
+    const url = await resolveInstanceUrl(opts, port, interactive);
+    if (!opts.url && !readEnv(ENV_KEYS.url)) prompted = true;
 
     // --- authentication: exactly one mode ---
     const authToken = opts.authToken ?? readEnv(ENV_KEYS.authToken);

@@ -85,10 +85,14 @@ describe('instance', () => {
         it('rejects a host that answers 404 — reached, but not dotCMS', async () => {
             jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
             const err = (await checkReachable('https://example.com').catch((e: Error) => e)) as Error;
-            expect(err.message).toMatch(/not a dotCMS instance/i);
+            expect(err.message).toMatch(/not a valid dotCMS instance/i);
             expect(err.message).toContain('example.com');
             // Distinct from unreachable: the host answered.
             expect(err.message).not.toMatch(/could not reach/i);
+            // Says WHAT is wrong, not HOW we found out. The endpoint probed and the shape
+            // expected are implementation detail the developer does not need.
+            expect(err.message).not.toMatch(/appconfiguration|api\/v1|proxy|CDN|payload|entity/i);
+            expect(err.message.length).toBeLessThan(120);
         });
 
         it('rejects a host that answers 200 with something else entirely', async () => {
@@ -96,7 +100,7 @@ describe('instance', () => {
                 new Response(JSON.stringify({ hello: 'world' }), { status: 200 })
             );
             await expect(checkReachable('https://proxy.example.com')).rejects.toThrow(
-                /not a dotCMS instance/i
+                /not a valid dotCMS instance/i
             );
         });
 
@@ -105,7 +109,7 @@ describe('instance', () => {
                 new Response('<!doctype html><html><body>hi</body></html>', { status: 200 })
             );
             await expect(checkReachable('https://cdn.example.com')).rejects.toThrow(
-                /not a dotCMS instance/i
+                /not a valid dotCMS instance/i
             );
         });
 
@@ -114,7 +118,7 @@ describe('instance', () => {
                 new Response(JSON.stringify({ entity: {} }), { status: 200 })
             );
             await expect(checkReachable('https://x.example.com')).rejects.toThrow(
-                /not a dotCMS instance/i
+                /not a valid dotCMS instance/i
             );
         });
 

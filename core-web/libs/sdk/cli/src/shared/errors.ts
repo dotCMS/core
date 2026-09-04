@@ -34,12 +34,10 @@ export class InstanceUnreachableError extends CliError {
 }
 
 export class NotADotCmsInstanceError extends CliError {
-    constructor(url: string, status: number) {
-        super(
-            `${url} answered (HTTP ${status}) but is not a dotCMS instance — ` +
-                `/api/v1/appconfiguration did not return a dotCMS configuration. ` +
-                `Check the address points at the dotCMS server itself, not a proxy, CDN or site root.`
-        );
+    constructor(url: string) {
+        // Says what is wrong, not how it was determined. The endpoint we probe and the shape we
+        // look for are our business; the developer needs the verdict and the fix.
+        super(`${url} is not a valid dotCMS instance. Check the address.`);
     }
 }
 

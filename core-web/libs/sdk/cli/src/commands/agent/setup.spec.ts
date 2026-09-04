@@ -9,6 +9,8 @@ import * as registry from './targets/registry';
 
 import { appConfigurationResponse } from '../../shared/__fixtures__/appconfiguration';
 
+import type { PromptPort } from '../../shared/prompts';
+
 /**
  * setup.spec drives the WHOLE flow, including the skills install and the connection check —
  * both of which spawn processes. Without this, `installSkills` really ran `npx skills add` and
@@ -460,5 +462,56 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
             skipSkills: true, skipVerify: true, promptPort: portThatRetypes('x'), onAuthRetry
         }).catch(() => undefined);
         expect(onAuthRetry).not.toHaveBeenCalled();
+    });
+});
+
+describe('the instance is validated BEFORE credentials are asked for', () => {
+    /** A username and password typed against a wrong address is wasted effort. */
+    // Cast once: PromptPort.multiSelect is generic, which a per-property jest.fn() cannot
+    // satisfy without more ceremony than the test is worth. What matters here is the ORDER of
+    // the calls, not their types.
+    const trackingPort = (calls: string[]) =>
+        ({
+            text: jest.fn(async () => { calls.push('ask:url'); return URL_; }),
+            password: jest.fn(async () => { calls.push('ask:password'); return 'pw'; }),
+            select: jest.fn(async () => { calls.push('ask:mode'); return 'signin'; }),
+            multiSelect: jest.fn(async () => { calls.push('ask:targets'); return ['cursor']; })
+        }) as unknown as PromptPort;
+
+    it('never asks for a password when the address is not dotCMS', async () => {
+        jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
+        const calls: string[] = [];
+        const err = await runSetup({
+            url: 'https://example.com', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+        }).catch((e: Error) => e);
+
+        expect((err as Error).message).toMatch(/not a valid dotCMS instance/i);
+        expect(calls).not.toContain('ask:password');
+        expect(calls).not.toContain('ask:mode');
+    });
+
+    it('never asks for a password when the instance is unreachable', async () => {
+        jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+            Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } })
+        );
+        const calls: string[] = [];
+        await runSetup({
+            url: 'https://nope.invalid', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+        }).catch(() => undefined);
+
+        expect(calls).not.toContain('ask:password');
+    });
+
+    it('asks for the address first, and only then for a credential', async () => {
+        mockAcceptedToken();
+        const calls: string[] = [];
+        await runSetup({
+            authToken: 'good', agents: ['cursor'], scope: 'folder', cwd: dir,
+            skipSkills: true, skipVerify: true, promptPort: trackingPort(calls)
+        }).catch(() => undefined);
+
+        expect(calls[0]).toBe('ask:url');
     });
 });
