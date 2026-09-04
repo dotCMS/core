@@ -11,8 +11,9 @@ import { writeTomlTarget } from './targets/toml-target';
 import { mintToken, verifyToken } from '../../shared/auth';
 import { CAN_RESTRICT, hasEntry } from '../../shared/config-file';
 import { ENV_KEYS, readEnv } from '../../shared/env';
-import { ConflictingAuthError, MissingInputError, UnknownTargetError } from '../../shared/errors';
-import { checkReachable, resolveUrl } from '../../shared/instance';
+import { ConflictingAuthError, UnknownTargetError } from '../../shared/errors';
+import { checkReachable } from '../../shared/instance';
+import { resolveRequiredInputs } from '../../shared/prompts';
 
 import type { TargetId } from './targets/types';
 import type { RunOptions, TargetOutcome, Token } from '../../shared/types';
@@ -67,18 +68,25 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
     const explicitTargets = resolveTargets(opts);
     const scope = opts.scope ?? 'folder';
 
-    // 2. Instance.
-    const url = await resolveUrl(opts);
+    // 2. Resolve the required inputs — prompting only for what is missing, and only where
+    //    there is a terminal to ask on (FR-003i, FR-003k).
+    const inputs = await resolveRequiredInputs(
+        { ...opts, authToken: auth.token, user: auth.user, password: auth.password },
+        opts.promptPort
+    );
+    const url = inputs.url;
     await checkReachable(url);
 
     // 3. Authenticate.
     let token: Token;
-    if (auth.token) {
-        token = { value: auth.token, origin: 'supplied', verified: false };
-    } else if (auth.user && auth.password) {
-        token = await mintToken({ url, user: auth.user, password: auth.password });
+    if (inputs.authToken) {
+        token = { value: inputs.authToken, origin: 'supplied', verified: false };
     } else {
-        throw new MissingInputError(auth.user ? 'A password' : 'An authentication method');
+        token = await mintToken({
+            url,
+            user: inputs.user as string,
+            password: inputs.password as string
+        });
     }
 
     // 4. Verify. Past this line, and only past it, may anything be written.

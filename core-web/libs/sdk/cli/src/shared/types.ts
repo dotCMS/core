@@ -70,4 +70,6 @@ export interface RunOptions {
      * SAFE answer rather than bypassing the step.
      */
     confirmExclude?: (files: string[]) => Promise<boolean>;
+    /** How to ask, when asking is needed. Injected so the rules stay testable without a terminal. */
+    promptPort?: import('./prompts').PromptPort;
 }

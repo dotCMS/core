@@ -1,8 +1,10 @@
 
+import { confirmExclude, confirmOverwrite, inquirerPort } from './prompts';
 import { runSetup } from './setup';
 import { TARGET_IDS } from './targets/registry';
 
-import { renderSummary, writeOut } from '../../shared/ui';
+import { canPrompt } from '../../shared/prompts';
+import { printBanner, renderSummary, writeOut } from '../../shared/ui';
 
 import type { Command } from 'commander';
 
@@ -41,7 +43,13 @@ export function registerAgentCommand(program: Command): void {
         .option('-y, --yes', 'accept confirmations (never skips a required input)')
         .option('--force', 'replace an existing dotcms entry without asking')
         .action(async (options: Record<string, unknown>) => {
+            // Only when someone is watching — a banner in a CI log is noise.
+            if (canPrompt()) printBanner();
+            const interactive = canPrompt();
             const result = await runSetup({
+                promptPort: interactive ? inquirerPort : undefined,
+                confirmOverwrite: interactive ? confirmOverwrite : undefined,
+                confirmExclude: interactive ? confirmExclude : undefined,
                 url: options['url'] as string | undefined,
                 user: options['user'] as string | undefined,
                 password: options['password'] as string | undefined,

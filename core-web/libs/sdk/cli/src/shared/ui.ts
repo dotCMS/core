@@ -1,4 +1,12 @@
+import cfonts from 'cfonts';
+
 import type { TargetOutcome } from './types';
+
+/** Matches `create-app`'s printWelcomeScreen() so the two commands read as one tool. */
+export function printBanner(): void {
+    cfonts.say('dotCMS', { font: 'block', align: 'left', colors: ['red', 'white'], space: false });
+    process.stdout.write('  Connect your AI coding agent to a dotCMS instance\n\n');
+}
 
 export interface VersionControlSummary {
     files: string[];
