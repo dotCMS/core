@@ -643,6 +643,43 @@ describe('DotExperimentsConfigureStore', () => {
      * The screen mirrors the rule `ExperimentsAPIImpl.save()` enforces, so a page the server would
      * refuse never leaves. See `specs/37176-draft-experiment-page-change`.
      */
+    // #37005. The variant endpoints persist on their own and answer with the recomputed
+    // proportion, so the weights the card is about to mirror ARE what the server holds. The
+    // baseline was not settling with them, so adding a variant left the screen dirty: Save Draft
+    // lit up for work already written, and — worse — the `canDeactivate` guard then blocked the
+    // way to UVE, which is how "Edit variant" came back as an error instead of a navigation.
+    describe('adding a variant', () => {
+        const withNewVariant = () =>
+            buildExperiment({
+                trafficProportion: {
+                    type: TrafficProportionTypes.SPLIT_EVENLY,
+                    variants: [buildVariant('DEFAULT', 50), buildVariant('variant-new', 50)]
+                }
+            });
+
+        it('should leave the screen clean, since the endpoint already wrote it', () => {
+            initExisting();
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+            // The card mirrors the proportion that came back, as it does in the browser.
+            mirrorForm(added);
+
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        // Only the slice the endpoint wrote settles. A name typed and not yet sent is still work.
+        it('should keep an unsent edit dirty', () => {
+            initExisting();
+            edit({ name: 'Typed but never saved' });
+            const added = withNewVariant();
+
+            dispatcher.dispatch(apiEvents.addVariantSucceeded(added));
+
+            expect(store.$hasUnsavedChanges()).toBe(true);
+        });
+    });
+
     describe('changing the page of a draft', () => {
         const OTHER_PAGE = { pageId: 'page-2', title: 'Pricing', path: '/pricing', languageId: 1 };
 

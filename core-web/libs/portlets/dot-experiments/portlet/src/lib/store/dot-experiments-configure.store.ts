@@ -512,12 +512,38 @@ export const DotExperimentsConfigureStore = signalStore(
          */
         on(apiEvents.saveSkipped, () => ({ status: ComponentStatus.LOADED })),
 
-        // Variants have their own endpoints, each answering with the recomputed proportion.
+        /**
+         * Variants have their own endpoints, each answering with the recomputed proportion.
+         *
+         * Which means that proportion is already written, so the baseline has to move with it:
+         * the card mirrors the response into the form, and a baseline left behind called that
+         * mirroring unsaved work. Save Draft lit up for something already stored, and the
+         * `canDeactivate` guard then blocked the way out — so "Edit variant" came back as a
+         * confirm dialog about losing changes instead of opening the editor (#37005).
+         *
+         * Only that slice settles. `baselineOf` would rebuild the whole baseline from the server's
+         * experiment, which would call a name or a goal typed and never sent "saved" and lose it
+         * on the way out — the same trap `saveSucceeded` documents.
+         */
         on(
             apiEvents.addVariantSucceeded,
             apiEvents.editVariantSucceeded,
             apiEvents.removeVariantSucceeded,
-            ({ payload }) => ({ experiment: payload, status: ComponentStatus.LOADED })
+            ({ payload }, state) => {
+                const settled = baselineOf(payload);
+
+                return {
+                    experiment: payload,
+                    status: ComponentStatus.LOADED,
+                    savedFormValue: state.savedFormValue
+                        ? {
+                              ...state.savedFormValue,
+                              variantWeights: settled.variantWeights,
+                              trafficProportionType: settled.trafficProportionType
+                          }
+                        : settled
+                };
+            }
         ),
         on(pageEvents.variantAdded, pageEvents.variantRenamed, pageEvents.variantDeleted, () => ({
             status: ComponentStatus.SAVING
