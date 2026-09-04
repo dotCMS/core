@@ -98,6 +98,36 @@ test.describe('editing the key in place @smoke', () => {
         expect(await keys(root)).toEqual(['beta', 'alpha']);
     });
 
+    test('clicking away abandons the edit', async ({ page }) => {
+        const { f, root } = await open(page);
+        await f.addEntry('keepMe', 'v');
+
+        await root.getByTestId('dot-key-value-key-output').first().click();
+        const input = root.getByTestId('dot-key-value-key-input').first();
+        await expect(input).toBeVisible();
+        await input.fill('typedButAbandoned');
+
+        // Somewhere neutral, outside the editor entirely.
+        await page.getByTestId('title').click();
+
+        await expect(input).toBeHidden();
+        expect(await keys(root)).toEqual(['keepMe']);
+    });
+
+    test("clicking the row's own remove button still removes it mid-edit", async ({ page }) => {
+        // Blur abandons the edit, which re-renders the row. The click that caused the
+        // blur has to still land on the button rather than being swallowed by it.
+        const { f, root } = await open(page);
+        await f.addEntry('doomed', 'v');
+
+        await root.getByTestId('dot-key-value-key-output').first().click();
+        await expect(root.getByTestId('dot-key-value-key-input').first()).toBeVisible();
+
+        await root.getByTestId('dot-key-value-delete-button').first().click();
+
+        expect(await keys(root)).toEqual([]);
+    });
+
     test('escape leaves the key alone', async ({ page }) => {
         const { f, root } = await open(page);
         await f.addEntry('keepMe', 'v');

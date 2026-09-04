@@ -54,6 +54,7 @@ grew on top of it:
 | Deferred save in Field Variables | Cancel had nothing to cancel while every keystroke was written | FR-055 to FR-059 |
 | Editable key | reverses FR-008 | FR-008, FR-008a, FR-008b |
 | Refusals that say why | code review: an invalid edit closed and discarded what was typed, silently | FR-008a |
+| Click-away abandons | an edit should leave by one door whether or not it is valid | FR-008c |
 | Blank values refused everywhere | code review: the pasted block let one in that no other path allowed | FR-045a |
 
 ### Corrected during code review
@@ -266,7 +267,11 @@ persist.
   two pairs sharing a key collide wherever they are stored, and the entry row refuses the same thing
   when adding. A refused edit — a blank value included — MUST keep its input open, showing the same
   message the entry row shows for the same refusal, so what the user typed stays on screen to be
-  corrected. Abandoning the edit MUST restore the original text.
+  corrected.
+- **FR-008c**: Committing an edit MUST require an explicit confirmation, and moving focus away MUST
+  abandon it and restore the original text. One rule covers both ways out — Enter writes, anything
+  else puts the row back — rather than committing a valid edit and discarding an invalid one from the
+  same gesture.
 - **FR-008b**: A rename MUST carry the pair's value across unchanged.
 - **FR-009**: Users MUST be able to remove an existing pair.
 - **FR-010**: The editor MUST reject a new pair whose key duplicates an existing key, and MUST indicate

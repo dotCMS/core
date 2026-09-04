@@ -4,6 +4,7 @@
 @let readOnly = $readOnly();
 @let isEditing = $isEditing();
 @let isEditingKey = $isEditingKey();
+@let editing = isEditing || isEditingKey;
 
 <!--
     The cell stays whatever the mode, because the header always renders its gutter
@@ -15,67 +16,74 @@
     button and then does nothing at all. Until there is a keyboard reorder to reach,
     presenting it as a pointer affordance is the honest description.
 -->
-<td class="kv-gutter w-[30px] min-w-[30px] align-top">
-    @if (!readOnly) {
-        <span
-            class="inline-flex cursor-grab text-surface-500 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-surface-400"
-            pReorderableRowHandle
-            data-testId="dot-key-value-drag-handle">
+<td class="pr-0! pl-4!" [class.align-top]="editing" data-testId="dot-key-value-gutter">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (!readOnly) {
             <span
-                class="material-symbols-outlined text-lg!"
-                aria-hidden="true"
-                data-testId="dot-key-value-drag-handle-icon">
-                drag_indicator
+                class="inline-flex cursor-grab text-surface-500 opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 dark:text-surface-400"
+                pReorderableRowHandle
+                data-testId="dot-key-value-drag-handle">
+                <span
+                    class="material-symbols-outlined text-lg!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-drag-handle-icon">
+                    drag_indicator
+                </span>
             </span>
-        </span>
-    }
+        }
+    </div>
 </td>
 
 <!--
-    Cells align to the top, as the entry row's do: a validation message makes its own
-    cell taller, and centred content would drift, leaving the two columns off-line.
+    Cells keep the browser default of `middle`, unlike the entry row's.
+
+    The entry row top-aligns because it holds two inputs side by side: a message under
+    one would otherwise leave the two at different heights. A body row never has two —
+    one cell is being edited and the other is text — so there is nothing to keep level,
+    and top-aligning only moved the resting column for no gain. It does not even line
+    the key up with its input: the input is 36px tall against the key's 20, so matching
+    their top edges leaves their centres as far apart as centring does.
 -->
-<td class="align-top" data-testId="dot-key-value-key">
-    @if (isEditingKey) {
-        <input
-            (keydown.enter)="commitEdit($event)"
-            (keydown.escape)="cancelEdit($event)"
-            (blur)="commitEdit($event)"
-            [formControl]="editControl"
-            [placeholder]="'keyValue.key_input.placeholder' | dm"
-            class="w-full"
-            #keyInput
-            autocomplete="false"
-            data-testId="dot-key-value-key-input"
-            pInputText
-            pSize="small"
-            type="text" />
-        <!-- The entry row's messages, for the same refusals. -->
-        @if (editControl.dirty && editControl.hasError('required')) {
-            <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-key-required">
-                {{ 'keyValue.key_input.required' | dm }}
-            </small>
-        } @else if (editControl.dirty && editControl.hasError('duplicatedKey')) {
-            <small
-                class="mt-1 block text-xs text-red-500"
-                data-testId="dot-key-value-key-duplicated">
-                {{ 'keyValue.key_input.duplicated' | dm }}
-            </small>
+<td [class.align-top]="editing" data-testId="dot-key-value-key">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (isEditingKey) {
+            <input
+                (keydown.enter)="commitEdit($event)"
+                (keydown.escape)="cancelEdit($event)"
+                (blur)="cancelEdit($event)"
+                [formControl]="editControl"
+                [placeholder]="'keyValue.key_input.placeholder' | dm"
+                class="w-full"
+                #keyInput
+                autocomplete="false"
+                data-testId="dot-key-value-key-input"
+                pInputText
+                pSize="small"
+                type="text" />
+        } @else {
+            <!-- `title` keeps the whole key reachable once the column clips it. -->
+            <span
+                (click)="startEditKey()"
+                (keydown.enter)="startEditKey()"
+                (keydown.space)="$event.preventDefault(); startEditKey()"
+                [title]="variable.key"
+                [class.cursor-text]="!readOnly"
+                [attr.role]="readOnly ? null : 'button'"
+                [attr.tabindex]="readOnly ? null : 0"
+                class="block truncate"
+                data-testId="dot-key-value-key-output">
+                {{ variable.key }}
+            </span>
         }
-    } @else {
-        <!-- `title` keeps the whole key reachable once the column clips it. -->
-        <span
-            (click)="startEditKey()"
-            (keydown.enter)="startEditKey()"
-            (keydown.space)="$event.preventDefault(); startEditKey()"
-            [title]="variable.key"
-            [class.cursor-text]="!readOnly"
-            [attr.role]="readOnly ? null : 'button'"
-            [attr.tabindex]="readOnly ? null : 0"
-            class="block truncate"
-            data-testId="dot-key-value-key-output">
-            {{ variable.key }}
-        </span>
+    </div>
+    @if (isEditingKey && editControl.dirty && editControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-key-required">
+            {{ 'keyValue.key_input.required' | dm }}
+        </small>
+    } @else if (isEditingKey && editControl.dirty && editControl.hasError('duplicatedKey')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-key-duplicated">
+            {{ 'keyValue.key_input.duplicated' | dm }}
+        </small>
     }
 </td>
 
@@ -85,76 +93,78 @@
     offer, and no way to re-hide a value without persisting the mask over the secret.
     An existing row therefore carries no visibility control at all.
 -->
-<td class="align-top" data-testId="dot-key-value-editable-column">
-    @if (isHiddenField) {
-        <span
-            class="inline-flex items-center gap-1 text-surface-500 dark:text-surface-400"
-            data-testId="dot-key-value-label">
+<td [class.align-top]="editing" data-testId="dot-key-value-editable-column">
+    <div class="flex min-w-0 items-center" [class.min-h-12]="editing">
+        @if (isHiddenField) {
             <span
-                class="material-symbols-outlined text-base!"
-                aria-hidden="true"
-                data-testId="dot-key-value-hidden-icon">
-                lock
+                class="inline-flex items-center gap-1 text-surface-500 dark:text-surface-400"
+                data-testId="dot-key-value-label">
+                <span
+                    class="material-symbols-outlined text-base!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-hidden-icon">
+                    lock
+                </span>
+                {{ 'keyValue.value_hidden' | dm }}
             </span>
-            {{ 'keyValue.value_hidden' | dm }}
-        </span>
-    } @else if (isEditing) {
-        <input
-            (keydown.enter)="commitEdit($event)"
-            (keydown.escape)="cancelEdit($event)"
-            (blur)="commitEdit($event)"
-            [formControl]="editControl"
-            [placeholder]="'keyValue.value_input.placeholder' | dm"
-            class="w-full"
-            #valueInput
-            autocomplete="false"
-            data-testId="dot-key-value-input"
-            pInputText
-            pSize="small"
-            type="text" />
-        @if (editControl.dirty && editControl.hasError('required')) {
-            <small
-                class="mt-1 block text-xs text-red-500"
-                data-testId="dot-key-value-value-required">
-                {{ 'keyValue.value_input.required' | dm }}
-            </small>
+        } @else if (isEditing) {
+            <input
+                (keydown.enter)="commitEdit($event)"
+                (keydown.escape)="cancelEdit($event)"
+                (blur)="cancelEdit($event)"
+                [formControl]="editControl"
+                [placeholder]="'keyValue.value_input.placeholder' | dm"
+                class="w-full"
+                #valueInput
+                autocomplete="false"
+                data-testId="dot-key-value-input"
+                pInputText
+                pSize="small"
+                type="text" />
+        } @else {
+            <!-- `title` keeps the whole value reachable once the column clips it. -->
+            <span
+                (click)="startEdit()"
+                (keydown.enter)="startEdit()"
+                (keydown.space)="$event.preventDefault(); startEdit()"
+                [class.cursor-text]="!readOnly"
+                [attr.role]="readOnly ? null : 'button'"
+                [attr.tabindex]="readOnly ? null : 0"
+                [title]="variable.value"
+                class="block w-full truncate"
+                data-testId="dot-key-value-value-output">
+                {{ variable.value }}
+            </span>
         }
-    } @else {
-        <!-- `title` keeps the whole value reachable once the column clips it. -->
-        <span
-            (click)="startEdit()"
-            (keydown.enter)="startEdit()"
-            (keydown.space)="$event.preventDefault(); startEdit()"
-            [class.cursor-text]="!readOnly"
-            [attr.role]="readOnly ? null : 'button'"
-            [attr.tabindex]="readOnly ? null : 0"
-            [title]="variable.value"
-            class="block w-full truncate"
-            data-testId="dot-key-value-value-output">
-            {{ variable.value }}
-        </span>
+    </div>
+    @if (isEditing && editControl.dirty && editControl.hasError('required')) {
+        <small class="mt-1 block text-xs text-red-500" data-testId="dot-key-value-value-required">
+            {{ 'keyValue.value_input.required' | dm }}
+        </small>
     }
 </td>
 
 @if (!readOnly) {
-    <td class="w-[74px] min-w-[74px] align-top">
-        <button
-            (click)="delete.emit()"
-            [attr.aria-label]="'keyValue.action.delete' | dm"
-            [text]="true"
-            class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
-            data-testId="dot-key-value-delete-button"
-            pButton
-            severity="secondary"
-            size="small"
-            type="button">
-            <span
-                class="material-symbols-outlined text-lg!"
-                aria-hidden="true"
-                data-testId="dot-key-value-delete-icon"
-                pButtonIcon>
-                close
-            </span>
-        </button>
+    <td class="w-21 min-w-21" [class.align-top]="editing">
+        <div class="flex items-center" [class.min-h-12]="editing">
+            <button
+                (click)="delete.emit()"
+                [attr.aria-label]="'keyValue.action.delete' | dm"
+                [text]="true"
+                class="opacity-0 transition-opacity group-focus-within:opacity-100 group-hover:opacity-100 focus-visible:opacity-100"
+                data-testId="dot-key-value-delete-button"
+                pButton
+                severity="secondary"
+                size="small"
+                type="button">
+                <span
+                    class="material-symbols-outlined text-lg!"
+                    aria-hidden="true"
+                    data-testId="dot-key-value-delete-icon"
+                    pButtonIcon>
+                    close
+                </span>
+            </button>
+        </div>
     </td>
 }

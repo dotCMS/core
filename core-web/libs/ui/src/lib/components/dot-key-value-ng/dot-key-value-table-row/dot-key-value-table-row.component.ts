@@ -138,14 +138,15 @@ export class DotKeyValueTableRowComponent {
     }
 
     /**
-     * Commits the edit and returns the row to its at-rest presentation. Emits
-     * only when the text actually changed, so merely tabbing through a row
-     * does not look like an edit to the consumer.
+     * Commits the edit and returns the row to its at-rest presentation. Reached from
+     * Enter alone: moving focus away abandons the edit rather than committing it, so
+     * Enter is the one gesture that writes. Emits only when the text actually changed,
+     * so opening a row and closing it again is not an edit.
      *
      * An invalid edit — a blank key or value, or a rename onto a key another row
      * already holds — keeps the input open with its message rather than closing.
      * Closing would discard what the user typed without ever saying why it was
-     * refused, which is what this used to do. Escape still abandons the edit.
+     * refused, which is what this used to do. Escape and clicking away still abandon.
      *
      * Keys commit trimmed: surrounding space in a key is never meaningful, and two
      * keys differing only by it would read as duplicates. Values commit exactly as
@@ -185,9 +186,15 @@ export class DotKeyValueTableRowComponent {
     }
 
     /**
-     * Discards the edit. Leaving edit mode removes the input, which fires
-     * `blur` — so that must happen before anything else, or `commitEdit` would
-     * save the text being discarded.
+     * Discards the edit, from Escape or from focus leaving the input.
+     *
+     * Clicking away abandons rather than commits, which makes one rule for both ways
+     * out: Enter writes, anything else puts the row back as it was. The alternative —
+     * committing on blur — would have written a valid edit and discarded an invalid
+     * one from the very same gesture.
+     *
+     * Safe to reach twice: leaving edit mode removes the input, which fires `blur`
+     * again, and the second call finds nothing to do.
      */
     cancelEdit(event?: Event): void {
         event?.preventDefault();

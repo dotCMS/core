@@ -119,6 +119,43 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-input'))).toBeFalsy();
         });
 
+        it('should never shift a column vertically, opening or refusing', () => {
+            // The row keeps the default `middle` throughout. Top-aligning moved the
+            // resting column and bought nothing: the input is taller than the key text,
+            // so matching top edges leaves their centres as far apart as centring does.
+            const alignment = () => [
+                spectator.query(byTestId('dot-key-value-key')).className,
+                spectator.query(byTestId('dot-key-value-editable-column')).className
+            ];
+
+            expect(alignment().join()).not.toContain('align-top');
+
+            activate();
+            expect(alignment().join()).not.toContain('align-top');
+
+            spectator.component.editControl.setValue('   ');
+            spectator.component.commitEdit();
+            spectator.detectChanges();
+            expect(alignment().join()).not.toContain('align-top');
+        });
+
+        it('should discard the edit when focus leaves the input', () => {
+            // Enter is the one gesture that writes. Clicking away abandons, so a valid
+            // edit and an invalid one leave by the same door.
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            activate();
+
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-input'));
+            spectator.typeInElement('edited', input);
+            spectator.dispatchFakeEvent(input, 'blur');
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('dot-key-value-value-output')).textContent.trim()).toBe(
+                mockVariable.value
+            );
+        });
+
         it('should refuse an emptied value and say why', () => {
             const saveSpy = jest.spyOn(spectator.component.save, 'emit');
             activate();
@@ -390,6 +427,21 @@ describe('DotKeyValueTableRowComponent', () => {
             expect(spectator.query(byTestId('dot-key-value-key-input'))).toBeTruthy();
             expect(spectator.component.editControl.value).toBe('taken');
             expect(spectator.query(byTestId('dot-key-value-key-duplicated'))).toBeTruthy();
+        });
+
+        it('should discard a rename when focus leaves the input', () => {
+            const saveSpy = jest.spyOn(spectator.component.save, 'emit');
+            startEditing();
+
+            const input = spectator.query<HTMLInputElement>(byTestId('dot-key-value-key-input'));
+            spectator.typeInElement('renamed', input);
+            spectator.dispatchFakeEvent(input, 'blur');
+            spectator.detectChanges();
+
+            expect(saveSpy).not.toHaveBeenCalled();
+            expect(spectator.query(byTestId('dot-key-value-key-output')).textContent.trim()).toBe(
+                mockVariable.key
+            );
         });
 
         it('should keep the input open and say why an empty key was refused', () => {

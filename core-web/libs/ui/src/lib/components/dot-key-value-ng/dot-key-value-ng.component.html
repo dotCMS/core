@@ -10,7 +10,7 @@
     [value]="$variableList()"
     #table
     dataKey="key"
-    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_.kv-gutter]:pr-0! [&_.kv-gutter]:pl-[14px]! [&_table]:table-fixed [&_tbody_tr:last-child_td]:border-b-0!"
+    class="overflow-hidden rounded-lg border border-solid border-(--p-inputtext-border-color) transition-colors hover:border-(--p-inputtext-hover-border-color) [&_table]:table-fixed [&_tbody_tr:last-child_td]:border-b-0!"
     [rowHover]="true"
     [scrollable]="true"
     (onRowReorder)="onRowReorder()">
@@ -23,11 +23,11 @@
     -->
     <ng-template #header>
         <tr>
-            <th class="kv-gutter w-[30px] min-w-[30px]" scope="col"></th>
+            <th class="w-8.5 min-w-8.5 pr-0! pl-4!" scope="col"></th>
             <th scope="col">{{ 'keyValue.key_header.label' | dm }}</th>
             <th scope="col">{{ 'keyValue.value_header.label' | dm }}</th>
             @if (!readOnly) {
-                <th class="w-[74px] min-w-[74px]" scope="col">
+                <th class="w-21 min-w-21" scope="col">
                     <span class="sr-only">{{ 'keyValue.actions_header.label' | dm }}</span>
                 </th>
             }

@@ -82,7 +82,8 @@ directly. See [research.md R-09](../research.md#r-09--key-order-survival-across-
 | Clear All | not `readOnly` | text button, confirms before emptying | — |
 | Key at rest | not `readOnly` | plain text; becomes an input on activation | — |
 | Drag handle | not `readOnly` | pointer-only; no role, no tab stop | FR-019 |
-| Validation message | an edit is refused | under the input, cell top-aligned; input stays open | FR-008a |
+| Validation message | an edit is refused | under the input; input stays open | FR-008a |
+| Commit an edit | Enter only | blur and Escape both abandon | FR-008c |
 | Load-more row | more than 40 rows remain unrendered | appended after the last row; **left-aligned** "Load more", no count | FR-037 to FR-039 |
 
 ### Paging is not derived from `variables`

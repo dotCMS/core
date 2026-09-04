@@ -420,7 +420,7 @@ describe('DotKeyValueComponent', () => {
         });
 
         it('should keep the gutter column, so header and body stay the same shape', () => {
-            expect(spectator.query('tbody .kv-gutter')).toBeTruthy();
+            expect(spectator.query(byTestId('dot-key-value-gutter'))).toBeTruthy();
         });
 
         it('should not publish a reorder even if one reaches the handler', () => {
