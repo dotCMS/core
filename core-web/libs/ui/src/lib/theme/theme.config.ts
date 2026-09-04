@@ -104,6 +104,20 @@ export const CustomLaraPreset = definePreset(Lara, {
                 .dot-panel-no-footer .p-panel-footer {
                     display: none;
                 }
+
+                /*
+                 * The footer band matches the header's fill. Lara greys the header per colour
+                 * scheme (surface.50 light, surface.800 dark) and leaves the footer transparent,
+                 * so a card carrying actions at the bottom read as an unbounded continuation of
+                 * its content. Taken from the header's own emitted variable rather than from a
+                 * surface token, so the two cannot drift and dark mode follows for free.
+                 *
+                 * Panel exposes no footer background design token — only footer.padding — which
+                 * is why this is css rather than a token override.
+                 */
+                .p-panel-footer {
+                    background: var(--p-panel-header-background);
+                }
             `
         },
         card: {

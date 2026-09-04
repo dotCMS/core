@@ -199,6 +199,16 @@ export class DotExperimentsConfigurePageComponent {
      */
     #awaitingPageChange = false;
 
+    /**
+     * Why the experiment's page could not be resolved, or `null` when there is nothing to report.
+     *
+     * The store has always recorded this; nothing rendered it, so a page that had been deleted
+     * fell through to the card's empty state and read as "no page was ever chosen" (#37005).
+     */
+    protected readonly $pageUnresolved = computed<string | null>(() =>
+        this.store.selectedPage() ? null : this.store.pagePrefillError()
+    );
+
     constructor() {
         this.#closeConfirmationWhenVariantsAreGone();
     }

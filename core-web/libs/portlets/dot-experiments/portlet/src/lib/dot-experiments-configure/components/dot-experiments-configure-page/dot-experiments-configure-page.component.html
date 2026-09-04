@@ -27,6 +27,15 @@
                         {{ page.path }}
                     </span>
                 </div>
+            } @else if ($pageUnresolved(); as reasonKey) {
+                <!-- A page WAS chosen and cannot be resolved — the store recorded why. Saying
+                     "Select a Page to test" here would claim nobody ever picked one, which is the
+                     opposite of the truth and leaves a refused Preview unexplained (#37005). -->
+                <span
+                    class="text-sm text-orange-700"
+                    data-testid="experiments-configure-page-unresolved">
+                    {{ reasonKey | dm }}
+                </span>
             } @else {
                 <span
                     class="text-sm text-surface-500"
