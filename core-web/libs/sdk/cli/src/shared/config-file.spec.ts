@@ -5,8 +5,12 @@ import * as path from 'node:path';
 import { CAN_RESTRICT, ensureDir, writeMerged } from './config-file';
 
 let dir: string;
-beforeEach(async () => { dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dotcms-perm-')); });
-afterEach(async () => { await fs.rm(dir, { recursive: true, force: true }); });
+beforeEach(async () => {
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dotcms-perm-'));
+});
+afterEach(async () => {
+    await fs.rm(dir, { recursive: true, force: true });
+});
 
 const write = (file: string) =>
     writeMerged({ file, containerKey: 'mcpServers', entryKey: 'dotcms', entry: { token: 'x' } });

@@ -4,8 +4,12 @@ import { checkReachable, compatibilityWarning, resolveUrl } from './instance';
 describe('instance', () => {
     describe('resolveUrl (FR-004)', () => {
         const OLD_ENV = process.env;
-        beforeEach(() => { process.env = { ...OLD_ENV }; });
-        afterAll(() => { process.env = OLD_ENV; });
+        beforeEach(() => {
+            process.env = { ...OLD_ENV };
+        });
+        afterAll(() => {
+            process.env = OLD_ENV;
+        });
 
         it('prefers the supplied option over the environment', async () => {
             process.env['DOTCMS_URL'] = 'https://from-env.example.com';
@@ -26,7 +30,9 @@ describe('instance', () => {
         });
 
         it('rejects an address with no scheme rather than writing it through verbatim', async () => {
-            await expect(resolveUrl({ url: 'demo.dotcms.com' })).rejects.toThrow(/scheme|protocol|https?:\/\//i);
+            await expect(resolveUrl({ url: 'demo.dotcms.com' })).rejects.toThrow(
+                /scheme|protocol|https?:\/\//i
+            );
         });
 
         /**
@@ -37,17 +43,23 @@ describe('instance', () => {
         it.each(['ftp://demo.dotcms.com', 'file:///etc/passwd', 'javascript:alert(1)'])(
             'rejects the non-HTTP scheme %s',
             async (bad) => {
-                await expect(resolveUrl({ url: bad })).rejects.toThrow(/scheme|protocol|https?:\/\//i);
+                await expect(resolveUrl({ url: bad })).rejects.toThrow(
+                    /scheme|protocol|https?:\/\//i
+                );
             }
         );
 
         it('accepts plain http, not only https — local instances are the common case', async () => {
-            await expect(resolveUrl({ url: 'http://localhost:8082' })).resolves.toBe('http://localhost:8082');
+            await expect(resolveUrl({ url: 'http://localhost:8082' })).resolves.toBe(
+                'http://localhost:8082'
+            );
         });
     });
 
     describe('checkReachable (FR-005)', () => {
-        afterEach(() => { jest.restoreAllMocks(); });
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
 
         it('uses /api/v1/appconfiguration, not /probes/alive', async () => {
             const fetchMock = jest
@@ -80,11 +92,17 @@ describe('instance', () => {
     });
 
     describe('it must actually BE dotCMS (FR-005b)', () => {
-        afterEach(() => { jest.restoreAllMocks(); });
+        afterEach(() => {
+            jest.restoreAllMocks();
+        });
 
         it('rejects a host that answers 404 — reached, but not dotCMS', async () => {
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
-            const err = (await checkReachable('https://example.com').catch((e: Error) => e)) as Error;
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response('Not Found', { status: 404 })
+            );
+            const err = (await checkReachable('https://example.com').catch(
+                (e: Error) => e
+            )) as Error;
             expect(err.message).toMatch(/not a valid dotCMS instance/i);
             expect(err.message).toContain('example.com');
             // Distinct from unreachable: the host answered.
@@ -133,7 +151,9 @@ describe('instance', () => {
         it('reads the version from entity.config.releaseInfo.version', async () => {
             // The path that matters: an earlier version read entity.version, which does not
             // exist, so the ADR-0019 warning could never fire.
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(appConfigurationResponse('26.07.14-01'));
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                appConfigurationResponse('26.07.14-01')
+            );
             const info = await checkReachable('https://demo.dotcms.com');
             expect(info.version).toBe('26.07.14-01');
         });

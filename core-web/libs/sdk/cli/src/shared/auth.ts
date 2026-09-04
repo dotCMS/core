@@ -1,4 +1,11 @@
-import { DOTCMS_API, describeRequestFailure, endpoint, httpGet, httpPost, isHttpError } from '@dotcms/http';
+import {
+    DOTCMS_API,
+    describeRequestFailure,
+    endpoint,
+    httpGet,
+    httpPost,
+    isHttpError
+} from '@dotcms/http';
 
 import { CredentialsRejectedError, InstanceUnreachableError, TokenRejectedError } from './errors';
 
@@ -43,7 +50,10 @@ export async function verifyToken(url: string, token: Token): Promise<Token> {
     } catch (error) {
         // A rejected token and an unreachable instance are different problems with different
         // remedies, and must never collapse into one message (FR-008b).
-        if (isHttpError(error) && (error.response?.status === 401 || error.response?.status === 403)) {
+        if (
+            isHttpError(error) &&
+            (error.response?.status === 401 || error.response?.status === 403)
+        ) {
             throw new TokenRejectedError(url);
         }
         throw new InstanceUnreachableError(url, describeRequestFailure(error));

@@ -20,7 +20,6 @@ export function normalizeUrl(url: string): string {
 export function validateUrl(url: string): void {
     if (!/^https?:\/\//i.test(url)) throw new InvalidUrlError(url);
     try {
-         
         new URL(url);
     } catch {
         throw new InvalidUrlError(url);

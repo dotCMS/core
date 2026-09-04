@@ -59,7 +59,10 @@ export function describeRequestFailure(error: unknown): string {
             return 'TLS certificate has expired';
         }
 
-        if (error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' || error.code === 'SELF_SIGNED_CERT_IN_CHAIN') {
+        if (
+            error.code === 'DEPTH_ZERO_SELF_SIGNED_CERT' ||
+            error.code === 'SELF_SIGNED_CERT_IN_CHAIN'
+        ) {
             return 'TLS certificate is self-signed and not trusted';
         }
 

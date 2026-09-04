@@ -5,10 +5,7 @@ import { CliError, UsageError } from './shared/errors';
 
 const program = new Command();
 
-program
-    .name('dotcms')
-    .description('The dotCMS command line tool')
-    .showHelpAfterError();
+program.name('dotcms').description('The dotCMS command line tool').showHelpAfterError();
 
 registerAgentCommand(program);
 

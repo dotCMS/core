@@ -29,11 +29,21 @@ describe('confirmConnection (FR-024a-e)', () => {
         spawn.mockReturnValue(child as never);
     });
 
-    afterEach(() => { jest.clearAllMocks(); });
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
 
     it('passes the token through the child ENVIRONMENT, never argv (FR-022)', async () => {
-        void confirmConnection({ url: 'https://demo.dotcms.com', token: 'dot_secret_9999', timeoutMs: 50 });
-        const [, args, opts] = spawn.mock.calls[0] as [string, string[], { env?: NodeJS.ProcessEnv }];
+        void confirmConnection({
+            url: 'https://demo.dotcms.com',
+            token: 'dot_secret_9999',
+            timeoutMs: 50
+        });
+        const [, args, opts] = spawn.mock.calls[0] as [
+            string,
+            string[],
+            { env?: NodeJS.ProcessEnv }
+        ];
         expect(JSON.stringify(args)).not.toContain('dot_secret_9999');
         expect(opts?.env?.['AUTH_TOKEN']).toBe('dot_secret_9999');
     });

@@ -24,7 +24,6 @@ import { Err, Ok } from '@dotcms/http';
 
 import { reportInstallResult } from './install';
 
-
 describe('reportInstallResult', () => {
     it('reports success when the install succeeded', () => {
         expect(reportInstallResult(Ok(undefined))).toEqual({ kind: 'installed' });

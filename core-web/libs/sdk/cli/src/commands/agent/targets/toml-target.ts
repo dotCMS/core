@@ -3,7 +3,6 @@ import { parse, stringify } from 'smol-toml';
 import * as fs from 'node:fs/promises';
 import * as path from 'node:path';
 
-
 import { buildEntry } from './json-target';
 
 import { ensureDir, restrictFile } from '../../../shared/config-file';
@@ -35,7 +34,10 @@ export interface TomlWriteArgs {
  * Returns null when the entry is not present. The span runs from our header to the next header
  * that is not ours, so anything the developer wrote around it is untouched.
  */
-function findEntrySpan(lines: string[], containerKey: string): { start: number; end: number } | null {
+function findEntrySpan(
+    lines: string[],
+    containerKey: string
+): { start: number; end: number } | null {
     const ours = new RegExp(`^\\s*\\[\\s*${containerKey}\\.${ENTRY_KEY}\\s*(\\.[^\\]]+)?\\]`);
     const anyHeader = /^\s*\[/;
 
@@ -69,7 +71,12 @@ function findEntrySpan(lines: string[], containerKey: string): { start: number; 
  * and no failing test. Only this block is generated, so losing comments here costs nothing;
  * everything outside it is spliced, not re-serialized.
  */
-function renderEntry(target: AgentTarget, url: string, token: string, containerKey: string): string {
+function renderEntry(
+    target: AgentTarget,
+    url: string,
+    token: string,
+    containerKey: string
+): string {
     return stringify({
         [containerKey]: { [ENTRY_KEY]: buildEntry(target, url, token) }
     }).trimEnd();

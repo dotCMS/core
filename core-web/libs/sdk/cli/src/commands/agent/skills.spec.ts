@@ -11,7 +11,9 @@ jest.mock('node:child_process', () => ({
 const spawnSync = childProcess.spawnSync as unknown as jest.Mock;
 
 describe('installSkills (FR-025, FR-026)', () => {
-    afterEach(() => { jest.clearAllMocks(); });
+    afterEach(() => {
+        jest.clearAllMocks();
+    });
 
     it('makes ONE invocation covering all selected targets', async () => {
         spawnSync.mockReturnValue({ status: 0 });

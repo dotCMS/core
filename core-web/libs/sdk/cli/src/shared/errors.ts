@@ -32,7 +32,9 @@ export class InvalidUrlError extends CliError {
 
 export class InstanceUnreachableError extends CliError {
     constructor(url: string, reason: string) {
-        super(`Could not reach ${url} — ${reason}. Check the address and that the instance is running.`);
+        super(
+            `Could not reach ${url} — ${reason}. Check the address and that the instance is running.`
+        );
     }
 }
 
@@ -80,7 +82,9 @@ export class ConflictingAuthError extends UsageError {
 
 export class MissingInputError extends UsageError {
     constructor(what: string) {
-        super(`${what} is required and there is no terminal to prompt on. Pass it as an option or set its environment variable.`);
+        super(
+            `${what} is required and there is no terminal to prompt on. Pass it as an option or set its environment variable.`
+        );
     }
 }
 

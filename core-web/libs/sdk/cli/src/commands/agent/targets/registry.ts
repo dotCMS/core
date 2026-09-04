@@ -14,11 +14,15 @@ const inFolder = (cwd: string | undefined, ...parts: string[]) =>
     path.join(cwd ?? process.cwd(), ...parts);
 
 /** Advisory only — an undetected editor stays explicitly selectable (spec Edge Cases). */
-const probe = (...parts: string[]) => async () => existsSync(inHome(...parts));
+const probe =
+    (...parts: string[]) =>
+    async () =>
+        existsSync(inHome(...parts));
 
 /** VS Code's user directory is different on all three platforms. */
 function vscodeUserDir(): string {
-    if (process.platform === 'darwin') return inHome('Library', 'Application Support', 'Code', 'User');
+    if (process.platform === 'darwin')
+        return inHome('Library', 'Application Support', 'Code', 'User');
     if (process.platform === 'win32') {
         const appData = process.env['APPDATA'] ?? inHome('AppData', 'Roaming');
         return path.join(appData, 'Code', 'User');
@@ -60,7 +64,9 @@ export const TARGETS: readonly AgentTarget[] = [
         entryShape: 'stdio',
         detect: probe('.cursor'),
         configPath: (scope: Scope, cwd?: string) =>
-            scope === 'global' ? inHome('.cursor', 'mcp.json') : inFolder(cwd, '.cursor', 'mcp.json')
+            scope === 'global'
+                ? inHome('.cursor', 'mcp.json')
+                : inFolder(cwd, '.cursor', 'mcp.json')
     },
     {
         id: 'vscode',

@@ -7,7 +7,15 @@ import ora, { Ora } from 'ora';
 
 import path from 'path';
 
-import { Ok, Err, formatRetryReport, isSuccessStatus, httpGet, type Result, type RetryReporter } from '@dotcms/http';
+import {
+    Ok,
+    Err,
+    formatRetryReport,
+    isSuccessStatus,
+    httpGet,
+    type Result,
+    type RetryReporter
+} from '@dotcms/http';
 
 import { DotCMSApi } from './api';
 import {

@@ -1,4 +1,3 @@
-
 import ora, { type Ora } from 'ora';
 
 import { confirmExclude, confirmOverwrite, inquirerPort } from './prompts';
@@ -96,7 +95,7 @@ export function registerAgentCommand(program: Command): void {
                     onAuthRetry: (message, attempt, max) =>
                         progress.warn(`${message}  (attempt ${attempt} of ${max})`),
                     onWarning: (message) => progress.warn(message),
-                promptPort: interactive ? inquirerPort : undefined,
+                    promptPort: interactive ? inquirerPort : undefined,
                     confirmOverwrite: interactive ? confirmOverwrite : undefined,
                     confirmExclude: interactive ? confirmExclude : undefined,
                     url: options['url'] as string | undefined,

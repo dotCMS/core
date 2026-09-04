@@ -8,35 +8,22 @@
             "currentVersionResolver": "git-tag",
             "fallbackCurrentVersionResolver": "disk",
             "preserveLocalDependencyProtocols": false,
-            "manifestRootsToUpdate": [
-                "dist/{projectRoot}"
-            ]
+            "manifestRootsToUpdate": ["dist/{projectRoot}"]
         }
     },
     "tags": [],
     "targets": {
         "build": {
             "executor": "@nx/esbuild:esbuild",
-            "outputs": [
-                "{options.outputPath}"
-            ],
+            "outputs": ["{options.outputPath}"],
             "defaultConfiguration": "production",
             "options": {
                 "platform": "node",
                 "outputPath": "dist/libs/sdk/cli",
-                "format": [
-                    "esm"
-                ],
+                "format": ["esm"],
                 "bundle": true,
                 "thirdParty": true,
-                "external": [
-                    "ora",
-                    "chalk",
-                    "inquirer",
-                    "cfonts",
-                    "commander",
-                    "smol-toml"
-                ],
+                "external": ["ora", "chalk", "inquirer", "cfonts", "commander", "smol-toml"],
                 "main": "libs/sdk/cli/src/index.ts",
                 "tsConfig": "libs/sdk/cli/tsconfig.lib.json",
                 "assets": [
@@ -84,15 +71,11 @@
                     "coverage": true
                 }
             },
-            "dependsOn": [
-                "verify-package"
-            ]
+            "dependsOn": ["verify-package"]
         },
         "verify-package": {
             "executor": "nx:run-commands",
-            "dependsOn": [
-                "build"
-            ],
+            "dependsOn": ["build"],
             "options": {
                 "command": "bash libs/sdk/cli/scripts/verify-package.sh",
                 "cwd": "."

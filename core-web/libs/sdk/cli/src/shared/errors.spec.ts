@@ -22,15 +22,51 @@ import {
 
 /** Every error the tool can produce, with the identifier each one is expected to name. */
 const CASES: { name: string; error: Error; mustName: string }[] = [
-    { name: 'InvalidUrlError', error: new InvalidUrlError('demo.dotcms.com'), mustName: 'demo.dotcms.com' },
-    { name: 'InstanceUnreachableError', error: new InstanceUnreachableError('https://x.example.com', 'Connection refused'), mustName: 'x.example.com' },
-    { name: 'CredentialsRejectedError', error: new CredentialsRejectedError('https://x.example.com'), mustName: 'x.example.com' },
-    { name: 'TokenRejectedError', error: new TokenRejectedError('https://x.example.com'), mustName: 'x.example.com' },
-    { name: 'UnknownTargetError', error: new UnknownTargetError('nope', ['cursor', 'codex']), mustName: 'nope' },
-    { name: 'ConflictingAuthError', error: new ConflictingAuthError('--authToken', '--password'), mustName: '--authToken' },
-    { name: 'MissingInputError', error: new MissingInputError('A password'), mustName: 'A password' },
-    { name: 'MalformedConfigError', error: new MalformedConfigError('/tmp/mcp.json'), mustName: '/tmp/mcp.json' },
-    { name: 'NoConfigPathError', error: new NoConfigPathError('Codex', 'folder'), mustName: 'Codex' }
+    {
+        name: 'InvalidUrlError',
+        error: new InvalidUrlError('demo.dotcms.com'),
+        mustName: 'demo.dotcms.com'
+    },
+    {
+        name: 'InstanceUnreachableError',
+        error: new InstanceUnreachableError('https://x.example.com', 'Connection refused'),
+        mustName: 'x.example.com'
+    },
+    {
+        name: 'CredentialsRejectedError',
+        error: new CredentialsRejectedError('https://x.example.com'),
+        mustName: 'x.example.com'
+    },
+    {
+        name: 'TokenRejectedError',
+        error: new TokenRejectedError('https://x.example.com'),
+        mustName: 'x.example.com'
+    },
+    {
+        name: 'UnknownTargetError',
+        error: new UnknownTargetError('nope', ['cursor', 'codex']),
+        mustName: 'nope'
+    },
+    {
+        name: 'ConflictingAuthError',
+        error: new ConflictingAuthError('--authToken', '--password'),
+        mustName: '--authToken'
+    },
+    {
+        name: 'MissingInputError',
+        error: new MissingInputError('A password'),
+        mustName: 'A password'
+    },
+    {
+        name: 'MalformedConfigError',
+        error: new MalformedConfigError('/tmp/mcp.json'),
+        mustName: '/tmp/mcp.json'
+    },
+    {
+        name: 'NoConfigPathError',
+        error: new NoConfigPathError('Codex', 'folder'),
+        mustName: 'Codex'
+    }
 ];
 
 /** An imperative clause telling the developer what to do next. */

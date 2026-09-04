@@ -8,8 +8,14 @@ function port(overrides: Partial<PromptPort> = {}): PromptPort & { calls: string
         calls,
         // A realistic answer: the prompt is followed by the same validation an option gets,
         // so an unparseable value would fail before the assertion under test.
-        async text(message: string) { calls.push(`text:${message}`); return 'https://typed.example.com'; },
-        async password(message: string) { calls.push(`password:${message}`); return 'typed-pw'; },
+        async text(message: string) {
+            calls.push(`text:${message}`);
+            return 'https://typed.example.com';
+        },
+        async password(message: string) {
+            calls.push(`password:${message}`);
+            return 'typed-pw';
+        },
         async select<T extends string>(message: string, choices: { name: string; value: T }[]) {
             calls.push(`select:${message}`);
             return choices[0].value;
@@ -19,8 +25,12 @@ function port(overrides: Partial<PromptPort> = {}): PromptPort & { calls: string
 }
 
 const OLD = process.env;
-beforeEach(() => { process.env = { ...OLD }; });
-afterAll(() => { process.env = OLD; });
+beforeEach(() => {
+    process.env = { ...OLD };
+});
+afterAll(() => {
+    process.env = OLD;
+});
 
 describe('nothing is asked when the required inputs are supplied (FR-003i)', () => {
     it('asks nothing with a url and a token, on a terminal', async () => {
@@ -62,8 +72,11 @@ describe('a missing required input prompts, or fails by name (FR-003c, FR-003k)'
     });
 
     it('fails naming the password when there is no terminal', async () => {
-        const err = await resolveRequiredInputs({ url: URL_, user: 'a@b.com' }, port(), false)
-            .catch((e: Error) => e);
+        const err = await resolveRequiredInputs(
+            { url: URL_, user: 'a@b.com' },
+            port(),
+            false
+        ).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/password/i);
     });
 
@@ -74,7 +87,9 @@ describe('a missing required input prompts, or fails by name (FR-003c, FR-003k)'
     });
 
     it('fails naming BOTH modes when neither was supplied and there is no terminal (FR-003h)', async () => {
-        const err = await resolveRequiredInputs({ url: URL_ }, port(), false).catch((e: Error) => e);
+        const err = await resolveRequiredInputs({ url: URL_ }, port(), false).catch(
+            (e: Error) => e
+        );
         expect((err as Error).message).toMatch(/password/i);
         expect((err as Error).message).toMatch(/token/i);
     });
@@ -96,8 +111,11 @@ describe('--yes governs confirmations only (FR-003l)', () => {
     });
 
     it('still fails by name with --yes and no terminal — it does not invent a value', async () => {
-        const err = await resolveRequiredInputs({ url: URL_, user: 'a@b.com', yes: true }, port(), false)
-            .catch((e: Error) => e);
+        const err = await resolveRequiredInputs(
+            { url: URL_, user: 'a@b.com', yes: true },
+            port(),
+            false
+        ).catch((e: Error) => e);
         expect((err as Error).message).toMatch(/password/i);
     });
 });

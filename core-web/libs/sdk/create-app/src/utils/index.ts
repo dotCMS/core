@@ -4,7 +4,15 @@ import { execa } from 'execa';
 import net from 'net';
 import path from 'path';
 
-import { describeRequestFailure, httpGet, isHttpError, Err, Ok, type RetryReporter, type Result } from '@dotcms/http';
+import {
+    describeRequestFailure,
+    httpGet,
+    isHttpError,
+    Err,
+    Ok,
+    type RetryReporter,
+    type Result
+} from '@dotcms/http';
 
 import { REQUIRED_PORTS } from './ports';
 import { escapeShellPath } from './validation';

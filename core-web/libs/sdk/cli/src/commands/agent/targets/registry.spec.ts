@@ -11,19 +11,32 @@ jest.mock('node:os', () => ({ ...jest.requireActual('node:os'), homedir: jest.fn
 
 import type { TargetId } from './types';
 
-const ALL: TargetId[] = ['claude-code', 'cursor', 'vscode', 'codex', 'antigravity', 'devin', 'opencode'];
+const ALL: TargetId[] = [
+    'claude-code',
+    'cursor',
+    'vscode',
+    'codex',
+    'antigravity',
+    'devin',
+    'opencode'
+];
 
 function withPlatform(platform: NodeJS.Platform, home: string, fn: () => void) {
     const desc = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: platform, configurable: true });
     (os.homedir as jest.Mock).mockReturnValue(home);
-    try { fn(); } finally {
+    try {
+        fn();
+    } finally {
         if (desc) Object.defineProperty(process, 'platform', desc);
     }
 }
 
 describe('target registry', () => {
-    afterEach(() => { jest.clearAllMocks(); delete process.env['CODEX_HOME']; });
+    afterEach(() => {
+        jest.clearAllMocks();
+        delete process.env['CODEX_HOME'];
+    });
 
     it('ships exactly the seven supported editors (SC-006)', () => {
         expect(TARGETS.map((t) => t.id).sort()).toEqual([...ALL].sort());
@@ -74,7 +87,8 @@ describe('target registry', () => {
                 expect(getTarget('vscode').configPath('global')).toContain('Code');
                 expect(getTarget('vscode').configPath('global')).toContain('mcp.json');
             });
-            if (old === undefined) delete process.env['APPDATA']; else process.env['APPDATA'] = old;
+            if (old === undefined) delete process.env['APPDATA'];
+            else process.env['APPDATA'] = old;
         });
     });
 

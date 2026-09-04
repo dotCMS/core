@@ -4,7 +4,9 @@ import { checkReachable } from './instance';
 const URL_ = 'https://demo.dotcms.com';
 
 describe('auth', () => {
-    afterEach(() => { jest.restoreAllMocks(); });
+    afterEach(() => {
+        jest.restoreAllMocks();
+    });
 
     describe('mintToken (FR-006, FR-007)', () => {
         it('returns the token from entity.token on 200', async () => {
@@ -18,18 +20,22 @@ describe('auth', () => {
         });
 
         it('sends expirationDays as a STRING', async () => {
-            const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-                new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
-            );
+            const fetchMock = jest
+                .spyOn(globalThis, 'fetch')
+                .mockResolvedValue(
+                    new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
+                );
             await mintToken({ url: URL_, user: 'a@b.com', password: 'pw' });
             const body = JSON.parse(String((fetchMock.mock.calls[0][1] as RequestInit).body));
             expect(typeof body.expirationDays).toBe('string');
         });
 
         it('never puts the password in the URL', async () => {
-            const fetchMock = jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-                new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
-            );
+            const fetchMock = jest
+                .spyOn(globalThis, 'fetch')
+                .mockResolvedValue(
+                    new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
+                );
             await mintToken({ url: URL_, user: 'a@b.com', password: 'SuperSecret1' });
             expect(String(fetchMock.mock.calls[0][0])).not.toContain('SuperSecret1');
         });
@@ -45,9 +51,9 @@ describe('auth', () => {
             jest.spyOn(globalThis, 'fetch').mockRejectedValue(
                 Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
             );
-            await expect(
-                mintToken({ url: URL_, user: 'a@b.com', password: 'pw' })
-            ).rejects.toThrow(/connect|refused/i);
+            await expect(mintToken({ url: URL_, user: 'a@b.com', password: 'pw' })).rejects.toThrow(
+                /connect|refused/i
+            );
         });
     });
 
@@ -66,7 +72,11 @@ describe('auth', () => {
             jest.spyOn(globalThis, 'fetch').mockResolvedValue(
                 new Response(JSON.stringify({ entity: {} }), { status: 200 })
             );
-            const out = await verifyToken(URL_, { value: 'dot_x', origin: 'minted', verified: false });
+            const out = await verifyToken(URL_, {
+                value: 'dot_x',
+                origin: 'minted',
+                verified: false
+            });
             expect(out.verified).toBe(true);
         });
 
@@ -99,7 +109,10 @@ describe('no raw fetch error ever reaches the user (FR-032a)', () => {
 
     const callers: { name: string; call: () => Promise<unknown> }[] = [
         { name: 'checkReachable', call: () => checkReachable(URL_) },
-        { name: 'mintToken', call: () => mintToken({ url: URL_, user: 'a@b.com', password: 'pw' }) },
+        {
+            name: 'mintToken',
+            call: () => mintToken({ url: URL_, user: 'a@b.com', password: 'pw' })
+        },
         {
             name: 'verifyToken',
             call: () => verifyToken(URL_, { value: 'x', origin: 'supplied', verified: false })

@@ -67,7 +67,12 @@ export async function confirmConnection(args: {
         };
 
         const timer = setTimeout(
-            () => finish({ ok: false, cause: 'timeout', detail: `No response within ${timeoutMs}ms.` }),
+            () =>
+                finish({
+                    ok: false,
+                    cause: 'timeout',
+                    detail: `No response within ${timeoutMs}ms.`
+                }),
             timeoutMs
         );
 
@@ -103,7 +108,11 @@ export async function confirmConnection(args: {
                 jsonrpc: '2.0',
                 id: 1,
                 method: 'initialize',
-                params: { protocolVersion: '2024-11-05', capabilities: {}, clientInfo: { name: 'dotcms', version: '0' } }
+                params: {
+                    protocolVersion: '2024-11-05',
+                    capabilities: {},
+                    clientInfo: { name: 'dotcms', version: '0' }
+                }
             })}\n`
         );
         child.stdin?.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' })}\n`);

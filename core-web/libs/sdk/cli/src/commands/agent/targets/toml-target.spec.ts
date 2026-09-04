@@ -4,7 +4,6 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
-
 import { buildEntry } from './json-target';
 import { getTarget } from './registry';
 import { writeTomlTarget } from './toml-target';
@@ -13,11 +12,16 @@ const URL_ = 'https://demo.dotcms.com';
 const TOKEN = 'dot_testtoken_1234';
 
 let dir: string;
-beforeEach(async () => { dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dotcms-toml-')); });
-afterEach(async () => { await fs.rm(dir, { recursive: true, force: true }); });
+beforeEach(async () => {
+    dir = await fs.mkdtemp(path.join(os.tmpdir(), 'dotcms-toml-'));
+});
+afterEach(async () => {
+    await fs.rm(dir, { recursive: true, force: true });
+});
 
 const codex = () => getTarget('codex');
-const write = () => writeTomlTarget({ target: codex(), scope: 'folder', url: URL_, token: TOKEN, cwd: dir });
+const write = () =>
+    writeTomlTarget({ target: codex(), scope: 'folder', url: URL_, token: TOKEN, cwd: dir });
 async function seed(content: string) {
     const file = codex().configPath('folder', dir) as string;
     await fs.mkdir(path.dirname(file), { recursive: true });
