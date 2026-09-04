@@ -1,6 +1,6 @@
 # Feature Specification: `dotcms agent setup` — one command to wire an IDE to dotCMS
 
-**Feature Branch**: `fmontes/cli-agent`
+**Feature Branch**: `fmontes/37390-dotcms-agent-setup`
 
 **Created**: 2026-09-03
 
@@ -9,6 +9,16 @@
 **Type**: New Feature
 
 **Input**: User description: "`dotcms agent setup` — one command to wire an IDE to dotCMS. Collapses the four manual steps (find the admin panel, mint an API token, hand-edit an IDE config file, install the skills) into a single command. Scope is agent setup only; `create-app` stays where it is and the dotCLI port is not started here. Targets: Claude Code, Cursor, VS Code/Copilot, Codex, Antigravity, Devin, OpenCode."
+
+## Clarifications
+
+### Session 2026-09-04
+
+- Q: Can one editor hold more than one dotCMS instance, and what identifies the entry? → A: One fixed entry keyed `dotcms` per config file. Multiple instances are served by running the command in different folders, not by multiple entries in one file.
+- Q: Is the folder the default scope, or the developer's user account? → A: The folder is the default. Setup writes to the folder it was run in unless `-g/--global` is given.
+- Q: Does the written configuration pin the MCP server version? → A: No — it references the latest published server. Developers get server updates without re-running setup.
+- Q: What makes a run non-interactive, and what must the developer supply? → A: The instance address plus one auth mode (username/password, or an auth token) are the only required inputs. Supply both and setup runs to completion without prompting, whatever the terminal. Targets default to every detected editor and scope defaults to the folder, so neither ever blocks a run. Prompting happens only for a missing required input, and only when there is a terminal to prompt on.
+- Q: What scope do `status` and `remove` operate on? → A: Neither ships. Only `agent setup` is in scope. Re-running setup replaces a stale entry; removing one is left to the developer. FR-029, FR-030, FR-031, SC-007 and SC-008 are retired, and User Story 5 is withdrawn.
 
 ## User Scenarios & Testing *(mandatory)*
 
@@ -66,8 +76,8 @@ Setup handles a long-lived credential that grants access to a dotCMS instance. A
 1. **Given** setup writes a credential into any file, **When** the write completes, **Then** that file is readable and writable only by its owner, and any directory setup created is likewise restricted to its owner.
 2. **Given** setup must display the credential, **When** it appears anywhere in output, **Then** it is shown only in truncated form and never in full.
 3. **Given** setup performs any action that requires the credential, **When** that action runs, **Then** the credential is never passed in a way that makes it visible to other users of the machine.
-4. **Given** the developer chooses to configure the current project rather than their user account, **When** setup completes, **Then** it names every file it placed a credential into and offers to exclude those files from version control, defaulting to yes.
-5. **Given** the project-scoped file in question is one that projects conventionally commit to version control, **When** setup writes a credential into it, **Then** it explicitly warns that this file is normally committed and that doing so would publish the credential.
+4. **Given** the developer uses the default folder scope rather than the user account, **When** setup completes, **Then** it names every file it placed a credential into and offers to exclude those files from version control, defaulting to yes.
+5. **Given** the folder-scoped file in question is one that projects conventionally commit to version control, **When** setup writes a credential into it, **Then** it explicitly warns that this file is normally committed and that doing so would publish the credential.
 
 ---
 
@@ -92,26 +102,8 @@ A team lead wires dotCMS into a devcontainer, an onboarding script, or a CI job.
 9. **Given** the password is supplied through its environment variable rather than as an option, **When** setup runs, **Then** it is used without prompting and never appears in the process list.
 10. **Given** a supplied editor identifier is not one of the supported targets, **When** setup runs, **Then** it fails with a message naming the unrecognized identifier and listing the valid ones.
 11. **Given** the developer asks to skip either the configuration step or the skills step, **When** setup runs, **Then** that step is skipped and the summary says so.
-
----
-
-### User Story 5 - See what is configured, and undo it (Priority: P2)
-
-Later — debugging a connection problem, auditing a machine, or cleaning up — a developer needs to know what was configured where, whether the credential still works, and how to remove it all.
-
-**Why this priority**: Without this, the command is write-only: it can create state on a developer's machine that they then have to unpick by hand, which reintroduces exactly the manual file-editing this feature exists to eliminate.
-
-**Independent Test**: Run setup, then status, and assert status reports exactly what setup wrote for every target; then run remove and assert every touched file returns to its pre-setup contents.
-
-**Acceptance Scenarios**:
-
-1. **Given** setup has run for one or more editors, **When** the developer asks for status, **Then** they see, per editor, the scope, the file, the instance address, and a truncated credential.
-2. **Given** status runs, **When** it checks the recorded credential against the recorded instance, **Then** it reports whether that credential is still accepted.
-3. **Given** an editor was never configured, **When** status runs, **Then** it is reported as not configured rather than omitted or reported as an error.
-4. **Given** the developer asks to remove the configuration, **When** removal runs, **Then** only the dotCMS entry is removed from each file and every other entry and setting is preserved.
-5. **Given** removal runs against a file that has no dotCMS entry, **When** it completes, **Then** it reports nothing to remove rather than failing.
-
----
+12. **Given** only the instance address and an auth token are supplied — no targets, no scope — **When** setup runs, **Then** every detected editor is configured in the current folder with no prompt of any kind, whether or not a terminal is attached.
+13. **Given** the instance address and credentials are supplied along with the assume-yes option, and an existing dotCMS entry is present, **When** setup runs, **Then** the entry is replaced without a confirmation prompt, and the required inputs are still taken from the options rather than re-asked.
 
 ### Edge Cases
 
@@ -134,7 +126,7 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 **Command surface**
 
 - **FR-001**: The tool MUST be runnable without prior installation, using the package runner developers already have.
-- **FR-002**: The tool MUST expose agent configuration as a named group of sub-commands — set up, inspect status, and remove — so that unrelated future capabilities can be added alongside it without changing this command's invocation.
+- **FR-002**: The tool MUST expose setup as a sub-command within a named `agent` group, so that further agent commands and unrelated future capabilities can be added alongside it without changing this command's invocation. Only setup ships in this release.
 - **FR-003**: Setup MUST accept, as up-front options, every choice it would otherwise prompt for. Named explicitly: the **instance address**, the **username**, the **password**, an **auth token**, the target editors, the scope, whether to skip configuration, whether to skip skills, whether to assume yes, and whether to force overwrite.
 - **FR-003a**: Authentication MUST be expressible in exactly two mutually exclusive ways: a **username and password**, from which setup mints a token, or a supplied **auth token**, which setup uses as-is. These are alternative modes, not a fallback chain.
 - **FR-003b**: Supplying an auth token together with a username or a password MUST be rejected as a usage error, naming the conflicting options and stating that the two modes are alternatives. Setup MUST NOT silently prefer one mode over the other, MUST NOT mint a token, and MUST NOT write any configuration in this case.
@@ -144,6 +136,10 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-003f**: The help text for the password and auth token options MUST state that a value passed on the command line is visible in the machine's process list and is recorded in shell history, and MUST point at the environment variable and the interactive prompt as the safer alternatives.
 - **FR-003g**: A password supplied at an interactive prompt MUST NOT be echoed to the terminal.
 - **FR-003h**: When neither mode is supplied up front, setup MUST offer the choice interactively — sign in with a username and password, or supply an existing auth token — and MUST fail in a non-interactive environment with a message naming both modes.
+- **FR-003i**: The **only required inputs** are the instance address and one authentication mode. When both are supplied up front, setup MUST run to completion without prompting for anything, regardless of whether a terminal is attached.
+- **FR-003j**: Every other input MUST have a default that allows a run to proceed unprompted: targets default to every detected editor, and scope defaults to the folder. Neither may block a run.
+- **FR-003k**: Setup MUST prompt only for a missing required input. "Non-interactive" means no terminal is available to prompt on; in that case a missing required input MUST fail with a message naming it, rather than hanging on a prompt nobody can answer.
+- **FR-003l**: The assume-yes and force options MUST affect confirmation prompts only — replacing an existing entry, excluding files from version control. They MUST NOT suppress a prompt for a missing required input, and MUST NOT change which inputs are required.
 
 **Discovering the instance and authenticating**
 
@@ -159,20 +155,23 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 **Selecting targets and scope**
 
 - **FR-009**: Setup MUST support these seven editors: Claude Code, Cursor, VS Code with Copilot, Codex, Antigravity, Devin, and OpenCode.
-- **FR-010**: Setup MUST detect which supported editors are present on the machine and pre-select them, while allowing the developer to select any supported editor whether detected or not.
-- **FR-011**: Setup MUST offer two scopes — the developer's user account, and the current project — and MUST default to the user account.
+- **FR-010**: Setup MUST detect which supported editors are present on the machine. When the developer is being prompted, detected editors MUST be offered pre-selected and any supported editor MUST be selectable whether detected or not. When targets were not supplied and setup is not prompting, every detected editor MUST be used.
+- **FR-011**: Setup MUST offer two scopes — the **folder** the command was run in, and the developer's **user account** — and MUST default to the folder. The user-account scope MUST be selectable by an explicit option.
+- **FR-011a**: Each folder holds its own dotCMS instance configuration. A developer configures a second instance by running setup in a different folder, not by adding a second entry to one file.
+- **FR-011b**: Setup MUST write exactly one dotCMS entry per configuration file, under a single canonical key, so that a later run can find and replace precisely that entry.
 - **FR-012**: Setup MUST resolve each editor's configuration location correctly for the operating system it is running on, and MUST honor any documented environment override an editor provides for its own configuration location.
-- **FR-013** *(structural constraint — verified by code review, not by test)*: Adding support for a further editor MUST require only describing that editor — its identifier, name, detection, locations, and configuration shape — and MUST NOT require changes to the setup, status, or removal flows. This constrains internal structure rather than observable behavior; the plan phase owns how it is met.
+- **FR-013** *(structural constraint — verified by code review, not by test)*: Adding support for a further editor MUST require only describing that editor — its identifier, name, detection, locations, and configuration shape — and MUST NOT require changes to the setup flow. This constrains internal structure rather than observable behavior; the plan phase owns how it is met.
 
 **Writing the configuration**
 
 - **FR-014**: Setup MUST write each editor's configuration in the format and under the key that editor actually reads, including where an editor differs from the others in key name or entry shape.
-- **FR-015**: Setup MUST write the configuration files itself rather than delegating to each editor's own command-line tool, so that credentials are never exposed through process arguments and so that status and removal can read back exactly what was written.
-- **FR-016**: Setup MUST merge into existing configuration: it parses what is there, inserts or replaces only the dotCMS entry, and preserves everything else exactly.
+- **FR-015**: Setup MUST write the configuration files itself rather than delegating to each editor's own command-line tool, so that credentials are never exposed through process arguments, so that a re-run can read back and replace exactly what was written, and so that support for an editor does not depend on that editor's CLI being installed and on PATH.
+- **FR-016**: Setup MUST merge into existing configuration: it parses what is there, inserts or replaces only the single dotCMS entry identified by its canonical key, and preserves everything else exactly — including any other server the developer happens to have named similarly.
 - **FR-017**: Setup MUST prompt before replacing an existing dotCMS entry, and MUST skip that prompt when force or assume-yes is supplied.
 - **FR-018**: When an existing configuration file cannot be parsed, setup MUST fail for that editor with a message naming the file and the remedy, MUST leave the file untouched, and MUST NOT overwrite it.
 - **FR-019**: Setup MUST create missing configuration files and their parent directories.
 - **FR-020**: The configuration entry MUST point the editor at the published dotCMS MCP server and supply it the instance address and credential under the exact environment variable names that server reads.
+- **FR-020e**: The entry MUST reference the server at its latest published version rather than pinning a specific one, so that server updates reach developers without re-running setup. Setup MUST NOT write its own version into the entry.
 - **FR-020a**: When writing to one target fails, setup MUST continue with the remaining targets rather than aborting. Every target that can be written MUST be written.
 - **FR-020b**: The summary MUST report a per-target outcome — written, skipped, or failed with the reason — so that a partially configured machine is legible rather than ambiguous.
 - **FR-020c**: Setup MUST exit non-zero when any selected target failed, even if others succeeded, so that scripted and CI callers detect a partial result. It MUST exit zero only when every selected target succeeded.
@@ -183,9 +182,9 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-021**: Every file setup writes a credential into MUST be restricted to its owner, as MUST any directory setup creates.
 - **FR-022**: The credential MUST never be written to logs or console output in full, MUST never be passed as an argument to any sub-process, and MUST be truncated wherever it has to be shown.
 - **FR-022a**: The password MUST be used only to mint a token and MUST NOT be persisted to any file, echoed at any point, or included in any summary or error message. Setup MUST NOT write the password into an editor's configuration under any circumstances — the only credential ever written is a token, whether minted or supplied.
-- **FR-023**: When the project scope is chosen, setup MUST name every file it placed a credential into and MUST offer to exclude those files from version control, defaulting to yes.
-- **FR-023a**: When the project scope is chosen in a directory that is not under version control, setup MUST still name the files it wrote a credential into and MUST warn that they are unprotected, rather than silently omitting the exclusion step.
-- **FR-024**: When the project-scoped file for an editor is one that is conventionally committed to version control, setup MUST warn explicitly that writing a credential there risks publishing it.
+- **FR-023**: When the folder scope is used — which is the default — setup MUST name every file it placed a credential into and MUST offer to exclude those files from version control, defaulting to yes. Because this is the default path rather than an opt-in one, this offer MUST NOT be suppressed by the assume-yes option; assume-yes MUST take the safe answer (exclude) rather than skipping the exclusion.
+- **FR-023a**: When the folder scope is used in a directory that is not under version control, setup MUST still name the files it wrote a credential into and MUST warn that they are unprotected, rather than silently omitting the exclusion step.
+- **FR-024**: When the folder-scoped file for an editor is one that is conventionally committed to version control, setup MUST warn explicitly that writing a credential there risks publishing it.
 
 **Confirming the agent actually connects**
 
@@ -201,12 +200,9 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **FR-026**: Skills installation failure MUST NOT fail the command; setup MUST report the failure and print the exact command the developer can run to complete that step themselves.
 - **FR-027**: The summary MUST NOT report skills as installed for an editor whose skills location has not been confirmed to be read by that editor.
 
-**Reporting, status, and removal**
+**Reporting**
 
 - **FR-028**: Setup MUST end with a summary listing, per editor, the scope, the file written, and the outcome — followed by the concrete next action for the developer.
-- **FR-029**: Status MUST report, per supported editor, whether it is configured, at which scope and file, against which instance, and with which truncated credential — and MUST report an unconfigured editor as such rather than as an error.
-- **FR-030**: Status MUST report whether the recorded credential is still accepted by the recorded instance.
-- **FR-031**: Removal MUST delete only the dotCMS entry from each configuration file, preserve everything else, and report a file with no dotCMS entry as nothing to remove rather than as a failure.
 - **FR-032**: Every failure the tool can produce MUST be a named, actionable message identifying the file, address, or editor involved. Unhandled internal errors MUST NOT be surfaced to the developer.
 
 **Distribution**
@@ -217,7 +213,7 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 ### Key Entities
 
 - **Agent target**: A supported editor or agent. Identified by a stable identifier and a display name; knows how to detect its own presence, where its configuration lives at each scope, and what shape its configuration entry takes.
-- **Scope**: Where configuration is written — the developer's user account (default, applies everywhere) or the current project (applies to this checkout only, and carries version-control risk).
+- **Scope**: Where configuration is written — the folder the command was run in (default; applies to that folder only, and carries version-control risk) or the developer's user account (opt-in; applies everywhere). A folder's configuration names one dotCMS instance; a different instance means a different folder.
 - **Server registration**: The dotCMS entry placed into an editor's configuration — what to launch, the instance address, and the credential.
 - **Credential**: A long-lived instance access token, either supplied by the developer or minted during setup. Sensitive; subject to all handling rules in FR-021 through FR-024.
 - **Skills bundle**: The dotCMS agent skills, installed per editor from an external toolkit source and versioned independently of this tool.
@@ -235,8 +231,6 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **SC-005a**: A known password value never appears in captured output, in any log, or in any file the tool writes — including when it was supplied as a command-line option.
 - **SC-006**: All seven named editors are supported at ship.
 - **SC-006a**: A run that fails on one target still configures every other selected target, reports the failure per target, and exits non-zero.
-- **SC-007**: For every supported editor, status reports exactly what setup wrote — no drift between what is written and what is read back.
-- **SC-008**: After removal, every touched file matches its pre-setup contents.
 - **SC-009**: Every failure path the tool can reach produces a message naming the file, address, or editor involved; no failure path produces an unhandled internal error.
 - **SC-010**: A run in a fully non-interactive environment, with all choices supplied up front, produces the same result as the equivalent interactive run.
 
@@ -257,9 +251,10 @@ Later — debugging a connection problem, auditing a machine, or cleaning up —
 - **The release pipeline needs one change, contrary to the initial assessment.** The SDK release action rewrites versions and publishes every built package generically, so an added package is swept up automatically. However its "already published" guard is derived from the directory name with the `@dotcms/` scope hardcoded (`.github/actions/core-cicd/deployment/deploy-javascript-sdk/action.yml`). For an unscoped package name that guard can never match, so the first publish succeeds but any re-run — the exact case the guard exists to handle — attempts to re-publish an existing version and fails the release step. FR-034 covers this; the plan must address it.
 - **One editor's skills location is unverified.** For VS Code with Copilot the server configuration location is well established, but the skills location the installer targets is the Copilot command-line tool's directory, and it is not confirmed that the in-editor agent reads it. Until verified, the summary reports honestly rather than claiming success (FR-027).
 - **One editor's configuration location comes from documentation, not from an installed copy.** Antigravity's user-account configuration path is taken from its documentation. The implementation is expected to probe at runtime and degrade gracefully if the actual layout differs.
-- **Credentials are written literally, by design.** No operating-system keychain integration is in scope; the mitigation is restrictive file permissions, truncation in output, never passing the credential through process arguments, and version-control exclusion for project scope.
+- **Credentials are written literally, by design.** No operating-system keychain integration is in scope; the mitigation is restrictive file permissions, truncation in output, never passing the credential through process arguments, and version-control exclusion for folder scope. Because folder scope is the default, that exclusion offer is the primary defence rather than a fallback.
 - **Accepting a password as a command-line option is a deliberate, qualified trade-off.** It is required for scripted and provisioning use, but a value passed that way is visible in the machine's process list for the lifetime of the process and is recorded in shell history — the same class of exposure the tool otherwise refuses for the token. It is accepted because the alternative, forcing an interactive prompt, would make the non-interactive journey impossible. The mitigations are that an environment variable is offered for every secret-bearing option and documented as preferred (FR-003e), the risk is stated in the help text rather than left for the developer to discover (FR-003f), the password is never persisted or echoed (FR-022a), and the long-lived artifact that actually reaches disk is the minted credential rather than the password.
-- **Minted credentials are long-lived.** Setup mints a token with a one-year lifetime and a label identifying its origin. Renewal is out of scope; status surfaces that a credential has stopped working, and re-running setup replaces it.
-- **Concurrent writes are a documented limitation, not a solved problem.** An editor that is running may rewrite its own configuration file and drop setup's entry, and two setup runs at once could lose one another's writes. No file locking or coordination is specified. The mitigation is that `agent status` shows the true current state and re-running setup is cheap and idempotent; the summary's next-step line is the natural place to suggest restarting the editor. Revisit only if this proves to bite in practice.
-- **The MCP server is consumed as published.** The tool points editors at the published dotCMS MCP server package rather than bundling or building it, so server updates reach developers without a new release of this tool.
+- **Minted credentials are long-lived.** Setup mints a token with a one-year lifetime and a label identifying its origin. Renewal is out of scope. When a credential stops working the agent's own error surfaces it, and re-running setup mints and writes a fresh one.
+- **Concurrent writes are a documented limitation, not a solved problem.** An editor that is running may rewrite its own configuration file and drop setup's entry, and two setup runs at once could lose one another's writes. No file locking or coordination is specified. The mitigation is that re-running setup is cheap and idempotent; the summary's next-step line is the natural place to suggest restarting the editor. Revisit only if this proves to bite in practice.
+- **Only `agent setup` ships.** Inspecting what is configured and unregistering it were considered and deliberately dropped from this release. Re-running setup is the supported way to correct or repoint a configuration, and it already replaces the existing entry. Removing an entry means editing the configuration file by hand — acceptable because the entry is a single named key the developer can find, and because the alternative is shipping two more commands to serve a rarer need. The `agent` sub-command group is retained precisely so both can be added later without changing how setup is invoked.
+- **The MCP server is consumed as published, at its latest version.** The tool points editors at the published dotCMS MCP server rather than bundling or building it, and does not pin a version — so server updates reach developers without a new release of this tool and without re-running setup. The trade-off accepted here: a broken server release reaches every configured machine at once, and two developers running the same command on different days can get different server behavior. This puts the burden on the server's own release discipline rather than on this tool, and it is the reason the connection check (FR-024a) matters — a developer at least learns at setup time if the current server does not start.
 - **Existing helpers are duplicated, not extracted.** A small amount of address-validation and authentication logic already exists in the project-scaffolding tool. It is copied rather than factored into a shared library, to avoid churning that tool while work on it is in flight; consolidation is deferred to the future command merge.
