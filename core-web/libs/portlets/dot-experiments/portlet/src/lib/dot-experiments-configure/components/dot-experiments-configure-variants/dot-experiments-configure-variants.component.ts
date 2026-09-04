@@ -418,6 +418,7 @@ export class DotExperimentsConfigureVariantsComponent {
             page: this.store.selectedPage(),
             variantId: row.id,
             experimentId: this.store.experiment()?.id ?? '',
+            experimentPageId: this.store.experiment()?.pageId,
             mode: row.editorMode
         });
 

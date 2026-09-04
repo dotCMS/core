@@ -68,7 +68,7 @@
                 data-testid="configure-section-variants"
                 [field]="formTree.variantWeights"
                 [typeField]="formTree.trafficProportionType"
-                [gated]="$isGated()" />
+                [gated]="$isVariantsGated()" />
             <dot-experiments-configure-scheduling
                 [field]="formTree.scheduling"
                 [bounds]="$schedulingBounds()"

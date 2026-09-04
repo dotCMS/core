@@ -671,6 +671,68 @@ describe('DotExperimentsConfigureStore', () => {
             );
         });
 
+        // #37005. The server takes `pageId` only while the variants are the control alone, so this
+        // precondition expires the moment a variant is added — and adding one was a single click
+        // away for the whole wait. Waiting for Save Draft left the card showing one page and the
+        // experiment sitting on another, with no PATCH able to reconcile them.
+        it('should persist the pick immediately, without waiting for Save Draft', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(patchExperiment).toHaveBeenCalledWith(EXPERIMENT_ID, {
+                pageId: OTHER_PAGE.pageId
+            });
+        });
+
+        // Variants are copies of the page; one created before the change lands is created under
+        // the old one. The Configure screen reads this to gate that card and only that card.
+        it('should report the change as in flight until it settles', () => {
+            initExisting(controlOnlyDraft());
+            // Held open, so the flight is observable: the default mock answers in the same tick.
+            const answer = pendingCall(patchExperiment);
+
+            expect(store.pageChanging()).toBe(false);
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+
+            expect(store.pageChanging()).toBe(true);
+
+            answer.next(buildExperiment({ pageId: OTHER_PAGE.pageId }));
+            answer.complete();
+
+            expect(store.pageChanging()).toBe(false);
+            expect(store.experiment()?.pageId).toBe(OTHER_PAGE.pageId);
+        });
+
+        it('should let the form go again when the change is refused', () => {
+            initExisting(controlOnlyDraft());
+
+            dispatcher.dispatch(pageEvents.pageSelected(OTHER_PAGE));
+            dispatcher.dispatch(apiEvents.pageChangeFailed(new Error('boom')));
+
+            expect(store.pageChanging()).toBe(false);
+        });
+
+        // Picking the page it is already on is not a change, so nothing is sent and nothing gates.
+        it('should send nothing when the pick is the page it already has', () => {
+            const draft = controlOnlyDraft();
+            initExisting(draft);
+            patchExperiment.mockClear();
+
+            dispatcher.dispatch(
+                pageEvents.pageSelected({
+                    pageId: draft.pageId,
+                    title: 'Same',
+                    path: '/same',
+                    languageId: 1
+                })
+            );
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(store.pageChanging()).toBe(false);
+        });
+
         it('should ignore a pick once the draft has a variant of its own', () => {
             // The default fixture already carries `variant-b` beside the control.
             initExisting();

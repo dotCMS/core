@@ -183,6 +183,19 @@ export class DotExperimentsConfigureComponent {
     readonly $isGated = computed<boolean>(() => this.store.isNew());
 
     /**
+     * Variants are gated for one more reason than the rest of the form: a confirmed page change in
+     * flight.
+     *
+     * They are copies of the page, and the server takes `pageId` only while the variants are the
+     * control alone — so a variant created before the change lands is created under the old page,
+     * and from then on the change can never be written. The other cards do not depend on the page
+     * and stay live (#37005).
+     */
+    readonly $isVariantsGated = computed<boolean>(
+        () => this.$isGated() || this.store.pageChanging()
+    );
+
+    /**
      * Indeterminate bar under the header while a request is on the wire — the same affordance UVE
      * gives its autosave.
      *

@@ -147,6 +147,12 @@ export interface DotExperimentsConfigureViewState {
     /** `null` until the page's lock state has been resolved, or while no page is selected. */
     pageLockInfo: DotPageLockInfo | null;
     /**
+     * A confirmed page change is in flight. Variants are gated while it is: they are copies of the
+     * page, and creating one against a page the server has not moved yet is what strands the
+     * experiment between two pages (#37005).
+     */
+    pageChanging: boolean;
+    /**
      * True while the variants that stand in the way of a page change are being deleted.
      *
      * Its own flag rather than the shared `status`: the Change Page confirmation shows this wait on

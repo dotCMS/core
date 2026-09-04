@@ -181,6 +181,8 @@ const createStoreMock = () => ({
     // The weights slice is seeded from these, so they move with `experiment` (see `loadExperiment`).
     $variants: signal<Variant[]>([]),
     $disabledTooltipKey: signal<string | null>(null),
+    /** A confirmed page change in flight; gates the Variants card on its own. */
+    pageChanging: signal(false),
     draftName: signal(''),
     draftDescription: signal('')
 });
@@ -971,6 +973,46 @@ describe('DotExperimentsConfigureComponent', () => {
 
                 expect(scrollIntoView).toHaveBeenCalledTimes(1);
             });
+        });
+    });
+
+    // #37005. Variants are copies of the page, and the server takes `pageId` only while the
+    // variants are the control alone — so one created before a page change lands is created under
+    // the old page, and from then on the change can never be written.
+    describe('while a page change is in flight', () => {
+        const createComponent = createComponentOn({
+            experimentId: EXPERIMENT.id,
+            configProps: CONFIGURED_DURATIONS
+        });
+
+        beforeEach(() => {
+            spectator = createComponent();
+            storeMock.isNew.set(false);
+        });
+
+        /**
+         * Asserted on the screen's own decision rather than on the rendered card: this spec
+         * replaces the card components, so their `gated` input never reaches the DOM. Which
+         * expression feeds which card is fixed by the template; what varies, and what this covers,
+         * is that the two differ.
+         */
+        it('should gate the Variants card', () => {
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(false);
+
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isVariantsGated()).toBe(true);
+        });
+
+        // The other cards do not depend on the page, so they stay live.
+        it('should leave the rest of the form live', () => {
+            storeMock.pageChanging.set(true);
+            spectator.detectChanges();
+
+            expect(spectator.component.$isGated()).toBe(false);
         });
     });
 

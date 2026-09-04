@@ -49,6 +49,13 @@ export interface VariantEditorLinkParams {
     variantId: string;
     experimentId: string;
     mode: UVE_MODE;
+    /**
+     * The page the **experiment** is on, as the server last reported it.
+     *
+     * Required, not optional: the check below only works if no caller can forget it, and the whole
+     * point of this builder is that a destination is either complete or refused.
+     */
+    experimentPageId: string | undefined;
 }
 
 /**
@@ -91,6 +98,7 @@ export function buildVariantEditorLink({
     page,
     variantId,
     experimentId,
+    experimentPageId,
     mode
 }: VariantEditorLinkParams): DotEditorLink<DotVariantEditorQueryParams> | null {
     const pageParams = pageParamsOf(page);
@@ -98,6 +106,22 @@ export function buildVariantEditorLink({
     // The experiment id is as load-bearing as the page: the return leg resolves by experiment
     // identity, not by page, because a page may host several (FR-005).
     if (!pageParams || !variantId || !experimentId) {
+        return null;
+    }
+
+    /**
+     * The page on screen and the page the experiment is actually on can drift apart, and a link
+     * built across that gap is the worst possible outcome: it names a real page and a real variant
+     * that do not belong together, so UVE loads the page and then cannot find the variant on it.
+     *
+     * They drift because a page change is only persisted when Save Draft is pressed. Add a variant
+     * in between and it is created under the *old* page — after which no PATCH can move the
+     * experiment, since the server refuses `pageId` once a non-control variant exists.
+     *
+     * An unknown `experimentPageId` is not a disagreement, so it is not refused: a page the server
+     * has not reported says nothing either way.
+     */
+    if (experimentPageId && experimentPageId !== page?.pageId) {
         return null;
     }
 

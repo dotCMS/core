@@ -89,6 +89,7 @@ const initialState: DotExperimentsConfigureViewState = {
     selectedPage: null,
     pagePrefillError: null,
     pageLockInfo: null,
+    pageChanging: false,
     deletingVariants: false,
     deleteVariantsFailed: false,
     validationRevealed: false,
@@ -430,8 +431,19 @@ export const DotExperimentsConfigureStore = signalStore(
                 return {};
             }
 
-            return { selectedPage: payload, pagePrefillError: null };
+            // In flight only when there is an experiment to move: before creation the page travels
+            // in the POST, so nothing is pending and nothing needs gating.
+            const pageChanging = !!state.experiment && payload.pageId !== state.experiment.pageId;
+
+            return { selectedPage: payload, pagePrefillError: null, pageChanging };
         }),
+        on(apiEvents.pageChangeSucceeded, ({ payload }) => ({
+            experiment: payload,
+            pageChanging: false
+        })),
+        // The revert is the existing `revertRefusedPage$`, which re-resolves the page the
+        // experiment actually reports; this only lets the form go again.
+        on(apiEvents.pageChangeFailed, () => ({ pageChanging: false })),
         on(apiEvents.pagePrefillResolved, ({ payload }) => ({
             selectedPage: payload,
             pagePrefillError: null
@@ -859,7 +871,48 @@ export const DotExperimentsConfigureStore = signalStore(
                  * the user something that is not stored anywhere, so it is re-resolved from the
                  * experiment. The message explaining why was already raised by the error handler.
                  */
-                revertRefusedPage$: events.on(apiEvents.saveFailed).pipe(
+                /**
+                 * Persists a confirmed page change on its own, instead of letting it ride along
+                 * with the next Save Draft.
+                 *
+                 * The server takes `pageId` only while the experiment's variants are the control
+                 * alone, so this precondition expires the moment a variant is added — and adding
+                 * one is a single click that used to be available during the whole wait. Once it
+                 * expired, the change could never be written, and the card went on showing a page
+                 * the experiment was not on (#37005).
+                 *
+                 * `switchMap`: picking a second page while the first is still in flight makes the
+                 * first irrelevant. A partial body is what the endpoint expects — `setGoal` sends
+                 * `{ goals }` the same way.
+                 */
+                changePage$: events.on(pageEvents.pageSelected).pipe(
+                    map(({ payload }) => payload.pageId),
+                    filter((pageId) => {
+                        const experiment = store.experiment();
+
+                        // The same rule the reducer applies before recording the pick, and the one
+                        // the server enforces: a pick it declined must not be sent either.
+                        return (
+                            !!experiment &&
+                            !!pageId &&
+                            pageId !== experiment.pageId &&
+                            canChangePage(experiment)
+                        );
+                    }),
+                    switchMap((pageId) =>
+                        experimentsService.patch(store.experiment()?.id ?? '', { pageId }).pipe(
+                            mapResponse({
+                                next: (experiment) => apiEvents.pageChangeSucceeded(experiment),
+                                error: toFailure(apiEvents.pageChangeFailed)
+                            })
+                        )
+                    )
+                ),
+
+                revertRefusedPage$: merge(
+                    events.on(apiEvents.saveFailed),
+                    events.on(apiEvents.pageChangeFailed)
+                ).pipe(
                     filter(() => store.selectedPage()?.pageId !== store.experiment()?.pageId),
                     map(() => store.experiment()?.pageId),
                     filter((pageId): pageId is string => !!pageId),

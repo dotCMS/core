@@ -31,6 +31,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.EDIT
         });
 
@@ -42,6 +43,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.EDIT
         });
 
@@ -63,6 +65,7 @@ describe('buildVariantEditorLink', () => {
             page: { ...PAGE, languageId: 7 },
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.EDIT
         });
 
@@ -77,6 +80,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.PREVIEW
         });
 
@@ -88,6 +92,7 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode
         });
 
@@ -104,12 +109,14 @@ describe('buildVariantEditorLink', () => {
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.EDIT
         });
         const preview = buildVariantEditorLink({
             page: PAGE,
             variantId: VARIANT_ID,
             experimentId: EXPERIMENT_ID,
+            experimentPageId: PAGE.pageId,
             mode: UVE_MODE.PREVIEW
         });
 
@@ -124,6 +131,7 @@ describe('buildVariantEditorLink', () => {
                     page: null,
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
+                    experimentPageId: PAGE.pageId,
                     mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
@@ -135,6 +143,7 @@ describe('buildVariantEditorLink', () => {
                     page: { ...PAGE, path: path as string },
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
+                    experimentPageId: PAGE.pageId,
                     mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
@@ -148,6 +157,7 @@ describe('buildVariantEditorLink', () => {
                     page: { ...PAGE, languageId: languageId as number },
                     variantId: VARIANT_ID,
                     experimentId: EXPERIMENT_ID,
+                    experimentPageId: PAGE.pageId,
                     mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
@@ -159,6 +169,7 @@ describe('buildVariantEditorLink', () => {
                     page: PAGE,
                     variantId: '',
                     experimentId: EXPERIMENT_ID,
+                    experimentPageId: PAGE.pageId,
                     mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
@@ -170,6 +181,7 @@ describe('buildVariantEditorLink', () => {
                     page: PAGE,
                     variantId: VARIANT_ID,
                     experimentId: '',
+                    experimentPageId: PAGE.pageId,
                     mode: UVE_MODE.EDIT
                 })
             ).toBeNull();
@@ -188,6 +200,7 @@ describe('buildVariantEditorLink', () => {
                 page: PAGE,
                 variantId: VARIANT_ID,
                 experimentId: EXPERIMENT_ID,
+                experimentPageId: PAGE.pageId,
                 mode: UVE_MODE.EDIT
             });
 
@@ -203,6 +216,38 @@ describe('buildVariantEditorLink', () => {
  * The same builder without the variant, experiment and mode params — the list's page-filter chip
  * uses it to send the editor back to the page they came from (FR-024).
  */
+// The page the card shows and the page the experiment is actually on can drift apart: a page
+// change is only persisted when Save Draft is pressed, so adding a variant in between creates
+// it under the OLD page and no later PATCH can move it. Building the link anyway produced a
+// URL for the new page carrying a variant that only exists under the old one, and UVE answered
+// that the page does not exist.
+describe('when the card and the experiment disagree about the page', () => {
+    it('should refuse rather than build a destination for a page the variant is not on', () => {
+        const link = buildVariantEditorLink({
+            page: PAGE,
+            variantId: VARIANT_ID,
+            experimentId: EXPERIMENT_ID,
+            experimentPageId: 'page-the-experiment-is-really-on',
+            mode: UVE_MODE.EDIT
+        });
+
+        expect(link).toBeNull();
+    });
+
+    // An experiment whose page the server has not reported says nothing about a disagreement.
+    it('should still build the link when the experiment page is unknown', () => {
+        const link = buildVariantEditorLink({
+            page: PAGE,
+            variantId: VARIANT_ID,
+            experimentId: EXPERIMENT_ID,
+            experimentPageId: undefined,
+            mode: UVE_MODE.EDIT
+        });
+
+        expect(link).not.toBeNull();
+    });
+});
+
 describe('buildPageEditorLink', () => {
     it('should target the page in the editor with no experiment context', () => {
         const link = buildPageEditorLink(PAGE);
