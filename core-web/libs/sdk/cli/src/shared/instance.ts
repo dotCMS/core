@@ -1,7 +1,7 @@
 import { DOTCMS_API, describeRequestFailure, endpoint, httpGet } from '@dotcms/http';
 
 import { ENV_KEYS, readEnv } from './env';
-import { InstanceUnreachableError, InvalidUrlError } from './errors';
+import { InstanceUnreachableError, InvalidUrlError, NotADotCmsInstanceError } from './errors';
 
 import type { RunOptions } from './types';
 
@@ -51,19 +51,53 @@ export async function resolveUrl(
  * version, which is why the compatibility check costs no extra request.
  */
 export async function checkReachable(url: string): Promise<InstanceInfo> {
+    let response;
     try {
-        const { data } = await httpGet<{ entity?: Record<string, unknown> }>(
-            endpoint(url, DOTCMS_API.appConfiguration)
-        );
-        return { url, version: readVersion(data) };
+        // `acceptAnyStatus` so a 404 is DATA, not an exception. A host that answers is
+        // reachable; whether it is dotCMS is the separate question below, and collapsing the
+        // two produced "Could not reach https://example.com — HTTP 404", which is wrong twice:
+        // it was reached, and the address is the problem.
+        response = await httpGet<unknown>(endpoint(url, DOTCMS_API.appConfiguration), {
+            acceptAnyStatus: true
+        });
     } catch (error) {
         throw new InstanceUnreachableError(url, describeRequestFailure(error));
     }
+
+    if (!isDotCmsConfiguration(response.data)) {
+        throw new NotADotCmsInstanceError(url, response.status);
+    }
+
+    return { url, version: readVersion(response.data) };
 }
 
+/**
+ * Is this actually dotCMS?
+ *
+ * Anything can answer 200 — a proxy, a CDN error page, an unrelated app. Writing an editor
+ * configuration that points at one of those produces an agent that fails every call later,
+ * with nothing to explain why. Fingerprint on the shape the endpoint really returns:
+ * `entity.config` carrying dotCMS's own configuration keys.
+ */
+function isDotCmsConfiguration(data: unknown): boolean {
+    const config = (data as { entity?: { config?: Record<string, unknown> } })?.entity?.config;
+    if (!config || typeof config !== 'object') return false;
+    // Any one of these is enough; requiring all of them would break on a trimmed-down instance.
+    return ['releaseInfo', 'license', 'cluster', 'emailRegex', 'languages'].some(
+        (key) => key in config
+    );
+}
+
+/**
+ * The instance version, for the ADR-0019 compatibility warning.
+ *
+ * It lives at `entity.config.releaseInfo.version` — e.g. "26.09.03-01". An earlier version of
+ * this read `entity.version`, which does not exist, so the warning could never fire.
+ */
 function readVersion(data: unknown): string | null {
-    const entity = (data as { entity?: Record<string, unknown> })?.entity;
-    const candidate = entity?.['version'] ?? entity?.['dotcmsVersion'] ?? entity?.['releaseVersion'];
+    const info = (data as { entity?: { config?: { releaseInfo?: { version?: unknown } } } })?.entity
+        ?.config?.releaseInfo;
+    const candidate = info?.version;
     return typeof candidate === 'string' && candidate.trim() !== '' ? candidate : null;
 }
 

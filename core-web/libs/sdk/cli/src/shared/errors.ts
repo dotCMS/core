@@ -33,6 +33,16 @@ export class InstanceUnreachableError extends CliError {
     }
 }
 
+export class NotADotCmsInstanceError extends CliError {
+    constructor(url: string, status: number) {
+        super(
+            `${url} answered (HTTP ${status}) but is not a dotCMS instance — ` +
+                `/api/v1/appconfiguration did not return a dotCMS configuration. ` +
+                `Check the address points at the dotCMS server itself, not a proxy, CDN or site root.`
+        );
+    }
+}
+
 export class CredentialsRejectedError extends CliError {
     constructor(url: string) {
         super(`The username and password were rejected by ${url}. Check them and try again.`);

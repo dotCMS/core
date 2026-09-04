@@ -1,3 +1,4 @@
+import { appConfiguration, appConfigurationResponse } from './__fixtures__/appconfiguration';
 import { checkReachable, compatibilityWarning, resolveUrl } from './instance';
 
 describe('instance', () => {
@@ -51,7 +52,7 @@ describe('instance', () => {
         it('uses /api/v1/appconfiguration, not /probes/alive', async () => {
             const fetchMock = jest
                 .spyOn(globalThis, 'fetch')
-                .mockResolvedValue(new Response(JSON.stringify({ entity: {} }), { status: 200 }));
+                .mockResolvedValue(appConfigurationResponse());
             await checkReachable('https://demo.dotcms.com');
             expect(fetchMock.mock.calls[0][0]).toContain('/api/v1/appconfiguration');
             expect(fetchMock.mock.calls[0][0]).not.toContain('/probes/');
@@ -75,6 +76,72 @@ describe('instance', () => {
             const err = await checkReachable('https://nope.example.com').catch((e: Error) => e);
             expect((err as Error).message).toMatch(/refused|not accepting connections/i);
             expect((err as Error).message).toContain('nope.example.com');
+        });
+    });
+
+    describe('it must actually BE dotCMS (FR-005b)', () => {
+        afterEach(() => { jest.restoreAllMocks(); });
+
+        it('rejects a host that answers 404 — reached, but not dotCMS', async () => {
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
+            const err = (await checkReachable('https://example.com').catch((e: Error) => e)) as Error;
+            expect(err.message).toMatch(/not a dotCMS instance/i);
+            expect(err.message).toContain('example.com');
+            // Distinct from unreachable: the host answered.
+            expect(err.message).not.toMatch(/could not reach/i);
+        });
+
+        it('rejects a host that answers 200 with something else entirely', async () => {
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response(JSON.stringify({ hello: 'world' }), { status: 200 })
+            );
+            await expect(checkReachable('https://proxy.example.com')).rejects.toThrow(
+                /not a dotCMS instance/i
+            );
+        });
+
+        it('rejects an HTML page served with 200 — a CDN or site root', async () => {
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response('<!doctype html><html><body>hi</body></html>', { status: 200 })
+            );
+            await expect(checkReachable('https://cdn.example.com')).rejects.toThrow(
+                /not a dotCMS instance/i
+            );
+        });
+
+        it('rejects an empty entity — the shape dotCMS never returns', async () => {
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response(JSON.stringify({ entity: {} }), { status: 200 })
+            );
+            await expect(checkReachable('https://x.example.com')).rejects.toThrow(
+                /not a dotCMS instance/i
+            );
+        });
+
+        it('accepts a real dotCMS body', async () => {
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(appConfigurationResponse());
+            await expect(checkReachable('https://demo.dotcms.com')).resolves.toEqual({
+                url: 'https://demo.dotcms.com',
+                version: '26.09.03-01'
+            });
+        });
+
+        it('reads the version from entity.config.releaseInfo.version', async () => {
+            // The path that matters: an earlier version read entity.version, which does not
+            // exist, so the ADR-0019 warning could never fire.
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(appConfigurationResponse('26.07.14-01'));
+            const info = await checkReachable('https://demo.dotcms.com');
+            expect(info.version).toBe('26.07.14-01');
+        });
+
+        it('still accepts an instance that reports no version — the warning is fail-open', async () => {
+            const body = appConfiguration();
+            delete (body.entity.config as Record<string, unknown>)['releaseInfo'];
+            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+                new Response(JSON.stringify(body), { status: 200 })
+            );
+            const info = await checkReachable('https://demo.dotcms.com');
+            expect(info.version).toBeNull();
         });
     });
 

@@ -2,9 +2,12 @@ import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+
 import { runSetup } from './setup';
 import * as skills from './skills';
 import * as registry from './targets/registry';
+
+import { appConfigurationResponse } from '../../shared/__fixtures__/appconfiguration';
 
 /**
  * setup.spec drives the WHOLE flow, including the skills install and the connection check —
@@ -44,7 +47,7 @@ afterEach(async () => {
 function mockRejectedToken() {
     jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
         const u = String(input);
-        if (u.includes('/appconfiguration')) return new Response(JSON.stringify({ entity: {} }), { status: 200 });
+        if (u.includes('/appconfiguration')) return appConfigurationResponse();
         return new Response('', { status: 401 });
     });
 }
@@ -109,9 +112,16 @@ describe('auth mode exclusivity (FR-003b)', () => {
 
 /** A reachable instance that accepts the token — so the run gets past verification and
  *  actually reaches the write step. */
+/**
+ * A healthy instance: a real appconfiguration body for the reachability probe, and a 200 for
+ * everything else. Routing by URL matters — a single blanket response meant the probe was
+ * answered with a token payload, which the dotCMS fingerprint now correctly rejects.
+ */
 function mockAcceptedToken() {
-    jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-        new Response(JSON.stringify({ entity: { token: 'dot_ok' } }), { status: 200 })
+    jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+        String(input).includes('/appconfiguration')
+            ? appConfigurationResponse()
+            : new Response(JSON.stringify({ entity: { token: 'dot_ok' } }), { status: 200 })
     );
 }
 
@@ -366,7 +376,7 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             const u = String(input);
             if (u.includes('/appconfiguration')) {
-                return new Response(JSON.stringify({ entity: {} }), { status: 200 });
+                return appConfigurationResponse();
             }
             return new Response('', { status: 401 });
         });
@@ -378,12 +388,12 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
         jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             const u = String(input);
             if (u.includes('/appconfiguration')) {
-                return new Response(JSON.stringify({ entity: {} }), { status: 200 });
+                return appConfigurationResponse();
             }
             verifyCalls += 1;
             return verifyCalls <= 2
                 ? new Response('', { status: 401 })
-                : new Response(JSON.stringify({ entity: {} }), { status: 200 });
+                : appConfigurationResponse();
         });
     }
 
