@@ -34,110 +34,172 @@
         </div>
     </header>
 
-    <p-table
-        [value]="$tokens()"
-        [rowHover]="true"
-        [loading]="$isLoading()"
-        dataKey="id"
-        styleClass="border border-surface-200 rounded-lg overflow-hidden"
-        data-testid="users-api-tokens-table">
-        <ng-template pTemplate="header">
-            <tr>
-                <th>{{ 'users.dialog.tokens.column.id' | dm }}</th>
-                <th>{{ 'users.dialog.tokens.column.label' | dm }}</th>
-                <th>{{ 'users.dialog.tokens.column.issued' | dm }}</th>
-                <th>{{ 'users.dialog.tokens.column.expires' | dm }}</th>
-                <th>{{ 'users.dialog.tokens.column.requested-by' | dm }}</th>
-                <th>{{ 'users.dialog.tokens.column.network' | dm }}</th>
-                <th style="width: 7rem"></th>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="body" let-token>
-            @let status = statusOf(token);
-            @let isInactive = status !== 'valid';
-            <tr
-                [class.cursor-pointer]="!isInactive"
-                [class.text-surface-400]="isInactive"
-                [class.opacity-60]="isInactive"
-                [attr.role]="!isInactive ? 'button' : null"
-                [attr.tabindex]="!isInactive ? 0 : null"
-                [attr.aria-label]="
-                    !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
-                "
-                [attr.title]="!isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null"
-                (click)="onRowClick(token)"
-                (keydown)="onRowKeydown(token, $event)"
-                [attr.data-testid]="'users-api-tokens-row-' + token.id">
-                <td class="font-mono text-sm" [title]="token.id">{{ shortId(token.id) }}</td>
-                <td>{{ token.claims?.label || '—' }}</td>
-                <td class="text-sm" [class.text-color-secondary]="!isInactive">
-                    {{ token.issueDate | date: 'MM/dd/yyyy, h:mm:ss a' }}
-                </td>
-                <td class="text-sm" [class.text-color-secondary]="!isInactive">
-                    {{ token.expiresDate | date: 'MM/dd/yyyy, h:mm:ss a' }}
-                </td>
-                <td class="font-mono text-xs" [class.text-color-secondary]="!isInactive">
-                    {{ token.requestingUserId }}
-                </td>
-                <td>
-                    <span
-                        class="rounded-md px-2 py-1 text-xs"
-                        [class.bg-surface-100]="!isInactive"
-                        [class.bg-surface-50]="isInactive">
-                        {{ token.allowNetwork || ('users.dialog.tokens.network.any' | dm) }}
-                    </span>
-                </td>
-                <td>
-                    @if (!isInactive) {
-                        <p-button
-                            [label]="'users.dialog.tokens.revoke' | dm"
-                            [text]="true"
-                            size="small"
-                            (onClick)="revoke(token, $event)"
-                            [attr.data-testid]="'users-api-tokens-revoke-' + token.id" />
-                    } @else {
-                        <p-tag
-                            [value]="statusLabelKey(status) | dm"
-                            severity="secondary"
-                            [rounded]="true"
-                            [attr.data-testid]="'users-api-tokens-status-pill-' + token.id" />
-                    }
-                </td>
-            </tr>
-        </ng-template>
-        <ng-template pTemplate="emptymessage">
-            <tr class="hover:bg-transparent!">
-                <td colspan="7" class="border-none p-0">
-                    @if ($loadError()) {
-                        <div
-                            class="flex flex-col items-center justify-center gap-3 p-6 text-sm"
-                            data-testid="users-api-tokens-error">
-                            <span class="text-red-600">
-                                {{ 'users.dialog.tokens.error' | dm }}
-                            </span>
-                            <p-button
-                                [label]="'users.dialog.tokens.retry' | dm"
-                                [outlined]="true"
-                                size="small"
-                                (onClick)="retryLoad()"
-                                data-testid="users-api-tokens-retry-btn" />
-                        </div>
-                    } @else {
-                        <div
-                            class="flex items-center justify-center p-6 text-sm text-surface-400 italic"
-                            data-testid="users-api-tokens-empty">
-                            {{
-                                ($showRevoked()
-                                    ? 'users.dialog.tokens.empty-all'
-                                    : 'users.dialog.tokens.empty'
-                                ) | dm
-                            }}
-                        </div>
-                    }
-                </td>
-            </tr>
-        </ng-template>
-    </p-table>
+    <!--
+        Wrapping the table in a bordered rounded div gives the empty
+        remainder-of-flex space something to read as instead of blank
+        whitespace: users see a bordered box that clearly hosts the
+        table, matching the visual weight of a paginated portlet
+        table without needing pagination here.
+
+        Scrolling is on the wrapper (`overflow-auto`) instead of the
+        `<p-table>`. `[scrollable]` + `scrollHeight="flex"` needs the
+        whole ancestor chain to be a definite-height flex column
+        without a `gap` gutter in the way — the host's `gap-4` breaks
+        that assumption, so PrimeNG's flex-height never resolves and
+        the table falls back to intrinsic size. Plain `overflow-auto`
+        sidesteps that plumbing entirely.
+    -->
+    <div class="flex min-h-0 flex-1 flex-col overflow-auto rounded-lg border border-surface-200">
+        <p-table
+            [value]="$tokens()"
+            [tableStyle]="{ width: '100%' }"
+            [rowHover]="true"
+            dataKey="id"
+            data-testid="users-api-tokens-table">
+            <ng-template pTemplate="header">
+                <!--
+                    All columns flow with `table-layout: auto`: the
+                    browser sizes each one from its content and header
+                    text. No filter or search on this table, so any
+                    width shift only happens on the initial load and on
+                    revoke — no live typing to make columns jitter, and
+                    dates + ids always stay fully visible.
+                -->
+                <tr>
+                    <th>{{ 'users.dialog.tokens.column.id' | dm }}</th>
+                    <th>{{ 'users.dialog.tokens.column.label' | dm }}</th>
+                    <th>{{ 'users.dialog.tokens.column.issued' | dm }}</th>
+                    <th>{{ 'users.dialog.tokens.column.expires' | dm }}</th>
+                    <th>{{ 'users.dialog.tokens.column.requested-by' | dm }}</th>
+                    <th>{{ 'users.dialog.tokens.column.network' | dm }}</th>
+                    <th></th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-token>
+                @if ($isLoading()) {
+                    <tr
+                        data-testid="users-api-tokens-loading-row"
+                        class="cursor-default hover:bg-transparent!">
+                        <td><p-skeleton height="1.5rem" width="60%" /></td>
+                        <td><p-skeleton height="1.5rem" width="70%" /></td>
+                        <td><p-skeleton height="1.5rem" width="80%" /></td>
+                        <td><p-skeleton height="1.5rem" width="80%" /></td>
+                        <td><p-skeleton height="1.5rem" width="60%" /></td>
+                        <td><p-skeleton height="1.5rem" width="50%" /></td>
+                        <td><p-skeleton height="1.5rem" width="70%" /></td>
+                    </tr>
+                } @else {
+                    @let status = statusOf(token);
+                    @let isInactive = status !== 'valid';
+                    <tr
+                        [class.cursor-pointer]="!isInactive"
+                        [class.opacity-60]="isInactive"
+                        [attr.role]="!isInactive ? 'button' : null"
+                        [attr.tabindex]="!isInactive ? 0 : null"
+                        [attr.aria-label]="
+                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
+                        "
+                        [attr.title]="
+                            !isInactive ? ('users.dialog.tokens.row.reveal-hint' | dm) : null
+                        "
+                        (click)="onRowClick(token)"
+                        (keydown)="onRowKeydown(token, $event)"
+                        [attr.data-testid]="'users-api-tokens-row-' + token.id">
+                        <td class="font-mono text-sm" [title]="token.id">
+                            {{ shortId(token.id) }}
+                        </td>
+                        <td>{{ token.claims?.label || '—' }}</td>
+                        <td class="text-sm">
+                            {{ token.issueDate | date: 'MM/dd/yyyy, h:mm a' }}
+                        </td>
+                        <td class="text-sm">
+                            {{ token.expiresDate | date: 'MM/dd/yyyy, h:mm a' }}
+                        </td>
+                        <td class="font-mono text-xs">
+                            {{ token.requestingUserId }}
+                        </td>
+                        <td class="font-mono text-xs">
+                            {{ token.allowNetwork || ('users.dialog.tokens.network.any' | dm) }}
+                        </td>
+                        <td (click)="$event.stopPropagation()">
+                            @if (!isInactive) {
+                                <p-button
+                                    [label]="'users.dialog.tokens.revoke' | dm"
+                                    [text]="true"
+                                    size="small"
+                                    (onClick)="revoke(token, $event)"
+                                    [attr.data-testid]="'users-api-tokens-revoke-' + token.id" />
+                            } @else {
+                                <p-tag
+                                    [value]="statusLabelKey(status) | dm"
+                                    severity="secondary"
+                                    [rounded]="true"
+                                    [attr.data-testid]="
+                                        'users-api-tokens-status-pill-' + token.id
+                                    " />
+                            }
+                        </td>
+                    </tr>
+                }
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr class="hover:bg-transparent!">
+                    <td colspan="7" class="border-none p-0">
+                        @if ($loadError()) {
+                            <!--
+                            Error and empty states share the dot-tags
+                            empty-state shape: centred icon + title +
+                            copy, neutral typography. Colour drops off
+                            the copy line — the icon + heading carry
+                            enough weight without turning the message
+                            red.
+                        -->
+                            <div
+                                class="mx-auto flex max-w-100 flex-col items-center gap-4 p-6 text-center"
+                                data-testid="users-api-tokens-error">
+                                <div class="flex size-16 items-center justify-center rounded-full">
+                                    <span
+                                        class="material-symbols-rounded text-5xl! text-surface-500"
+                                        aria-hidden="true">
+                                        error
+                                    </span>
+                                </div>
+                                <p class="m-0 text-base leading-6 text-color">
+                                    {{ 'users.dialog.tokens.error' | dm }}
+                                </p>
+                                <p-button
+                                    [label]="'users.dialog.tokens.retry' | dm"
+                                    [outlined]="true"
+                                    size="small"
+                                    (onClick)="retryLoad()"
+                                    data-testid="users-api-tokens-retry-btn" />
+                            </div>
+                        } @else {
+                            <div
+                                class="mx-auto flex max-w-100 flex-col items-center gap-4 p-6 text-center"
+                                data-testid="users-api-tokens-empty">
+                                <div class="flex size-16 items-center justify-center rounded-full">
+                                    <span
+                                        class="material-symbols-rounded text-5xl! text-surface-500"
+                                        aria-hidden="true">
+                                        key
+                                    </span>
+                                </div>
+                                <p class="m-0 text-base leading-6 text-color">
+                                    {{
+                                        ($showRevoked()
+                                            ? 'users.dialog.tokens.empty-all'
+                                            : 'users.dialog.tokens.empty'
+                                        ) | dm
+                                    }}
+                                </p>
+                            </div>
+                        }
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
 
     <p-confirmDialog
         [style]="{ width: '500px' }"

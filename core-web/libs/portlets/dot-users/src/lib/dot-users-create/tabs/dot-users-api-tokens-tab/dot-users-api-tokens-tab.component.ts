@@ -21,6 +21,7 @@ import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogModule } from 'primeng/dialog';
 import { DialogService, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { InputTextModule } from 'primeng/inputtext';
+import { SkeletonModule } from 'primeng/skeleton';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 
@@ -65,6 +66,7 @@ type TokenStatus = 'valid' | 'revoked' | 'expired';
         ConfirmDialogModule,
         DialogModule,
         InputTextModule,
+        SkeletonModule,
         TableModule,
         TagModule,
         DotMessagePipe
@@ -72,7 +74,7 @@ type TokenStatus = 'valid' | 'revoked' | 'expired';
     templateUrl: './dot-users-api-tokens-tab.component.html',
     styleUrl: './dot-users-api-tokens-tab.component.scss',
     providers: [DialogService, ConfirmationService],
-    host: { class: 'flex flex-col gap-4' }
+    host: { class: 'flex min-h-0 flex-1 flex-col gap-4' }
 })
 export class DotUsersApiTokensTabComponent {
     readonly #dialogService = inject(DialogService);
