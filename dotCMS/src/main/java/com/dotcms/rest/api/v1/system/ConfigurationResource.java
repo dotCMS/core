@@ -5,7 +5,7 @@ import static com.dotcms.rest.ResponseEntityView.OK;
 import com.dotcms.featureflag.FeatureFlagName;
 import com.dotcms.rest.InitDataObject;
 import com.dotcms.rest.WebResource.InitBuilder;
-import com.dotcms.rest.api.v1.maintenance.JVMInfoResource;
+import com.dotcms.util.ObfuscationUtil;
 import com.dotcms.rest.api.v1.pagescanner.PageScannerResource;
 import com.dotmarketing.util.StringUtils;
 import com.google.common.collect.ImmutableSet;
@@ -117,7 +117,7 @@ public class ConfigurationResource implements Serializable {
                             FeatureFlagName.FEATURE_FLAG_DOTAI_CONFIG_UI }));
 
 	private boolean isOnBlackList(final String key) {
-		return null != JVMInfoResource.obfuscatePattern ? JVMInfoResource.obfuscatePattern.matcher(key).find() : false;
+		return ObfuscationUtil.matchesCustomPattern(key);
 	}
 
 	/**

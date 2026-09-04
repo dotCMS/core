@@ -54,9 +54,9 @@ public class ConfigurationResourceTest {
     void setUp() {
         // Open the Config mock BEFORE constructing ConfigurationResource so that
         // any static initializer that calls Config (WHITE_LIST, and
-        // JVMInfoResource.obfuscatePattern via isOnBlackList) receives a safe
+        // ObfuscationUtil.CUSTOM_PATTERN via isOnBlackList) receives a safe
         // default instead of null.  Without this, Pattern.compile(null) inside
-        // JVMInfoResource throws NullPointerException on first class load.
+        // ObfuscationUtil throws NullPointerException on first class load.
         //
         // Default answer: return the caller-supplied default (second argument)
         // for any getStringProperty / getStringArrayProperty call that is not
