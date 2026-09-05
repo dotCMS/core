@@ -46,14 +46,19 @@ public class DataSourceStrategyProvider {
     }
 
     /**
-     * Method that loads a datasource from a custom implementation if <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> property
-     * is defined. Otherwise, the datasource is initialized using any of these implementations (respecting order):
+     * Method that loads a datasource.
+     * <p>If <b>DATASOURCE_PROVIDER_STRATEGY_CLASS</b> is explicitly configured (to any
+     * value, including {@link SystemEnvDataSourceStrategy}), that implementation is loaded
+     * directly. Otherwise (property unset), the datasource is initialized using the
+     * following precedence:
      * <ol>
-     *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} implemented by
-     *     {@link DBPropertiesDataSourceStrategy}</li>
-     *     <li>Configuration is taken from environment variables implemented by {@link SystemEnvDataSourceStrategy}</li>
-     *     <li>Getting Docker Secrets if set. Implementation: {@link DockerSecretDataSourceStrategy}</li>
-     *     <li>A {@code context.xml} file in {@code /META-INF/}. Implementation: {@link TomcatDataSourceStrategy}</li>
+     *     <li>A {@code db.properties} file in {@code /WEB-INF/classes} (if present),
+     *         implemented by {@link DBPropertiesDataSourceStrategy}</li>
+     *     <li>Docker Secrets (if present), implemented by {@link DockerSecretDataSourceStrategy}</li>
+     *     <li>Configuration from system environment variables (the default),
+     *         implemented by {@link SystemEnvDataSourceStrategy}</li>
+     *     <li>Fallback on failure: {@code context.xml} in {@code /META-INF/},
+     *         implemented by {@link TomcatDataSourceStrategy}</li>
      * </ol>
      * It's also worth noting that creating the {@link DataSource} instance requires the default {@link TimeZone} object
      * to be set to {@code UTC}. Otherwise, the default Time Zone will be used instead and several database operations
@@ -71,36 +76,39 @@ public class DataSourceStrategyProvider {
 
         DataSource defaultDataSource = null;
 
-        final SystemEnvironmentProperties systemEnvironmentProperties = getSystemEnvironmentProperties();
-
         final String providerClassName = getCustomDataSourceProvider();
+        // An explicitly configured strategy (including an explicit
+        // SystemEnvDataSourceStrategy, as the integration test harness sets) is
+        // honored directly. Only the implicit default (property unset) walks the
+        // full precedence chain below.
+        final boolean hasExplicitCustomProvider = isDataSourceProviderExplicitlyConfigured();
+
         try {
-            if (!UtilMethods.isSet(providerClassName)) {
-                if (getDBPropertiesInstance()
-                        .existsDBPropertiesFile()) {
-                    defaultDataSource = getDBPropertiesInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from db.properties file");
-                } else if (systemEnvironmentProperties.getVariable(CONNECTION_DB_BASE_URL)
-                        != null) {
-                    defaultDataSource = getSystemEnvDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from system environment");
-                } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
-                    defaultDataSource = getDockerSecretDataSourceInstance()
-                            .apply();
-                    Logger.info(DataSourceStrategyProvider.class,
-                            "Datasource loaded from Docker Secret");
-                }
-            } else {
+            if (hasExplicitCustomProvider) {
                 DotDataSourceStrategy customStrategy = ((Class<DotDataSourceStrategy>) Class
                         .forName(providerClassName)).getDeclaredConstructor().newInstance();
                 defaultDataSource = customStrategy.apply();
 
                 Logger.info(DataSourceStrategyProvider.class,
                         "Datasource loaded using custom class " + providerClassName);
+            } else {
+                if (getDBPropertiesInstance()
+                        .existsDBPropertiesFile()) {
+                    defaultDataSource = getDBPropertiesInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from db.properties file");
+                } else if (getDockerSecretDataSourceInstance().dockerSecretPathExists()) {
+                    defaultDataSource = getDockerSecretDataSourceInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from Docker Secret");
+                } else {
+                    defaultDataSource = getSystemEnvDataSourceInstance()
+                            .apply();
+                    Logger.info(DataSourceStrategyProvider.class,
+                            "Datasource loaded from system environment");
+                }
             }
 
         } catch(Exception e) {
@@ -122,7 +130,19 @@ public class DataSourceStrategyProvider {
     @VisibleForTesting
     String getCustomDataSourceProvider() {
         return Config
-                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null);
+                .getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", "com.dotmarketing.db.SystemEnvDataSourceStrategy");
+    }
+
+    /**
+     * Whether {@code DATASOURCE_PROVIDER_STRATEGY_CLASS} was explicitly configured (as
+     * opposed to falling back to the {@link SystemEnvDataSourceStrategy} default). An
+     * explicitly configured value - including an explicit {@code SystemEnvDataSourceStrategy}
+     * - is honored directly; only the implicit default walks the precedence chain.
+     */
+    @VisibleForTesting
+    boolean isDataSourceProviderExplicitlyConfigured() {
+        return UtilMethods.isSet(
+                Config.getStringProperty("DATASOURCE_PROVIDER_STRATEGY_CLASS", null));
     }
 
     @VisibleForTesting

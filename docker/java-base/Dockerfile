@@ -6,7 +6,9 @@ FROM ubuntu:24.04 AS base-builder
 WORKDIR /srv
 
 # Defining default Java version, can be any java version provided by sdkman
-ARG SDKMAN_JAVA_VERSION="25.0.2-ms"
+ARG SDKMAN_JAVA_VERSION="25.0.4+1-ms"
+ARG TCNATIVE_VERSION="1.3.8"
+ARG TCNATIVE_SHA512="a12b97979037720465300cbc05777ff6ee2ec1dc59ff698864d7068800bf0c2d2606a4e0e29a4d7b16f92c9130604a13e0cc27929a224c9ff77e532ac98a4695"
 
 ENV JAVA_OUTPUT_DIR="/java"
 ENV DEBIAN_FRONTEND=noninteractive
@@ -17,7 +19,8 @@ ENV PATH="$SDKMAN_DIR/bin:$PATH"
 # Installing basic packages and SDKMAN
 RUN apt update && \
     apt upgrade -y && \
-    apt install -y --no-install-recommends zip unzip wget libtcnative-1 tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg && \
+    apt install -y --no-install-recommends zip unzip wget tzdata tini ca-certificates openssl libapr1 libpq-dev curl gnupg \
+        gcc make libapr1-dev libssl-dev && \
     rm -rf /var/lib/apt/lists/* && \
     wget -O - https://get.sdkman.io | bash && \
     bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && sdk install java ${SDKMAN_JAVA_VERSION} && sdk flush archives" && \
@@ -43,9 +46,40 @@ RUN bash -c "source $SDKMAN_DIR/bin/sdkman-init.sh && jlink \
     --no-man-pages \
     --output \"$JAVA_OUTPUT_DIR\""
 
+# Build the Tomcat Native library (tcnative) for Tomcat 9.
+# Tomcat 9 requires the tcnative 1.x line (tcnative 2.x is Tomcat 10.1+ only).
+# Ubuntu 24.04 only packages libtcnative-1 1.2.35, which is old and known to
+# segfault with OpenSSL 3.x in FIPS environments, so we build the current
+# Apache release from source, linked against this image's APR/OpenSSL 3.
+# Built once here and reused by downstream images (the dotcms runtime image
+# copies it from this image). Must run before the SDKMAN cleanup below,
+# since the full JDK (JNI headers) is required. The build deps were installed
+# with the Ubuntu repos only (before the pgdg repo is added), so no apt
+# update is needed here; they are purged afterwards to keep the image slim.
+# libpq-dev is purged here too because it depends on libssl-dev (purging
+# libssl-dev removes it), and the cleanup step below no longer lists it.
+# See https://tomcat.apache.org/download-native.cgi
+# downloads.apache.org only hosts the current release; older ones move to
+# archive.apache.org, so fall back there once ${TCNATIVE_VERSION} is superseded.
+RUN cd /tmp && \
+    (wget -q "https://downloads.apache.org/tomcat/tomcat-connectors/native/${TCNATIVE_VERSION}/source/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" || \
+     wget -q "https://archive.apache.org/dist/tomcat/tomcat-connectors/native/${TCNATIVE_VERSION}/source/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz") && \
+    echo "${TCNATIVE_SHA512} *tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" | sha512sum -c - && \
+    tar xzf "tomcat-native-${TCNATIVE_VERSION}-src.tar.gz" && \
+    cd "tomcat-native-${TCNATIVE_VERSION}-src/native" && \
+    ./configure --with-apr=/usr/bin/apr-1-config \
+        --with-java-home="${SDKMAN_DIR}/candidates/java/current" \
+        --with-ssl=/usr \
+        --prefix=/usr/local/tomcat-native && \
+    make -j"$(nproc)" && \
+    make install && \
+    cd / && rm -rf /tmp/tomcat-native-${TCNATIVE_VERSION}-src.tar.gz "tomcat-native-${TCNATIVE_VERSION}-src" && \
+    apt purge -y gcc make libapr1-dev libssl-dev libpq-dev && \
+    apt autoremove -y
+
 # Cleanup
 RUN rm -rf /root/.sdkman && \
-    apt purge -y zip unzip wget curl libpq-dev && \
+    apt purge -y zip unzip wget curl && \
     apt autoremove -y && \
     apt clean && \
     rm -rf /var/lib/apt/lists/*
@@ -55,3 +89,7 @@ RUN rm -rf /root/.sdkman && \
 # ----------------------------------------------
 FROM scratch
 COPY --from=base-builder / /
+
+# tcnative built in base-builder; downstream images inherit it via COPY and
+# redeclare this ENV themselves (ENVs do not survive the flatten to scratch).
+ENV LD_LIBRARY_PATH="/usr/local/tomcat-native/lib"

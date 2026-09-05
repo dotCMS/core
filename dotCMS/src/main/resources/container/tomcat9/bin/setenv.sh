@@ -3,7 +3,10 @@
 # Set default environment variables
 export LANG=${LANG:-"C.UTF-8"}
 
-export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true  -Djava.library.path=/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
+# java.library.path must include the bundled tcnative dir (see java-base image):
+# -Djava.library.path overrides LD_LIBRARY_PATH, so without it Tomcat's
+# AprLifecycleListener cannot find libtcnative-1 and silently falls back to JSSE.
+export JAVA_OPTS_BASE=${JAVA_OPTS_BASE:-"-Djava.awt.headless=true -Djava.library.path=/usr/local/tomcat-native/lib:/usr/lib/$( uname -m )-linux-gnu/ -XX:+UseCompactObjectHeaders --enable-preview "}
 
 # Auto-tune GC algorithm based on available vCPUs:
 #   1-3 cores → G1GC (default) + G1PeriodicGCInterval to return memory to OS on idle
@@ -64,7 +67,12 @@ export DOT_FELIX_FELIX_FILEINSTALL_DIR=${DOT_FELIX_FELIX_FILEINSTALL_DIR:-"/data
 export DOT_FELIX_FELIX_UPLOAD_DIR=${DOT_FELIX_FELIX_UPLOAD_DIR:-"/data/shared/felix/upload"}
 
 # Database Configuration
-export DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS="com.dotmarketing.db.SystemEnvDataSourceStrategy"
+# NOTE: DOT_DATASOURCE_PROVIDER_STRATEGY_CLASS is intentionally NOT exported here.
+# DataSourceStrategyProvider already defaults to SystemEnvDataSourceStrategy (so
+# DB_* env vars work out of the box). Force-exporting it here would override any
+# operator-provided value and make the documented empty-value escape hatch
+# (which restores the legacy db.properties / Docker Secrets resolution order)
+# impossible to use in Dockerized environments.
 export DB_DRIVER=${DB_DRIVER:-"org.postgresql.Driver"}
 export DB_BASE_URL=${DB_BASE_URL:-"jdbc:postgresql://db.dotcms.site/dotcms"}
 export DB_USERNAME=${DB_USERNAME:-"dotcmsdbuser"}
