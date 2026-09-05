@@ -81,7 +81,19 @@
                             {{ 'dotai.embeddings.column.tokens' | dm }}
                             <p-sortIcon field="tokenTotal" />
                         </th>
-                        <th class="w-32">{{ 'dotai.embeddings.column.cost' | dm }}</th>
+                        <th class="w-32">
+                            {{ 'dotai.embeddings.column.cost' | dm }}
+                            <!-- Named, not implied: the figure hardcodes one provider's
+                                 published pricing and is already wrong for the others the
+                                 platform supports (FR-026). -->
+                            <span
+                                class="material-symbols-outlined align-middle text-base! text-muted-color"
+                                [title]="'dotai.embeddings.column.cost.hint' | dm"
+                                data-testid="dotai-embeddings-cost-hint"
+                                aria-hidden="true">
+                                info
+                            </span>
+                        </th>
                         <th class="w-32">{{ 'dotai.embeddings.column.status' | dm }}</th>
                         <th class="w-24"></th>
                     </tr>

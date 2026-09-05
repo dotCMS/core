@@ -7,7 +7,8 @@ import { TabsModule } from 'primeng/tabs';
 
 import { filter, map, startWith } from 'rxjs/operators';
 
-import { DotAiCompletionsStreamService } from '@dotcms/data-access';
+import { DotAiCompletionsStreamService, DotMessageService } from '@dotcms/data-access';
+import { GlobalStore } from '@dotcms/store';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_AI_TABS, DotAiTabId } from '../models/dot-ai-portlet.models';
@@ -44,6 +45,8 @@ import { DotAiStore } from '../store/dot-ai.store';
 })
 export default class DotAiShellComponent {
     readonly #router = inject(Router);
+    readonly #globalStore = inject(GlobalStore);
+    readonly #messageService = inject(DotMessageService);
 
     protected readonly store = inject(DotAiStore);
     protected readonly tabs = DOT_AI_TABS;
@@ -57,6 +60,19 @@ export default class DotAiShellComponent {
         ),
         { initialValue: DOT_AI_TABS[0].id }
     );
+
+    constructor() {
+        // Without this the shell header keeps whatever trail the previous portlet left —
+        // observed live as "Home > Getting Started / Welcome" while sitting on dotAI.
+        this.#globalStore.setBreadcrumbs([
+            {
+                id: 'dotai',
+                label: this.#messageService.get('com.dotcms.repackage.javax.portlet.title.dotai'),
+                url: '/dotAdmin/#/dotai',
+                target: '_self'
+            }
+        ]);
+    }
 
     #activeTabFromUrl(): DotAiTabId {
         return (
