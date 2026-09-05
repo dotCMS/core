@@ -124,7 +124,21 @@ export class DotAiCompletionsStreamService {
         const trimmed = line.trim();
 
         // Blank lines separate frames; ':' lines are keep-alive comments.
-        if (!trimmed || trimmed.startsWith(':') || !trimmed.startsWith(DATA_PREFIX)) {
+        if (!trimmed || trimmed.startsWith(':')) {
+            return false;
+        }
+
+        // Not every line is SSE. When retrieval matches nothing the endpoint answers with a
+        // bare JSON object and no framing at all — `{"error":"no matching content found..."}`.
+        // Dropping it as "not a data: line" leaves the user staring at an empty answer with
+        // no explanation, so it is parsed for an error here (FR-014).
+        if (!trimmed.startsWith(DATA_PREFIX)) {
+            const bare = this.#parseErrorMessage(trimmed);
+
+            if (bare) {
+                subscriber.next({ type: 'error', message: bare });
+            }
+
             return false;
         }
 
@@ -162,5 +176,25 @@ export class DotAiCompletionsStreamService {
         }
 
         return false;
+    }
+
+    /** Reads an error message out of a bare (unframed) JSON line, if it is one. */
+    #parseErrorMessage(line: string): string | null {
+        if (!line.startsWith('{')) {
+            return null;
+        }
+
+        try {
+            const parsed = JSON.parse(line) as DotAiCompletionFrame;
+            const message = parsed?.error ?? parsed?.message;
+
+            if (!message) {
+                return null;
+            }
+
+            return typeof message === 'string' ? message : JSON.stringify(message);
+        } catch {
+            return null;
+        }
     }
 }

@@ -208,4 +208,39 @@ describe('DotAiCompletionsStreamService', () => {
         expect(headers.Accept).toBeUndefined();
         expect(JSON.stringify(headers)).not.toContain('event-stream');
     });
+    it('should surface a bare JSON error line that carries no data: prefix', async () => {
+        // Observed against a live instance: when retrieval matches nothing, the endpoint
+        // answers with a plain JSON object and no SSE framing at all. Parsing only `data:`
+        // lines drops it, and the user sees an empty answer with no explanation (FR-014).
+        fetchMock.mockResolvedValue(
+            streamResponse(['{"error":"no matching content found in the index for your query"}\n'])
+        );
+
+        const events: DotAiStreamEvent[] = [];
+        await new Promise<void>((resolve) => {
+            spectator.service.stream(form).subscribe({
+                next: (e) => events.push(e),
+                complete: () => resolve()
+            });
+        });
+
+        expect(events[0]).toEqual({
+            type: 'error',
+            message: 'no matching content found in the index for your query'
+        });
+    });
+
+    it('should ignore a bare JSON line that is not an error', async () => {
+        fetchMock.mockResolvedValue(streamResponse(['{"ok":true}\n', 'data: [DONE]\n']));
+
+        const events: DotAiStreamEvent[] = [];
+        await new Promise<void>((resolve) => {
+            spectator.service.stream(form).subscribe({
+                next: (e) => events.push(e),
+                complete: () => resolve()
+            });
+        });
+
+        expect(events).toEqual([]);
+    });
 });

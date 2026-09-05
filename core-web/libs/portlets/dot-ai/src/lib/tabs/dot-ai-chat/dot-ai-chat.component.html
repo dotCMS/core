@@ -1,0 +1,121 @@
+<p-splitter
+    class="flex h-full min-h-0"
+    [panelSizes]="[75, 25]"
+    [minSizes]="[40, 15]"
+    stateKey="dotai-chat-splitter"
+    stateStorage="local"
+    [pt]="splitterPt">
+    <ng-template pTemplate>
+        <section class="flex h-full min-w-0 flex-col overflow-hidden">
+            <div #thread class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-thread">
+                @if (!store.hasChat()) {
+                    <div class="p-8 text-center" data-testid="dotai-chat-empty">
+                        <h2 class="text-2xl font-medium">{{ 'dotai.chat.empty.title' | dm }}</h2>
+                        <!-- Deliberately does not promise sources: only the non-streaming mode
+                             returns them, and this tab streams. -->
+                        <p class="mt-1 text-muted-color">{{ 'dotai.chat.empty.sub' | dm }}</p>
+                    </div>
+                } @else {
+                    <ul class="flex flex-col gap-4">
+                        @for (message of store.chatMessages(); track message.id) {
+                            <li>
+                                @if (message.role === 'user') {
+                                    <div class="flex justify-end">
+                                        <p
+                                            class="max-w-3/4 rounded-2xl bg-surface-100 px-4 py-2.5 whitespace-pre-wrap"
+                                            data-testid="dotai-chat-user-message">
+                                            {{ message.content }}
+                                        </p>
+                                    </div>
+                                } @else {
+                                    <div
+                                        class="flex gap-3"
+                                        data-testid="dotai-chat-assistant-message">
+                                        <dot-color-icon
+                                            color="primary"
+                                            variant="solid"
+                                            size="sm"
+                                            class="size-7.5! shrink-0 rounded-md!" />
+
+                                        <div class="min-w-0 flex-1">
+                                            @if (
+                                                message.state === states.STREAMING &&
+                                                !message.content
+                                            ) {
+                                                <dot-agent-thinking
+                                                    [text]="'dotai.chat.thinking' | dm"
+                                                    data-testid="dotai-chat-thinking" />
+                                            } @else {
+                                                <p class="whitespace-pre-wrap">
+                                                    {{ message.content }}
+                                                </p>
+                                            }
+
+                                            @if (message.state === states.STOPPED) {
+                                                <p
+                                                    class="mt-1 text-xs text-muted-color"
+                                                    data-testid="dotai-chat-stopped">
+                                                    {{ 'dotai.chat.stopped' | dm }}
+                                                </p>
+                                            }
+
+                                            @if (message.state === states.ERROR) {
+                                                <!-- Inline, never a dialog over a live stream. -->
+                                                <p
+                                                    class="mt-1 text-sm text-red-500"
+                                                    data-testid="dotai-chat-error">
+                                                    {{ message.error }}
+                                                </p>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </li>
+                        }
+                    </ul>
+                }
+            </div>
+
+            <div class="shrink-0 border-t border-surface-200 p-4">
+                <div class="flex items-end gap-2">
+                    <textarea
+                        pTextarea
+                        class="flex-1"
+                        rows="2"
+                        [ngModel]="$draft()"
+                        (ngModelChange)="$draft.set($event)"
+                        (keydown)="onKeydown($event)"
+                        [placeholder]="'dotai.chat.placeholder' | dm"
+                        [attr.aria-label]="'dotai.chat.input.aria' | dm"
+                        data-testid="dotai-chat-input"></textarea>
+
+                    @if (store.isStreaming()) {
+                        <p-button
+                            severity="secondary"
+                            [outlined]="true"
+                            [label]="'dotai.chat.stop' | dm"
+                            (onClick)="store.stopChat()"
+                            data-testid="dotai-chat-stop" />
+                    } @else {
+                        <!-- ariaLabel, not [attr.aria-label]: the attribute form lands on the
+                             p-button host and leaves the real <button> unnamed (FR-056). -->
+                        <p-button
+                            [rounded]="true"
+                            [disabled]="!store.isConfigured() || !$draft().trim()"
+                            [ariaLabel]="'dotai.chat.send' | dm"
+                            (onClick)="onSend()"
+                            data-testid="dotai-chat-send">
+                            <span class="material-symbols-outlined text-lg!" aria-hidden="true">
+                                arrow_upward
+                            </span>
+                        </p-button>
+                    }
+                </div>
+            </div>
+        </section>
+    </ng-template>
+
+    <ng-template pTemplate>
+        <dot-ai-settings-panel />
+    </ng-template>
+</p-splitter>

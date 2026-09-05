@@ -1,5 +1,6 @@
 import {
     ComponentStatus,
+    DotAiChatMessage,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
     DotAiIndexStatus,
@@ -76,6 +77,10 @@ export interface DotAiPortletState {
     searchStatus: ComponentStatus;
     searchMissingIndex: string | null;
     hasSearched: boolean;
+
+    // chat
+    chatMessages: DotAiChatMessage[];
+    chatStreaming: boolean;
 }
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
@@ -106,5 +111,8 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     searchResponse: null,
     searchStatus: ComponentStatus.INIT,
     searchMissingIndex: null,
-    hasSearched: false
+    hasSearched: false,
+
+    chatMessages: [],
+    chatStreaming: false
 };

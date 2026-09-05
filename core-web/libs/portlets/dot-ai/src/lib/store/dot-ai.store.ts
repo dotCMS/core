@@ -2,6 +2,7 @@ import { signalStore, withHooks, withState } from '@ngrx/signals';
 
 import { withPersistedQuery } from '@dotcms/data-access';
 
+import { withAiChat } from './features/with-ai-chat.feature';
 import { withAiConfig } from './features/with-ai-config.feature';
 import { withAiIndexes } from './features/with-ai-indexes.feature';
 import { withAiSearch } from './features/with-ai-search.feature';
@@ -29,6 +30,7 @@ export const DotAiStore = signalStore(
     withAiIndexes(),
     withRetrievalSettings(),
     withAiSearch(),
+    withAiChat(),
     // Gives `dotcms.devtools.dotai.lastQuery`, matching the three sibling dev-tool portlets.
     // It can only be composed once — it contributes a `clearPersistedQuery()` method that a
     // second instance would collide on.

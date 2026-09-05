@@ -26,8 +26,12 @@ export const dotAiRoutes: Route[] = [
                 path: 'search',
                 loadComponent: () => import('./tabs/dot-ai-search/dot-ai-search.component')
             },
+            {
+                path: 'chat',
+                loadComponent: () => import('./tabs/dot-ai-chat/dot-ai-chat.component')
+            },
             // Placeholders — each is replaced by its real tab component as that tab lands.
-            ...DOT_AI_TABS.filter((tab) => tab.id !== 'search').map(
+            ...DOT_AI_TABS.filter((tab) => tab.id !== 'search' && tab.id !== 'chat').map(
                 (tab): Route => ({
                     path: tab.id,
                     data: { tab },
