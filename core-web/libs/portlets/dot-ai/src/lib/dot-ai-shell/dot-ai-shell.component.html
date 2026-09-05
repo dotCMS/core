@@ -1,9 +1,10 @@
-<p-tabs>
+<p-tabs [value]="$activeTab()">
     <p-tablist>
         @for (tab of tabs; track tab.id) {
             <p-tab
+                [value]="tab.id"
                 [routerLink]="['/dotai', tab.id]"
-                [routerLinkActive]="['p-tab-active', 'bg-primary-50']"
+                [routerLinkActive]="['bg-primary-50']"
                 [attr.data-testid]="'dotai-tab-' + tab.id">
                 <span class="flex items-center gap-2">
                     <span class="material-symbols-outlined text-lg!" aria-hidden="true">
