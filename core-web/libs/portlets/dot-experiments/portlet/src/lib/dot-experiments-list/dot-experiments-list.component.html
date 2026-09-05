@@ -158,7 +158,14 @@
                             }
                         </tr>
                     } @else {
-                        <tr class="group" data-testid="experiment-row">
+                        <tr
+                            class="group cursor-pointer"
+                            data-testid="experiment-row"
+                            role="button"
+                            tabindex="0"
+                            (click)="onRowClick(row.experiment)"
+                            (keydown.enter)="onRowClick(row.experiment)"
+                            (keydown.space)="onRowClick(row.experiment); $event.preventDefault()">
                             <td class="max-w-0" data-testid="experiment-name">
                                 <div class="flex min-w-0 flex-col">
                                     <span
@@ -201,10 +208,9 @@
                             <td class="whitespace-nowrap" data-testid="experiment-modified">
                                 {{ row.experiment.modDate | date: 'MMM d, y' }}
                             </td>
-                            <td>
-                                <!-- The design leads this cell with "View Results" / "Configure";
-                                 Configure is the first entry of the kebab and View Results lands
-                                 with the reports screen. -->
+                            <td
+                                (click)="$event.stopPropagation()"
+                                (keydown)="$event.stopPropagation()">
                                 <div
                                     class="flex items-center justify-end gap-1 opacity-0 transition-opacity duration-200 group-hover:opacity-100 focus-within:opacity-100">
                                     <p-button

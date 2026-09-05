@@ -1,0 +1,52 @@
+<div class="flex w-full flex-col gap-4">
+    <p-tabs [value]="$activeTab()" (valueChange)="selectTab($event)">
+        <p-tablist>
+            @for (tab of tabs; track tab.id) {
+                <p-tab [value]="tab.id" [attr.data-testid]="'results-chart-tab-' + tab.id">
+                    {{ tab.labelKey | dm }}
+                </p-tab>
+            }
+        </p-tablist>
+    </p-tabs>
+
+    <p-card>
+        @if ($activeTab() === 'daily') {
+            <dot-experiments-reports-chart
+                [isLoading]="store.$isLoading()"
+                [isEmpty]="$isDailyEmpty()"
+                [config]="dailyAxisLabels"
+                [data]="store.$dailyChartData()"
+                data-testid="results-daily-chart">
+                <div chartHeading class="mr-auto flex min-w-0 flex-col gap-0.5">
+                    <span
+                        class="text-[15px] font-semibold text-surface-900"
+                        data-testid="results-chart-heading">
+                        {{ 'experiments.results.chart.daily.title' | dm }}
+                    </span>
+                    <span class="text-[13px] text-surface-500" data-testid="results-chart-subtitle">
+                        {{ $dailyChartSubtitle() }}
+                    </span>
+                </div>
+            </dot-experiments-reports-chart>
+        } @else {
+            <dot-experiments-reports-chart
+                [isLoading]="store.$isLoading()"
+                [isEmpty]="$isBayesianEmpty()"
+                [config]="bayesianAxisLabels"
+                [data]="store.$bayesianChartData()"
+                [isLinearAxis]="true"
+                data-testid="results-bayesian-chart">
+                <div chartHeading class="mr-auto flex min-w-0 flex-col gap-0.5">
+                    <span
+                        class="text-[15px] font-semibold text-surface-900"
+                        data-testid="results-chart-heading">
+                        {{ 'experiments.results.chart.bayesian.title' | dm }}
+                    </span>
+                    <span class="text-[13px] text-surface-500" data-testid="results-chart-subtitle">
+                        {{ 'experiments.results.chart.bayesian.subtitle' | dm }}
+                    </span>
+                </div>
+            </dot-experiments-reports-chart>
+        }
+    </p-card>
+</div>

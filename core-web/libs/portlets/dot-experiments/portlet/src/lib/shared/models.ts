@@ -1,9 +1,10 @@
-import { DotPageLockInfo } from '@dotcms/data-access';
 import {
     AllowedActionsByExperimentStatus,
     ComponentStatus,
     DotExperiment,
+    DotExperimentResults,
     DotExperimentStatus,
+    DotExperimentVariantDetail,
     GOAL_OPERATORS,
     GOAL_TYPES,
     TrafficProportionTypes
@@ -123,8 +124,6 @@ export interface DotExperimentsConfigureViewState {
     selectedPage: DotExperimentConfigurePage | null;
     /** i18n key of the Page card's inline error when `?pageId=`/`?url=` did not resolve. */
     pagePrefillError: string | null;
-    /** `null` until the page's lock state has been resolved, or while no page is selected. */
-    pageLockInfo: DotPageLockInfo | null;
     /**
      * True while the variants that stand in the way of a page change are being deleted.
      *
@@ -303,4 +302,54 @@ export interface VariantRowViewModel {
     disabled: boolean;
     /** i18n key explaining `disabled`; `null` when the row is editable. */
     disabledTooltipKey: string | null;
+}
+
+/** How a Lift vs Original reads: a gain, a loss, or nothing to compare against (AC16). */
+export type LiftTone = 'neutral' | 'positive' | 'negative';
+
+/** Translated copy the summary table needs for values the backend does not supply. */
+export interface VariantDetailLabels {
+    /** Shown where the backend has not computed a range or a probability yet. */
+    noDataLabel: string;
+    /** Sits between the two bounds of the 95% conversion rate range. */
+    rangeSeparatorLabel: string;
+}
+
+/**
+ * A summary-table row: the shared variant detail plus the Lift vs Original.
+ *
+ * Lift has no backend field — it is the variant's conversion rate minus the control's — so it is
+ * additive here rather than in `DotExperimentVariantDetail`, which the old reports screen shares.
+ */
+export interface DotExperimentResultVariantDetail extends DotExperimentVariantDetail {
+    /** Signed percentage points to one decimal, or an em dash when there is nothing to compare. */
+    liftVsOriginal: string;
+    liftTone: LiftTone;
+}
+
+/** Everything the Results screen renders from. */
+export interface DotExperimentsResultsViewState {
+    /** `null` until the experiment has loaded, which is also what the skeleton reads (AC23). */
+    experiment: DotExperiment | null;
+    /**
+     * The page the experiment runs on, resolved from its `pageId`.
+     *
+     * `DotExperiment` carries the identifier and nothing else — no title, no path — so a content
+     * search resolves them. `null` while it has not resolved, and also when it cannot be: the
+     * header then reads the variant count alone rather than blocking a report that is complete.
+     */
+    page: DotExperimentConfigurePage | null;
+    /**
+     * `null` while the experiment is DRAFT or SCHEDULED: `getResults` is uncached and costs two
+     * analytics round-trips plus a Monte Carlo run, so it is never called before there is
+     * anything to count (AC10).
+     */
+    results: DotExperimentResults | null;
+    status: ComponentStatus;
+    /**
+     * True when the experiment loaded but its report did not. Kept apart from `status`: everything
+     * the experiment alone can draw stays on screen, and the shell says the report is missing
+     * over it rather than blanking the page.
+     */
+    reportUnavailable: boolean;
 }

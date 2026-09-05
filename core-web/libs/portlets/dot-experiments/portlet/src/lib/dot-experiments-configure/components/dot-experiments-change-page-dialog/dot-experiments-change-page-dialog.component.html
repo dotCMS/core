@@ -16,12 +16,12 @@
     </ul>
 
     @if ($hasFailed()) {
-        <small class="p-error" data-testid="change-page-error">
+        <p-message severity="error" data-testid="change-page-error">
             {{ 'experiments.configure.page.change.error' | dm }}
-        </small>
+        </p-message>
     }
 
-    <div class="flex justify-end gap-2">
+    <div class="mt-4 flex justify-end gap-2">
         <p-button
             type="button"
             severity="secondary"

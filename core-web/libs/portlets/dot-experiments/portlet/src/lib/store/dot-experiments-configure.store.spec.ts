@@ -24,7 +24,6 @@ import {
     DotExperimentStatus,
     DotSite,
     EXP_CONFIG_ERROR_LABEL_CANT_EDIT,
-    EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED,
     GOAL_OPERATORS,
     GOAL_PARAMETERS,
     GOAL_TYPES,
@@ -64,7 +63,6 @@ const apiEvents = dotExperimentsConfigureApiEvents;
 
 const SITE_HOSTNAME = 'demo.dotcms.com';
 const CURRENT_USER_ID = 'user-me';
-const OTHER_USER_ID = 'user-someone-else';
 const EXPERIMENT_ID = 'exp-1';
 
 /** The page every fixture runs on, as the Page card renders it. */
@@ -165,7 +163,6 @@ describe('DotExperimentsConfigureStore', () => {
     const cancelSchedule = jest.fn();
     const contentSearchGet = jest.fn();
     const searchPages = jest.fn();
-    const getPageLockState = jest.fn();
     const messageGet = jest.fn();
     const navigate = jest.fn();
 
@@ -204,7 +201,7 @@ describe('DotExperimentsConfigureStore', () => {
         // `Dispatcher`/`Events` are `providedIn: 'platform'`, so they outlive TestBed resets and
         // a store from a previous test would keep reacting to this test's events.
         provideDispatcher(),
-        mockProvider(DotPagesBrowserService, { searchPages, getPageLockState }),
+        mockProvider(DotPagesBrowserService, { searchPages }),
         mockProvider(DotContentSearchService, { get: contentSearchGet }),
         mockProvider(DotHttpErrorManagerService),
         mockProvider(DotMessageService, { get: messageGet }),
@@ -360,7 +357,6 @@ describe('DotExperimentsConfigureStore', () => {
         cancelSchedule.mockReturnValue(of(VALID_DRAFT));
         contentSearchGet.mockReturnValue(of(PAGE_LOOKUP_RESULT));
         searchPages.mockReturnValue(of([buildBrowserPage()]));
-        getPageLockState.mockReturnValue(of({ locked: false }));
         messageGet.mockImplementation((key: string) => key);
 
         globalStoreMock.loggedUser.set({ userId: CURRENT_USER_ID } as DotCurrentUser);
@@ -1486,50 +1482,6 @@ describe('DotExperimentsConfigureStore', () => {
         });
     });
 
-    describe('page lock', () => {
-        it('should flag a page locked by another user', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: OTHER_USER_ID }));
-
-            initExisting();
-
-            expect(getPageLockState).toHaveBeenCalledWith(PAGE.pageId);
-            expect(store.$lockedByAnotherUser()).toBe(true);
-            expect(store.$disabledTooltipKey()).toBe(EXP_CONFIG_ERROR_LABEL_PAGE_BLOCKED);
-        });
-
-        it('should not flag a page this user locked themselves', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: CURRENT_USER_ID }));
-
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-            expect(store.$disabledTooltipKey()).toBeNull();
-        });
-
-        it('should not flag an unlocked page', () => {
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-        });
-
-        it('should treat an unresolvable lock state as unlocked', () => {
-            getPageLockState.mockReturnValue(throwError(() => httpError(500)));
-
-            initExisting();
-
-            expect(store.$lockedByAnotherUser()).toBe(false);
-            expect(store.status()).toBe(ComponentStatus.LOADED);
-        });
-
-        it('should resolve the lock of a page picked before creation', () => {
-            initNew();
-
-            dispatcher.dispatch(pageEvents.pageSelected(PAGE));
-
-            expect(getPageLockState).toHaveBeenCalledWith(PAGE.pageId);
-        });
-    });
-
     describe('validation (AC28/AC29)', () => {
         interface ValidationCase {
             rule: string;
@@ -1747,6 +1699,69 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$isScheduledStart()).toBe(false);
         });
 
+        /**
+         * The backend validates a start against what is *persisted*, so a goal picked and never
+         * flushed is a goal the server has never seen — `ExperimentsAPIImpl.start()` answers "The
+         * Experiment needs to have the Goal set." for a form the screen considers complete.
+         */
+        it('should flush the pending form before starting', () => {
+            const withGoal = buildExperiment();
+            patchExperiment.mockReturnValue(of(withGoal));
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).toHaveBeenCalledWith(
+                EXPERIMENT_ID,
+                expect.objectContaining({ goals: buildGoals() })
+            );
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+            expect(store.$hasUnsavedChanges()).toBe(false);
+        });
+
+        it('should start without a write when the screen holds nothing unsaved', () => {
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting();
+
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(patchExperiment).not.toHaveBeenCalled();
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+        });
+
+        it('should not start when the flush is refused', () => {
+            patchExperiment.mockReturnValue(throwError(() => httpError(400, {})));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            // The refused write leaves the screen dirty and startable again, rather than
+            // transitioning an experiment the server never received the goal for.
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(false);
+            expect(store.$hasUnsavedChanges()).toBe(true);
+            expect(store.status()).toBe(ComponentStatus.LOADED);
+        });
+
+        it('should wait for the flush before the start leaves', () => {
+            const flushed = pendingCall(patchExperiment);
+            start.mockReturnValue(of(buildExperiment({ status: DotExperimentStatus.RUNNING })));
+            initExisting(buildExperiment({ goals: null }));
+
+            edit({ goal: toGoalSlice(buildGoals()) });
+            dispatcher.dispatch(pageEvents.startRequested());
+
+            expect(start).not.toHaveBeenCalled();
+            expect(store.starting()).toBe(true);
+
+            flushed.next(buildExperiment());
+
+            expect(start).toHaveBeenCalledWith(EXPERIMENT_ID);
+        });
+
         it('should not fire a second start while the first one is in flight', () => {
             const started = new Subject<DotExperiment>();
             start.mockReturnValue(started);
@@ -1898,13 +1913,12 @@ describe('DotExperimentsConfigureStore', () => {
             expect(store.$lockedBannerKey()).toBe(LOCKED_BANNER_KEY_READ_ONLY);
         });
 
-        it('should explain the locked status before the page lock', () => {
-            getPageLockState.mockReturnValue(of({ locked: true, lockedBy: OTHER_USER_ID }));
+        // A lock on the page does not reach this screen at all: every edit it offers is a write to
+        // the experiment, which the backend accepts on a locked page. See `$disabledTooltipKey`.
+        it('should leave a draft editable regardless of the page', () => {
+            initExisting();
 
-            initExisting(buildExperiment({ status: DotExperimentStatus.RUNNING }));
-
-            expect(store.$lockedByAnotherUser()).toBe(true);
-            expect(store.$disabledTooltipKey()).toBe(EXP_CONFIG_ERROR_LABEL_CANT_EDIT);
+            expect(store.$disabledTooltipKey()).toBeNull();
         });
     });
 

@@ -6,9 +6,19 @@
  * unlayered and scoped, so `p-card[_ngcontent-x]` outranks PrimeNG's own `.p-card`, while a utility
  * sits in `@layer utilities` and loses to it no matter the specificity.
  */
-.radio-card {
-    display: block;
-    cursor: pointer;
+/**
+ * The card fills its grid cell rather than sizing to its own copy, so a row of cards is even
+ * whatever length each description happens to be. The caller decides how tall a row is — with
+ * `auto-rows-fr` on the grid, that is the tallest card in the set — and this chain passes that
+ * height down through the label to the card PrimeNG renders.
+ *
+ * The host and the label carry their half as utilities; only the `p-card` links below have to be
+ * stylesheet rules, for the layering reason above. The disabled cursor still wins over the label's
+ * `cursor-pointer`: an unlayered component rule beats a utility whatever the specificity.
+ */
+p-card,
+p-card .p-card-body {
+    height: 100%;
 }
 
 p-card {
