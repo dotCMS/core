@@ -8,6 +8,7 @@ import { withAiEmbeddings } from './features/with-ai-embeddings.feature';
 import { withAiImage } from './features/with-ai-image.feature';
 import { withAiIndexes } from './features/with-ai-indexes.feature';
 import { withAiSearch } from './features/with-ai-search.feature';
+import { withDotAiPreferences } from './features/with-dot-ai-preferences.feature';
 import { withRetrievalSettings } from './features/with-retrieval-settings.feature';
 
 import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../models/dot-ai-portlet.models';
@@ -39,6 +40,9 @@ export const DotAiStore = signalStore(
     // It can only be composed once — it contributes a `clearPersistedQuery()` method that a
     // second instance would collide on.
     withPersistedQuery({ portletKey: 'dotai', field: 'searchPrompt' }),
+    // The panel's ten controls, which withPersistedQuery cannot express: it holds one string
+    // field and can only be composed once (FR-018).
+    withDotAiPreferences(),
     withHooks({
         onInit(store) {
             store.loadConfig();

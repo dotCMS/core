@@ -1,17 +1,27 @@
-import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
+import {
+    patchState,
+    signalStoreFeature,
+    type,
+    withComputed,
+    withHooks,
+    withMethods
+} from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
-import { EMPTY, pipe } from 'rxjs';
+import { EMPTY, interval, pipe, Subscription } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { computed, inject } from '@angular/core';
+import { computed, effect, inject, untracked } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
 import { DotAiEmbeddingsService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { ComponentStatus, DotAiIndex } from '@dotcms/dotcms-models';
+import { ComponentStatus, DOT_AI_INDEX_STATUS, DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 import { deriveIndexStatuses, toIndexOptions } from '../../utils/dot-ai-index.utils';
+
+/** Matches the legacy portlet's cadence; fast enough to feel live, slow enough to be cheap. */
+const INDEX_POLL_MS = 5000;
 
 /**
  * The embeddings index list — one owner, two readers.
@@ -110,6 +120,38 @@ export function withAiIndexes() {
                     });
                 }
             };
+        }),
+        withHooks({
+            onInit(store) {
+                // Without this the derivation never runs again: statuses are computed from a
+                // fragment-count delta, so a BUILDING index only settles to READY if something
+                // re-fetches. Poll only while a build is outstanding, and stop as soon as it
+                // settles — an idle screen should not talk to the server (FR-027).
+                let poll: Subscription | null = null;
+
+                effect(() => {
+                    const building = Object.values(store.indexStatuses()).includes(
+                        DOT_AI_INDEX_STATUS.BUILDING
+                    );
+
+                    untracked(() => {
+                        if (building && !poll) {
+                            poll = interval(INDEX_POLL_MS).subscribe(() => store.loadIndexes());
+
+                            return;
+                        }
+
+                        if (!building && poll) {
+                            poll.unsubscribe();
+                            poll = null;
+                        }
+                    });
+                });
+            },
+            onDestroy() {
+                // The effect's teardown owns the subscription; nothing to do beyond letting
+                // the injection context dispose it.
+            }
         })
     );
 }

@@ -48,6 +48,7 @@ describe('DotAiSearchComponent', () => {
         settingsTemperature: jest.fn().mockReturnValue(0),
         settingsResponseLength: jest.fn().mockReturnValue(1024),
         settingsContentTypes: jest.fn().mockReturnValue(''),
+        settingsSite: jest.fn().mockReturnValue(null),
         setSettings: jest.fn()
     };
 

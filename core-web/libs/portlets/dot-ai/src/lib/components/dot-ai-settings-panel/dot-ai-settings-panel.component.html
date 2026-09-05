@@ -103,6 +103,21 @@
     </div>
 
     <div class="field">
+        <label for="dotai-settings-site">{{ 'dotai.settings.site' | dm }}</label>
+        <!-- showClear so "no site" is reachable: a cleared value means all sites, which is
+             what the API wants as site:"" (FR-021). -->
+        <dot-site
+            id="dotai-settings-site"
+            [showSystemHost]="false"
+            [showClear]="true"
+            [value]="store.settingsSite()"
+            (siteChange)="onSiteChange($event)"
+            [placeholder]="'dotai.settings.site.all'"
+            data-testid="dotai-settings-site" />
+        <small class="p-field-hint">{{ 'dotai.settings.site.hint' | dm }}</small>
+    </div>
+
+    <div class="field">
         <label for="dotai-settings-content-types">
             {{ 'dotai.settings.content-types' | dm }}
         </label>

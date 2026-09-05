@@ -7,7 +7,7 @@ import { RadioButtonModule } from 'primeng/radiobutton';
 import { SelectModule } from 'primeng/select';
 
 import { DOT_AI_VECTOR_OPERATOR, DotAiVectorOperator } from '@dotcms/dotcms-models';
-import { DotMessagePipe } from '@dotcms/ui';
+import { DotMessagePipe, DotSiteComponent } from '@dotcms/ui';
 
 import {
     DOT_AI_MIN_RESPONSE_TOKENS,
@@ -33,6 +33,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
         InputNumberModule,
         InputTextModule,
         RadioButtonModule,
+        DotSiteComponent,
         DotMessagePipe
     ],
     templateUrl: './dot-ai-settings-panel.component.html',
@@ -53,4 +54,11 @@ export class DotAiSettingsPanelComponent {
 
     protected readonly temperatureRange = DOT_AI_TEMPERATURE_RANGE;
     protected readonly minResponseTokens = DOT_AI_MIN_RESPONSE_TOKENS;
+
+    /** A cleared site means "all sites"; the payload turns null into an empty string. */
+    protected onSiteChange(site: { identifier?: string } | string | null): void {
+        const identifier = typeof site === 'string' ? site : (site?.identifier ?? null);
+
+        this.store.setSettings({ settingsSite: identifier });
+    }
 }

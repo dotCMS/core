@@ -141,6 +141,15 @@ export class DotSiteComponent implements ControlValueAccessor, OnInit, OnDestroy
     showSystemHost = input<boolean>(true);
 
     /**
+     * Whether to offer a clear affordance on the dropdown.
+     *
+     * Defaults to `false`, so existing call sites are unchanged. Set it where "no site" is a
+     * meaningful selection rather than an unset one — the dotAI retrieval panel, for instance,
+     * treats a cleared value as "search every site".
+     */
+    showClear = input<boolean>(false);
+
+    /**
      * Two-way model binding for the selected site.
      * Accepts a string (site identifier), a DotSite object, or null if no site is selected.
      * Used to drive the currently selected value in the dropdown.
