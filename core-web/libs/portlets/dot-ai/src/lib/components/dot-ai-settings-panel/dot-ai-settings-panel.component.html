@@ -1,0 +1,118 @@
+<form class="form" data-testid="dotai-settings-panel">
+    <div class="field">
+        <label for="dotai-settings-index">{{ 'dotai.settings.index' | dm }}</label>
+        @if (store.indexesForbidden()) {
+            <!-- indexCount needs CMS_ADMINISTRATOR_ROLE while portlet access does not, so a
+                 non-admin lands here through no fault of their own (FR-049). -->
+            <p class="p-field-hint" data-testid="dotai-settings-index-forbidden">
+                {{ 'dotai.index.admin-required' | dm }}
+            </p>
+        } @else {
+            <p-select
+                inputId="dotai-settings-index"
+                size="small"
+                [options]="store.indexOptions()"
+                optionLabel="label"
+                optionValue="value"
+                [ngModel]="store.settingsIndexName()"
+                [ngModelOptions]="{ standalone: true }"
+                (ngModelChange)="store.setSettings({ settingsIndexName: $event })"
+                data-testid="dotai-settings-index" />
+        }
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-threshold">{{ 'dotai.settings.threshold' | dm }}</label>
+        <p-inputNumber
+            inputId="dotai-settings-threshold"
+            size="small"
+            [min]="0"
+            [max]="2"
+            [step]="0.05"
+            [minFractionDigits]="2"
+            [ngModel]="store.settingsThreshold()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsThreshold: $event })"
+            data-testid="dotai-settings-threshold" />
+        <!-- Reads backwards otherwise: it is a MAX distance, so higher matches more. -->
+        <small class="p-field-hint">{{ 'dotai.settings.threshold.hint' | dm }}</small>
+    </div>
+
+    <div class="field">
+        <span class="mb-1 block text-sm font-medium">{{ 'dotai.settings.operator' | dm }}</span>
+        @for (operator of operators; track operator.value) {
+            <div class="form-radio">
+                <p-radioButton
+                    name="dotai-operator"
+                    [inputId]="'dotai-op-' + operator.value"
+                    [value]="operator.value"
+                    [ngModel]="store.settingsOperator()"
+                    [ngModelOptions]="{ standalone: true }"
+                    (ngModelChange)="store.setSettings({ settingsOperator: $event })"
+                    [attr.data-testid]="'dotai-settings-operator-' + operator.value" />
+                <label [for]="'dotai-op-' + operator.value">{{ operator.label | dm }}</label>
+            </div>
+        }
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-model">{{ 'dotai.settings.model' | dm }}</label>
+        <p-select
+            inputId="dotai-settings-model"
+            size="small"
+            [options]="store.chatModels()"
+            [ngModel]="store.settingsModel()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsModel: $event })"
+            data-testid="dotai-settings-model" />
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-temperature">{{ 'dotai.settings.temperature' | dm }}</label>
+        <p-inputNumber
+            inputId="dotai-settings-temperature"
+            size="small"
+            [min]="temperatureRange.min"
+            [max]="temperatureRange.max"
+            [step]="0.1"
+            [minFractionDigits]="1"
+            [ngModel]="store.settingsTemperature()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsTemperature: $event })"
+            data-testid="dotai-settings-temperature" />
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-response-length">
+            {{ 'dotai.settings.response-length' | dm }}
+        </label>
+        <p-inputNumber
+            inputId="dotai-settings-response-length"
+            size="small"
+            [min]="minResponseTokens"
+            [max]="4096"
+            [step]="128"
+            [ngModel]="store.settingsResponseLength()"
+            [ngModelOptions]="{ standalone: true }"
+            (ngModelChange)="store.setSettings({ settingsResponseLength: $event })"
+            data-testid="dotai-settings-response-length" />
+        <!-- The legacy screen advertised 10 here, which the server's own contract rejects. -->
+        <small class="p-field-hint">
+            {{ 'dotai.settings.response-length.hint' | dm: [minResponseTokens + ''] }}
+        </small>
+    </div>
+
+    <div class="field">
+        <label for="dotai-settings-content-types">
+            {{ 'dotai.settings.content-types' | dm }}
+        </label>
+        <input
+            pInputText
+            id="dotai-settings-content-types"
+            [value]="store.settingsContentTypes()"
+            (input)="store.setSettings({ settingsContentTypes: $any($event.target).value })"
+            [placeholder]="'dotai.settings.content-types.placeholder' | dm"
+            data-testid="dotai-settings-content-types" />
+        <small class="p-field-hint">{{ 'dotai.settings.content-types.hint' | dm }}</small>
+    </div>
+</form>

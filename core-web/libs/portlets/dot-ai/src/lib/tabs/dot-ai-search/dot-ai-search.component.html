@@ -1,110 +1,140 @@
-<section class="flex h-full min-w-0 flex-col overflow-hidden">
-    <div class="shrink-0 border-b border-surface-200 p-4">
-        <p-inputgroup>
-            <p-inputgroup-addon>
-                <span class="material-symbols-outlined text-lg!" aria-hidden="true">search</span>
-            </p-inputgroup-addon>
-            <input
-                pInputText
-                class="text-lg"
-                [value]="store.searchPrompt()"
-                (input)="store.setSearchPrompt($any($event.target).value)"
-                (keydown.enter)="onSearch()"
-                [disabled]="!store.isConfigured()"
-                [attr.aria-label]="'dotai.search.input.aria' | dm"
-                [placeholder]="'dotai.search.placeholder' | dm"
-                data-testid="dotai-search-input" />
-            <p-button
-                [label]="'dotai.search.action' | dm"
-                [disabled]="!$canSearch()"
-                (onClick)="onSearch()"
-                data-testid="dotai-search-submit" />
-        </p-inputgroup>
+<!-- Splitter rather than a fixed aside: this is the established shape for a settings pane
+     beside a results pane in dot-query-tool, dot-es-search, dot-roles and dot-analytics.
+     `stateKey` persists the user's split across reloads (FR-019). -->
+<p-splitter
+    class="flex h-full min-h-0"
+    [panelSizes]="[75, 25]"
+    [minSizes]="[40, 15]"
+    stateKey="dotai-search-splitter"
+    stateStorage="local"
+    [pt]="splitterPt">
+    <ng-template pTemplate>
+        <section class="flex h-full min-w-0 flex-col overflow-hidden">
+            <div class="shrink-0 border-b border-surface-200 p-4">
+                <p-inputgroup>
+                    <p-inputgroup-addon>
+                        <span class="material-symbols-outlined text-lg!" aria-hidden="true">
+                            search
+                        </span>
+                    </p-inputgroup-addon>
+                    <input
+                        pInputText
+                        class="text-lg"
+                        [value]="store.searchPrompt()"
+                        (input)="store.setSearchPrompt($any($event.target).value)"
+                        (keydown.enter)="onSearch()"
+                        [disabled]="!store.isConfigured()"
+                        [attr.aria-label]="'dotai.search.input.aria' | dm"
+                        [placeholder]="'dotai.search.placeholder' | dm"
+                        data-testid="dotai-search-input" />
+                    <p-button
+                        [label]="'dotai.search.action' | dm"
+                        [disabled]="!$canSearch()"
+                        (onClick)="onSearch()"
+                        data-testid="dotai-search-submit" />
+                </p-inputgroup>
 
-        @if (store.searchResponse(); as response) {
-            <p class="mt-2 text-sm text-muted-color" data-testid="dotai-search-meta">
-                {{
-                    'dotai.search.meta'
-                        | dm
-                            : [
-                                  response.count + '',
-                                  response.timeToEmbeddings,
-                                  response.threshold + ''
-                              ]
-                }}
-            </p>
-        }
-    </div>
-
-    <div class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-search-scroll">
-        @if (store.isSearching()) {
-            <div class="flex flex-col gap-3" data-testid="dotai-search-loading">
-                @for (row of [1, 2, 3]; track row) {
-                    <p-skeleton height="5rem" />
+                @if (store.searchResponse(); as response) {
+                    <p class="mt-2 text-sm text-muted-color" data-testid="dotai-search-meta">
+                        {{
+                            'dotai.search.meta'
+                                | dm
+                                    : [
+                                          response.count + '',
+                                          response.timeToEmbeddings,
+                                          response.threshold + ''
+                                      ]
+                        }}
+                    </p>
                 }
             </div>
-        } @else if (store.searchMissingIndex(); as missing) {
-            <div class="p-8 text-center" data-testid="dotai-search-missing-index">
-                <h2 class="text-2xl font-medium">{{ 'dotai.search.index-missing' | dm }}</h2>
-                <p class="mt-1 text-muted-color">{{ missing }}</p>
-            </div>
-        } @else if (!store.hasSearched()) {
-            <div class="p-8 text-center" data-testid="dotai-search-empty-first-run">
-                <h2 class="text-2xl font-medium">{{ 'dotai.search.first-run.title' | dm }}</h2>
-                <p class="mt-1 text-muted-color">{{ 'dotai.search.first-run.sub' | dm }}</p>
-            </div>
-        } @else if (!store.searchResults().length) {
-            <div class="p-8 text-center" data-testid="dotai-search-no-results">
-                <h2 class="text-2xl font-medium">{{ 'dotai.search.no-results.title' | dm }}</h2>
-                <p class="mt-1 text-muted-color">{{ 'dotai.search.no-results.sub' | dm }}</p>
-            </div>
-        } @else {
-            <ul class="flex flex-col gap-3" data-testid="dotai-search-results">
-                @for (result of store.searchResults(); track result.inode) {
-                    <li>
-                        <article
-                            class="rounded-md border border-surface-200 bg-surface-0 p-4 hover:bg-surface-50">
-                            <a
-                                class="font-medium text-primary"
-                                [href]="'/dotAdmin/#/content/' + result.inode"
-                                data-testid="dotai-search-result-title">
-                                {{ result.title }}
-                            </a>
 
-                            <p class="mt-1 text-sm text-muted-color">
-                                <span>{{ result.contentType }}</span>
-                                <!-- One server fallback path omits modDate entirely, so the
+            <div class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-search-scroll">
+                @if (store.isSearching()) {
+                    <div class="flex flex-col gap-3" data-testid="dotai-search-loading">
+                        @for (row of [1, 2, 3]; track row) {
+                            <p-skeleton height="5rem" />
+                        }
+                    </div>
+                } @else if (store.searchMissingIndex(); as missing) {
+                    <div class="p-8 text-center" data-testid="dotai-search-missing-index">
+                        <h2 class="text-2xl font-medium">
+                            {{ 'dotai.search.index-missing' | dm }}
+                        </h2>
+                        <p class="mt-1 text-muted-color">{{ missing }}</p>
+                    </div>
+                } @else if (!store.hasSearched()) {
+                    <div class="p-8 text-center" data-testid="dotai-search-empty-first-run">
+                        <h2 class="text-2xl font-medium">
+                            {{ 'dotai.search.first-run.title' | dm }}
+                        </h2>
+                        <p class="mt-1 text-muted-color">{{ 'dotai.search.first-run.sub' | dm }}</p>
+                    </div>
+                } @else if (!store.searchResults().length) {
+                    <div class="p-8 text-center" data-testid="dotai-search-no-results">
+                        <h2 class="text-2xl font-medium">
+                            {{ 'dotai.search.no-results.title' | dm }}
+                        </h2>
+                        <p class="mt-1 text-muted-color">
+                            {{ 'dotai.search.no-results.sub' | dm }}
+                        </p>
+                    </div>
+                } @else {
+                    <ul class="flex flex-col gap-3" data-testid="dotai-search-results">
+                        @for (result of store.searchResults(); track result.inode) {
+                            <li>
+                                <article
+                                    class="rounded-md border border-surface-200 bg-surface-0 p-4 hover:bg-surface-50">
+                                    <a
+                                        class="font-medium text-primary"
+                                        [href]="'/dotAdmin/#/content/' + result.inode"
+                                        data-testid="dotai-search-result-title">
+                                        {{ result.title }}
+                                    </a>
+
+                                    <p class="mt-1 text-sm text-muted-color">
+                                        <span>{{ result.contentType }}</span>
+                                        <!-- One server fallback path omits modDate entirely, so the
                                      separator goes with it rather than dangling. -->
-                                @if (result.modDate) {
-                                    <span aria-hidden="true">·</span>
-                                    <span>{{ result.modDate | dotRelativeDate }}</span>
-                                }
-                            </p>
+                                        @if (result.modDate) {
+                                            <span class="mx-1" aria-hidden="true">·</span>
+                                            <span>{{ result.modDate | dotRelativeDate }}</span>
+                                        }
+                                    </p>
 
-                            @if (result.matches[0]; as match) {
-                                <p class="mt-2 line-clamp-2 text-sm">{{ match.extractedText }}</p>
+                                    @if (result.matches[0]; as match) {
+                                        <p class="mt-2 line-clamp-2 text-sm">
+                                            {{ match.extractedText }}
+                                        </p>
 
-                                <div class="mt-2 flex items-center gap-2 text-xs text-muted-color">
-                                    <p-progressBar
-                                        class="h-1 w-12"
-                                        [value]="toCloseness(match.distance)"
-                                        [showValue]="false" />
-                                    <span data-testid="dotai-search-result-distance">
-                                        {{ match.distance.toFixed(2) }}
-                                    </span>
-                                    <span>·</span>
-                                    <span>
-                                        {{
-                                            'dotai.search.match-count'
-                                                | dm: [result.matches.length + '']
-                                        }}
-                                    </span>
-                                </div>
-                            }
-                        </article>
-                    </li>
+                                        <div
+                                            class="mt-2 flex items-center gap-2 text-xs text-muted-color">
+                                            <p-progressBar
+                                                class="h-1 w-12"
+                                                [value]="toCloseness(match.distance)"
+                                                [showValue]="false" />
+                                            <span data-testid="dotai-search-result-distance">
+                                                {{ match.distance.toFixed(2) }}
+                                            </span>
+                                            <span>·</span>
+                                            <span>
+                                                {{
+                                                    'dotai.search.match-count'
+                                                        | dm: [result.matches.length + '']
+                                                }}
+                                            </span>
+                                        </div>
+                                    }
+                                </article>
+                            </li>
+                        }
+                    </ul>
                 }
-            </ul>
-        }
-    </div>
-</section>
+            </div>
+        </section>
+    </ng-template>
+
+    <ng-template pTemplate>
+        <dot-ai-settings-panel />
+    </ng-template>
+</p-splitter>

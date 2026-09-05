@@ -6,9 +6,11 @@ import { InputGroupAddonModule } from 'primeng/inputgroupaddon';
 import { InputTextModule } from 'primeng/inputtext';
 import { ProgressBarModule } from 'primeng/progressbar';
 import { SkeletonModule } from 'primeng/skeleton';
+import { SplitterModule } from 'primeng/splitter';
 
 import { DotMessagePipe, DotRelativeDatePipe } from '@dotcms/ui';
 
+import { DotAiSettingsPanelComponent } from '../../components/dot-ai-settings-panel/dot-ai-settings-panel.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 
@@ -29,6 +31,8 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
         InputTextModule,
         ProgressBarModule,
         SkeletonModule,
+        SplitterModule,
+        DotAiSettingsPanelComponent,
         DotMessagePipe,
         DotRelativeDatePipe
     ],
@@ -37,6 +41,8 @@ import { toClosenessPercent } from '../../utils/dot-ai-distance.utils';
 })
 export default class DotAiSearchComponent {
     protected readonly store = inject(DotAiStore);
+
+    protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
 
     /** Closeness for the result bar. See `toClosenessPercent` for why it normalises. */
     protected readonly toCloseness = toClosenessPercent;

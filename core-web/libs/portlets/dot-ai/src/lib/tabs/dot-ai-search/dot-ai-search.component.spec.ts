@@ -36,7 +36,19 @@ describe('DotAiSearchComponent', () => {
         hasSearched: jest.fn().mockReturnValue(false),
         isConfigured: jest.fn().mockReturnValue(true),
         setSearchPrompt: jest.fn(),
-        runSearch: jest.fn()
+        runSearch: jest.fn(),
+        // Read by the settings panel, which is a real child of this component.
+        indexesForbidden: jest.fn().mockReturnValue(false),
+        indexOptions: jest.fn().mockReturnValue([]),
+        chatModels: jest.fn().mockReturnValue([]),
+        settingsIndexName: jest.fn().mockReturnValue('default'),
+        settingsThreshold: jest.fn().mockReturnValue(0.25),
+        settingsOperator: jest.fn().mockReturnValue('cosine'),
+        settingsModel: jest.fn().mockReturnValue(''),
+        settingsTemperature: jest.fn().mockReturnValue(0),
+        settingsResponseLength: jest.fn().mockReturnValue(1024),
+        settingsContentTypes: jest.fn().mockReturnValue(''),
+        setSettings: jest.fn()
     };
 
     const createComponent = createComponentFactory({
