@@ -1,6 +1,6 @@
 <form class="form" (ngSubmit)="submit()">
     <div class="field">
-        <span class="mb-1 block text-sm font-medium">{{ 'dotai.index.create.mode' | dm }}</span>
+        <label>{{ 'dotai.index.create.mode' | dm }}</label>
         <p-selectButton
             [options]="modes"
             optionLabel="label"
@@ -64,7 +64,7 @@
         </div>
     }
 
-    <div class="flex justify-end gap-2">
+    <div class="mt-4 flex justify-end gap-2">
         <p-button
             severity="secondary"
             [text]="true"

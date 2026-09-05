@@ -39,7 +39,7 @@
     </div>
 
     <div class="field">
-        <span class="mb-1 block text-sm font-medium">{{ 'dotai.settings.operator' | dm }}</span>
+        <label>{{ 'dotai.settings.operator' | dm }}</label>
         @for (operator of operators; track operator.value) {
             <div class="form-radio">
                 <p-radioButton
@@ -105,14 +105,16 @@
     <div class="field">
         <label for="dotai-settings-site">{{ 'dotai.settings.site' | dm }}</label>
         <!-- showClear so "no site" is reachable: a cleared value means all sites, which is
-             what the API wants as site:"" (FR-021). -->
+             what the API wants as site:"" (FR-021). The placeholder is piped through `dm`
+             because dot-site takes resolved text — unlike dot-search-input, which pipes its
+             own. -->
         <dot-site
             id="dotai-settings-site"
             [showSystemHost]="false"
             [showClear]="true"
             [value]="store.settingsSite()"
             (siteChange)="onSiteChange($event)"
-            [placeholder]="'dotai.settings.site.all'"
+            [placeholder]="'dotai.settings.site.all' | dm"
             data-testid="dotai-settings-site" />
         <small class="p-field-hint">{{ 'dotai.settings.site.hint' | dm }}</small>
     </div>
