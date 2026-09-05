@@ -20,7 +20,7 @@ Configured in `/.mcp.json`. Use these instead of guessing:
 pnpm nx serve dotcms-ui                    # Dev server (proxies /api/* to port 8080)
 pnpm nx build dotcms-ui                    # Build
 pnpm nx test {project}                     # Test specific project
-pnpm nx test {project} --testPathPattern=  # Test specific file
+pnpm nx test {project} --testPathPatterns=  # Test specific file (note the plural — the singular form now hard-errors)
 pnpm nx lint {project}                     # Lint
 pnpm nx affected:test                      # Test only changed projects
 pnpm run test:dotcms                       # Test all
