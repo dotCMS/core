@@ -1285,6 +1285,16 @@ describe('DotContentDriveShellComponent', () => {
             spectator.detectChanges();
         };
 
+        it('should leave the upload restricted to nothing', () => {
+            // Content Drive shares the selector and the dropzone with the Asset Picker, which
+            // scopes uploads to the field that opened it (#37365). Content Drive has no such field:
+            // it must keep accepting every file type, with today's wording. An empty
+            // `restrictionLabel` is what keeps the default descriptions rendering.
+            openViaButton(TARGET_FOLDER_DATA);
+
+            expect(spectator.query(DotUploadTypeSelectorComponent).$restrictionLabel()).toBe('');
+        });
+
         it('should open the upload menu with the selected folder when the upload button is clicked', () => {
             openViaButton(TARGET_FOLDER_DATA);
 
