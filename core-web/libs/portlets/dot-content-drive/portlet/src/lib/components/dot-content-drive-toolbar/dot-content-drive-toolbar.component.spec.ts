@@ -22,17 +22,26 @@ import {
     DotMessageService,
     DotTagsService
 } from '@dotcms/data-access';
-import { DotContentDriveItem } from '@dotcms/dotcms-models';
+import { DotCMSContentTypeField, DotContentDriveItem } from '@dotcms/dotcms-models';
 import { DotUVEPaletteListTypes } from '@dotcms/portlets/dot-ema/ui';
+import {
+    DOT_FIELD_FILTER_HOST,
+    DOT_FILTER_FACADE,
+    DotFieldFilterHost,
+    DotFilterFacade,
+    DotFilterValue,
+    isCanonicalChipOrder
+} from '@dotcms/ui';
 import { createFakeTextField, mockLocales, MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotContentDriveToolbarComponent } from './dot-content-drive-toolbar.component';
 
 import { DIALOG_TYPE } from '../../shared/constants';
 import { MOCK_BASE_TYPES, MOCK_CONTENT_TYPES, MOCK_ITEMS } from '../../shared/mocks';
-import { DotContentDriveActionExecution } from '../../shared/models';
+import { DotContentDriveActionExecution, DotContentDriveFilters } from '../../shared/models';
 import { DotContentDriveNavigationService } from '../../shared/services';
 import { DotContentDriveStore } from '../../store/dot-content-drive.store';
+import { hasNonDefaultFilters } from '../../utils/functions';
 
 /**
  * The creation buttons (Upload + "Add New") are driven by an animation state machine that hides
@@ -47,23 +56,59 @@ const settleToolbarAnimation = async (spectator: Spectator<DotContentDriveToolba
     spectator.detectChanges();
 };
 
+/** The bar clears through the facade, so this is what the Clear all test asserts against. */
+const clearFiltersSpy = jest.fn();
+
 describe('DotContentDriveToolbarComponent', () => {
     let spectator: Spectator<DotContentDriveToolbarComponent>;
     let store: SpyObject<InstanceType<typeof DotContentDriveStore>>;
 
     // Real signals so the component's computeds re-run when they change
     const isTreeExpandedSignal = signal(false);
-    const filtersSignal = signal<Record<string, unknown>>({});
+    const filtersSignal = signal<DotContentDriveFilters>({});
     const selectedItemsSignal = signal<DotContentDriveItem[]>([]);
     const selectedNodeSignal = signal<
         { data?: { defaultBaseType?: string | null; permissions?: string[] } } | undefined
     >(undefined);
     const actionExecutionSignal = signal<DotContentDriveActionExecution | undefined>(undefined);
+    // The field-filter chips read these through DOT_FIELD_FILTER_HOST, and the toolbar reads the
+    // same pair off the store to render one chip per active field — so both point here.
+    const userSearchableFieldsSignal = signal<DotCMSContentTypeField[]>([]);
+    const userSearchableActiveSignal = signal<string[]>([]);
     const siteCanAddChildrenSignal = signal<boolean | undefined>(undefined);
 
     const createComponent = createComponentFactory({
         component: DotContentDriveToolbarComponent,
         providers: [
+            // The shared filter chips reach the store through this seam rather than injecting it,
+            // so the toolbar's graph needs it even though the toolbar itself does not inject it.
+            {
+                provide: DOT_FILTER_FACADE,
+                useValue: {
+                    getFilterValue: jest.fn(
+                        (key: string): DotFilterValue | undefined => filtersSignal()[key]
+                    ),
+                    patchFilters: jest.fn(),
+                    removeFilter: jest.fn(),
+                    clearFilters: clearFiltersSpy,
+                    // "Clear all" lives in the shared bar now and keys off this. In production the
+                    // facade derives it from the same filters this suite already drives, so deriving
+                    // it here too keeps these tests driving one value rather than two.
+                    $hasNonDefaultFilters: computed(() => hasNonDefaultFilters(filtersSignal(), 1))
+                } satisfies DotFilterFacade
+            },
+            // The "More" overflow's own seam. In production the shell provides it over the same
+            // store methods this suite already mocks, so it is wired to them here too.
+            {
+                provide: DOT_FIELD_FILTER_HOST,
+                useValue: {
+                    $activeFields: userSearchableActiveSignal,
+                    $fields: userSearchableFieldsSignal,
+                    addField: jest.fn(),
+                    setFields: jest.fn(),
+                    clearFields: jest.fn()
+                } satisfies DotFieldFilterHost
+            },
             mockProvider(DotContentDriveStore, {
                 isTreeExpanded: isTreeExpandedSignal,
                 // The toolbar now renders from the visual (panel-aware) computed; reusing the same
@@ -81,8 +126,8 @@ describe('DotContentDriveToolbarComponent', () => {
                 setDialog: jest.fn(),
                 selectedItems: selectedItemsSignal,
                 selectedNode: selectedNodeSignal,
-                userSearchableFields: signal([]),
-                userSearchableActive: signal<string[]>([]),
+                userSearchableFields: userSearchableFieldsSignal,
+                userSearchableActive: userSearchableActiveSignal,
                 setUserSearchableFields: jest.fn(),
                 addUserSearchableField: jest.fn(),
                 clearUserSearchableFilters: jest.fn(),
@@ -230,6 +275,62 @@ describe('DotContentDriveToolbarComponent', () => {
         });
     });
 
+    describe('chip row', () => {
+        it('should render all six chips', () => {
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip')
+            );
+
+            expect(chips).toEqual([
+                'sharedAssets',
+                'contentType',
+                'workflow',
+                'status',
+                'language',
+                'fieldFilters'
+            ]);
+        });
+
+        it('should present them in the canonical order', () => {
+            // FR-007. The picker asserts the same thing against the same constant, which is what
+            // makes "the two toolbars read as one" a claim a test can hold rather than a promise.
+            const chips = Array.from(spectator.element.querySelectorAll('[data-filter-chip]')).map(
+                (element) => element.getAttribute('data-filter-chip') as string
+            );
+
+            expect(isCanonicalChipOrder(chips)).toBe(true);
+        });
+
+        // FR-018 / SC-007: the parity the picker's toolbar is measured against. Asserted on both
+        // surfaces against the same rule, so neither can drift into being mouse-only.
+        it('should put every filter control in the tab order, in the order displayed', () => {
+            const chips = Array.from(
+                spectator.element.querySelectorAll<HTMLElement>('[data-filter-chip]')
+            );
+
+            expect(chips.length).toBe(6);
+            chips.forEach((chip) => {
+                const focusable = chip.matches('[tabindex]')
+                    ? chip
+                    : chip.querySelector<HTMLElement>('[tabindex], button');
+
+                expect(focusable).toBeTruthy();
+                expect(focusable?.getAttribute('tabindex')).not.toBe('-1');
+            });
+        });
+
+        it('should open a filter panel from the keyboard alone', () => {
+            const chip = spectator.query('[data-testid="content-type-filter-chip"]') as HTMLElement;
+
+            chip.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+            spectator.detectChanges();
+
+            expect(
+                spectator.query('.p-popover, [data-pc-name="popover"]', { root: true })
+            ).toBeTruthy();
+        });
+    });
+
     describe('Clear all button', () => {
         it('should not render when no filters are applied', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeNull();
@@ -265,7 +366,7 @@ describe('DotContentDriveToolbarComponent', () => {
             expect(spectator.query('[data-testid="clear-all-filters"]')).toBeTruthy();
         });
 
-        it('should call store.clearFilters when clicked', () => {
+        it('should clear through the facade when clicked', () => {
             filtersSignal.set({ contentType: ['Blog'] });
             spectator.detectChanges();
 
@@ -274,7 +375,7 @@ describe('DotContentDriveToolbarComponent', () => {
                 ?.querySelector('button');
             spectator.click(clearButton as HTMLElement);
 
-            expect(store.clearFilters).toHaveBeenCalled();
+            expect(clearFiltersSpy).toHaveBeenCalled();
         });
     });
 

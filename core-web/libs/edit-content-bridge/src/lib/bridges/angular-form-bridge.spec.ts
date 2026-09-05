@@ -962,15 +962,43 @@ describe('AngularFormBridge', () => {
                 );
             });
 
+            // `status` answers two different questions now (FR-014b): `'live'` / `'working'` set
+            // the version state, and `'archived'` seeds the Status *filter* instead of pinning a
+            // flag — so it means "archived only" and the editor can clear it in the dialog.
             it.each([
-                ['live', { showWorking: false, showArchived: false }],
-                ['working', { showWorking: true, showArchived: false }],
-                ['archived', { showArchived: true }]
-            ] as const)('should map status %s', (status, expected) => {
+                ['live', { showWorking: false }],
+                ['working', { showWorking: true }],
+                ['archived', { showWorking: true }]
+            ] as const)('should map status %s to a version state', (status, expected) => {
                 bridge.openBrowserModal({ status });
 
                 expect(openedConfig().browse).toEqual(expect.objectContaining(expected));
             });
+
+            it.each(['live', 'working', 'archived'] as const)(
+                'should never send showArchived for status %s',
+                (status) => {
+                    bridge.openBrowserModal({ status });
+
+                    // The pin is gone: content condition is expressed once, through the filter.
+                    expect(openedConfig().browse).not.toHaveProperty('showArchived');
+                }
+            );
+
+            it('should seed the Status filter with Archived for status archived', () => {
+                bridge.openBrowserModal({ status: 'archived' });
+
+                expect(openedConfig().status).toEqual(['ARCHIVED']);
+            });
+
+            it.each(['live', 'working'] as const)(
+                'should seed no Status filter for status %s',
+                (status) => {
+                    bridge.openBrowserModal({ status });
+
+                    expect(openedConfig().status).toBeUndefined();
+                }
+            );
 
             it('should map sort direction', () => {
                 bridge.openBrowserModal({ sort: { field: 'modDate', direction: 'desc' } });

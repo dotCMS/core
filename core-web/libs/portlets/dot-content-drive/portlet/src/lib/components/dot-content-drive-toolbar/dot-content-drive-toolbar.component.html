@@ -74,35 +74,38 @@
         </div>
 
         <div class="col-start-2 row-start-2 flex w-full flex-wrap items-center gap-2">
-            <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
-                 precondition for the filters that narrow within them. -->
-            <dot-content-drive-shared-assets-filter data-testid="shared-assets-filter" />
-            <dot-content-drive-content-type-filter data-testid="content-type-filter" />
-            <dot-content-drive-workflow-filter data-testid="workflow-filter" />
-            <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
-                 goes after rather than before, because the workflow filter derives its scheme list
-                 from the content-type selection and the two must stay adjacent. -->
-            <dot-content-drive-status-filter data-testid="status-filter" />
-            <dot-content-drive-language-field data-testid="language-field" />
+            <!-- The chip row and its "Clear all" are the shared bar now. Chips are projected rather
+                 than named by a registry, which is what lets the two portlet-local ones — Workflow
+                 and the field filters — sit in the same row as the shared ones. -->
+            <dot-filter-bar>
+                <!-- Leads the row: it scopes *which* assets are in play at all, so it reads as a
+                     precondition for the filters that narrow within them. -->
+                <dot-shared-assets-filter data-testid="shared-assets-filter" />
+                <dot-content-type-filter-chip data-testid="content-type-filter" />
+                <dot-content-drive-workflow-filter data-testid="workflow-filter" />
+                <!-- Sits beside the workflow filter: both ask where content is in its lifecycle. It
+                     goes after rather than before, because the workflow filter derives its scheme
+                     list from the content-type selection and the two must stay adjacent.
 
-            @for (field of $activeFieldFilters(); track field.variable) {
-                <dot-content-drive-field-filter
-                    animate.enter="field-filter-enter"
-                    animate.leave="field-filter-leave"
-                    [field]="field" />
-            }
+                     No `allowedOptions`: Content Drive pins no version state, so all three
+                     conditions apply here (FR-014d). -->
+                <dot-status-filter data-testid="status-filter" />
+                <dot-language-filter-chip data-testid="language-field" />
 
-            <dot-content-drive-field-filter-menu data-testid="field-filter-menu" />
+                @for (field of $activeFieldFilters(); track field.variable) {
+                    <dot-field-filter
+                        animate.enter="field-filter-enter"
+                        animate.leave="field-filter-leave"
+                        [field]="field" />
+                }
 
-            @if ($hasFilters()) {
-                <p-button
-                    [label]="'content-drive.filters.clear-all' | dm"
-                    [text]="true"
-                    [rounded]="true"
-                    size="small"
-                    (click)="onClearAll()"
-                    data-testid="clear-all-filters" />
-            }
+                <!-- The menu reports a failed field fetch rather than handling it: it is shared with
+                     the picker now, and `DotHttpErrorManagerService` cannot be injected inside
+                     `@dotcms/ui`. This surface still announces it the way it always did. -->
+                <dot-field-filter-menu
+                    data-testid="field-filter-menu"
+                    (error)="onFieldFilterError($event)" />
+            </dot-filter-bar>
 
             <!-- Sits at the end of the filter row rather than beside the search box: during a run the
                  selection still stands, so the row above is occupied by the workflow-action buttons.

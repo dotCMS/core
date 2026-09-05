@@ -40,10 +40,18 @@ export interface DotBrowserOptions {
     kinds?: DotBrowserItemKind[];
 
     /**
-     * Which version state to browse.
+     * Which content the picker opens on.
      *
-     * One value rather than the previous `showWorking` + `showArchived` pair, which encoded three
-     * states in two booleans and left one combination meaningless.
+     * One value rather than a pair of booleans, and the three values are not three points on one
+     * axis — two of them set the version state, the third seeds a filter:
+     *
+     * - `'working'` (the default) — working versions included, nothing pre-filtered.
+     * - `'live'` — published content only. It also narrows the in-dialog **Status** control to
+     *   *Locked*: neither Archived nor Unpublished has a published version, so offering them would
+     *   force the whole query onto the working version.
+     * - `'archived'` — **archived only**. It pre-selects Archived in the Status control rather than
+     *   setting a flag, so the editor can clear it from inside the dialog and see everything. It
+     *   does not narrow the version state; working versions stay included.
      *
      * @default 'working'
      */

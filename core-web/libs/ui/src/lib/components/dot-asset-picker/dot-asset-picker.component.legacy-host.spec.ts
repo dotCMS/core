@@ -6,6 +6,9 @@ import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 
+import { readdirSync, readFileSync } from 'fs';
+import { join } from 'path';
+
 import {
     DotMessageService,
     DotUploadService,
@@ -80,5 +83,64 @@ describe('DotAssetPickerComponent — legacy Dojo host (no Router, no app shell)
         // The store now records failures as `requestError` state and this component toasts them, so
         // the dependency is gone. Re-introducing anything router-bound will fail here.
         expect(() => createComponent()).not.toThrow();
+    });
+
+    // The construction check above renders shallow, so it never instantiates the toolbar's chips —
+    // and those are exactly what this feature added to the picker's tree. Reading the sources
+    // covers what a shallow render cannot: nothing in either tree may so much as *reference* the
+    // dependencies that break this host, whether or not a test happens to render it.
+    describe('the picker and the shared filter chips (source-level guard)', () => {
+        /**
+         * What may not appear in code — `Router` itself and everything that reaches it, plus the
+         * app shell's global store, kept out for the same reason.
+         *
+         * Matched against code with comments stripped: several of these names appear in prose in
+         * this very tree, explaining why they are absent, and a guard that fired on its own
+         * rationale would be unfixable except by deleting the explanation.
+         */
+        const FORBIDDEN = [
+            'Router',
+            'DotRouterService',
+            'DotHttpErrorManagerService',
+            'DotEventsSocket',
+            'DotMessageDisplayService',
+            'GlobalStore'
+        ];
+
+        /** Every non-spec TypeScript source under `dir`, recursively. */
+        const sourcesUnder = (dir: string): string[] =>
+            readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+                const path = join(dir, entry.name);
+
+                if (entry.isDirectory()) {
+                    return sourcesUnder(path);
+                }
+
+                return entry.name.endsWith('.ts') && !entry.name.endsWith('.spec.ts') ? [path] : [];
+            });
+
+        /** The file's code, with block and line comments removed. */
+        const codeOf = (file: string): string =>
+            readFileSync(file, 'utf8')
+                .replace(/\/\*[\s\S]*?\*\//g, '')
+                .replace(/\/\/.*$/gm, '');
+
+        it.each([
+            ['the AssetPicker', __dirname],
+            ['the shared filter bar', join(__dirname, '..', 'dot-filter-bar')]
+        ])('should keep %s free of app-shell dependencies', (_name, dir) => {
+            const offenders = sourcesUnder(dir).flatMap((file) => {
+                const code = codeOf(file);
+
+                return FORBIDDEN.filter((name) => new RegExp(`\\b${name}\\b`).test(code)).map(
+                    (name) => `${file.slice(file.indexOf('src/'))} → ${name}`
+                );
+            });
+
+            // A failure here is not a test to relax: the dependency has to be inverted into a
+            // surface-provided capability, the way `DOT_RELATIONSHIP_PICKER` and the chips' `error`
+            // output already are (FR-015, FR-020).
+            expect(offenders).toEqual([]);
+        });
     });
 });

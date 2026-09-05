@@ -87,6 +87,8 @@ import {
     DotContentDriveStatus
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
+import { provideContentDriveFieldFilterHost } from '../store/content-drive-field-filter-host';
+import { provideContentDriveFilterFacade } from '../store/content-drive-filter-facade';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
 
 // Backs the navigation service mock's readonly `$editPanelRequest`. Typed (not cast) so tests get
@@ -189,7 +191,13 @@ describe('DotContentDriveShellComponent', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
         detectChanges: false
     });
 
@@ -3168,7 +3176,13 @@ describe('DotContentDriveShellComponent — editContent deep link', () => {
                 release: jest.fn()
             })
         ],
-        componentProviders: [DotContentDriveStore],
+        componentProviders: [
+            DotContentDriveStore,
+            provideContentDriveFilterFacade(),
+            // The toolbar renders for real here, "More" overflow included, so its own seam has to
+            // be provided the same way the shell provides it in production.
+            provideContentDriveFieldFilterHost()
+        ],
         detectChanges: false
     });
 

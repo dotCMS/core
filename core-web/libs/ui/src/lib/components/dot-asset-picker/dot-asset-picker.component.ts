@@ -48,6 +48,8 @@ import {
     WARNING_MESSAGE_LIFE
 } from './constants';
 import { DotAssetPickerLocation, writeLastAssetLocation } from './last-asset-path';
+import { provideAssetPickerFieldFilterHost } from './store/asset-picker-field-filter-host';
+import { provideAssetPickerFilterFacade } from './store/asset-picker-filter-facade';
 import { DotAssetPickerStore } from './store/dot-asset-picker.store';
 import { DotAssetPickerConfig } from './store/models';
 
@@ -60,6 +62,7 @@ import {
     DotDialogFooterComponent,
     DotDialogHeaderComponent
 } from '../dot-dialog';
+import { DotFilterChipError } from '../dot-filter-bar/filter-facade.token';
 import { DotFolderListViewComponent } from '../dot-folder-list-view/dot-folder-list-view.component';
 import { DotToastComponent } from '../dot-toast/dot-toast.component';
 import { DotUploadDropzoneComponent } from '../dot-upload-dropzone/dot-upload-dropzone.component';
@@ -94,7 +97,17 @@ import {
     // the failure: it transitively needs `DotAlertConfirmService`, `DotRouterService` -> `Router` and
     // `DotEventsSocket`, and that host has no `Router` at all. The store reports failures as state
     // instead and this component toasts them — see the `requestError` effect.
-    providers: [DotAssetPickerStore, MessageService, DotContentTypeService],
+    providers: [
+        DotAssetPickerStore,
+        // Exposes this dialog's store to the shared filter chips. Alongside the store, never in
+        // `root`: two custom fields can each hold an open picker.
+        provideAssetPickerFilterFacade(),
+        // The field-filter chips' own seam: which chips are shown, plus the field metadata the
+        // "More" overflow fetches and `$request` reshapes values with.
+        provideAssetPickerFieldFilterHost(),
+        MessageService,
+        DotContentTypeService
+    ],
     imports: [
         ButtonModule,
         DialogModule,
@@ -272,6 +285,18 @@ export class DotAssetPickerComponent implements OnInit {
                         life: ERROR_MESSAGE_LIFE
                     })
             });
+    }
+
+    /**
+     * A filter chip could not load its options.
+     *
+     * Routed to the same toast the store's own failures use, which is this dialog's only error
+     * channel: `DotHttpErrorManagerService` cannot be injected here at all (it transitively needs
+     * `Router`, and the legacy Dojo host has none), and the dialog must stay open and operable
+     * with the affected control simply offering nothing (FR-015).
+     */
+    protected onFilterError(error: DotFilterChipError): void {
+        this.#reportRequestError(error.messageKey);
     }
 
     /** Toasts a failed request. `messageKey` comes from {@link ASSET_PICKER_ERROR_KEYS}. */

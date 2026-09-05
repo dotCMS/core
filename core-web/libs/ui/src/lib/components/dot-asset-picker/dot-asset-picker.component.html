@@ -39,7 +39,9 @@
 
                 <ng-template #panel>
                     <div class="flex h-full min-h-0 flex-col gap-4 p-4">
-                        <dot-asset-picker-toolbar (upload)="onUpload($event)" />
+                        <dot-asset-picker-toolbar
+                            (upload)="onUpload($event)"
+                            (fieldFilterError)="onFilterError($event)" />
 
                         <!-- No `overflow-auto` here: the table inside scrolls itself (`scrollHeight="flex"`
                              hands the scroll to PrimeNG's `.p-datatable-table-container`). A second scroll
