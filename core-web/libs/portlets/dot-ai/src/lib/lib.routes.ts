@@ -22,8 +22,12 @@ export const dotAiRoutes: Route[] = [
                 redirectTo: DOT_AI_TABS[0].id,
                 pathMatch: 'full'
             },
+            {
+                path: 'search',
+                loadComponent: () => import('./tabs/dot-ai-search/dot-ai-search.component')
+            },
             // Placeholders — each is replaced by its real tab component as that tab lands.
-            ...DOT_AI_TABS.map(
+            ...DOT_AI_TABS.filter((tab) => tab.id !== 'search').map(
                 (tab): Route => ({
                     path: tab.id,
                     data: { tab },

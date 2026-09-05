@@ -2,13 +2,16 @@ import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { MessageModule } from 'primeng/message';
 import { TabsModule } from 'primeng/tabs';
 
 import { filter, map, startWith } from 'rxjs/operators';
 
+import { DotAiCompletionsStreamService } from '@dotcms/data-access';
 import { DotMessagePipe } from '@dotcms/ui';
 
 import { DOT_AI_TABS, DotAiTabId } from '../models/dot-ai-portlet.models';
+import { DotAiStore } from '../store/dot-ai.store';
 
 /**
  * Shell for the dotAI portlet: the tab bar plus the outlet the five tabs render into.
@@ -25,13 +28,24 @@ import { DOT_AI_TABS, DotAiTabId } from '../models/dot-ai-portlet.models';
  */
 @Component({
     selector: 'dot-ai-shell',
-    imports: [RouterOutlet, RouterLink, RouterLinkActive, TabsModule, DotMessagePipe],
+    imports: [
+        RouterOutlet,
+        RouterLink,
+        RouterLinkActive,
+        TabsModule,
+        MessageModule,
+        DotMessagePipe
+    ],
+    // Store lives here, above the tabs, so the shared retrieval settings survive tab
+    // navigation and the index list has a single owner with two readers.
+    providers: [DotAiStore, DotAiCompletionsStreamService],
     templateUrl: './dot-ai-shell.component.html',
     host: { class: 'flex flex-1 min-h-0 flex-col' }
 })
 export default class DotAiShellComponent {
     readonly #router = inject(Router);
 
+    protected readonly store = inject(DotAiStore);
     protected readonly tabs = DOT_AI_TABS;
 
     /** Active tab id, derived from the URL so a deep link and a click agree. */

@@ -1,3 +1,12 @@
+@if (!store.isConfigured()) {
+    <!-- Pinned above the tab bar, full-bleed: the design omits this, but the legacy screen
+         showed it and without it an unconfigured instance is a silent dead end (FR-047).
+         Deliberately non-blocking — Config Values and Embeddings stay usable (FR-048). -->
+    <p-message severity="warn" [closable]="false" data-testid="dotai-not-configured">
+        {{ 'dotai.not-configured.message' | dm }}
+    </p-message>
+}
+
 <p-tabs [value]="$activeTab()">
     <p-tablist>
         @for (tab of tabs; track tab.id) {
