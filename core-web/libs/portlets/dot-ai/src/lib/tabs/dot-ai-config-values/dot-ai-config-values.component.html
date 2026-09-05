@@ -1,0 +1,98 @@
+<section class="flex h-full min-w-0 flex-col overflow-hidden">
+    <div class="flex shrink-0 items-center gap-3 border-b border-surface-200 p-4">
+        <dot-search-input
+            [placeholder]="'dotai.config.filter.placeholder'"
+            (search)="$filter.set($event)"
+            testId="dotai-config-filter" />
+
+        <span class="flex-1 truncate text-sm text-muted-color" data-testid="dotai-config-host">
+            {{ store.resolvedConfig()?.configHost }}
+        </span>
+
+        <p-button
+            variant="text"
+            [label]="'dotai.config.view-provider' | dm"
+            [disabled]="!store.isConfigured()"
+            (onClick)="$providerDialogOpen.set(true)"
+            data-testid="dotai-config-view-provider" />
+    </div>
+
+    <div class="min-h-0 flex-1 overflow-hidden">
+        @if (store.redactionFailed()) {
+            <!-- The server could not safely redact the config, so it sent a sentinel rather
+                 than JSON. Say so instead of rendering the sentinel as a value (FR-046). -->
+            <div class="p-8 text-center" data-testid="dotai-config-redaction-failed">
+                <h2 class="text-2xl font-medium">
+                    {{ 'dotai.config.redaction-failed.title' | dm }}
+                </h2>
+                <p class="mt-1 text-muted-color">{{ 'dotai.config.redaction-failed.sub' | dm }}</p>
+            </div>
+        } @else {
+            <p-table
+                [value]="$filteredRows()"
+                [rowHover]="true"
+                [scrollable]="true"
+                scrollHeight="flex"
+                dataKey="key"
+                data-testid="dotai-config-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th>{{ 'dotai.config.column.key' | dm }}</th>
+                        <th>{{ 'dotai.config.column.value' | dm }}</th>
+                        <th class="w-40">{{ 'dotai.config.column.source' | dm }}</th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-row>
+                    <tr class="group" data-testid="dotai-config-row">
+                        <td class="truncate font-mono text-sm">{{ row.key }}</td>
+                        <td class="font-mono text-sm">
+                            <div class="flex items-center gap-2">
+                                <span class="truncate" data-testid="dotai-config-value">
+                                    {{ row.value }}
+                                </span>
+                                @if (row.source !== sources.SECRET) {
+                                    <dot-copy-button
+                                        customClass="opacity-0 group-hover:opacity-100"
+                                        [copy]="row.value" />
+                                }
+                            </div>
+                        </td>
+                        <td>
+                            <p-tag
+                                [severity]="severityFor(row.source)"
+                                [value]="row.source"
+                                data-testid="dotai-config-source" />
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="3">
+                            <div class="p-8 text-center" data-testid="dotai-config-empty">
+                                <p class="text-muted-color">{{ 'dotai.config.empty' | dm }}</p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</section>
+
+<p-dialog
+    [visible]="$providerDialogOpen()"
+    (visibleChange)="$providerDialogOpen.set($event)"
+    [header]="'dotai.config.provider.header' | dm"
+    [modal]="true"
+    [draggable]="false"
+    [closable]="true"
+    [closeOnEscape]="true"
+    [style]="{ width: '700px' }">
+    <pre
+        class="max-h-[60vh] overflow-auto rounded-md bg-surface-100 p-3 font-mono text-sm"
+        data-testid="dotai-config-provider-json"
+        >{{ $providerJson() }}</pre
+    >
+</p-dialog>

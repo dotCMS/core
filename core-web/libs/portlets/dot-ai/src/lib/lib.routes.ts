@@ -31,18 +31,18 @@ export const dotAiRoutes: Route[] = [
                 loadComponent: () => import('./tabs/dot-ai-chat/dot-ai-chat.component')
             },
             {
+                path: 'image',
+                loadComponent: () => import('./tabs/dot-ai-image/dot-ai-image.component')
+            },
+            {
                 path: 'embeddings',
                 loadComponent: () => import('./tabs/dot-ai-embeddings/dot-ai-embeddings.component')
             },
-            // Placeholders — each is replaced by its real tab component as that tab lands.
-            ...DOT_AI_TABS.filter((tab) => !['search', 'chat', 'embeddings'].includes(tab.id)).map(
-                (tab): Route => ({
-                    path: tab.id,
-                    data: { tab },
-                    loadComponent: () =>
-                        import('./dot-ai-tab-placeholder/dot-ai-tab-placeholder.component')
-                })
-            )
+            {
+                path: 'config',
+                loadComponent: () =>
+                    import('./tabs/dot-ai-config-values/dot-ai-config-values.component')
+            }
         ]
     }
 ];

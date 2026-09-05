@@ -1,9 +1,9 @@
-import { patchState, signalStoreFeature, type, withMethods } from '@ngrx/signals';
+import { patchState, signalStoreFeature, type, withComputed, withMethods } from '@ngrx/signals';
 import { rxMethod } from '@ngrx/signals/rxjs-interop';
 import { EMPTY, pipe } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
+import { computed, inject } from '@angular/core';
 
 import { catchError, switchMap, tap } from 'rxjs/operators';
 
@@ -26,6 +26,17 @@ import { DOT_AI_DEFAULT_THRESHOLD, DotAiPortletState } from '../../models/dot-ai
 export function withAiConfig() {
     return signalStoreFeature(
         type<{ state: DotAiPortletState }>(),
+        withComputed((store) => ({
+            /** The resolved config reassembled from state, for the Config Values screen. */
+            resolvedConfig: computed<DotAiResolvedConfig>(() => ({
+                configHost: store.configHost(),
+                settings: store.settings(),
+                providerConfig: store.providerConfig(),
+                chatModels: store.chatModels(),
+                isConfigured: store.isConfigured(),
+                redactionFailed: store.redactionFailed()
+            }))
+        })),
         withMethods((store) => {
             const configService = inject(DotAiConfigService);
             const httpErrorManager = inject(DotHttpErrorManagerService);
@@ -47,6 +58,7 @@ export function withAiConfig() {
                                         settings: config.settings,
                                         chatModels: config.chatModels,
                                         redactionFailed: config.redactionFailed,
+                                        providerConfig: config.providerConfig,
                                         settingsThreshold: Number.isFinite(threshold)
                                             ? threshold
                                             : DOT_AI_DEFAULT_THRESHOLD,

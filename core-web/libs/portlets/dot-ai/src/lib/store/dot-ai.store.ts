@@ -5,6 +5,7 @@ import { withPersistedQuery } from '@dotcms/data-access';
 import { withAiChat } from './features/with-ai-chat.feature';
 import { withAiConfig } from './features/with-ai-config.feature';
 import { withAiEmbeddings } from './features/with-ai-embeddings.feature';
+import { withAiImage } from './features/with-ai-image.feature';
 import { withAiIndexes } from './features/with-ai-indexes.feature';
 import { withAiSearch } from './features/with-ai-search.feature';
 import { withRetrievalSettings } from './features/with-retrieval-settings.feature';
@@ -33,6 +34,7 @@ export const DotAiStore = signalStore(
     withAiSearch(),
     withAiChat(),
     withAiEmbeddings(),
+    withAiImage(),
     // Gives `dotcms.devtools.dotai.lastQuery`, matching the three sibling dev-tool portlets.
     // It can only be composed once — it contributes a `clearPersistedQuery()` method that a
     // second instance would collide on.

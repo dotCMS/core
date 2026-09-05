@@ -1,5 +1,6 @@
 import {
     ComponentStatus,
+    DEFAULT_IMAGE_SIZE,
     DotAiChatMessage,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
@@ -7,6 +8,15 @@ import {
     DotAiSearchResponse,
     DotAiVectorOperator
 } from '@dotcms/dotcms-models';
+
+/** A generated image, plus whether it has been deliberately published. */
+export interface DotAiGeneratedImage {
+    response: string;
+    tempFileName: string;
+    originalPrompt: string;
+    revisedPrompt: string;
+    published: boolean;
+}
 
 /**
  * View-model-only types for the dotAI portlet. Wire shapes and their conversions live in
@@ -51,6 +61,7 @@ export interface DotAiPortletState {
     settings: Record<string, string>;
     chatModels: string[];
     redactionFailed: boolean;
+    providerConfig: Record<string, unknown> | null;
 
     // indexes
     indexes: DotAiIndex[];
@@ -85,6 +96,12 @@ export interface DotAiPortletState {
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
     statusFilter: DotAiIndexStatus | null;
+
+    // image
+    image: DotAiGeneratedImage | null;
+    imageGenerating: boolean;
+    imageSaving: boolean;
+    imageOrientation: string;
 }
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
@@ -93,6 +110,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     settings: {},
     chatModels: [],
     redactionFailed: false,
+    providerConfig: null,
 
     indexes: [],
     indexStatuses: {},
@@ -121,5 +139,10 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     chatStreaming: false,
 
     indexFilter: '',
-    statusFilter: null
+    statusFilter: null,
+
+    image: null,
+    imageGenerating: false,
+    imageSaving: false,
+    imageOrientation: DEFAULT_IMAGE_SIZE
 };
