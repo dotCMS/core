@@ -2732,7 +2732,14 @@ public class BrowserAPITest extends IntegrationTestBase {
     public void test_getPaginatedContents_folderScopedCte_permissionScopingUnchanged() throws Exception {
         final Host host = new SiteDataGen().nextPersisted(true);
         final Folder folder = new FolderDataGen().site(host).nextPersisted();
-        final User limitedUser = TestUserUtils.getChrisPublisherUser(host);
+        // A dedicated, freshly-created user -- NOT the shared TestUserUtils.getChrisPublisherUser
+        // fixture, which is a singleton looked up by a hardcoded email across the whole suite.
+        // Granting this test's permissions on that shared user polluted a pre-existing,
+        // unrelated test in this same file that also uses it (found running this test).
+        final Role limitedRole = new RoleDataGen().nextPersisted();
+        final User limitedUser = new UserDataGen()
+                .roles(limitedRole, TestUserUtils.getBackendRole())
+                .nextPersisted();
         final PermissionAPI permissionAPI = APILocator.getPermissionAPI();
 
         permissionAPI.save(new Permission(host.getPermissionId(),
@@ -2742,11 +2749,22 @@ public class BrowserAPITest extends IntegrationTestBase {
                         APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
                 folder, APILocator.systemUser(), false);
 
+        // New content does not inherit READ from the folder grant above -- it needs its own
+        // explicit permission, same as the working pattern in
+        // test_exhaustive_pagination_with_permission_filtering (found running this test: the
+        // folder-only grant left doesUserHavePermission false on a freshly created contentlet).
         final Contentlet readableContentlet = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("readable", ".txt", "content"))
                 .host(host).folder(folder).setPolicy(IndexPolicy.WAIT_FOR).nextPersisted();
+        permissionAPI.save(new Permission(readableContentlet.getPermissionId(),
+                        APILocator.getRoleAPI().getUserRole(limitedUser).getId(), PermissionAPI.PERMISSION_READ),
+                readableContentlet, APILocator.systemUser(), false);
 
-        // A second, otherwise-identical contentlet with NO permission granted to limitedUser.
+        // A second, otherwise-identical contentlet with NO permission granted to limitedUser --
+        // an explicit permission entry for a role limitedUser doesn't have overrides folder
+        // inheritance, matching test_exhaustive_pagination_with_permission_filtering's proven
+        // pattern (the extra permissionIndividually() call tried here first did not actually
+        // block read access -- found running this test).
         final Role noAccessRole = new RoleDataGen().nextPersisted();
         final Contentlet restrictedContentlet = new FileAssetDataGen(
                 FileUtil.createTemporaryFile("restricted", ".txt", "content"))
@@ -2754,7 +2772,15 @@ public class BrowserAPITest extends IntegrationTestBase {
         permissionAPI.save(new Permission(restrictedContentlet.getPermissionId(),
                         noAccessRole.getId(), PermissionAPI.PERMISSION_READ),
                 restrictedContentlet, APILocator.systemUser(), false);
-        permissionAPI.permissionIndividually(folder, restrictedContentlet, APILocator.systemUser());
+
+        // Diagnostic: isolate a permission-setup issue from a candidate-scan issue before
+        // asserting on getPaginatedContents' result.
+        assertTrue("Sanity check: limitedUser must have READ on readableContentlet",
+                permissionAPI.doesUserHavePermission(readableContentlet, PermissionAPI.PERMISSION_READ,
+                        limitedUser, false));
+        assertFalse("Sanity check: limitedUser must NOT have READ on restrictedContentlet",
+                permissionAPI.doesUserHavePermission(restrictedContentlet, PermissionAPI.PERMISSION_READ,
+                        limitedUser, false));
 
         final BrowserQuery query = BrowserQuery.builder()
                 .withHostOrFolderId(folder.getInode())
