@@ -131,7 +131,7 @@ A user with no provider configured, or with portlet access but not the administr
 
 ### User Story 7 - Fall back if the new screen misbehaves (Priority: P7)
 
-The old screen stays reachable at a separate documented address, absent from every menu, so a regression is fixable without an outage.
+The old screen stays available under a separate portlet identity, absent from every menu, so an administrator can restore it without a redeploy if the new one regresses.
 
 **Why this priority**: Rollout insurance.
 
@@ -140,7 +140,8 @@ The old screen stays reachable at a separate documented address, absent from eve
 **Acceptance Scenarios**:
 
 1. **Given** an upgraded installation, **When** dotAI is opened from the menu, **Then** the rebuilt screen opens with no manual configuration or layout edit.
-2. **Given** the same installation, **When** support navigates to the fallback address, **Then** the previous screen loads and works as before.
+2. **Given** an administrator has added the fallback portlet to a layout, **When** they navigate to it, **Then** the previous screen loads and works as before.
+2b. **Given** it has not been added to any layout, **When** anyone navigates to its address, **Then** the shell redirects them rather than showing a broken screen — the same behavior as every other `-legacy` twin.
 3. **Given** the fallback exists, **When** any user browses their menus, **Then** it does not appear.
 
 ---
@@ -163,7 +164,7 @@ The old screen stays reachable at a separate documented address, absent from eve
 **Placement and rollout**
 
 - **FR-001**: The rebuilt screen MUST open from the existing dotAI menu entry with no upgrade step, layout change or manual configuration.
-- **FR-002**: The previous screen MUST remain reachable at a separate documented address, behavior unchanged.
+- **FR-002**: The previous screen MUST remain available under a separate portlet identity, behavior unchanged, so an administrator can restore access to it without a redeploy. *(Verified against the running product: the address alone is not enough — the admin shell rejects any portlet absent from the user's layout, so restoring the old screen means an administrator adds that portlet to a layout. This matches all three sibling `-legacy` twins, which behave identically.)*
 - **FR-003**: The fallback screen MUST NOT appear in any menu.
 - **FR-004**: The rebuilt screen MUST render inside the admin shell, inheriting theme, navigation and site context — not in an embedded legacy frame.
 - **FR-005**: The portlet MUST present five tabs — Search, Chat, Image, Embeddings, Config Values — each addressable by its own URL.
@@ -278,7 +279,7 @@ The old screen stays reachable at a separate documented address, absent from eve
 - **SC-005**: A streaming answer stops within one second of being asked to, with no further text after.
 - **SC-006**: An index build or removal is reflected everywhere the list appears within one refresh cycle, with no page reload.
 - **SC-007**: Zero silently empty or inert surfaces — every state where the portlet cannot do what was asked gives a stated reason.
-- **SC-008**: The previous screen answers at its fallback address on an upgraded installation and appears in no menu.
+- **SC-008**: On an upgraded installation, an administrator can restore the previous screen by adding its portlet to a layout, with no redeploy — and until they do, it appears in no menu for anyone.
 - **SC-009**: An existing installation shows the rebuilt screen at its usual menu entry immediately after upgrade, zero manual steps.
 - **SC-010**: No horizontal page scroll at 1280px and above with the longest realistic values present.
 - **SC-011**: Behavior is verified by tests written, approved and confirmed failing before implementation; the tests guarding existing shared behavior pass unchanged.
