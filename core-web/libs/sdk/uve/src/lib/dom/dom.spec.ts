@@ -12,7 +12,8 @@ import {
     getDotCMSContentletsBound,
     getDotContainerAttributes,
     getDotContentletAttributes,
-    isDotAnalyticsActive
+    isDotAnalyticsActive,
+    readContentletDataset
 } from './dom.utils';
 
 import { ANALYTICS_ACTIVE_WINDOW_KEY } from '../../internal/constants';
@@ -101,7 +102,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet1',
                         title: 'Contentlet 1',
                         inode: 'inode1',
-                        contentType: 'type1'
+                        contentType: 'type1',
+                        canEdit: true
                     }
                 })
             },
@@ -116,7 +118,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet2',
                         title: 'Contentlet 2',
                         inode: 'inode2',
-                        contentType: 'type2'
+                        contentType: 'type2',
+                        canEdit: true
                     }
                 })
             }
@@ -172,7 +175,8 @@ describe('getDotCMSContentletsBound', () => {
                         identifier: 'contentlet1',
                         title: 'Contentlet 1',
                         inode: 'inode1',
-                        contentType: 'type1'
+                        contentType: 'type1',
+                        canEdit: true
                     }
                 })
             }
@@ -273,7 +277,8 @@ describe('getDotContentletAttributes', () => {
             'data-dot-inode': 'test-inode',
             'data-dot-type': 'test-type',
             'data-dot-container': 'test-container',
-            'data-dot-on-number-of-pages': '5'
+            'data-dot-on-number-of-pages': '5',
+            'data-dot-can-edit': 'true'
         });
     });
 
@@ -723,5 +728,195 @@ describe('findDotCMSElement', () => {
 
         const result = findDotCMSElement(level0);
         expect(result).toBe(level4);
+    });
+});
+
+describe('readContentletDataset', () => {
+    const createContentletElement = (dataset: Record<string, string> = {}): HTMLElement => {
+        const element = document.createElement('div');
+        Object.entries(dataset).forEach(([key, value]) => {
+            element.dataset[key] = value;
+        });
+
+        return element;
+    };
+
+    describe('canEdit', () => {
+        // The gate must FAIL OPEN. Headless and SDK-rendered pages never emit
+        // `data-dot-can-edit`, so anything other than the literal "false" has
+        // to resolve to "allowed" — inverting this disables every edit
+        // affordance on every headless page.
+        it('should be false only when the attribute is exactly "false"', () => {
+            const element = createContentletElement({ dotCanEdit: 'false' });
+
+            expect(readContentletDataset(element).canEdit).toBe(false);
+        });
+
+        it('should be true when the attribute is "true"', () => {
+            const element = createContentletElement({ dotCanEdit: 'true' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is absent', () => {
+            const element = createContentletElement();
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is an empty string', () => {
+            const element = createContentletElement({ dotCanEdit: '' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the attribute is malformed', () => {
+            const element = createContentletElement({ dotCanEdit: 'nope' });
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+
+        it('should be true when the element has no dataset at all', () => {
+            const element = { dataset: undefined } as unknown as HTMLElement;
+
+            expect(readContentletDataset(element).canEdit).toBe(true);
+        });
+    });
+
+    describe('existing fields', () => {
+        // Regression guard: this reader feeds every contentlet interaction in
+        // the editor (hover, selection, drag), so adding canEdit must not
+        // disturb anything already on the payload.
+        it('should keep mapping every previously supported attribute', () => {
+            const element = createContentletElement({
+                dotIdentifier: 'identifier-123',
+                dotTitle: 'Test Contentlet',
+                dotInode: 'inode-123',
+                dotType: 'test-content-type',
+                dotBasetype: 'CONTENT',
+                dotWidgetTitle: 'Widget Title',
+                dotOnNumberOfPages: '3',
+                dotCanEdit: 'false'
+            });
+
+            expect(readContentletDataset(element)).toEqual({
+                identifier: 'identifier-123',
+                title: 'Test Contentlet',
+                inode: 'inode-123',
+                contentType: 'test-content-type',
+                baseType: 'CONTENT',
+                widgetTitle: 'Widget Title',
+                onNumberOfPages: '3',
+                canEdit: false
+            });
+        });
+
+        it('should still parse dotStyleProperties when present', () => {
+            const element = createContentletElement({
+                dotIdentifier: 'identifier-123',
+                dotStyleProperties: JSON.stringify({ alignment: 'center' })
+            });
+
+            const result = readContentletDataset(element);
+
+            expect(result.dotStyleProperties).toEqual({ alignment: 'center' });
+            expect(result.canEdit).toBe(true);
+        });
+    });
+});
+
+describe('getDotCMSContentletsBound — edit permission (#37376)', () => {
+    // The bounds payload re-anchors the current selection whenever the iframe
+    // layout changes (opening or switching the right-hand panel resizes it).
+    // If it omits canEdit, the anchor overwrites the selection with a payload
+    // that has no permission and every gate silently reopens.
+    const containerRect = {
+        x: 0,
+        y: 0,
+        width: 100,
+        height: 100,
+        top: 0,
+        right: 100,
+        bottom: 100,
+        left: 0
+    } as DOMRect;
+
+    const createContentlet = (dataset: Record<string, string>): HTMLDivElement => {
+        const contentlet = document.createElement('div');
+        contentlet.getBoundingClientRect = jest.fn(() => ({
+            x: 0,
+            y: 0,
+            width: 10,
+            height: 10
+        })) as unknown as () => DOMRect;
+        Object.keys(dataset).forEach((key) => contentlet.setAttribute(`data-${key}`, dataset[key]));
+
+        return contentlet;
+    };
+
+    const boundPermissionFor = (canEdit?: string): boolean => {
+        const dataset: Record<string, string> = {
+            'dot-container': JSON.stringify({ uuid: 'container1' }),
+            'dot-identifier': 'contentlet1',
+            'dot-title': 'Contentlet 1',
+            'dot-inode': 'inode1',
+            'dot-type': 'type1'
+        };
+        if (canEdit !== undefined) {
+            dataset['dot-can-edit'] = canEdit;
+        }
+
+        const [bound] = getDotCMSContentletsBound(containerRect, [createContentlet(dataset)]);
+
+        return JSON.parse(bound.payload).contentlet.canEdit;
+    };
+
+    it('should carry canEdit: false for a contentlet the user cannot edit', () => {
+        expect(boundPermissionFor('false')).toBe(false);
+    });
+
+    it('should carry canEdit: true when the user can edit', () => {
+        expect(boundPermissionFor('true')).toBe(true);
+    });
+
+    it('should carry canEdit: true when the attribute is absent', () => {
+        expect(boundPermissionFor(undefined)).toBe(true);
+    });
+});
+
+describe('getDotContentletAttributes — headless edit permission (#37376)', () => {
+    // Headless pages build their own contentlet wrappers from the Page API
+    // response instead of the Velocity renderer, so this is where the
+    // permission has to be stamped for the editor gates to see it there.
+    it('should emit data-dot-can-edit="false" when the contentlet cannot be edited', () => {
+        const contentlet = {
+            identifier: 'id-1',
+            canEdit: false
+        } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'false'
+        );
+    });
+
+    it('should emit data-dot-can-edit="true" when the contentlet can be edited', () => {
+        const contentlet = {
+            identifier: 'id-1',
+            canEdit: true
+        } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'true'
+        );
+    });
+
+    it('should emit data-dot-can-edit="true" when the API did not supply the permission', () => {
+        // An older dotCMS release does not return canEdit. Fail open, so the
+        // editor behaves exactly as it does today rather than locking up.
+        const contentlet = { identifier: 'id-1' } as unknown as DotCMSBasicContentlet;
+
+        expect(getDotContentletAttributes(contentlet, 'container-1')['data-dot-can-edit']).toBe(
+            'true'
+        );
     });
 });

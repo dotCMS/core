@@ -860,6 +860,64 @@ public class PageResourceTest {
      * @throws DotSecurityException
      * @throws DotDataException
      */
+    /**
+     * Method to test: {@link PageResource#loadJson(HttpServletRequest, HttpServletResponse, String,
+     * String, String, String, String, String, String)}
+     * <p>
+     * Given Scenario: A page with content is requested as JSON.
+     * <p>
+     * Expected Result: Every contentlet in the response carries a {@code canEdit} flag whose value
+     * matches an independent permission check for the requesting user. Headless editors have no
+     * rendered markup to read {@code data-dot-can-edit} from, so this field is the only way they can
+     * gate the edit affordances -- see issue #37376.
+     */
+    @Test
+    public void test_loadJson_exposes_contentlet_edit_permission()
+            throws DotDataException, DotSecurityException {
+
+        final PageRenderTestUtil.PageRenderTest pageRenderTest =
+                PageRenderTestUtil.createPage(1, host);
+        final HTMLPageAsset page = pageRenderTest.getPage();
+
+        when(request.getRequestURI()).thenReturn(page.getURI());
+
+        final Response response = pageResource.loadJson(request, this.response, page.getURI(),
+                null, null, null, "1", null, null);
+
+        RestUtilTest.verifySuccessResponse(response);
+
+        final PageView pageView =
+                (PageView) ((ResponseEntityView) response.getEntity()).getEntity();
+
+        int assertedContentlets = 0;
+
+        for (final ContainerRaw containerRaw : pageView.getContainers()) {
+            for (final List<Contentlet> contentlets : containerRaw.getContentlets().values()) {
+                for (final Contentlet contentlet : contentlets) {
+
+                    final Object canEdit = contentlet.getMap().get("canEdit");
+
+                    assertNotNull("Contentlet " + contentlet.getIdentifier()
+                            + " must expose a canEdit flag", canEdit);
+
+                    // Compare against an independent check rather than a literal, so the test
+                    // fails if the value is ever hardcoded instead of derived.
+                    final boolean expected = APILocator.getPermissionAPI()
+                            .doesUserHavePermission(contentlet, PermissionAPI.PERMISSION_WRITE,
+                                    user);
+
+                    assertEquals("canEdit must reflect the requesting user's WRITE permission on "
+                            + contentlet.getIdentifier(), expected, canEdit);
+
+                    assertedContentlets++;
+                }
+            }
+        }
+
+        assertTrue("The fixture must place at least one contentlet on the page, otherwise this "
+                + "test asserts nothing", assertedContentlets > 0);
+    }
+
     @Test
     public void testRender() throws DotDataException, DotSecurityException {
 

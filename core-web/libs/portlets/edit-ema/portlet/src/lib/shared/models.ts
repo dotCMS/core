@@ -90,6 +90,13 @@ export interface ContentletPayload {
     contentType: string;
     baseType?: string;
     onNumberOfPages?: number;
+    /**
+     * Whether the current user holds EDIT permission on this contentlet
+     * instance, read from the `data-dot-can-edit` attribute the container
+     * renderer emits. Optional and fail-open: `undefined` means allowed,
+     * because headless pages never carry the attribute.
+     */
+    canEdit?: boolean;
     dotStyleProperties?: StyleEditorProperties;
 }
 
