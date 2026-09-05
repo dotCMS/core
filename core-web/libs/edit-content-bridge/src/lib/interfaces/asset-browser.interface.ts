@@ -3,10 +3,14 @@
  * `DotCustomFieldApi.openBrowserModal()`.
  *
  * Replaces the previous `BrowserSelector*` shapes, which were named after the legacy
- * `DotBrowserSelectorComponent` and modelled every selection as a contentlet — so a folder or a
- * menu link had to carry a mimetype and a base type it does not have. That was safe to change
- * because the API is unshipped: the templates that call it (`*_new.vtl`) only render when the new
- * Edit Content is enabled, which is not the default.
+ * `DotBrowserSelectorComponent` and modelled every selection as a contentlet — so a menu link had
+ * to carry a mimetype and a base type it does not have. That was safe to change because the API is
+ * unshipped: the templates that call it (`*_new.vtl`) only render when the new Edit Content is
+ * enabled, which is not the default.
+ *
+ * The same unshipped status is why `'folder'` could be withdrawn outright in #37366 rather than
+ * deprecated: folders are navigation, reached through the picker's sidebar tree, and are neither
+ * listed nor returned.
  */
 
 /**
@@ -15,8 +19,12 @@
  * `file` and `dotasset` are kept apart rather than collapsed into one `asset` value because callers
  * genuinely distinguish them — the shipped file-browser template asks for file assets while
  * excluding dotAssets.
+ *
+ * `folder` is deliberately absent. Folders are navigation, not content: they appear only in the
+ * picker's sidebar tree, where selecting one changes what the list shows. No option lists a folder
+ * as a row and none returns one.
  */
-export type DotBrowserItemKind = 'file' | 'dotasset' | 'page' | 'folder' | 'link';
+export type DotBrowserItemKind = 'file' | 'dotasset' | 'page' | 'link';
 
 /**
  * What a caller asks the browser to show.
@@ -31,9 +39,18 @@ export interface DotBrowserOptions {
     /**
      * What may be listed and returned.
      *
-     * One list rather than five booleans: `showFiles`/`showPages`/`showFolders`/`showLinks`/
-     * `showDotAssets` could express combinations that mean nothing, and could not say "these kinds"
-     * without naming every other kind too.
+     * One list rather than a boolean per kind: `showFiles`/`showPages`/`showLinks`/`showDotAssets`
+     * could express combinations that mean nothing, and could not say "these kinds" without naming
+     * every other kind too.
+     *
+     * **Folders cannot be requested and cannot be returned.** They are navigation, not content:
+     * they appear only in the picker's sidebar tree, where selecting one changes what the list
+     * shows. To store a folder path in a field, type it — the picker will not hand you one.
+     *
+     * An entry that is not a {@link DotBrowserItemKind} is **ignored with a console warning**
+     * rather than throwing, since a caller is a VTL `<script>` where an exception would break the
+     * whole custom field. `'folder'` is the case this exists for: every shipped template asked for
+     * it before the kind was withdrawn.
      *
      * @default ['file', 'dotasset']
      */
@@ -107,8 +124,7 @@ export interface DotBrowserSelectionBase {
      * The value a field stores. **Always non-empty.**
      *
      * The one field every shipped template actually reads, so an empty value is a defect rather
-     * than a degraded result: a contentlet's URL, a page's URL, a folder's path, or a link's
-     * target.
+     * than a degraded result: a contentlet's URL, a page's URL, or a link's target.
      */
     url: string;
 }
@@ -130,11 +146,6 @@ export interface DotBrowserPageSelection extends DotBrowserSelectionBase {
     contentType?: string;
 }
 
-/** A folder. `url` is its path. */
-export interface DotBrowserFolderSelection extends DotBrowserSelectionBase {
-    kind: 'folder';
-}
-
 /** A menu link. `url` is its target. */
 export interface DotBrowserLinkSelection extends DotBrowserSelectionBase {
     kind: 'link';
@@ -144,13 +155,12 @@ export interface DotBrowserLinkSelection extends DotBrowserSelectionBase {
  * What the editor picked.
  *
  * A union discriminated by `kind` rather than one flat shape with everything optional: the flat
- * shape let a consumer read a mimetype off a folder and get `undefined` with no indication that the
- * question was meaningless. Branch on `kind` and each variant offers exactly the fields it has.
+ * shape let a consumer read a mimetype off a menu link and get `undefined` with no indication that
+ * the question was meaningless. Branch on `kind` and each variant offers exactly the fields it has.
  */
 export type DotBrowserSelection =
     | DotBrowserAssetSelection
     | DotBrowserPageSelection
-    | DotBrowserFolderSelection
     | DotBrowserLinkSelection;
 
 /**

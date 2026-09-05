@@ -49,8 +49,10 @@ export interface FormBridge {
     destroy(): void;
 
     /**
-     * Opens the asset browser so the user can pick content — an asset, a page, a folder or a menu
-     * link.
+     * Opens the asset browser so the user can pick content — an asset, a page or a menu link.
+     *
+     * Folders are **not** pickable: they are navigation, reached through the browser's sidebar
+     * tree, and the list panel carries content only.
      *
      * Only the Angular host opens anything: the legacy Dojo editor has never had this dialog, and
      * its bridge resolves `null` with a warning rather than pretending.

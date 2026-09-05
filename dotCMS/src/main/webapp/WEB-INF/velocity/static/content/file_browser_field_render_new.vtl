@@ -20,7 +20,7 @@
     browseButton.addEventListener("click", () => {
       DotCustomFieldApi.openBrowserModal({
         title: "$text.get('Select-a-file')",
-        kinds: ["file", "page", "folder"],
+        kinds: ["file", "page"],
         status: "live",
         sort: { field: "modDate", direction: "desc" },
         onClose: (selection) => {

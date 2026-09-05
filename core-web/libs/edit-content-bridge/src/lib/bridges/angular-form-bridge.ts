@@ -618,6 +618,14 @@ export class AngularFormBridge implements FormBridge {
     }
 }
 
+/**
+ * Every kind the browse contract admits.
+ *
+ * Declared rather than derived from {@link KIND_BASE_TYPES}, which covers only the kinds that map
+ * onto a base type — `link` has none, so deriving would report it as unsupported.
+ */
+const SUPPORTED_KINDS: readonly DotBrowserItemKind[] = ['file', 'dotasset', 'page', 'link'];
+
 /** Base types a `kinds` list asks the selector to offer. */
 const KIND_BASE_TYPES: Partial<Record<DotBrowserItemKind, string>> = {
     file: 'FILEASSET',
@@ -651,6 +659,20 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     const kinds = options.kinds ?? [];
     const wantsLinks = kinds.includes('link');
 
+    // Callers are VTL string literals, so `kinds` can carry anything the type no longer admits —
+    // `'folder'` above all, which every template asked for until #37366. Warn and drop it: an
+    // exception here would take the whole custom field down, while the rest of the request is still
+    // satisfiable. Mirrors the mimetype conflict below.
+    const unsupported = kinds.filter((kind) => !SUPPORTED_KINDS.includes(kind));
+
+    if (unsupported.length) {
+        console.warn(
+            `DotCustomFieldApi.openBrowserModal: unsupported kind(s) ${unsupported.join(', ')} — ` +
+                'ignored. Folders in particular are navigation, not content: they appear only in ' +
+                'the picker sidebar tree and can never be listed or returned.'
+        );
+    }
+
     if (wantsLinks && options.mimeTypes?.length) {
         // The browse endpoint drops links whenever a mimetype filter is set, because a link has no
         // file metadata to match against. Surfaced rather than worked around: silently returning
@@ -662,7 +684,6 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     }
 
     return {
-        ...(kinds.includes('folder') ? { showFolders: true } : {}),
         ...(wantsLinks ? { showLinks: true } : {}),
         // Three states, expressed as the two flags the picker already understands.
         ...(options.status ? { showWorking: options.status !== 'live' } : {}),
@@ -673,12 +694,12 @@ function browseOptionsFor(options: DotBrowserOptions): DotAssetPickerBrowseOptio
     };
 }
 
-/** What the picker returned, in the terms the item itself reports. */
+/**
+ * What the picker returned, in the terms the item itself reports.
+ *
+ * No folder branch: the picker never lists a folder, so a row can never be one.
+ */
 function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
-    if (item['type'] === 'folder') {
-        return 'folder';
-    }
-
     if (item['type'] === 'link' || item['extension'] === 'link') {
         return 'link';
     }
@@ -695,9 +716,9 @@ function kindOf(item: Record<string, unknown>): DotBrowserItemKind {
 /**
  * Maps a picked row onto the published selection shape.
  *
- * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a folder its path, a link
- * its target. Contentlet-only fields are attached only for the kinds that actually have them, so a
- * consumer can never read a mimetype off a folder.
+ * `url` is the one guarantee: a contentlet reports `url` (or `urlMap`), a link its target.
+ * Contentlet-only fields are attached only for the kinds that actually have them, so a consumer can
+ * never read a mimetype off a menu link.
  */
 /**
  * A string, or nothing.
@@ -721,7 +742,7 @@ function toSelection(item: DotCMSContentlet | Record<string, unknown>): DotBrows
         url: String(row['url'] ?? row['urlMap'] ?? row['path'] ?? '')
     };
 
-    if (kind === 'folder' || kind === 'link') {
+    if (kind === 'link') {
         return base as DotBrowserSelection;
     }
 

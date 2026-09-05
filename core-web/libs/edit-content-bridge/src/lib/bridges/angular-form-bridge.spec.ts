@@ -8,6 +8,8 @@ import { DotAssetPickerComponent } from '@dotcms/ui';
 
 import { AngularFormBridge } from './angular-form-bridge';
 
+import { DotBrowserOptions } from '../interfaces/asset-browser.interface';
+
 /** The site the picker browses; the bridge is handed a way to resolve it. */
 const SITE: DotSite = {
     identifier: 'site-1',
@@ -942,7 +944,6 @@ describe('AngularFormBridge', () => {
                 bridge.openBrowserModal();
 
                 expect(openedConfig().allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
-                expect(openedConfig().browse?.showFolders).toBeFalsy();
                 expect(openedConfig().browse?.showLinks).toBeFalsy();
             });
         });
@@ -954,12 +955,66 @@ describe('AngularFormBridge', () => {
                 expect(openedConfig().allowedBaseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
             });
 
-            it('should map folder and link kinds to browse options', () => {
-                bridge.openBrowserModal({ kinds: ['page', 'folder', 'link'] });
+            it('should map the link kind to a browse option', () => {
+                bridge.openBrowserModal({ kinds: ['page', 'link'] });
 
-                expect(openedConfig().browse).toEqual(
-                    expect.objectContaining({ showFolders: true, showLinks: true })
-                );
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
+            });
+
+            it('should not carry a folder browse option for a caller that asks for folders', () => {
+                // #37366: `'folder'` left the contract, but a VTL template is a string literal —
+                // TypeScript polices nothing here, so the runtime has to. The kind is dropped, and
+                // the picker is never handed an option that would list folders.
+                bridge.openBrowserModal({
+                    kinds: ['page', 'folder', 'link']
+                } as unknown as DotBrowserOptions);
+
+                expect(openedConfig().browse).not.toHaveProperty('showFolders');
+                expect(openedConfig().browse).toEqual(expect.objectContaining({ showLinks: true }));
+            });
+
+            it('should warn about an unsupported kind rather than ignore it silently', () => {
+                // AC-008: a template author must not be able to ask for a kind the picker refuses
+                // and get no signal. Same treatment the `link` + `mimeTypes` conflict already gets.
+                const warn = jest.spyOn(console, 'warn').mockImplementation();
+
+                bridge.openBrowserModal({
+                    kinds: ['file', 'page', 'folder']
+                } as unknown as DotBrowserOptions);
+
+                expect(warn).toHaveBeenCalledTimes(1);
+                expect(warn.mock.calls[0][0]).toContain('folder');
+                expect(openedConfig().allowedBaseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+
+                warn.mockRestore();
+            });
+
+            it('should fall back to asset-only browsing when folder is the only kind asked for', () => {
+                // Degenerate case: no requested kind maps to a base type, so `baseTypesFor` returns
+                // undefined and the picker uses its own default. Must not throw — an exception
+                // inside a VTL <script> takes the whole custom field down with it.
+                const warn = jest.spyOn(console, 'warn').mockImplementation();
+
+                expect(() =>
+                    bridge.openBrowserModal({
+                        kinds: ['folder']
+                    } as unknown as DotBrowserOptions)
+                ).not.toThrow();
+
+                expect(openedConfig().allowedBaseTypes).toEqual(['DOTASSET', 'FILEASSET']);
+                expect(warn).toHaveBeenCalledTimes(1);
+
+                warn.mockRestore();
+            });
+
+            it('should not warn for a caller whose kinds are all supported', () => {
+                const warn = jest.spyOn(console, 'warn').mockImplementation();
+
+                bridge.openBrowserModal({ kinds: ['file', 'dotasset', 'page', 'link'] });
+
+                expect(warn).not.toHaveBeenCalled();
+
+                warn.mockRestore();
             });
 
             it.each([
@@ -1069,26 +1124,9 @@ describe('AngularFormBridge', () => {
                 );
             });
 
-            it('should report a folder with its path as the url', () => {
-                // A folder has no `url` — its path is what a custom field stores.
-                const onClose = jest.fn();
-                bridge.openBrowserModal({ kinds: ['folder'], onClose });
-                closeWith({
-                    type: 'folder',
-                    identifier: 'folder-1',
-                    inode: 'folder-inode',
-                    title: 'images',
-                    path: '/images/'
-                });
-
-                expect(onClose).toHaveBeenCalledWith({
-                    kind: 'folder',
-                    identifier: 'folder-1',
-                    inode: 'folder-inode',
-                    title: 'images',
-                    url: '/images/'
-                });
-            });
+            // Removed in #37366: "should report a folder with its path as the url". A folder can no
+            // longer be picked, so there is no selection to report. The path a custom field stores
+            // for a folder is now typed into the field, not returned by the picker.
 
             it('should report a menu link with its target as the url', () => {
                 const onClose = jest.fn();
@@ -1112,10 +1150,8 @@ describe('AngularFormBridge', () => {
             });
 
             it.each([
-                [
-                    'folder',
-                    { type: 'folder', identifier: 'f', inode: 'fi', title: 'f', path: '/f/' }
-                ],
+                // The `folder` case went with #37366 — a folder is no longer a selectable kind, so
+                // there is no folder selection whose shape could be wrong.
                 ['link', { extension: 'link', identifier: 'l', inode: 'li', title: 'l', url: '/l' }]
             ])('should not attach contentlet-only fields to a %s', (_kind, item) => {
                 // The whole point of the discriminated union: a consumer can never read a mimetype
