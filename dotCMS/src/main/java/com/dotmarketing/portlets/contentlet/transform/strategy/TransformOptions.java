@@ -110,7 +110,15 @@ public enum TransformOptions {
     HISTORY_VIEW,
     /** Instructs the Strategy to clear all existing data in the Contentlet Map before applying a
      * specific Strategy. */
-    CLEAR_EXISTING_DATA;
+    CLEAR_EXISTING_DATA,
+    /**
+     * Instructs the Strategy to replace WYSIWYG/TextArea/Story Block field values with a
+     * &lt;=150-character extracted plain-text preview. Declared last (after {@link #STORY_BLOCK_VIEW}
+     * and {@link #JSON_VIEW}) so {@code EnumSet} iteration order in
+     * {@link StrategyResolverImpl#resolveStrategies} runs this strategy after those have already
+     * decorated the map -- see issue #37185.
+     */
+    LONG_TEXT_PREVIEW;
 
     // -----------------------------------------------------------------------------------------
     // Plug additional Transform Options to manipulate the outcome as a particular type of view

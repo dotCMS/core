@@ -22,6 +22,7 @@ import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformO
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.JSON_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.KEY_VALUE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LANGUAGE_VIEW;
+import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.LONG_TEXT_PREVIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.RENDER_FIELDS;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.SITE_VIEW;
 import static com.dotmarketing.portlets.contentlet.transform.strategy.TransformOptions.STORY_BLOCK_VIEW;
@@ -102,6 +103,7 @@ public class StrategyResolverImpl implements StrategyResolver {
         strategyTriggeredByOptionMap.put(JSON_VIEW, () -> new JSONViewStrategy(toolBox));
         strategyTriggeredByOptionMap.put(DATETIME_FIELDS_TO_TIMESTAMP, () -> new DateTimeFieldsToTimeStampStrategy(toolBox));
         strategyTriggeredByOptionMap.put(HISTORY_VIEW, () -> new HistoryViewStrategy(toolBox));
+        strategyTriggeredByOptionMap.put(LONG_TEXT_PREVIEW, () -> new LongTextPreviewStrategy(toolBox));
         return strategyTriggeredByOptionMap;
     }
 

@@ -67,7 +67,7 @@ public class ContentDriveResource {
                     description = "Drive search results retrieved successfully",
                     content = @Content(mediaType = "application/json",
                         schema = @Schema(type = "object",
-                        description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering")
+                        description = "Drive search response containing filtered assets, folders, and navigation metadata with content type filtering. WYSIWYG/TextArea/Story Block field values on each listing row are a <=150-character extracted plain-text preview, not the full stored value (issue #37185).")
                     )
         ),
         @ApiResponse(responseCode = "401",
