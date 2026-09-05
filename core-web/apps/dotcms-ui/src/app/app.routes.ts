@@ -176,6 +176,21 @@ const PORTLETS_ANGULAR: Route[] = [
         loadChildren: () => import('@dotcms/portlets/dot-auth/portlet').then((m) => m.dotAuthRoutes)
     },
     {
+        // Must stay literally `dotai`: DotRouterService.getPortletId takes the first URL
+        // segment (after filtering '', '#' and 'c') and matches it against /api/v1/menu,
+        // where the portlet id is `dotai`. Renaming the path breaks MenuGuardService.
+        //
+        // No DotEnterpriseLicenseResolver, unlike es-search and velocity-playground:
+        // nothing in com.dotcms.ai.rest checks license level. Access is gated on
+        // configuration and role, in the store, so Config Values stays reachable while
+        // unconfigured — which is exactly when it is needed.
+        path: 'dotai',
+        canActivate: [MenuGuardService],
+        canActivateChild: [MenuGuardService],
+        data: { reuseRoute: false },
+        loadChildren: () => import('@dotcms/portlets/dot-ai/portlet').then((m) => m.dotAiRoutes)
+    },
+    {
         path: 'experiments',
         canActivate: [MenuGuardService],
         canActivateChild: [MenuGuardService],

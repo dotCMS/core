@@ -229,6 +229,7 @@
                 "libs/global-store/**/*",
                 "libs/image-editor/**/*",
                 "libs/new-block-editor/**/*",
+                "libs/portlets/dot-ai/**/*",
                 "libs/portlets/dot-analytics/data-access/**/*",
                 "libs/portlets/dot-analytics/portlet/**/*",
                 "libs/portlets/dot-categories/**/*",

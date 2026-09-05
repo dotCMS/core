@@ -410,13 +410,41 @@
         <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
+    <!--
+        The dotAI portlet moved to Angular; `dotai` now lives in the Angular Portlets
+        section below. This twin keeps the original Dojo/JSP screen reachable at
+        /c/dotai-legacy for rollback. It is intentionally in no layout.
+
+        It must use com.liferay.portlet.JSPPortlet, not com.dotcms.rest.JSPPortlet:
+        the REST variant derives the JSP path from the portlet id
+        (BaseRestPortlet#getJspResponse builds "/WEB-INF/jsp/" + portletId + "/render.jsp"),
+        so a rest-JSPPortlet named dotai-legacy would look for jsp/dotai-legacy/render.jsp
+        and 404. The liferay variant takes an explicit view-jsp, which lets the original
+        WEB-INF/jsp/dotai/render.jsp stay exactly where it is. Same shape as
+        velocity_playground-legacy above.
+    -->
     <portlet>
-        <portlet-name>dotai</portlet-name>
-        <display-name>dotAI</display-name>
-        <portlet-class>com.dotcms.rest.JSPPortlet</portlet-class>
+        <portlet-name>dotai-legacy</portlet-name>
+        <display-name>dotAI (Legacy)</display-name>
+        <portlet-class>com.liferay.portlet.JSPPortlet</portlet-class>
+        <init-param>
+            <name>view-jsp</name>
+            <value>/jsp/dotai/render.jsp</value>
+        </init-param>
+        <init-param>
+            <name>useWEBINFDIR</name>
+            <value>true</value>
+        </init-param>
+        <resource-bundle>com.liferay.portlet.StrutsResourceBundle</resource-bundle>
     </portlet>
 
     <!-- Angular Portlets -->
+
+    <portlet>
+        <portlet-name>dotai</portlet-name>
+        <display-name>dotAI</display-name>
+        <portlet-class>com.dotcms.spring.portlet.PortletController</portlet-class>
+    </portlet>
 
     <portlet>
         <portlet-name>containers</portlet-name>

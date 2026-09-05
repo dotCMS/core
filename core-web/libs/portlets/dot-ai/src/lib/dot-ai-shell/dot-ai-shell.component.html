@@ -1,0 +1,21 @@
+<p-tabs>
+    <p-tablist>
+        @for (tab of tabs; track tab.id) {
+            <p-tab
+                [routerLink]="['/dotai', tab.id]"
+                [routerLinkActive]="['p-tab-active', 'bg-primary-50']"
+                [attr.data-testid]="'dotai-tab-' + tab.id">
+                <span class="flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg!" aria-hidden="true">
+                        {{ tab.icon }}
+                    </span>
+                    <span>{{ tab.labelKey | dm }}</span>
+                </span>
+            </p-tab>
+        }
+    </p-tablist>
+</p-tabs>
+
+<div class="min-h-0 flex-1 overflow-hidden" data-testid="dotai-outlet">
+    <router-outlet />
+</div>
