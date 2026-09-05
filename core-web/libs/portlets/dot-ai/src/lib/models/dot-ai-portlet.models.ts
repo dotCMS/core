@@ -57,6 +57,12 @@ export const DOT_AI_TEMPERATURE_RANGE = { min: 0, max: 2 } as const;
 export interface DotAiPortletState {
     // config
     isConfigured: boolean;
+    /**
+     * Whether the config request has come back at all — distinct from `isConfigured`.
+     * Before this is true the answer is *unknown*, not *no*, and treating the two the same
+     * is what made the not-configured banner flash on every load.
+     */
+    configLoaded: boolean;
     configHost: string;
     settings: Record<string, string>;
     chatModels: string[];
@@ -106,6 +112,7 @@ export interface DotAiPortletState {
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     isConfigured: false,
+    configLoaded: false,
     configHost: '',
     settings: {},
     chatModels: [],

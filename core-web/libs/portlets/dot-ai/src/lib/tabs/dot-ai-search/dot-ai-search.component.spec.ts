@@ -35,6 +35,7 @@ describe('DotAiSearchComponent', () => {
         isSearching: jest.fn().mockReturnValue(false),
         hasSearched: jest.fn().mockReturnValue(false),
         isConfigured: jest.fn().mockReturnValue(true),
+        showNotConfigured: jest.fn().mockReturnValue(false),
         setSearchPrompt: jest.fn(),
         runSearch: jest.fn(),
         // Read by the settings panel, which is a real child of this component.

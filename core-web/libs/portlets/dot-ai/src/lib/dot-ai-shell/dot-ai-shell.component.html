@@ -1,7 +1,9 @@
-@if (!store.isConfigured()) {
-    <!-- Pinned above the tab bar, full-bleed: the design omits this, but the legacy screen
-         showed it and without it an unconfigured instance is a silent dead end (FR-047).
-         Deliberately non-blocking — Config Values and Embeddings stay usable (FR-048). -->
+@if (store.showNotConfigured()) {
+    <!-- Pinned above the tab bar: the design omits this, but the legacy screen showed it and
+         without it an unconfigured instance is a silent dead end (FR-047). Deliberately
+         non-blocking — Config Values and Embeddings stay usable (FR-048).
+         Gated on showNotConfigured, never on !isConfigured: the latter is also true before
+         the config has loaded, which flashed the banner on every load. -->
     <p-message severity="warn" [closable]="false" data-testid="dotai-not-configured">
         {{ 'dotai.not-configured.message' | dm }}
     </p-message>

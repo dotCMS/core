@@ -27,6 +27,16 @@ export function withAiConfig() {
     return signalStoreFeature(
         type<{ state: DotAiPortletState }>(),
         withComputed((store) => ({
+            /**
+             * Whether to tell the user dotAI is unconfigured.
+             *
+             * Gated on `configLoaded`, not just `!isConfigured`: the store starts out
+             * unconfigured because nothing has loaded yet, so binding the banner straight to
+             * `isConfigured` renders it during every initial async window and then animates
+             * it away — a flash on every load (FR-047).
+             */
+            showNotConfigured: computed(() => store.configLoaded() && !store.isConfigured()),
+
             /** The resolved config reassembled from state, for the Config Values screen. */
             resolvedConfig: computed<DotAiResolvedConfig>(() => ({
                 configHost: store.configHost(),
@@ -53,6 +63,7 @@ export function withAiConfig() {
                                     );
 
                                     patchState(store, {
+                                        configLoaded: true,
                                         isConfigured: config.isConfigured,
                                         configHost: config.configHost,
                                         settings: config.settings,
@@ -67,6 +78,9 @@ export function withAiConfig() {
                                 }),
                                 catchError((error: HttpErrorResponse) => {
                                     httpErrorManager.handle(error);
+                                    // Loaded, just unsuccessfully — otherwise a failed request
+                                    // would suppress the banner forever.
+                                    patchState(store, { configLoaded: true });
 
                                     return EMPTY;
                                 })

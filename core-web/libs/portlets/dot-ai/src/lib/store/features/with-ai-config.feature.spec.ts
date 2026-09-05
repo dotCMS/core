@@ -98,4 +98,45 @@ describe('withAiConfig', () => {
 
         expect(spectator.inject(DotHttpErrorManagerService).handle).toHaveBeenCalledWith(error);
     });
+    describe('showNotConfigured (banner gating)', () => {
+        it('should be false before the config has loaded', () => {
+            // "not yet known" is not "not configured". Showing the banner during the initial
+            // async window makes it flash on every load.
+            expect(store.showNotConfigured()).toBe(false);
+            expect(store.configLoaded()).toBe(false);
+        });
+
+        it('should be true once the config says there is no provider', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved({ providerConfig: null, isConfigured: false })));
+
+            store.loadConfig();
+
+            expect(store.configLoaded()).toBe(true);
+            expect(store.showNotConfigured()).toBe(true);
+        });
+
+        it('should stay false once the config says a provider is present', () => {
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(of(resolved()));
+
+            store.loadConfig();
+
+            expect(store.showNotConfigured()).toBe(false);
+        });
+
+        it('should mark the config loaded even when the request fails', () => {
+            // Otherwise a failed load leaves the banner permanently suppressed.
+            spectator.inject(DotAiConfigService).getResolvedConfig = jest
+                .fn()
+                .mockReturnValue(throwError(() => new HttpErrorResponse({ status: 500 })));
+
+            store.loadConfig();
+
+            expect(store.configLoaded()).toBe(true);
+            expect(store.showNotConfigured()).toBe(true);
+        });
+    });
 });

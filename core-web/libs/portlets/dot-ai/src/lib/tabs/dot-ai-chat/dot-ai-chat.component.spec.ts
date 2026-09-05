@@ -30,6 +30,7 @@ describe('DotAiChatComponent', () => {
         hasChat: jest.fn().mockReturnValue(false),
         isStreaming: jest.fn().mockReturnValue(false),
         isConfigured: jest.fn().mockReturnValue(true),
+        showNotConfigured: jest.fn().mockReturnValue(false),
         sendChat: jest.fn(),
         stopChat: jest.fn(),
         // Read by the settings panel, a real child of this component.
