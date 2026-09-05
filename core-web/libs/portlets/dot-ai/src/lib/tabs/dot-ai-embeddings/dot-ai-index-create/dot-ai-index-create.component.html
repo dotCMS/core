@@ -1,0 +1,81 @@
+<form class="form" (ngSubmit)="submit()">
+    <div class="field">
+        <span class="mb-1 block text-sm font-medium">{{ 'dotai.index.create.mode' | dm }}</span>
+        <p-selectButton
+            [options]="modes"
+            optionLabel="label"
+            optionValue="value"
+            [allowEmpty]="false"
+            [ngModel]="$mode()"
+            (ngModelChange)="$mode.set($event)"
+            [ngModelOptions]="{ standalone: true }"
+            data-testid="dotai-index-create-mode">
+            <ng-template let-item pTemplate="item">{{ item.label | dm }}</ng-template>
+        </p-selectButton>
+    </div>
+
+    <div class="field">
+        <label for="dotai-index-name">{{ 'dotai.index.create.name' | dm }}</label>
+        <input
+            pInputText
+            id="dotai-index-name"
+            [value]="$indexName()"
+            (input)="$indexName.set($any($event.target).value)"
+            [placeholder]="'dotai.index.create.name.placeholder' | dm"
+            data-testid="dotai-index-create-name" />
+    </div>
+
+    <div class="field">
+        <label for="dotai-index-query">{{ 'dotai.index.create.query' | dm }}</label>
+        <textarea
+            pTextarea
+            id="dotai-index-query"
+            rows="3"
+            [value]="$query()"
+            (input)="$query.set($any($event.target).value)"
+            [placeholder]="'dotai.index.create.query.placeholder' | dm"
+            data-testid="dotai-index-create-query"></textarea>
+        <small class="p-field-hint">{{ 'dotai.index.create.query.hint' | dm }}</small>
+    </div>
+
+    <!-- Both only shape what gets embedded, so they are meaningless when deleting. -->
+    @if ($mode() === 'add') {
+        <div class="field">
+            <label for="dotai-index-fields">{{ 'dotai.index.create.fields' | dm }}</label>
+            <input
+                pInputText
+                id="dotai-index-fields"
+                [value]="$fields()"
+                (input)="$fields.set($any($event.target).value)"
+                [placeholder]="'dotai.index.create.fields.placeholder' | dm"
+                data-testid="dotai-index-create-fields" />
+            <small class="p-field-hint">{{ 'dotai.index.create.fields.hint' | dm }}</small>
+        </div>
+
+        <div class="field">
+            <label for="dotai-index-template">{{ 'dotai.index.create.template' | dm }}</label>
+            <textarea
+                pTextarea
+                id="dotai-index-template"
+                rows="2"
+                [value]="$velocityTemplate()"
+                (input)="$velocityTemplate.set($any($event.target).value)"
+                data-testid="dotai-index-create-template"></textarea>
+        </div>
+    }
+
+    <div class="flex justify-end gap-2">
+        <p-button
+            severity="secondary"
+            [text]="true"
+            [label]="'dotai.index.create.cancel' | dm"
+            (onClick)="cancel()"
+            data-testid="dotai-index-create-cancel" />
+        <p-button
+            type="submit"
+            [severity]="$mode() === 'delete' ? 'danger' : 'primary'"
+            [disabled]="!$canSubmit()"
+            [label]="$submitLabel() | dm"
+            data-testid="dotai-index-create-submit" />
+    </div>
+</form>

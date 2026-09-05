@@ -81,6 +81,10 @@ export interface DotAiPortletState {
     // chat
     chatMessages: DotAiChatMessage[];
     chatStreaming: boolean;
+
+    // embeddings screen (client-side filters — the whole dataset arrives in one response)
+    indexFilter: string;
+    statusFilter: DotAiIndexStatus | null;
 }
 
 export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
@@ -114,5 +118,8 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     hasSearched: false,
 
     chatMessages: [],
-    chatStreaming: false
+    chatStreaming: false,
+
+    indexFilter: '',
+    statusFilter: null
 };

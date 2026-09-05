@@ -1,0 +1,162 @@
+<section class="flex h-full min-w-0 flex-col overflow-hidden">
+    <p-toolbar class="shrink-0">
+        <ng-template pTemplate="start">
+            <div class="flex items-center gap-3">
+                <dot-search-input
+                    [placeholder]="'dotai.embeddings.filter.placeholder'"
+                    (search)="store.setIndexFilter($event)"
+                    testId="dotai-embeddings-filter" />
+
+                <p-select
+                    size="small"
+                    [options]="statusOptions"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="store.statusFilter()"
+                    (ngModelChange)="store.setStatusFilter($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    data-testid="dotai-embeddings-status-filter" />
+
+                <span class="text-sm text-muted-color" data-testid="dotai-embeddings-summary">
+                    {{
+                        'dotai.embeddings.summary'
+                            | dm: [store.filteredIndexes().length + '', store.indexes().length + '']
+                    }}
+                </span>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="end">
+            <div class="flex items-center gap-2">
+                <p-button
+                    severity="danger"
+                    [outlined]="true"
+                    [label]="'dotai.embeddings.rebuild' | dm"
+                    (onClick)="confirmRebuild()"
+                    data-testid="dotai-embeddings-rebuild" />
+                <p-button
+                    [label]="'dotai.index.create.action' | dm"
+                    [disabled]="!store.isConfigured()"
+                    (onClick)="openCreateDialog()"
+                    data-testid="dotai-embeddings-new-index" />
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    <div class="min-h-0 flex-1 overflow-hidden">
+        @if (store.indexesForbidden()) {
+            <!-- indexCount requires CMS_ADMINISTRATOR_ROLE while portlet access does not, so
+                 this is a normal state for a non-admin, not an error (FR-049, FR-050). -->
+            <div class="p-8 text-center" data-testid="dotai-embeddings-forbidden">
+                <h2 class="text-2xl font-medium">{{ 'dotai.index.admin-required' | dm }}</h2>
+                <p class="mt-1 text-muted-color">
+                    {{ 'dotai.index.admin-required.sub' | dm }}
+                </p>
+            </div>
+        } @else {
+            <p-table
+                [value]="store.filteredIndexes()"
+                [rowHover]="true"
+                [scrollable]="true"
+                scrollHeight="flex"
+                sortMode="single"
+                dataKey="name"
+                [pt]="tablePt"
+                data-testid="dotai-embeddings-table">
+                <ng-template pTemplate="header">
+                    <tr>
+                        <th pSortableColumn="name">
+                            {{ 'dotai.embeddings.column.index' | dm }}
+                            <p-sortIcon field="name" />
+                        </th>
+                        <th pSortableColumn="fragments" class="w-32">
+                            {{ 'dotai.embeddings.column.chunks' | dm }}
+                            <p-sortIcon field="fragments" />
+                        </th>
+                        <th pSortableColumn="contents" class="w-32">
+                            {{ 'dotai.embeddings.column.contents' | dm }}
+                            <p-sortIcon field="contents" />
+                        </th>
+                        <th pSortableColumn="tokenTotal" class="w-36">
+                            {{ 'dotai.embeddings.column.tokens' | dm }}
+                            <p-sortIcon field="tokenTotal" />
+                        </th>
+                        <th class="w-32">{{ 'dotai.embeddings.column.cost' | dm }}</th>
+                        <th class="w-32">{{ 'dotai.embeddings.column.status' | dm }}</th>
+                        <th class="w-24"></th>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="body" let-index>
+                    <tr data-testid="dotai-embeddings-row">
+                        <td>
+                            <span class="block truncate font-medium">{{ index.name }}</span>
+                            <!-- The design asked for "Updated <date>" here, but nothing stores a
+                                 timestamp for an index. Content types are real data that the
+                                 legacy screen buried in a title attribute. -->
+                            <span
+                                class="block truncate text-sm text-muted-color"
+                                data-testid="dotai-embeddings-content-types">
+                                {{
+                                    index.contentTypes.join(', ') ||
+                                        ('dotai.embeddings.no-types' | dm)
+                                }}
+                            </span>
+                        </td>
+                        <td class="text-sm">{{ index.fragments }}</td>
+                        <td class="text-sm">{{ index.contents }}</td>
+                        <td class="text-sm">{{ index.tokenTotal }}</td>
+                        <td class="text-sm" data-testid="dotai-embeddings-cost">
+                            <!-- Labelled an estimate: it hardcodes one provider's pricing and is
+                                 already wrong for the others the platform supports. -->
+                            ~${{ cost(index).toFixed(4) }}
+                        </td>
+                        <td>
+                            @if (store.indexStatuses()[index.name] === statuses.BUILDING) {
+                                <p-tag
+                                    severity="warn"
+                                    [value]="'dotai.embeddings.status.building' | dm" />
+                            } @else {
+                                <p-tag
+                                    severity="success"
+                                    [value]="'dotai.embeddings.status.ready' | dm" />
+                            }
+                        </td>
+                        <td class="text-right">
+                            <p-button
+                                severity="danger"
+                                [outlined]="true"
+                                size="small"
+                                [ariaLabel]="'dotai.embeddings.delete' | dm"
+                                (onClick)="confirmDeleteIndex(index)"
+                                data-testid="dotai-embeddings-delete">
+                                <span
+                                    class="material-symbols-outlined text-base!"
+                                    aria-hidden="true">
+                                    delete
+                                </span>
+                            </p-button>
+                        </td>
+                    </tr>
+                </ng-template>
+
+                <ng-template pTemplate="emptymessage">
+                    <tr>
+                        <td colspan="7">
+                            <div class="p-8 text-center" data-testid="dotai-embeddings-empty">
+                                <h2 class="text-2xl font-medium">
+                                    {{ 'dotai.embeddings.empty.title' | dm }}
+                                </h2>
+                                <p class="mt-1 text-muted-color">
+                                    {{ 'dotai.embeddings.empty.sub' | dm }}
+                                </p>
+                            </div>
+                        </td>
+                    </tr>
+                </ng-template>
+            </p-table>
+        }
+    </div>
+</section>
+
+<p-confirmDialog [draggable]="false" [style]="{ width: '500px' }" />
