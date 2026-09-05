@@ -104,18 +104,27 @@
 
     <div class="field">
         <label for="dotai-settings-site">{{ 'dotai.settings.site' | dm }}</label>
-        <!-- showClear so "no site" is reachable: a cleared value means all sites, which is
-             what the API wants as site:"" (FR-021). The placeholder is piped through `dm`
-             because dot-site takes resolved text — unlike dot-search-input, which pipes its
-             own. -->
+        <!-- The clear affordance lives here rather than on dot-site: adding a `showClear`
+             input to that shared component would mean editing libs/ui for one consumer.
+             Clearing sets the site to null, which the payload sends as site:"" — all sites
+             (FR-021). The placeholder is piped through `dm` because dot-site takes resolved
+             text, unlike dot-search-input which pipes its own. -->
         <dot-site
             id="dotai-settings-site"
             [showSystemHost]="false"
-            [showClear]="true"
             [value]="store.settingsSite()"
             (siteChange)="onSiteChange($event)"
             [placeholder]="'dotai.settings.site.all' | dm"
             data-testid="dotai-settings-site" />
+        @if (store.settingsSite()) {
+            <p-button
+                severity="secondary"
+                [text]="true"
+                size="small"
+                [label]="'dotai.settings.site.clear' | dm"
+                (onClick)="onSiteChange(null)"
+                data-testid="dotai-settings-site-clear" />
+        }
         <small class="p-field-hint">{{ 'dotai.settings.site.hint' | dm }}</small>
     </div>
 

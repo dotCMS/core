@@ -1,6 +1,7 @@
 import { Component, inject } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 
+import { ButtonModule } from 'primeng/button';
 import { InputNumberModule } from 'primeng/inputnumber';
 import { InputTextModule } from 'primeng/inputtext';
 import { RadioButtonModule } from 'primeng/radiobutton';
@@ -29,6 +30,7 @@ import { DotAiStore } from '../../store/dot-ai.store';
     selector: 'dot-ai-settings-panel',
     imports: [
         FormsModule,
+        ButtonModule,
         SelectModule,
         InputNumberModule,
         InputTextModule,
