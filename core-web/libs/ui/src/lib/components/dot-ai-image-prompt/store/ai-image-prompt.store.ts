@@ -7,7 +7,7 @@ import { computed, inject } from '@angular/core';
 
 import { switchMap, tap } from 'rxjs/operators';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import {
     AIImagePrompt,
     ComponentStatus,
@@ -73,7 +73,7 @@ export const DotAiImagePromptStore = signalStore(
         })
     })),
     withMethods((store) => {
-        const dotAiService = inject(DotAiService);
+        const dotAiService = inject(DotAiContentService);
 
         return {
             setGalleryActiveIndex: (galleryActiveIndex: number) => {

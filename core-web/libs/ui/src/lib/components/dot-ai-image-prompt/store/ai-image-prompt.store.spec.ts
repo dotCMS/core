@@ -4,7 +4,7 @@ import { of, throwError } from 'rxjs';
 
 import { TestBed } from '@angular/core/testing';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import { ComponentStatus, PromptType } from '@dotcms/dotcms-models';
 
 import { DotAiImagePromptStore } from './ai-image-prompt.store';
@@ -13,15 +13,15 @@ import { MOCK_AI_IMAGE_CONTENT, MOCK_GENERATED_AI_IMAGE } from '../utils/mocks';
 
 describe('DotAiImagePromptStore', () => {
     let store: InstanceType<typeof DotAiImagePromptStore>;
-    let dotAiService: SpyObject<DotAiService>;
+    let dotAiService: SpyObject<DotAiContentService>;
 
     beforeEach(() => {
         TestBed.configureTestingModule({
-            providers: [DotAiImagePromptStore, mockProvider(DotAiService)]
+            providers: [DotAiImagePromptStore, mockProvider(DotAiContentService)]
         });
 
         store = TestBed.inject(DotAiImagePromptStore);
-        dotAiService = TestBed.inject(DotAiService) as SpyObject<DotAiService>;
+        dotAiService = TestBed.inject(DotAiContentService) as SpyObject<DotAiContentService>;
     });
 
     it('should be created', () => {

@@ -5,7 +5,7 @@ import { NO_ERRORS_SCHEMA } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 
 import {
-    DotAiService,
+    DotAiConfigService,
     DotMessageDisplayService,
     DotMessageService,
     DotRouterService
@@ -23,7 +23,7 @@ describe('DotAiConfigDetailComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiConfigDetailComponent,
         providers: [
-            mockProvider(DotAiService),
+            mockProvider(DotAiConfigService),
             mockProvider(DotRouterService),
             mockProvider(DotMessageDisplayService),
             { provide: DotMessageService, useValue: new MockDotMessageService({}) },
@@ -42,9 +42,9 @@ describe('DotAiConfigDetailComponent', () => {
     describe('when the initial load fails', () => {
         beforeEach(() => {
             spectator = createComponent();
-            spectator.inject(DotAiService).getProviders.mockReturnValue(of(providers));
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
             spectator
-                .inject(DotAiService)
+                .inject(DotAiConfigService)
                 .getConfig.mockReturnValue(throwError(() => new Error('network error')));
 
             spectator.component.ngOnInit();
@@ -62,15 +62,15 @@ describe('DotAiConfigDetailComponent', () => {
         it('refuses to save over a config that never actually loaded', () => {
             spectator.component.save();
 
-            expect(spectator.inject(DotAiService).saveConfig).not.toHaveBeenCalled();
+            expect(spectator.inject(DotAiConfigService).saveConfig).not.toHaveBeenCalled();
         });
     });
 
     describe('when the initial load succeeds', () => {
         beforeEach(() => {
             spectator = createComponent();
-            spectator.inject(DotAiService).getProviders.mockReturnValue(of(providers));
-            spectator.inject(DotAiService).getConfig.mockReturnValue(
+            spectator.inject(DotAiConfigService).getProviders.mockReturnValue(of(providers));
+            spectator.inject(DotAiConfigService).getConfig.mockReturnValue(
                 of({
                     providerConfig: JSON.stringify({ settings: { textPrompt: 'hi' } })
                 } as never)

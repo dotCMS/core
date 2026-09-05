@@ -1,6 +1,6 @@
-import { Observable, of, throwError } from 'rxjs';
+import { Observable, throwError } from 'rxjs';
 
-import { HttpClient, HttpHeaders, HttpParams, HttpErrorResponse } from '@angular/common/http';
+import { HttpClient, HttpHeaders, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 
 import { catchError, map, switchMap } from 'rxjs/operators';
@@ -10,30 +10,23 @@ import {
     AiPluginResponse,
     DotAIImageContent,
     DotAIImageResponse,
-    DotAiProviderConfig,
-    DotAiProviderMetadata,
-    DotAiTestConnectionResult,
     DEFAULT_IMAGE_SIZE
 } from '@dotcms/dotcms-models';
 
-interface ResponseEntityView<T> {
-    entity: T;
-}
-
-export { DotAiProviderConfig };
-
-export const AI_PLUGIN_KEY = {
-    NOT_SET: 'NOT SET'
-};
-export const API_ENDPOINT = '/api/v1/ai';
-export const API_ENDPOINT_FOR_PUBLISH = '/api/v1/workflow/actions/default/fire/PUBLISH';
+import { AI_API_ENDPOINT, API_ENDPOINT_FOR_PUBLISH } from './dot-ai.constants';
 
 const headers = new HttpHeaders({
     'Content-Type': 'application/json'
 });
 
+/**
+ * dotAI **content generation**: text, images, and publishing a generated image as a dotAsset.
+ *
+ * Split out of the former `DotAiService`; its configuration half now lives in
+ * `DotAiConfigService`.
+ */
 @Injectable({ providedIn: 'root' })
-export class DotAiService {
+export class DotAiContentService {
     #http: HttpClient = inject(HttpClient);
 
     /**
@@ -46,10 +39,14 @@ export class DotAiService {
      */
     generateContent(prompt: string): Observable<string> {
         return this.#http
-            .post<AiPluginResponse>(`${API_ENDPOINT}/text/generate`, JSON.stringify({ prompt }), {
-                headers,
-                observe: 'response'
-            })
+            .post<AiPluginResponse>(
+                `${AI_API_ENDPOINT}/text/generate`,
+                JSON.stringify({ prompt }),
+                {
+                    headers,
+                    observe: 'response'
+                }
+            )
             .pipe(
                 map((response) => {
                     // If the response is 200 and the body come with an error, we throw an error
@@ -88,9 +85,30 @@ export class DotAiService {
         prompt: string,
         size = DEFAULT_IMAGE_SIZE
     ): Observable<DotAIImageContent> {
+        return this.generateImage(prompt, size).pipe(
+            switchMap((response: DotAIImageResponse) => {
+                return this.createAndPublishContentlet(response);
+            })
+        );
+    }
+
+    /**
+     * Generates an image **without publishing it**.
+     *
+     * Extracted from `generateAndPublishImage`, which chains straight into
+     * `createAndPublishContentlet` and therefore publishes a live dotAsset for every
+     * generation — including ones the user goes on to discard. The dotAI portlet needs
+     * Generate and Save to be separate, deliberate actions, so it composes this with
+     * `createAndPublishContentlet` itself.
+     *
+     * @param {string} prompt - the prompt for generating the image.
+     * @param {string} size - the size of the image to generate.
+     * @returns {Observable<DotAIImageResponse>} the raw generation response.
+     */
+    generateImage(prompt: string, size = DEFAULT_IMAGE_SIZE): Observable<DotAIImageResponse> {
         return this.#http
             .post<DotAIImageResponse>(
-                `${API_ENDPOINT}/image/generate`,
+                `${AI_API_ENDPOINT}/image/generate`,
                 JSON.stringify({ prompt, size }),
                 {
                     headers
@@ -107,84 +125,8 @@ export class DotAiService {
                     return throwError(
                         () => message ?? 'block-editor.extension.ai-image.api-error.missing-token'
                     );
-                }),
-                switchMap((response: DotAIImageResponse) => {
-                    return this.createAndPublishContentlet(response);
                 })
             );
-    }
-
-    /**
-     * Checks if the plugin is installed and properly configured.
-     *
-     * @return {Observable<boolean>} An observable that emits a boolean value indicating if the plugin is installed and properly configured.
-     */
-    checkPluginInstallation(): Observable<boolean> {
-        return this.#http
-            .get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
-                observe: 'response'
-            })
-            .pipe(
-                map((res) => res.status === 200 && !!res?.body?.providerConfig),
-                catchError(() => {
-                    return of(false);
-                })
-            );
-    }
-
-    getConfig(siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
-
-        return this.#http.get<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, {
-            params
-        });
-    }
-
-    saveConfig(json: string, siteId?: string): Observable<DotAiProviderConfig> {
-        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
-
-        return this.#http.put<DotAiProviderConfig>(`${API_ENDPOINT}/completions/config`, json, {
-            headers,
-            params
-        });
-    }
-
-    /**
-     * Lists capability and field metadata for every registered dotAI provider, so the
-     * configuration form can render dynamic provider/field UI without hardcoding provider
-     * knowledge. A new backend provider appears here automatically.
-     *
-     * @returns {Observable<DotAiProviderMetadata[]>} provider metadata list.
-     */
-    getProviders(): Observable<DotAiProviderMetadata[]> {
-        return this.#http
-            .get<ResponseEntityView<DotAiProviderMetadata[]>>(`${API_ENDPOINT}/providers`)
-            .pipe(map((response) => response.entity));
-    }
-
-    /**
-     * Tests a provider configuration for one capability by asking the backend to build the
-     * provider client and issue a minimal real request against it. Masked credential fields
-     * (`"*****"`) in `config` are resolved server-side against the value already stored for
-     * `siteId` — the real secret never has to round-trip through the browser.
-     *
-     * @param {string} capability - the capability section to test: `chat`, `embeddings`, or `image`.
-     * @param {Record<string, unknown>} config - the assembled provider config section to test.
-     * @param {string} [siteId] - site identifier (or `SYSTEM_HOST`) whose stored config resolves masked credentials.
-     * @returns {Observable<DotAiTestConnectionResult>} the test outcome.
-     */
-    testConnection(
-        capability: string,
-        config: Record<string, unknown>,
-        siteId?: string
-    ): Observable<DotAiTestConnectionResult> {
-        const params = siteId ? new HttpParams().set('siteId', siteId) : undefined;
-
-        return this.#http
-            .post<
-                ResponseEntityView<DotAiTestConnectionResult>
-            >(`${API_ENDPOINT}/providers/test/${capability}`, JSON.stringify(config), { headers, params })
-            .pipe(map((response) => response.entity));
     }
 
     createAndPublishContentlet(aiResponse: DotAIImageResponse): Observable<DotAIImageContent> {

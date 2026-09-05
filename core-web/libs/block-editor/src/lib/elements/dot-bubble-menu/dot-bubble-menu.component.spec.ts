@@ -10,7 +10,7 @@ import { Subscript } from '@tiptap/extension-subscript';
 import { Superscript } from '@tiptap/extension-superscript';
 import { Text } from '@tiptap/extension-text';
 
-import { DotAiService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
+import { DotAiConfigService, DotContentTypeService, DotMessageService } from '@dotcms/data-access';
 
 import { DotBubbleMenuComponent } from './dot-bubble-menu.component';
 
@@ -70,7 +70,7 @@ describe('DotBubbleMenuComponent - superscript/subscript mutual exclusion', () =
             imports: [DotBubbleMenuComponent],
             providers: [
                 {
-                    provide: DotAiService,
+                    provide: DotAiConfigService,
                     useValue: { checkPluginInstallation: () => of(false) }
                 },
                 { provide: DotContentTypeService, useValue: {} },

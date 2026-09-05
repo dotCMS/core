@@ -6,7 +6,7 @@ import { Injectable, inject } from '@angular/core';
 
 import { switchMap, withLatestFrom } from 'rxjs/operators';
 
-import { DotAiService } from '@dotcms/data-access';
+import { DotAiContentService } from '@dotcms/data-access';
 import {
     ComponentStatus,
     AIImagePrompt,
@@ -54,7 +54,7 @@ const initialState: DotAiImagePromptComponentState = {
 
 @Injectable({ providedIn: 'root' })
 export class DotAiImagePromptStore extends ComponentStore<DotAiImagePromptComponentState> {
-    private dotAiService = inject(DotAiService);
+    private dotAiService = inject(DotAiContentService);
 
     //Selectors
     readonly isOpenDialog$ = this.select(this.state$, ({ showDialog }) => showDialog);

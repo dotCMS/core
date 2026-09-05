@@ -162,3 +162,139 @@ export interface DotAiTestConnectionResult {
     success: boolean;
     message: string;
 }
+
+/* -------------------------------------------------------------------------------------------
+ * dotAI admin portlet types
+ *
+ * The admin's own dotAI contract, deliberately separate from the published SDK types in
+ * `@dotcms/types` (`libs/sdk/types/src/lib/ai/`). Those describe the SDK's `GET /ai/search`
+ * query-param call style; the portlet uses `POST` with a `CompletionsForm` body, so the
+ * request side is not shared at all. Coupling an internal admin screen to a versioned
+ * external contract would mean an SDK change breaks the portlet and vice versa.
+ *
+ * New unions here are `as const` objects. The `enum`s above are an older convention — not
+ * the pattern to follow.
+ * ---------------------------------------------------------------------------------------- */
+
+/** The three operators the backend actually accepts. Anything else silently becomes cosine. */
+export const DOT_AI_VECTOR_OPERATOR = {
+    DISTANCE: 'distance',
+    COSINE: 'cosine',
+    /** NOT `product` — the legacy portlet sent that, so "Inner Product" never worked. */
+    INNER_PRODUCT: 'innerProduct'
+} as const;
+
+export type DotAiVectorOperator =
+    (typeof DOT_AI_VECTOR_OPERATOR)[keyof typeof DOT_AI_VECTOR_OPERATOR];
+
+/** Derived client-side: `dot_embeddings` has no status column. */
+export const DOT_AI_INDEX_STATUS = {
+    READY: 'READY',
+    BUILDING: 'BUILDING'
+} as const;
+
+export type DotAiIndexStatus = (typeof DOT_AI_INDEX_STATUS)[keyof typeof DOT_AI_INDEX_STATUS];
+
+/** One embeddings index, after the service folds the map key in and splits the CSV. */
+export interface DotAiIndex {
+    name: string;
+    fragments: number;
+    contents: number;
+    tokenTotal: number;
+    tokensPerChunk: number;
+    contentTypes: string[];
+}
+
+export interface DotAiSearchMatch {
+    distance: number;
+    extractedText: string;
+}
+
+export interface DotAiSearchResult {
+    identifier: string;
+    inode: string;
+    title: string;
+    contentType: string;
+    /** Absent on one server fallback path — always guard before rendering. */
+    modDate?: string;
+    matches: DotAiSearchMatch[];
+}
+
+export interface DotAiSearchResponse {
+    timeToEmbeddings: string;
+    total: number;
+    count: number;
+    query: string;
+    threshold: number;
+    operator: string;
+    offset: number;
+    limit: number;
+    results: DotAiSearchResult[];
+}
+
+/** Retrieval criteria shared by Search and Chat — a CompletionsForm minus `prompt`. */
+export interface DotAiRetrievalPayload {
+    indexName: string;
+    site?: string;
+    contentType?: string[];
+    threshold: number;
+    operator: DotAiVectorOperator;
+    model?: string;
+    temperature?: number;
+    responseLengthTokens?: number;
+    language?: number;
+    searchLimit?: number;
+    searchOffset?: number;
+}
+
+export type DotAiCompletionsForm = DotAiRetrievalPayload & {
+    prompt: string;
+    stream?: boolean;
+};
+
+/** The build endpoint takes an EmbeddingsForm, NOT a CompletionsForm. Different shape. */
+export interface DotAiEmbeddingsBuildForm {
+    indexName: string;
+    query: string;
+    fields?: string;
+    velocityTemplate?: string;
+    limit?: number;
+    offset?: number;
+}
+
+export interface DotAiEmbeddingsBuildResult {
+    timeToEmbeddings: string;
+    totalToEmbed: number;
+    indexName: string;
+}
+
+/** `providerConfig` parsed exactly once, by DotAiConfigService. */
+export interface DotAiResolvedConfig {
+    /** A display string from the server, e.g. "demo.dotcms.com (falls back to system host)". */
+    configHost: string;
+    settings: Record<string, string>;
+    providerConfig: Record<string, unknown> | null;
+    /** `chat.model` is a CSV fallback list whose first entry is the default. */
+    chatModels: string[];
+    /** Derived from the presence of `providerConfig`; the server omits it when blank. */
+    isConfigured: boolean;
+    redactionFailed: boolean;
+}
+
+export const DOT_AI_CHAT_MESSAGE_STATE = {
+    STREAMING: 'streaming',
+    COMPLETE: 'complete',
+    STOPPED: 'stopped',
+    ERROR: 'error'
+} as const;
+
+export type DotAiChatMessageState =
+    (typeof DOT_AI_CHAT_MESSAGE_STATE)[keyof typeof DOT_AI_CHAT_MESSAGE_STATE];
+
+export interface DotAiChatMessage {
+    id: string;
+    role: 'user' | 'assistant';
+    content: string;
+    state: DotAiChatMessageState;
+    error?: string;
+}

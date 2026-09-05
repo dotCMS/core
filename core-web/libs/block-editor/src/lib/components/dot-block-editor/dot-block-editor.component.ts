@@ -42,7 +42,7 @@ import { Underline } from '@tiptap/extension-underline';
 import { Youtube } from '@tiptap/extension-youtube';
 import StarterKit, { StarterKitOptions } from '@tiptap/starter-kit';
 
-import { DotAiService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
+import { DotAiConfigService, DotMessageService, DotPropertiesService } from '@dotcms/data-access';
 import {
     DotCMSContentlet,
     DotCMSContentTypeField,
@@ -162,7 +162,7 @@ export class DotBlockEditorComponent implements OnInit, OnChanges, OnDestroy, Co
 
     readonly viewContainerRef = inject(ViewContainerRef);
     readonly dotMarketingConfigService = inject(DotMarketingConfigService);
-    readonly dotAiService = inject(DotAiService);
+    readonly dotAiService = inject(DotAiConfigService);
 
     readonly dotDragHandleOptions = {
         duration: 250,
