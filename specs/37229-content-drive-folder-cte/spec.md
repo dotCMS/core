@@ -229,15 +229,28 @@ permission-limited user) and confirm identical results.
 
 ### Measurable Outcomes
 
-- **SC-001**: Opening the largest folder in the test matrix renders its first page of results in
-  the same rough time class the fix's validated reference case demonstrated (roughly a 3-4x
-  improvement over the current worst case), rather than the multi-hundred-millisecond delay
-  observed today — treated as a target informed by the spike, to be confirmed against the real
-  query's full predicate set, not a guaranteed outcome stated as fact ahead of that confirmation.
-- **SC-002**: No folder anywhere in the test matrix — including folders that already load quickly
-  today — becomes noticeably slower after the fix; added latency on an already-fast folder stays
-  within roughly +25-30ms, the spike's measured reference point, not an open-ended "small and
-  bounded" claim.
+- **SC-001 — confirmed (2026-09-05, per FR-010 re-validation against `dotcms/dotcms:
+  issue-37229-content-drive-folder-cte_SNAPSHOT`, commit `95b6031025`).** On the pathological
+  reference folder (`/outreach/`, 21,383 children), the query plan now enters via
+  `identifier_parent_path_asset_name_host_inode_key` instead of `idx_contentlet_mod_date`: buffer
+  hits dropped from the ~909k baseline to 90,351, and per-request DB-time attribution (`pg_stat_
+  statements` inside a real request, not the raw `EXPLAIN ANALYZE` figure) dropped 272ms→114ms
+  (~2.4x). Raw SQL-only `EXPLAIN ANALYZE` time (109-127ms) is consistent with the original spike's
+  101-108ms reference. Combined with a workflow filter or a tag filter, the plan still enters via
+  the same good index — the fix does not reintroduce plan instability under the real predicate
+  set. End-to-end endpoint latency on this specific fixture barely moves, because its bottleneck is
+  long-text hydration (issue #37396's item, not this query) — the improvement is real at the DB
+  layer and is expected to matter more on folders without that confound.
+- **SC-002 — number corrected (2026-09-05, per FR-010 re-validation).** No folder in the test
+  matrix regresses catastrophically; on folders where the pre-fix plan was already good, the
+  materialized CTE adds a small, real overhead purely from materialization (confirmed via
+  near-identical buffer counts before/after): **+25 to +40ms**, not the narrower "+25-30ms" this
+  criterion originally stated from the spike's single reference point (`/chans/`). A second,
+  larger all-file folder (`/uploads/news/`, 7,154 children) measured +40ms (~2.1x, 35-37ms→75-77ms)
+  during re-validation — within the accepted trade-off, but wide enough that the original number
+  was optimistic. Recommendation from that re-check: add a large, all-file-asset folder shape like
+  this one to the permanent regression matrix, since it exposed a bigger delta than the original
+  single reference case did.
 - **SC-003 — split into three separate oracles (2026-09-01, per review), one per case.**
   Across the full size matrix, both user-permission levels, and every supported filter
   combination:
