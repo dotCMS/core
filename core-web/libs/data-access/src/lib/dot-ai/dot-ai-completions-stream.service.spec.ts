@@ -195,4 +195,17 @@ describe('DotAiCompletionsStreamService', () => {
         expect(init.method).toBe('POST');
         expect(JSON.parse(init.body)).toMatchObject({ prompt: 'hi', stream: true });
     });
+    it('should NOT ask for text/event-stream', async () => {
+        // The endpoint is a StreamingOutput, not SSE, and answers 406 to that Accept header.
+        // A unit test cannot see the 406 — this guards the regression that e2e caught.
+        fetchMock.mockResolvedValue(streamResponse(['data: [DONE]\n']));
+
+        await new Promise<void>((resolve) => {
+            spectator.service.stream(form).subscribe({ complete: () => resolve() });
+        });
+
+        const headers = fetchMock.mock.calls[0][1].headers;
+        expect(headers.Accept).toBeUndefined();
+        expect(JSON.stringify(headers)).not.toContain('event-stream');
+    });
 });

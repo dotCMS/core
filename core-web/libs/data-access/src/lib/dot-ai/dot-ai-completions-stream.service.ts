@@ -61,7 +61,11 @@ export class DotAiCompletionsStreamService {
             const response = await fetch(`${AI_API_ENDPOINT}/completions`, {
                 method: 'POST',
                 credentials: 'same-origin',
-                headers: { 'Content-Type': 'application/json', Accept: 'text/event-stream' },
+                // No `Accept: text/event-stream` here, deliberately. This endpoint returns a
+                // JAX-RS StreamingOutput, not SSE, and does not declare that media type — asking
+                // for it gets HTTP 406 Not Acceptable. (Verified against a running instance;
+                // DotAgentRunService does send it, because /api/v1/agents/* really is SSE.)
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ ...form, stream: true }),
                 signal: controller.signal
             });
