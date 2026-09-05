@@ -93,11 +93,6 @@ export interface ReleaseQAReport {
   excluded: PRQAResult[];
 }
 
-/** Raw commit from the GitHub Compare API. */
-export interface CommitInfo {
-  sha: string;
-}
-
 /** CLI arguments parsed from process.argv. */
 export interface CLIArgs {
   repo: string;

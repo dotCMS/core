@@ -591,7 +591,8 @@ jobs:
           && !contains(needs.release-prepare.outputs.release_tag, '_lts_')
           && startsWith(needs.release-prepare.outputs.release_tag, 'v')
         continue-on-error: true
-        working-directory: .github/scripts/release-qa-status
+        # npm workspace root — see .github/scripts/package.json
+        working-directory: .github/scripts
         run: npm ci
 
       - name: Compute QA-coverage warning
