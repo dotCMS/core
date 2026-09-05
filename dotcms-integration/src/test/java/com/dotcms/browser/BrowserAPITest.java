@@ -2547,11 +2547,15 @@ public class BrowserAPITest extends IntegrationTestBase {
     private static final String LTP_TEXTAREA_VAR = "ltpTextArea";
     private static final String LTP_STORY_VAR = "ltpStory";
 
-    /** AC-002: every field the Content Drive grid/toolbar/action menu depend on. */
+    /**
+     * AC-002: every field the Content Drive grid/toolbar/action menu depend on, for a
+     * generic-Content row. {@code mimeType}/{@code extension} are File Asset-specific and
+     * legitimately absent here (found running this test against a generic content type).
+     */
     private static final List<String> REQUIRED_LISTING_KEYS = List.of(
             "identifier", "inode", "title", "contentType", "baseType", "languageId", "live",
             "working", "archived", "hasLiveVersion", "modUser", "modUserName", "modDate",
-            "permissions", "__icon__", "mimeType", "extension", "hasTitleImage", "owner");
+            "permissions", "icon", "hasTitleImage", "owner");
 
     private static String storyBlockJson(final String text) {
         return "{\"type\":\"doc\",\"content\":[{\"type\":\"paragraph\",\"content\":"
@@ -2760,7 +2764,10 @@ public class BrowserAPITest extends IntegrationTestBase {
                 .velocityVarName("title").contentTypeId(contentType.id())
                 .searchable(true).indexed(true).nextPersisted();
 
-        final String longTitleHtml = "<p>" + "TitleWord ".repeat(40) + "</p>";
+        // Kept under 255 chars (raw HTML) -- the contentlet.title column is varchar(255) -- while
+        // its stripped plain text (~220 chars) still comfortably exceeds the 150-char preview
+        // bound, so an accidental truncation of this key would be caught.
+        final String longTitleHtml = "<p>" + "TitleWord ".repeat(22) + "</p>";
         final Contentlet contentlet = new ContentletDataGen(contentType.id())
                 .folder(folder)
                 .setProperty("title", longTitleHtml)

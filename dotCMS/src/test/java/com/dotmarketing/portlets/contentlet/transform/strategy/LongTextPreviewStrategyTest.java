@@ -280,9 +280,19 @@ public class LongTextPreviewStrategyTest {
      * opt-in, only at {@code BrowserAPIImpl#dotContentMap}'s specific call site.
      */
     @Test
-    public void defaultOptions_neverIncludesLongTextPreview() {
+    public void defaultOptions_neverIncludesLongTextPreview() throws Exception {
+        // Package-private field on a different package (com.dotmarketing.portlets.contentlet.
+        // transform, not this class's ...transform.strategy) -- read via reflection.
+        final java.lang.reflect.Field defaultOptionsField = Class
+                .forName("com.dotmarketing.portlets.contentlet.transform.DotContentletTransformerImpl")
+                .getDeclaredField("defaultOptions");
+        defaultOptionsField.setAccessible(true);
+        @SuppressWarnings("unchecked")
+        final java.util.Set<TransformOptions> defaultOptions =
+                (java.util.Set<TransformOptions>) defaultOptionsField.get(null);
+
         assertFalse("LONG_TEXT_PREVIEW must not be part of the shared defaultOptions set",
-                DotContentletTransformerImpl.defaultOptions.contains(TransformOptions.LONG_TEXT_PREVIEW));
+                defaultOptions.contains(TransformOptions.LONG_TEXT_PREVIEW));
     }
 
     // --- T014: StrategyResolverImpl registers the new option-triggered strategy ----------------
