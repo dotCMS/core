@@ -281,20 +281,25 @@ export interface DotAiResolvedConfig {
     redactionFailed: boolean;
 }
 
-export const DOT_AI_CHAT_MESSAGE_STATE = {
+export const DOT_AI_ANSWER_STATE = {
     STREAMING: 'streaming',
     COMPLETE: 'complete',
     STOPPED: 'stopped',
     ERROR: 'error'
 } as const;
 
-export type DotAiChatMessageState =
-    (typeof DOT_AI_CHAT_MESSAGE_STATE)[keyof typeof DOT_AI_CHAT_MESSAGE_STATE];
+export type DotAiAnswerState = (typeof DOT_AI_ANSWER_STATE)[keyof typeof DOT_AI_ANSWER_STATE];
 
-export interface DotAiChatMessage {
-    id: string;
-    role: 'user' | 'assistant';
+/**
+ * The one answer currently on screen, replaced by every submit.
+ *
+ * Deliberately not a list of messages. The completions endpoint takes a single `prompt` and
+ * keeps no conversation — the server builds [system(context), user(prompt)] per call — so there
+ * is no history to hold, and a transcript would only imply a memory that does not exist.
+ * There is no `role` for the same reason: the question stays in the composer, not in a bubble.
+ */
+export interface DotAiChatAnswer {
     content: string;
-    state: DotAiChatMessageState;
+    state: DotAiAnswerState;
     error?: string;
 }

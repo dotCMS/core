@@ -73,7 +73,7 @@ describe('withDotAiPreferences', () => {
     it('should start from defaults when nothing is stored', () => {
         spectator = createService();
 
-        expect(spectator.service.settingsThreshold()).toBe(0.25);
+        expect(spectator.service.settingsThreshold()).toBe(0.5);
     });
 
     it('should not throw on a malformed blob', () => {

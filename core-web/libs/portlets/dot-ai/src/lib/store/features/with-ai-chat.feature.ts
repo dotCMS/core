@@ -11,9 +11,9 @@ import { computed, inject, Signal } from '@angular/core';
 
 import { DotAiCompletionsStreamService, DotAiStreamEvent } from '@dotcms/data-access';
 import {
-    DOT_AI_CHAT_MESSAGE_STATE,
-    DotAiChatMessage,
-    DotAiChatMessageState,
+    DOT_AI_ANSWER_STATE,
+    DotAiAnswerState,
+    DotAiChatAnswer,
     DotAiRetrievalPayload
 } from '@dotcms/dotcms-models';
 import { SubscriptionSlot } from '@dotcms/store';
@@ -21,7 +21,12 @@ import { SubscriptionSlot } from '@dotcms/store';
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
 /**
- * Chat: a streamed answer that can be stopped mid-flight.
+ * Chat: one streamed answer at a time, stoppable mid-flight.
+ *
+ * **Holds a single answer, not a transcript.** The completions endpoint takes one `prompt` and
+ * keeps no conversation, so every submit is independent — asking again replaces the answer
+ * rather than adding a turn. A running transcript would look like memory the endpoint cannot
+ * provide, and the question itself stays in the composer where it can be edited and resent.
  *
  * Deliberately **not** an `rxMethod`. Stop has to abort the underlying `fetch`, and the only
  * thing that does that is unsubscribing, so the subscription is held explicitly in a
@@ -41,40 +46,31 @@ export function withAiChat() {
         }>(),
         withComputed((store) => ({
             isStreaming: computed(() => store.chatStreaming()),
-            hasChat: computed(() => store.chatMessages().length > 0)
+            hasAnswer: computed(() => store.chatAnswer() !== null)
         })),
         withMethods((store) => {
             const streamService = inject(DotAiCompletionsStreamService);
             const slot = new SubscriptionSlot();
 
-            /** Rewrites the trailing assistant turn; every stream event lands through here. */
-            const patchAssistant = (
-                change: Partial<DotAiChatMessage>,
-                onlyWhileStreaming = true
-            ) => {
-                const messages = store.chatMessages();
-                const index = messages.map((m) => m.role).lastIndexOf('assistant');
+            /** Rewrites the current answer; every stream event lands through here. */
+            const patchAnswer = (change: Partial<DotAiChatAnswer>, onlyWhileStreaming = true) => {
+                const current = store.chatAnswer();
 
-                if (index === -1) {
+                if (!current) {
                     return;
                 }
-
-                const current = messages[index];
 
                 // After a stop, late frames from a stream still winding down must not
-                // resurrect the turn.
-                if (onlyWhileStreaming && current.state !== DOT_AI_CHAT_MESSAGE_STATE.STREAMING) {
+                // resurrect the answer.
+                if (onlyWhileStreaming && current.state !== DOT_AI_ANSWER_STATE.STREAMING) {
                     return;
                 }
 
-                const next = [...messages];
-                next[index] = { ...current, ...change };
-
-                patchState(store, { chatMessages: next });
+                patchState(store, { chatAnswer: { ...current, ...change } });
             };
 
-            const finish = (state: DotAiChatMessageState, error?: string) => {
-                patchAssistant({ state, ...(error ? { error } : {}) });
+            const finish = (state: DotAiAnswerState, error?: string) => {
+                patchAnswer({ state, ...(error ? { error } : {}) });
                 patchState(store, { chatStreaming: false });
             };
 
@@ -86,60 +82,39 @@ export function withAiChat() {
                         return;
                     }
 
-                    const stamp = Date.now();
-                    const assistantId = `assistant-${stamp}`;
-
+                    // Replaces whatever was on screen. Each submit is its own request.
                     patchState(store, {
-                        chatMessages: [
-                            ...store.chatMessages(),
-                            {
-                                id: `user-${stamp}`,
-                                role: 'user',
-                                content: trimmed,
-                                state: DOT_AI_CHAT_MESSAGE_STATE.COMPLETE
-                            },
-                            {
-                                id: assistantId,
-                                role: 'assistant',
-                                content: '',
-                                state: DOT_AI_CHAT_MESSAGE_STATE.STREAMING
-                            }
-                        ],
+                        chatAnswer: { content: '', state: DOT_AI_ANSWER_STATE.STREAMING },
                         chatStreaming: true
                     });
 
                     // Taking the slot cancels any earlier stream, so a late delta from an
-                    // abandoned turn cannot bleed into this one (FR-013).
+                    // abandoned answer cannot bleed into this one (FR-013).
                     slot.set(
                         streamService
                             .stream({ ...store.retrievalPayload(), prompt: trimmed, stream: true })
                             .subscribe({
                                 next: (event: DotAiStreamEvent) => {
                                     if (event.type === 'error') {
-                                        finish(DOT_AI_CHAT_MESSAGE_STATE.ERROR, event.message);
+                                        finish(DOT_AI_ANSWER_STATE.ERROR, event.message);
 
                                         return;
                                     }
 
-                                    const messages = store.chatMessages();
-                                    const index = messages
-                                        .map((m) => m.role)
-                                        .lastIndexOf('assistant');
+                                    const current = store.chatAnswer();
 
-                                    if (index === -1) {
+                                    if (!current) {
                                         return;
                                     }
 
-                                    patchAssistant({
-                                        content: messages[index].content + event.content
-                                    });
+                                    patchAnswer({ content: current.content + event.content });
                                 },
                                 error: (error: unknown) =>
                                     finish(
-                                        DOT_AI_CHAT_MESSAGE_STATE.ERROR,
+                                        DOT_AI_ANSWER_STATE.ERROR,
                                         error instanceof Error ? error.message : String(error)
                                     ),
-                                complete: () => finish(DOT_AI_CHAT_MESSAGE_STATE.COMPLETE)
+                                complete: () => finish(DOT_AI_ANSWER_STATE.COMPLETE)
                             })
                     );
                 },
@@ -147,12 +122,12 @@ export function withAiChat() {
                 /** Stops generation. Unsubscribing is what aborts the fetch (FR-012). */
                 stopChat(): void {
                     slot.cancel();
-                    finish(DOT_AI_CHAT_MESSAGE_STATE.STOPPED);
+                    finish(DOT_AI_ANSWER_STATE.STOPPED);
                 },
 
                 clearChat(): void {
                     slot.cancel();
-                    patchState(store, { chatMessages: [], chatStreaming: false });
+                    patchState(store, { chatAnswer: null, chatStreaming: false });
                 }
             };
         }),

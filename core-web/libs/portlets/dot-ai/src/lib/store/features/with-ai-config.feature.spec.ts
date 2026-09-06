@@ -58,7 +58,7 @@ describe('withAiConfig', () => {
 
         store.loadConfig();
 
-        expect(store.settingsThreshold()).toBe(0.25);
+        expect(store.settingsThreshold()).toBe(0.5);
     });
 
     it('should expose the chat models and default to the first', () => {

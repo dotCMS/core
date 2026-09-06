@@ -1,7 +1,7 @@
 import {
     ComponentStatus,
     DEFAULT_IMAGE_SIZE,
-    DotAiChatMessage,
+    DotAiChatAnswer,
     DOT_AI_VECTOR_OPERATOR,
     DotAiIndex,
     DotAiIndexStatus,
@@ -40,8 +40,15 @@ export type DotAiTabId = DotAiTab['id'];
 
 /* ------------------------------------------------------------------------------------------- */
 
-/** Default closeness threshold, matching the backend's own CompletionsForm default. */
-export const DOT_AI_DEFAULT_THRESHOLD = 0.25;
+/**
+ * Default maximum match distance.
+ *
+ * Deliberately looser than the backend's own CompletionsForm default of .25f: at 0.25 a
+ * reasonable question routinely retrieves nothing and the answer is "no matching content found
+ * in the index for your query". The payload always carries this value, so the server default
+ * never applies and the divergence is intentional rather than accidental drift.
+ */
+export const DOT_AI_DEFAULT_THRESHOLD = 0.5;
 
 /** The backend declares @Min(128) but does not enforce it — the client is the only guard. */
 export const DOT_AI_MIN_RESPONSE_TOKENS = 128;
@@ -96,7 +103,8 @@ export interface DotAiPortletState {
     hasSearched: boolean;
 
     // chat
-    chatMessages: DotAiChatMessage[];
+    /** The one answer on screen. Replaced per submit — there is no transcript. */
+    chatAnswer: DotAiChatAnswer | null;
     chatStreaming: boolean;
 
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
@@ -142,7 +150,7 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     searchMissingIndex: null,
     hasSearched: false,
 
-    chatMessages: [],
+    chatAnswer: null,
     chatStreaming: false,
 
     indexFilter: '',

@@ -7,7 +7,7 @@ import {
     DotAiStreamEvent,
     DotHttpErrorManagerService
 } from '@dotcms/data-access';
-import { DOT_AI_CHAT_MESSAGE_STATE } from '@dotcms/dotcms-models';
+import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
 
 import { withAiChat } from './with-ai-chat.feature';
 import { withRetrievalSettings } from './with-retrieval-settings.feature';
@@ -41,21 +41,14 @@ describe('withAiChat', () => {
         spectator.inject(DotAiCompletionsStreamService).stream = jest.fn().mockReturnValue(stream$);
     });
 
-    const assistant = () =>
-        store
-            .chatMessages()
-            .filter((m) => m.role === 'assistant')
-            .at(-1);
+    const assistant = () => store.chatAnswer();
 
-    it('should append the user turn and an empty streaming assistant turn', () => {
+    it('should open an empty streaming answer', () => {
         store.sendChat('what is dotCMS');
 
-        expect(store.chatMessages()).toHaveLength(2);
-        expect(store.chatMessages()[0]).toMatchObject({ role: 'user', content: 'what is dotCMS' });
-        expect(assistant()).toMatchObject({
-            role: 'assistant',
+        expect(store.chatAnswer()).toEqual({
             content: '',
-            state: DOT_AI_CHAT_MESSAGE_STATE.STREAMING
+            state: DOT_AI_ANSWER_STATE.STREAMING
         });
     });
 
@@ -73,7 +66,7 @@ describe('withAiChat', () => {
         stream$.next({ type: 'delta', content: 'done' });
         stream$.complete();
 
-        expect(assistant()?.state).toBe(DOT_AI_CHAT_MESSAGE_STATE.COMPLETE);
+        expect(assistant()?.state).toBe(DOT_AI_ANSWER_STATE.COMPLETE);
         expect(store.isStreaming()).toBe(false);
     });
 
@@ -91,7 +84,7 @@ describe('withAiChat', () => {
     it('should ignore an empty prompt', () => {
         store.sendChat('   ');
 
-        expect(store.chatMessages()).toHaveLength(0);
+        expect(store.chatAnswer()).toBeNull();
         expect(spectator.inject(DotAiCompletionsStreamService).stream).not.toHaveBeenCalled();
     });
 
@@ -104,7 +97,7 @@ describe('withAiChat', () => {
 
             expect(assistant()).toMatchObject({
                 content: 'partial',
-                state: DOT_AI_CHAT_MESSAGE_STATE.STOPPED
+                state: DOT_AI_ANSWER_STATE.STOPPED
             });
             expect(store.isStreaming()).toBe(false);
         });
@@ -120,7 +113,7 @@ describe('withAiChat', () => {
         });
     });
 
-    it('should abandon the earlier turn when a second question is sent (FR-013)', () => {
+    it('should replace the previous answer when a second question is sent (FR-013)', () => {
         const second$ = new Subject<DotAiStreamEvent>();
         const service = spectator.inject(DotAiCompletionsStreamService);
 
@@ -134,8 +127,8 @@ describe('withAiChat', () => {
         stream$.next({ type: 'delta', content: ' LATE' });
         second$.next({ type: 'delta', content: 'two' });
 
+        // Replaced, not appended: there is only ever one answer on screen.
         expect(assistant()?.content).toBe('two');
-        expect(store.chatMessages().filter((m) => m.role === 'assistant')).toHaveLength(2);
     });
 
     describe('errors (FR-014)', () => {
@@ -145,7 +138,7 @@ describe('withAiChat', () => {
             stream$.next({ type: 'error', message: 'rate limited' });
 
             expect(assistant()).toMatchObject({
-                state: DOT_AI_CHAT_MESSAGE_STATE.ERROR,
+                state: DOT_AI_ANSWER_STATE.ERROR,
                 error: 'rate limited'
             });
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
@@ -158,7 +151,7 @@ describe('withAiChat', () => {
 
             store.sendChat('q');
 
-            expect(assistant()?.state).toBe(DOT_AI_CHAT_MESSAGE_STATE.ERROR);
+            expect(assistant()?.state).toBe(DOT_AI_ANSWER_STATE.ERROR);
             expect(spectator.inject(DotHttpErrorManagerService).handle).not.toHaveBeenCalled();
             expect(store.isStreaming()).toBe(false);
         });

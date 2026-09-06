@@ -6,15 +6,19 @@ import { SplitterModule } from 'primeng/splitter';
 import { TextareaModule } from 'primeng/textarea';
 
 import { DotAgentThinkingComponent } from '@dotcms/ai-ui';
-import { DOT_AI_CHAT_MESSAGE_STATE } from '@dotcms/dotcms-models';
-import { DotColorIconComponent, DotMessagePipe } from '@dotcms/ui';
+import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
+import { DotMessagePipe } from '@dotcms/ui';
 
 import { DotAiSettingsPanelComponent } from '../../components/dot-ai-settings-panel/dot-ai-settings-panel.component';
 import { DotAiStore } from '../../store/dot-ai.store';
 
 /**
- * Chat tab: a conversation over the same indexed content Search reads, streamed token by
- * token and stoppable mid-answer.
+ * Chat tab: ask a question of the indexed content and watch the answer stream in.
+ *
+ * A prompt form, not a conversation. The completions endpoint takes one `prompt` and keeps no
+ * history, so each submit is independent and replaces the previous answer. The composer sits
+ * above the answer to say that in the layout itself, and the question is left in the textarea
+ * so it can be edited and asked again.
  *
  * Answers carry no source list. Only the non-streaming response mode returns
  * `dotCMSResults`, and progressive rendering was chosen over source attribution — so the
@@ -28,7 +32,6 @@ import { DotAiStore } from '../../store/dot-ai.store';
         TextareaModule,
         SplitterModule,
         DotAgentThinkingComponent,
-        DotColorIconComponent,
         DotAiSettingsPanelComponent,
         DotMessagePipe
     ],
@@ -38,12 +41,12 @@ import { DotAiStore } from '../../store/dot-ai.store';
 export default class DotAiChatComponent {
     protected readonly store = inject(DotAiStore);
 
-    protected readonly states = DOT_AI_CHAT_MESSAGE_STATE;
+    protected readonly states = DOT_AI_ANSWER_STATE;
     protected readonly splitterPt = { root: { class: 'border-0! rounded-none!' } };
 
     protected readonly $draft = signal('');
 
-    protected readonly thread = viewChild<{ nativeElement: HTMLElement }>('thread');
+    protected readonly answer = viewChild<{ nativeElement: HTMLElement }>('answer');
 
     protected onSend(): void {
         const prompt = this.$draft().trim();
@@ -53,8 +56,10 @@ export default class DotAiChatComponent {
         }
 
         this.store.sendChat(prompt);
-        this.$draft.set('');
-        queueMicrotask(() => this.#scrollToBottom());
+
+        // The draft is deliberately kept: the question is only visible here, and asking a
+        // variation of it is the common next step.
+        queueMicrotask(() => this.#scrollAnswerToTop());
     }
 
     /** Enter sends; Shift+Enter inserts a newline (FR-011). */
@@ -65,11 +70,12 @@ export default class DotAiChatComponent {
         }
     }
 
-    #scrollToBottom(): void {
-        const el = this.thread()?.nativeElement;
+    /** A replaced answer starts at the top, not wherever the last one was scrolled to. */
+    #scrollAnswerToTop(): void {
+        const el = this.answer()?.nativeElement;
 
         if (el) {
-            el.scrollTop = el.scrollHeight;
+            el.scrollTop = 0;
         }
     }
 }
