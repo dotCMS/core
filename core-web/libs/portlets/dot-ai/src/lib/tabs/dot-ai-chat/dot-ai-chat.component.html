@@ -111,6 +111,16 @@
                         </p-button>
                     }
                 </div>
+
+                @if (store.hasChat()) {
+                    <!-- The transcript looks like a conversation, but every request carries only
+                         the latest question: CompletionsForm has a single `prompt`, and the server
+                         builds [system(context), user(prompt)] per call. Stating that here keeps
+                         the UI from promising memory the endpoint cannot provide. -->
+                    <p class="mt-2 text-xs text-muted-color" data-testid="dotai-chat-no-memory">
+                        {{ 'dotai.chat.no-memory' | dm }}
+                    </p>
+                }
             </div>
         </section>
     </ng-template>

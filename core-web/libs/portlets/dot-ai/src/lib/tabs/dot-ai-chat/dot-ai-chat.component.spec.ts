@@ -74,6 +74,19 @@ describe('DotAiChatComponent', () => {
         expect(spectator.query(byTestId('dotai-chat-empty'))).toBeTruthy();
     });
 
+    it('should state that turns carry no history, but only once a thread exists', () => {
+        // Each request sends only the latest prompt — CompletionsForm has no messages array —
+        // so the transcript must not be left implying the model remembers earlier turns.
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-chat-no-memory'))).toBeFalsy();
+
+        withThread([user('hello'), assistant({ content: 'hi', state: 'complete' })]);
+        spectator = createComponent();
+
+        expect(spectator.query(byTestId('dotai-chat-no-memory'))).toBeTruthy();
+    });
+
     it('should render user and assistant turns distinctly', () => {
         withThread([user('hello'), assistant({ content: 'hi there', state: 'complete' })]);
         spectator = createComponent();
