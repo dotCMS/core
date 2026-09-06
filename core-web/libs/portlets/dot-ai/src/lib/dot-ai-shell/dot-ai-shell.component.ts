@@ -41,7 +41,13 @@ import { DotAiStore } from '../store/dot-ai.store';
     // navigation and the index list has a single owner with two readers.
     providers: [DotAiStore, DotAiCompletionsStreamService],
     templateUrl: './dot-ai-shell.component.html',
-    host: { class: 'flex flex-1 min-h-0 flex-col' }
+    // h-full, NOT flex-1: the portlet outlet in main-legacy.component.html is a plain block
+    // `<div class="overflow-auto">`, not a flex container, so `flex-1` on this host resolves to
+    // nothing and the shell collapses to its content height. Every `h-full` below then measures
+    // against an auto height, so the chat thread never gets a bounded box and the whole viewport
+    // scrolls instead of the thread. That div IS a grid item with a definite height, so `h-full`
+    // anchors the chain here without touching markup outside this portlet.
+    host: { class: 'flex h-full min-h-0 flex-col' }
 })
 export default class DotAiShellComponent {
     readonly #router = inject(Router);
