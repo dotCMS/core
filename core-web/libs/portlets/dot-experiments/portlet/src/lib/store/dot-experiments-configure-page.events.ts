@@ -46,13 +46,22 @@ export const dotExperimentsConfigurePageEvents = eventGroup({
         pagePrefillRequested: type<ConfigurePagePrefill>(),
 
         /**
-         * The chosen page was cleared, so the picker can start from nothing.
+         * Change Page was pressed on a draft whose variants have to go first, so the confirmation
+         * is about to open.
          *
-         * Same rule as picking one: only while the experiment is a draft whose single variant is
-         * the control. An experiment always has a page server-side — `save()` refuses one without
-         * — so this stages a re-pick rather than unsetting anything.
+         * Reported rather than kept in the card because the outcome of the *last* attempt is store
+         * state: a run that was refused, then cancelled, would otherwise greet the next press with
+         * the error it ended on.
          */
-        pageCleared: type<void>(),
+        pageChangeRequested: type<void>(),
+
+        /**
+         * The confirmation was accepted: the variants are to be deleted so the page can move.
+         *
+         * It covers the deletion alone. The page that replaces the current one arrives afterwards
+         * as its own `pageSelected`, once the picker the dialog hands over to answers.
+         */
+        pageChangeConfirmed: type<void>(),
 
         /**
          * The form changed, carrying its whole current value.

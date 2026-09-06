@@ -74,6 +74,7 @@ export * from './lib/components/dot-workflow-actions/dot-workflow-actions.compon
 export * from './lib/components/dot-browser-selector/dot-browser-selector.component';
 export * from './lib/components/dot-folder-tree/dot-folder-tree.component';
 export * from './lib/components/dot-folder-tree/constants';
+export * from './lib/components/dot-truncated-label/dot-truncated-label.component';
 export * from './lib/components/dot-folder-search-results/dot-folder-search-results.component';
 export * from './lib/components/dot-folder-search-results/folder-search-path.utils';
 export { LOAD_MORE_NODE_TYPE } from '@dotcms/dotcms-models';

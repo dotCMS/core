@@ -126,6 +126,21 @@ export interface DotExperimentsConfigureViewState {
     /** `null` until the page's lock state has been resolved, or while no page is selected. */
     pageLockInfo: DotPageLockInfo | null;
     /**
+     * True while the variants that stand in the way of a page change are being deleted.
+     *
+     * Its own flag rather than the shared `status`: the Change Page confirmation shows this wait on
+     * its own button, and an autosave that happened to be in flight when it opened would otherwise
+     * have it spinning over nothing.
+     */
+    deletingVariants: boolean;
+    /**
+     * True when the last such run was refused, so the confirmation can say so and stay open.
+     *
+     * Cleared when the next one is asked for — a press or a confirmation — so a cancelled failure
+     * is not still on screen the next time the dialog opens.
+     */
+    deleteVariantsFailed: boolean;
+    /**
      * Whether the validation rules are allowed to show. `false` until Start/Schedule is pressed,
      * so no field can show an error before then (AC28).
      *

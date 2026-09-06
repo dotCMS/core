@@ -31,7 +31,8 @@ import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
-    DotContentDriveItem,
+    DotContentDriveBrowseItem,
+    DotContentDriveFolder,
     DotContentDrivePaginateEvent,
     TreeNodeData
 } from '@dotcms/dotcms-models';
@@ -215,8 +216,8 @@ export class DotAssetPickerComponent implements OnInit {
      * The list always emits an array, even in single-selection mode. Double-click routes here too:
      * it marks the row and nothing else — confirming stays an explicit action.
      */
-    protected onSelect(items: DotContentDriveItem[]): void {
-        const asset = items?.[0] as DotCMSContentlet | undefined;
+    protected onSelect(items: DotContentDriveBrowseItem[]): void {
+        const asset = items?.[0];
 
         if (asset) {
             this.store.setSelectedAsset(asset);
@@ -226,14 +227,25 @@ export class DotAssetPickerComponent implements OnInit {
     }
 
     /**
-     * Returns the asset to the caller. The row carries only what the list needs, so it is re-fetched
-     * with its full content before closing.
+     * Returns the selection to the caller.
+     *
+     * A contentlet row carries only what the list needs, so it is re-fetched with its full content
+     * before closing. A folder and a menu link are **not** contentlets: there is nothing richer to
+     * fetch, and asking the contentlet endpoint for one 404s — which would toast "confirm error"
+     * and leave the picker open, making folders and links impossible to select.
      */
     protected confirm(): void {
         const asset = this.store.selectedAsset();
 
         // The button is disabled without a selection, but a programmatic call must not throw.
         if (!asset) {
+            return;
+        }
+
+        if (!isContentlet(asset)) {
+            writeLastAssetLocation(this.#resolveAssetLocation(asset));
+            this.#dialogRef.close(asset);
+
             return;
         }
 
@@ -280,15 +292,24 @@ export class DotAssetPickerComponent implements OnInit {
      *
      * `DotCMSContentlet.folder` is the folder's *identifier*, not a path, so it is no help here.
      */
-    #resolveAssetLocation(asset: DotCMSContentlet): DotAssetPickerLocation | undefined {
+    #resolveAssetLocation(item: DotContentDriveBrowseItem): DotAssetPickerLocation | undefined {
         const site = this.store.browsingSite();
 
         if (!site) {
             return undefined;
         }
 
-        const lastSlash = asset.url?.lastIndexOf('/') ?? -1;
-        const path = lastSlash >= 0 ? asset.url.slice(0, lastSlash + 1) : this.store.path();
+        // A folder IS a location — its own path, not the folder its url sits in.
+        if (isFolder(item)) {
+            return { siteId: site.identifier, hostname: site.hostname, path: item.path };
+        }
+
+        // No cast: after `isFolder`, the union is `DotCMSContentlet | DotContentDriveLink` and both
+        // declare `url: string`. Reading it directly means a future browse item without a `url`
+        // fails to compile here instead of silently reading `undefined`.
+        const url = item.url;
+        const lastSlash = url?.lastIndexOf('/') ?? -1;
+        const path = lastSlash >= 0 ? url.slice(0, lastSlash + 1) : this.store.path();
 
         return { siteId: site.identifier, hostname: site.hostname, path };
     }
@@ -549,4 +570,28 @@ export class DotAssetPickerComponent implements OnInit {
                 }
             });
     }
+}
+
+/**
+ * A folder row, told apart by the discriminant the browse response stamps on it.
+ *
+ * Deliberately local rather than shared with the bridge's own `kindOf`: that one maps onto the
+ * *public* selection kinds a VTL template sees, which is a different vocabulary that should be free
+ * to change without dragging the picker's internals with it.
+ */
+function isFolder(item: DotContentDriveBrowseItem): item is DotContentDriveFolder {
+    return (item as DotContentDriveFolder).type === 'folder';
+}
+
+/**
+ * Whether the row is a contentlet — the only kind with more content to fetch.
+ *
+ * Defined as "neither a folder nor a link" rather than by sniffing for a contentlet field, so a new
+ * non-contentlet row type fails closed: it would skip hydration rather than 404 against the
+ * contentlet endpoint.
+ */
+function isContentlet(item: DotContentDriveBrowseItem): item is DotCMSContentlet {
+    const row = item as { type?: string; extension?: string };
+
+    return row.type !== 'folder' && row.type !== 'link' && row.extension !== 'link';
 }

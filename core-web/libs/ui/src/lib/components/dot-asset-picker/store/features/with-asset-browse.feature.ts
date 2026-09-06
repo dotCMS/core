@@ -49,7 +49,8 @@ const initialState: DotAssetPickerBrowseState = {
  *
  * Mirrors the shape of Content Drive's request builder, minus everything the picker has no use for
  * (workflow filters, user-searchable fields) and plus the two things it needs: a silent mimetype
- * restriction and `showFolders: false` as an invariant.
+ * restriction, and folders and menu links switched off unless the caller opts in through
+ * `DotAssetPickerBrowseOptions`.
  */
 export function withAssetBrowse() {
     return signalStoreFeature(
@@ -66,19 +67,25 @@ export function withAssetBrowse() {
              * Handing that to PrimeNG makes every full page look like the last one, so it computes a
              * single page and renders "next" disabled — the paging chain below never even runs.
              *
-             * So while the bookmark for the page on screen reports more content, claim one page
-             * beyond to keep the arrow live; once it doesn't, the page is the last one and the exact
-             * total is knowable. Mirrors Content Drive's `$totalItems`.
+             * So while the bookmark for the page on screen reports more of ANY stream, claim one
+             * page beyond to keep the arrow live; once none of them do, the page is the last one and
+             * the exact total is knowable. Mirrors Content Drive's `$totalItems`.
+             *
+             * All three streams matter, not just content: contentlets, folders and menu links page
+             * independently, so a page whose content ran out while folders kept going would
+             * otherwise report the rows already on screen as the grand total. PrimeNG then sees
+             * `first + rows >= totalRecords`, disables Next, and those folders become unreachable.
              */
             $totalRecords: computed(() => {
                 const { page, limit } = pagination();
-                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMoreContent`
-                // answers "is there anything past what is on screen".
+                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMore*` flags
+                // answer "is there anything past what is on screen".
                 const bookmark = pages()[page];
+                const hasMore = bookmark
+                    ? bookmark.hasMoreContent || bookmark.hasMoreFolders || bookmark.hasMoreLinks
+                    : false;
 
-                return bookmark?.hasMoreContent
-                    ? limit * (page + 1)
-                    : limit * (page - 1) + items().length;
+                return hasMore ? limit * (page + 1) : limit * (page - 1) + items().length;
             }),
 
             /**
@@ -108,11 +115,21 @@ export function withAssetBrowse() {
                         ? currentFilters.baseType
                         : pickerConfig?.allowedBaseTypes;
 
-                    // Read UNTRACKED: the response writes the next page's cursor back into `pages`,
-                    // so tracking it here would recompute the request, refire the search, and loop.
-                    const cursor = untracked(
-                        () => pages()[currentPagination.page - 1]?.contentCursor ?? 0
-                    );
+                    // Read UNTRACKED: the response writes the next page's cursors back into
+                    // `pages`, so tracking it here would recompute the request, refire the search,
+                    // and loop.
+                    const bookmark = untracked(() => pages()[currentPagination.page - 1]);
+
+                    // What the caller opted into. Absent, this is the asset-only picker every entry
+                    // point but `openBrowserModal` uses.
+                    const browse = pickerConfig?.browse;
+
+                    // Once a stream is exhausted the endpoint asks us to switch it off, so later
+                    // pages stop paying for a query with nothing left to return.
+                    const showFolders =
+                        Boolean(browse?.showFolders) && (bookmark?.hasMoreFolders ?? true);
+                    const showLinks =
+                        Boolean(browse?.showLinks) && (bookmark?.hasMoreLinks ?? true);
 
                     return {
                         assetPath: `//${site?.hostname}${path() || '/'}`,
@@ -127,15 +144,29 @@ export function withAssetBrowse() {
                         mimeTypes: pickerConfig?.mimeTypes?.length
                             ? pickerConfig.mimeTypes
                             : undefined,
-                        contentCursor: cursor,
-                        // Always 0: with `showFolders: false` the folder cursor never advances.
-                        folderCursor: 0,
+                        contentCursor: bookmark?.contentCursor ?? 0,
+                        // No longer pinned. It stays 0 while folders are switched off — which is
+                        // every entry point but `openBrowserModal` — but a caller that asks for
+                        // folders pages through them like any other stream.
+                        folderCursor: bookmark?.folderCursor ?? 0,
+                        ...(browse?.showLinks
+                            ? { showLinks, linkCursor: bookmark?.linkCursor ?? 0 }
+                            : {}),
                         maxResults: currentPagination.limit,
                         sortBy: `${sort().field}:${sort().order}`,
-                        archived: false,
-                        // Invariant, not a default: the picker's list is for assets. Folders are
-                        // navigated through the sidebar tree.
-                        showFolders: false
+                        // Version state. Not a flat `false` any more: `openBrowserModal` callers can
+                        // ask for live-only or for archived content. Absent `browse`, this is
+                        // exactly what it always was.
+                        archived: browse?.showArchived ?? false,
+                        // `live: true` means published-only. The endpoint's own default is `false`
+                        // (working included), which is what every entry point but `openBrowserModal`
+                        // wants, so the key is omitted unless a caller explicitly asked for
+                        // live-only.
+                        ...(browse?.showWorking === false ? { live: true } : {}),
+                        // Default, not an invariant any more: the picker's list is for assets, and
+                        // folders are navigated through the sidebar tree — unless the caller
+                        // explicitly asked for them.
+                        showFolders
                     };
                 },
                 // Structural dedupe so a no-op recompute doesn't refire the search.
@@ -168,12 +199,27 @@ export function withAssetBrowse() {
                             tap((response: DotContentDriveSearchResponse) => {
                                 const page = store.pagination().page;
                                 const pages = [...store.pages()];
+                                // The bookmark this page was requested with — its cursors are the
+                                // "where we asked from" fallback below.
+                                const sent = pages[page - 1];
 
                                 // Bookmark where the NEXT page starts, so paging forward can
                                 // resume from a cursor instead of replaying from the top.
                                 pages[page] = {
                                     contentCursor: response.nextContentCursor,
-                                    hasMoreContent: response.hasMoreContent
+                                    hasMoreContent: response.hasMoreContent,
+                                    folderCursor: response.nextFolderCursor,
+                                    hasMoreFolders: response.hasMoreFolders,
+                                    // Only a `showLinks` response carries these, and unlike the
+                                    // folder pair they are both optional — so a response could
+                                    // report more links without saying where to resume. Falling
+                                    // back to the cursor we sent keeps the stream from rewinding to
+                                    // 0 and re-serving links that were already shown; once there
+                                    // are no more, 0 is correct because nothing will read it again.
+                                    linkCursor: response.hasMoreLinks
+                                        ? (response.nextLinkCursor ?? sent?.linkCursor ?? 0)
+                                        : 0,
+                                    hasMoreLinks: response.hasMoreLinks ?? false
                                 };
 
                                 patchState(store, {

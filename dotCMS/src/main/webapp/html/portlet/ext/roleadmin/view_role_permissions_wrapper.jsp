@@ -61,7 +61,7 @@
 <%@ include file="/html/portlet/ext/roleadmin/view_role_iframe_stubs_inc.jsp" %>
 
 <%-- The permissions wrapper does NOT ship a `<select id="portletList">`
-     (that markup lives in `view_role_tools_inc.jsp`), but the shared
+     (no wrapper does since the Tools tab moved to Angular), but the shared
      `initializePortletInfoList` boot-time addOnLoad still tries to
      upgrade one via `dijit.form.FilteringSelect`. Provide a hidden
      stub here so the parser has an element to bind to.

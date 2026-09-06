@@ -1,24 +1,22 @@
 import { createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
-import { DotHttpErrorManagerService } from '@dotcms/data-access';
+import { DotHttpErrorManagerService, DotRolesService } from '@dotcms/data-access';
+import { DotRole } from '@dotcms/dotcms-models';
 
 import { DotUsersRolesTabComponent } from './dot-users-roles-tab.component';
 
-import { DotRoleView, DotUsersService } from '../../../services/dot-users.service';
-
 /**
- * Baseline role shape. Passed through `mockProvider(DotUsersService,
- * { getAllRoles })` — the component transforms via `toRoleOption` so
- * these tests never see the internal `RoleOption` shape.
+ * Baseline role shape. `DotRoleView` was collapsed into the shared `DotRole`
+ * when the roles read surface moved to `DotRolesService`.
  */
-function fakeRole(overrides: Partial<DotRoleView> = {}): DotRoleView {
+function fakeRole(overrides: Partial<DotRole> = {}): DotRole {
     return {
         id: 'role-x',
         name: 'Role X',
         roleKey: 'ROLE_X',
-        parent: undefined,
         editUsers: true,
+        childCount: 0,
         ...overrides
     };
 }
@@ -35,17 +33,34 @@ function fakeRole(overrides: Partial<DotRoleView> = {}): DotRoleView {
  *   Root C (id=7)                — mixed, one leaf editUsers=false
  *     ├── Leaf C1 (id=8, editUsers=false)  ← must not surface a checkbox
  *     └── Leaf C2 (id=9, editUsers=true)
+ *
+ * Shaped the way `getRoots(true)` actually returns it: roots nested with
+ * their first level only. Sub A1's own children are one level too deep, so
+ * they arrive through the walk's follow-up fetch (see GET_BY_ID below) —
+ * which is exactly the two-level hydration limit the backend imposes.
  */
-const ROLES: DotRoleView[] = [
-    fakeRole({ id: '1', name: 'Root A', roleKey: 'ROOT_A' }),
-    fakeRole({ id: '2', name: 'Sub A1', roleKey: 'SUB_A1', parent: '1' }),
-    fakeRole({ id: '3', name: 'Leaf A1a', roleKey: 'A1A', parent: '2' }),
-    fakeRole({ id: '4', name: 'Leaf A1b', roleKey: 'A1B', parent: '2' }),
-    fakeRole({ id: '5', name: 'Leaf A2', roleKey: 'A2', parent: '1' }),
+const ROLE_ROOTS: DotRole[] = [
+    fakeRole({
+        id: '1',
+        name: 'Root A',
+        roleKey: 'ROOT_A',
+        childCount: 2,
+        roleChildren: [
+            fakeRole({ id: '2', name: 'Sub A1', roleKey: 'SUB_A1', childCount: 2 }),
+            fakeRole({ id: '5', name: 'Leaf A2', roleKey: 'A2' })
+        ]
+    }),
     fakeRole({ id: '6', name: 'Root B', roleKey: 'ROOT_B' }),
-    fakeRole({ id: '7', name: 'Root C', roleKey: 'ROOT_C' }),
-    fakeRole({ id: '8', name: 'Leaf C1', roleKey: 'C1', parent: '7', editUsers: false }),
-    fakeRole({ id: '9', name: 'Leaf C2', roleKey: 'C2', parent: '7' })
+    fakeRole({
+        id: '7',
+        name: 'Root C',
+        roleKey: 'ROOT_C',
+        childCount: 2,
+        roleChildren: [
+            fakeRole({ id: '8', name: 'Leaf C1', roleKey: 'C1', editUsers: false }),
+            fakeRole({ id: '9', name: 'Leaf C2', roleKey: 'C2' })
+        ]
+    })
 ];
 
 /**
@@ -77,8 +92,28 @@ describe('DotUsersRolesTabComponent', () => {
         component: DotUsersRolesTabComponent,
         detectChanges: false,
         providers: [
-            mockProvider(DotUsersService, {
-                getAllRoles: jest.fn().mockReturnValue(of(ROLES))
+            // The tab composes getRoots + flattenRoleHierarchy. Only Sub A1
+            // reports childCount > 0 below the first level, so the walk
+            // fetches it and nothing else — every other node is a known leaf
+            // and gets pruned.
+            mockProvider(DotRolesService, {
+                getRoots: jest.fn().mockReturnValue(of(ROLE_ROOTS)),
+                getById: jest.fn().mockImplementation((id: string) =>
+                    of(
+                        id === '2'
+                            ? fakeRole({
+                                  id: '2',
+                                  name: 'Sub A1',
+                                  roleKey: 'SUB_A1',
+                                  childCount: 2,
+                                  roleChildren: [
+                                      fakeRole({ id: '3', name: 'Leaf A1a', roleKey: 'A1A' }),
+                                      fakeRole({ id: '4', name: 'Leaf A1b', roleKey: 'A1B' })
+                                  ]
+                              })
+                            : fakeRole({ id, roleChildren: [] })
+                    )
+                )
             }),
             mockProvider(DotHttpErrorManagerService, { handle: jest.fn() })
         ]
@@ -216,8 +251,8 @@ describe('DotUsersRolesTabComponent', () => {
 
     describe('service error path', () => {
         it('surfaces the error via httpErrorManager and leaves the panel empty', () => {
-            const service = spectator.inject(DotUsersService, true);
-            (service.getAllRoles as jest.Mock).mockReturnValueOnce(
+            const service = spectator.inject(DotRolesService, true);
+            (service.getRoots as jest.Mock).mockReturnValueOnce(
                 throwError(() => new Error('boom'))
             );
 

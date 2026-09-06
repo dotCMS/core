@@ -94,7 +94,7 @@ jobs:
       has-tests: ${{ steps.generate-matrix.outputs.has-tests }}
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Shallow checkout: this job only reads .github/test-matrix.yml from HEAD.
           # fetch-depth: 0 pulled every branch ref (~2k+ branches, ~1.1 GB pack).
@@ -108,7 +108,7 @@ jobs:
 
       - name: Generate test matrix
         id: generate-matrix
-        uses: actions/github-script@v7
+        uses: actions/github-script@ed597411d8f924073f98dfc5c65a23a2325f34cd # v8
         env:
           # Passed via env (not interpolated into the script) to avoid script injection.
           OPENSEARCH_PHASE: ${{ inputs.opensearch_phase }}
@@ -249,7 +249,7 @@ jobs:
 
     steps:          
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           # Shallow checkout: test jobs run Maven suites against the checked-out
           # snapshot only — no git history is read anywhere in this job or in the

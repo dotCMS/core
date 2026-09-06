@@ -9,7 +9,7 @@
     @if ($popoverOpen()) {
         @switch ($control()) {
             @case ('text') {
-                <div class="flex w-72 flex-col p-3" data-testid="field-filter-panel">
+                <div class="flex w-72 flex-col" data-testid="field-filter-panel">
                     <input
                         pInputText
                         type="text"
@@ -28,7 +28,7 @@
                     value); the `key:value` shorthand is translated to the joined `key_value` term
                     for an exact-pair match when the search payload is built.
                 -->
-                <div class="flex w-72 flex-col gap-1 p-3" data-testid="field-filter-panel">
+                <div class="flex w-72 flex-col gap-1" data-testid="field-filter-panel">
                     <input
                         pInputText
                         type="text"
@@ -171,9 +171,7 @@
                         for timeOnly, so a single control can't express a time span. Any time can be
                         picked for either bound, and either can be left empty (open-ended range).
                     -->
-                    <div
-                        class="flex flex-col items-center gap-2 p-3"
-                        data-testid="field-filter-time">
+                    <div class="flex flex-col items-center gap-2" data-testid="field-filter-time">
                         <div class="flex items-start justify-center gap-6">
                             <div class="flex flex-col items-start gap-1">
                                 <label class="text-xs font-semibold text-slate-500">
@@ -224,7 +222,7 @@
                         set each bound's time. Both combine into the from/to instants.
                     -->
                     <div
-                        class="flex flex-col items-center gap-3 p-3"
+                        class="flex flex-col items-center gap-3"
                         data-testid="field-filter-datetime">
                         <p-datePicker
                             selectionMode="range"
@@ -277,7 +275,7 @@
                         }
                     </div>
                 } @else {
-                    <div class="flex justify-center p-3">
+                    <div class="flex justify-center">
                         <p-datePicker
                             selectionMode="range"
                             [ngModel]="$dateValue()"

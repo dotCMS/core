@@ -255,8 +255,7 @@ describe('DotHostFolderFieldComponent', () => {
                 path: '',
                 type: 'site'
             },
-            expandedIcon: 'pi pi-globe',
-            collapsedIcon: 'pi pi-globe'
+            icon: 'pi pi-globe'
         });
 
         const queryInOverlay = (testId: string): Element | null =>
@@ -785,6 +784,130 @@ describe('DotHostFolderFieldComponent', () => {
             popover.show(event, trigger);
             spectator.detectChanges();
         };
+
+        it('should take its folder icons from the shared tree (#37362)', fakeAsync(() => {
+            // The icon used to be carried per-node by `dot-browsing.service`. It now comes from
+            // the shared component, so this picker has to opt in. This also covers US2: the icon
+            // is a function of the row's state, so a collapse cannot leave it stuck open.
+            const folder: TreeNodeItem = {
+                key: 'folder-parent',
+                label: 'demo.dotcms.com/parent/',
+                data: {
+                    id: 'folder-parent',
+                    hostname: 'demo.dotcms.com',
+                    path: '/parent/',
+                    type: 'folder'
+                },
+                leaf: false
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [folder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const tree = queryInOverlay('host-folder-tree');
+            const icon = tree?.querySelector('[data-testid="tree-node-folder-icon"]');
+
+            expect(icon).toBeTruthy();
+            expect(icon?.getAttribute('data-expanded')).toBe('false');
+        }));
+
+        it('should render its projected folder label inside the shared clipping element', fakeAsync(() => {
+            // #37363: the overlay used to cut long names off with its own CSS. The shared tree
+            // owns the clipping now, so the consumer's label must sit inside its wrapper.
+            const longFolder: TreeNodeItem = {
+                key: 'folder-long',
+                label: 'demo.dotcms.com/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                data: {
+                    id: 'folder-long',
+                    hostname: 'demo.dotcms.com',
+                    path: '/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [longFolder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const clip = queryInOverlay('tree-node-label-clip');
+
+            expect(clip).toBeTruthy();
+            expect(clip?.textContent?.trim()).toBe(
+                'a-very-long-folder-name-that-will-not-fit-in-the-overlay'
+            );
+        }));
+
+        it('should reveal a clipped folder name on hover, which the overlay had lost', fakeAsync(() => {
+            // The regression named in #37363: this overlay truncated with its own CSS and showed
+            // no tooltip at all, so a long name was simply unreadable.
+            const longFolder: TreeNodeItem = {
+                key: 'folder-long',
+                label: 'demo.dotcms.com/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                data: {
+                    id: 'folder-long',
+                    hostname: 'demo.dotcms.com',
+                    path: '/a-very-long-folder-name-that-will-not-fit-in-the-overlay/',
+                    type: 'folder'
+                },
+                leaf: true
+            };
+
+            mockSitesPage(TREE_SELECT_SITES_MOCK);
+            service.searchFolders.mockReturnValue(
+                of({
+                    folders: [longFolder],
+                    pagination: { currentPage: 1, perPage: 40, totalEntries: 1 }
+                })
+            );
+
+            store.loadSites({ path: null, isRequired: false });
+            tick();
+            store.selectSite(TREE_SELECT_SITES_MOCK[0]);
+            tick();
+            spectator.detectChanges();
+            showFoldersPanel();
+
+            const clip = queryInOverlay('tree-node-label-clip') as HTMLElement;
+            // `showOnEllipsis` compares offsetWidth against scrollWidth, and both are 0 in jsdom.
+            Object.defineProperty(clip, 'offsetWidth', { value: 100, configurable: true });
+            Object.defineProperty(clip, 'scrollWidth', { value: 400, configurable: true });
+
+            clip.dispatchEvent(new MouseEvent('mouseenter'));
+            spectator.detectChanges();
+            tick(1000);
+
+            expect(document.querySelector('.p-tooltip-text')?.textContent?.trim()).toBe(
+                'a-very-long-folder-name-that-will-not-fit-in-the-overlay'
+            );
+
+            clip.dispatchEvent(new MouseEvent('mouseleave'));
+            tick(1000);
+            document.querySelectorAll('.p-tooltip').forEach((node) => node.remove());
+        }));
 
         it('should show a spinner on the toggler while a folder expand request is pending', fakeAsync(() => {
             const parentFolder: TreeNodeItem = {

@@ -83,7 +83,43 @@ export type PermissionType = (typeof PERMISSIONS_TYPE)[keyof typeof PERMISSIONS_
 
 // This will extend the DotCMSContentlet with more properties,
 // but for now we will just use the DotCMSContentlet until we have folders on the request response
+/**
+ * A menu Link listed alongside folders and contentlets.
+ *
+ * A Link is not a contentlet and not a `BaseContentType`, so it is a third variant rather than a
+ * shape either of the other two could carry. The backend stamps `extension: 'link'` on it
+ * (`BrowserAPIImpl`), which is what tells the three apart in a result list.
+ *
+ * Returned only when a caller asks for links, and never together with a mimetype filter — a Link
+ * has no file metadata to match one against.
+ */
+export interface DotContentDriveLink {
+    type: 'link';
+    /** What the backend stamps; the row-kind discriminator in a mixed list. */
+    extension: 'link';
+    identifier: string;
+    inode: string;
+    title: string;
+    /** The link's target — the value a browse selection reports as its URL. */
+    url: string;
+    hostId: string;
+    modDate: number;
+}
+
 export type DotContentDriveItem = DotCMSContentlet | DotContentDriveFolder;
+
+/**
+ * A browse result that may also contain menu Links.
+ *
+ * Deliberately NOT folded into {@link DotContentDriveItem}: Content Drive never asks for links, and
+ * every one of its consumers reads that union as "a folder, or else a contentlet". Widening it
+ * there would force `isFolder`, the action centre, the workflow counters and the drag handling to
+ * reason about a third kind that cannot reach them.
+ *
+ * Only a caller that sends `showLinks: true` — today, the asset picker's browse mode — receives
+ * these, and only that caller uses this type.
+ */
+export type DotContentDriveBrowseItem = DotContentDriveItem | DotContentDriveLink;
 
 /**
  * An item the shared folder actions (context menu, Edit-folder dialog) can act on.
@@ -210,6 +246,24 @@ export interface DotContentDriveSearchRequest {
     folderCursor?: number;
 
     /**
+     * Whether to include menu Links in the results.
+     *
+     * Ignored by the endpoint whenever `mimeTypes` is set: a Link carries no file metadata, so it
+     * could never satisfy a mimetype filter.
+     * @default false
+     */
+    showLinks?: boolean;
+
+    /**
+     * Index into the link list to start from — the `nextLinkCursor` of the previous page.
+     *
+     * Links page independently of folders and contentlets, so a page of results is described by
+     * three cursors rather than one.
+     * @default 0
+     */
+    linkCursor?: number;
+
+    /**
      * Maximum number of results to return.
      * @default 2000
      */
@@ -313,6 +367,15 @@ export interface DotContentDriveSearchResponse {
     hasMoreFolders: boolean;
     nextContentCursor: number;
     nextFolderCursor: number;
+    /**
+     * Whether more menu Links remain beyond this page.
+     *
+     * Optional because only responses to a `showLinks` request carry it. When it comes back
+     * `false`, the next request should set `showLinks: false` to skip the link query entirely.
+     */
+    hasMoreLinks?: boolean;
+    /** Link-list index the next page should start from. Present alongside {@link hasMoreLinks}. */
+    nextLinkCursor?: number;
 }
 
 /**

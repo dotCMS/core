@@ -186,6 +186,42 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `highlight` | `@tiptap/extension-highlight` | — (schema only; the legacy editor has no button either) | any text |
 | `link` | `@tiptap/extension-link` | Link popover — hidden when `link` is not in allowed blocks | any text. Always in the schema; `allowedBlocks` gates only the authoring paths (button, autolink, link-on-paste). Gating the *registration* blanked every restricted field (#37175) — a missing mark aborts `Node.fromJSON` for the whole document, and `link` is not even offered as an Allowed Blocks option. |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
+| `dotUnsupportedMark` | `createUnsupportedBlockMark()` (`@dotcms/dotcms-models`) | — (never authored; visually neutral) | any text whose stored mark this schema does not declare. Registered unconditionally: an unknown mark aborts `Node.fromJSON` for the WHOLE document, so `preserveUnknownBlockMarks` swaps it for this placeholder on load and `restoreUnknownBlockNodes` puts the original back on save (#37175). Mark-side twin of `dotUnsupportedBlock`. |
+
+### Unknown nodes and marks (load-path invariant)
+
+Stored content can name a node or mark this schema does not declare — content written by the
+API, migrated from another CMS, or produced by a newer version. Both are preserved rather than
+dropped, and the two passes are **not** interchangeable:
+
+| | Unknown node | Unknown mark |
+|---|---|---|
+| Placeholder | `dotUnsupportedBlock` — renders `Unsupported block (type)` | `dotUnsupportedMark` — visually neutral, the text renders as ordinary text |
+| Preserve on load | `preserveUnknownBlockNodes` | `preserveUnknownBlockMarks` |
+| Restore on save | `restoreUnknownBlockNodes` (handles both) | same |
+| Failure without it | `RangeError: Unknown node type: X` | `RangeError: There is no mark type X in this schema` |
+
+Order matters: **nodes first, then marks.** An unknown node is swallowed whole into the
+placeholder's `originalNode` attr, and that payload is inert data rather than part of the
+document tree — running the mark pass first would rewrite marks inside the very payload the
+placeholder exists to preserve.
+
+Both editors wire this the same way (`preserveUnknownNodesInDocument` here,
+`setEditorJSONContent` in the legacy `dot-block-editor.component.ts`), and both derive the known
+sets from the live schema, so a newly registered extension needs no bookkeeping.
+
+TipTap does not surface either failure loudly: it catches the `RangeError`, logs
+`[tiptap warn]: Invalid content`, and boots an EMPTY document. The field looks emptied while the
+stored JSON is intact — and the next save makes that loss real (#37145, #37175).
+
+**Known limitation — "Clear formatting" discards both payloads.** That action runs
+`unsetAllMarks().clearNodes()` (`toolbar.component.ts`; the legacy bubble menu runs
+`unsetAllMarks()`), which strips `dotUnsupportedMark` along with every real mark, and
+`clearNodes()` does the same to `dotUnsupportedBlock`. Neither placeholder renders visible
+formatting, so the author cannot tell anything was discarded and there is no way back. Still
+strictly better than not loading the document at all, and unlike that, user-initiated.
+Excluding both placeholders from the clear-formatting command is worth doing — it belongs to
+that command in each editor, not to the placeholders.
 
 ### Special / node-scoped commands
 

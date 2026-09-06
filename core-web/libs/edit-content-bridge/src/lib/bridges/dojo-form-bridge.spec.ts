@@ -376,4 +376,52 @@ describe('DojoFormBridge', () => {
             expect(callback).not.toHaveBeenCalled();
         });
     });
+
+    /**
+     * The legacy Dojo editor has never had a browse modal — the method has always been a stub.
+     * That stays true; what changes is that it says so. A stub that silently resolves `null` is
+     * indistinguishable from the user pressing Cancel, so a template author debugging "why does
+     * nothing happen" has nothing to go on.
+     */
+    describe('openBrowserModal', () => {
+        let warn: jest.SpyInstance;
+
+        beforeEach(() => {
+            warn = jest.spyOn(console, 'warn').mockImplementation(() => {});
+        });
+
+        afterEach(() => warn.mockRestore());
+
+        it('should return a controller', () => {
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(typeof controller.close).toBe('function');
+        });
+
+        it('should report null because it opens nothing', () => {
+            const onClose = jest.fn();
+
+            bridge.openBrowserModal({ kinds: ['file'], onClose });
+
+            expect(onClose).toHaveBeenCalledWith(null);
+        });
+
+        it('should warn that the legacy editor does not support it', () => {
+            bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(warn).toHaveBeenCalled();
+        });
+
+        it('should tolerate close() being called', () => {
+            // Nothing is open, so this must be a no-op rather than a throw — a caller cannot know
+            // which host it landed in.
+            const controller = bridge.openBrowserModal({ kinds: ['file'] });
+
+            expect(() => controller.close()).not.toThrow();
+        });
+
+        it('should work with no options at all', () => {
+            expect(() => bridge.openBrowserModal()).not.toThrow();
+        });
+    });
 });

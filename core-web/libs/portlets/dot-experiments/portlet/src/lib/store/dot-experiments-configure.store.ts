@@ -1,13 +1,23 @@
 import { mapResponse } from '@ngrx/operators';
 import { signalStore, withComputed, withHooks, withState } from '@ngrx/signals';
 import { Dispatcher, Events, on, withEventHandlers, withReducer } from '@ngrx/signals/events';
-import { merge, of, SubscriptionLike } from 'rxjs';
+import { from, merge, of, SubscriptionLike } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 import { computed, inject } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 
-import { catchError, distinctUntilChanged, filter, map, mergeMap, switchMap } from 'rxjs/operators';
+import {
+    catchError,
+    concatMap,
+    distinctUntilChanged,
+    filter,
+    last,
+    map,
+    mergeMap,
+    switchMap,
+    tap
+} from 'rxjs/operators';
 
 import {
     DotContentSearchService,
@@ -56,6 +66,7 @@ import {
 } from '../util/dot-experiments-configure-form.util';
 import {
     canChangePage,
+    deletableVariants,
     fromBrowserPage,
     isSameFormValue,
     normalizePath,
@@ -78,6 +89,8 @@ const initialState: DotExperimentsConfigureViewState = {
     selectedPage: null,
     pagePrefillError: null,
     pageLockInfo: null,
+    deletingVariants: false,
+    deleteVariantsFailed: false,
     validationRevealed: false,
     formValue: null,
     formValidity: { trafficAllocation: true, scheduling: true },
@@ -97,12 +110,14 @@ interface PageLookupEntity {
  * then swapped for the created one) and every later change is persisted by a debounced PATCH.
  * `PATCH /api/v1/experiments/{id}` applies every key of its body in one atomic update, so the
  * screen keeps one accumulated diff and one timer: a Name edit and a Goal edit in the same window
- * leave as a single multi-key call (AC6). `pageId` and `targetingConditions` are never part of a
- * body — the page is immutable once the draft exists, and sending targeting conditions would have
- * the backend rebuild the experiment's Rule (AC7).
+ * leave as a single multi-key call (AC6). `targetingConditions` is never part of a body — sending
+ * it would have the backend rebuild the experiment's Rule (AC7) — and `pageId` only when the page
+ * actually moved, since a body carrying the stored one is the shape `save()` refuses on an
+ * experiment that has variants.
  *
- * The page is chosen once: the PATCH endpoint does not accept `pageId`, so after creation the
- * selected page is only ever *resolved* from the experiment, never sent back.
+ * The page of a draft can still be changed (#37176), and the variants are what stand in the way:
+ * a non-control variant holds a copy of the current page, so the change deletes them first
+ * (`pageChangeConfirmed`) and only then is a new page worth selecting.
  *
  * Validation is deliberately absent until Start/Schedule is pressed (AC28): the reducer for
  * `startRequested` sets `validationRevealed`, and the handler only calls the API while
@@ -166,6 +181,9 @@ export const DotExperimentsConfigureStore = signalStore(
         const $variants = computed<Variant[]>(
             () => store.experiment()?.trafficProportion?.variants ?? []
         );
+
+        /** The variants a page change has to delete first — see `deletableVariants`. */
+        const $deletableVariants = computed<Variant[]>(() => deletableVariants(store.experiment()));
 
         /**
          * Whether the weights on screen stand in the way of a save.
@@ -248,6 +266,7 @@ export const DotExperimentsConfigureStore = signalStore(
             $isLocked,
             $lockedByAnotherUser,
             $variants,
+            $deletableVariants,
             /**
              * Share of the page's traffic entering the Experiment, as the form currently holds it.
              *
@@ -413,9 +432,6 @@ export const DotExperimentsConfigureStore = signalStore(
 
             return { selectedPage: payload, pagePrefillError: null };
         }),
-        on(pageEvents.pageCleared, (_event, state) =>
-            canChangePage(state.experiment) ? { selectedPage: null, pagePrefillError: null } : {}
-        ),
         on(apiEvents.pagePrefillResolved, ({ payload }) => ({
             selectedPage: payload,
             pagePrefillError: null
@@ -500,6 +516,45 @@ export const DotExperimentsConfigureStore = signalStore(
             apiEvents.removeVariantFailed,
             () => ({ status: ComponentStatus.LOADED })
         ),
+
+        // A press only clears the last run's outcome: the confirmation opens on a clean slate
+        // rather than on the error the previous attempt ended with.
+        on(pageEvents.pageChangeRequested, () => ({ deleteVariantsFailed: false })),
+        /**
+         * Clearing the variants for a page change is one command over several calls, and reads as
+         * the same `SAVING` a single deletion does — plus a flag of its own, which is what the
+         * confirmation's button spins on.
+         *
+         * Keyed on the request the handler raises rather than on the confirmation that triggers it.
+         * Two reasons, and the second is the one that forces it: nothing rises for a run that never
+         * goes out (the dialog would hang waiting on it), and the handler's own re-entrancy guard
+         * reads this flag — a reducer on the intent would set it before the handler ran and the
+         * guard would refuse the very first press.
+         */
+        on(apiEvents.deleteVariantsRequested, () => ({
+            status: ComponentStatus.SAVING,
+            deletingVariants: true,
+            deleteVariantsFailed: false
+        })),
+        on(apiEvents.deleteVariantsSucceeded, ({ payload }) => ({
+            experiment: payload,
+            status: ComponentStatus.LOADED,
+            deletingVariants: false
+        })),
+        /**
+         * A rejection halfway leaves the variants that were already deleted deleted, so the last
+         * answer the run did get is folded in rather than dropped: the card would otherwise go on
+         * offering weights for rows that no longer exist. `null` means the first call failed, and
+         * nothing about the experiment moved.
+         *
+         * The dialog stays open — it is the retry — which is what `deleteVariantsFailed` is for.
+         */
+        on(apiEvents.deleteVariantsFailed, ({ payload }) => ({
+            ...(payload.experiment ? { experiment: payload.experiment } : {}),
+            status: ComponentStatus.LOADED,
+            deletingVariants: false,
+            deleteVariantsFailed: true
+        })),
 
         /**
          * Pressing Start is what *reveals* the rules (AC28/AC29) — it does not freeze them. The
@@ -838,6 +893,67 @@ export const DotExperimentsConfigureStore = signalStore(
                                 })
                             )
                     )
+                ),
+
+                /**
+                 * Deletes every non-control variant so the page can move (#37176).
+                 *
+                 * One call per variant, run one after another rather than at once: each has the
+                 * backend recompute the traffic proportion over what is left, so it is the answer
+                 * to the *last* one that describes the experiment afterwards. Firing them in
+                 * parallel would leave which of the answers is current up to arrival order.
+                 *
+                 * `deletingVariants` is what makes a second confirmation a no-op rather than a
+                 * second run: the dialog guards its own button, but the guard that matters is here,
+                 * where every dispatcher passes — the same contract `create$` and `start$` keep. A
+                 * `switchMap` alone would not do: it would cancel a run whose deletions have
+                 * already partly landed and start another from a list that has not caught up yet.
+                 *
+                 * Nothing left to delete is answered as success rather than dropped. It is
+                 * reachable — the variants can go from another tab between opening the dialog and
+                 * confirming it — and the page is free either way, so the alternative is a
+                 * confirmation that sits there having done nothing with nothing to show for it.
+                 */
+                deleteVariantsForPageChange$: events.on(pageEvents.pageChangeConfirmed).pipe(
+                    filter(() => !!store.experiment() && !store.deletingVariants()),
+                    switchMap(() => {
+                        const experiment = store.experiment() as DotExperiment;
+                        const variantIds = store.$deletableVariants().map(({ id }) => id);
+
+                        if (!variantIds.length) {
+                            return of(apiEvents.deleteVariantsSucceeded(experiment));
+                        }
+
+                        // What the last successful deletion answered with, so a rejection halfway
+                        // can still report the variants that did go.
+                        let deleted: DotExperiment | null = null;
+
+                        return merge(
+                            of(apiEvents.deleteVariantsRequested()),
+                            from(variantIds).pipe(
+                                concatMap((variantId) =>
+                                    experimentsService.removeVariant(experiment.id, variantId)
+                                ),
+                                tap((settled) => (deleted = settled)),
+                                last(),
+                                map((settled) => apiEvents.deleteVariantsSucceeded(settled)),
+                                catchError((error: HttpErrorResponse) => {
+                                    // Unobtrusive on purpose: the Change Page dialog cannot be
+                                    // dismissed while this runs, so the inline message beside its
+                                    // buttons is what carries the failure. An alert would only bury
+                                    // the retry it offers.
+                                    httpErrorManager.handle(error, true);
+
+                                    return of(
+                                        apiEvents.deleteVariantsFailed({
+                                            error,
+                                            experiment: deleted
+                                        })
+                                    );
+                                })
+                            )
+                        );
+                    })
                 ),
 
                 removeVariant$: events.on(pageEvents.variantDeleted).pipe(

@@ -38,6 +38,7 @@ import com.dotmarketing.business.SecondaryCategoryPermissionTest;
 import com.dotmarketing.db.InodeExistenceCheckIntegrationTest;
 import com.dotmarketing.factories.TreeFactoryTest;
 import com.dotmarketing.fixtask.tasks.FixTask00090RecreateMissingFoldersInParentPathTest;
+import com.dotmarketing.portlets.containers.business.FileAssetContainerPermissionInheritanceTest;
 import com.dotmarketing.portlets.contentlet.action.ImportContentletsActionSmokeTest;
 import com.dotmarketing.portlets.rules.RuleAPITest;
 import com.dotmarketing.startup.runonce.Task230630CreateRunningIdsExperimentFieldIntegrationTest;
@@ -118,6 +119,7 @@ import org.junit.runners.Suite;
         SecretsStoreWipeRegressionTest.class,
         SecretsStoreConcurrentWriteRaceTest.class,
         RoleResourceIntegrationTest.class,
+        FileAssetContainerPermissionInheritanceTest.class,
 
         // System event delivery in a cluster (issue #36827). The migration runs first so the
         // cursor table exists before anything reads it.
@@ -126,7 +128,7 @@ import org.junit.runners.Suite;
         SystemEventsJobDelegateIntegrationTest.class,
         SystemEventsClusterDeliveryIntegrationTest.class,
         SystemEventsReconciliationIntegrationTest.class,
-        SystemEventsRetentionIntegrationTest.class,
+        SystemEventsRetentionIntegrationTest.class
 })
 
 public class MainSuite3a {

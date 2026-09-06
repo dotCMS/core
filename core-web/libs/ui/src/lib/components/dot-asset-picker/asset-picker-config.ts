@@ -1,19 +1,28 @@
 import { DotCMSBaseTypesContentTypes, DotSite } from '@dotcms/dotcms-models';
 
 import { readLastAssetLocation } from './last-asset-path';
-import { DotAssetPickerConfig } from './store/models';
+import { DotAssetPickerBrowseOptions, DotAssetPickerConfig } from './store/models';
 
 /**
  * What the host opened the picker for.
  *
- * `file` is an Edit Content File field — any asset goes. The rest are media modes, each narrowed to
- * its own mimetype: `image` is the Image field *and* the Story Block's image node, `video` and
- * `audio` are the Story Block's media nodes.
+ * `file` is an Edit Content File field — any asset goes. `image`, `video` and `audio` are media
+ * modes, each narrowed to its own mimetype: `image` is the Image field *and* the Story Block's
+ * image node, `video` and `audio` are the Story Block's media nodes.
+ *
+ * `browse` is `DotCustomFieldApi.openBrowserModal` — the only mode that can ask for folders, menu
+ * links or pages, and the only one that carries {@link DotAssetPickerBrowseOptions}. Like `file`
+ * it applies no mimetype narrowing of its own.
  */
-export type DotAssetPickerMode = 'file' | 'image' | 'video' | 'audio';
+export type DotAssetPickerMode = 'file' | 'image' | 'video' | 'audio' | 'browse';
 
-/** Every mode that carries a mimetype restriction — i.e. everything but `file`. */
-export type DotAssetPickerMediaMode = Exclude<DotAssetPickerMode, 'file'>;
+/**
+ * Every mode that carries a mimetype restriction.
+ *
+ * `file` and `browse` are both excluded: they are the two modes that impose no narrowing, so
+ * neither has an entry in {@link ASSET_PICKER_MIME_TYPES}.
+ */
+export type DotAssetPickerMediaMode = Exclude<DotAssetPickerMode, 'file' | 'browse'>;
 
 /**
  * The only two base types that carry an asset.
@@ -31,7 +40,7 @@ export const ASSET_PICKER_ASSET_BASE_TYPES: DotCMSBaseTypesContentTypes[] = [
  * Mimetype narrowing per media mode, applied silently — an Image field that could return a PDF is
  * broken, and so is a `dotVideo` node pointing at an mp3.
  *
- * `file` is absent on purpose, which is what makes it the one mode with no restriction.
+ * `file` and `browse` are absent on purpose: they are the two modes with no restriction.
  */
 export const ASSET_PICKER_MIME_TYPES: Record<DotAssetPickerMediaMode, string[]> = {
     image: ['image/*'],
@@ -44,6 +53,7 @@ export const ASSET_PICKER_MIME_TYPES: Record<DotAssetPickerMediaMode, string[]> 
  * config instead of `DynamicDialogConfig.header`.
  */
 export const ASSET_PICKER_TITLE_KEYS: Record<DotAssetPickerMode, string> = {
+    browse: 'dot.asset.picker.header.browse',
     file: 'dot.asset.picker.header.file',
     image: 'dot.asset.picker.header.image',
     video: 'dot.asset.picker.header.video',
@@ -70,6 +80,29 @@ export interface DotAssetPickerEntryOptions {
      * last-used location, so it reopens where the editor last picked something.
      */
     initialAssetPath?: string;
+
+    /**
+     * Base types the selector may offer, overriding the asset-only default.
+     *
+     * `browse` mode only — it is the one entry point that can ask for pages. Ignored elsewhere, so
+     * a change to a File-field call site cannot widen what that field offers.
+     */
+    allowedBaseTypes?: string[];
+
+    /**
+     * Folders, menu links, version state and sort direction.
+     *
+     * `browse` mode only, for the same reason as {@link allowedBaseTypes}.
+     */
+    browse?: DotAssetPickerBrowseOptions;
+
+    /**
+     * Explicit mimetype restriction.
+     *
+     * `browse` mode only. The media modes get theirs from {@link ASSET_PICKER_MIME_TYPES} and must
+     * not be overridable — an Image field that could return a PDF is broken.
+     */
+    mimeTypes?: string[];
 }
 
 /**
@@ -87,14 +120,26 @@ export function buildAssetPickerConfig({
     site,
     title,
     languageId,
-    initialAssetPath
+    initialAssetPath,
+    allowedBaseTypes,
+    browse,
+    mimeTypes: explicitMimeTypes
 }: DotAssetPickerEntryOptions): DotAssetPickerConfig {
     // Presence in the mimetype map is what makes a mode a media mode — no `mode === 'x'` chain to
     // extend the next time a media node shows up.
     const mimeTypes = ASSET_PICKER_MIME_TYPES[mode as DotAssetPickerMediaMode];
 
+    // `browse` has no entry in the map, so it is the one mode that may bring its own.
+    const browseMimeTypes = mode === 'browse' ? explicitMimeTypes : undefined;
+
     // An explicit path is always about the entry site; a remembered one carries its own.
     const remembered = initialAssetPath ? undefined : readLastAssetLocation();
+
+    // Gated on the mode rather than on "was it passed?", so the browse capabilities are structurally
+    // unreachable from the File / Image / video / audio entry points. Those four must keep offering
+    // assets only, and a guard that depends on every call site remembering not to pass a field is
+    // not a guard.
+    const isBrowse = mode === 'browse';
 
     return {
         site,
@@ -105,8 +150,14 @@ export function buildAssetPickerConfig({
             : {}),
         ...(title ? { title } : {}),
         path: initialAssetPath ?? remembered?.path,
-        // What the selector may offer — the same in every mode.
-        allowedBaseTypes: [...ASSET_PICKER_ASSET_BASE_TYPES],
+        // What the selector may offer. Asset-only everywhere except `browse`, which is the only
+        // entry point that can ask for pages.
+        allowedBaseTypes:
+            isBrowse && allowedBaseTypes?.length
+                ? [...allowedBaseTypes]
+                : [...ASSET_PICKER_ASSET_BASE_TYPES],
+        ...(isBrowse && browse ? { browse } : {}),
+        ...(browseMimeTypes?.length ? { mimeTypes: [...browseMimeTypes] } : {}),
         ...(languageId ? { languageId } : {}),
         // What starts selected, plus the silent mimetype narrowing — media modes only.
         ...(mimeTypes

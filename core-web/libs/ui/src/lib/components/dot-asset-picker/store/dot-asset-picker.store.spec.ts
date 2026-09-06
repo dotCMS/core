@@ -6,7 +6,7 @@ import {
     SpectatorService,
     SpyObject
 } from '@openng/spectator/jest';
-import { of, throwError } from 'rxjs';
+import { NEVER, of, throwError } from 'rxjs';
 
 import { HttpErrorResponse } from '@angular/common/http';
 
@@ -91,6 +91,16 @@ const IMAGE_FIELD_CONFIG: DotAssetPickerConfig = {
     allowedBaseTypes: ASSET_BASE_TYPES,
     baseTypes: ASSET_BASE_TYPES,
     mimeTypes: ['image/*']
+};
+
+/**
+ * What `openBrowserModal` hands the store: pages alongside assets, plus folders and menu links —
+ * none of which any other entry point may ask for.
+ */
+const BROWSE_CONFIG: DotAssetPickerConfig = {
+    site: SITE,
+    allowedBaseTypes: [DotCMSBaseTypesContentTypes.FILEASSET, DotCMSBaseTypesContentTypes.HTMLPAGE],
+    browse: { showFolders: true, showLinks: true }
 };
 
 describe('DotAssetPickerStore', () => {
@@ -235,7 +245,10 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
-    describe('showFolders invariant', () => {
+    // Formerly "showFolders invariant". It is no longer an invariant — `openBrowserModal` can ask
+    // for folders — but it remains the DEFAULT, and these are now the guards that prove no other
+    // entry point gained them.
+    describe('showFolders default (no browse options)', () => {
         it('should be false with no filters applied', () => {
             store.initPicker(FILE_FIELD_CONFIG);
 
@@ -410,6 +423,288 @@ describe('DotAssetPickerStore', () => {
         });
     });
 
+    describe('browse entry point (openBrowserModal)', () => {
+        /** A response that still has more of everything to give. */
+        const MORE_OF_EVERYTHING = {
+            ...EMPTY_RESPONSE,
+            hasMoreContent: true,
+            hasMoreFolders: true,
+            hasMoreLinks: true,
+            nextContentCursor: 20,
+            nextFolderCursor: 5,
+            nextLinkCursor: 3
+        };
+
+        it('should ask for folders when the caller does', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showFolders).toBe(true);
+        });
+
+        it('should ask for menu links when the caller does', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().showLinks).toBe(true);
+        });
+
+        it('should offer pages alongside assets', () => {
+            store.initPicker(BROWSE_CONFIG);
+
+            expect(store.$request().baseTypes).toEqual(['FILEASSET', 'HTMLPAGE']);
+        });
+
+        it('should ask for live content only when the caller wants published', () => {
+            store.initPicker({ ...BROWSE_CONFIG, browse: { showWorking: false } });
+
+            expect(store.$request().live).toBe(true);
+        });
+
+        it('should include archived content when the caller asks for it', () => {
+            store.initPicker({ ...BROWSE_CONFIG, browse: { showArchived: true } });
+
+            expect(store.$request().archived).toBe(true);
+        });
+
+        describe('three-cursor paging', () => {
+            beforeEach(() => {
+                contentDriveService.search.mockReturnValue(of(MORE_OF_EVERYTHING));
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+            });
+
+            it('should no longer pin the folder cursor to zero', () => {
+                // The old invariant ("with showFolders: false the folder cursor never advances")
+                // held only because folders were never returned. Now they can be.
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().folderCursor).toBe(5);
+            });
+
+            it('should resume every stream from where the previous page left off', () => {
+                // Contentlets, folders and links page independently — one cursor cannot describe a
+                // page of a mixed list.
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+                expect(store.$request().folderCursor).toBe(5);
+                expect(store.$request().linkCursor).toBe(3);
+            });
+
+            it('should start every stream at zero on page one', () => {
+                expect(store.$request().contentCursor).toBe(0);
+                expect(store.$request().folderCursor).toBe(0);
+                expect(store.$request().linkCursor).toBe(0);
+            });
+        });
+
+        describe('exhausted streams', () => {
+            it('should stop asking for folders once there are no more', () => {
+                // The endpoint's own contract: when hasMoreFolders comes back false, the next page
+                // should skip the folder query entirely rather than pay for it again.
+                contentDriveService.search.mockReturnValue(
+                    of({
+                        ...MORE_OF_EVERYTHING,
+                        hasMoreFolders: false,
+                        nextFolderCursor: 5
+                    })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                // Asserted on BOTH pages on purpose. `showFolders` starts out hardcoded `false`, so
+                // checking only page 2 would pass today for entirely the wrong reason — a guard
+                // that cannot fail is not a guard.
+                expect(store.$request().showFolders).toBe(true);
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().showFolders).toBe(false);
+            });
+
+            it('should stop asking for links once there are no more', () => {
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreLinks: false, nextLinkCursor: 3 })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().showLinks).toBe(false);
+            });
+
+            it('should keep asking for content while content remains', () => {
+                // Reaching the end of one stream must not truncate the others.
+                contentDriveService.search.mockReturnValue(
+                    of({ ...MORE_OF_EVERYTHING, hasMoreFolders: false, hasMoreLinks: false })
+                );
+                store.initPicker(BROWSE_CONFIG);
+                spectator.flushEffects();
+
+                store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+                expect(store.$request().contentCursor).toBe(20);
+            });
+        });
+    });
+
+    describe('entry site resolution', () => {
+        /** What a caller hands over when it does not know, or does not care, which site it is on. */
+        const NO_SITE_CONFIG: DotAssetPickerConfig = {
+            allowedBaseTypes: ASSET_BASE_TYPES
+        };
+
+        beforeEach(() => {
+            siteService.getCurrentSite = jest.fn().mockReturnValue(of(SITE));
+        });
+
+        it('should not ask the server when the caller already supplied a site', () => {
+            // The File field and the Story Block both have one in hand; making them pay for a
+            // request they do not need would be a regression.
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should resolve the current site when the caller supplied none', () => {
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(siteService.getCurrentSite).toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(SITE.identifier);
+        });
+
+        it('should not search until a site is known', () => {
+            // `$isBrowsable` already guards on `browsingSite`, so the request simply waits rather
+            // than firing against an undefined path.
+            siteService.getCurrentSite = jest.fn().mockReturnValue(NEVER);
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(contentDriveService.search).not.toHaveBeenCalled();
+        });
+
+        it('should still open when the lookup fails, leaving the site tree unselected', () => {
+            // Opening on the site tree with nothing chosen beats not opening at all — the sidebar
+            // lists every site the user can browse, so they can pick one.
+            siteService.getCurrentSite = jest
+                .fn()
+                .mockReturnValue(throwError(() => new Error('offline')));
+
+            store.initPicker(NO_SITE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.browsingSite()).toBeUndefined();
+            expect(store.status()).not.toBe(ComponentStatus.ERROR);
+        });
+
+        it('should prefer the remembered site over the resolved one', () => {
+            // `browseSite` is where the editor last picked something; it already wins over the
+            // caller's site, and it must win over the looked-up one too.
+            store.initPicker({
+                ...NO_SITE_CONFIG,
+                browseSite: { identifier: OTHER_SITE.identifier, hostname: OTHER_SITE.hostname }
+            });
+
+            expect(siteService.getCurrentSite).not.toHaveBeenCalled();
+            expect(store.browsingSite()?.identifier).toBe(OTHER_SITE.identifier);
+        });
+    });
+
+    describe('paginator row count across three streams', () => {
+        it('should keep Next reachable while folders remain, even with content exhausted', () => {
+            // Reported in review of #37273. The paginator total looked only at `hasMoreContent`, so
+            // a page whose content stream ended while folders kept going reported the rows already
+            // on screen as the grand total. PrimeNG then sees `first + rows >= totalRecords`,
+            // disables Next, and the remaining folders become unreachable.
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: true,
+                    nextFolderCursor: 5
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            // One page beyond what is on screen, so the arrow stays live.
+            expect(store.$totalRecords()).toBeGreaterThan(15);
+        });
+
+        it('should keep Next reachable while menu links remain', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: true,
+                    nextLinkCursor: 3
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBeGreaterThan(15);
+        });
+
+        it('should settle on the exact total once every stream is exhausted', () => {
+            contentDriveService.search.mockReturnValue(
+                of({
+                    ...EMPTY_RESPONSE,
+                    list: new Array(15).fill({ inode: 'x' }),
+                    contentCount: 15,
+                    hasMoreContent: false,
+                    hasMoreFolders: false,
+                    hasMoreLinks: false
+                })
+            );
+            store.initPicker(BROWSE_CONFIG);
+            spectator.flushEffects();
+
+            expect(store.$totalRecords()).toBe(15);
+        });
+    });
+
+    describe('opt-in guarantee (no browse options)', () => {
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should not ask for links for the %s', (_name, config) => {
+            store.initPicker(config);
+
+            expect(store.$request().showLinks).toBeFalsy();
+        });
+
+        it.each([
+            ['File field', FILE_FIELD_CONFIG],
+            ['Image field', IMAGE_FIELD_CONFIG]
+        ])('should keep the folder cursor pinned for the %s', (_name, config) => {
+            contentDriveService.search.mockReturnValue(
+                of({ ...EMPTY_RESPONSE, hasMoreContent: true, nextContentCursor: 20 })
+            );
+            store.initPicker(config);
+            spectator.flushEffects();
+
+            store.setPagination({ ...DEFAULT_ASSET_PICKER_PAGINATION, page: 2 });
+
+            expect(store.$request().folderCursor).toBe(0);
+        });
+
+        it('should not request archived content', () => {
+            store.initPicker(FILE_FIELD_CONFIG);
+
+            expect(store.$request().archived).toBe(false);
+        });
+    });
+
     describe('paginator row count', () => {
         const page = (
             list: DotContentDriveItem[],
@@ -500,7 +795,13 @@ describe('DotAssetPickerStore', () => {
         it('should open on the remembered site rather than the one being edited', () => {
             store.initPicker({ ...FILE_FIELD_CONFIG, browseSite: OTHER_SITE });
 
-            expect(store.browsingSite()).toEqual(OTHER_SITE);
+            // Normalised to what `DotAssetPickerSite` actually declares. It used to store whatever
+            // object the caller passed, so a full `DotSite` leaked its `aliases`/`archived` into
+            // state that promises two fields — and only sometimes, depending on the caller.
+            expect(store.browsingSite()).toEqual({
+                identifier: OTHER_SITE.identifier,
+                hostname: OTHER_SITE.hostname
+            });
             expect(store.folders()[0].data?.id).toBe(OTHER_SITE.identifier);
             expect(store.folders()[0].expanded).toBe(true);
         });

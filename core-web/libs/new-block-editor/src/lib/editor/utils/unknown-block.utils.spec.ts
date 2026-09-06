@@ -1,9 +1,11 @@
 import { JSONContent } from '@tiptap/core';
 
 import {
+    preserveUnknownBlockMarks,
     preserveUnknownBlockNodes,
     preserveUnknownNodesInDocument,
     restoreUnknownBlockNodes,
+    UNKNOWN_BLOCK_MARK_NAME,
     UNKNOWN_BLOCK_NODE_NAME
 } from './unknown-block.utils';
 
@@ -123,6 +125,7 @@ describe('unknown-block.utils', () => {
  */
 describe('preserveUnknownNodesInDocument', () => {
     const known = new Set(['doc', 'paragraph', 'text']);
+    const knownMarks = new Set(['bold', 'link']);
 
     it('keeps a bare array of nodes as an array', () => {
         const input: JSONContent[] = [
@@ -130,7 +133,7 @@ describe('preserveUnknownNodesInDocument', () => {
             { type: 'paragraph', content: [{ type: 'text', text: 'second' }] }
         ];
 
-        const result = preserveUnknownNodesInDocument(input, known);
+        const result = preserveUnknownNodesInDocument(input, known, knownMarks);
 
         expect(Array.isArray(result)).toBe(true);
         expect(result).toEqual(input);
@@ -139,7 +142,7 @@ describe('preserveUnknownNodesInDocument', () => {
     it('never turns an array into a plain object carrying an undefined content', () => {
         const input: JSONContent[] = [{ type: 'paragraph' }];
 
-        const result = preserveUnknownNodesInDocument(input, known);
+        const result = preserveUnknownNodesInDocument(input, known, knownMarks);
 
         // The spread bug produced `{ 0: node, content: undefined }`: still an object, and the
         // stray `content` key is what made TipTap throw `Unknown node type: undefined`.
@@ -150,7 +153,11 @@ describe('preserveUnknownNodesInDocument', () => {
     it('still preserves unknown nodes inside a bare array', () => {
         const unknown: JSONContent = { type: 'customGallery', attrs: { layout: 'single' } };
 
-        const result = preserveUnknownNodesInDocument([unknown], known) as JSONContent[];
+        const result = preserveUnknownNodesInDocument(
+            [unknown],
+            known,
+            knownMarks
+        ) as JSONContent[];
 
         expect(result[0].type).toBe(UNKNOWN_BLOCK_NODE_NAME);
         expect(result[0].attrs).toEqual({
@@ -166,7 +173,7 @@ describe('preserveUnknownNodesInDocument', () => {
             content: [{ type: 'paragraph', content: [{ type: 'text', text: 'keep me' }] }]
         };
 
-        expect(preserveUnknownNodesInDocument(doc, known)).toEqual(doc);
+        expect(preserveUnknownNodesInDocument(doc, known, knownMarks)).toEqual(doc);
     });
 
     it('preserves sibling document attrs such as the doc stats', () => {
@@ -176,6 +183,152 @@ describe('preserveUnknownNodesInDocument', () => {
             content: [{ type: 'paragraph' }]
         };
 
-        expect(preserveUnknownNodesInDocument(doc, known)).toEqual(doc);
+        expect(preserveUnknownNodesInDocument(doc, known, knownMarks)).toEqual(doc);
+    });
+});
+
+/**
+ * #37175 AC5 — an unknown *mark* used to abort `Node.fromJSON` for the WHOLE document:
+ * `RangeError: There is no mark type X in this schema`. TipTap catches that, warns, and
+ * boots an empty document, so the field looked emptied while the stored JSON was intact —
+ * and the next save made the loss real. Unknown *nodes* already degraded to a placeholder;
+ * marks had no equivalent until `dotUnsupportedMark`.
+ */
+describe('preserveUnknownBlockMarks', () => {
+    const knownMarks = new Set(['bold', 'link']);
+
+    it('round-trips an unregistered mark through the placeholder, keeping the text', () => {
+        const unknownMark = { type: 'textStyle', attrs: { color: '#ff0000' } };
+        const input: JSONContent[] = [
+            {
+                type: 'paragraph',
+                content: [{ type: 'text', marks: [unknownMark], text: 'imported copy' }]
+            }
+        ];
+
+        const preserved = preserveUnknownBlockMarks(input, knownMarks);
+
+        expect(preserved).toEqual([
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [
+                            {
+                                type: UNKNOWN_BLOCK_MARK_NAME,
+                                attrs: {
+                                    originalType: 'textStyle',
+                                    originalMark: unknownMark,
+                                    originalMarkRaw: null
+                                }
+                            }
+                        ],
+                        text: 'imported copy'
+                    }
+                ]
+            }
+        ]);
+        expect(restoreUnknownBlockNodes(preserved)).toEqual(input);
+    });
+
+    it('leaves known marks untouched', () => {
+        const input: JSONContent[] = [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [{ type: 'link', attrs: { href: 'https://dotcms.com' } }],
+                        text: 'keep me a link'
+                    }
+                ]
+            }
+        ];
+
+        expect(preserveUnknownBlockMarks(input, knownMarks)).toEqual(input);
+    });
+
+    it('replaces only the unknown entries of a mixed mark list, in order', () => {
+        const input: JSONContent[] = [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [{ type: 'bold' }, { type: 'fontFamily' }],
+                        text: 'mixed'
+                    }
+                ]
+            }
+        ];
+
+        const marks = (preserveUnknownBlockMarks(input, knownMarks) as JSONContent[])[0]
+            .content?.[0].marks;
+
+        expect(marks?.map((mark) => mark.type)).toEqual(['bold', UNKNOWN_BLOCK_MARK_NAME]);
+    });
+
+    it('wraps a mark with a missing or non-string type', () => {
+        const input = [
+            { type: 'paragraph', content: [{ type: 'text', marks: [{}], text: 'x' }] }
+        ] as JSONContent[];
+
+        const marks = (preserveUnknownBlockMarks(input, knownMarks) as JSONContent[])[0]
+            .content?.[0].marks;
+
+        expect(marks?.[0]).toEqual({
+            type: UNKNOWN_BLOCK_MARK_NAME,
+            attrs: { originalType: null, originalMark: {}, originalMarkRaw: null }
+        });
+    });
+
+    /**
+     * The ordering invariant between the two passes: nodes run first, and a
+     * `dotUnsupportedBlock` payload is inert data rather than part of the tree. Rewriting
+     * marks inside it would corrupt exactly what the placeholder exists to preserve.
+     */
+    it('never rewrites marks inside an unsupported-block payload', () => {
+        const input: JSONContent[] = [
+            {
+                type: UNKNOWN_BLOCK_NODE_NAME,
+                attrs: {
+                    originalType: 'customGallery',
+                    originalNode: {
+                        type: 'customGallery',
+                        content: [{ type: 'text', marks: [{ type: 'fontFamily' }], text: 'x' }]
+                    },
+                    originalNodeRaw: null
+                }
+            }
+        ];
+
+        expect(preserveUnknownBlockMarks(input, knownMarks)).toEqual(input);
+    });
+
+    it('keeps a placeholder whose payload is no longer valid during restore', () => {
+        const input: JSONContent[] = [
+            {
+                type: 'paragraph',
+                content: [
+                    {
+                        type: 'text',
+                        marks: [
+                            {
+                                type: UNKNOWN_BLOCK_MARK_NAME,
+                                attrs: {
+                                    originalType: 'textStyle',
+                                    originalMark: null,
+                                    originalMarkRaw: '{"type":"textStyle"'
+                                }
+                            }
+                        ],
+                        text: 'corrupted'
+                    }
+                ]
+            }
+        ];
+
+        expect(restoreUnknownBlockNodes(input)).toEqual(input);
     });
 });

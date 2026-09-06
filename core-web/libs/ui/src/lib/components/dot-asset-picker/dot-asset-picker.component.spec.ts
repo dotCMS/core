@@ -17,6 +17,7 @@ import {
     ComponentStatus,
     DotCMSBaseTypesContentTypes,
     DotCMSContentlet,
+    DotContentDriveBrowseItem,
     DotSite
 } from '@dotcms/dotcms-models';
 import { MockDotMessageService } from '@dotcms/utils-testing';
@@ -76,6 +77,26 @@ const CONFIG: DotAssetPickerConfig = { site: SITE, languageId: '1' };
 const BROWSING_SITE_LOCATION = { siteId: SITE.identifier, hostname: SITE.hostname };
 
 const SELECTED_ASSET = { inode: 'inode-1', title: 'logo.png' } as DotCMSContentlet;
+
+/** A folder row, as the list hands one back. Not a contentlet — it has no content to fetch. */
+const SELECTED_FOLDER = {
+    type: 'folder',
+    identifier: 'folder-1',
+    inode: 'folder-inode',
+    title: 'images',
+    name: 'images',
+    path: '/images/'
+} as DotContentDriveBrowseItem;
+
+/** A menu link row. Also not a contentlet. */
+const SELECTED_LINK = {
+    type: 'link',
+    extension: 'link',
+    identifier: 'link-1',
+    inode: 'link-inode',
+    title: 'Docs',
+    url: '/docs'
+} as DotContentDriveBrowseItem;
 const HYDRATED_ASSET = {
     inode: 'inode-1',
     title: 'logo.png',
@@ -121,7 +142,7 @@ const createMockStore = () => {
         folders: signal([]),
         foldersStatus: signal(ComponentStatus.LOADED),
         selectedNode: signal<{ data: unknown } | undefined>(undefined),
-        selectedAsset: signal<DotCMSContentlet | null>(null),
+        selectedAsset: signal<DotContentDriveBrowseItem | null>(null),
         $request: signal({}),
         // methods
         initPicker: jest.fn(),
@@ -386,6 +407,47 @@ describe('DotAssetPickerComponent', () => {
             expect(addSpy).toHaveBeenCalledWith(expect.objectContaining({ severity: 'error' }));
             // The picker stays open so the user can pick something else.
             expect(dialogRef.close).not.toHaveBeenCalled();
+        });
+
+        it('should close with a folder as-is, without trying to hydrate it', () => {
+            // A folder has an inode but is not a contentlet: `getContentletByInodeWithContent`
+            // would 404, the picker would toast "confirm error" and stay open, and selecting a
+            // folder would be impossible.
+            store.selectedAsset.set(SELECTED_FOLDER);
+            spectator.detectChanges();
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(contentletService.getContentletByInodeWithContent).not.toHaveBeenCalled();
+            expect(dialogRef.close).toHaveBeenCalledWith(SELECTED_FOLDER);
+        });
+
+        it('should close with a menu link as-is, without trying to hydrate it', () => {
+            store.selectedAsset.set(SELECTED_LINK);
+            spectator.detectChanges();
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(contentletService.getContentletByInodeWithContent).not.toHaveBeenCalled();
+            expect(dialogRef.close).toHaveBeenCalledWith(SELECTED_LINK);
+        });
+
+        it('should still hydrate a contentlet', () => {
+            // The conditional must not become "never hydrate" — the four asset entry points
+            // depend on receiving the full contentlet.
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(contentletService.getContentletByInodeWithContent).toHaveBeenCalled();
+        });
+
+        it("should remember a folder's own path", () => {
+            // A folder carries `path`, not `url`, so the location logic cannot read `url` alone.
+            store.selectedAsset.set(SELECTED_FOLDER);
+            spectator.detectChanges();
+
+            spectator.click(button('asset-picker-confirm'));
+
+            expect(readLastAssetLocation()?.path).toBe('/images/');
         });
 
         it('should do nothing when called with no selection', () => {

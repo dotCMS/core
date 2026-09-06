@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 
 import { DotMessagePipe } from '@dotcms/ui';
@@ -33,11 +33,9 @@ const ROLE_ID_UUID =
  */
 @Component({
     selector: 'dot-role-permissions-iframe',
-    standalone: true,
     imports: [DotMessagePipe],
     templateUrl: './dot-role-permissions-iframe.component.html',
-    host: { class: 'block h-full' },
-    changeDetection: ChangeDetectionStrategy.OnPush
+    host: { class: 'block h-full' }
 })
 export class DotRolePermissionsIframeComponent {
     protected readonly store = inject(DotRolesStore);

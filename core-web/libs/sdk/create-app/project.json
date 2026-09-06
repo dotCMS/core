@@ -29,7 +29,6 @@
                     "inquirer",
                     "execa",
                     "cfonts",
-                    "axios",
                     "fs-extra",
                     "commander"
                 ],
@@ -45,6 +44,11 @@
                         "input": "libs/sdk/create-app",
                         "glob": "package.json",
                         "output": "."
+                    },
+                    {
+                        "input": "libs/sdk/create-app/assets",
+                        "glob": "**/*",
+                        "output": "assets"
                     }
                 ],
                 "esbuildOptions": {
@@ -71,6 +75,7 @@
             }
         },
         "test": {
+            "dependsOn": ["verify-package", "verify-compose-static"],
             "options": {
                 "passWithNoTests": true
             },
@@ -79,6 +84,30 @@
                     "ci": true,
                     "coverage": true
                 }
+            }
+        },
+        "verify-package": {
+            "executor": "nx:run-commands",
+            "dependsOn": ["build"],
+            "options": {
+                "command": "bash libs/sdk/create-app/scripts/verify-package.sh",
+                "cwd": "."
+            },
+            "cache": true,
+            "inputs": [
+                "{projectRoot}/assets/**",
+                "{projectRoot}/package.json",
+                "{projectRoot}/project.json",
+                "{projectRoot}/scripts/verify-package.sh"
+            ]
+        },
+        "verify-compose-static": {
+            "executor": "nx:run-commands",
+            "cache": true,
+            "inputs": ["{projectRoot}/assets/**", "{projectRoot}/scripts/verify-cold-start.sh"],
+            "options": {
+                "command": "bash libs/sdk/create-app/scripts/verify-cold-start.sh --static",
+                "cwd": "."
             }
         }
     }
