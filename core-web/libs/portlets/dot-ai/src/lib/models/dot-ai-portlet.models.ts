@@ -28,11 +28,11 @@ export interface DotAiGeneratedImage {
  * single source for both the tab bar and `lib.routes.ts` — they cannot drift apart.
  */
 export const DOT_AI_TABS = [
-    { id: 'search', labelKey: 'dotai.tab.search', icon: 'search' },
-    { id: 'chat', labelKey: 'dotai.tab.chat', icon: 'forum' },
-    { id: 'image', labelKey: 'dotai.tab.image', icon: 'imagesmode' },
-    { id: 'embeddings', labelKey: 'dotai.tab.embeddings', icon: 'database' },
-    { id: 'config', labelKey: 'dotai.tab.config', icon: 'tune' }
+    { id: 'search', labelKey: 'dotai.tab.search' },
+    { id: 'chat', labelKey: 'dotai.tab.chat' },
+    { id: 'image', labelKey: 'dotai.tab.image' },
+    { id: 'embeddings', labelKey: 'dotai.tab.embeddings' },
+    { id: 'config', labelKey: 'dotai.tab.config' }
 ] as const;
 
 export type DotAiTab = (typeof DOT_AI_TABS)[number];

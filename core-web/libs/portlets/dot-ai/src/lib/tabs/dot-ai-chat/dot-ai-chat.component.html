@@ -75,7 +75,7 @@
                                  style.css — without it Tailwind's preflight leaves headings and
                                  list markers stripped. prose caps itself at 65ch, so the 70ch
                                  here is a deliberate override for line length. -->
-                            <div class="prose max-w-[70ch]" data-testid="dotai-chat-answer-text">
+                            <div class="prose mx-auto max-w-[70ch]" data-testid="dotai-chat-answer-text">
                                 <markdown [data]="current.content" />
                             </div>
                         }

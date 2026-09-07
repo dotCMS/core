@@ -9,7 +9,12 @@
     </p-message>
 }
 
-<p-tabs [value]="$activeTab()">
+<!-- The rule under the tab bar is PrimeNG's own: the theme styles
+     `.p-tablist-tab-list` with `border-width: dt('tabs.tablist.border.width')`, and the
+     dotCMS theme sets that token to 0. Setting the token to a bottom-only width restores it
+     through the documented seam, reusing the theme's existing border colour, rather than
+     hand-drawing a border on the element. -->
+<p-tabs [value]="$activeTab()" style="--p-tabs-tablist-border-width: 0 0 1px 0">
     <p-tablist>
         @for (tab of tabs; track tab.id) {
             <p-tab
@@ -17,12 +22,7 @@
                 [routerLink]="['/dotai', tab.id]"
                 [routerLinkActive]="['bg-primary-50']"
                 [attr.data-testid]="'dotai-tab-' + tab.id">
-                <span class="flex items-center gap-2">
-                    <span class="material-symbols-outlined text-lg!" aria-hidden="true">
-                        {{ tab.icon }}
-                    </span>
-                    <span>{{ tab.labelKey | dm }}</span>
-                </span>
+                {{ tab.labelKey | dm }}
             </p-tab>
         }
     </p-tablist>
