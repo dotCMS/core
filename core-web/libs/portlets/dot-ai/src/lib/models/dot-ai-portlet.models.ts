@@ -48,7 +48,7 @@ export type DotAiTabId = DotAiTab['id'];
  * in the index for your query". The payload always carries this value, so the server default
  * never applies and the divergence is intentional rather than accidental drift.
  */
-export const DOT_AI_DEFAULT_THRESHOLD = 0.5;
+export const DOT_AI_DEFAULT_THRESHOLD = 0.75;
 
 /** The backend declares @Min(128) but does not enforce it — the client is the only guard. */
 export const DOT_AI_MIN_RESPONSE_TOKENS = 128;

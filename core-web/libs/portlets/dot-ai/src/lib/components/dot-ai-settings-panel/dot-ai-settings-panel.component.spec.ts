@@ -16,7 +16,7 @@ describe('DotAiSettingsPanelComponent', () => {
             .mockReturnValue([{ label: 'blogs - (contents:4)', value: 'blogs' }]),
         chatModels: jest.fn().mockReturnValue(['gpt-4o-mini']),
         settingsIndexName: jest.fn().mockReturnValue('blogs'),
-        settingsThreshold: jest.fn().mockReturnValue(0.5),
+        settingsThreshold: jest.fn().mockReturnValue(0.75),
         settingsOperator: jest.fn().mockReturnValue('cosine'),
         settingsModel: jest.fn().mockReturnValue('gpt-4o-mini'),
         settingsTemperature: jest.fn().mockReturnValue(0),

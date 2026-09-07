@@ -9,6 +9,24 @@ import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 /** One key, one JSON blob — unlike `withPersistedQuery` this can hold numbers and nulls. */
 const PREFERENCES_KEY = 'dotcms.devtools.dotai.settings';
 
+/**
+ * Bumped whenever a default changes in a way a stored value would otherwise mask.
+ *
+ * Without this, changing a default only reaches people who have never opened the portlet:
+ * everyone else has the old value persisted, and merging it back pins them to it forever.
+ *
+ * v2 re-defaults `settingsThreshold`. Blobs written at v1 hold 0.25, which is tight enough
+ * that ordinary questions retrieve nothing and the answer is "no matching content found in the
+ * index for your query". Only that key is dropped — every other stored control survives, so
+ * this is a targeted re-default, not a reset of the panel.
+ */
+const PREFERENCES_VERSION = 2;
+
+/** Keys a stored blob gives up when it predates the current version. */
+const RE_DEFAULTED_KEYS: Record<number, ReadonlySet<string>> = {
+    2: new Set(['settingsThreshold'])
+};
+
 /** Exactly the retrieval-panel controls. Nothing else is persisted. */
 type DotAiPreferences = Pick<
     DotAiPortletState,
@@ -60,16 +78,30 @@ export function withDotAiPreferences() {
         type<{ state: DotAiPortletState }>(),
         withMethods((store) => ({
             hydratePreferences(): void {
-                const stored = readJson<Partial<DotAiPreferences>>(PREFERENCES_KEY, {});
+                const stored = readJson<Partial<DotAiPreferences> & { version?: number }>(
+                    PREFERENCES_KEY,
+                    {}
+                );
 
                 if (!stored || typeof stored !== 'object') {
                     return;
                 }
 
+                // A blob from an older version gives up the keys that version re-defaulted,
+                // so the new default is what the panel actually shows.
+                const reDefaulted =
+                    stored.version === PREFERENCES_VERSION
+                        ? new Set<string>()
+                        : RE_DEFAULTED_KEYS[PREFERENCES_VERSION];
+
                 // Merge over the defaults rather than replacing them: only keys we recognise,
                 // and only where a value was actually stored. `settingsSite` is allowed to be
                 // null, because null is a meaningful value there — it means "all sites".
                 const merged = PREFERENCE_KEYS.reduce<Partial<DotAiPreferences>>((acc, key) => {
+                    if (reDefaulted.has(key)) {
+                        return acc;
+                    }
+
                     const value = stored[key];
                     const isSet = key === 'settingsSite' ? value !== undefined : value != null;
 
@@ -96,7 +128,9 @@ export function withDotAiPreferences() {
                         settingsResponseLength: store.settingsResponseLength()
                     } as DotAiPortletState);
 
-                    untracked(() => writeJson(PREFERENCES_KEY, snapshot));
+                    untracked(() =>
+                        writeJson(PREFERENCES_KEY, { ...snapshot, version: PREFERENCES_VERSION })
+                    );
                 });
             }
         })

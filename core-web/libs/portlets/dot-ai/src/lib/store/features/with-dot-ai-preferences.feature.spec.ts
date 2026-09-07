@@ -9,6 +9,7 @@ import { withRetrievalSettings } from './with-retrieval-settings.feature';
 import { DOT_AI_INITIAL_STATE, DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
 const KEY = 'dotcms.devtools.dotai.settings';
+const VERSION = 2;
 
 const TestStore = signalStore(
     { providedIn: 'root' },
@@ -28,7 +29,11 @@ describe('withDotAiPreferences', () => {
     it('should restore stored settings on init (FR-018)', () => {
         localStorage.setItem(
             KEY,
-            JSON.stringify({ settingsThreshold: 0.9, settingsContentTypes: 'Blog' })
+            JSON.stringify({
+                version: VERSION,
+                settingsThreshold: 0.9,
+                settingsContentTypes: 'Blog'
+            })
         );
 
         spectator = createService();
@@ -39,7 +44,7 @@ describe('withDotAiPreferences', () => {
 
     it('should merge over defaults rather than replacing them', () => {
         // Only one field stored; everything else must keep its default.
-        localStorage.setItem(KEY, JSON.stringify({ settingsThreshold: 0.9 }));
+        localStorage.setItem(KEY, JSON.stringify({ version: VERSION, settingsThreshold: 0.9 }));
 
         spectator = createService();
 
@@ -51,7 +56,7 @@ describe('withDotAiPreferences', () => {
     it('should ignore keys it does not recognise, so a stale blob cannot pin anything', () => {
         localStorage.setItem(
             KEY,
-            JSON.stringify({ settingsThreshold: 0.9, someRemovedControl: 'boom' })
+            JSON.stringify({ version: VERSION, settingsThreshold: 0.9, someRemovedControl: 'boom' })
         );
 
         spectator = createService();
@@ -63,7 +68,7 @@ describe('withDotAiPreferences', () => {
     });
 
     it('should keep a stored null site, since null means all sites', () => {
-        localStorage.setItem(KEY, JSON.stringify({ settingsSite: null }));
+        localStorage.setItem(KEY, JSON.stringify({ version: VERSION, settingsSite: null }));
 
         spectator = createService();
 
@@ -73,7 +78,7 @@ describe('withDotAiPreferences', () => {
     it('should start from defaults when nothing is stored', () => {
         spectator = createService();
 
-        expect(spectator.service.settingsThreshold()).toBe(0.5);
+        expect(spectator.service.settingsThreshold()).toBe(0.75);
     });
 
     it('should not throw on a malformed blob', () => {
@@ -85,9 +90,51 @@ describe('withDotAiPreferences', () => {
     it('should persist a changed setting', () => {
         spectator = createService();
 
-        spectator.service.setSettings({ settingsThreshold: 0.75 });
+        spectator.service.setSettings({ settingsThreshold: 0.9 });
         spectator.flushEffects();
 
-        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').settingsThreshold).toBe(0.75);
+        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').settingsThreshold).toBe(0.9);
+    });
+
+    it('should stamp the version when persisting, so the migration runs once', () => {
+        spectator = createService();
+
+        spectator.service.setSettings({ settingsThreshold: 0.9 });
+        spectator.flushEffects();
+
+        expect(JSON.parse(localStorage.getItem(KEY) ?? '{}').version).toBe(VERSION);
+    });
+
+    describe('re-defaulting on an older blob', () => {
+        it('should take the new threshold default instead of the stored one', () => {
+            // Without this, raising the default would only reach people who had never opened
+            // the portlet — everyone else stays pinned to the value they have persisted.
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({ settingsThreshold: 0.25, settingsContentTypes: 'Blog' })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsThreshold()).toBe(0.75);
+        });
+
+        it('should keep every other stored control, so it is a re-default not a reset', () => {
+            localStorage.setItem(
+                KEY,
+                JSON.stringify({
+                    settingsThreshold: 0.25,
+                    settingsContentTypes: 'Blog',
+                    settingsIndexName: 'blogs',
+                    settingsOperator: DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT
+                })
+            );
+
+            spectator = createService();
+
+            expect(spectator.service.settingsContentTypes()).toBe('Blog');
+            expect(spectator.service.settingsIndexName()).toBe('blogs');
+            expect(spectator.service.settingsOperator()).toBe(DOT_AI_VECTOR_OPERATOR.INNER_PRODUCT);
+        });
     });
 });

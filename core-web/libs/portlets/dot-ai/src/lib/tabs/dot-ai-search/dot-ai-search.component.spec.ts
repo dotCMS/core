@@ -43,7 +43,7 @@ describe('DotAiSearchComponent', () => {
         indexOptions: jest.fn().mockReturnValue([]),
         chatModels: jest.fn().mockReturnValue([]),
         settingsIndexName: jest.fn().mockReturnValue('default'),
-        settingsThreshold: jest.fn().mockReturnValue(0.5),
+        settingsThreshold: jest.fn().mockReturnValue(0.75),
         settingsOperator: jest.fn().mockReturnValue('cosine'),
         settingsModel: jest.fn().mockReturnValue(''),
         settingsTemperature: jest.fn().mockReturnValue(0),

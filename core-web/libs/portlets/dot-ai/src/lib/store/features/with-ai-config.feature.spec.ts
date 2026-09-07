@@ -1,4 +1,4 @@
-import { signalStore, withState } from '@ngrx/signals';
+import { patchState, signalStore, withState } from '@ngrx/signals';
 import { createServiceFactory, mockProvider, SpectatorService } from '@openng/spectator/jest';
 import { of, throwError } from 'rxjs';
 
@@ -41,24 +41,27 @@ describe('withAiConfig', () => {
         store = spectator.service;
     });
 
-    it('should seed the threshold default from the resolved settings', () => {
+    it('should not let the app-level embeddingsSearchThreshold override the portlet default', () => {
+        // The server sends `.25` as an app default. Seeding it here made the portlet's own
+        // default unreachable and overwrote the user's stored choice on every load.
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ settings: { embeddingsSearchThreshold: '0.25' } })));
+
+        store.loadConfig();
+
+        expect(store.settingsThreshold()).toBe(0.75);
+    });
+
+    it('should leave the threshold alone entirely, including a value already chosen', () => {
+        patchState(store, { settingsThreshold: 1.2 });
         spectator.inject(DotAiConfigService).getResolvedConfig = jest
             .fn()
             .mockReturnValue(of(resolved()));
 
         store.loadConfig();
 
-        expect(store.settingsThreshold()).toBe(0.4);
-    });
-
-    it('should fall back to the documented default when the setting is missing', () => {
-        spectator.inject(DotAiConfigService).getResolvedConfig = jest
-            .fn()
-            .mockReturnValue(of(resolved({ settings: {} })));
-
-        store.loadConfig();
-
-        expect(store.settingsThreshold()).toBe(0.5);
+        expect(store.settingsThreshold()).toBe(1.2);
     });
 
     it('should expose the chat models and default to the first', () => {
@@ -69,6 +72,28 @@ describe('withAiConfig', () => {
         store.loadConfig();
 
         expect(store.chatModels()).toEqual(['first', 'second']);
+        expect(store.settingsModel()).toBe('first');
+    });
+
+    it('should keep a chosen model the provider still offers (FR-018)', () => {
+        patchState(store, { settingsModel: 'second' });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
+
+        store.loadConfig();
+
+        expect(store.settingsModel()).toBe('second');
+    });
+
+    it('should fall back when the chosen model is no longer offered (FR-018)', () => {
+        patchState(store, { settingsModel: 'retired' });
+        spectator.inject(DotAiConfigService).getResolvedConfig = jest
+            .fn()
+            .mockReturnValue(of(resolved({ chatModels: ['first', 'second'] })));
+
+        store.loadConfig();
+
         expect(store.settingsModel()).toBe('first');
     });
 

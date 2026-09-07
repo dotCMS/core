@@ -17,7 +17,7 @@ const response = (overrides: Partial<DotAiSearchResponse> = {}): DotAiSearchResp
     total: 1,
     count: 1,
     query: 'q',
-    threshold: 0.5,
+    threshold: 0.75,
     operator: '<=>',
     offset: 0,
     limit: 50,

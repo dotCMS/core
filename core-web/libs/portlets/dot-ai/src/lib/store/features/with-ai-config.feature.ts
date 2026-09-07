@@ -10,14 +10,20 @@ import { catchError, switchMap, tap } from 'rxjs/operators';
 import { DotAiConfigService, DotHttpErrorManagerService } from '@dotcms/data-access';
 import { DotAiResolvedConfig } from '@dotcms/dotcms-models';
 
-import { DOT_AI_DEFAULT_THRESHOLD, DotAiPortletState } from '../../models/dot-ai-portlet.models';
+import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
 /**
  * dotAI configuration.
  *
- * Composed **first**, because it seeds two defaults the retrieval panel needs: the closeness
- * threshold (from the resolved `embeddingsSearchThreshold` setting) and the default chat
- * model (the first entry of the provider's comma-separated fallback list).
+ * Composed **first**, because it seeds the default chat model the retrieval panel needs (the
+ * first entry of the provider's comma-separated fallback list).
+ *
+ * It deliberately does **not** seed the closeness threshold from the resolved
+ * `embeddingsSearchThreshold` setting. That setting is an app-level default of `.25`, tight
+ * enough that ordinary questions retrieve nothing, and seeding it here made the portlet's own
+ * default unreachable. Worse, it ran on every load and so overwrote whatever the user had
+ * chosen and persisted, quietly breaking FR-018 for that control. The panel's threshold now
+ * comes from `DOT_AI_DEFAULT_THRESHOLD` or the stored preference, and nothing else.
  *
  * `isConfigured` gates Search / Send / Generate / Build (FR-047) but deliberately does not
  * blank the portlet — Config Values and Embeddings stay reachable, which is exactly when you
@@ -58,9 +64,14 @@ export function withAiConfig() {
                         switchMap(() =>
                             configService.getResolvedConfig().pipe(
                                 tap((config: DotAiResolvedConfig) => {
-                                    const threshold = Number(
-                                        config.settings?.['embeddingsSearchThreshold']
-                                    );
+                                    // Keep the selected model when the provider still offers
+                                    // it, and only fall back when it has gone away (FR-018).
+                                    // Unconditionally taking chatModels[0] overwrote a stored
+                                    // choice on every load.
+                                    const selected = store.settingsModel();
+                                    const model = config.chatModels.includes(selected)
+                                        ? selected
+                                        : (config.chatModels[0] ?? '');
 
                                     patchState(store, {
                                         configLoaded: true,
@@ -70,10 +81,7 @@ export function withAiConfig() {
                                         chatModels: config.chatModels,
                                         redactionFailed: config.redactionFailed,
                                         providerConfig: config.providerConfig,
-                                        settingsThreshold: Number.isFinite(threshold)
-                                            ? threshold
-                                            : DOT_AI_DEFAULT_THRESHOLD,
-                                        settingsModel: config.chatModels[0] ?? ''
+                                        settingsModel: model
                                     });
                                 }),
                                 catchError((error: HttpErrorResponse) => {
