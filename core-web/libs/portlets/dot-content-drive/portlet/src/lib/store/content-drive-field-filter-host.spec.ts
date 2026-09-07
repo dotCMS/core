@@ -9,7 +9,12 @@ import { provideContentDriveFieldFilterHost } from './content-drive-field-filter
 import { DotContentDriveStore } from './dot-content-drive.store';
 
 const field = (overrides: Partial<DotCMSContentTypeField> = {}): DotCMSContentTypeField =>
-    ({ variable: 'aField', name: 'A Field', fieldType: 'Text', ...overrides }) as DotCMSContentTypeField;
+    ({
+        variable: 'aField',
+        name: 'A Field',
+        fieldType: 'Text',
+        ...overrides
+    }) as DotCMSContentTypeField;
 
 /**
  * The Content Drive side of the {@link DOT_FIELD_FILTER_HOST} seam.

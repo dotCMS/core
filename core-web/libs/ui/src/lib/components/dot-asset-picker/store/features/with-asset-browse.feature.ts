@@ -65,34 +65,47 @@ export function withAssetBrowse() {
         // scroll out of existence — see `loadItems`.
         { state: type<DotAssetPickerState & DotAssetPickerSelectionState>() },
         withState<DotAssetPickerBrowseState>(initialState),
-        withComputed(({ config, browsingSite, path, filters, pagination, sort, pages, items, userSearchableFields }) => ({
-            /**
-             * Row count the paginator divides into pages.
-             *
-             * NOT `totalItems`: the Drive API is cursor-based and never returns a grand total —
-             * `contentCount` is the size of the page it just returned (`BrowserAPIImpl#getContents`).
-             * Handing that to PrimeNG makes every full page look like the last one, so it computes a
-             * single page and renders "next" disabled — the paging chain below never even runs.
-             *
-             * So while the bookmark for the page on screen reports more of ANY stream, claim one
-             * page beyond to keep the arrow live; once none of them do, the page is the last one and
-             * the exact total is knowable. Mirrors Content Drive's `$totalItems`.
-             *
-             * Both streams matter, not just content: contentlets and menu links page independently,
-             * so a page whose content ran out while links kept going would otherwise report the rows
-             * already on screen as the grand total. PrimeNG then sees
-             * `first + rows >= totalRecords`, disables Next, and those links become unreachable.
-             *
-             * The response also carries `hasMoreFolders`, and it is deliberately NOT read: the
-             * picker never asks for folders, so folder rows can never be on screen and claiming a
-             * page for them would offer a page the user cannot fill.
-             */
-            $totalRecords: computed(() => {
-                const { page, limit } = pagination();
-                // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMore*` flags
-                // answer "is there anything past what is on screen".
-                const bookmark = pages()[page];
-                const hasMore = bookmark ? bookmark.hasMoreContent || bookmark.hasMoreLinks : false;
+        withComputed(
+            ({
+                config,
+                browsingSite,
+                path,
+                filters,
+                pagination,
+                sort,
+                pages,
+                items,
+                userSearchableFields
+            }) => ({
+                /**
+                 * Row count the paginator divides into pages.
+                 *
+                 * NOT `totalItems`: the Drive API is cursor-based and never returns a grand total —
+                 * `contentCount` is the size of the page it just returned (`BrowserAPIImpl#getContents`).
+                 * Handing that to PrimeNG makes every full page look like the last one, so it computes a
+                 * single page and renders "next" disabled — the paging chain below never even runs.
+                 *
+                 * So while the bookmark for the page on screen reports more of ANY stream, claim one
+                 * page beyond to keep the arrow live; once none of them do, the page is the last one and
+                 * the exact total is knowable. Mirrors Content Drive's `$totalItems`.
+                 *
+                 * Both streams matter, not just content: contentlets and menu links page independently,
+                 * so a page whose content ran out while links kept going would otherwise report the rows
+                 * already on screen as the grand total. PrimeNG then sees
+                 * `first + rows >= totalRecords`, disables Next, and those links become unreachable.
+                 *
+                 * The response also carries `hasMoreFolders`, and it is deliberately NOT read: the
+                 * picker never asks for folders, so folder rows can never be on screen and claiming a
+                 * page for them would offer a page the user cannot fill.
+                 */
+                $totalRecords: computed(() => {
+                    const { page, limit } = pagination();
+                    // `pages[N]` is the bookmark written AFTER loading page N, so its `hasMore*` flags
+                    // answer "is there anything past what is on screen".
+                    const bookmark = pages()[page];
+                    const hasMore = bookmark
+                        ? bookmark.hasMoreContent || bookmark.hasMoreLinks
+                        : false;
 
                     return hasMore ? limit * (page + 1) : limit * (page - 1) + items().length;
                 }),
@@ -133,77 +146,78 @@ export function withAssetBrowse() {
                         // point but `openBrowserModal` uses.
                         const browse = pickerConfig?.browse;
 
-                    // Once a stream is exhausted the endpoint asks us to switch it off, so later
-                    // pages stop paying for a query with nothing left to return.
-                    const showLinks =
-                        Boolean(browse?.showLinks) && (bookmark?.hasMoreLinks ?? true);
+                        // Once a stream is exhausted the endpoint asks us to switch it off, so later
+                        // pages stop paying for a query with nothing left to return.
+                        const showLinks =
+                            Boolean(browse?.showLinks) && (bookmark?.hasMoreLinks ?? true);
 
-                    return {
-                        assetPath: `//${site?.hostname}${path() || '/'}`,
-                        // Off only when explicitly turned off. This used to be pinned `true` with
-                        // no way for the editor to change it — the chip that drives it now is the
-                        // same one Content Drive uses, and reads an absent key as on.
-                        includeSystemHost:
-                            currentFilters?.[SHARED_ASSETS_FILTER_KEY] !==
-                            SHARED_ASSETS_DISABLED_VALUE,
-                        filters: { text: currentFilters?.title || '', filterFolders: true },
-                        language: currentFilters?.languageId,
-                        contentTypes: currentFilters?.contentType,
-                        // Base-type NAMES. Content Drive maps these to numbers so they survive the
-                        // URL; the picker has no URL, so it skips that round-trip entirely.
-                        baseTypes: baseTypes?.length ? baseTypes : undefined,
-                        // Silent restriction from the host — never part of `filters`, so no chip.
-                        mimeTypes: pickerConfig?.mimeTypes?.length
-                            ? pickerConfig.mimeTypes
-                            : undefined,
-                        contentCursor: bookmark?.contentCursor ?? 0,
-                        // No `folderCursor`: with `showFolders: false` the endpoint runs no folder
-                        // query, so there is nothing to resume from. Its server-side default is 0,
-                        // which is what the key would have carried anyway.
-                        ...(browse?.showLinks
-                            ? { showLinks, linkCursor: bookmark?.linkCursor ?? 0 }
-                            : {}),
-                        maxResults: currentPagination.limit,
-                        sortBy: `${sort().field}:${sort().order}`,
-                        // No `archived` key at all. Content condition has exactly one
-                        // representation now — the Status chip, through `status` below — and a pin
-                        // here would contradict an Archived selection. The endpoint defaults the
-                        // key to false, so an unfiltered picker asks for precisely what it always
-                        // did (FR-014b).
-                        //
-                        // Sent only when non-empty, the same discipline Content Drive applies: an
-                        // absent key leaves the request byte-identical to one that never mentioned
-                        // status.
-                        ...(currentFilters?.status?.length
-                            ? { status: currentFilters.status }
-                            : {}),
-                        // Field-based criteria from the "More" chips, keyed by field variable.
-                        // `undefined` when nothing is set, so the key is dropped from the payload
-                        // rather than sent empty.
-                        userSearchable: buildUserSearchablePayload(
-                            currentFilters ?? {},
-                            userSearchableFields()
-                        ),
-                        // Version state, a separate axis from content condition (FR-014c).
-                        // `live: true` means published-only. The endpoint's own default is `false`
-                        // (working included), which is what every entry point but `openBrowserModal`
-                        // wants, so the key is omitted unless a caller explicitly asked for
-                        // live-only.
-                        ...(browse?.showWorking === false ? { live: true } : {}),
-                        // An invariant, and hardcoded rather than derived from `browse` so that no
-                        // configuration can reach it: the picker's list carries content only, and
-                        // folders are navigated through the sidebar tree.
-                        //
-                        // Sent, never omitted. The endpoint defaults `showFolders` to TRUE
-                        // (AbstractDriveRequestForm#showFolders), so dropping the key would list
-                        // folders again — silently, since nothing here would look wrong.
-                        showFolders: false
-                    };
-                },
-                // Structural dedupe so a no-op recompute doesn't refire the search.
-                { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
-            )
-        })),
+                        return {
+                            assetPath: `//${site?.hostname}${path() || '/'}`,
+                            // Off only when explicitly turned off. This used to be pinned `true` with
+                            // no way for the editor to change it — the chip that drives it now is the
+                            // same one Content Drive uses, and reads an absent key as on.
+                            includeSystemHost:
+                                currentFilters?.[SHARED_ASSETS_FILTER_KEY] !==
+                                SHARED_ASSETS_DISABLED_VALUE,
+                            filters: { text: currentFilters?.title || '', filterFolders: true },
+                            language: currentFilters?.languageId,
+                            contentTypes: currentFilters?.contentType,
+                            // Base-type NAMES. Content Drive maps these to numbers so they survive the
+                            // URL; the picker has no URL, so it skips that round-trip entirely.
+                            baseTypes: baseTypes?.length ? baseTypes : undefined,
+                            // Silent restriction from the host — never part of `filters`, so no chip.
+                            mimeTypes: pickerConfig?.mimeTypes?.length
+                                ? pickerConfig.mimeTypes
+                                : undefined,
+                            contentCursor: bookmark?.contentCursor ?? 0,
+                            // No `folderCursor`: with `showFolders: false` the endpoint runs no folder
+                            // query, so there is nothing to resume from. Its server-side default is 0,
+                            // which is what the key would have carried anyway.
+                            ...(browse?.showLinks
+                                ? { showLinks, linkCursor: bookmark?.linkCursor ?? 0 }
+                                : {}),
+                            maxResults: currentPagination.limit,
+                            sortBy: `${sort().field}:${sort().order}`,
+                            // No `archived` key at all. Content condition has exactly one
+                            // representation now — the Status chip, through `status` below — and a pin
+                            // here would contradict an Archived selection. The endpoint defaults the
+                            // key to false, so an unfiltered picker asks for precisely what it always
+                            // did (FR-014b).
+                            //
+                            // Sent only when non-empty, the same discipline Content Drive applies: an
+                            // absent key leaves the request byte-identical to one that never mentioned
+                            // status.
+                            ...(currentFilters?.status?.length
+                                ? { status: currentFilters.status }
+                                : {}),
+                            // Field-based criteria from the "More" chips, keyed by field variable.
+                            // `undefined` when nothing is set, so the key is dropped from the payload
+                            // rather than sent empty.
+                            userSearchable: buildUserSearchablePayload(
+                                currentFilters ?? {},
+                                userSearchableFields()
+                            ),
+                            // Version state, a separate axis from content condition (FR-014c).
+                            // `live: true` means published-only. The endpoint's own default is `false`
+                            // (working included), which is what every entry point but `openBrowserModal`
+                            // wants, so the key is omitted unless a caller explicitly asked for
+                            // live-only.
+                            ...(browse?.showWorking === false ? { live: true } : {}),
+                            // An invariant, and hardcoded rather than derived from `browse` so that no
+                            // configuration can reach it: the picker's list carries content only, and
+                            // folders are navigated through the sidebar tree.
+                            //
+                            // Sent, never omitted. The endpoint defaults `showFolders` to TRUE
+                            // (AbstractDriveRequestForm#showFolders), so dropping the key would list
+                            // folders again — silently, since nothing here would look wrong.
+                            showFolders: false
+                        };
+                    },
+                    // Structural dedupe so a no-op recompute doesn't refire the search.
+                    { equal: (a, b) => JSON.stringify(a) === JSON.stringify(b) }
+                )
+            })
+        ),
         withMethods((store, contentDriveService = inject(DotContentDriveService)) => ({
             /**
              * Runs whenever the request changes. Feed it the `$request` signal (not a value) so

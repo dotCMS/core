@@ -147,12 +147,10 @@ describe('provideContentDriveRelationshipPicker', () => {
         const received: DotCMSContentlet[][] = [];
         let completed = false;
 
-        picker
-            .open(relationshipField(), [])
-            .subscribe({
-                next: (items) => received.push(items),
-                complete: () => (completed = true)
-            });
+        picker.open(relationshipField(), []).subscribe({
+            next: (items) => received.push(items),
+            complete: () => (completed = true)
+        });
 
         expect(received).toEqual([[]]);
         expect(completed).toBe(true);

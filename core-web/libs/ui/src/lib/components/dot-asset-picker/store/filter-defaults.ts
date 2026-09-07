@@ -109,9 +109,7 @@ function admittedStatuses(config: DotAssetPickerConfig): string[] {
  * @param config The picker's configuration, or `null` before `initPicker` has run.
  * @return The admitted conditions, or `null` when every condition applies.
  */
-export function allowedStatusesFor(
-    config: DotAssetPickerConfig | null
-): DotContentStatus[] | null {
+export function allowedStatusesFor(config: DotAssetPickerConfig | null): DotContentStatus[] | null {
     if (!config) {
         return null;
     }
