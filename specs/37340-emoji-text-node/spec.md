@@ -76,13 +76,23 @@ symptom of a defect spanning a large class of characters.
   script. The shortcode table needed to resolve the character already ships inside the editor's own
   dependency, so nothing crosses a build boundary.
 - Q: Should the heal also inherit the neighbouring `link` mark, so the reported payload renders as
-  one anchor again? → A: **No — the rule is strictly `emoji(marks) → text(same marks, character)`.**
-  Marks are preserved, never invented, and adjacent text nodes are not merged. Inheriting a
-  neighbour's mark would be inferring **one** author's intent from **one** payload shape; in another
-  document the same shape is deliberate, and a wrong guess is silent and irreversible. Whether a
-  symbol belongs inside a link is an editorial judgment, not a transform's. **The heal therefore
-  restores the character, not the link** — see
-  [Fix Scope non-goals](#fix-scope--non-goals-mandatory).
+  one anchor again? → A: **Not in general — but yes for one narrow signature.** The default rule is
+  `emoji(marks) → text(same marks, character)`: marks preserved, never invented. Inheriting from a
+  neighbour as a general rule would infer **one** author's intent from **one** payload shape, and in
+  another document that shape is deliberate.
+- Q: Then what about the specific shape a **bare** `emoji` node between two `text` nodes carrying
+  **identical** `link` marks? → A: **Inherit, because that shape is a defect fingerprint rather than
+  an editorial choice.** Raised in review on PR #37434. The editor cannot produce it deliberately
+  going forward: applying a link over an existing `emoji` node marks the node too (verified), and
+  after this fix a typed symbol never becomes a node at all. The only construction that reaches it —
+  linking two runs separately *around* an already-converted symbol — requires having hit this defect
+  first, so it lives in the same legacy population the heal is repairing. **This closes #37340's
+  "single link without a re-save" criterion instead of amending it.** Bounded by AC-015 and, more
+  importantly, by AC-016's negative cases.
+- Q: What if that inference is wrong for someone? → A: **Accepted, and it is a different class of
+  harm than a general mark rewrite.** A wrong merge is **visible** — the underline extends over the
+  symbol — and locally reversible by selecting and removing the link. The general rule was rejected
+  partly on "silent and irreversible"; neither adjective applies to this signature.
 - Q: Removing the four creation paths still leaves the node's inherited `parseHTML`, which matches
   `<span data-type="emoji">` — so copying a stored emoji between fields re-creates the node. Keep
   that? → A: **No — neutralize `parseHTML` so pasted emoji HTML lands as text.** Stored JSON is
@@ -109,8 +119,8 @@ symptom of a defect spanning a large class of characters.
   no database, no REST endpoint, no renderer and no build artifact, so those layers have nothing to
   assert. The one claim that reaches beyond the editor — that a `text` node carrying a `link` mark
   renders as a single `<a>` — is pre-existing behavior in every renderer, unchanged by this work.
-  Accessibility (AC-020, AC-021) is not automatable and is routed to the post-merge QA plan.
-  Everything else, AC-013 through AC-019 included, is a Jest assertion.
+  Accessibility (AC-022, AC-023) is not automatable and is routed to the post-merge QA plan.
+  Everything else, AC-013 through AC-021 included, is a Jest assertion.
 - Q: Do we still need renderer link-run coalescing (v1 "Gap B")? → A: **No.** Content authored
   after the fix is a single `text` node carrying the `link` mark, so nothing needs coalescing.
   Healed content deliberately keeps its two anchors until an author reapplies the link — coalescing
@@ -296,8 +306,10 @@ class in one change with no list to maintain across extension upgrades.
   `emoji(marks) → text(same marks, character)` and nothing more:
   - **Marks are preserved, never inherited.** A bare node yields bare text; a node carrying a
     `link` mark (because a link was applied over it) yields text carrying that same mark.
-  - **No merging, no link repair.** Adjacent text nodes are not joined and the split link is not
-    rejoined. That is an editorial judgment, not a transform's — see the non-goal below.
+  - **One exception, narrowly drawn: the link sandwich.** A **bare** node between two `text` nodes
+    whose `link` marks match on every attribute inherits that mark, so the run rejoins into a single
+    `<a>`. That shape is a fingerprint of this defect, not an editorial choice — see Clarifications.
+    Every other neighbour arrangement inherits nothing (AC-016).
   - **Recursive.** `emoji` nodes occur inside headings, list items, blockquotes and table cells,
     not only paragraphs.
   - **Non-destructive on failure.** An unresolvable `name` leaves the node untouched — never blank
@@ -319,13 +331,13 @@ class in one change with no list to maintain across extension upgrades.
   in VTL and as an unknown block in the SDKs. Accepted — the heal reaches everything an author
   touches, no shipped renderer ever supported the node, and nothing creates new ones after this fix.
   **Track separately if a second report arrives.**
-- **Inferring marks during the heal, or rejoining the split link.**
-  *Consequence, stated plainly*: **the heal restores the character, not the link.** A field saved
-  before the fix comes back with its `©` visible in every renderer, but still as two `<a>` elements.
-  Rejoining them is a normal edit the author can now actually perform — select the line, reapply the
-  link. Accepted by developer decision: inheriting a neighbour's mark would be inferring one
-  author's intent from one payload shape, and a wrong guess is silent, irreversible, and would
-  change content for users who never had this bug.
+- **Inferring marks during the heal, beyond the single link-sandwich signature.** The heal does not
+  look at neighbours in any other arrangement, does not merge across differing mark attributes, and
+  does not re-mark a node that carries marks of its own.
+  *Consequence*: a symbol that sat between two links to **different** URLs, or next to a
+  `hardBreak`, or at a block boundary, heals to unmarked text and stays outside both anchors. That
+  is correct — those shapes carry no defect fingerprint, and guessing at them would change content
+  for users who never had this bug.
 - **Any Java transform, data migration, or heal script.** The heal is a pure JSON transform on the
   editor's parse path. Keeps this change out of the DB and out of
   [rollback-unsafe territory](../../docs/core/ROLLBACK_UNSAFE_CATEGORIES.md) entirely.
@@ -350,7 +362,7 @@ class in one change with no list to maintain across extension upgrades.
     change *removes* work from that path rather than adding it.
   - **The document parse path**, on every field load. The heal must be a cheap recursive walk that
     returns the input unchanged when no `emoji` node is present — the overwhelmingly common case,
-    and the one AC-017 asserts. It runs once per load, not per keystroke.
+    and the one AC-019 asserts. It runs once per load, not per keystroke.
   - Compared with v1, `VM_global_library.vm` — which renders every Story Block field on every
     VTL page for every customer, flag or not — is no longer touched at all. That was v1's single
     highest-risk edit.
@@ -367,20 +379,25 @@ class in one change with no list to maintain across extension upgrades.
     character and the shortcode leaves storage. That is the intent — the character is the content,
     and no consumer outside the editor can resolve a shortcode anyway.
   - **The heal must not damage content that never had this bug.** This is the change's sharpest
-    risk and the reason marks are preserved rather than inherited: a transform that guessed at
-    marks could alter documents unrelated to the defect, silently and irreversibly. Two criteria
-    bound it — AC-014 (marks preserved exactly, none inherited) and AC-017 (a document with no
-    `emoji` node is returned unchanged).
+    risk, and it is why marks are preserved rather than inherited everywhere except one signature.
+    Three criteria bound it: AC-014 (marks preserved exactly), **AC-016 (every negative case of the
+    sandwich rule, asserted individually)** and AC-019 (a document with no `emoji` node is returned
+    unchanged). AC-016 is the one that keeps the permitted inference from widening over time, and it
+    is the test most worth reviewing carefully.
+  - **The sandwich inference is bounded and visible.** It fires only on a bare node between two text
+    nodes with attribute-identical `link` marks. It cannot arise from content authored after this
+    fix, because no typed symbol becomes a node. If it were ever wrong, the result is a visibly
+    longer underline, reversible by selecting and removing the link — not a silent rewrite.
   - **Cross-editor exposure** (pre-existing, improved): content carrying `emoji` nodes opened in
     the **legacy** editor is a loss path — no registration there, so by the `AIContent` mechanism
     the node is dropped on load. This change reduces future exposure by not creating nodes, and
     *removes* it for any field healed and re-saved through the new editor. **The plan should
     confirm the legacy-drop behavior empirically.**
-  - **One case joins itself, with no merge logic.** Where a link was applied *over* an existing
-    node, that node already carries the `link` mark, so the heal yields `text(link)` between two
-    `text(link)` nodes. ProseMirror joins adjacent text nodes with identical marks during
-    normalization. **The plan must confirm this empirically rather than assert it** — it is the one
-    place the spec relies on library behavior instead of its own code.
+  - **The joining itself is ProseMirror's, not ours.** Both the already-marked case (a link applied
+    *over* a node) and the sandwich case (AC-015) produce three adjacent `text` nodes with identical
+    marks; ProseMirror joins those during normalization. The heal never merges nodes itself. **The
+    plan must confirm this empirically rather than assert it** — it is the one place the spec relies
+    on library behavior instead of its own code, and both cases now depend on it.
   - No REST contract, DB schema, or ES mapping change. Not rollback-unsafe in any documented
     category.
 - **Data considerations**: an `emoji` node persists only until a field is opened and saved through
@@ -435,27 +452,41 @@ class in one change with no list to maintain across extension upgrades.
   node: each has become a `text` node holding the character resolved from its `attrs.name`.
 - **AC-014**: The resulting `text` node carries **exactly** the marks the `emoji` node carried —
   none for a node created by the defect, and the `link` mark for a node a link was applied over.
-  **No mark is inherited from a neighbouring node, and adjacent text nodes are not merged.** This is
-  the criterion that keeps the transform from altering content unrelated to this defect.
-- **AC-015**: The heal is recursive — `emoji` nodes inside headings, list items, blockquotes and
+  **No mark is inherited from a neighbouring node**, with the single narrow exception in AC-015.
+  This is the criterion that keeps the transform from altering content unrelated to this defect.
+- **AC-015**: **The link sandwich.** Where a **bare** `emoji` node sits between two **`text`** nodes
+  whose `link` marks are equal on **every** attribute (`href`, `target`, `rel`, `title`,
+  `aria-label`), the healed text node carries that same `link` mark. ProseMirror then joins the run,
+  so the reported payload renders as a **single** `<a>` with the character inside it — **with no
+  re-save and no author action**.
+- **AC-016**: **The sandwich rule does not fire otherwise.** No mark is inherited when any of these
+  holds, each asserted separately:
+  - the two `link` marks differ in **any** attribute;
+  - either immediate sibling is not a `text` node — `hardBreak`, another `emoji`, an image, or the
+    block boundary itself when the node is first or last;
+  - either sibling carries no `link` mark;
+  - the `emoji` node is **not** bare — a node carrying its own marks keeps them under AC-014 and is
+    never re-marked from a neighbour.
+- **AC-017**: The heal is recursive — `emoji` nodes inside headings, list items, blockquotes and
   table cells are healed identically to those in paragraphs.
-- **AC-016**: An `emoji` node whose `name` does not resolve against the `emojis` table is left
+- **AC-018**: An `emoji` node whose `name` does not resolve against the `emojis` table is left
   **untouched** — never replaced with empty text and never with a literal `:name:`.
-- **AC-017**: A document containing no `emoji` node is returned **unchanged** by the heal (identity
+- **AC-019**: A document containing no `emoji` node is returned **unchanged** by the heal (identity
   path). Asserted explicitly, because it is the overwhelmingly common case.
-- **AC-018**: Removing the `emoji` extension registration is proven to lose that content — the
+- **AC-020**: Removing the `emoji` extension registration is proven to lose that content — the
   regression guard for AC-013. Asserted by parsing the fixture document with the extension absent
   and observing the node is dropped (the `AIContent` / #37145 mechanism).
-- **AC-019**: **The reported payload heals as specified, and no further.** Loading
-  `text(link) + emoji(no marks) + text(link)` yields `text(link) + text(no marks) + text(link)`:
-  the `©` is present and renders in VTL and every SDK, and the output is still **two** `<a>`
-  elements. That is the expected result, not a shortfall — rejoining them is the author's edit.
+- **AC-021**: **The reported payload heals completely.** Loading
+  `text(link) + emoji(no marks) + text(link)` with identical `link` marks yields exactly **one**
+  `text` node carrying that mark, whose text contains `©` — the shape that renders as a single `<a>`
+  in VTL and in every SDK, with no renderer change and no re-save. This is AC-015 applied end to end
+  to the customer's actual data.
 
 **Accessibility verification**
 
-- **AC-020**: For content authored **after** the fix, tabbing through the rendered link produces
-  exactly **one** focus stop.
-- **AC-021**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the complete
+- **AC-022**: Tabbing through the rendered link produces exactly **one** focus stop — both for
+  content authored after the fix and for the healed reported payload (AC-021).
+- **AC-023**: The NVDA Elements List / VoiceOver rotor shows **one** entry carrying the complete
   accessible name, including the symbol.
 
 **Verification method**:
@@ -465,18 +496,19 @@ class in one change with no list to maintain across extension upgrades.
   class, not three literals, is covered. Use real `NgZone` in service tests; a mocked one breaks
   the change-detection scheduler.
   `pnpm nx test new-block-editor`
-- **Unit (Jest)** for the heal as a pure JSON transform — AC-013 through AC-017 and AC-019. Fast,
-  no editor instance needed. AC-014 (marks preserved, none inherited) and AC-017 (identity path) are
-  the two that bound the risk and must not be folded into a broader assertion.
-- **Unit (Jest/Spectator)** for AC-018 and for the AC-012 ↔ AC-013 pair — the same fixture must
+- **Unit (Jest)** for the heal as a pure JSON transform — AC-013 through AC-019 and AC-021. Fast,
+  no editor instance needed. Three of these bound the risk and must each be asserted on their own,
+  never folded into a broader test: **AC-014** (marks preserved, none inherited), **AC-016** (every
+  negative case of the sandwich rule) and **AC-019** (identity path). AC-016 in particular is what
+  keeps the one inference this spec permits from widening.
+- **Unit (Jest/Spectator)** for AC-020 and for the AC-012 ↔ AC-013 pair — the same fixture must
   survive a JSON load with `parseHTML` neutralized, proving parse rules govern HTML entry points
   only.
 - **Regression fixture** — the exact three-node payload from Actual Behavior, shared across the
   editor suites so every assertion runs against identical input.
-- **Manual accessibility pass** — AC-020 and AC-021, with NVDA and with VoiceOver, on content
-  authored after the fix. Not automatable; record in the post-merge QA plan. Note that a *healed*
-  field still shows two focus stops by design (AC-019); the single-stop criterion applies to newly
-  authored content.
+- **Manual accessibility pass** — AC-022 and AC-023, with NVDA and with VoiceOver, on content
+  authored after the fix. Not automatable; record in the post-merge QA plan. Run it on new content
+  and on a field healed from the reported payload, which AC-015 rejoins into one anchor.
 - **Empirical check the plan owes** — whether ProseMirror joins the adjacent `text(link)` nodes
   produced when the heal converts a node that already carried the `link` mark. Confirm, do not
   assume.
@@ -493,7 +525,7 @@ implied):
 | Postman | No | No REST endpoint changes. The VTL render path is unmodified. |
 | Karate | No | Same — no API surface. |
 | e2e (Playwright) | No | The storage round-trip it would prove is plain ProseMirror JSON serialization, already covered at the unit layer. Adds a running-instance dependency for no new assertion. |
-| Manual | **Yes** | **AC-020 and AC-021 only** — screen-reader output, not automatable, recorded in the post-merge QA plan. Every other criterion, AC-013 through AC-019 included, is a Jest test. AC-014 and AC-017 in particular bound the heal's risk and must not be routed here. |
+| Manual | **Yes** | **AC-022 and AC-023 only** — screen-reader output, not automatable, recorded in the post-merge QA plan. Every other criterion, AC-013 through AC-021 included, is a Jest test. AC-014, AC-016 and AC-019 in particular bound the heal's risk and must not be routed here. |
 
 Per Constitution Principle V, the tests that **are** written are developer-approved and confirmed
 failing (Red) before any implementation.
@@ -507,12 +539,11 @@ failing (Red) before any implementation.
   issue and the spec do not disagree in the record.
 - **#37340 also frames two renderer gaps ("no `emoji` branch", "no link coalescing") as in-scope.**
   v2 declares both non-goals and explains why in Fix Scope. **Action: record that on the issue too.**
-- **#37340's migration criterion is met only in part and must be amended**: "already-split content
-  renders as a single link **without requiring a re-save**." The heal restores the **character**
-  without a re-save — it renders in VTL and every SDK on the next load. It does **not** restore the
-  single link: the output stays two `<a>` elements until an author reapplies the link. That half is
-  a deliberate developer decision (Resolved Decision 3), not an oversight. **Action: amend that AC
-  on #37340 alongside the other two.**
+- **#37340's migration criterion is now met in full, and needs no amendment**: "already-split
+  content renders as a single link **without requiring a re-save**." The heal restores the character
+  on load, and the link-sandwich rule (AC-015) rejoins the run into one `<a>`. This criterion was
+  going to be amended until PR #37434 review raised the narrow signature; it is met instead.
+  **Action: only two ACs on #37340 need amending, not three.**
 - Emoji as a literal character in a text node is acceptable product behavior. It is already what
   the picker produces and what the legacy Block Editor has always produced.
 - Losing shortcode round-tripping (`:rocket:` in storage) for new content is acceptable; the
@@ -529,7 +560,7 @@ failing (Red) before any implementation.
 | --- | --- | --- | --- |
 | 1 | Fix boundary — editor, renderers, or both? | **Editor only** | The cause is authoring-side, and the shortcode table only exists there. Fixing it in the editor removes the need for five renderer implementations, a generated map, and an SDK release. |
 | 2 | Existing stored `emoji` nodes | **Healed on the editor's parse path** | `emoji(marks) → text(same marks, character)`. The shortcode table already ships inside the editor's dependency, so nothing crosses a build boundary. No Java, no migration, no heal script. |
-| 3 | Should the heal inherit neighbouring marks and rejoin the split link? | **No — marks preserved, never inherited** | Inheriting a neighbour's mark infers **one** author's intent from **one** payload shape; elsewhere that shape is deliberate, and a wrong guess is silent and irreversible. Accepted consequence: the heal restores the character, not the link. AC-014, AC-019. |
+| 3 | Should the heal inherit neighbouring marks and rejoin the split link? | **No in general; yes for the link sandwich** | A general "inherit from a neighbour" rule infers one author's intent from one payload shape. But a **bare** node between two `text` nodes with attribute-identical `link` marks is a fingerprint this defect alone produces — the editor marks the node when a link is applied over it, and after this fix no typed symbol becomes a node. Raised in PR #37434 review; adopted because it closes #37340's "single link without a re-save" criterion rather than amending it, and because a wrong merge is visible and reversible rather than silent. AC-014, AC-015, AC-016. |
 | 4 | `:shortcode:` and `:)` shortcuts | **Kept, output changed to a literal character** | Removing them would be a functional regression; keeping the node would not fix the bug. AC-006, AC-007. |
 | 5 | Emoji node registration | **Preserved, `emojis` unfiltered** | #37145 / #37175 / `AIContent`: dropping a registration TipTap needs to parse stored content loses the content. Filtering `emojis` verifiably renders `:copyright:` as text. |
 | 6 | Renderer link-run coalescing (v1 "Gap B") | **Dropped** | Retyped content is one marked `text` node, so nothing remains to coalesce for this defect. A genuinely latent coalescing gap can be filed on its own merits. |
@@ -550,5 +581,6 @@ failing (Red) before any implementation.
 
 | Version | Date | Change |
 | --- | --- | --- |
-| v1 | 2026-09-03 | Original spec. Editor fix **plus** renderer Gap A (`emoji` branch in VTL + four JS renderers), Gap B (link coalescing in five renderers + `StoryBlockRenderHelper`), a build-generated shortcode map crossing the JS → Java boundary, and a coordinated SDK release. Implemented on `…-37340-…-impl`: 33 files, ~2.4k lines, two ACs withdrawn mid-implementation (v1 AC-012 map, v1 AC-022 version bump vs ADR-0019). |
+| v1 | 2026-09-03 | Original spec. Editor fix **plus** renderer Gap A (`emoji` branch in VTL + four JS renderers), Gap B (link coalescing in five renderers + `StoryBlockRenderHelper`), a build-generated shortcode map crossing the JS → Java boundary, and a coordinated SDK release. Implemented on `…-37340-…-impl`: 33 files, ~2.4k lines, two ACs withdrawn mid-implementation (v1 AC‑012 map, v1 AC‑022 version bump vs ADR-0019). |
+| v2.1 | 2026-09-07 | **The link-sandwich exception**, added after review on PR #37434. The heal still preserves marks rather than inheriting them, with one narrow signature carved out: a bare `emoji` node between two `text` nodes carrying attribute-identical `link` marks inherits that mark, so the reported payload rejoins into a single `<a>` with no re-save. Bounded by AC-016's negative cases. Corrects a conflation in `research.md` R8, which had rejected this on the grounds that ProseMirror already handled it — it handles the *already-marked* node, not the bare one. |
 | v2 | 2026-09-07 | **Scope reduced to the editor.** Every renderer, SDK, Java and release criterion becomes a non-goal with its consequence stated. Clarify added the `parseHTML` paste path, removed the Allowed Blocks gates, and recorded the skipped test types. An options review then settled the treatment of stored nodes: they are **healed into text on load**, by a transform that preserves marks exactly and infers nothing — restoring the character everywhere without guessing at the link. |
