@@ -69,9 +69,10 @@ fail=0
 body_case() {
   local desc="$1" body="$2" expect="$3"
   export FIXTURE_CONNECTED="${4:-}"
+  export FIXTURE_TITLE="${5:-}"
   local out; out="$(mktemp)"
   (
-    export FIXTURE_BODY="$body" GITHUB_OUTPUT="$out"
+    export FIXTURE_BODY="$body" PR_TITLE="$FIXTURE_TITLE" GITHUB_OUTPUT="$out"
     # Stub the two API calls the step makes: PR details over curl, the paginated
     # timeline over gh. FIXTURE_CONNECTED is the issue number a Development-section
     # link would yield — empty for every case that exercises body parsing.
@@ -145,6 +146,13 @@ body_case "contributes to #103" "contributes to #103" \
   "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_body_reference linked_issue_number=103"
 body_case "ref: #104" "ref: #104" \
   "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_body_reference linked_issue_number=104"
+
+echo "== PR title: trailing issue suffix links without closing =="
+body_case "title suffix (#37417)" \
+  "Closes nothing yet — implementation lands in PR 2." \
+  "has_linked_issues=true is_closing_link=false is_cross_repo=false link_method=pr_title_reference linked_issue_number=37417" \
+  "" \
+  "Spec: Dojo to Angular dotAI portlet migration (#37417)"
 
 echo "== PR body: non-closing references are same-repo only, by design =="
 # Cross-repo and full-URL forms are supported for *closing* keywords only. Nobody has

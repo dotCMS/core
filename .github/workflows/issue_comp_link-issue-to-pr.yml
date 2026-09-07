@@ -169,10 +169,26 @@ jobs:
                   echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
 
                 else
-                  echo "No linked issues found in Development section or PR body"
-                  echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
-                  echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
-                  echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                  # ── PR title suffix: "... (#N)" ────────────────────────────────
+                  # Spec PRs routinely keep the issue open while still carrying the
+                  # tracker number in the title. Treat the conventional trailing
+                  # "(#123)" as a same-repo non-closing link, but keep it below
+                  # every explicit body/Development signal and above branch fallback.
+                  if [[ "$PR_TITLE" =~ \(\#([0-9]+)\)[[:space:]]*$ ]]; then
+                    title_issue="${BASH_REMATCH[1]}"
+                    echo "Found same-repo issue in PR title suffix: $title_issue"
+                    echo "has_linked_issues=true" >> "$GITHUB_OUTPUT"
+                    echo "linked_issue_number=$title_issue" >> "$GITHUB_OUTPUT"
+                    echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                    echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                    echo "link_method=pr_title_reference" >> "$GITHUB_OUTPUT"
+                    echo "is_closing_link=false" >> "$GITHUB_OUTPUT"
+                  else
+                    echo "No linked issues found in Development section, PR body, or PR title"
+                    echo "has_linked_issues=false" >> "$GITHUB_OUTPUT"
+                    echo "is_cross_repo=false" >> "$GITHUB_OUTPUT"
+                    echo "cross_repo_owner_repo=" >> "$GITHUB_OUTPUT"
+                  fi
                 fi
               fi
             fi
@@ -257,12 +273,13 @@ jobs:
               final_issue_number="$BRANCH_ISSUE_NUMBER"
               echo "Using issue from branch name: $final_issue_number"
             else
-              echo "::error::No issue number found in Development section, PR body, GitHub linked issues, or branch name"
+              echo "::error::No issue number found in Development section, PR body, PR title, GitHub linked issues, or branch name"
               echo "::error::Please link an issue using one of these methods:"
               echo "::error::1. Link via GitHub UI: Go to PR → Development section → Link issue"
               echo "::error::2. Add 'fixes #123' (same repo), 'fixes org/repo#123' (cross-repo), or a full GitHub issue URL to PR body"
               echo "::error::3. Add 'refs #123' / 'part of #123' if this PR relates to the issue but must NOT close it"
-              echo "::error::4. Use branch naming like 'issue-123-feature', '123-feature' or 'user/123-feature'"
+              echo "::error::4. End the PR title with '(#123)' for a same-repo non-closing link"
+              echo "::error::5. Use branch naming like 'issue-123-feature', '123-feature' or 'user/123-feature'"
               echo "failure_detected=true" >> "$GITHUB_OUTPUT"
               exit 1
             fi
@@ -623,6 +640,7 @@ jobs:
           - `Closes https://github.com/org/repo/issues/123` — full GitHub URL
           - Other supported keywords: `fix`, `fixed`, `close`, `closed`, `resolve`, `resolved`
           - `Refs #123` or `Part of #123` — links the issue without closing it on merge (same-repo only)
+          - End the PR title with `(#123)` — same-repo link without closing it on merge
 
           **Option 2: Link via GitHub UI** (Note: won't clear the failed check)
 
