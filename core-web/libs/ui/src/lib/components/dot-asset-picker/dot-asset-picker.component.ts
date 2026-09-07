@@ -20,6 +20,7 @@ import { Dialog, DialogModule } from 'primeng/dialog';
 import { DynamicDialogConfig, DynamicDialogRef } from 'primeng/dynamicdialog';
 import { Popover, PopoverModule } from 'primeng/popover';
 import { SplitterModule } from 'primeng/splitter';
+import type { SplitterPassThrough } from 'primeng/types/splitter';
 
 import {
     DotContentletService,
@@ -154,8 +155,10 @@ export class DotAssetPickerComponent implements OnInit {
      * The legacy theme gives `.p-splitter` a gray border and a radius, which read as a stray box
      * inside a dialog that already has its own chrome. The gutter keeps its own styling.
      */
-    protected readonly splitterPt = {
+    protected readonly splitterPt: SplitterPassThrough = {
         root: { class: 'border-0! rounded-none!' },
+        // PrimeNG types `panel` as required, so it has to be listed even with nothing to pass.
+        panel: {},
         gutterHandle: {
             'aria-label': this.#dotMessageService.get('dot.asset.picker.splitter.aria')
         }
