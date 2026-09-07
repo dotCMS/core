@@ -6,8 +6,27 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.dotcms.Junit5WeldBaseTest;
+import com.dotcms.datagen.FolderDataGen;
+import com.dotcms.datagen.SiteDataGen;
+import com.dotcms.datagen.UserDataGen;
+import com.dotcms.jobs.business.api.JobQueueManagerAPI;
+import com.dotcms.mock.request.MockAttributeRequest;
+import com.dotcms.mock.request.MockHttpRequestIntegrationTest;
+import com.dotcms.mock.request.MockSessionRequest;
 import com.dotcms.util.IntegrationTestInitService;
+import com.dotmarketing.beans.Host;
+import com.dotmarketing.business.APILocator;
+import com.dotmarketing.exception.DoesNotExistException;
+import com.dotmarketing.exception.DotSecurityException;
+import com.dotmarketing.portlets.folders.model.Folder;
 import com.dotmarketing.util.Config;
+import com.liferay.portal.model.User;
+import java.io.ByteArrayInputStream;
+import java.util.ArrayList;
+import java.util.List;
+import javax.inject.Inject;
+import org.jboss.weld.junit5.EnableWeld;
+import javax.servlet.http.HttpServletRequest;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -24,11 +43,49 @@ import org.junit.jupiter.api.Test;
  * Distinguishability matters as much as refusal (FR-004): "too many files" and "too much data" are
  * different problems with different fixes, and an author handed one opaque error cannot act on it.
  */
+@EnableWeld
 public class BulkUploadResourceIT extends Junit5WeldBaseTest {
+
+    @Inject
+    JobQueueManagerAPI jobQueueManagerAPI;
+
+    private static User admin;
+    private static Host site;
 
     @BeforeAll
     public static void prepare() throws Exception {
         IntegrationTestInitService.getInstance().init();
+        admin = APILocator.systemUser();
+        site = new SiteDataGen().nextPersisted();
+    }
+
+    /** Built per test rather than once: the injected API is an instance field. */
+    private BulkUploadHelper helper() {
+        return new BulkUploadHelper(jobQueueManagerAPI);
+    }
+
+    /** A folder the admin can add children to. */
+    private Folder targetFolder() {
+        return new FolderDataGen().site(site).nextPersisted();
+    }
+
+    /** A request only for the fingerprint capture; the run has none and resolves by that instead. */
+    private HttpServletRequest request() {
+        return new MockSessionRequest(new MockAttributeRequest(
+                new MockHttpRequestIntegrationTest("localhost", "/").request()).request()).request();
+    }
+
+    private List<UploadPart> parts(final int count, final int bytesEach) {
+        final List<UploadPart> parts = new ArrayList<>();
+        for (int i = 0; i < count; i++) {
+            parts.add(new UploadPart("file-" + i + ".txt",
+                    new ByteArrayInputStream(new byte[bytesEach])));
+        }
+        return parts;
+    }
+
+    private BulkUploadForm form(final String folderId, final Long declaredTotal) {
+        return new BulkUploadForm("DOTASSET", folderId, null, declaredTotal);
     }
 
     /**
@@ -42,8 +99,21 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * precedent — a deliberate divergence from bulk refresh, which returns the id alone.
      */
     @Test
-    public void test_submit_answers202WithAHandleBeforeCreatingAnything() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_answers202WithAHandleBeforeCreatingAnything() throws Exception {
+        final Folder folder = targetFolder();
+        final FakeBatchStaging staging = new FakeBatchStaging();
+
+        final BulkUploadSubmitResponse response = helper().submit(
+                form(folder.getIdentifier(), null), parts(3, 10), staging, admin, request());
+
+        assertNotNull(response.jobId(), "the caller must get a handle");
+        assertEquals("/api/v1/jobs/" + response.jobId() + "/status", response.statusUrl(),
+                "the status URL is returned rather than left for the client to assemble");
+        assertEquals(3, response.submitted());
+
+        // The point of 202: the work has NOT been done. The job exists, the assets do not.
+        assertEquals(0, APILocator.getFolderAPI().getLiveContent(folder, admin, false).size(),
+                "the submission is answered before anything is created");
     }
 
     /**
@@ -56,8 +126,14 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * failure rather than surfacing it.
      */
     @Test
-    public void test_submit_refusesASubmissionWithNoFiles() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_refusesASubmissionWithNoFiles() throws Exception {
+        final Folder folder = targetFolder();
+
+        final BulkUploadRefusedException refused = assertThrows(BulkUploadRefusedException.class,
+                () -> helper().submit(form(folder.getIdentifier(), null), List.of(),
+                        new FakeBatchStaging(), admin, request()));
+
+        assertEquals(BulkUploadRefusedException.Ceiling.FILE_COUNT, refused.ceiling());
     }
 
     /**
@@ -70,8 +146,28 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * ceiling is crossed (FR-010a).
      */
     @Test
-    public void test_submit_refusesOverTheFileCountAndStagesNothingBeyondIt() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_refusesOverTheFileCountAndStagesNothingBeyondIt() throws Exception {
+        final Folder folder = targetFolder();
+        final FakeBatchStaging staging = new FakeBatchStaging();
+        final int max = Config.getIntProperty(BulkUploadHelper.MAX_FILES_KEY,
+                BulkUploadHelper.DEFAULT_MAX_FILES);
+
+        Config.setProperty(BulkUploadHelper.MAX_FILES_KEY, 3);
+        try {
+            final BulkUploadRefusedException refused = assertThrows(
+                    BulkUploadRefusedException.class,
+                    () -> helper().submit(form(folder.getIdentifier(), null), parts(6, 10),
+                            staging, admin, request()));
+
+            assertEquals(BulkUploadRefusedException.Ceiling.FILE_COUNT, refused.ceiling(),
+                    "'too many files' must be distinguishable from 'too much data'");
+            assertTrue(staging.staged().size() <= 3,
+                    "the read stops at the ceiling rather than after the whole body");
+            assertEquals(List.of(), staging.leaked(),
+                    "and nothing it staged is left behind");
+        } finally {
+            Config.setProperty(BulkUploadHelper.MAX_FILES_KEY, max);
+        }
     }
 
     /**
@@ -86,8 +182,28 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * on a schedule, so a leak here would be permanent.
      */
     @Test
-    public void test_submit_answers413AndReclaims_whenTheTotalSizeCeilingIsCrossed() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_answers413AndReclaims_whenTheTotalSizeCeilingIsCrossed() throws Exception {
+        final Folder folder = targetFolder();
+        final FakeBatchStaging staging = new FakeBatchStaging();
+        final long max = Config.getLongProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY,
+                BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES);
+
+        Config.setProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY, 250L);
+        try {
+            final BulkUploadRefusedException refused = assertThrows(
+                    BulkUploadRefusedException.class,
+                    () -> helper().submit(form(folder.getIdentifier(), null), parts(5, 100),
+                            staging, admin, request()));
+
+            assertEquals(BulkUploadRefusedException.Ceiling.TOTAL_SIZE, refused.ceiling(),
+                    "answered 413, and distinguishable from the count refusal");
+            assertTrue(staging.staged().size() <= 3,
+                    "no more than the ceiling may reach disk");
+            assertEquals(List.of(), staging.leaked(),
+                    "what was staged before the abort is reclaimed; nothing purges it later");
+        } finally {
+            Config.setProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY, max);
+        }
     }
 
     /**
@@ -101,8 +217,26 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * under-states the figure.
      */
     @Test
-    public void test_submit_refusesADeclaredTotalOverTheCeiling_withoutReadingTheBody() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_refusesADeclaredTotalOverTheCeiling_withoutReadingTheBody() throws Exception {
+        final Folder folder = targetFolder();
+        final FakeBatchStaging staging = new FakeBatchStaging();
+        final long max = Config.getLongProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY,
+                BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES);
+
+        Config.setProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY, 250L);
+        try {
+            final BulkUploadRefusedException refused = assertThrows(
+                    BulkUploadRefusedException.class,
+                    () -> helper().submit(form(folder.getIdentifier(), 10_000L), parts(5, 100),
+                            staging, admin, request()));
+
+            assertEquals(BulkUploadRefusedException.Ceiling.TOTAL_SIZE, refused.ceiling());
+            assertEquals(0, staging.staged().size(),
+                    "the courtesy refusal saves the author the upload entirely: not one byte "
+                            + "should have been staged");
+        } finally {
+            Config.setProperty(BulkUploadHelper.MAX_TOTAL_BYTES_KEY, max);
+        }
     }
 
     /**
@@ -115,8 +249,18 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * Moved here from the unit level: it needs a real target and {@code PermissionAPI}.
      */
     @Test
-    public void test_submit_answers403WhenTheAuthorMayNotAddChildren() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_answers403WhenTheAuthorMayNotAddChildren() throws Exception {
+        final Folder folder = targetFolder();
+        final User limited = new UserDataGen().nextPersisted();
+        final FakeBatchStaging staging = new FakeBatchStaging();
+
+        assertThrows(DotSecurityException.class,
+                () -> helper().submit(form(folder.getIdentifier(), null), parts(2, 10),
+                        staging, limited, request()));
+
+        assertEquals(0, staging.staged().size(),
+                "permission is decided before the body is read, so an author who cannot use the "
+                        + "folder is never made to upload into it first");
     }
 
     /**
@@ -129,8 +273,15 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
      * lacks rights, and telling them "forbidden" sends them to an administrator for nothing.
      */
     @Test
-    public void test_submit_answers404ForAMissingTarget() {
-        throw new UnsupportedOperationException("Not implemented — T026, T027");
+    public void test_submit_answers404ForAMissingTarget() throws Exception {
+        final FakeBatchStaging staging = new FakeBatchStaging();
+
+        assertThrows(DoesNotExistException.class,
+                () -> helper().submit(form("a-folder-that-does-not-exist", null), parts(2, 10),
+                        staging, admin, request()));
+
+        assertEquals(0, staging.staged().size(),
+                "resolved before the body, so a deleted folder costs the author nothing");
     }
 
     /**
