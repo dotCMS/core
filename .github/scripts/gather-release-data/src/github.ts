@@ -17,6 +17,9 @@ const ThrottledOctokit = Octokit.plugin(throttling);
 
 const MAX_RATE_LIMIT_RETRIES = 3;
 
+/** Per-PR body truncation, see fetchPRDetails. */
+export const BODY_CHAR_LIMIT = 1_000;
+
 export function onThrottle(kind: string) {
   return (
     retryAfter: number,
@@ -249,8 +252,12 @@ export async function fetchPRDetails(
 
         const linkedIssues = extractLinkedIssues(data.body || '');
 
-        // Safety cap at 50K chars to guard against extreme outliers
-        const body = (data.body || '').slice(0, 50_000);
+        // Bodies are ~90% of the payload and the changelog only needs the lede,
+        // so keep the first BODY_CHAR_LIMIT chars. Uncapped, a full release
+        // (50+ PRs, spec/design PRs running 10-18K each) pushes the assembled
+        // prompt past Linux MAX_ARG_STRLEN (128 KiB per argv/env entry) and any
+        // step that passes it through argv or GITHUB_ENV dies with E2BIG.
+        const body = (data.body || '').slice(0, BODY_CHAR_LIMIT);
 
         return {
           number: prNumber,
