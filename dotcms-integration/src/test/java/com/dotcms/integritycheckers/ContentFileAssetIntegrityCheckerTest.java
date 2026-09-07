@@ -121,6 +121,36 @@ public class ContentFileAssetIntegrityCheckerTest extends IntegrationTestBase im
     }
 
     /**
+     * Given Scenario: A published file asset whose title contains single-quote characters (apostrophes)
+     * is conflicted (a row is inserted into the fileassets_ir table).
+     * Expected Behavior: The integrity checker must solve the conflict and generate the contentlet_as_json
+     * without breaking the generated SQL. Regression test for the bug where the contentlet JSON was inlined
+     * into the INSERT/UPDATE statements: any apostrophe inside the content broke the SQL with an
+     * "Unterminated identifier" error (PostgreSQL). The JSON must be bound as a JDBC parameter.
+     */
+    @Test
+    public void TestFixConflictWhenContentContainsSingleQuotes() throws Exception {
+        final Host host = new SiteDataGen().nextPersisted();
+        final Folder folder = new FolderDataGen().site(host).nextPersisted();
+        final File file = FileUtil.createTemporaryFile("test", ".txt", "this is a test!");
+        final Contentlet persisted = new FileAssetDataGen(file)
+                .title("It's dotCMS's test file")
+                .languageId(1)
+                .folder(folder)
+                .setPolicy(IndexPolicy.WAIT_FOR)
+                .nextPersisted();
+        ContentletDataGen.publish(persisted);
+        final FileAsset fileAsset = APILocator.getFileAssetAPI().fromContentlet(persisted);
+
+        final ContentFileAssetIntegrityChecker integrityChecker = new ContentFileAssetIntegrityChecker();
+        final Tuple2<String, String> remoteIdentifierAndInode = introduceConflict(fileAsset,
+                endpointId.get());
+
+        integrityChecker.executeFix(endpointId.get());
+        Assert.assertTrue(validateFix(remoteIdentifierAndInode._1()));
+    }
+
+    /**
      * Method to test: {@link ContentFileAssetIntegrityChecker#executeFix(String)}
      * When: Tests that after conflicts are detected a fix is applied in favor of remote fileAsset.
      * Should: Columns Asset_subtype, owner and create_date should be populated
