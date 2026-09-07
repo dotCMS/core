@@ -1,0 +1,330 @@
+{
+    "info": {
+        "_postman_id": "125b2baf-6ed4-48f2-9200-5832c86a64d6",
+        "name": "BulkUploadResource",
+        "description": "Postman collection for POST /api/v1/assets/_bulkupload (#37166).\n\nStub created by /speckit-implement T003. Requests are added under T021, which sits behind the US1 TDD gates (T022 approval, T023 Red) \u2014 do not add them ahead of those.\n\nContract: specs/37166-bulk-file-upload/contracts/bulk-upload-api.md",
+        "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+    },
+    "item": [
+        {
+            "name": "Accepts a batch and answers 202 with a handle",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('202 Accepted, not 200 \u2014 the work has not happened yet', function () {",
+                            "    pm.response.to.have.status(202);",
+                            "});",
+                            "pm.test('carries both jobId and statusUrl', function () {",
+                            "    const e = pm.response.json().entity;",
+                            "    pm.expect(e).to.have.property('jobId');",
+                            "    pm.expect(e).to.have.property('statusUrl');",
+                            "    pm.collectionVariables.set('jobId', e.jobId);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "files",
+                            "type": "file",
+                            "src": "a.txt"
+                        },
+                        {
+                            "key": "files",
+                            "type": "file",
+                            "src": "b.txt"
+                        },
+                        {
+                            "key": "form",
+                            "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\"}",
+                            "type": "text",
+                            "contentType": "application/json"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+                    "host": [
+                        "{{serverURL}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "assets",
+                        "_bulkupload"
+                    ]
+                },
+                "description": "The happy path (contracts \u00a71, spec FR-002). The response must arrive before the files exist \u2014 202 means queued, not done \u2014 and must carry statusUrl as well as jobId so the client is not left assembling URLs by hand."
+            },
+            "response": []
+        },
+        {
+            "name": "Refuses a batch with no files",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "form",
+                            "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\"}",
+                            "type": "text",
+                            "contentType": "application/json"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+                    "host": [
+                        "{{serverURL}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "assets",
+                        "_bulkupload"
+                    ]
+                },
+                "description": "An empty batch is not an empty success (spec FR-003)."
+            },
+            "response": []
+        },
+        {
+            "name": "Refuses an unsupported baseType",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "files",
+                            "type": "file",
+                            "src": "a.txt"
+                        },
+                        {
+                            "key": "form",
+                            "value": "{\"baseType\":\"HTMLPAGE\",\"folderId\":\"{{folderId}}\"}",
+                            "type": "text",
+                            "contentType": "application/json"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+                    "host": [
+                        "{{serverURL}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "assets",
+                        "_bulkupload"
+                    ]
+                },
+                "description": "Only DOTASSET and FILEASSET carry files; anything else reaches the creation path with no binary to place (spec FR-003)."
+            },
+            "response": []
+        },
+        {
+            "name": "Refuses both folderId and siteId together",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('400 Bad Request', function () { pm.response.to.have.status(400); });"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "files",
+                            "type": "file",
+                            "src": "a.txt"
+                        },
+                        {
+                            "key": "form",
+                            "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\",\"siteId\":\"{{siteId}}\"}",
+                            "type": "text",
+                            "contentType": "application/json"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+                    "host": [
+                        "{{serverURL}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "assets",
+                        "_bulkupload"
+                    ]
+                },
+                "description": "Two targets is neither a merge nor a preference order \u2014 the caller has said two contradictory things and the server must not choose (ADR-0020)."
+            },
+            "response": []
+        },
+        {
+            "name": "Refuses a declared total over the ceiling with 413",
+            "event": [
+                {
+                    "listen": "test",
+                    "script": {
+                        "type": "text/javascript",
+                        "exec": [
+                            "pm.test('413 Content Too Large, not 400', function () {",
+                            "    pm.response.to.have.status(413);",
+                            "});"
+                        ]
+                    }
+                }
+            ],
+            "request": {
+                "method": "POST",
+                "header": [],
+                "body": {
+                    "mode": "formdata",
+                    "formdata": [
+                        {
+                            "key": "files",
+                            "type": "file",
+                            "src": "a.txt"
+                        },
+                        {
+                            "key": "form",
+                            "value": "{\"baseType\":\"DOTASSET\",\"folderId\":\"{{folderId}}\",\"totalSizeBytes\":9999999999}",
+                            "type": "text",
+                            "contentType": "application/json"
+                        }
+                    ]
+                },
+                "url": {
+                    "raw": "{{serverURL}}/api/v1/assets/_bulkupload",
+                    "host": [
+                        "{{serverURL}}"
+                    ],
+                    "path": [
+                        "api",
+                        "v1",
+                        "assets",
+                        "_bulkupload"
+                    ]
+                },
+                "description": "The courtesy refusal (spec FR-013c.1): decided before the body is read, so an author is not made to upload gigabytes before being told no. 413 rather than 400 because a size problem has a different fix from a shape problem."
+            },
+            "response": []
+        }
+    ],
+    "auth": {
+        "type": "bearer",
+        "bearer": [
+            {
+                "key": "token",
+                "value": "{{jwt}}",
+                "type": "string"
+            }
+        ]
+    },
+    "event": [
+        {
+            "listen": "prerequest",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                    "   ",
+                    "if(!pm.collectionVariables.get('jwt')){",
+                    "    console.log(\"generating....\")",
+                    "    const serverURL = pm.environment.get('serverURL') || pm.collectionVariables.get('baseUrl'); // Get the server URL from the environment variable",
+                    "    const apiUrl = `${serverURL}/api/v1/apitoken`; // Construct the full API URL",
+                    "",
+                    "        const username = pm.environment.get(\"user\") || pm.collectionVariables.get('user'); ",
+                    "        const password = pm.environment.get(\"password\") || pm.collectionVariables.get('password');",
+                    "        const basicAuth = Buffer.from(`${username}:${password}`).toString('base64');",
+                    "",
+                    "        const requestOptions = {",
+                    "            url: apiUrl,",
+                    "            method: \"POST\",",
+                    "            header: {",
+                    "                \"accept\": \"*/*\",",
+                    "                \"content-type\": \"application/json\",",
+                    "                \"Authorization\": `Basic ${basicAuth}`",
+                    "            },",
+                    "            body: {",
+                    "                mode: \"raw\",",
+                    "                raw: JSON.stringify({",
+                    "                    \"expirationSeconds\": 7200,",
+                    "                    \"userId\": \"dotcms.org.1\",",
+                    "                    \"network\": \"0.0.0.0/0\",",
+                    "                    \"claims\": {\"label\": \"postman-tests\"}",
+                    "                })",
+                    "            }",
+                    "        };",
+                    "",
+                    "        pm.sendRequest(requestOptions, function (err, response) {",
+                    "            if (err) {",
+                    "                console.log(err);",
+                    "            } else {",
+                    "                const jwt = response.json().entity.jwt;",
+                    "                pm.collectionVariables.set('jwt', jwt);",
+                    "                console.log(\"Successfully got a jwt :\" + jwt);",
+                    "            }",
+                    "        });    ",
+                    "}           "
+                ]
+            }
+        },
+        {
+            "listen": "test",
+            "script": {
+                "type": "text/javascript",
+                "packages": {},
+                "exec": [
+                    ""
+                ]
+            }
+        }
+    ]
+}

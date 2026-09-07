@@ -35,6 +35,8 @@ tags:
   name: Announcements
 - description: Third-party application integration and configuration
   name: Apps
+- description: Creating several assets in one background run
+  name: Bulk Upload
 - externalDocs:
     description: Additional Authentication API information
     url: https://www.dotcms.com/docs/latest/rest-api-authentication
@@ -4130,6 +4132,38 @@ paths:
       summary: Archive asset
       tags:
       - Web Assets
+  /v1/assets/_bulkupload:
+    post:
+      description: |-
+        Accepts several files plus a JSON `form` part naming the target and the base type, and answers `202` with a job handle **before the assets are created**. The work runs in the background: follow it with `GET /api/v1/jobs/{jobId}/status`, watch it with `GET /api/v1/jobs/{jobId}/monitor`, cancel it with `POST /api/v1/jobs/{jobId}/cancel`, and read the per-file outcome from the job's result. The submitting author is notified on any terminal state, so the outcome survives them navigating away.
+
+        One file failing does not abort the batch: every remaining file is still attempted, and each failure is reported by name with a machine-readable reason.
+      operationId: bulkUploadAssets
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/FormDataMultiPart"
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkUploadSubmitResponse"
+          description: Batch queued
+        "400":
+          description: No files; malformed or missing `form`; unsupported base type;
+            neither or both of folderId/siteId; more files than the configured maximum;
+            request not same-origin; staging disabled
+        "403":
+          description: The author may not add children to the target
+        "404":
+          description: The target folder or site does not exist
+        "413":
+          description: The batch is over the configured total size
+      summary: "Create several assets from one upload, asynchronously"
+      tags:
+      - Bulk Upload
   /v1/assets/_delete:
     post:
       description: Permanently delete an asset (file) from the system using its path
@@ -25646,6 +25680,16 @@ components:
         successCount:
           type: integer
           format: int64
+    BulkUploadSubmitResponse:
+      type: object
+      properties:
+        jobId:
+          type: string
+        statusUrl:
+          type: string
+        submitted:
+          type: integer
+          format: int32
     BulkWorkflowSchemeView:
       type: object
       properties:
