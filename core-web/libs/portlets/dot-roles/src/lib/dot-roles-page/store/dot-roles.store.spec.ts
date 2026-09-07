@@ -728,26 +728,7 @@ describe('DotRolesStore', () => {
         });
     });
 
-    describe('selectedRoleIsParent and isSystemRole', () => {
-        it('should mark the selected role as parent when the detail has roleChildren', () => {
-            service.getById.mockReturnValueOnce(
-                of({
-                    ...MOCK_ROLE_DETAIL,
-                    roleChildren: [{ id: 'child', name: 'child' }]
-                })
-            );
-
-            store.selectRole('r-eco');
-
-            expect(store.selectedRoleIsParent()).toBe(true);
-        });
-
-        it('should mark the selected role as leaf when the detail has no roleChildren', () => {
-            store.selectRole('r-eco');
-
-            expect(store.selectedRoleIsParent()).toBe(false);
-        });
-
+    describe('isSystemRole', () => {
         it('isSystemRole should be true only for system roles', () => {
             service.getById.mockReturnValueOnce(of({ ...MOCK_ROLE_DETAIL, system: true }));
 

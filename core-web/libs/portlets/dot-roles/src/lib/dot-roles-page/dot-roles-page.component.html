@@ -22,7 +22,7 @@
                     [value]="store.activeTab()"
                     (valueChange)="onTabChange($event)"
                     data-testid="role-detail-tabs">
-                    <p-tablist>
+                    <p-tablist class="border-b border-gray-200 bg-surface-50!">
                         <p-tab value="users" data-testid="tab-users">
                             {{ 'roles.tab.users' | dm }}
                         </p-tab>
