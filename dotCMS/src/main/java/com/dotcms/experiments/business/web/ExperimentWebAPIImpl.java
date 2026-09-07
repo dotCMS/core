@@ -188,6 +188,10 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         final List<Experiment> experiments = new ArrayList<>();
 
         for (final Experiment experiment : runningExperiments) {
+            if (!currentPageMatchesExperimentPage(request, experiment)) {
+                continue;
+            }
+
             final int randomValue = nextRandomNumber();
 
             if (randomValue < experiment.trafficAllocation()) {
@@ -198,6 +202,35 @@ public class ExperimentWebAPIImpl implements ExperimentWebAPI {
         }
 
         return experiments;
+    }
+
+    /**
+     * Returns {@code true} if the page the user is currently viewing matches the experiment's page.
+     * <p>
+     * The current page URL is read from the {@code Referer} HTTP header, which the browser sets
+     * automatically when {@code fetch()} is called from a page. A user must be on the experiment
+     * page before they can be assigned to the experiment — this prevents sessions on unrelated
+     * pages from being counted in the experiment results.
+     * </p>
+     *
+     * @param request    the current HTTP request (Referer header carries the caller page URL)
+     * @param experiment the experiment whose page URL pattern to match against
+     * @return {@code true} if the Referer URL matches the experiment page pattern; {@code false}
+     *         if the Referer is absent or does not match
+     */
+    private boolean currentPageMatchesExperimentPage(final HttpServletRequest request,
+                                                     final Experiment experiment) {
+        final String referer = request.getHeader("Referer");
+
+        if (!UtilMethods.isSet(referer)) {
+            Logger.debug(this, () -> "No Referer header — skipping experiment " + experiment.id().orElse("?"));
+            return false;
+        }
+
+        final String pagePattern = ExperimentUrlPatternCalculator.INSTANCE
+                .calculatePageUrlRegexPattern(experiment);
+
+        return referer.matches(pagePattern);
     }
 
     private HTMLPageAsset getHtmlPageAsset(final Experiment experiment) {
