@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
 
 import { DotLanguageFilterComponent } from '../../../dot-language-filter/dot-language-filter.component';
 import { DOT_FILTER_FACADE, toFilterValues } from '../../filter-facade.token';
@@ -13,12 +13,7 @@ import { DOT_FILTER_FACADE, toFilterValues } from '../../filter-facade.token';
 @Component({
     selector: 'dot-language-filter-chip',
     imports: [DotLanguageFilterComponent],
-    template: `
-        <dot-language-filter
-            [selectedLanguageIds]="$languageIds()"
-            (selectionChange)="onSelectionChange($event)" />
-    `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-language-filter-chip.component.html',
     host: { 'data-filter-chip': 'language' }
 })
 export class DotLanguageFilterChipComponent {

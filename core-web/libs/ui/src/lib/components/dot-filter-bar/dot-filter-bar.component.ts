@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 
 import { ButtonModule } from 'primeng/button';
 
@@ -26,7 +26,6 @@ import { DotMessagePipe } from '../../dot-message/dot-message.pipe';
     selector: 'dot-filter-bar',
     imports: [ButtonModule, DotMessagePipe],
     templateUrl: './dot-filter-bar.component.html',
-    changeDetection: ChangeDetectionStrategy.OnPush,
     host: { class: 'block w-full' }
 })
 export class DotFilterBarComponent {

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
+import { Component, computed, inject, input } from '@angular/core';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
 
@@ -23,14 +23,7 @@ import { DOT_FILTER_FACADE, toFilterValues } from '../../filter-facade.token';
 @Component({
     selector: 'dot-content-type-filter-chip',
     imports: [DotContentTypeFilterComponent],
-    template: `
-        <dot-content-type-filter
-            [selectedBaseTypes]="$baseTypes()"
-            [selectedContentTypes]="$contentTypes()"
-            [allowedBaseTypes]="$allowedBaseTypes()"
-            (selectionChange)="onSelectionChange($event)" />
-    `,
-    changeDetection: ChangeDetectionStrategy.OnPush,
+    templateUrl: './dot-content-type-filter-chip.component.html',
     host: { 'data-filter-chip': 'contentType' }
 })
 export class DotContentTypeFilterChipComponent {
