@@ -28,19 +28,14 @@
                             (onClick)="store.stopChat()"
                             data-testid="dotai-chat-stop" />
                     } @else {
-                        <!-- ariaLabel, not [attr.aria-label]: the attribute form lands on the
-                             p-button host and leaves the real <button> unnamed (FR-056). -->
+                        <!-- A labelled button, matching Image's Generate. No ariaLabel needed
+                             now: the visible label is the button's accessible name (FR-056). -->
                         <p-button
                             promptEnd
-                            [rounded]="true"
+                            [label]="'dotai.chat.send' | dm"
                             [disabled]="!store.isConfigured() || !$draft().trim()"
-                            [ariaLabel]="'dotai.chat.send' | dm"
                             (onClick)="onSend()"
-                            data-testid="dotai-chat-send">
-                            <span class="material-symbols-outlined text-lg!" aria-hidden="true">
-                                arrow_upward
-                            </span>
-                        </p-button>
+                            data-testid="dotai-chat-send" />
                     }
                 </dot-ai-prompt-input>
             </div>
