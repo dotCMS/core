@@ -325,6 +325,9 @@ importers:
       inquirer:
         specifier: 13.0.1
         version: 13.0.1(@types/node@20.19.9)
+      jsonc-parser:
+        specifier: 3.3.1
+        version: 3.3.1
       jstat:
         specifier: 1.9.6
         version: 1.9.6

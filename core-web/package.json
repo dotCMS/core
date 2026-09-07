@@ -151,6 +151,7 @@
         "hono": "^4.12.26",
         "htmldiff-js": "1.0.5",
         "inquirer": "13.0.1",
+        "jsonc-parser": "3.3.1",
         "jstat": "1.9.6",
         "lowlight": "^3.3.0",
         "marked": "12.0.2",

@@ -156,6 +156,6 @@ An existing editor config, read before writing. Not owned by this tool.
 **Rules**
 
 - Read → parse → mutate one key → serialize → write. Never truncate-and-rewrite from scratch (FR-016).
-- Unparseable input is a named error identifying the file and the remedy; the file is left byte-for-byte untouched and is **never** overwritten (FR-018).
+- Unparseable input is a named error identifying the file and the remedy; the file is left byte-for-byte untouched and is **never** overwritten (FR-018). JSON targets are parsed as **JSONC** — comments and trailing commas are valid input, not corruption.
 - Missing file or parent directory is created (FR-019), owner-only where the platform supports it (FR-021, research R5).
-- JSON is written with 2-space indentation. TOML round-trips through `smol-toml`, preserving unrelated tables (research R6).
+- Both formats parse to validate and splice to write, so only the `dotcms` key's own bytes change and a new entry adopts the indentation already in the file (research R6, R24).

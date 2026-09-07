@@ -83,12 +83,12 @@ AUTH_TOKEN = "<token>"
 Apply to every target.
 
 1. **Merge, never clobber.** Parse the existing document, insert or replace only the `dotcms` key, leave every other server and unrelated setting byte-for-byte identical (FR-016).
-2. **Unparseable input is a named error.** Identify the file and the remedy, leave it untouched, never overwrite (FR-018). Example: ``~/.cursor/mcp.json is not valid JSON — fix it or re-run with --skip-mcp``.
+2. **Unparseable input is a named error.** Identify the file and the remedy, leave it untouched, never overwrite (FR-018). Example: ``~/.cursor/mcp.json is not valid JSON — fix it or re-run with --skip-mcp``. "Unparseable" means unparseable as **JSONC**, not as strict JSON: `.vscode/mcp.json` is the same family as `settings.json` and `launch.json`, so comments and trailing commas are valid input a developer's editor accepts, and rejecting them would refuse to configure an editor over a file that is not actually broken.
 3. **An existing `dotcms` entry prompts before replacement**, unless `--force` or `-y` (FR-017).
 4. **Create missing files and parent directories** (FR-019).
 5. **Owner-only permissions** — `0600` on files, `0700` on created directories. POSIX only; on Windows `chmod` does not touch ACLs, so the step is skipped and the summary says the file could not be restricted (FR-021, research R5).
 6. **Two targets resolving to one path are written once**, not twice (spec Edge Cases).
-7. **JSON is written with 2-space indentation.** TOML round-trips via `smol-toml`, preserving comments and unrelated tables (research R6).
+7. **Both formats parse to validate and splice to write.** Neither is re-serialized from its parse tree, because that preserves values while rewriting bytes — comments, inline arrays and the developer's own indentation all disappear, turning a one-entry change into a whole-file diff on a file a team shares. Only the `dotcms` key's own bytes change; a new entry follows the indentation already in the file (research R6, R24).
 8. **One target's failure does not stop the others** and does not roll back what already succeeded (FR-020a, FR-020d).
 
 ## Version-control safety — folder scope

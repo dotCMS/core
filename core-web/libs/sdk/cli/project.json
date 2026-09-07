@@ -23,7 +23,15 @@
                 "format": ["esm"],
                 "bundle": true,
                 "thirdParty": true,
-                "external": ["ora", "chalk", "inquirer", "cfonts", "commander", "smol-toml"],
+                "external": [
+                    "ora",
+                    "chalk",
+                    "inquirer",
+                    "cfonts",
+                    "commander",
+                    "smol-toml",
+                    "jsonc-parser"
+                ],
                 "main": "libs/sdk/cli/src/index.ts",
                 "tsConfig": "libs/sdk/cli/tsconfig.lib.json",
                 "assets": [

@@ -68,3 +68,138 @@ describe('permission honesty (research R5)', () => {
         expect(result.permissionsApplied).toBe(true);
     });
 });
+
+/**
+ * These exist because an end-to-end run against a folder that already held other MCP servers
+ * showed the old writer rebuilding the whole document from its parse tree: values survived,
+ * bytes did not. FR-016 and target-configs.md both promise the untouched keys come through
+ * "byte-for-byte identical", and for a file a team shares that is the difference between a
+ * one-entry diff and a whole-file churn.
+ *
+ * The TOML writer already worked this way (parse to validate, splice to write). This is the
+ * JSON side catching up.
+ */
+describe('merging into a document the developer owns (FR-016)', () => {
+    const merge = (file: string, entry: unknown = { type: 'stdio', command: 'npx' }) =>
+        writeMerged({ file, containerKey: 'mcpServers', entryKey: 'dotcms', entry });
+
+    it('leaves every untouched line byte-for-byte identical', async () => {
+        const file = path.join(dir, 'mcp.json');
+        const before = [
+            '{',
+            '  "mcpServers": {',
+            '    "github": {',
+            '      "command": "npx",',
+            '      "args": ["-y", "@modelcontextprotocol/server-github"],',
+            '      "env": { "GITHUB_TOKEN": "ghp_existing" }',
+            '    },',
+            '    "postgres": { "command": "docker", "args": ["run", "-i", "mcp/postgres"] }',
+            '  },',
+            '  "someUnrelatedSetting": { "keepMe": true, "nested": [1, 2, 3] }',
+            '}',
+            ''
+        ].join('\n');
+        await fs.writeFile(file, before, 'utf8');
+
+        await merge(file);
+        const after = await fs.readFile(file, 'utf8');
+
+        // Every original line still present verbatim — not merely value-equivalent.
+        for (const line of before.split('\n').slice(1, -2)) {
+            if (line.trim() === '' || line.trim() === '},') continue;
+            expect(after).toContain(line);
+        }
+        expect(after).toContain('"args": ["-y", "@modelcontextprotocol/server-github"]');
+        expect(after).toContain('"nested": [1, 2, 3]');
+        // The IMMEDIATELY PRECEDING sibling is the one a formatting-aware edit reflows: our
+        // insertion point abuts it. Asserting it survives compact is what makes this test
+        // about preservation rather than about values.
+        expect(after).toContain(
+            '"postgres": { "command": "docker", "args": ["run", "-i", "mcp/postgres"] }'
+        );
+    });
+
+    it('preserves comments — .vscode/mcp.json is JSONC, not strict JSON', async () => {
+        // A commented VS Code config was rejected outright as "not valid JSON", so the tool
+        // refused to configure an editor whose file was perfectly valid for that editor.
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(
+            file,
+            '{\n  // Shared team servers -- see wiki\n  "servers": {\n    "github": { "command": "npx" }\n  }\n}\n',
+            'utf8'
+        );
+
+        await writeMerged({
+            file,
+            containerKey: 'servers',
+            entryKey: 'dotcms',
+            entry: { command: 'npx' }
+        });
+        const after = await fs.readFile(file, 'utf8');
+
+        expect(after).toContain('// Shared team servers -- see wiki');
+        expect(after).toContain('"github": { "command": "npx" }');
+        expect(after).toContain('"dotcms"');
+    });
+
+    it('accepts a trailing comma, which JSONC allows and JSON.parse rejects', async () => {
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(
+            file,
+            '{\n  "servers": {\n    "github": { "command": "npx" },\n  },\n}\n',
+            'utf8'
+        );
+        await expect(
+            writeMerged({
+                file,
+                containerKey: 'servers',
+                entryKey: 'dotcms',
+                entry: { command: 'npx' }
+            })
+        ).resolves.toBeDefined();
+        expect(await fs.readFile(file, 'utf8')).toContain('"dotcms"');
+    });
+
+    it('matches the indentation already in the file rather than imposing two spaces', async () => {
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(
+            file,
+            '{\n    "mcpServers": {\n        "github": { "command": "npx" }\n    }\n}\n',
+            'utf8'
+        );
+        await merge(file);
+        const after = await fs.readFile(file, 'utf8');
+        expect(after).toContain('\n        "dotcms"');
+    });
+
+    it('still creates a well-formed document when the file does not exist', async () => {
+        const file = path.join(dir, 'nested', 'mcp.json');
+        await merge(file);
+        const doc = JSON.parse(await fs.readFile(file, 'utf8'));
+        expect(doc.mcpServers.dotcms).toEqual({ type: 'stdio', command: 'npx' });
+    });
+
+    it('replaces our own entry without disturbing its neighbours', async () => {
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(
+            file,
+            '{\n  "mcpServers": {\n    "github": { "command": "npx" },\n    "dotcms": { "command": "OLD" }\n  }\n}\n',
+            'utf8'
+        );
+        const result = await merge(file);
+        const after = await fs.readFile(file, 'utf8');
+
+        expect(result.replacedExisting).toBe(true);
+        expect(after).not.toContain('OLD');
+        expect(after).toContain('"github": { "command": "npx" }');
+    });
+
+    it('is still a named error, and still writes nothing, when the file is genuinely broken', async () => {
+        // Tolerating JSONC must not mean tolerating garbage: FR-018 is unchanged.
+        const file = path.join(dir, 'mcp.json');
+        const broken = '{ "mcpServers": { "github": ';
+        await fs.writeFile(file, broken, 'utf8');
+        await expect(merge(file)).rejects.toThrow(/not valid JSON/i);
+        expect(await fs.readFile(file, 'utf8')).toBe(broken);
+    });
+});
