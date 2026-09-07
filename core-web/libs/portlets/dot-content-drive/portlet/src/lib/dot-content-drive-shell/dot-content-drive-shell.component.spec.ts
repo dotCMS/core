@@ -110,6 +110,7 @@ describe('DotContentDriveShellComponent', () => {
     let statusSignal: ReturnType<typeof signal<DotContentDriveStatus>>;
     // Reactive so the shell's syncDialogEffect reacts (mirrors the real SignalStore signal).
     let dialogSignal: WritableSignal<DotContentDriveDialog | undefined>;
+    let selectedItemsSignal: WritableSignal<DotContentDriveItem[]>;
     // Header override published by a dialog body that has drilled into a sub-screen.
     let dialogDrillDownSignal: WritableSignal<DotContentDriveDialogDrillDown | undefined>;
     // Result of a finished workflow action, which the shell turns into a toast.
@@ -197,6 +198,7 @@ describe('DotContentDriveShellComponent', () => {
         filtersSignal = signal({});
         statusSignal = signal(DotContentDriveStatus.LOADING);
         dialogSignal = signal<DotContentDriveDialog | undefined>(undefined);
+        selectedItemsSignal = signal<DotContentDriveItem[]>([]);
         dialogDrillDownSignal = signal<DotContentDriveDialogDrillDown | undefined>(undefined);
         actionExecutionResultSignal = signal<DotContentDriveActionExecutionResult | undefined>(
             undefined
@@ -241,7 +243,7 @@ describe('DotContentDriveShellComponent', () => {
                     endExternalRun: jest.fn(),
                     setPagination: jest.fn(),
                     setSort: jest.fn(),
-                    selectedItems: jest.fn().mockReturnValue([]),
+                    selectedItems: selectedItemsSignal,
                     setSelectedItems: jest.fn(),
                     // Read by the Action Center, which the shell renders for real inside the dialog.
                     currentUserIsAdmin: jest.fn().mockReturnValue(false),
@@ -449,6 +451,91 @@ describe('DotContentDriveShellComponent', () => {
 
             expect(store.loadItems).toHaveBeenCalled();
             expect(store.closeDialog).not.toHaveBeenCalled();
+        });
+
+        describe('deferring the reload while the author is mid-task (FR-043)', () => {
+            const backgrounded = {
+                actionName: 'Refresh',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true
+            };
+
+            it('should run the held reload once the dialog closes', () => {
+                // Skipping it outright leaves the grid stale for as long as the author stays in the
+                // portlet: the run settled, the rows changed, and nothing will fetch them again.
+                dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while rows are selected, and run it when the selection clears', () => {
+                // `loadItems` empties `selectedItems` unconditionally, so reloading here takes the
+                // author's selection away mid-task — exactly what FR-026 forbids.
+                selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                selectedItemsSignal.set([]);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should hold the reload while the edit panel is open, and run it when it closes', () => {
+                editPanelRequestSignal.set({} as EditContentDialogData);
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+
+                editPanelRequestSignal.set(null);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should run a held reload once, not on every later change', () => {
+                // The flush has to consume what it held. Otherwise every subsequent dialog open and
+                // close refetches the grid for a run that settled long ago.
+                dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+                spectator.detectChanges();
+
+                settle(backgrounded);
+
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+                dialogSignal.set({ type: DIALOG_TYPE.FOLDER, header: 'Folder' });
+                spectator.detectChanges();
+                dialogSignal.set(undefined);
+                spectator.detectChanges();
+
+                expect(store.loadItems).toHaveBeenCalledTimes(1);
+            });
+
+            it('should not hold a reload the author is waiting on', () => {
+                // Only a backgrounded outcome arrives unprompted. Everything else settles a request
+                // the author just made, so holding it would read as the action having done nothing.
+                dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
+                spectator.detectChanges();
+
+                settle({ ...backgrounded, backgrounded: false });
+
+                expect(store.loadItems).toHaveBeenCalled();
+            });
         });
 
         it('should stay silent while no result is published', () => {
@@ -702,9 +789,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should render a sub-header with the selected contentlet count', () => {
-            // `selectedItems` is mocked as a plain jest.fn here, so it must be set before the
-            // computed is first read — it has no signal dependency to invalidate its cache.
-            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             spectator.detectChanges();
             spectator.detectChanges();
@@ -714,7 +799,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should count folders in the sub-header, since actions now take them', () => {
-            store.selectedItems.mockReturnValue([
+            selectedItemsSignal.set([
                 MOCK_ITEMS[0],
                 { type: 'folder', identifier: 'f1' } as unknown as DotContentDriveItem
             ]);
@@ -728,7 +813,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should retitle the header to the drilled-into action', () => {
             // The Action Center body publishes this when it opens an action's preview, so the one
             // dialog header names the action instead of the body rendering a second header.
-            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
             spectator.detectChanges();
@@ -742,7 +827,7 @@ describe('DotContentDriveShellComponent', () => {
         });
 
         it('should restore the dialog title when the drill-down is cleared', () => {
-            store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+            selectedItemsSignal.set([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
             dialogSignal.set({ type: DIALOG_TYPE.ACTION_CENTER, header: 'Workflow Center' });
             dialogDrillDownSignal.set({ header: 'Send for Review', itemCount: 1 });
             spectator.detectChanges();
@@ -977,7 +1062,7 @@ describe('DotContentDriveShellComponent', () => {
             // The grid is in controlled mode purely so this holds. Left uncontrolled it keeps its own
             // checked set and only drops it when the items reference changes, which meant a selection
             // cleared on action hand-off stayed visibly ticked until the next search returned.
-            store.selectedItems.mockReturnValue([MOCK_ITEMS[0]]);
+            selectedItemsSignal.set([MOCK_ITEMS[0]]);
             spectator.detectChanges();
 
             const listView = spectator.query(DotFolderListViewComponent);

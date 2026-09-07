@@ -539,6 +539,24 @@ export class DotContentDriveShellComponent {
      * unqualified success would be the one thing the user cannot recover from — the grid has already
      * reloaded and the selection is gone.
      */
+    /**
+     * Whether reloading the listing right now would take something away from the author.
+     *
+     * `loadItems` empties `selectedItems` unconditionally and replaces every row, so firing it
+     * mid-task is not merely noisy: a run settling while rows are checked for a workflow action
+     * silently discards that selection (FR-026, FR-043).
+     *
+     * Reads `$dialogVisible` rather than `$activeDialog`, which is deliberately held through
+     * PrimeNG's close animation and so still reports a dialog that is already gone.
+     */
+    protected readonly $authorIsMidTask = computed(
+        () =>
+            this.$dialogVisible() || this.$selectedItems().length > 0 || !!this.$editPanelRequest()
+    );
+
+    /** A backgrounded reload waiting for {@link $authorIsMidTask} to clear. */
+    readonly #reloadHeld = signal(false);
+
     readonly actionExecutionResultEffect = effect(() => {
         const result = this.#store.actionExecutionResult();
 
@@ -614,17 +632,20 @@ export class DotContentDriveShellComponent {
 
         untracked(() => {
             // A backgrounded outcome arrives unprompted, so it must not disturb whatever the user is
-            // doing when it lands. Every other result settles a request they are waiting on.
-            const dialogIsOpen = !!this.$activeDialog();
-
-            if (!backgrounded || !dialogIsOpen) {
+            // doing when it lands. Every other result settles a request they are waiting on, so it
+            // reloads straight away — holding it would read as the action having done nothing.
+            if (!backgrounded || !this.$authorIsMidTask()) {
                 // Contentlets have moved step, so the grid is stale; `loadItems` also drops the
-                // selection the run consumed. Skipped for a backgrounded result while a dialog is
-                // open, because reloading pulls the rows out from under the form being filled in.
+                // selection the run consumed.
                 //
                 // Quiet: the run marked its rows, so a skeleton here would be a second load
                 // right after the first and would read as a jump.
                 this.#store.loadItems({ quiet: true });
+            } else {
+                // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
+                // author stayed in the portlet: the run settled, the rows changed, and nothing
+                // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
+                this.#reloadHeld.set(true);
             }
 
             if (!backgrounded) {
@@ -636,6 +657,26 @@ export class DotContentDriveShellComponent {
             }
 
             this.#store.clearActionExecutionResult();
+        });
+    });
+
+    /**
+     * Runs a reload that was held while the author was mid-task, as soon as they are not.
+     *
+     * The guard is read first and tracked so this re-runs the moment it clears; the held flag is
+     * read untracked and consumed on the way out, so one held reload produces exactly one refetch
+     * rather than one per later dialog open and close.
+     */
+    readonly flushHeldReloadEffect = effect(() => {
+        const midTask = this.$authorIsMidTask();
+
+        untracked(() => {
+            if (midTask || !this.#reloadHeld()) {
+                return;
+            }
+
+            this.#reloadHeld.set(false);
+            this.#store.loadItems({ quiet: true });
         });
     });
 
