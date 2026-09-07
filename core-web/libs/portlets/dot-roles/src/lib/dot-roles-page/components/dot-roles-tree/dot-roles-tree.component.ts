@@ -22,7 +22,7 @@ import {
 import { debounceTime, distinctUntilChanged, take } from 'rxjs/operators';
 
 import { DotAlertConfirmService, DotMessageService } from '@dotcms/data-access';
-import { DotFolderTreeComponent, DotMessagePipe } from '@dotcms/ui';
+import { DotFolderTreeComponent, DotMessagePipe, DotTruncatedLabelComponent } from '@dotcms/ui';
 
 import { DotRolesAddComponent } from '../../../dot-roles-add/dot-roles-add.component';
 import { DotRolesEditComponent } from '../../../dot-roles-edit/dot-roles-edit.component';
@@ -49,6 +49,7 @@ interface DotRolePrimeTreeNode extends TreeNode {
         ContextMenuModule,
         ConfirmDialogModule,
         DotFolderTreeComponent,
+        DotTruncatedLabelComponent,
         DotMessagePipe
     ],
     providers: [DialogService, ConfirmationService],
@@ -113,18 +114,12 @@ export class DotRolesTreeComponent {
      */
     readonly #openNodeIds = signal(new Set<string>());
 
-    // `pt.nodeLabel` only reaches the top-level tree — nested `<p-treenode>`
-    // instances fall back to PrimeNG defaults, so child labels don't
-    // truncate and the `+` button doesn't land at the trailing edge.
-    // Applying the label styles as a descendant selector on `root`
-    // cascades to every label regardless of depth.
+    // The label's own layout — clipping, and the `flex-1` that keeps the `+` button at the
+    // trailing edge — belongs to `dot-truncated-label` and the shared tree's stylesheet now
+    // (#37363). That also fixes the depth problem this comment used to describe: `pt` only
+    // reaches the top-level tree, so nested labels never received these rules.
     protected readonly treePt = {
-        root: {
-            class:
-                'w-full h-full border-none overflow-y-auto [--p-tree-padding:0] ' +
-                '[&_.p-tree-node-label]:flex-1 [&_.p-tree-node-label]:overflow-hidden ' +
-                '[&_.p-tree-node-label]:text-ellipsis [&_.p-tree-node-label]:whitespace-nowrap'
-        }
+        root: { class: 'w-full h-full border-none overflow-y-auto [--p-tree-padding:0]' }
     };
 
     protected readonly $filterInput = computed(() => this.store.filter());

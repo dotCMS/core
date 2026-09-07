@@ -12,10 +12,15 @@ import {
     DotCMSContentlet,
     DotFolder,
     DotPagination,
-    FolderSearchView,
-    DotSite
+    DotSite,
+    FolderSearchView
 } from '@dotcms/dotcms-models';
-import { createFakeContentlet, createFakeFolder, createFakeSite } from '@dotcms/utils-testing';
+import {
+    createFakeContentlet,
+    createFakeFolder,
+    createFakeFolderSearchView,
+    createFakeSite
+} from '@dotcms/utils-testing';
 
 import {
     DotBrowsingService,
@@ -92,8 +97,7 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-globe',
-                    collapsedIcon: 'pi pi-globe',
+                    icon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(result[1]).toEqual({
@@ -105,8 +109,7 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-globe',
-                    collapsedIcon: 'pi pi-globe',
+                    icon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(dotSiteService.getSites).toHaveBeenCalledWith({
@@ -308,6 +311,8 @@ describe('DotBrowsingService', () => {
                     addChildrenAllowed: true
                 });
                 expect(result.folders).toHaveLength(2);
+                // These keep their per-node icons: they render in the relationship field's
+                // `p-treeSelect`, which has no shared-tree input to opt into (#37362).
                 expect(result.folders[0]).toEqual({
                     key: 'child-1',
                     label: 'example.com/parent/child1',
@@ -376,34 +381,22 @@ describe('DotBrowsingService', () => {
     describe('searchFolders', () => {
         it('should transform FolderSearchView results into TreeNodeItems using the given hostname', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-1',
                     inode: 'inode-1',
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: true,
-                    title: '',
-                    sortOrder: 0,
-                    filesMasks: '',
-                    defaultFileType: '',
-                    showOnMenu: true,
-                    permissions: null
-                },
-                {
+                    hasChildren: true
+                }),
+                createFakeFolderSearchView({
                     id: 'folder-2',
                     inode: 'inode-2',
                     name: 'folder2',
                     path: '/',
                     addChildrenAllowed: false,
-                    hasChildren: false,
-                    title: '',
-                    sortOrder: 0,
-                    filesMasks: '',
-                    defaultFileType: '',
-                    showOnMenu: true,
-                    permissions: null
-                }
+                    hasChildren: false
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 2 };
 
@@ -425,8 +418,6 @@ describe('DotBrowsingService', () => {
                                 path: '/folder1/',
                                 type: 'folder'
                             },
-                            expandedIcon: 'pi pi-folder-open',
-                            collapsedIcon: 'pi pi-folder',
                             leaf: false
                         },
                         {
@@ -438,8 +429,6 @@ describe('DotBrowsingService', () => {
                                 path: '/folder2/',
                                 type: 'folder'
                             },
-                            expandedIcon: 'pi pi-folder-open',
-                            collapsedIcon: 'pi pi-folder',
                             leaf: true
                         }
                     ]);
@@ -452,20 +441,14 @@ describe('DotBrowsingService', () => {
 
         it('should set leaf from hasChildren, not addChildrenAllowed', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-3',
                     inode: 'inode-3',
                     name: 'allowed-but-empty',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: false,
-                    title: '',
-                    sortOrder: 0,
-                    filesMasks: '',
-                    defaultFileType: '',
-                    showOnMenu: true,
-                    permissions: null
-                }
+                    hasChildren: false
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -483,20 +466,14 @@ describe('DotBrowsingService', () => {
 
         it('should mark recursive search results as leaves even when hasChildren is true', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-1',
                     inode: 'inode-1',
                     name: 'folder1',
                     path: '/',
                     addChildrenAllowed: true,
-                    hasChildren: true,
-                    title: '',
-                    sortOrder: 0,
-                    filesMasks: '',
-                    defaultFileType: '',
-                    showOnMenu: true,
-                    permissions: null
-                }
+                    hasChildren: true
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -514,20 +491,14 @@ describe('DotBrowsingService', () => {
 
         it('should build nested folder paths from a non-root parent path', (done) => {
             const mockFolders: FolderSearchView[] = [
-                {
+                createFakeFolderSearchView({
                     id: 'folder-3',
                     inode: 'inode-3',
                     name: 'child',
                     path: '/level1',
                     addChildrenAllowed: true,
-                    hasChildren: true,
-                    title: '',
-                    sortOrder: 0,
-                    filesMasks: '',
-                    defaultFileType: '',
-                    showOnMenu: true,
-                    permissions: null
-                }
+                    hasChildren: true
+                })
             ];
             const mockPagination: DotPagination = { currentPage: 1, perPage: 40, totalEntries: 1 };
 
@@ -582,20 +553,15 @@ describe('DotBrowsingService', () => {
             name: string;
             path: string;
             hasChildren?: boolean;
-        }): FolderSearchView => ({
-            id: options.id,
-            inode: `${options.id}-inode`,
-            name: options.name,
-            path: options.path,
-            addChildrenAllowed: true,
-            hasChildren: options.hasChildren ?? false,
-            title: '',
-            sortOrder: 0,
-            filesMasks: '',
-            defaultFileType: '',
-            showOnMenu: true,
-            permissions: null
-        });
+        }): FolderSearchView =>
+            createFakeFolderSearchView({
+                id: options.id,
+                inode: `${options.id}-inode`,
+                name: options.name,
+                path: options.path,
+                addChildrenAllowed: true,
+                hasChildren: options.hasChildren ?? false
+            });
 
         it('should build hierarchical tree structure from folder path using searchFolders', (done) => {
             const folderPath = '/level1/level2/';
@@ -981,8 +947,7 @@ describe('DotBrowsingService', () => {
                         path: '',
                         type: 'site'
                     },
-                    expandedIcon: 'pi pi-globe',
-                    collapsedIcon: 'pi pi-globe',
+                    icon: 'pi pi-globe',
                     leaf: false
                 });
                 expect(dotSiteService.getCurrentSite).toHaveBeenCalled();

@@ -47,8 +47,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     },
     {
         key: 'nico.dotcms.com',
@@ -59,8 +58,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     },
     {
         key: 'System Host',
@@ -71,8 +69,7 @@ const TREE_SELECT_SITES_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     }
 ];
 
@@ -86,8 +83,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe',
+        icon: 'pi pi-globe',
         children: [
             {
                 key: 'demo.dotcms.comlevel1',
@@ -98,8 +94,6 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     path: '/level1/',
                     type: 'folder'
                 },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder',
                 children: [
                     {
                         key: 'demo.dotcms.comlevel1child1',
@@ -109,9 +103,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                             hostname: 'demo.dotcms.com',
                             path: '/level1/child1/',
                             type: 'folder'
-                        },
-                        expandedIcon: 'pi pi-folder-open',
-                        collapsedIcon: 'pi pi-folder'
+                        }
                     }
                 ]
             },
@@ -123,9 +115,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
                     hostname: 'demo.dotcms.com',
                     path: '/level2/',
                     type: 'folder'
-                },
-                expandedIcon: 'pi pi-folder-open',
-                collapsedIcon: 'pi pi-folder'
+                }
             }
         ]
     },
@@ -138,8 +128,7 @@ const TREE_SELECT_MOCK: TreeNodeItem[] = [
             path: '',
             type: 'site'
         },
-        expandedIcon: 'pi pi-globe',
-        collapsedIcon: 'pi pi-globe'
+        icon: 'pi pi-globe'
     }
 ];
 

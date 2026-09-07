@@ -21,9 +21,13 @@ additive — it did not modify any pre-existing `.claude/` files.
 ## The standard flow
 
 `/speckit-specify` (feature) **or** `/speckit-specify-fix` (issue) → `/speckit-plan` →
-`/speckit-tasks` → `/speckit-implement`. Optional: `/speckit-clarify`, `/speckit-checklist`,
-`/speckit-analyze`. Both spec flows funnel through `/speckit-plan`, so the ADR and legacy
-gates apply to features and fixes alike.
+`/speckit-tasks` → `/speckit-implement` → `/speckit-converge`. Optional: `/speckit-clarify`,
+`/speckit-checklist`, `/speckit-analyze`. Both spec flows funnel through `/speckit-plan`, so the
+ADR and legacy gates apply to features and fixes alike.
+
+`/speckit-converge` is the **mandatory closing step**, not an optional tool: `/speckit-implement`
+fires it automatically (customization #7). Loop implement → converge until it reports
+`converged`, then open PR 2.
 
 ## Spec-folder commit policy
 
@@ -136,6 +140,83 @@ anyway, our patch has `get_feature_paths()` assign `REPO_ROOT`, `CURRENT_BRANCH`
 sites (`setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh`) call it plainly —
 no output string is ever re-parsed as code.
 
+### 7. Convergence as the closing step, developer-triggered — UPGRADE-SAFE (no shipped files edited)
+
+Upstream ships `/speckit-converge` as step 9 of its quickstart, but nothing in our flow invoked
+it, so the question *"does the code actually match the spec approved in PR 1?"* was never asked
+before PR 2 — it was left for the reviewer to reconstruct from the diff, the exact failure mode
+the two-PR flow exists to avoid.
+
+One additive piece closes that:
+
+- **`.specify/extensions.yml`** — registers `speckit.converge` as an **`after_implement` hook with
+  `optional: true`**, so `/speckit-implement` *recommends* it on completing the task list,
+  printing the command without running it. The shipped `/speckit-implement` skill **already**
+  dispatches `after_implement` (its "Mandatory Post-Execution Hooks" section) — we did not edit
+  it, or any other shipped skill.
+
+**Why recommended and not mandatory.** An automatic run fires at the end of the task list, which
+is the *least* final state of the work: in practice a developer finishes the tasks and then makes
+several manual corrections. Converge would sign off on the code as it stood before that polishing,
+and a stale `converged` verdict is worse than no verdict, because nobody re-reads it — while the
+docs telling you it "runs automatically" actively train you not to. Only the developer knows when
+their edits have stopped. So convergence stays part of the flow (Quick Start §1, §2, §3) with the
+*timing* left to the developer. Note this diverges from dotCMS/core#37267's AC B, which specified
+`optional: false`; the divergence and its reason are recorded in that issue.
+
+Append-only by construction: converge's only write is a `## Phase N: Convergence` section at the
+end of `tasks.md`, which is gitignored (see the commit policy above) and therefore never reaches
+PR 2. Documented for developers in [Quick Start](../docs/core/SPEC_KIT_QUICK_START.md) §1, §3
+and §9.
+
+**Alternative considered — editing the shipped skill.** Extending
+`.claude/skills/speckit-converge/SKILL.md` directly was rejected. It would have been the first
+shipped `/speckit-*` skill we ever edited, and it creates a lose-lose with
+`.specify/integrations/claude.manifest.json`: that file records a sha256 per shipped skill and is
+read by the upstream `specify` CLI **on upgrade, to detect locally-modified files**. Refresh the
+hash after editing and upgrade silently overwrites our customization; leave it stale and the
+manifest is invalid. The additive route avoids the choice entirely — all ten hashes stay valid.
+
+### 8. Documentation drift in the convergence step — UPGRADE-SAFE (no shipped files edited)
+
+Upstream's `/speckit-converge` reads `spec.md`, `plan.md`, `tasks.md` and the codebase. It has no
+notion of documentation, because a vanilla Spec-Kit repo has no normative documentation contract.
+dotCMS does — `openapi.yaml` is build-verified and CI-enforced, `docs/` is the single source of
+truth per domain, and `@Schema`/return-type correspondence is a Critical Rule. So a feature could
+converge clean while the docs still described the old behavior.
+
+Two additive pieces close that:
+
+- **`.claude/skills/speckit-docs-converge/SKILL.md`** — a dotCMS-authored companion command. Same
+  classification vocabulary (`missing`/`partial`/`contradicts`/`unrequested`), same severity
+  scale, same append-only contract as converge. Assesses four surfaces: `docs/` + `CLAUDE.md`,
+  `openapi.yaml` + REST annotations, `spec.md`/`plan.md` divergence, and Javadoc. It **never**
+  edits a document, never edits `spec.md`/`plan.md`, and never runs a build — a stale
+  `openapi.yaml` becomes a task carrying the `./mvnw compile` command, not a regeneration.
+- **`.specify/extensions.yml`** — registers it as a **mandatory** `after_converge` hook. Mandatory
+  here is not a contradiction of #7: by the time it fires, the developer has already chosen to
+  converge, so extending that one decision to documentation needs no second prompt. The shipped
+  `/speckit-converge` skill **already** dispatches `after_converge` (its Execution Step 9) — we
+  did not edit it.
+
+Because it is a new skill, two governance files must move with it or the required
+`cicd_pr_skill-lint` check fails: `.claude/skills/skills.config.json` (its name is added to
+`grandfathered`, as with every other `speckit-*` skill) and `.claude/skills/CATALOG.md`
+(regenerated with `just skills-catalog`, never hand-edited).
+
+**Two behaviors that make a mandatory hook safe to run automatically:**
+
+- **Incomplete-run guard** — if `tasks.md` still has unchecked non-`[GATE]` tasks, implement
+  halted rather than finished; it reports `implementation_incomplete` and writes nothing.
+  Without this, every TDD gate approval would append duplicates of already-open tasks.
+- **Dedupe** — a finding already represented by a task in a prior Convergence phase, *checked or
+  unchecked*, is never re-emitted. Each pass yields strictly fewer new findings, so the loop
+  provably terminates; and a finding the developer consciously accepted (ticked `[X]`) is never
+  raised again. **Known asymmetry:** the shipped `/speckit-converge` has neither behavior and we
+  won't edit it to add them, so its own findings can recur. That is handled in documentation —
+  [Quick Start](../docs/core/SPEC_KIT_QUICK_START.md) §3 and §9 define the gate as *`converged`,
+  or every remaining finding consciously accepted*, and §10 carries the symptom row.
+
 ## Guardrail: Spec-Kit must never create ADRs
 
 Enforced in the constitution, the `adr-context.sh` output, the `speckit-adr-context` and
@@ -152,9 +233,10 @@ customizations are split so that most survive automatically:
 | `.specify/memory/constitution.md` | Usually (not overwritten unless re-init) | Verify still present; re-author if reset |
 | `.specify/templates/overrides/*` | ✅ Yes (overrides dir is ours) | None |
 | `.specify/templates/spec-issue-template.md` | ✅ Yes (net-new name) | None |
-| `.specify/extensions.yml` | ✅ Yes (net-new; not shipped) | Verify hook still matches skill name |
+| `.specify/extensions.yml` | ✅ Yes (net-new; not shipped) | Verify all three hooks still match skill names: `before_plan`, `after_implement`, `after_converge` |
 | `.specify/scripts/bash/adr-context.sh` | ✅ Yes (net-new name) | None |
-| `.claude/skills/speckit-adr-context/`, `.claude/skills/speckit-specify-fix/` | ✅ Yes (net-new skills) | Confirm not clobbered |
+| `.claude/skills/speckit-adr-context/`, `.claude/skills/speckit-specify-fix/`, `.claude/skills/speckit-docs-converge/` | ✅ Yes (net-new skills) | Confirm not clobbered; re-run `just skills-lint` |
+| `.claude/skills/skills.config.json`, `.claude/skills/CATALOG.md` | ✅ Yes (ours, not shipped) | Verify `speckit-docs-converge` is still in `grandfathered`; re-run `just skills-catalog` |
 | `.specify/scripts/bash/create-new-feature.sh` | ❌ No (shipped script, patched in-place) | Re-apply the branch-aware numbering patch (#5): `get_highest_from_branches()` + the max() at the `BRANCH_NUMBER` computation |
 | `.specify/scripts/bash/common.sh`, `setup-plan.sh`, `setup-tasks.sh`, `check-prerequisites.sh` | ❌ No (shipped scripts, patched in-place) | Re-apply the eval-free path resolution patch (#6): direct assignment in `get_feature_paths()` + plain calls at the three call sites |
 
