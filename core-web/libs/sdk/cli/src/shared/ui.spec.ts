@@ -102,3 +102,15 @@ describe('warnings reach the summary (FR-005a)', () => {
         expect(withNone).toBe(withUndefined);
     });
 });
+
+describe('Ready means something was configured', () => {
+    it('does NOT print Ready when nothing was configured', () => {
+        // `[].every()` is true, so an empty run printed "✓ server responded / Ready".
+        const out = renderSummary({ outcomes: [], connection: 'ok' });
+        expect(out).not.toMatch(/Ready/);
+    });
+
+    it('still prints Ready when something was', () => {
+        expect(renderSummary({ outcomes: [ok('cursor')], connection: 'ok' })).toMatch(/Ready/);
+    });
+});

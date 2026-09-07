@@ -24,6 +24,9 @@ SRC_PKG="$SCRIPT_DIR/../package.json"
 PASS=0
 FAIL=0
 ok()  { printf '  \033[32mPASS\033[0m  %s\n' "$1"; PASS=$((PASS + 1)); }
+# A check we could not run is NOT a failure. This script is a `dependsOn` of `nx test`, so a
+# missing tool here blocked the entire suite for a reviewer on a pnpm-only machine.
+skip(){ printf '  \033[33mSKIP\033[0m  %s\n' "$1"; }
 bad() { printf '  \033[31mFAIL\033[0m  %s\n' "$1"; FAIL=$((FAIL + 1)); }
 
 printf '\n\033[1mverify-package.sh\033[0m — %s\n\n' "$DIST"
@@ -72,9 +75,15 @@ else
 fi
 
 # 5. npm would actually pack the entry point and the README.
-PACKED="$(cd "$DIST" && npm pack --dry-run --json 2>/dev/null | grep -o "\"path\": *\"[^\"]*\"" | sed 's/.*: *"//; s/"$//')"
+#    `npm` is not this workspace's package manager, so it may simply not be installed.
+if ! command -v npm >/dev/null 2>&1; then
+    PACKED=""
+    skip "npm is not installed — cannot confirm the tarball contents (CI does have it)"
+else
+    PACKED="$(cd "$DIST" && npm pack --dry-run --json 2>/dev/null | grep -o "\"path\": *\"[^\"]*\"" | sed 's/.*: *"//; s/"$//')"
+fi
 if [ -z "$PACKED" ]; then
-    bad "npm pack --dry-run produced no file list — cannot confirm the tarball contents"
+    command -v npm >/dev/null 2>&1 && bad "npm pack --dry-run produced no file list — cannot confirm the tarball contents"
 else
     for want in index.js README.md; do
         if printf '%s\n' "$PACKED" | grep -qx "$want"; then

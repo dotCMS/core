@@ -207,3 +207,26 @@ x = 1
         expect(doc['some']['unrelated']['table']).toEqual({ value: 42 });
     });
 });
+
+describe('our table is recognised however TOML spells it', () => {
+    /**
+     * `findEntrySpan` matched only a bare `[mcp_servers.dotcms]`. A developer whose file says
+     * `[mcp_servers."dotcms"]` — identical to TOML — was told the entry was absent, so the
+     * writer APPENDED a second one. Two tables with the same key is a duplicate-table error:
+     * the config stops parsing and the editor loses every server in it.
+     */
+    it.each([
+        ['quoted', '[mcp_servers."dotcms"]\ncommand = "old"\n'],
+        ['single-quoted', '[mcp_servers.\'dotcms\']\ncommand = "old"\n'],
+        ['inner spaces', '[ mcp_servers.dotcms ]\ncommand = "old"\n'],
+        ['spaced around the dot', '[mcp_servers . dotcms]\ncommand = "old"\n']
+    ])('replaces the %s form instead of appending a duplicate', async (_form, content) => {
+        const file = await seed(content);
+        await write();
+        const raw = await fs.readFile(file, 'utf8');
+        // One table, and it is ours — never two.
+        expect(raw.match(/\[\s*mcp_servers\s*\.\s*["']?dotcms["']?\s*\]/g)).toHaveLength(1);
+        expect(raw).not.toContain('command = "old"');
+        expect(() => parse(raw)).not.toThrow();
+    });
+});

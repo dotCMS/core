@@ -35,7 +35,17 @@ export async function installSkills(args: {
     const argv = buildSkillsArgs(args.agentIds, args.global);
     const command = `npx ${argv.join(' ')}`;
     try {
-        const result = childProcess.spawnSync('npx', argv, { stdio: 'inherit' });
+        const result = childProcess.spawnSync('npx', argv, {
+            stdio: 'inherit',
+            // On Windows `npx` is `npx.cmd`, and since the CVE-2024-27980 fix Node refuses to
+            // execute `.cmd`/`.bat` without a shell — so this spawn failed on every Windows run
+            // and FR-025 never installed anything there.
+            shell: process.platform === 'win32'
+        });
+        // `spawnSync` does NOT throw on a spawn failure: it returns `{ status: null, error }`.
+        // The catch below never ran, and the developer got "exited with code null" instead of
+        // `spawn npx ENOENT` — with no verbose mode, that message is all they get (FR-032a).
+        if (result.error) return { ok: false, command, reason: result.error.message };
         if (result.status === 0) return { ok: true, command };
         return { ok: false, command, reason: `skills exited with code ${result.status}` };
     } catch (error) {

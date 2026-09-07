@@ -16,7 +16,7 @@ import { MalformedConfigError } from './errors';
  *  the limitation (research R5). Callers report `permissionsApplied` accordingly. */
 export const CAN_RESTRICT = process.platform !== 'win32';
 
-const FILE_MODE = 0o600;
+export const FILE_MODE = 0o600;
 const DIR_MODE = 0o700;
 
 export interface WriteResult {
@@ -42,6 +42,12 @@ function parseOrThrow(raw: string, file: string): Record<string, unknown> {
     const errors: ParseError[] = [];
     const doc = parseJsonc(raw, errors, PARSE_OPTIONS) as Record<string, unknown> | undefined;
     if (errors.length > 0 || doc === undefined) throw new MalformedConfigError(file);
+    // `[1,2,3]`, `"text"`, `42` and `null` all parse cleanly. They used to fall through to the
+    // fresh-file branch and REPLACE the developer's file wholesale; FR-018 says an input we
+    // cannot merge into is a named error that leaves the file untouched.
+    if (typeof doc !== 'object' || doc === null || Array.isArray(doc)) {
+        throw new MalformedConfigError(file);
+    }
     return doc;
 }
 
@@ -219,7 +225,11 @@ export async function writeMerged(args: {
     }
 
     await ensureDir(path.dirname(args.file));
-    await fs.writeFile(args.file, next, 'utf8');
+    // `mode` applies at CREATION. Writing at the umask and restricting afterwards left a
+    // token-bearing file world-readable for the width of that gap, and permanently so if the
+    // process died in between (FR-021). chmod below still matters for a pre-existing file,
+    // whose mode `mode` does not change.
+    await fs.writeFile(args.file, next, { encoding: 'utf8', mode: FILE_MODE });
     const permissionsApplied = await restrictFile(args.file, args.canRestrict ?? CAN_RESTRICT);
     return { path: args.file, permissionsApplied, replacedExisting };
 }

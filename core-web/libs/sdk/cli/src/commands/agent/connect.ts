@@ -40,6 +40,10 @@ export async function confirmConnection(args: {
 
     const child = childProcess.spawn('npx', ['-y', MCP_SERVER_PACKAGE], {
         stdio: ['pipe', 'pipe', 'pipe'],
+        // `npx` is `npx.cmd` on Windows and Node refuses `.cmd` without a shell since the
+        // CVE-2024-27980 fix — so FR-024a failed on every Windows run, reporting a broken
+        // server for a configuration that was written correctly.
+        shell: process.platform === 'win32',
         env: {
             ...process.env,
             [SERVER_ENV.url]: args.url,
@@ -86,7 +90,23 @@ export async function confirmConnection(args: {
             for (const line of frames) {
                 if (!line.trim()) continue;
                 try {
-                    const message = JSON.parse(line) as { result?: { tools?: unknown[] } };
+                    const message = JSON.parse(line) as {
+                        id?: number;
+                        result?: { tools?: unknown[] };
+                    };
+                    // MCP requires initialize -> `notifications/initialized` -> anything else.
+                    // We used to fire `tools/list` immediately alongside `initialize`, which a
+                    // strict server is entitled to reject — so the connection check could fail
+                    // against a perfectly good server. Wait for the initialize RESULT first.
+                    if (message.id === 1) {
+                        child.stdin?.write(
+                            `${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`
+                        );
+                        child.stdin?.write(
+                            `${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' })}\n`
+                        );
+                        continue;
+                    }
                     const tools = message.result?.tools;
                     if (Array.isArray(tools)) finish({ ok: true, toolCount: tools.length });
                 } catch {
@@ -106,7 +126,8 @@ export async function confirmConnection(args: {
             })
         );
 
-        // Speak MCP: initialize, then ask for the tool list.
+        // Speak MCP: initialize now; the initialized notification and `tools/list` follow once
+        // the server has answered, in the handler above.
         child.stdin?.write(
             `${JSON.stringify({
                 jsonrpc: '2.0',
@@ -119,6 +140,5 @@ export async function confirmConnection(args: {
                 }
             })}\n`
         );
-        child.stdin?.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list' })}\n`);
     });
 }

@@ -5,7 +5,7 @@ import * as path from 'node:path';
 
 import { buildEntry } from './entry';
 
-import { ensureDir, restrictFile, type WriteResult } from '../../../shared/config-file';
+import { ensureDir, FILE_MODE, restrictFile, type WriteResult } from '../../../shared/config-file';
 import { MalformedConfigError, NoConfigPathError } from '../../../shared/errors';
 import { ENTRY_KEY } from '../constants';
 
@@ -45,7 +45,14 @@ function findEntrySpan(
     lines: string[],
     containerKey: string
 ): { start: number; end: number } | null {
-    const ours = new RegExp(`^\\s*\\[\\s*${containerKey}\\.${ENTRY_KEY}\\s*(\\.[^\\]]+)?\\]`);
+    // TOML spells one key several ways: bare, "quoted", 'quoted', and with whitespace around
+    // the dots. Matching only the bare form told us our entry was absent, so the writer
+    // APPENDED a second table with the same key — a duplicate-table error that makes the whole
+    // file unparseable and costs the developer every other server in it.
+    const spelt = (key: string) => `(?:${key}|"${key}"|'${key}')`;
+    const ours = new RegExp(
+        `^\\s*\\[\\s*${spelt(containerKey)}\\s*\\.\\s*${spelt(ENTRY_KEY)}\\s*(\\.[^\\]]*)?\\]`
+    );
     const anyHeader = /^\s*\[/;
 
     const start = lines.findIndex((line) => ours.test(line));
@@ -134,7 +141,11 @@ export async function writeTomlTarget(args: WriteArgs): Promise<WriteResult> {
     }
 
     await ensureDir(path.dirname(file));
-    await fs.writeFile(file, next.endsWith('\n') ? next : `${next}\n`, 'utf8');
+    // Owner-only at creation — see the note in `config-file.ts` (FR-021).
+    await fs.writeFile(file, next.endsWith('\n') ? next : `${next}\n`, {
+        encoding: 'utf8',
+        mode: FILE_MODE
+    });
     // Report what chmod actually did. The flow used to assert `CAN_RESTRICT` here, which is a
     // platform constant rather than an observation — the summary claimed a protection nobody
     // had checked.

@@ -215,6 +215,16 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         plan.push({ target, file });
     }
 
+    // Configuring nothing is not success. Silently exiting 0 here is exactly what the spec's
+    // Edge Cases forbid: say so, and name what the developer can pick.
+    if (!plan.length && !opts.skipMcp) {
+        const noEditors =
+            `No editor was configured. None of the supported editors was detected, and none was ` +
+            `named. Re-run with --agent <id>, choosing from: ${TARGET_IDS.join(', ')}.`;
+        warnings.push(noEditors);
+        opts.onWarning?.(noEditors);
+    }
+
     const outcomes: TargetOutcome[] = [];
     if (opts.skipMcp) {
         // Say so. Returning an empty summary made `--skip-mcp` look like a no-op run.
@@ -279,16 +289,27 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         .filter((o) => (o.result === 'written' || o.result === 'replaced') && o.path)
         .map((o) => o.path as string);
     if (scope === 'folder' && written.length) {
-        versionControl = await protectFromVersionControl({
-            files: written,
-            // Which of them a project would normally commit is the registry's to say, not a
-            // basename set inside the gitignore module.
-            committedByConvention: plan
-                .filter(({ target }) => target.folderConfigIsCommitted)
-                .map(({ file }) => file),
-            cwd: opts.cwd ?? process.cwd(),
-            confirmExclude: opts.yes ? async () => true : opts.confirmExclude
-        });
+        // A throw here would escape runSetup and take the whole summary with it — including the
+        // list of files that now hold a token, which is precisely what the developer needs at
+        // that moment. Degrade to a warning instead (FR-023a).
+        try {
+            versionControl = await protectFromVersionControl({
+                files: written,
+                // Which of them a project would normally commit is the registry's to say, not a
+                // basename set inside the gitignore module.
+                committedByConvention: plan
+                    .filter(({ target }) => target.folderConfigIsCommitted)
+                    .map(({ file }) => file),
+                cwd: opts.cwd ?? process.cwd(),
+                confirmExclude: opts.yes ? async () => true : opts.confirmExclude
+            });
+        } catch (error) {
+            const vcFailed =
+                `Could not update .gitignore — ${(error as Error).message}. These files hold an ` +
+                `access token and are NOT excluded from version control:\n      ${written.join('\n      ')}`;
+            warnings.push(vcFailed);
+            opts.onWarning?.(vcFailed);
+        }
     }
 
     // 7. Skills — non-fatal by design (FR-026).
@@ -309,6 +330,16 @@ export async function runSetup(opts: Partial<RunOptions>): Promise<SetupResult> 
         if (ids.length) {
             step('Installing the dotCMS skills');
             const skills = await installSkills({ agentIds: ids, global: scope === 'global' });
+            if (!skills.ok) {
+                // FR-026 requires the developer be handed the command to finish the job. The
+                // reason and the command were both computed and then dropped on the floor, so
+                // a failed install was completely silent.
+                const failed =
+                    `Skills were not installed${skills.reason ? ` — ${skills.reason}` : ''}. ` +
+                    `Run this when the problem is fixed:\n      ${skills.command}`;
+                warnings.push(failed);
+                opts.onWarning?.(failed);
+            }
             for (const o of outcomes) {
                 if (o.result === 'failed') continue;
                 // FR-027: never claim skills landed where the editor is not confirmed to read

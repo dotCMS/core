@@ -43,3 +43,33 @@ describe('installSkills (FR-025, FR-026)', () => {
         expect(JSON.stringify(spawnSync.mock.calls[0])).not.toMatch(/AUTH_TOKEN|dot_/);
     });
 });
+
+describe('Windows needs a shell to run npx (FR-024a, FR-025)', () => {
+    /**
+     * `npx` on Windows is `npx.cmd`, and since the CVE-2024-27980 fix Node refuses to execute
+     * `.cmd`/`.bat` without a shell. Windows is in scope (see `CAN_RESTRICT`, the `%APPDATA%`
+     * path in the registry, research R5), so without this the connection check failed on EVERY
+     * Windows run — after the configuration had been written correctly.
+     *
+     * Asserted by faking the platform, because CI here is not Windows and an untested claim
+     * about another OS is worth very little.
+     */
+    const real = process.platform;
+    const asPlatform = (value: string) =>
+        Object.defineProperty(process, 'platform', { value, configurable: true });
+    afterEach(() => asPlatform(real));
+
+    it('passes shell: true on win32', () => {
+        asPlatform('win32');
+        spawnSync.mockReturnValue({ status: 0 });
+        installSkills({ agentIds: ['cursor'], global: false });
+        expect((spawnSync.mock.calls.at(-1) as unknown[])[2]).toMatchObject({ shell: true });
+    });
+
+    it('does not on posix', () => {
+        asPlatform('darwin');
+        spawnSync.mockReturnValue({ status: 0 });
+        installSkills({ agentIds: ['cursor'], global: false });
+        expect((spawnSync.mock.calls.at(-1) as unknown[])[2]).toMatchObject({ shell: false });
+    });
+});

@@ -179,3 +179,37 @@ describe('resolveInstanceUrl (FR-004)', () => {
         );
     });
 });
+
+describe('an address may not smuggle a credential (FR-022a)', () => {
+    /**
+     * `https://user:secret@host` passed validation, and the address is then written into
+     * DOTCMS_URL in every editor's config and printed in the summary — so a password reached
+     * disk in plaintext and the terminal in clear, which FR-022a forbids outright.
+     */
+    it.each([
+        'https://admin:hunter2@demo.dotcms.com',
+        'http://admin:hunter2@localhost:8082',
+        'https://admin@demo.dotcms.com'
+    ])('rejects %s', async (bad) => {
+        await expect(resolveInstanceUrl({ url: bad })).rejects.toThrow();
+    });
+
+    it('never echoes the credential back in the error', async () => {
+        const error = await resolveInstanceUrl({
+            url: 'https://admin:hunter2@demo.dotcms.com'
+        }).catch((e: Error) => e);
+        // Not even partially: a redacted password is still a leaked password.
+        expect((error as Error).message).not.toContain('hunter2');
+        expect((error as Error).message).not.toContain('hunter');
+        expect((error as Error).message).toContain('demo.dotcms.com');
+        // And it must say WHY, with a remedy that is not the address it just refused.
+        expect((error as Error).message).toMatch(/username or password/i);
+        expect((error as Error).message).toMatch(/--authToken|sign in/i);
+    });
+
+    it('still accepts an ordinary address', async () => {
+        await expect(resolveInstanceUrl({ url: 'https://demo.dotcms.com' })).resolves.toBe(
+            'https://demo.dotcms.com'
+        );
+    });
+});

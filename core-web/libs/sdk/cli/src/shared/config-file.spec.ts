@@ -203,3 +203,25 @@ describe('merging into a document the developer owns (FR-016)', () => {
         expect(await fs.readFile(file, 'utf8')).toBe(broken);
     });
 });
+
+describe('a document whose root is not an object (FR-018)', () => {
+    /**
+     * These parse cleanly, so they slipped past the malformed check and then failed the
+     * `tree.type !== 'object'` test — which routed them to the FRESH-FILE branch and replaced
+     * the developer's file wholesale. Verified: a file containing `[1,2,3]` came back as
+     * `{"mcpServers":{...}}`. FR-018 says never overwrite; say what is wrong and stop.
+     */
+    it.each([
+        ['an array', '[1, 2, 3]\n'],
+        ['a string', '"hello"\n'],
+        ['a number', '42\n'],
+        ['null', 'null\n']
+    ])('refuses to write into %s, and leaves it byte-for-byte', async (_what, content) => {
+        const file = path.join(dir, 'mcp.json');
+        await fs.writeFile(file, content, 'utf8');
+        await expect(
+            writeMerged({ file, containerKey: 'mcpServers', entryKey: 'dotcms', entry: { a: 1 } })
+        ).rejects.toThrow(/not valid JSON/i);
+        expect(await fs.readFile(file, 'utf8')).toBe(content);
+    });
+});

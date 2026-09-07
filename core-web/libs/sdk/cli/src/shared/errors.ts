@@ -22,10 +22,33 @@ export class InvalidUrlError extends CliError {
         // carry the fix too (FR-032a).
         // Strip ANY scheme, not just http(s): stripping only http(s) turned
         // "ftp://demo.dotcms.com" into the suggestion "https://ftp://demo.dotcms.com".
-        const host = value.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
+        // Drop any `user:password@` before the value is used at all. A rejected address may
+        // be rejected BECAUSE it carries a credential, and echoing it — even partially — would
+        // put that password on screen (FR-022a).
+        const safe = value.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i, '$1');
+        const host = safe.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^\/+/, '');
         super(
-            `"${value}" is not a valid instance address. Pass it with an http:// or https:// ` +
+            `"${safe}" is not a valid instance address. Pass it with an http:// or https:// ` +
                 `scheme, e.g. https://${host || 'demo.dotcms.com'}`
+        );
+    }
+}
+
+/**
+ * An address carrying `user:password@`.
+ *
+ * Its own error rather than a flavour of InvalidUrlError, because the REMEDY is different:
+ * the address is fine, it is the credential riding along that is not. Reusing the generic
+ * message produced "\"https://demo.dotcms.com\" is not a valid instance address … e.g.
+ * https://demo.dotcms.com" — the suggestion and the complaint were the same string.
+ */
+export class CredentialInUrlError extends CliError {
+    constructor(url: string) {
+        // Built from the STRIPPED address; the password must not reach the screen (FR-022a).
+        const safe = url.replace(/^([a-z][a-z0-9+.-]*:\/\/)[^/@]*@/i, '$1');
+        super(
+            `The instance address must not carry a username or password. Use ${safe} on its own — ` +
+                `setup will ask you to sign in, or pass --authToken.`
         );
     }
 }

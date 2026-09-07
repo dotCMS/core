@@ -1,7 +1,9 @@
+import * as childProcess from 'node:child_process';
 import * as fs from 'node:fs/promises';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
+import * as gitignore from './gitignore';
 import { runSetup } from './setup';
 import * as skills from './skills';
 import * as registry from './targets/registry';
@@ -351,7 +353,10 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
         expect(result.outcomes.map((o) => o.targetId).sort()).toEqual(['claude-code', 'cursor']);
     });
 
-    it('writes nothing and does not throw when no editor is detected', async () => {
+    it('SAYS SO when no editor is detected, rather than exiting silently', async () => {
+        // This asserted only `outcomes: []` and `exitCode: 0`, which is satisfied by saying
+        // nothing at all — the behaviour the spec's Edge Cases forbid, and which paired with
+        // `[].every()` in the summary to print "Ready" after configuring nothing.
         mockAcceptedToken();
         vi.spyOn(registry, 'detectTargets').mockResolvedValue([]);
         const result = await runSetup({
@@ -363,7 +368,11 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
             skipVerify: true
         });
         expect(result.outcomes).toEqual([]);
-        expect(result.exitCode).toBe(0);
+        const said = result.warnings.join(' ');
+        expect(said).toMatch(/no editor/i);
+        // Naming the remedy is the point: "nothing happened" is not actionable (FR-032a).
+        expect(said).toContain('--agent');
+        expect(said).toContain('cursor');
     });
 
     it('defaults to FOLDER scope, writing into the working directory rather than $HOME', async () => {
@@ -1014,5 +1023,87 @@ describe('the conventionally-committed warning is driven by the registry (FR-024
     it('does not warn for cursor, whose folder file it does not', async () => {
         const result = await run('cursor');
         expect(result.versionControl?.warnings.join(' ') ?? '').not.toMatch(/normally committed/i);
+    });
+});
+
+describe('a run that configures nothing is not a successful run', () => {
+    it('does not throw, and still reports', async () => {
+        mockAcceptedToken();
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([]);
+        await expect(
+            runSetup({
+                url: URL_,
+                authToken: 'good',
+                scope: 'folder',
+                cwd: dir,
+                skipSkills: true,
+                skipVerify: true
+            })
+        ).resolves.toBeDefined();
+    });
+});
+
+describe('a failed skills install hands back the command (FR-026)', () => {
+    it('warns with the reason and the exact command to re-run', async () => {
+        mockAcceptedToken();
+        vi.mocked(childProcess.spawnSync).mockReturnValue({ status: 1 } as never);
+        const result = await runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipVerify: true,
+            yes: true
+        });
+        const said = result.warnings.join(' ');
+        expect(said).toMatch(/skills were not installed/i);
+        // The command was computed and then discarded; without it the developer cannot finish.
+        expect(said).toContain('npx -y skills add');
+        // Still non-fatal (FR-026).
+        expect(result.outcomes[0].result).toBe('written');
+    });
+
+    it('reports the real spawn failure, not "code null"', async () => {
+        mockAcceptedToken();
+        vi.mocked(childProcess.spawnSync).mockReturnValue({
+            status: null,
+            error: new Error('spawn npx ENOENT')
+        } as never);
+        const result = await runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipVerify: true,
+            yes: true
+        });
+        expect(result.warnings.join(' ')).toContain('spawn npx ENOENT');
+        expect(result.warnings.join(' ')).not.toContain('code null');
+    });
+});
+
+describe('a .gitignore failure must not swallow the summary', () => {
+    it('warns and names the token-bearing files instead of throwing', async () => {
+        mockAcceptedToken();
+        vi.spyOn(gitignore, 'protectFromVersionControl').mockRejectedValue(
+            new Error('EACCES: permission denied')
+        );
+        const result = await runSetup({
+            url: URL_,
+            authToken: 'good',
+            agents: ['cursor'],
+            scope: 'folder',
+            cwd: dir,
+            skipSkills: true,
+            skipVerify: true,
+            yes: true
+        });
+        const said = result.warnings.join(' ');
+        expect(said).toContain('EACCES');
+        // The whole point: the developer still learns which files hold a token.
+        expect(said).toContain('.cursor');
+        expect(result.outcomes[0].result).toBe('written');
     });
 });

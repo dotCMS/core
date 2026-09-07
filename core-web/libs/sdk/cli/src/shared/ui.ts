@@ -100,7 +100,12 @@ export function renderSummary(input: SummaryInput): string {
         lines.push('    Configuration was written and left in place; the server did not come up.');
     }
 
-    const allGood = input.connection === 'ok' && input.outcomes.every((o) => o.result !== 'failed');
+    // `[].every()` is true, so a run that configured NOTHING used to print "Ready" and exit 0.
+    // Requiring at least one outcome is what makes the claim mean something (spec Edge Cases).
+    const allGood =
+        input.connection === 'ok' &&
+        input.outcomes.length > 0 &&
+        input.outcomes.every((o) => o.result !== 'failed');
     if (allGood) {
         lines.push('');
         lines.push(`  Ready — ${input.nextStep ?? 'open your editor and start using dotCMS.'}`);

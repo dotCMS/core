@@ -1,6 +1,11 @@
 import { DOTCMS_API, describeRequestFailure, endpoint, httpGet } from '@dotcms/http';
 
-import { InstanceUnreachableError, InvalidUrlError, NotADotCmsInstanceError } from './errors';
+import {
+    CredentialInUrlError,
+    InstanceUnreachableError,
+    InvalidUrlError,
+    NotADotCmsInstanceError
+} from './errors';
 
 export interface InstanceInfo {
     /** Normalized base URL, no trailing slash. */
@@ -16,11 +21,17 @@ export function normalizeUrl(url: string): string {
 
 export function validateUrl(url: string): void {
     if (!/^https?:\/\//i.test(url)) throw new InvalidUrlError(url);
+    let parsed: URL;
     try {
-        new URL(url);
+        parsed = new URL(url);
     } catch {
         throw new InvalidUrlError(url);
     }
+    // An address is not a place to keep a credential. `https://user:secret@host` parses
+    // perfectly, and this address is then written into DOTCMS_URL in every editor's config and
+    // printed in the summary — so accepting it puts a password on disk in plaintext and on
+    // screen in clear, which FR-022a forbids outright.
+    if (parsed.username || parsed.password) throw new CredentialInUrlError(url);
 }
 
 /**

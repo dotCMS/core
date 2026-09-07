@@ -77,3 +77,114 @@ describe('confirmConnection (FR-024a-e)', () => {
         if (!result.ok) expect(result.cause).toBe('fetch-failed');
     });
 });
+
+describe('the MCP handshake is sequenced, not fired all at once (FR-024a)', () => {
+    /**
+     * `tools/list` used to go out in the same tick as `initialize`. MCP requires
+     * initialize -> `notifications/initialized` -> everything else, so a strict server may
+     * reject that request and the connection check would report a broken server for a
+     * configuration that is perfectly good.
+     *
+     * Nothing here caught it: no existing test drove the server SIDE of the conversation.
+     */
+    function sent(child: ReturnType<typeof fakeChild>): Promise<string[]> {
+        const frames: string[] = [];
+        (child['stdin'] as NodeJS.WritableStream).on('data', (c: Buffer) => {
+            for (const line of String(c).split('\n')) if (line.trim()) frames.push(line);
+        });
+        return Promise.resolve(frames);
+    }
+
+    it('sends initialize alone, then initialized + tools/list only after the server answers', async () => {
+        const child = fakeChild();
+        (childProcess.spawn as unknown as Mock).mockReturnValue(child as never);
+        const frames = await sent(child);
+
+        const run = confirmConnection({
+            url: 'https://demo.dotcms.com',
+            token: 't',
+            timeoutMs: 500
+        });
+        await new Promise((r) => setImmediate(r));
+
+        const first = frames.map((f) => JSON.parse(f).method);
+        expect(first).toEqual(['initialize']);
+
+        // The server answers the initialize.
+        (child['stdout'] as NodeJS.ReadableStream).emit(
+            'data',
+            Buffer.from(`${JSON.stringify({ jsonrpc: '2.0', id: 1, result: {} })}\n`)
+        );
+        await new Promise((r) => setImmediate(r));
+
+        expect(frames.map((f) => JSON.parse(f).method)).toEqual([
+            'initialize',
+            'notifications/initialized',
+            'tools/list'
+        ]);
+
+        (child['stdout'] as NodeJS.ReadableStream).emit(
+            'data',
+            Buffer.from(
+                `${JSON.stringify({ jsonrpc: '2.0', id: 2, result: { tools: [{ name: 'x' }] } })}\n`
+            )
+        );
+        await expect(run).resolves.toMatchObject({ ok: true });
+    });
+
+    it('the initialized notification carries no id — it is a notification', async () => {
+        const child = fakeChild();
+        (childProcess.spawn as unknown as Mock).mockReturnValue(child as never);
+        const frames = await sent(child);
+        void confirmConnection({ url: 'https://demo.dotcms.com', token: 't', timeoutMs: 200 });
+        await new Promise((r) => setImmediate(r));
+        (child['stdout'] as NodeJS.ReadableStream).emit(
+            'data',
+            Buffer.from(`${JSON.stringify({ jsonrpc: '2.0', id: 1, result: {} })}\n`)
+        );
+        await new Promise((r) => setImmediate(r));
+        const note = frames
+            .map((f) => JSON.parse(f))
+            .find((m) => m.method === 'notifications/initialized');
+        expect(note).toBeDefined();
+        expect(note.id).toBeUndefined();
+    });
+});
+
+describe('Windows needs a shell to run npx (FR-024a, FR-025)', () => {
+    /**
+     * `npx` on Windows is `npx.cmd`, and since the CVE-2024-27980 fix Node refuses to execute
+     * `.cmd`/`.bat` without a shell. Windows is in scope (see `CAN_RESTRICT`, the `%APPDATA%`
+     * path in the registry, research R5), so without this the connection check failed on EVERY
+     * Windows run — after the configuration had been written correctly.
+     *
+     * Asserted by faking the platform, because CI here is not Windows and an untested claim
+     * about another OS is worth very little.
+     */
+    const real = process.platform;
+    const asPlatform = (value: string) =>
+        Object.defineProperty(process, 'platform', { value, configurable: true });
+    afterEach(() => asPlatform(real));
+
+    it('passes shell: true on win32', () => {
+        asPlatform('win32');
+        void confirmConnection({ url: 'https://demo.dotcms.com', token: 't', timeoutMs: 20 });
+        const [, , opts] = (childProcess.spawn as unknown as Mock).mock.calls.at(-1) as [
+            string,
+            string[],
+            { shell?: boolean }
+        ];
+        expect(opts.shell).toBe(true);
+    });
+
+    it('does not on posix, where a shell would only add an interpreter', () => {
+        asPlatform('darwin');
+        void confirmConnection({ url: 'https://demo.dotcms.com', token: 't', timeoutMs: 20 });
+        const [, , opts] = (childProcess.spawn as unknown as Mock).mock.calls.at(-1) as [
+            string,
+            string[],
+            { shell?: boolean }
+        ];
+        expect(opts.shell).toBe(false);
+    });
+});
