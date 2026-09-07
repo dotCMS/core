@@ -879,6 +879,10 @@ public class PageResourceTest {
                 PageRenderTestUtil.createPage(1, host);
         final HTMLPageAsset page = pageRenderTest.getPage();
 
+        // createPage() only wires up the containers; content has to be placed
+        // explicitly, otherwise the assertion loop below has nothing to iterate.
+        pageRenderTest.addContent(pageRenderTest.getFirstContainer());
+
         when(request.getRequestURI()).thenReturn(page.getURI());
 
         final Response response = pageResource.loadJson(request, this.response, page.getURI(),
