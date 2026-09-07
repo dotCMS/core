@@ -3,9 +3,9 @@ import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { ImageModule } from 'primeng/image';
-import { InputTextModule } from 'primeng/inputtext';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
+import { TextareaModule } from 'primeng/textarea';
 
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
@@ -24,9 +24,9 @@ import { DotAiStore } from '../../store/dot-ai.store';
     imports: [
         FormsModule,
         ButtonModule,
-        InputTextModule,
         SelectModule,
         SkeletonModule,
+        TextareaModule,
         ImageModule,
         DotCopyButtonComponent,
         DotMessagePipe
@@ -39,11 +39,24 @@ export default class DotAiImageComponent {
 
     protected readonly $prompt = signal('');
 
+    /**
+     * The enum values are the pixel sizes the API takes, so the label is derived from the
+     * value rather than translated: `1792x1024` shown as `1792×1024`. That keeps the two from
+     * drifting, and dimensions read the same in every language.
+     */
     protected readonly orientations = [
-        { label: 'dotai.image.orientation.square', value: DotAIImageOrientation.SQUARE },
-        { label: 'dotai.image.orientation.landscape', value: DotAIImageOrientation.HORIZONTAL },
-        { label: 'dotai.image.orientation.portrait', value: DotAIImageOrientation.VERTICAL }
-    ];
+        DotAIImageOrientation.HORIZONTAL,
+        DotAIImageOrientation.SQUARE,
+        DotAIImageOrientation.VERTICAL
+    ].map((value) => ({ value, label: value.replace('x', '×') }));
+
+    /** Enter generates; Shift+Enter inserts a newline, as in the Chat tab's composer. */
+    protected onKeydown(event: KeyboardEvent): void {
+        if (event.key === 'Enter' && !event.shiftKey) {
+            event.preventDefault();
+            this.onGenerate();
+        }
+    }
 
     protected onGenerate(): void {
         if (this.$prompt().trim() && this.store.isConfigured()) {

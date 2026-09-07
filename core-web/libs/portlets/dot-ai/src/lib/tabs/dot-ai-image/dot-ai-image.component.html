@@ -1,43 +1,69 @@
 <section class="flex h-full min-w-0 flex-col overflow-hidden">
     <div class="shrink-0 border-b border-surface-200 p-4">
-        <div class="flex items-end gap-2">
-            <input
-                pInputText
-                class="flex-1"
+        <!-- One card holds the prompt and its controls. The border lives on the card, so the
+             textarea's own border, radius and focus shadow are switched off rather than nested
+             inside it — otherwise you see a box within a box. overflow-hidden keeps the
+             textarea's corners inside the card's radius. -->
+        <div class="overflow-hidden rounded-lg border border-surface-200 bg-surface-0">
+            <textarea
+                pTextarea
+                rows="2"
+                class="w-full resize-none rounded-none! border-0! bg-transparent! shadow-none! focus:shadow-none!"
                 [value]="$prompt()"
                 (input)="$prompt.set($any($event.target).value)"
-                (keydown.enter)="onGenerate()"
+                (keydown)="onKeydown($event)"
                 [disabled]="!store.isConfigured()"
                 [attr.aria-label]="'dotai.image.input.aria' | dm"
                 [placeholder]="'dotai.image.placeholder' | dm"
-                data-testid="dotai-image-input" />
+                data-testid="dotai-image-input"></textarea>
 
-            <p-select
-                size="small"
-                [options]="orientations"
-                optionLabel="label"
-                optionValue="value"
-                [ngModel]="store.imageOrientation()"
-                (ngModelChange)="store.setOrientation($event)"
-                [ngModelOptions]="{ standalone: true }"
-                data-testid="dotai-image-orientation" />
+            <div class="flex flex-wrap items-center gap-3 px-3 pb-3">
+                <p-select
+                    [options]="orientations"
+                    optionLabel="label"
+                    optionValue="value"
+                    [ngModel]="store.imageOrientation()"
+                    (ngModelChange)="store.setOrientation($event)"
+                    [ngModelOptions]="{ standalone: true }"
+                    [ariaLabel]="'dotai.image.size.aria' | dm"
+                    data-testid="dotai-image-orientation">
+                    <!-- PrimeNG's own template seam, so the leading glyph rides along with the
+                         selected value instead of being positioned over the control. -->
+                    <ng-template #selectedItem let-selected>
+                        <span class="flex items-center gap-2">
+                            <span class="material-symbols-outlined text-base!" aria-hidden="true">
+                                image
+                            </span>
+                            <span>{{ selected.label }}</span>
+                        </span>
+                    </ng-template>
+                </p-select>
 
-            <p-button
-                [label]="'dotai.image.generate' | dm"
-                [disabled]="!store.isConfigured() || !$prompt().trim() || store.imageGenerating()"
-                (onClick)="onGenerate()"
-                data-testid="dotai-image-generate" />
+                <span
+                    class="ml-auto text-sm text-muted-color"
+                    data-testid="dotai-image-replaces-hint">
+                    {{ 'dotai.image.replaces-hint' | dm }}
+                </span>
+
+                <p-button
+                    [label]="'dotai.image.generate' | dm"
+                    [disabled]="
+                        !store.isConfigured() || !$prompt().trim() || store.imageGenerating()
+                    "
+                    (onClick)="onGenerate()"
+                    data-testid="dotai-image-generate" />
+            </div>
         </div>
     </div>
 
-    <div class="min-h-0 flex-1 overflow-y-auto p-4">
+    <!-- flex-col so the placeholder can take the remaining height rather than sitting as a
+         short band under the composer. -->
+    <div class="flex min-h-0 flex-1 flex-col overflow-y-auto p-4">
         @if (store.imageGenerating()) {
-            <p-skeleton
-                class="block aspect-video w-full max-w-2xl"
-                data-testid="dotai-image-loading" />
+            <p-skeleton class="block aspect-video w-full" data-testid="dotai-image-loading" />
         } @else if (store.image(); as image) {
-            <div class="max-w-2xl" data-testid="dotai-image-result">
-                <div class="aspect-video overflow-hidden rounded-md border border-surface-200">
+            <div data-testid="dotai-image-result">
+                <div class="aspect-video overflow-hidden rounded-lg border border-surface-200">
                     <p-image
                         [src]="store.imageUrl()"
                         [preview]="true"
@@ -75,9 +101,17 @@
                 </div>
             </div>
         } @else {
-            <div class="p-8 text-center" data-testid="dotai-image-empty">
-                <h2 class="text-2xl font-medium">{{ 'dotai.image.empty.title' | dm }}</h2>
-                <p class="mt-1 text-muted-color">{{ 'dotai.image.empty.sub' | dm }}</p>
+            <div
+                class="flex min-h-0 flex-1 items-center justify-center rounded-lg bg-surface-100 p-8 text-center"
+                data-testid="dotai-image-empty">
+                <div>
+                    <span
+                        class="material-symbols-outlined text-4xl! text-muted-color"
+                        aria-hidden="true">
+                        image
+                    </span>
+                    <p class="mt-2 text-muted-color">{{ 'dotai.image.empty.sub' | dm }}</p>
+                </div>
             </div>
         }
     </div>
