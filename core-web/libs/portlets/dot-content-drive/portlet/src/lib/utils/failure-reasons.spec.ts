@@ -1,28 +1,25 @@
 import { describe, expect, it } from '@jest/globals';
 
-import {
-    CONTENT_DRIVE_FAILURE_REASONS,
-    DotContentDriveFailureReason,
-    messageKeyForFailureReason
-} from './failure-reasons';
+import { DOT_BULK_UPLOAD_FAILURE_REASONS, DotBulkUploadFailureReason } from '@dotcms/dotcms-models';
+
+import { messageKeyForFailureReason } from './failure-reasons';
 
 /**
  * FR-036: every failure reason the server can return must have its own product copy. A reason with
  * no copy is a hole the author sees, so this file's job is to make an unmapped reason impossible to
  * ship rather than to check a handful of examples.
  *
- * **Why the reason set is ours and not the server's.** The wire codes are part of the submission
- * contract, which is not settled (see `contracts/client-requirements.md`, open item 2). This maps a
- * *client-side* union to message keys, which needs no contract at all — which is why the copy work
- * can proceed while that conversation is still open. Translating whatever strings the server
- * actually sends into this union is a separate, tiny step that belongs in Phase 7, once the
- * contract exists.
+ * **The reason set is the server's, and this asserts we cover all of it.** The codes are the closed
+ * set fixed by the submission contract, so `DOT_BULK_UPLOAD_FAILURE_REASONS` is imported rather
+ * than restated here: a set declared twice is a set that can disagree with itself, and the whole
+ * risk this file guards is a reason arriving with no copy behind it. Iterating the real vocabulary
+ * means adding a member to the contract fails here until someone writes the copy for it.
  */
 describe('messageKeyForFailureReason', () => {
     it('should cover every reason in the closed set, with no gaps', () => {
         // The point of the whole file. Adding a seventh reason without copy fails here rather than
         // rendering a blank to an author.
-        const unmapped = CONTENT_DRIVE_FAILURE_REASONS.filter(
+        const unmapped = DOT_BULK_UPLOAD_FAILURE_REASONS.filter(
             (reason) => !messageKeyForFailureReason(reason)
         );
 
@@ -31,9 +28,9 @@ describe('messageKeyForFailureReason', () => {
 
     it('should give each reason its own distinct copy', () => {
         // Two reasons sharing a key means one of them is being explained by the wrong sentence.
-        const keys = CONTENT_DRIVE_FAILURE_REASONS.map(messageKeyForFailureReason);
+        const keys = DOT_BULK_UPLOAD_FAILURE_REASONS.map(messageKeyForFailureReason);
 
-        expect(new Set(keys).size).toBe(CONTENT_DRIVE_FAILURE_REASONS.length);
+        expect(new Set(keys).size).toBe(DOT_BULK_UPLOAD_FAILURE_REASONS.length);
     });
 
     it.each([
@@ -43,7 +40,7 @@ describe('messageKeyForFailureReason', () => {
         ['PERMISSION_DENIED'],
         ['STAGED_CONTENT_UNAVAILABLE'],
         ['UNCLASSIFIED']
-    ] as [DotContentDriveFailureReason][])('should resolve a key for %s', (reason) => {
+    ] as [DotBulkUploadFailureReason][])('should resolve a key for %s', (reason) => {
         expect(messageKeyForFailureReason(reason)).toEqual(
             expect.stringContaining('content-drive')
         );

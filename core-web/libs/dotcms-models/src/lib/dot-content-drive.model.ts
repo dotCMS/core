@@ -430,3 +430,26 @@ export interface DotBulkRefreshCompletedEvent extends Partial<DotBulkRefreshCoun
      */
     jobId?: string;
 }
+
+/**
+ * Why a single file in a bulk upload batch did not make it.
+ *
+ * The closed set fixed by the submission contract
+ * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), carried as `results[].reason`
+ * on a `FAILED` item. Adding a member is a change to both halves of #37166.
+ *
+ * It lives here rather than beside the copy that renders it because it is a **wire** vocabulary:
+ * the service that reads a run's outcome sits in `data-access`, and a service there cannot import
+ * a type out of a portlet. Resolving a reason to product copy is the portlet's business and stays
+ * there.
+ */
+export const DOT_BULK_UPLOAD_FAILURE_REASONS = [
+    'OVER_SIZE_LIMIT',
+    'DISALLOWED_FILE_TYPE',
+    'NAME_COLLISION',
+    'PERMISSION_DENIED',
+    'STAGED_CONTENT_UNAVAILABLE',
+    'UNCLASSIFIED'
+] as const;
+
+export type DotBulkUploadFailureReason = (typeof DOT_BULK_UPLOAD_FAILURE_REASONS)[number];
