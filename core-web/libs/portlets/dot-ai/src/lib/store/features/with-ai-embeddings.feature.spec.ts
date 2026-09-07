@@ -169,11 +169,10 @@ describe('withAiEmbeddings', () => {
             expect(store.filteredIndexes().map((i) => i.name)).toEqual(['news']);
         });
 
-        it('should filter by status', () => {
+        it('should ignore build status, since the filter is text only', () => {
             store.markIndexBuilding('blogs');
-            store.setStatusFilter('BUILDING');
 
-            expect(store.filteredIndexes().map((i) => i.name)).toEqual(['blogs']);
+            expect(store.filteredIndexes()).toHaveLength(2);
         });
 
         it('should show everything when no filter is set', () => {

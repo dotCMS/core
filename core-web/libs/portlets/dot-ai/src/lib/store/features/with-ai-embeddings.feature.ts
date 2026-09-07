@@ -8,7 +8,7 @@ import { computed, inject, Signal } from '@angular/core';
 import { catchError, exhaustMap, mergeMap, tap } from 'rxjs/operators';
 
 import { DotAiEmbeddingsService, DotHttpErrorManagerService } from '@dotcms/data-access';
-import { DotAiEmbeddingsBuildForm, DotAiIndex, DotAiIndexStatus } from '@dotcms/dotcms-models';
+import { DotAiEmbeddingsBuildForm, DotAiIndex } from '@dotcms/dotcms-models';
 
 import { DotAiPortletState } from '../../models/dot-ai-portlet.models';
 
@@ -35,20 +35,17 @@ export function withAiEmbeddings() {
         }>(),
         withComputed((store) => ({
             /**
-             * Both filters are pure `computed` work: `indexCount` returns every index in one
-             * response with no query parameters, so there is nothing to fetch on a keystroke.
+             * Pure `computed` work: `indexCount` returns every index in one response with no
+             * query parameters, so there is nothing to fetch on a keystroke.
              */
             filteredIndexes: computed<DotAiIndex[]>(() => {
                 const needle = store.indexFilter().trim().toLowerCase();
-                const status = store.statusFilter();
-                const statuses = store.indexStatuses();
 
-                return store.indexes().filter((index) => {
-                    const matchesName = !needle || index.name.toLowerCase().includes(needle);
-                    const matchesStatus = !status || statuses[index.name] === status;
+                if (!needle) {
+                    return store.indexes();
+                }
 
-                    return matchesName && matchesStatus;
-                });
+                return store.indexes().filter((index) => index.name.toLowerCase().includes(needle));
             })
         })),
         withMethods((store) => {
@@ -64,10 +61,6 @@ export function withAiEmbeddings() {
             return {
                 setIndexFilter(indexFilter: string): void {
                     patchState(store, { indexFilter });
-                },
-
-                setStatusFilter(statusFilter: DotAiIndexStatus | null): void {
-                    patchState(store, { statusFilter });
                 },
 
                 buildIndex: rxMethod<DotAiEmbeddingsBuildForm>(

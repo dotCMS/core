@@ -109,7 +109,6 @@ export interface DotAiPortletState {
 
     // embeddings screen (client-side filters — the whole dataset arrives in one response)
     indexFilter: string;
-    statusFilter: DotAiIndexStatus | null;
 
     // image
     image: DotAiGeneratedImage | null;
@@ -154,7 +153,6 @@ export const DOT_AI_INITIAL_STATE: DotAiPortletState = {
     chatStreaming: false,
 
     indexFilter: '',
-    statusFilter: null,
 
     image: null,
     imageGenerating: false,

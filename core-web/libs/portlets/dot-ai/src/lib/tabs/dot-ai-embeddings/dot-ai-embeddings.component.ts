@@ -4,7 +4,6 @@ import { ConfirmationService } from 'primeng/api';
 import { ButtonModule } from 'primeng/button';
 import { ConfirmDialogModule } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
-import { SelectModule } from 'primeng/select';
 import { TableModule } from 'primeng/table';
 import { TagModule } from 'primeng/tag';
 import { ToolbarModule } from 'primeng/toolbar';
@@ -37,7 +36,6 @@ import { estimateIndexCost } from '../../utils/dot-ai-index.utils';
         TableModule,
         TagModule,
         ButtonModule,
-        SelectModule,
         ConfirmDialogModule,
         DotSearchInputComponent,
         DotMessagePipe
@@ -61,12 +59,6 @@ export default class DotAiEmbeddingsComponent {
         table: { style: 'table-layout: fixed' },
         wrapper: { style: 'height: 100%' }
     };
-
-    protected readonly statusOptions = [
-        { label: 'dotai.embeddings.filter.all', value: null },
-        { label: 'dotai.embeddings.status.ready', value: DOT_AI_INDEX_STATUS.READY },
-        { label: 'dotai.embeddings.status.building', value: DOT_AI_INDEX_STATUS.BUILDING }
-    ];
 
     protected openCreateDialog(): void {
         this.#dialogService

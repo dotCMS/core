@@ -7,16 +7,6 @@
                     (search)="store.setIndexFilter($event)"
                     testId="dotai-embeddings-filter" />
 
-                <p-select
-                    size="small"
-                    [options]="statusOptions"
-                    optionLabel="label"
-                    optionValue="value"
-                    [ngModel]="store.statusFilter()"
-                    (ngModelChange)="store.setStatusFilter($event)"
-                    [ngModelOptions]="{ standalone: true }"
-                    data-testid="dotai-embeddings-status-filter" />
-
                 <span class="text-sm text-muted-color" data-testid="dotai-embeddings-summary">
                     {{
                         'dotai.embeddings.summary'
