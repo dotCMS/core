@@ -4,7 +4,7 @@ import { confirmExclude, confirmOverwrite, inquirerPort } from './prompts';
 import { runSetup } from './setup';
 import { TARGET_IDS } from './targets/registry';
 
-import { canPrompt } from '../../shared/prompts';
+import { canPrompt, type PromptPort } from '../../shared/prompts';
 import { printBanner, renderSummary, writeOut } from '../../shared/ui';
 
 import type { Command } from 'commander';
@@ -33,6 +33,17 @@ function makeProgress(interactive: boolean) {
         },
         done(): void {
             spinner?.stop();
+            spinner = null;
+        },
+        /**
+         * Hand the terminal over to a question.
+         *
+         * Keeps the finished step visible, then stops repainting. `done()` erases the line;
+         * here the step really did complete, so it should stay on screen above the prompt.
+         */
+        pause(): void {
+            spinner?.succeed();
+            spinner = null;
         },
         /**
          * Leave the failed step visible instead of a spinner that never stops.
@@ -48,6 +59,60 @@ function makeProgress(interactive: boolean) {
         warn(text: string): void {
             this.fail(text);
         }
+    };
+}
+
+/** The part of the progress reporter a prompt needs. */
+export interface Pausable {
+    pause(): void;
+}
+
+/**
+ * Give the terminal to whoever is asking a question.
+ *
+ * ora repaints on a timer; inquirer draws its prompt once and then waits. Run both and the
+ * spinner overwrites the question: the developer sees the PREVIOUS step still spinning with a
+ * cursor after it and no visible prompt, so the run looks hung on that step. It is not hung —
+ * it is waiting for an answer to a question it has already erased.
+ *
+ * Wrapping the port is the only place this rule can live once. `setup.ts` does not know a
+ * spinner exists (and should not), and the port does not know which step is running.
+ */
+export function pausingPort(port: PromptPort, progress: Pausable): PromptPort {
+    return {
+        text(message, defaultValue) {
+            progress.pause();
+            return port.text(message, defaultValue);
+        },
+        password(message) {
+            progress.pause();
+            return port.password(message);
+        },
+        select<T extends string>(message: string, choices: { name: string; value: T }[]) {
+            progress.pause();
+            return port.select(message, choices);
+        },
+        multiSelect<T extends string>(
+            message: string,
+            choices: { name: string; value: T; checked: boolean }[]
+        ) {
+            progress.pause();
+            return port.multiSelect(message, choices);
+        }
+    };
+}
+
+/**
+ * The same rule for the confirmations, which are prompts too — and which run under the
+ * `Writing configuration…` spinner, where an invisible question is just as fatal.
+ */
+export function pausingConfirm<A extends unknown[]>(
+    confirm: (...args: A) => Promise<boolean>,
+    progress: Pausable
+): (...args: A) => Promise<boolean> {
+    return (...args: A) => {
+        progress.pause();
+        return confirm(...args);
     };
 }
 
@@ -97,9 +162,13 @@ export function registerAgentCommand(program: Command): void {
                     onAuthRetry: (message, attempt, max) =>
                         progress.warn(`${message}  (attempt ${attempt} of ${max})`),
                     onWarning: (message) => progress.warn(message),
-                    promptPort: interactive ? inquirerPort : undefined,
-                    confirmOverwrite: interactive ? confirmOverwrite : undefined,
-                    confirmExclude: interactive ? confirmExclude : undefined,
+                    promptPort: interactive ? pausingPort(inquirerPort, progress) : undefined,
+                    confirmOverwrite: interactive
+                        ? pausingConfirm(confirmOverwrite, progress)
+                        : undefined,
+                    confirmExclude: interactive
+                        ? pausingConfirm(confirmExclude, progress)
+                        : undefined,
                     url: options['url'] as string | undefined,
                     user: options['user'] as string | undefined,
                     password: options['password'] as string | undefined,
