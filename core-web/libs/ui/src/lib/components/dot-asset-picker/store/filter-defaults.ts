@@ -9,6 +9,7 @@ import {
     PUBLISHED_ONLY_STATUSES,
     REFERENCEABLE_STATUSES
 } from '../../dot-filter-bar/chips/dot-status-filter/constants';
+import { sameFilterValue } from '../../dot-filter-bar/filter-facade.token';
 
 /**
  * The filters a picker opens with, derived from what its caller seeded.
@@ -121,15 +122,6 @@ export function allowedStatusesFor(config: DotAssetPickerConfig | null): DotCont
     return config.browse.showWorking === false ? PUBLISHED_ONLY_STATUSES : null;
 }
 
-/** Whether two filter values are the same selection, order included. */
-const sameValue = (a?: string | string[], b?: string | string[]): boolean => {
-    if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((value, index) => value === b[index]);
-    }
-
-    return a === b;
-};
-
 /**
  * Whether anything differs from what the picker opened with — which is what decides whether
  * "Clear all" is worth offering.
@@ -160,7 +152,7 @@ export function hasNonDefaultPickerFilters(
             continue;
         }
 
-        if (!sameValue(filters?.[key], defaults[key])) {
+        if (!sameFilterValue(filters?.[key], defaults[key])) {
             return true;
         }
     }

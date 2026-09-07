@@ -19,7 +19,11 @@ import { DotMessageService } from '@dotcms/data-access';
 import { DotContentStatus, STATUS_FILTER_KEY, STATUS_FILTER_OPTIONS } from './constants';
 
 import { DotMessagePipe } from '../../../../dot-message/dot-message.pipe';
-import { CHIP_FILTER_LISTBOX_PT, CHIP_FILTER_POPOVER_PT } from '../../../dot-chip-filter/constants';
+import {
+    CHIP_FILTER_LISTBOX_PT,
+    CHIP_FILTER_POPOVER_PT,
+    CHIP_FILTER_SCROLL_HEIGHT
+} from '../../../dot-chip-filter/constants';
 import { DotChipFilterComponent } from '../../../dot-chip-filter/dot-chip-filter.component';
 import { DotFilterListItemComponent } from '../../../dot-filter-list-item/dot-filter-list-item.component';
 import { DOT_FILTER_FACADE } from '../../filter-facade.token';
@@ -61,7 +65,7 @@ export class DotStatusFilterComponent {
 
     protected readonly listboxPt = CHIP_FILTER_LISTBOX_PT;
     protected readonly popoverPt = CHIP_FILTER_POPOVER_PT;
-    protected readonly LISTBOX_SCROLL_HEIGHT = '25rem';
+    protected readonly LISTBOX_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
     /**
      * Conditions this surface may offer, or `null` for no bound (FR-014d).
      *

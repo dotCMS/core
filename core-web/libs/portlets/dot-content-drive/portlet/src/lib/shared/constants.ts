@@ -3,7 +3,7 @@ import {
     DotCMSBaseTypesContentTypes,
     DotSite
 } from '@dotcms/dotcms-models';
-import { SYSTEM_HOST_ID } from '@dotcms/ui';
+import { CHIP_FILTER_SCROLL_HEIGHT, SYSTEM_HOST_ID } from '@dotcms/ui';
 
 import { DotContentDrivePage, DotContentDrivePagination, DotContentDriveSortOrder } from './models';
 
@@ -159,7 +159,9 @@ export {
 // AssetPicker, and the portlet's URL decode layer sanitizes against the same three values.
 export { CONTENT_STATUS, STATUS_FILTER_KEY, STATUS_FILTER_OPTIONS } from '@dotcms/ui';
 
-export const PANEL_SCROLL_HEIGHT = '25rem';
+// Aliased rather than redefined: the portlet's panels are chip-filter popovers, so this is the
+// same measurement `@dotcms/ui` already owns, not a second one that happens to match.
+export const PANEL_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
 
 // Dialog type
 export const DIALOG_TYPE = {

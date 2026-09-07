@@ -5,19 +5,11 @@ import { DotAssetPickerStore } from './dot-asset-picker.store';
 import {
     DOT_FILTER_FACADE,
     DotFilterFacade,
-    DotFilterValue
+    DotFilterValue,
+    isNoOpFilterPatch
 } from '../../dot-filter-bar/filter-facade.token';
 
 type AssetPickerStore = InstanceType<typeof DotAssetPickerStore>;
-
-/** Whether two filter values are the same selection, order included. */
-const sameValue = (a?: DotFilterValue, b?: DotFilterValue): boolean => {
-    if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((value, index) => value === b[index]);
-    }
-
-    return a === b;
-};
 
 /**
  * The AssetPicker's {@link DotFilterFacade}.
@@ -47,11 +39,7 @@ export function createAssetPickerFilterFacade(store: AssetPickerStore): DotFilte
 
         patchFilters: (patch: Record<string, DotFilterValue>): void => {
             // O9: a patch that changes nothing must not notify or reset paging.
-            const changed = Object.entries(patch).some(
-                ([key, value]) => !sameValue(store.getFilterValue(key), value)
-            );
-
-            if (!changed) {
+            if (isNoOpFilterPatch(patch, (key) => store.getFilterValue(key))) {
                 return;
             }
 

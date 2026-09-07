@@ -1,7 +1,7 @@
 import { computed, inject, Provider } from '@angular/core';
 
 import { DotCMSBaseTypesContentTypes } from '@dotcms/dotcms-models';
-import { DOT_FILTER_FACADE, DotFilterFacade, DotFilterValue } from '@dotcms/ui';
+import { DOT_FILTER_FACADE, DotFilterFacade, DotFilterValue, isNoOpFilterPatch } from '@dotcms/ui';
 
 import { DotContentDriveStore } from './dot-content-drive.store';
 
@@ -12,15 +12,6 @@ type ContentDriveStore = InstanceType<typeof DotContentDriveStore>;
 
 /** The one filter key whose stored form differs from what chips speak. */
 const BASE_TYPE_KEY = 'baseType';
-
-/** Whether two filter values are the same selection, order included. */
-const sameValue = (a?: DotFilterValue, b?: DotFilterValue): boolean => {
-    if (Array.isArray(a) && Array.isArray(b)) {
-        return a.length === b.length && a.every((value, index) => value === b[index]);
-    }
-
-    return a === b;
-};
 
 /**
  * Stored numeric keys → base-type names. Unmapped keys are dropped, not passed through.
@@ -90,11 +81,7 @@ export function createContentDriveFilterFacade(store: ContentDriveStore): DotFil
             // the *stored* form, after encoding, so a name→number round-trip does not read as a
             // change. The store's own `patchFilters` resets paging unconditionally, which is right
             // for its other callers.
-            const changed = Object.entries(encoded).some(
-                ([key, value]) => !sameValue(store.getFilterValue(key), value)
-            );
-
-            if (!changed) {
+            if (isNoOpFilterPatch(encoded, (key) => store.getFilterValue(key))) {
                 return;
             }
 

@@ -31,6 +31,48 @@ export function toFilterValues(value: DotFilterValue | undefined): string[] {
 }
 
 /**
+ * Whether two filter values are the same selection, order included.
+ *
+ * Lives here, next to {@link toFilterValues}, because every facade needs it and a divergence
+ * between two surfaces' comparators is exactly the drift this seam exists to prevent: one facade
+ * treating a reordered list as unchanged while the other treats it as a change would make O9
+ * (idempotence) mean something different per surface.
+ *
+ * @param a One value, or `undefined` when the filter is not set.
+ * @param b The other value, or `undefined`.
+ * @return True when both are unset, or hold the same values in the same order.
+ */
+export function sameFilterValue(a?: DotFilterValue, b?: DotFilterValue): boolean {
+    if (Array.isArray(a) && Array.isArray(b)) {
+        return a.length === b.length && a.every((value, index) => value === b[index]);
+    }
+
+    return a === b;
+}
+
+/**
+ * Whether a patch would change nothing, which is the guard behind contract O9.
+ *
+ * A store's `patchFilters` resets paging unconditionally — right for a real change, wrong for a
+ * no-op: a chip re-emitting its current selection (a popover closing, a `linkedSignal` settling)
+ * would bounce the editor back to page 1 for nothing. Facades apply this before delegating, so the
+ * store's other callers keep their unconditional semantics.
+ *
+ * Compare against the **stored** form: a facade that encodes values on the way in should encode
+ * first, so a name-to-key round-trip does not read as a change.
+ *
+ * @param patch The values about to be merged, in stored form.
+ * @param read Reads the currently stored value for a key.
+ * @return True when every entry already holds that value.
+ */
+export function isNoOpFilterPatch(
+    patch: Record<string, DotFilterValue>,
+    read: (key: string) => DotFilterValue | undefined
+): boolean {
+    return Object.entries(patch).every(([key, value]) => sameFilterValue(read(key), value));
+}
+
+/**
  * What a chip reports when the request behind its options fails.
  *
  * A translation key rather than an `HttpErrorResponse`, and a small object rather than a bare

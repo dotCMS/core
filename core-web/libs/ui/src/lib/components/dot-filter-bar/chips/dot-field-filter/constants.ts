@@ -9,6 +9,8 @@
  * The string values match the backend field-type contract (edit-content `FIELD_TYPES`).
  */
 
+import { CHIP_FILTER_SCROLL_HEIGHT } from '../../../dot-chip-filter/constants';
+
 /**
  * Prefix that marks a filter-bag key as a per-field "user searchable" criterion, e.g. `us.title`.
  *
@@ -115,5 +117,10 @@ export const USER_SEARCHABLE_FIELD_TYPES: readonly string[] = [
  */
 export const FIELD_FILTER_DEBOUNCE_TIME = 500;
 
-/** Scroll height of a field-filter panel's option list. */
-export const FIELD_FILTER_PANEL_SCROLL_HEIGHT = '25rem';
+/**
+ * Scroll height of a field-filter panel's option list.
+ *
+ * Aliases {@link CHIP_FILTER_SCROLL_HEIGHT} rather than repeating its value: a field panel is a
+ * chip-filter popover, so the two heights are the same measurement, not two that happen to match.
+ */
+export const FIELD_FILTER_PANEL_SCROLL_HEIGHT = CHIP_FILTER_SCROLL_HEIGHT;
