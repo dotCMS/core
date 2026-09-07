@@ -16,9 +16,10 @@ import { DotAiStore } from '../../store/dot-ai.store';
  * Chat tab: ask a question of the indexed content and watch the answer stream in.
  *
  * A prompt form, not a conversation. The completions endpoint takes one `prompt` and keeps no
- * history, so each submit is independent and replaces the previous answer. The composer sits
- * above the answer to say that in the layout itself, and the question is left in the textarea
- * so it can be edited and asked again.
+ * history, so each submit is independent and **replaces** the previous answer — there is no
+ * transcript, which is what keeps the screen from implying a memory it does not have. The
+ * composer sits below the answer, the usual arrangement for this kind of screen, and the
+ * question is left in the textarea so it can be edited and asked again.
  *
  * Answers carry no source list. Only the non-streaming response mode returns
  * `dotCMSResults`, and progressive rendering was chosen over source attribution — so the

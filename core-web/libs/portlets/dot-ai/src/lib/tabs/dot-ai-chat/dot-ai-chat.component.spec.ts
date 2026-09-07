@@ -104,7 +104,7 @@ describe('DotAiChatComponent', () => {
         expect(region.textContent).not.toContain('**');
     });
 
-    it('should put the composer above the answer so each submit reads as its own request', () => {
+    it('should put the answer above the composer, so focus order matches reading order', () => {
         withAnswer(answer({ content: 'an answer', state: 'complete' }));
         spectator = createComponent();
 
@@ -114,7 +114,7 @@ describe('DotAiChatComponent', () => {
         expect(composer).toBeTruthy();
         expect(region).toBeTruthy();
         expect(
-            composer.compareDocumentPosition(region) & Node.DOCUMENT_POSITION_FOLLOWING
+            region.compareDocumentPosition(composer) & Node.DOCUMENT_POSITION_FOLLOWING
         ).toBeTruthy();
     });
 

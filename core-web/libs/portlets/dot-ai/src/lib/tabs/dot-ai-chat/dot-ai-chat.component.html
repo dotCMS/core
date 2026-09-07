@@ -7,39 +7,6 @@
     [pt]="splitterPt">
     <ng-template pTemplate>
         <section class="flex h-full min-w-0 flex-col overflow-hidden">
-            <!-- Composer first, answer below: each submit is an independent request that
-                 replaces the answer, so this is a prompt form, not a conversation. Ordering it
-                 this way is what makes that true at a glance, rather than a caption under a
-                 transcript that still looks like chat. -->
-            <div class="shrink-0 border-b border-surface-200 p-4">
-                <dot-ai-prompt-input
-                    [value]="$draft()"
-                    (valueChange)="$draft.set($event)"
-                    (submitted)="onSend()"
-                    [disabled]="!store.isConfigured()"
-                    [ariaLabel]="'dotai.chat.input.aria' | dm"
-                    [placeholder]="'dotai.chat.placeholder' | dm">
-                    @if (store.isStreaming()) {
-                        <p-button
-                            promptEnd
-                            severity="secondary"
-                            [outlined]="true"
-                            [label]="'dotai.chat.stop' | dm"
-                            (onClick)="store.stopChat()"
-                            data-testid="dotai-chat-stop" />
-                    } @else {
-                        <!-- A labelled button, matching Image's Generate. No ariaLabel needed
-                             now: the visible label is the button's accessible name (FR-056). -->
-                        <p-button
-                            promptEnd
-                            [label]="'dotai.chat.send' | dm"
-                            [disabled]="!store.isConfigured() || !$draft().trim()"
-                            (onClick)="onSend()"
-                            data-testid="dotai-chat-send" />
-                    }
-                </dot-ai-prompt-input>
-            </div>
-
             <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
                 @if (!store.hasAnswer()) {
                     <div class="p-8 text-center" data-testid="dotai-chat-empty">
@@ -91,6 +58,38 @@
                     }
                 }
             </div>
+            <!-- Composer last in the DOM as well as visually, so focus order matches what you
+                 read: answer, then the box you type in. border-t rather than border-b now that
+                 it sits under the result. -->
+            <div class="shrink-0 border-t border-surface-200 p-4">
+                <dot-ai-prompt-input
+                    [value]="$draft()"
+                    (valueChange)="$draft.set($event)"
+                    (submitted)="onSend()"
+                    [disabled]="!store.isConfigured()"
+                    [ariaLabel]="'dotai.chat.input.aria' | dm"
+                    [placeholder]="'dotai.chat.placeholder' | dm">
+                    @if (store.isStreaming()) {
+                        <p-button
+                            promptEnd
+                            severity="secondary"
+                            [outlined]="true"
+                            [label]="'dotai.chat.stop' | dm"
+                            (onClick)="store.stopChat()"
+                            data-testid="dotai-chat-stop" />
+                    } @else {
+                        <!-- A labelled button, matching Image's Generate. No ariaLabel needed
+                             now: the visible label is the button's accessible name (FR-056). -->
+                        <p-button
+                            promptEnd
+                            [label]="'dotai.chat.send' | dm"
+                            [disabled]="!store.isConfigured() || !$draft().trim()"
+                            (onClick)="onSend()"
+                            data-testid="dotai-chat-send" />
+                    }
+                </dot-ai-prompt-input>
+            </div>
+
         </section>
     </ng-template>
 
