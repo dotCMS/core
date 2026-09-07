@@ -109,7 +109,8 @@ symptom of a defect spanning a large class of characters.
   no database, no REST endpoint, no renderer and no build artifact, so those layers have nothing to
   assert. The one claim that reaches beyond the editor — that a `text` node carrying a `link` mark
   renders as a single `<a>` — is pre-existing behavior in every renderer, unchanged by this work.
-  Accessibility (AC-017, AC-018) is not automatable and is routed to the post-merge QA plan.
+  Accessibility (AC-020, AC-021) is not automatable and is routed to the post-merge QA plan.
+  Everything else, AC-013 through AC-019 included, is a Jest assertion.
 - Q: Do we still need renderer link-run coalescing (v1 "Gap B")? → A: **No.** Content authored
   after the fix is a single `text` node carrying the `link` mark, so nothing needs coalescing.
   Healed content deliberately keeps its two anchors until an author reapplies the link — coalescing
@@ -492,7 +493,7 @@ implied):
 | Postman | No | No REST endpoint changes. The VTL render path is unmodified. |
 | Karate | No | Same — no API surface. |
 | e2e (Playwright) | No | The storage round-trip it would prove is plain ProseMirror JSON serialization, already covered at the unit layer. Adds a running-instance dependency for no new assertion. |
-| Manual | **Yes** | AC-017 and AC-018 (screen-reader output) are not automatable; recorded in the post-merge QA plan. AC-016's query is run by hand once. |
+| Manual | **Yes** | **AC-020 and AC-021 only** — screen-reader output, not automatable, recorded in the post-merge QA plan. Every other criterion, AC-013 through AC-019 included, is a Jest test. AC-014 and AC-017 in particular bound the heal's risk and must not be routed here. |
 
 Per Constitution Principle V, the tests that **are** written are developer-approved and confirmed
 failing (Red) before any implementation.
