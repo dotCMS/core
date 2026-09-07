@@ -383,12 +383,17 @@ run reports a collision failure for it.
   unset, which is to say not bounded at all — an authenticated author could stage unbounded bytes
   on shared storage.
 - **FR-013c**: Because the submission carries the content (Q5), the total is not known before the
-  body is read. Enforcement is therefore **authoritative while reading** (FR-010a): the sum
-  accumulates as each file is staged and the request is aborted the moment the ceiling is crossed,
-  so no batch is created and no more than the ceiling reaches disk. Where a caller declares a total
-  up front it MAY be used for a fast refusal before reading — a convenience that saves an author
-  uploading gigabytes only to be refused — but it is never the enforcement point, since a caller
-  can under-declare or omit it.
+  body is read, so enforcement has two stages. The numbering is load-bearing — the frontend half
+  cites these sub-points individually, because the difference between them is what the author
+  experiences:
+  1. **A fast refusal on the declared total**, before reading the body, where the caller declares
+     one. A convenience that saves an author uploading gigabytes only to be refused. It is **not**
+     the enforcement point, since a caller can under-declare or omit it.
+  2. **The authoritative enforcement while the content is read** (FR-010a): the sum accumulates as
+     each file is staged and the request is aborted the moment the ceiling is crossed, so no batch
+     is created and no more than the ceiling reaches disk. Without a declared total this is the
+     only stage that runs, which means an over-ceiling batch is refused **after** the author has
+     watched it upload.
 - **FR-013d**: Content already staged when a submission is refused — by FR-013c or by any other
   submission-time refusal — MUST be reclaimed. FR-033 covers reclaim for runs that reach a terminal
   state; a refused submission never becomes a run and would otherwise leak bytes the author cannot
@@ -591,6 +596,12 @@ from the consumer's point of view.
   is what FR-014 … FR-016 record, and summarising it as "counts" says less than this spec already
   requires. The client's FR-023 depends on the failing file names being present in both, since
   those names are what tell an author which files to choose again.
+- **C-006a**: The completion signal is emitted **after** the run has resolved search-index
+  visibility for the batch (FR-008a), never before. Stated because the client depends on the
+  ordering without being able to see it: a listing refreshed on this signal finds every created
+  file, including under an active text filter, which per ADR-0018 is the one criterion routed to
+  the index rather than to the database. Reversing the two would surface as a client-side defect —
+  a refresh that misses files — for a cause that lives entirely on this side.
 
 **Not blocking on the client**: FR-019/FR-020 mean the frontend does **not** need to build a jobs
 management screen for the outcome to survive navigation. It needs only to render the pushed signal

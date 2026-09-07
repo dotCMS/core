@@ -20,12 +20,28 @@ Content-Type: multipart/form-data
 file to the product's file-staging API as it reads it, then creates the batch against what was
 staged — the same shape content import already uses. The client never sees a staging reference.
 
+Two kinds of part, matching how content import already shapes its own multipart submission
+(`@FormDataParam("file")` plus a JSON `@FormDataParam("form")`):
+
 | Part | Type | Required | Description |
 |---|---|---|---|
-| `files` | file[] | yes | One part per file, in the order the author chose them. That order is preserved in the outcome. |
+| `files` | file | yes | **Repeated** — one part per file, in the order the author chose them. That order is preserved in the outcome. |
+| `form` | JSON | yes | The batch parameters, below. Sent as `application/json` |
+
+```json
+{
+  "baseType": "DOTASSET",
+  "folderId": "abc-123",
+  "totalSizeBytes": 812345
+}
+```
+
+| Field | Type | Required | Description |
+|---|---|---|---|
 | `baseType` | string | yes | `DOTASSET` or `FILEASSET`. One type for the whole batch. Any other value is `400`. |
 | `folderId` | string | conditional | Target folder identifier. **Exactly one** of `folderId` / `siteId`. |
 | `siteId` | string | conditional | Target site, for an upload at the site root. |
+| `totalSizeBytes` | number | no | A declared total, used only for a **fast refusal before reading** — a convenience so an author is not made to upload gigabytes before being told no. **Never the enforcement point** (FR-013c): a caller can under-declare or omit it, and the authoritative total is accumulated while the body is read. |
 
 > **Why two target fields and not one.** The workflow API this feature fires already separates
 > `contentHost` (site id) from `hostFolder` (folder id), and carries explicit disambiguation
@@ -76,13 +92,16 @@ directly (spec FR-003a):
 
 | Status | When |
 |---|---|
-| `400` | no `files` parts; `baseType` neither `DOTASSET` nor `FILEASSET`; neither or both of `folderId`/`siteId`; more files than the configured maximum; **accumulated size over the configured batch ceiling**; request not same-origin; staging layer disabled |
+| `400` | no `files` parts; malformed or missing `form`; `baseType` neither `DOTASSET` nor `FILEASSET`; neither or both of `folderId`/`siteId`; more files than the configured maximum; request not same-origin; staging layer disabled |
+| `413` | the batch is over the configured total size — either the declared `totalSizeBytes` (refused before reading) or the size accumulated **while reading**, which aborts the read there and reclaims what was already staged |
 | `403` | the author may not add children to the target |
 | `404` | the target folder or site does not exist |
 
-**Every refusal is immediate**, before any batch exists. The submission carries no content, so the
-total-size check is a sum over what staging already measured — there is no partial upload to unwind
-and no `413`.
+**Every refusal is immediate**, before any batch exists. The checks that need no body — origin,
+`form`, target, permission, and a declared `totalSizeBytes` — are decided before a byte is read. The
+file count and the real total are decided **while reading**, and a `413` raised mid-read aborts
+there rather than after the whole body has arrived, so no submission can commit more than the
+ceiling to disk.
 
 Content staged before a refusal aborts the read **is reclaimed** by this feature (FR-013d). It
 created that content, so it owns cleaning it up — a refused submission never becomes a run, so
@@ -213,9 +232,10 @@ Useful when reading the two halves side by side.
 |---|---|---|
 | Same origin; staging layer enabled | submission, before reading the body | `400` |
 | `baseType`, target, exactly one of `folderId`/`siteId` | submission, before reading the body | `400` / `404` |
+| Declared `totalSizeBytes` vs the batch ceiling | submission, before reading the body | `413` — a courtesy refusal only; omitting it skips this row |
 | Add-children permission on the target | submission, before reading the body | `403` |
 | File count vs the configured maximum | submission, **while reading** | `400`, read aborted, staged parts reclaimed |
-| Accumulated size vs the batch ceiling | submission, **while reading** | `400`, read aborted, staged parts reclaimed |
+| Accumulated size vs the batch ceiling | submission, **while reading** | `413`, read aborted, staged parts reclaimed |
 | Content type's size ceiling, or the fallback | the run, per file | `FAILED` / `OVER_SIZE_LIMIT` — batch continues |
 | Content type's allowed media types | the run, per file | `FAILED` / `DISALLOWED_FILE_TYPE` — batch continues |
 | Name collision in the target | the run, per file | `FAILED` / `NAME_COLLISION` — batch continues |
