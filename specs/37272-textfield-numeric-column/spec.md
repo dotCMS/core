@@ -135,11 +135,17 @@ its own.
   converting best-effort instead of assuming the stored value already matches the column:
   - A shared best-effort conversion helper (alongside the existing `NumberUtil.toInt` /
     `NumberUtil.toLong` / `NumberUtil.pad`, following the same `Supplier<T> defaultOne` idiom).
+    **It must cover the floating-point path, not only integers.** The failing branch
+    (`ESMappingAPIImpl.java:1113-1116`) matches `float%` *and* `integer%` columns, and `NumberUtil`
+    currently has no `toFloat`/`toDouble` — only `toInt`, `toLong`, `toBoolean`, `asInt`. A `"54.3"`
+    in a `float`-backed Text field is in scope (AC-001 says *numeric* column) and must convert
+    rather than fall to the unconvertible path. Note also that `NumberUtil.pad(Number)` takes a
+    `Number`, so it cannot be used on a value that did not convert.
   - **Index (`loadFields`)**: convert the value; if it converts, the numeric branch behaves exactly
     as today (a stored `"54"` produces a document identical to a correctly-stored `54`, padding
-    included). If it does not convert, emit `0` under the numeric key — keeping the document
-    consistent with the field's `long` mapping — and the **original text** under `_dotraw`, so the
-    real value stays visible and searchable. Log a WARN naming the field and content type.
+    included). If it does not convert, **both keys are omitted** for that field and a WARN names
+    the field and content type — see *Resolved Decisions → C-3* for why, and for the
+    `_dotraw`-padding invariant that rules out writing the raw text there.
   Scope is the index path only: a Text field that carries a numeric value must survive the parse,
   whichever way the value happens to be stored.
 - Make a per-field serialization failure **non-fatal to the document**: the field degrades (or is
@@ -187,14 +193,34 @@ its own.
   sorting equals numeric sorting. **Routing those through the text branch would break page
   ordering on every installation** — hence the value-based discriminator rather than a
   type-based one.
+
+  **Why `_dotraw` is the load-bearing key, in full** (this is what makes C-3 below non-negotiable):
+
+  1. `loadFields` writes the padded string to `keyNameText` = `<field>_text`
+     (`ESMappingAPIImpl.java:1009`, `:1118`).
+  2. That entry is lowercased (`:590`) and **renamed** `_text` → `_dotraw` (`:598`).
+  3. By default (`CREATE_TEXT_INDEX_FIELD_FOR_NON_TEXT_FIELDS=false`) the `_text` key is then
+     dropped (`:607-610`), so `_dotraw` is the **only** survivor of the pair.
+  4. `*_dotraw` is mapped `keyword` (`es-content-mapping.json`, `template_1`) — lexicographic,
+     not numeric.
+  5. **Every** sort in dotCMS targets it: `addBuilderSort` appends `_dotraw` to whatever field
+     name the caller passes (`ContentFactoryIndexOperationsES.java:412-413`, and the OpenSearch
+     counterpart).
+
+  So the zero-padding is not cosmetic — it is the *only* reason ordering by a numeric field works
+  at all. Anything unpadded written to that key silently reorders results.
 - **Backward compatibility**: The emitted values feed index mappings and existing queries (range,
   sort, exact match via `_dotraw`, VTL/GraphQL/Elastic search by field). Changing the *type* of an
   emitted value is potentially rollback-unsafe during a rolling deploy. Making a previously-fatal
   failure non-fatal is safe in that direction — it can only add documents that were missing.
 - **Data considerations**: Documents lost to this defect reappear on the next reindex. No schema or
-  DB migration. Note the index mapping for such a field is `long`: emitting a non-numeric String
-  under the numeric key would produce a mapper parsing exception at the engine, i.e. the same lost
-  document one layer down — so the text-degradation path must not write the numeric key.
+  DB migration. Note the generated mapping for such a field is numeric — `long` for an `integer%`
+  column, **`double` for a `float%` column** (`ESMappingUtilHelper.java:404-406`,
+  `DataTypes.INTEGER → long`, `DataTypes.FLOAT → double`). Emitting a non-numeric String under the
+  numeric key would produce a mapper parsing exception at the engine, i.e. the same lost document
+  one layer down. To be unambiguous about what that forbids: the unconvertible path must not write
+  **a non-numeric string** under the numeric key, and per C-3 below it does not write the numeric
+  key at all.
 
 ### Identified risk: unvalidated ingestion path (`ImportStarterUtil`)
 
@@ -271,26 +297,45 @@ defect; `jsonb_each(NULL)` drops them from the result silently.)
 - **AC-004**: The log level matches the outcome — WARN when the document is still indexed, ERROR
   when it is aborted. No WARN-then-rethrow.
 - **AC-005 (regression, critical)**: A field of the same shape whose value **is** a `Number` —
-  `htmlpageasset.sortOrder`, `Vanity URL.order` — produces a byte-identical index document,
+  `htmlpageasset.sortOrder`, `Vanity URL.order` — produces **identical emitted map entries**,
   including the zero-padded `_dotraw`. Page ordering by `sortOrder` is unchanged.
 - **AC-006 (regression)**: Correctly-modelled `Integer`, `Float`/`Decimal`, `Boolean`, `Date`,
   `DateTime`, `Checkbox`/`Multi-Select`, `Key-Value`, `Tag`, `Category` and `Relationship` fields
-  produce byte-identical index documents, including the unique-field SHA-256 entry.
-- **AC-007**: A value that cannot be converted to a number is indexed as `0` under the numeric key
-  (so it cannot trigger a mapper parsing exception against the field's `long` mapping) while
-  `_dotraw` carries the original text, and a WARN names the field and content type.
-- **AC-008**: A stored String that *is* numeric (`"54"`) produces an index document identical to
-  the same contentlet stored as a number — including the zero-padded `_dotraw`.
+  produce **identical emitted map entries**, including the unique-field SHA-256 entry.
+- **AC-007 (`_dotraw` invariant, non-negotiable)**: For a Text field on a numeric column,
+  `<field>_dotraw` is **either the 19.18 zero-padded numeric string or absent** — never the raw
+  text, and never an unpadded number. Asserted directly: index a contentlet whose value does not
+  convert, then sort a result set by that field ascending and descending and confirm the ordering
+  of the *convertible* documents is unchanged in both directions. (Rationale and the full
+  `_text` → `_dotraw` → `keyword` → sort chain: Regression Risk → *Blast radius*.)
+- **AC-008**: A value that cannot be converted to a number results in **both** keys being omitted
+  for that field — no numeric key, no `_dotraw` — the rest of the contentlet indexed, and one WARN
+  naming the field and content type. Specifically: a range query on that field does not match the
+  document (no false `0`), and the document sorts last on that field, which is the engines'
+  defined behavior for a missing sort key.
+- **AC-009**: A stored String that *is* numeric produces **identical emitted map entries** to the
+  same contentlet stored as a number — including the zero-padded `_dotraw` — for an `integer%`
+  column (`"54"`) **and** a `float%` column (`"54.3"`). The assertion is at the emitted-`Map`
+  level, so the converted value must be of the **same runtime class** as the natively-stored path
+  produces: `Integer 54` and `Long 54` are not `equals`, and a test that ignores this passes or
+  fails for the wrong reason.
+- **AC-010**: The happy path stays silent. A natively-stored number (`htmlpageasset.sortOrder`) and
+  a convertible String both produce **no WARN at all** — the fix must not start logging on every
+  page's `sortOrder`.
 
 - **Verification method**:
   - **Unit** — a focused test over `loadFields` across (declared type × storage column × value
-    class), asserting the emitted map entries. The `TextField`-on-`integer1`-with-String case must
-    fail first (Red).
+    class), asserting the emitted map entries. The matrix must include **both** numeric columns —
+    `integer%` and `float%` — and both a convertible (`"54"`, `"54.3"`) and an unconvertible
+    (`"N/A"`) String. The `TextField`-on-`integer1`-with-String case must fail first (Red).
+    Assert runtime class, not just numeric equality (AC-009).
   - **Integration** — `dotcms-integration`, a `*Test` class registered in the matching
     `@SuiteClasses` suite: content type with a Text field on a numeric column, contentlet carrying
     a String value, index it, assert the document is retrievable and the other fields populated.
     Run with `./mvnw verify -pl :dotcms-integration -Dcoreit.test.skip=false -Dit.test=<TestClass>`.
-  - **Regression** — assert `htmlpageasset.sortOrder` still emits the zero-padded `_dotraw`.
+  - **Regression** — assert `htmlpageasset.sortOrder` still emits the zero-padded `_dotraw`, and
+    assert the sort-ordering invariant of AC-007 end-to-end (order of convertible documents
+    unchanged, asc and desc, with an unconvertible document present in the index).
   - **Manual** — apply reproduction B on a seeded instance, run
     `POST /api/v1/content/_bulkrefresh`, confirm zero failures for the affected content types.
 
@@ -313,5 +358,27 @@ defect; `jsonb_each(NULL)` drops them from the result silently.)
   tracked separately under *Identified risk*. **This fix handles the parse failure where it
   surfaces — at index time — so that a Text field carrying a numeric value indexes correctly no
   matter how the value was stored.**
-- **Unconvertible values index as `0`** under the numeric key, with the original text preserved in
-  `_dotraw` and a WARN naming the field and content type.
+- **C-3 — what an unconvertible value emits.** Revised after review of PR #37393. The two keys are
+  two separate decisions, and an earlier revision of this spec got one of them wrong.
+
+  **`_dotraw` — forced, not chosen.** It must be padded or absent, never the raw text. `_dotraw` is
+  the `keyword` that *every* sort targets, and the padding is the only reason lexicographic order
+  equals numeric order (chain and citations in Regression Risk → *Blast radius*). Writing `"N/A"`
+  there puts the document after every padded digit string (`'N'` = 0x4E > `'9'` = 0x39) and
+  silently reorders any listing sorted by that field — with no signal to the operator. The earlier
+  revision's "original text under `_dotraw`, so the real value stays visible and searchable" would
+  have done exactly that. The value is not lost by omitting it: it remains in the database, and
+  the WARN names the field.
+
+  **The numeric key — a real choice, made here.** **Omit it** rather than emit `0`. A `0` is
+  indistinguishable from a genuine `0` in range queries, sorts and aggregations
+  (`field:[0 TO 10]` matches a document whose value is actually `"N/A"`), and only the WARN
+  reveals the difference. Omission means the field is simply unset for that one document: no false
+  match, and the engines' documented missing-key behavior applies. The alternative — `0` for
+  document/mapping consistency — was weighed and rejected because a false in-range hit is a
+  correctness bug while an unset field is an honest absence.
+
+  **This supersedes** the earlier decision ("unconvertible values index as `0` under the numeric
+  key, with the original text preserved in `_dotraw`"). The `_dotraw` half is a correctness fix;
+  the numeric-key half is a judgment call and the plan may overturn it, but only with the reason
+  recorded here.
