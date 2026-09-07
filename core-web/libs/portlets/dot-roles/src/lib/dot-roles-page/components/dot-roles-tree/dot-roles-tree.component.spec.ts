@@ -84,6 +84,26 @@ describe('DotRolesTreeComponent', () => {
         expect(spectator.query(byTestId('tree-empty'))).toBeNull();
     });
 
+    it('should not inherit the shared tree folder icons (#37362)', () => {
+        // This portlet renders a *roles* hierarchy through the shared DotFolderTreeComponent and
+        // draws its own Material Symbols icons in the projected label template. The shared
+        // folder-icon input is opt-in precisely so a folder glyph never lands next to them here.
+        const store = spectator.inject(DotRolesStore, true);
+        (store.filteredRoles as jest.Mock).mockReturnValue([
+            { id: 'r-eco', name: 'Eco Role', children: [] }
+        ]);
+        spectator.detectChanges();
+
+        expect(spectator.query(byTestId('tree-node-folder-icon'))).toBeNull();
+
+        // The label the portlet projects still draws its own Material Symbols icons, and no
+        // PrimeIcons glyph joined them there — the only `.pi` on the row is PrimeNG's chevron,
+        // which lives outside the label in the toggle button.
+        const label = spectator.query('.p-tree-node-label');
+        expect(label?.querySelector('.material-symbols-outlined')).toBeTruthy();
+        expect(label?.querySelector('.pi')).toBeNull();
+    });
+
     describe('long role names (#37363)', () => {
         const LONG_NAME = 'A-very-long-role-name-that-will-not-fit-in-the-panel';
 

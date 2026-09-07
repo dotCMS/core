@@ -8,6 +8,8 @@ import { MockDotMessageService } from '@dotcms/utils-testing';
 
 import { DotSideBarComponent } from './dot-sidebar.component';
 
+import { DotFolderTreeComponent } from '../../../dot-folder-tree/dot-folder-tree.component';
+
 describe('DotSideBarComponent', () => {
     let spectator: Spectator<DotSideBarComponent>;
 
@@ -16,8 +18,7 @@ describe('DotSideBarComponent', () => {
             key: 'site-1',
             label: 'qa36151-site-1.dotcms.dev',
             data: { type: 'site', id: 'site-1', hostname: 'qa36151-site-1.dotcms.dev' },
-            expandedIcon: 'pi pi-globe',
-            collapsedIcon: 'pi pi-globe',
+            icon: 'pi pi-globe',
             expanded: true,
             children: [
                 {
@@ -28,9 +29,7 @@ describe('DotSideBarComponent', () => {
                         path: '/application',
                         hostname: 'qa36151-site-1.dotcms.dev',
                         id: 'folder-1'
-                    },
-                    expandedIcon: 'pi pi-folder-open',
-                    collapsedIcon: 'pi pi-folder'
+                    }
                 }
             ]
         }
@@ -70,6 +69,17 @@ describe('DotSideBarComponent', () => {
 
         expect(folderIcon).toBeTruthy();
         expect(folderIcon?.classList.contains('pi')).toBe(true);
+    });
+
+    it('should take its folder icons from the shared tree (#37362)', () => {
+        // The icon used to be carried per-node by `dot-browsing.service`. It now comes from the
+        // shared component, so this sidebar has to opt in — and the icon it renders is the shared
+        // one, with its state readable.
+        expect(spectator.query(DotFolderTreeComponent)?.$showFolderIcons()).toBe(true);
+
+        const icon = spectator.query(byTestId('tree-node-folder-icon'));
+        expect(icon).toBeTruthy();
+        expect(icon?.getAttribute('data-expanded')).toBe('false');
     });
 
     it('should truncate tree node labels to a single line', () => {
