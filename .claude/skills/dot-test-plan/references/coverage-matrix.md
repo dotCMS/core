@@ -18,6 +18,7 @@ Walk the matrix **once** over the union of everything the PR changed, not once p
 | **Push Publish** | bundle generation, receiver replay, integrity checks | the diff touches publishable entities (content, templates, containers, content types, workflows, categories) |
 | **Persistence** | **PostgreSQL only** — CI does not run H2 | any DB-touching code |
 | **UI / UX** | see the checklist below | any of the triggers below |
+| **Form & state semantics** | see the checklist below | the diff adds or changes a form, a multi-step editor, or any save / discard / leave gesture |
 
 ### UI / UX triggers
 
@@ -54,6 +55,30 @@ person checks by hand:
   don't break the layout
 - **Theme / contrast** — light and dark both render correctly; text stays legible
 - **Copy** — labels, buttons, errors, and tooltips match the spec or the acceptance criteria
+
+
+### Form & state semantics checklist
+
+In scope whenever the change touches a form or an editor. These are behavioural rather than
+presentational — the UI / UX checklist asks whether a control *looks* right, this one asks whether
+the *data* survives:
+
+- **Bounded choices** — exercise every option of a select, radio group or status enum, not only the
+  default. A five-value enum with one value tested is one case, not five.
+- **Numeric boundaries** — min, max, min−1, max+1, zero, empty. Ranges and durations especially.
+- **Derived or recomputed fields** — a counter, a summary line, a total: change an input and confirm
+  the derived value follows, including back to zero.
+- **Child-entity CRUD inside a parent form** — add, rename, reorder and delete a child while the
+  parent is unsaved, then confirm what actually persisted.
+- **Optional configuration** — set versus deliberately left unset. "Not configured" is a state, and
+  it is the one nobody tests.
+- **Which gesture persists what** — when more than one thing saves (autosave, an explicit Save, a
+  status transition), exercise each separately and state which persisted what. Do not assume one
+  gesture covers another.
+- **Leaving with unsaved work** — navigate away, reload, and use the browser Back button with changes
+  pending. Confirm the guard fires, and that discarding actually discards.
+- **Locked / read-only states** — a status that disables the form must disable *all* of it, not the
+  obvious controls only.
 
 ---
 
