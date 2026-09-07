@@ -123,10 +123,20 @@ already loads its actions via `getByInode`.
 The legacy editor does not consult `actionInputs`; it reads the raw `commentable` / `assignable`
 flags, which is why it is unaffected.
 
+**Verified fact bearing on the fix**: every flag `createActionInputViews` reads is *already*
+serialized on the raw `WorkflowAction` embedded in `WorkflowDefaultActionView` — `commentable`
+(`isCommentable()`), `assignable` (`isAssignable()`), `hasPushPublishActionlet`,
+`hasMoveActionletActionlet` / `hasMoveActionletHasPathActionlet` (all four `@JsonProperty`), plus
+`nextAssign` and `roleHierarchyForAssign`. None is `@JsonIgnore`
+(`com.dotmarketing.portlets.workflows.model.WorkflowAction`). The default/initial-action payload
+therefore already carries everything needed to determine an action's inputs — what is missing is
+only the derived `actionInputs[]` array itself.
+
 The plan phase will confirm this and choose between the candidate fixes (backend: have the
 default/initial-action endpoints emit `actionInputs`; frontend: derive the inputs from the raw
-action flags, or fetch an input-bearing action list for unsaved content). The trade-offs —
-notably that changing an existing endpoint's response shape is an API-contract change — belong
+action flags, or fetch an input-bearing action list for unsaved content). Given the fact above, a
+frontend-only fix is viable **without any REST contract change**; the trade-off against it is that
+it duplicates in TypeScript a derivation rule that today lives only in Java. Weighing that belongs
 in the plan, not here.
 
 ## Fix Scope & Non-Goals *(mandatory)*
@@ -140,8 +150,10 @@ in the plan, not here.
   legacy gating.
 - The same correctness applies after a **Reset** action, where the author re-selects a scheme and
   the action list is re-seeded from the same source.
-- Whatever contract change this requires between `WorkflowResource`'s default/initial action
-  endpoints and the edit-content store, kept minimal and additive.
+- Whatever contract change this requires, **if any**, between `WorkflowResource`'s
+  default/initial action endpoints and the edit-content store, kept minimal and additive. A
+  frontend-only fix requiring no contract change at all is in scope and, per the Root-Cause
+  Hypothesis, appears achievable.
 - Regression coverage (see Acceptance & Verification).
 
 **Explicitly out of scope / non-goals**:
@@ -175,7 +187,9 @@ in the plan, not here.
   - Push Publish actions on unsaved content go through the same `actionInputs` check
     (`containsPushPublish`), so they are affected by the same bug and by the same fix — the
     "no publish environments configured" notification path must keep working.
-- **Backward compatibility**: The response of a published REST endpoint may change. Any change
+- **Backward compatibility**: Nothing here *requires* a REST change — a frontend-only fix leaves
+  every contract untouched, which is the lower-risk path. Should the plan pick the backend route,
+  the response of a published REST endpoint changes, and then: any change
   must be **additive only** (`actionInputs[]` appears where it previously did not); no existing
   property may be renamed, retyped, or dropped. `@Schema` annotations must match the actual
   return type and `openapi.yaml` must be regenerated and committed alongside. An additive JSON
