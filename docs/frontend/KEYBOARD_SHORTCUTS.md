@@ -47,7 +47,12 @@ Pass everything the surface wants in **one** call: a batch returns a single with
 one thing to remember rather than one per shortcut.
 
 Add the `label` key to `Language.properties`. It is what the author-facing documentation is generated
-from.
+from, and **labels must be unique within a single `register()` call** — a duplicate throws, because
+two shortcuts sharing a label collapse into one indistinguishable documentation entry and there is no
+rule to resolve them.
+
+Note the asymmetry: claiming the same **combination** twice is legal and resolved by the claim stack
+(most recent wins). Claiming the same **label** twice is not, because nothing resolves it.
 
 ## The rules
 

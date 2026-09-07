@@ -115,9 +115,31 @@ export class DotKeyboardShortcutService {
     register(
         shortcuts: DotKeyboardShortcut | DotKeyboardShortcut[]
     ): DotKeyboardShortcutUnregister {
-        const withdrawals = (Array.isArray(shortcuts) ? shortcuts : [shortcuts]).map((shortcut) =>
-            this.#registerOne(shortcut)
-        );
+        const batch = Array.isArray(shortcuts) ? shortcuts : [shortcuts];
+
+        // Duplicate *combinations* are deliberately allowed: the claim stack resolves them, and the
+        // most recent claim wins. Duplicate *labels* have no such rule. The label is the key the
+        // author-facing documentation is generated from, so two claims sharing one produce an
+        // ambiguous entry that nothing in the model sorts out — and in a single call it is almost
+        // always a registration that was copied and only half edited.
+        //
+        // Rejected before anything is registered, so a bad batch leaves no partial state behind.
+        const seen = new Set<string>();
+
+        for (const { label } of batch) {
+            if (seen.has(label)) {
+                throw new Error(
+                    `DotKeyboardShortcutService: the label "${label}" is used twice in the same ` +
+                        `register() call. Labels are what the shortcut documentation is generated ` +
+                        `from, so each claim needs its own. (Claiming the same *combination* twice ` +
+                        `is fine — the most recent claim wins.)`
+                );
+            }
+
+            seen.add(label);
+        }
+
+        const withdrawals = batch.map((shortcut) => this.#registerOne(shortcut));
 
         let withdrawn = false;
 
@@ -175,10 +197,15 @@ export class DotKeyboardShortcutService {
     }
 
     /**
-     * The shortcut that would currently receive each claimed combination, with its label.
+     * The shortcut that would receive each claimed combination **right now**, with its label.
      *
-     * This is the source for author-facing documentation, which is why a label is required at
-     * registration: a shortcut that is not listed here cannot be documented.
+     * A runtime snapshot, not a manifest. It reports the winner of each claim stack, so a
+     * combination shadowed by an open dialog is listed under the dialog's label and the surface
+     * underneath does not appear at all. Anything generating author documentation from this must
+     * read it with no dialogs open, or it will document whatever happened to be on screen.
+     *
+     * This is why a label is required at registration, and why labels must be unique within a single
+     * `register()` call: a duplicate would collapse two shortcuts into one indistinguishable entry.
      */
     activeShortcuts(): { combination: string; label: string }[] {
         return Array.from(this.#claims.entries())

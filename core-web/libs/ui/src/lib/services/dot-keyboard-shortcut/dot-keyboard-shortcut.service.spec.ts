@@ -273,6 +273,60 @@ describe('DotKeyboardShortcutService', () => {
             expect(handler).toHaveBeenCalledTimes(1);
         });
 
+        // Labels are what the documentation is generated from, and unlike combinations they have no
+        // resolution rule: two claims sharing one just produce an ambiguous entry. In a single call
+        // it is almost always a registration that was copied and only half edited.
+        it('should reject the same label used twice in one call', () => {
+            expect(() =>
+                register([
+                    { combination: 'mod+k', label: 'search', handler: jest.fn() },
+                    { combination: 'escape', label: 'search', handler: jest.fn() }
+                ])
+            ).toThrow(/search/);
+        });
+
+        it('should register nothing at all when a batch is rejected', () => {
+            const handler = jest.fn();
+
+            expect(() =>
+                register([
+                    { combination: 'escape', label: 'dismiss', handler },
+                    { combination: 'mod+b', label: 'dismiss', handler }
+                ])
+            ).toThrow();
+
+            press({ key: 'Escape' });
+
+            expect(handler).not.toHaveBeenCalled();
+            expect(service.activeShortcuts()).toEqual([]);
+        });
+
+        // The model's own rule, which the label check must not break: a combination may be claimed
+        // more than once and the most recent claim wins.
+        it('should still allow the same combination twice in one call', () => {
+            const first = jest.fn();
+            const second = jest.fn();
+
+            expect(() =>
+                register([
+                    { combination: 'mod+k', label: 'first', handler: first },
+                    { combination: 'mod+k', label: 'second', handler: second }
+                ])
+            ).not.toThrow();
+
+            pressModK();
+
+            expect(second).toHaveBeenCalledTimes(1);
+            expect(first).not.toHaveBeenCalled();
+        });
+
+        it('should allow separate calls to reuse a label, since only a batch is checked', () => {
+            expect(() => {
+                register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+                register({ combination: 'escape', label: 'search', handler: jest.fn() });
+            }).not.toThrow();
+        });
+
         it('should leave an empty batch harmless', () => {
             const unregister = register([]);
 
