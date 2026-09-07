@@ -1,19 +1,10 @@
 <section class="flex h-full min-w-0 flex-col overflow-hidden">
     <p-toolbar class="shrink-0">
         <ng-template pTemplate="start">
-            <div class="flex items-center gap-3">
-                <dot-search-input
-                    [placeholder]="'dotai.embeddings.filter.placeholder'"
-                    (search)="store.setIndexFilter($event)"
-                    testId="dotai-embeddings-filter" />
-
-                <span class="text-sm text-muted-color" data-testid="dotai-embeddings-summary">
-                    {{
-                        'dotai.embeddings.summary'
-                            | dm: [store.filteredIndexes().length + '', store.indexes().length + '']
-                    }}
-                </span>
-            </div>
+            <dot-search-input
+                [placeholder]="'dotai.embeddings.filter.placeholder'"
+                (search)="store.setIndexFilter($event)"
+                testId="dotai-embeddings-filter" />
         </ng-template>
 
         <ng-template pTemplate="end">
