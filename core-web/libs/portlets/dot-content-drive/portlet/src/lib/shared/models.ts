@@ -191,6 +191,19 @@ export interface DotContentDriveRun extends DotContentDriveActionExecution {
  */
 export interface DotContentDriveActionExecutionResult {
     actionName: string;
+    /**
+     * The folders whose contents this run changed, as `//hostname/path` references.
+     *
+     * Used to decide whether the listing the author is *currently* looking at can show the outcome
+     * at all (FR-044): a move out of `/images/` says nothing about `/docs/`, so refetching `/docs/`
+     * costs a request and — since `loadItems` empties `selectedItems` — takes their selection, for a
+     * listing identical afterwards.
+     *
+     * Omitted means "reload regardless", which is what every synchronous caller wants: those act on
+     * rows in front of the author, so the browsed folder is the changed one by construction. Only a
+     * backgrounded run can settle after they have navigated away.
+     */
+    affectedFolders?: string[];
     successCount: number;
     skippedCount: number;
     failCount: number;

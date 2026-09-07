@@ -538,6 +538,58 @@ describe('DotContentDriveShellComponent', () => {
             });
         });
 
+        describe('scoping the reload to the folders a run changed (FR-044)', () => {
+            // The store mock browses `//demo.com/test/path`.
+            const moved = (affectedFolders?: string[]) => ({
+                actionName: 'Move',
+                successCount: 1,
+                skippedCount: 0,
+                failCount: 0,
+                backgrounded: true,
+                affectedFolders
+            });
+
+            it('should not reload a listing that cannot show what the run changed', () => {
+                // Refetching the folder the author wandered off to costs a request and, because
+                // `loadItems` empties `selectedItems`, takes their selection — for a listing that
+                // looks identical afterwards.
+                settle(moved(['//demo.com/somewhere/else']));
+
+                expect(store.loadItems).not.toHaveBeenCalled();
+            });
+
+            it('should still announce a run whose folders it did not reload', () => {
+                // The notification is then the only evidence the run happened, which is why FR-028
+                // has it name the folder.
+                settle(moved(['//demo.com/somewhere/else']));
+
+                expect(messageService.add).toHaveBeenCalled();
+                expect(store.clearActionExecutionResult).toHaveBeenCalled();
+            });
+
+            it('should reload when the author is viewing a folder the run changed', () => {
+                settle(moved(['//demo.com/somewhere/else', '//demo.com/test/path']));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should reload when a run does not say which folders it changed', () => {
+                // Unknown means reload: every synchronous caller acts on rows in front of the
+                // author, so scoping is opt-in and the default stays today's behaviour.
+                settle(moved(undefined));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+
+            it('should ignore case and a trailing slash when comparing folders', () => {
+                // dotCMS resolves asset paths through a lower-cased unique index, so two spellings
+                // of one folder are one folder.
+                settle(moved(['//DEMO.com/Test/Path/']));
+
+                expect(store.loadItems).toHaveBeenCalledWith({ quiet: true });
+            });
+        });
+
         it('should stay silent while no result is published', () => {
             spectator.detectChanges();
 

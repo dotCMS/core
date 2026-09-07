@@ -1160,3 +1160,20 @@ export function canAddChildrenTo(
 
     return permissions.includes(PERMISSIONS_TYPE.CAN_ADD_CHILDREN);
 }
+
+/**
+ * Canonical form for comparing two folder references: `//hostname/path`, lower-cased and without a
+ * trailing slash.
+ *
+ * The two sides arrive spelled differently — a move destination comes in as `//hostname/path/` from
+ * the tree, the browsed folder as a bare path plus the current site — so they are normalised rather
+ * than compared as given. Lower-casing is not a convenience: dotCMS resolves asset paths through a
+ * unique index over the lower-cased full path per host, so two spellings of one folder *are* one
+ * folder.
+ */
+export const toFolderRef = (hostname: string | null | undefined, path: string | null | undefined) =>
+    normalizeFolderRef(`//${hostname ?? ''}${path ?? ''}`);
+
+/** Normalises an already-formed `//hostname/path` reference. See {@link toFolderRef}. */
+export const normalizeFolderRef = (ref: string | null | undefined): string =>
+    (ref ?? '').toLowerCase().replace(/\/+$/, '');

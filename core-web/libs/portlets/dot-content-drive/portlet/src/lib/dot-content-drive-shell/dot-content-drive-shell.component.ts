@@ -91,7 +91,13 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
+import {
+    canAddChildrenTo,
+    encodeFilters,
+    isFolder,
+    normalizeFolderRef,
+    toFolderRef
+} from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -554,8 +560,25 @@ export class DotContentDriveShellComponent {
             this.$dialogVisible() || this.$selectedItems().length > 0 || !!this.$editPanelRequest()
     );
 
-    /** A backgrounded reload waiting for {@link $authorIsMidTask} to clear. */
-    readonly #reloadHeld = signal(false);
+    /**
+     * A backgrounded reload waiting for {@link $authorIsMidTask} to clear, carrying the folders the
+     * run changed so {@link #currentFolderIsAffected} can be re-checked when it finally runs —
+     * the author may have navigated in between.
+     */
+    readonly #reloadHeld = signal<{ affectedFolders?: string[] } | undefined>(undefined);
+
+    /**
+     * Whether the listing on screen can show what a run changed (FR-044).
+     *
+     * A run that declares no folders reloads regardless: every synchronous caller acts on rows in
+     * front of the author, so the browsed folder is the changed one by construction, and only a
+     * backgrounded run can settle after they have moved on.
+     */
+    readonly #currentFolderIsAffected = (affectedFolders?: string[]): boolean =>
+        !affectedFolders?.length ||
+        affectedFolders
+            .map(normalizeFolderRef)
+            .includes(toFolderRef(this.#store.currentSite()?.hostname, this.#store.path()));
 
     readonly actionExecutionResultEffect = effect(() => {
         const result = this.#store.actionExecutionResult();
@@ -571,7 +594,8 @@ export class DotContentDriveShellComponent {
             failCount,
             partialDetailKey,
             backgrounded,
-            confirmSuccess
+            confirmSuccess,
+            affectedFolders
         } = result;
 
         // Skips and failures are not mutually exclusive: one bulk fire over a mixed-type selection
@@ -640,12 +664,14 @@ export class DotContentDriveShellComponent {
                 //
                 // Quiet: the run marked its rows, so a skeleton here would be a second load
                 // right after the first and would read as a jump.
-                this.#store.loadItems({ quiet: true });
+                if (this.#currentFolderIsAffected(affectedFolders)) {
+                    this.#store.loadItems({ quiet: true });
+                }
             } else {
                 // Held, not dropped (FR-043). Dropping it left the grid stale for as long as the
                 // author stayed in the portlet: the run settled, the rows changed, and nothing
                 // would ever fetch them again. `#flushHeldReload` runs it at the next boundary.
-                this.#reloadHeld.set(true);
+                this.#reloadHeld.set({ affectedFolders });
             }
 
             if (!backgrounded) {
@@ -671,12 +697,17 @@ export class DotContentDriveShellComponent {
         const midTask = this.$authorIsMidTask();
 
         untracked(() => {
-            if (midTask || !this.#reloadHeld()) {
+            const held = this.#reloadHeld();
+
+            if (midTask || !held) {
                 return;
             }
 
-            this.#reloadHeld.set(false);
-            this.#store.loadItems({ quiet: true });
+            this.#reloadHeld.set(undefined);
+
+            if (this.#currentFolderIsAffected(held.affectedFolders)) {
+                this.#store.loadItems({ quiet: true });
+            }
         });
     });
 
