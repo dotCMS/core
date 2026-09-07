@@ -14,6 +14,24 @@ import {
     DotCMSWorkflowAction
 } from '@dotcms/dotcms-models';
 
+import { withDerivedActionInputs } from './dot-workflows-actions.utils';
+
+/**
+ * Fills in the `actionInputs` the default/initial-action endpoints do not send (#36883).
+ *
+ * Applied to `getDefaultActions` and `getWorkFlowActions` only — those return
+ * `WorkflowDefaultActionView`, which wraps the raw action and omits the array. `getByInode`,
+ * `getByWorkflows` and `getBulkActions` are deliberately left alone: their endpoints build it
+ * server-side, and deriving over them would hide a backend regression rather than surface it.
+ */
+const deriveInputsOnEach = (
+    schemeActions: DotCMSContentletWorkflowActions[]
+): DotCMSContentletWorkflowActions[] =>
+    schemeActions.map((schemeAction) => ({
+        ...schemeAction,
+        action: withDerivedActionInputs(schemeAction.action)
+    }));
+
 export enum DotRenderMode {
     LOCKED = 'LOCKED',
     LISTING = 'LISTING',
@@ -78,7 +96,8 @@ export class DotWorkflowsActionsService {
             >(`${this.BASE_URL}/initialactions/contenttype/${contentTypeId}`)
             .pipe(
                 map((x) => x?.entity),
-                map((res) => res || [])
+                map((res) => res || []),
+                map(deriveInputsOnEach)
             );
     }
 
@@ -122,7 +141,8 @@ export class DotWorkflowsActionsService {
             >(`${this.BASE_URL}/defaultactions/contenttype/${contentTypeName}`)
             .pipe(
                 map((x) => x?.entity),
-                map((res) => res || [])
+                map((res) => res || []),
+                map(deriveInputsOnEach)
             );
     }
 }

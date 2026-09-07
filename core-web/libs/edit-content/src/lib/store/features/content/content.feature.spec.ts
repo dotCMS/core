@@ -146,6 +146,35 @@ describe('ContentFeature', () => {
             expect(store.currentSchemeId()).toBe(MOCK_SINGLE_WORKFLOW_ACTIONS[0].scheme.id);
         }));
 
+        // #36883: this is the seeding point the reported bug takes — a single-scheme content
+        // type auto-selects its scheme here and seeds `currentContentActions` straight from the
+        // default-actions payload. The missing `actionInputs` is fixed in
+        // DotWorkflowsActionsService (which is mocked here), so this asserts the remaining half:
+        // that the store's reshape carries the array through instead of dropping it.
+        it('should carry actionInputs through into currentContentActions for new content', fakeAsync(() => {
+            const commentableActions = [
+                {
+                    ...MOCK_SINGLE_WORKFLOW_ACTIONS[0],
+                    action: {
+                        ...MOCK_SINGLE_WORKFLOW_ACTIONS[0].action,
+                        commentable: true,
+                        actionInputs: [{ id: 'commentable', body: {} }]
+                    }
+                }
+            ];
+            contentTypeService.getContentTypeWithRender.mockReturnValue(of(CONTENT_TYPE_MOCK));
+            workflowActionService.getDefaultActions.mockReturnValue(of(commentableActions));
+
+            store.initializeNewContent('testContentType');
+            tick();
+
+            const schemeId = commentableActions[0].scheme.id;
+            expect(store.currentSchemeId()).toBe(schemeId);
+            expect(store.currentContentActions()[schemeId][0].actionInputs).toEqual([
+                { id: 'commentable', body: {} }
+            ]);
+        }));
+
         it('should return correct computed values for existing content', fakeAsync(() => {
             const mockContentlet = {
                 inode: '123',

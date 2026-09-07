@@ -544,6 +544,9 @@ export class DotEditContentFormComponent implements OnInit {
             identifier
         };
 
+        // `DotWorkflowsActionsService` now guarantees `actionInputs` is populated on every
+        // action it returns, including for content with no inode (#36883) — the `= []` is a
+        // belt-and-braces default, not the contract.
         const { actionInputs = [] } = workflow;
         const isPushPublish =
             this.#dotWorkflowEventHandlerService.containsPushPublish(actionInputs);
