@@ -12,20 +12,16 @@
                  this way is what makes that true at a glance, rather than a caption under a
                  transcript that still looks like chat. -->
             <div class="shrink-0 border-b border-surface-200 p-4">
-                <div class="flex items-end gap-2">
-                    <textarea
-                        pTextarea
-                        class="flex-1"
-                        rows="2"
-                        [ngModel]="$draft()"
-                        (ngModelChange)="$draft.set($event)"
-                        (keydown)="onKeydown($event)"
-                        [placeholder]="'dotai.chat.placeholder' | dm"
-                        [attr.aria-label]="'dotai.chat.input.aria' | dm"
-                        data-testid="dotai-chat-input"></textarea>
-
+                <dot-ai-prompt-input
+                    [value]="$draft()"
+                    (valueChange)="$draft.set($event)"
+                    (submitted)="onSend()"
+                    [disabled]="!store.isConfigured()"
+                    [ariaLabel]="'dotai.chat.input.aria' | dm"
+                    [placeholder]="'dotai.chat.placeholder' | dm">
                     @if (store.isStreaming()) {
                         <p-button
+                            promptEnd
                             severity="secondary"
                             [outlined]="true"
                             [label]="'dotai.chat.stop' | dm"
@@ -35,6 +31,7 @@
                         <!-- ariaLabel, not [attr.aria-label]: the attribute form lands on the
                              p-button host and leaves the real <button> unnamed (FR-056). -->
                         <p-button
+                            promptEnd
                             [rounded]="true"
                             [disabled]="!store.isConfigured() || !$draft().trim()"
                             [ariaLabel]="'dotai.chat.send' | dm"
@@ -45,7 +42,7 @@
                             </span>
                         </p-button>
                     }
-                </div>
+                </dot-ai-prompt-input>
             </div>
 
             <div #answer class="min-h-0 flex-1 overflow-y-auto p-4" data-testid="dotai-chat-answer">
@@ -75,7 +72,9 @@
                                  style.css — without it Tailwind's preflight leaves headings and
                                  list markers stripped. prose caps itself at 65ch, so the 70ch
                                  here is a deliberate override for line length. -->
-                            <div class="prose mx-auto max-w-[70ch]" data-testid="dotai-chat-answer-text">
+                            <div
+                                class="mx-auto prose max-w-[70ch]"
+                                data-testid="dotai-chat-answer-text">
                                 <markdown [data]="current.content" />
                             </div>
                         }

@@ -1,6 +1,7 @@
 import { byTestId, createComponentFactory, mockProvider, Spectator } from '@openng/spectator/jest';
 import { MarkdownModule } from 'ngx-markdown';
 
+import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotMessageService } from '@dotcms/data-access';
 import { DOT_AI_ANSWER_STATE, DotAiChatAnswer } from '@dotcms/dotcms-models';
 
@@ -43,10 +44,10 @@ describe('DotAiChatComponent', () => {
     const createComponent = createComponentFactory({
         component: DotAiChatComponent,
         componentProviders: [{ provide: DotAiStore, useValue: storeMock }],
-        // The real renderer, not a stub: answers are markdown and the tests below assert the
-        // rendered text. MarkdownModule.forRoot() supplies MarkdownService, which the app
-        // provides globally in app.config.ts.
-        imports: [MarkdownModule.forRoot()],
+        // Real, not stubs: the answers are markdown and the composer is the shared
+        // dot-ai-prompt-input, and the tests below drive both. MarkdownModule.forRoot()
+        // supplies MarkdownService, which the app provides globally in app.config.ts.
+        imports: [MarkdownModule.forRoot(), DotAiPromptInputComponent],
         providers: [mockProvider(DotMessageService)],
         shallow: true
     });
@@ -107,7 +108,7 @@ describe('DotAiChatComponent', () => {
         withAnswer(answer({ content: 'an answer', state: 'complete' }));
         spectator = createComponent();
 
-        const composer = spectator.query(byTestId('dotai-chat-input'));
+        const composer = spectator.query(byTestId('ai-prompt-input'));
         const region = spectator.query(byTestId('dotai-chat-answer'));
 
         expect(composer).toBeTruthy();
@@ -158,8 +159,13 @@ describe('DotAiChatComponent', () => {
     });
 
     describe('composer', () => {
+        // A real KeyboardEvent: spectator's helper needs initKeyboardEvent, which this jsdom
+        // does not provide.
+        const enter = (el: Element) =>
+            el.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter', bubbles: true }));
+
         const type = (value: string) => {
-            const input = spectator.query(byTestId('dotai-chat-input')) as HTMLTextAreaElement;
+            const input = spectator.query(byTestId('ai-prompt-input')) as HTMLTextAreaElement;
             spectator.typeInElement(value, input);
 
             return input;
@@ -169,7 +175,7 @@ describe('DotAiChatComponent', () => {
             spectator = createComponent();
             const input = type('a question');
 
-            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
+            enter(input);
 
             expect(storeMock.sendChat).toHaveBeenCalledWith('a question');
         });
@@ -181,8 +187,8 @@ describe('DotAiChatComponent', () => {
             spectator = createComponent();
             const input = type('a question');
 
-            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
-            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
+            enter(input);
+            enter(input);
 
             expect(storeMock.sendChat).toHaveBeenCalledTimes(2);
             expect(storeMock.sendChat).toHaveBeenLastCalledWith('a question');
@@ -206,7 +212,7 @@ describe('DotAiChatComponent', () => {
             spectator = createComponent();
             const input = type('   ');
 
-            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
+            enter(input);
 
             expect(storeMock.sendChat).not.toHaveBeenCalled();
         });
@@ -216,7 +222,7 @@ describe('DotAiChatComponent', () => {
             spectator = createComponent();
             const input = type('a question');
 
-            spectator.dispatchKeyboardEvent(input, 'keydown', 'Enter');
+            enter(input);
 
             expect(storeMock.sendChat).not.toHaveBeenCalled();
         });

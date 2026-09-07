@@ -1,0 +1,23 @@
+<div class="rounded-lg border border-surface-200 bg-surface-0">
+    <textarea
+        pTextarea
+        [rows]="rows()"
+        class="w-full resize-none rounded-none! border-0! bg-transparent! shadow-none! focus:shadow-none!"
+        [value]="value()"
+        (input)="onInput($event)"
+        (keydown)="onKeydown($event)"
+        [disabled]="disabled()"
+        [placeholder]="placeholder()"
+        [attr.aria-label]="ariaLabel()"
+        data-testid="ai-prompt-input"></textarea>
+
+    <div class="flex flex-wrap items-center gap-3 px-3 pb-3">
+        <ng-content select="[promptStart]" />
+
+        <!-- ml-auto on the wrapper, so the trailing group hugs the right edge whether or not
+             anything was projected into promptStart. -->
+        <div class="ml-auto flex flex-wrap items-center gap-3">
+            <ng-content select="[promptEnd]" />
+        </div>
+    </div>
+</div>

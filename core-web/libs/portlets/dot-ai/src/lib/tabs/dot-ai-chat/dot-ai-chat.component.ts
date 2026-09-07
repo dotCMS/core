@@ -1,13 +1,11 @@
 import { MarkdownModule } from 'ngx-markdown';
 
 import { Component, inject, signal, viewChild } from '@angular/core';
-import { FormsModule } from '@angular/forms';
 
 import { ButtonModule } from 'primeng/button';
 import { SplitterModule } from 'primeng/splitter';
-import { TextareaModule } from 'primeng/textarea';
 
-import { DotAgentThinkingComponent } from '@dotcms/ai-ui';
+import { DotAgentThinkingComponent, DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DOT_AI_ANSWER_STATE } from '@dotcms/dotcms-models';
 import { DotMessagePipe } from '@dotcms/ui';
 
@@ -29,12 +27,11 @@ import { DotAiStore } from '../../store/dot-ai.store';
 @Component({
     selector: 'dot-ai-chat',
     imports: [
-        FormsModule,
         ButtonModule,
-        TextareaModule,
         SplitterModule,
         MarkdownModule,
         DotAgentThinkingComponent,
+        DotAiPromptInputComponent,
         DotAiSettingsPanelComponent,
         DotMessagePipe
     ],
@@ -63,14 +60,6 @@ export default class DotAiChatComponent {
         // The draft is deliberately kept: the question is only visible here, and asking a
         // variation of it is the common next step.
         queueMicrotask(() => this.#scrollAnswerToTop());
-    }
-
-    /** Enter sends; Shift+Enter inserts a newline (FR-011). */
-    protected onKeydown(event: KeyboardEvent): void {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            this.onSend();
-        }
     }
 
     /** A replaced answer starts at the top, not wherever the last one was scrolled to. */

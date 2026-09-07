@@ -5,8 +5,8 @@ import { ButtonModule } from 'primeng/button';
 import { ImageModule } from 'primeng/image';
 import { SelectModule } from 'primeng/select';
 import { SkeletonModule } from 'primeng/skeleton';
-import { TextareaModule } from 'primeng/textarea';
 
+import { DotAiPromptInputComponent } from '@dotcms/ai-ui';
 import { DotAIImageOrientation } from '@dotcms/dotcms-models';
 import { DotCopyButtonComponent, DotMessagePipe } from '@dotcms/ui';
 
@@ -26,8 +26,8 @@ import { DotAiStore } from '../../store/dot-ai.store';
         ButtonModule,
         SelectModule,
         SkeletonModule,
-        TextareaModule,
         ImageModule,
+        DotAiPromptInputComponent,
         DotCopyButtonComponent,
         DotMessagePipe
     ],
@@ -49,14 +49,6 @@ export default class DotAiImageComponent {
         DotAIImageOrientation.SQUARE,
         DotAIImageOrientation.VERTICAL
     ].map((value) => ({ value, label: value.replace('x', '×') }));
-
-    /** Enter generates; Shift+Enter inserts a newline, as in the Chat tab's composer. */
-    protected onKeydown(event: KeyboardEvent): void {
-        if (event.key === 'Enter' && !event.shiftKey) {
-            event.preventDefault();
-            this.onGenerate();
-        }
-    }
 
     protected onGenerate(): void {
         if (this.$prompt().trim() && this.store.isConfigured()) {
