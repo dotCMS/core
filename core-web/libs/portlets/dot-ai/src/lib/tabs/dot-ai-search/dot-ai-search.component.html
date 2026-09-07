@@ -109,10 +109,6 @@
 
                                         <div
                                             class="mt-2 flex items-center gap-2 text-xs text-muted-color">
-                                            <p-progressBar
-                                                class="h-1 w-12"
-                                                [value]="toCloseness(match.distance)"
-                                                [showValue]="false" />
                                             <span data-testid="dotai-search-result-distance">
                                                 {{ match.distance.toFixed(2) }}
                                             </span>
@@ -123,6 +119,20 @@
                                                         | dm: [result.matches.length + '']
                                                 }}
                                             </span>
+                                            <!-- Height comes from PrimeNG's own token rather
+                                                 than a Tailwind h-* class: the theme sets
+                                                 `.p-progressbar { height: dt('progressbar.height') }`,
+                                                 which outranks `h-1` on the host and left the bar
+                                                 at the token's 1.5rem. Setting the variable keeps
+                                                 the fix inside PrimeNG's contract instead of
+                                                 needing an !important.
+                                                 ml-auto and last position put it at the right edge,
+                                                 with DOM order matching what is read out. -->
+                                            <p-progressBar
+                                                class="ml-auto w-12"
+                                                style="--p-progressbar-height: 8px"
+                                                [value]="toCloseness(match.distance)"
+                                                [showValue]="false" />
                                         </div>
                                     }
                                 </article>
