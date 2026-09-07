@@ -40,15 +40,20 @@ export default class DotAiImageComponent {
     protected readonly $prompt = signal('');
 
     /**
-     * The enum values are the pixel sizes the API takes, so the label is derived from the
-     * value rather than translated: `1792x1024` shown as `1792×1024`. That keeps the two from
-     * drifting, and dimensions read the same in every language.
+     * Labelled by aspect ratio rather than pixel size: the ratio is what you are choosing,
+     * and the exact pixel count is the API's business. Not translated — a ratio reads the
+     * same in every language. The values stay the sizes the API takes.
      */
     protected readonly orientations = [
-        DotAIImageOrientation.HORIZONTAL,
-        DotAIImageOrientation.SQUARE,
-        DotAIImageOrientation.VERTICAL
-    ].map((value) => ({ value, label: value.replace('x', '×') }));
+        { value: DotAIImageOrientation.HORIZONTAL, label: '16:9' },
+        { value: DotAIImageOrientation.SQUARE, label: '1x1' },
+        { value: DotAIImageOrientation.VERTICAL, label: '9:16' }
+    ];
+
+    /** Fills the frame so the picture can be centred and contained at any ratio. */
+    protected readonly imagePt = {
+        root: { class: 'flex size-full items-center justify-center' }
+    };
 
     protected onGenerate(): void {
         if (this.$prompt().trim() && this.store.isConfigured()) {
