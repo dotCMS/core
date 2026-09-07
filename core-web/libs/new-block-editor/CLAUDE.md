@@ -165,7 +165,7 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `dotVideo` | `video.extension.ts` | Video (modal picker) | Insert video | `video` |
 | `dotAudio` | `audio.extension.ts` | Audio (modal picker) | Insert audio | `audio` |
 | `youtube` | `@tiptap/extension-youtube` | — (legacy slash entry) | — | none — always registered. `youtube` is not an Allowed Blocks option, so gating it only dropped stored embeds on restricted fields (#37175). Insertion is gated in the UI via `showAssetByUrl()`. |
-| `emoji` | `@tiptap/extension-emoji` | — (toolbar popover, gated by `emoji`) | — | none — always registered, same reason as `youtube` (#37175). Authoring is gated: toolbar button behind `@if (isAllowed('emoji'))`, `:)` input rule behind `enableEmoticons: has('emoji')`. |
+| `emoji` | `dot-emoji.extension.ts` (extends `@tiptap/extension-emoji`) | — (toolbar popover, **never gated**) | — | none — always registered, same reason as `youtube` (#37175). **Nothing creates this node any more (#37340)** — see below. Authoring is NOT gated: `emoji` is not selectable in Allowed Blocks, so gating it only ever misfired. |
 | `dotContent` | `contentlet/contentlet.extension.ts` | Content type → submenu | Edit contentlet (node-scoped) | `dotContent` |
 | `gridBlock` | `grid.extension.ts` | Grid (2 columns) | — | `gridBlock` |
 | `gridColumn` | `grid.extension.ts` | — (created by `insertGrid`) | — | inherits gridBlock |
@@ -187,6 +187,45 @@ What actions are available on each node type. **Slash** = appears in `/` menu (`
 | `link` | `@tiptap/extension-link` | Link popover — hidden when `link` is not in allowed blocks | any text. Always in the schema; `allowedBlocks` gates only the authoring paths (button, autolink, link-on-paste). Gating the *registration* blanked every restricted field (#37175) — a missing mark aborts `Node.fromJSON` for the whole document, and `link` is not even offered as an Allowed Blocks option. |
 | `textAlign` | `@tiptap/extension-text-align` | Align L/C/R/Justify | configured for `paragraph` + `heading` only |
 | `dotUnsupportedMark` | `createUnsupportedBlockMark()` (`@dotcms/dotcms-models`) | — (never authored; visually neutral) | any text whose stored mark this schema does not declare. Registered unconditionally: an unknown mark aborts `Node.fromJSON` for the WHOLE document, so `preserveUnknownBlockMarks` swaps it for this placeholder on load and `restoreUnknownBlockNodes` puts the original back on save (#37175). Mark-side twin of `dotUnsupportedBlock`. |
+
+### The `emoji` node is registered but never created (#37340)
+
+Same shape as the `aiContent` case above, with one addition: the registration is load-bearing for
+**two** reasons, and the node is actively converted away on load.
+
+The upstream extension replaced any character Unicode classifies as an emoji with a bare `emoji`
+node — 1907 of the 1949 it catalogues, including 219 that render as ordinary typography (`©`, `®`,
+`™`, `✔`, `⚠`, arrows). A bare inline atom inside a marked run **ends that run**, so a linked phrase
+became `text(link) + emoji + text(link)`: two `<a>` elements where the author created one, persisted
+into the stored JSON. `dot-emoji.extension.ts` closes all five paths that created one.
+
+**The node stays registered because:**
+
+1. Stored `emoji` nodes must still parse. Without the registration `Node.fromJSON` aborts and boots
+   an EMPTY document — the #37145 mechanism.
+2. The `emojis` option is the shortcode → character table. The `:copyright:` and `:)` input rules
+   read it, and so does the heal. It must stay **unfiltered**: removing an entry makes stored nodes
+   of that name render as literal `:copyright:` text.
+
+**Stored nodes are healed on load.** `emoji-heal.utils.ts` converts them to `text(same marks,
+character)` on the parse path, so the character returns to VTL, the SDKs, Elasticsearch,
+`getCharCount`, and `isTextContentEmpty` — which counts only `"text"` nodes, and therefore reports
+an emoji-only Story Block field as *empty*, failing required-field validation. All fixed with no
+change outside this library.
+
+The heal preserves marks and never invents them, with one narrow exception: a **bare** node between
+two `text` nodes carrying identical mark sets that include a `link` inherits them, because that
+shape is a fingerprint of this defect rather than an editorial choice.
+
+**Two traps worth knowing before touching any of this:**
+
+- **`parseHTML` is deliberately `[]`.** Parse rules govern HTML entry points only — `Node.fromJSON`
+  never consults them — so this closes copy-paste between fields without weakening (1) above.
+  Restoring it re-opens the fifth creation path.
+- **Assert on the JSON, never the editor DOM.** ProseMirror's serializer renders a mark run as a
+  single element however many text nodes span it, and `Fragment.fromJSON` does NOT join
+  identical-mark runs. The document and the DOM disagree, and that disagreement hid a wrong design
+  assumption through three drafts of this spec.
 
 ### Unknown nodes and marks (load-path invariant)
 
