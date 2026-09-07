@@ -699,7 +699,7 @@ export class DotFolderListViewContextMenuComponent {
                     actionName: this.#dotMessageService.get('Remote-Publish'),
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 0
+                    failedCount: 0
                 })
         });
     }

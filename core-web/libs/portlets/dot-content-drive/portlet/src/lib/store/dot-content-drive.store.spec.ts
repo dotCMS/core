@@ -1890,7 +1890,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Refresh',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 0,
+                    failedCount: 0,
                     partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
                     backgrounded: true
                 })
@@ -2028,7 +2028,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Refresh',
                     successCount: 2,
                     skippedCount: 1,
-                    failCount: 1,
+                    failedCount: 1,
                     partialDetailKey: 'content-drive.action-center.toast.refreshed-partial',
                     backgrounded: true
                 })
@@ -2137,7 +2137,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Lock',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -2210,7 +2210,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Lock',
                     successCount: 0,
                     skippedCount: 0,
-                    failCount: 2
+                    failedCount: 2
                 })
             );
             expect(httpErrorManager.handle).not.toHaveBeenCalled();
@@ -2243,7 +2243,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Send for Review',
                     successCount: 1,
                     skippedCount: 1,
-                    failCount: 0
+                    failedCount: 0
                 })
             );
         });
@@ -2259,7 +2259,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
 
             store.executeWorkflowAction('action-review', 'Send for Review', ['inode-1', 'inode-2']);
 
-            expect(store.actionExecutionResult()?.failCount).toBe(1);
+            expect(store.actionExecutionResult()?.failedCount).toBe(1);
         });
 
         it('should hand errors to the error manager and clear the running action', () => {
@@ -2307,7 +2307,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Add to Bundle',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 0
+                    failedCount: 0
                 })
             );
         });
@@ -2324,7 +2324,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Add to Bundle',
                     successCount: 2,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -2353,7 +2353,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Add to Bundle',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -2454,7 +2454,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Push Publish',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 0
+                    failedCount: 0
                 })
             );
         });
@@ -2471,7 +2471,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Push Publish',
                     successCount: 2,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -2499,7 +2499,7 @@ describe('DotContentDriveStore - withActionExecution', () => {
                     actionName: 'Push Publish',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });

@@ -221,7 +221,7 @@ export class DotContentDriveShellComponent {
             actionName: this.#dotMessageService.get('content-drive.action-center.add-to-bundle'),
             successCount: 1,
             skippedCount: 0,
-            failCount: 0,
+            failedCount: 0,
             // Nothing in the listing changes when an asset joins a bundle, so this is one of the
             // few successes that still has to be said out loud.
             confirmSuccess: true
@@ -540,7 +540,7 @@ export class DotContentDriveShellComponent {
      * composition. `loadItems` clears the selection and sets `LOADING` itself, so this one call is the
      * whole post-run refresh.
      *
-     * `failCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
+     * `failedCount` downgrades the toast to a warning. Partial failure is a normal outcome for these
      * endpoints (a lock held by somebody else, a per-contentlet permission), and reporting it as an
      * unqualified success would be the one thing the user cannot recover from — the grid has already
      * reloaded and the selection is gone.
@@ -591,7 +591,7 @@ export class DotContentDriveShellComponent {
             actionName,
             successCount,
             skippedCount,
-            failCount,
+            failedCount,
             partialDetailKey,
             backgrounded,
             confirmSuccess,
@@ -607,7 +607,7 @@ export class DotContentDriveShellComponent {
         // So anything short of a clean run reports all three numbers, each next to its own cause.
         // Both counts are always passed, meaning a fails-only run renders "0 skipped"; naming the
         // cause and its number is what keeps the message honest.
-        const isPartial = failCount > 0 || skippedCount > 0;
+        const isPartial = failedCount > 0 || skippedCount > 0;
 
         // Silent on a clean success, unless the operation leaves no visible trace.
         //
@@ -634,7 +634,7 @@ export class DotContentDriveShellComponent {
                   partialDetailKey ?? 'content-drive.action-center.toast.executed-partial',
                   actionName,
                   String(successCount),
-                  String(failCount),
+                  String(failedCount),
                   String(skippedCount)
               )
             : this.#dotMessageService.get(

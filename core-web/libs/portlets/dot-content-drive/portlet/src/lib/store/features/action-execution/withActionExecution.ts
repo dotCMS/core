@@ -334,7 +334,7 @@ export function withActionExecution() {
                                 // successes are what is left after removing them.
                                 successCount: Math.max((result.total ?? 0) - result.errors, 0),
                                 skippedCount: 0,
-                                failCount: result.errors,
+                                failedCount: result.errors,
                                 // Both consumers of this path — Add to Bundle and Push Publish —
                                 // change nothing in the listing, so their success has to be said out
                                 // loud or the author gets no sign at all. The row-based operations
@@ -392,7 +392,7 @@ export function withActionExecution() {
                                     actionName,
                                     successCount: summary.successCount,
                                     skippedCount: 0,
-                                    failCount: summary.failCount
+                                    failedCount: summary.failCount
                                 });
                             });
                     },
@@ -533,7 +533,7 @@ export function withActionExecution() {
                                 actionName,
                                 successCount: event.successCount ?? 0,
                                 skippedCount: event.skippedCount ?? 0,
-                                failCount: event.failedCount ?? 0,
+                                failedCount: event.failedCount ?? 0,
                                 partialDetailKey:
                                     'content-drive.action-center.toast.refreshed-partial',
                                 backgrounded: true
@@ -617,7 +617,7 @@ export function withActionExecution() {
                                     actionName,
                                     successCount: result?.successCount ?? 0,
                                     skippedCount: result?.skippedCount ?? 0,
-                                    failCount: result?.fails?.length ?? 0,
+                                    failedCount: result?.fails?.length ?? 0,
                                     affectedFolders
                                 })
                             );

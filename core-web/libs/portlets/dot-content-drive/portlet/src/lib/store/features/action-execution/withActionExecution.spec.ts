@@ -158,7 +158,7 @@ describe('withActionExecution', () => {
                     actionName: 'Lock',
                     successCount: 1,
                     skippedCount: 0,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -298,7 +298,7 @@ describe('withActionExecution', () => {
                     actionName: 'Publish',
                     successCount: 3,
                     skippedCount: 2,
-                    failCount: 1
+                    failedCount: 1
                 })
             );
         });
@@ -326,7 +326,7 @@ describe('withActionExecution', () => {
                     actionName: 'Add to Bundle',
                     successCount: 3,
                     skippedCount: 0,
-                    failCount: 2
+                    failedCount: 2
                 })
             );
         });

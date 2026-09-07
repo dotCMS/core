@@ -372,7 +372,7 @@ describe('DotContentDriveShellComponent', () => {
             // The rule the PM asked for: success is not announced when the author can see it. The
             // rows published, moved or unlocked in front of them, so a notification saying so
             // repeats what is already on screen — which is the noise this set out to remove.
-            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failCount: 0 });
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failedCount: 0 });
 
             expect(messageService.add).not.toHaveBeenCalled();
         });
@@ -380,7 +380,7 @@ describe('DotContentDriveShellComponent', () => {
         it('should still refresh and consume a silent success', () => {
             // Only the notification is dropped. The reload is how the author actually sees it, so
             // suppressing that too would replace a redundant message with no feedback at all.
-            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failCount: 0 });
+            settle({ actionName: 'Publish', successCount: 3, skippedCount: 0, failedCount: 0 });
 
             expect(store.loadItems).toHaveBeenCalled();
             expect(store.clearActionExecutionResult).toHaveBeenCalled();
@@ -393,7 +393,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Add to Bundle',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0,
+                failedCount: 0,
                 confirmSuccess: true
             });
 
@@ -407,7 +407,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Publish',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0
+                failedCount: 0
             });
 
             expect(store.loadItems).toHaveBeenCalled();
@@ -426,7 +426,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Refresh',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0,
+                failedCount: 0,
                 backgrounded: true
             });
 
@@ -445,7 +445,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Refresh',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0,
+                failedCount: 0,
                 backgrounded: true
             });
 
@@ -458,7 +458,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Refresh',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0,
+                failedCount: 0,
                 backgrounded: true
             };
 
@@ -544,7 +544,7 @@ describe('DotContentDriveShellComponent', () => {
                 actionName: 'Move',
                 successCount: 1,
                 skippedCount: 0,
-                failCount: 0,
+                failedCount: 0,
                 backgrounded: true,
                 affectedFolders
             });

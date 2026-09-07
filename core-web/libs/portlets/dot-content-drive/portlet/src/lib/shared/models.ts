@@ -206,7 +206,19 @@ export interface DotContentDriveActionExecutionResult {
     affectedFolders?: string[];
     successCount: number;
     skippedCount: number;
-    failCount: number;
+    /**
+     * Spelled to match every job-backed producer rather than the view.
+     *
+     * `BulkRefreshContentletsProcessor` emits `failedCount`, and so does the bulk upload contract
+     * (`specs/37166-bulk-file-upload/contracts/bulk-upload-api.md` §3), which says so explicitly.
+     * Naming it `failCount` here meant a pushed outcome was translated on the way in, and every
+     * future job-backed consumer would translate it again for nothing (FR-032).
+     *
+     * The one place a translation remains is the workflow bulk-fire adapter, which reads
+     * `summary.failCount` — that API reports a `fails[]` list and no count at all, so a conversion
+     * there is real work rather than a rename.
+     */
+    failedCount: number;
     /**
      * i18n key for the partial-outcome copy, when the default does not fit.
      *
