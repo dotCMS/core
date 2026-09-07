@@ -2301,6 +2301,21 @@ CREATE TABLE static_s3_vanity_mapping (
 CREATE INDEX idx_static_s3_vanity_mapping_vurl
     ON static_s3_vanity_mapping (endpoint_id, vanity_url_id);
 
+CREATE TABLE job_item_result (
+    job_id varchar(255) not null,
+    seq integer not null,
+    item_key varchar(510) not null,
+    status varchar(20) not null,
+    reason varchar(64),
+    message text,
+    ref_id varchar(36),
+    updated_at timestamptz not null,
+    primary key (job_id, seq)
+);
+
+CREATE INDEX idx_job_item_result_key
+    ON job_item_result (job_id, item_key);
+
 create table publishing_environment(
 	id varchar(36) NOT NULL  primary key,
 	name varchar(255) NOT NULL unique,

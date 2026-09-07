@@ -28,6 +28,15 @@ import java.sql.SQLException;
  * <p>
  * Additive only — a new table, no changes to existing ones — so an older build simply ignores it
  * and the change stays rollback-safe.
+ * <p>
+ * <b>A new table needs two homes, and this is only one of them.</b> The run-once loop skips
+ * {@code executeUpgrade()} entirely when {@code firstTimeStart} is true — that is, whenever
+ * {@code DB_VERSION} is 0 — while still recording the version, so on a fresh database this task is
+ * marked applied without ever running and can never self-correct. Fresh installs get their schema
+ * from {@code dotCMS/src/main/resources/postgres.sql} instead, which is where {@code job_item_result}
+ * is also declared. This task is what creates it on an <b>existing</b> install upgrading past
+ * version 260907. {@code Task260507CreateS3VanityAliasTable} is paired the same way; keep the two
+ * definitions in step, because nothing checks that they agree.
  */
 public class Task260907CreateJobItemResultTable extends AbstractJDBCStartupTask {
 

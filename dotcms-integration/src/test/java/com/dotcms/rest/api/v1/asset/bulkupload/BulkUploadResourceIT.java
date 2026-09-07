@@ -136,18 +136,50 @@ public class BulkUploadResourceIT extends Junit5WeldBaseTest {
     /**
      * Method to test: the configured ceilings
      * <p>
-     * Given scenario: The endpoint reads its limits.
+     * Given scenario: An operator changes the limits, and then leaves them unset.
      * <p>
-     * Expected result: They come from {@code Config}, with the documented defaults, rather than
-     * being hardcoded (FR-010, Constitution II). An operator who cannot change them has no way to
-     * adapt the feature to their own storage.
+     * Expected result: The change is honoured, and the documented default applies when nothing is
+     * set. That is what FR-010 asks for — "operator-configurable through the product's standard
+     * configuration mechanism rather than hardcoded" — and it is the half that matters: an operator
+     * who cannot change these has no way to adapt the feature to their own storage.
+     * <p>
+     * <b>Deliberately not asserted here: the value shipped in the properties file.</b> An earlier
+     * version of this test read {@code Config.getIntProperty(key, -1)} and expected 100, which
+     * could only ever pass if the key were present in the config the test JVM loads. It is not, and
+     * should not be: {@code dotcms-integration} carries its own partial
+     * {@code dotmarketing-config.properties} — 886 lines against core's 1000, and missing the
+     * {@code TEMP_RESOURCE_*} block too — that shadows core's on the test classpath. Adding the
+     * keys there would have made the assertion pass by editing the fixture it asserts against,
+     * which tests nothing. The shipped defaults are documented in the contract and in the
+     * properties file itself; what needs a test is that the code reads them rather than baking
+     * them in.
      */
     @Test
     public void test_ceilings_areOperatorConfigurableWithTheDocumentedDefaults() {
-        assertEquals(100, Config.getIntProperty("CONTENT_BULK_UPLOAD_MAX_FILES", -1));
-        assertEquals(1073741824L,
-                Config.getLongProperty("CONTENT_BULK_UPLOAD_MAX_TOTAL_BYTES", -1L));
-        assertEquals(209715200L,
-                Config.getLongProperty("CONTENT_BULK_UPLOAD_FALLBACK_MAX_FILE_BYTES", -1L));
+
+        final String maxFilesKey = BulkUploadHelper.MAX_FILES_KEY;
+        final String maxTotalKey = BulkUploadHelper.MAX_TOTAL_BYTES_KEY;
+
+        try {
+            Config.setProperty(maxFilesKey, 7);
+            Config.setProperty(maxTotalKey, 4096L);
+
+            assertEquals(7, Config.getIntProperty(maxFilesKey,
+                            BulkUploadHelper.DEFAULT_MAX_FILES),
+                    "an operator's file-count ceiling must be honoured");
+            assertEquals(4096L, Config.getLongProperty(maxTotalKey,
+                            BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES),
+                    "an operator's total-size ceiling must be honoured");
+        } finally {
+            Config.setProperty(maxFilesKey, null);
+            Config.setProperty(maxTotalKey, null);
+        }
+
+        assertEquals(100, Config.getIntProperty(maxFilesKey,
+                        BulkUploadHelper.DEFAULT_MAX_FILES),
+                "with nothing configured, the documented default applies");
+        assertEquals(1073741824L, Config.getLongProperty(maxTotalKey,
+                        BulkUploadHelper.DEFAULT_MAX_TOTAL_BYTES),
+                "with nothing configured, the documented default applies");
     }
 }
