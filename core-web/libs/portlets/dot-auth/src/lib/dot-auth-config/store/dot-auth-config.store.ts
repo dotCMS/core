@@ -10,6 +10,8 @@ import { DOT_AUTH_SYSTEM_HOST, DotAuthConfig, DotAuthUiProtocol } from '@dotcms/
 
 import {
     DEFAULT_CONFIG,
+    GOOGLE_ISSUER,
+    applyGoogleGroupsPreset,
     applyOidcDiscovery,
     applyTrustedDiscovery,
     clone,
@@ -38,6 +40,8 @@ interface DotAuthConfigState {
     // reload errored (which, per convention, still lands on status 'loaded'), so a failed
     // reload does not masquerade as a successful save with a green toast.
     reloadFailed: boolean;
+    // Set when OIDC discovery returned Google's issuer; the component offers the groups pre-fill.
+    googlePrefillPending: boolean;
 }
 
 const initialState: DotAuthConfigState = {
@@ -48,7 +52,8 @@ const initialState: DotAuthConfigState = {
     inherited: false,
     status: 'init',
     errors: {},
-    reloadFailed: false
+    reloadFailed: false,
+    googlePrefillPending: false
 };
 
 export const DotAuthConfigStore = signalStore(
@@ -249,9 +254,21 @@ export const DotAuthConfigStore = signalStore(
                             draft:
                                 path === 'oidc'
                                     ? applyOidcDiscovery(store.draft(), view)
-                                    : applyTrustedDiscovery(store.draft(), path, view)
+                                    : applyTrustedDiscovery(store.draft(), path, view),
+                            googlePrefillPending: path === 'oidc' && view.issuer === GOOGLE_ISSUER
                         });
                     });
+            },
+
+            applyGoogleGroupsPreset(): void {
+                patchState(store, {
+                    draft: applyGoogleGroupsPreset(store.draft()),
+                    googlePrefillPending: false
+                });
+            },
+
+            dismissGooglePrefill(): void {
+                patchState(store, { googlePrefillPending: false });
             },
 
             fetchSamlMetadata(url: string): void {
