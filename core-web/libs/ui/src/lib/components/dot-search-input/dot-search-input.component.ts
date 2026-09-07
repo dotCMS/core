@@ -1,6 +1,15 @@
 import { timer } from 'rxjs';
 
-import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    effect,
+    ElementRef,
+    input,
+    output,
+    signal,
+    viewChild
+} from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 
@@ -60,6 +69,21 @@ export class DotSearchInputComponent {
 
     /** Emits the trimmed term once the debounce window closes. */
     readonly search = output<string>();
+
+    /** The text field itself, so a host can hand it focus. */
+    private readonly $input = viewChild<ElementRef<HTMLInputElement>>('input');
+
+    /**
+     * Moves focus to the text field.
+     *
+     * Deliberately the whole of this component's involvement in keyboard shortcuts: the host owns the
+     * combination and the registration and calls this, so the box stays usable by a surface that has
+     * no shortcut registry at all. Never alters the current term, and is a no-op when the field
+     * already holds focus.
+     */
+    focus(): void {
+        this.$input()?.nativeElement.focus();
+    }
 
     protected readonly searchControl = new FormControl('');
 

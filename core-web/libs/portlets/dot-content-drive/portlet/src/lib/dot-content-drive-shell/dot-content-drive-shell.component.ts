@@ -57,6 +57,7 @@ import {
     DotFolderListViewComponent,
     DOT_FOLDER_LIST_VIEW_COLUMN_TYPE,
     DotFolderListViewColumn,
+    DotKeyboardShortcutService,
     DotMessagePipe,
     DotToastComponent,
     DotUploadDropzoneComponent,
@@ -91,7 +92,12 @@ import {
 } from '../shared/models';
 import { DotContentDriveNavigationService } from '../shared/services';
 import { DotContentDriveStore } from '../store/dot-content-drive.store';
-import { canAddChildrenTo, encodeFilters, isFolder } from '../utils/functions';
+import {
+    canAddChildrenTo,
+    encodeFilters,
+    hasNonDefaultFilters,
+    isFolder
+} from '../utils/functions';
 
 @Component({
     selector: 'dot-content-drive-shell',
@@ -144,6 +150,8 @@ export class DotContentDriveShellComponent {
     readonly #location = inject(Location);
     readonly #navigationService = inject(DotContentDriveNavigationService);
     readonly #destroyRef = inject(DestroyRef);
+
+    readonly #shortcuts = inject(DotKeyboardShortcutService);
 
     readonly #dotMessageService = inject(DotMessageService);
     readonly #messageService = inject(MessageService);
@@ -363,6 +371,10 @@ export class DotContentDriveShellComponent {
     });
 
     constructor() {
+        // Called rather than assigned: its only purpose is the side effect, and a private field
+        // nothing reads is exactly what `no-unused-private-class-members` is for.
+        this.#registerShortcuts();
+
         this.#syncDialog(this.#store.dialog);
 
         // Shareable deep-link: `?editContent=<identifier>` reopens the edit panel on load. Read
@@ -695,6 +707,61 @@ export class DotContentDriveShellComponent {
             this.#store.setPath(data.path);
         }
     });
+
+    /**
+     * Claims the portlet-level shortcuts (issue #32591).
+     *
+     * Registered as one batch so there is a single withdrawal to hold, and withdrawn when the shell
+     * is destroyed — which is what lets a dialog opening over the portlet take a combination and
+     * hand it back on close.
+     */
+    #registerShortcuts(): void {
+        this.#destroyRef.onDestroy(
+            this.#shortcuts.register([
+                {
+                    combination: 'escape',
+                    label: 'content-drive.shortcut.escape',
+                    handler: () => this.#onEscape()
+                },
+                {
+                    combination: 'mod+b',
+                    label: 'content-drive.shortcut.toggle-tree',
+                    handler: () => {
+                        this.#store.setIsTreeExpanded(!this.#store.isTreeExpanded());
+
+                        return true;
+                    }
+                }
+            ])
+        );
+    }
+
+    /**
+     * Backs out one layer at a time: the selection first, then every active filter.
+     *
+     * The filter step deliberately calls the *same* store action the toolbar's "Clear all" control
+     * calls, rather than clearing anything itself. One rule, one code path, and a visible button that
+     * advertises the shortcut. It also inherits that action's semantics for free: filters with
+     * defaults are re-seeded rather than emptied, and the browsed folder is untouched.
+     *
+     * Declines when there is nothing to back out of, so Escape keeps whatever meaning it has
+     * elsewhere instead of being silently swallowed here.
+     */
+    #onEscape(): boolean {
+        if (this.#store.selectedItems().length) {
+            this.#store.setSelectedItems([]);
+
+            return true;
+        }
+
+        if (hasNonDefaultFilters(this.#store.filters(), this.#store.defaultLanguageId())) {
+            this.#store.clearFilters();
+
+            return true;
+        }
+
+        return false;
+    }
 
     protected onPaginate(event: DotContentDrivePaginateEvent) {
         // Explicit check because it can potentially be 0

@@ -48,6 +48,8 @@ export * from './lib/components/dot-not-license/dot-not-license.component';
 export * from './lib/components/dot-radio-card/dot-radio-card.component';
 export * from './lib/components/dot-pages-favorite-page-empty-skeleton/dot-pages-favorite-page-empty-skeleton.component';
 export * from './lib/components/dot-search-input/dot-search-input.component';
+export * from './lib/services/dot-keyboard-shortcut/dot-keyboard-shortcut.service';
+export * from './lib/services/dot-keyboard-shortcut/models';
 export * from './lib/components/dot-search-input/constants';
 export * from './lib/components/dot-severity-icon/dot-severity-icon.component';
 export * from './lib/components/dot-sidebar-accordion';

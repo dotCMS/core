@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
+import {
+    ChangeDetectionStrategy,
+    Component,
+    computed,
+    DestroyRef,
+    inject,
+    viewChild
+} from '@angular/core';
 
-import { DotSearchInputComponent } from '@dotcms/ui';
+import { DotKeyboardShortcutService, DotSearchInputComponent } from '@dotcms/ui';
 
 import { DotContentDriveStore } from '../../../../store/dot-content-drive.store';
 
@@ -21,10 +28,43 @@ import { DotContentDriveStore } from '../../../../store/dot-content-drive.store'
 })
 export class DotContentDriveSearchInputComponent {
     readonly #store = inject(DotContentDriveStore);
+    readonly #shortcuts = inject(DotKeyboardShortcutService);
+
+    private readonly $searchInput = viewChild(DotSearchInputComponent);
 
     protected readonly $searchTerm = computed(
         () => (this.#store.getFilterValue('title') as string) ?? ''
     );
+
+    /**
+     * Claims the search shortcut for as long as this box is on screen.
+     *
+     * Registered here rather than in the shell because this is the component that holds the search
+     * field; the shell would have to reach three levels down to find it. It also means the claim is
+     * withdrawn automatically when the toolbar goes away, which is what lets a dialog opening over
+     * the portlet take the shortcut and hand it back on close.
+     */
+    constructor() {
+        const unregister = this.#shortcuts.register({
+            combination: 'mod+k',
+            label: 'content-drive.shortcut.search',
+            handler: () => {
+                const input = this.$searchInput();
+
+                // Declines rather than swallowing the key if the box is not rendered, so the
+                // combination falls through instead of silently doing nothing.
+                if (!input) {
+                    return false;
+                }
+
+                input.focus();
+
+                return true;
+            }
+        });
+
+        inject(DestroyRef).onDestroy(unregister);
+    }
 
     /**
      * A new search resets the folder scope: results are drive-wide, so leaving the tree pinned to

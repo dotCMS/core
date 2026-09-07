@@ -228,6 +228,7 @@ describe('DotContentDriveShellComponent', () => {
                     setTreeForceCollapsed: jest.fn(),
                     path: jest.fn().mockReturnValue('/test/path'),
                     filters: filtersSignal,
+                    clearFilters: jest.fn(),
                     status: statusSignal,
                     sort: jest
                         .fn()
@@ -353,6 +354,151 @@ describe('DotContentDriveShellComponent', () => {
 
     afterEach(() => {
         jest.clearAllMocks();
+    });
+
+    // US5 and US6 (issue #32591). Both claims are made in one batch, so the shell holds a single
+    // withdrawal rather than one per combination.
+    describe('keyboard shortcuts', () => {
+        const press = (init: KeyboardEventInit): KeyboardEvent => {
+            const event = new KeyboardEvent('keydown', {
+                bubbles: true,
+                cancelable: true,
+                ...init
+            });
+            document.dispatchEvent(event);
+
+            return event;
+        };
+
+        const pressEscape = () => press({ key: 'Escape' });
+        const pressModB = () => press({ key: 'b', metaKey: true });
+
+        beforeEach(() => {
+            spectator.detectChanges();
+        });
+
+        describe('Escape', () => {
+            it('should clear the selection and leave the filters alone', () => {
+                store.selectedItems.mockReturnValue([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setSelectedItems).toHaveBeenCalledWith([]);
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            // Asserted as equivalence with the store action the "Clear all" control already calls,
+            // rather than by re-listing the expected filters, so the two cannot drift apart (SC-009).
+            it('should clear every filter through the Clear all path when nothing is selected', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.clearFilters).toHaveBeenCalledTimes(1);
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should do nothing with neither a selection nor an active filter', () => {
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+                expect(store.setSelectedItems).not.toHaveBeenCalled();
+            });
+
+            it('should leave the browser default alone when it has nothing to do', () => {
+                const event = pressEscape();
+
+                expect(event.defaultPrevented).toBe(false);
+            });
+
+            it('should not treat a defaulted language filter as an active filter', () => {
+                filtersSignal.set({ languageId: '1' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.clearFilters).not.toHaveBeenCalled();
+            });
+
+            it('should not change the browsed folder', () => {
+                filtersSignal.set({ contentType: 'Blog' });
+                spectator.detectChanges();
+
+                pressEscape();
+
+                expect(store.setPath).not.toHaveBeenCalled();
+            });
+        });
+
+        describe('tree toggle', () => {
+            it('should expand a collapsed tree', () => {
+                store.isTreeExpanded.mockReturnValue(false);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(true);
+            });
+
+            it('should collapse an expanded tree', () => {
+                store.isTreeExpanded.mockReturnValue(true);
+
+                pressModB();
+
+                expect(store.setIsTreeExpanded).toHaveBeenCalledWith(false);
+            });
+
+            // A rich text surface handling the same combination is closer to the event target, runs
+            // first and marks the event handled. The shell must not act on it a second time.
+            it('should ignore a combination a nested handler already consumed', () => {
+                const event = new KeyboardEvent('keydown', {
+                    key: 'b',
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true
+                });
+                event.preventDefault();
+                document.dispatchEvent(event);
+
+                expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            });
+        });
+
+        // The listing is rendered for real here, so this is the only test that exercises the whole
+        // round trip: row keydown -> range -> selectionChange -> store. The component-level tests
+        // stop at the emission.
+        it('should report a keyboard-extended range to the store', () => {
+            // The shared harness starts in LOADING, which renders skeletons instead of rows. This is
+            // the only test in this file that needs real rows on screen.
+            statusSignal.set(DotContentDriveStatus.LOADED);
+            spectator.detectChanges();
+
+            const rows = spectator.queryAll<HTMLTableRowElement>(byTestId('item-row'));
+
+            expect(rows.length).toBeGreaterThan(1);
+
+            rows[0].focus();
+            rows[0].dispatchEvent(
+                new KeyboardEvent('keydown', { code: 'ArrowDown', shiftKey: true, bubbles: true })
+            );
+            spectator.detectChanges();
+
+            expect(store.setSelectedItems).toHaveBeenCalledWith([MOCK_ITEMS[0], MOCK_ITEMS[1]]);
+        });
+
+        it('should release both claims when the shell is destroyed', () => {
+            filtersSignal.set({ contentType: 'Blog' });
+            spectator.detectChanges();
+
+            spectator.fixture.destroy();
+            pressModB();
+            pressEscape();
+
+            expect(store.setIsTreeExpanded).not.toHaveBeenCalled();
+            expect(store.clearFilters).not.toHaveBeenCalled();
+        });
     });
 
     describe('workflow action result', () => {

@@ -1,0 +1,366 @@
+import { afterEach, beforeEach, describe, expect, it, jest } from '@jest/globals';
+import { createServiceFactory, SpectatorService } from '@openng/spectator/jest';
+
+import { DotKeyboardShortcutService } from './dot-keyboard-shortcut.service';
+import { DotKeyboardShortcut, DotKeyboardShortcutUnregister } from './models';
+
+describe('DotKeyboardShortcutService', () => {
+    let spectator: SpectatorService<DotKeyboardShortcutService>;
+    let service: DotKeyboardShortcutService;
+
+    const createService = createServiceFactory(DotKeyboardShortcutService);
+
+    /**
+     * Registrations made through this are withdrawn after every test.
+     *
+     * The service listens on the document, so a claim left standing outlives its test: the stale
+     * listener consumes the event and marks it handled, and the next test's service then correctly
+     * ignores it. That produced a very convincing set of false failures before this was added.
+     */
+    let registered: DotKeyboardShortcutUnregister[] = [];
+
+    const register = (
+        shortcuts: DotKeyboardShortcut | DotKeyboardShortcut[]
+    ): DotKeyboardShortcutUnregister => {
+        const unregister = service.register(shortcuts);
+        registered.push(unregister);
+
+        return unregister;
+    };
+
+    /** Dispatches a real keydown on the document, the way a browser would. */
+    const press = (init: KeyboardEventInit): KeyboardEvent => {
+        const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, ...init });
+        document.dispatchEvent(event);
+
+        return event;
+    };
+
+    const pressModK = () => press({ key: 'k', metaKey: true });
+
+    beforeEach(() => {
+        spectator = createService();
+        service = spectator.service;
+        registered = [];
+    });
+
+    afterEach(() => {
+        registered.forEach((unregister) => unregister());
+        registered = [];
+    });
+
+    describe('registration and dispatch', () => {
+        it('should run the handler for a claimed combination', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            pressModK();
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not run the handler for a different combination', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            press({ key: 'j', metaKey: true });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should treat Control as the primary modifier too, so one claim serves every platform', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            press({ key: 'k', ctrlKey: true });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should not run a modifier combination when the modifier is absent', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            press({ key: 'k' });
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+
+        it('should distinguish a shift-modified combination from the plain one', () => {
+            const plain = jest.fn();
+            const shifted = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler: plain });
+            register({ combination: 'shift+mod+k', label: 'other', handler: shifted });
+
+            press({ key: 'k', metaKey: true, shiftKey: true });
+
+            expect(shifted).toHaveBeenCalledTimes(1);
+            expect(plain).not.toHaveBeenCalled();
+        });
+
+        it('should support a combination with no modifier', () => {
+            const handler = jest.fn();
+            register({ combination: 'escape', label: 'dismiss', handler });
+
+            press({ key: 'Escape' });
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    describe('last-in-wins arbitration', () => {
+        it('should give the key to the most recent claim on that combination', () => {
+            const first = jest.fn();
+            const second = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler: first });
+            register({ combination: 'mod+k', label: 'search', handler: second });
+
+            pressModK();
+
+            expect(second).toHaveBeenCalledTimes(1);
+            expect(first).not.toHaveBeenCalled();
+        });
+
+        it('should restore the previous claim when the newer one is withdrawn', () => {
+            const first = jest.fn();
+            const second = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler: first });
+            const unregister = register({
+                combination: 'mod+k',
+                label: 'search',
+                handler: second
+            });
+
+            unregister();
+            pressModK();
+
+            expect(first).toHaveBeenCalledTimes(1);
+            expect(second).not.toHaveBeenCalled();
+        });
+
+        it('should leave a combination unclaimed once every claim is withdrawn', () => {
+            const handler = jest.fn();
+            const unregister = register({
+                combination: 'mod+k',
+                label: 'search',
+                handler
+            });
+
+            unregister();
+            const event = pressModK();
+
+            expect(handler).not.toHaveBeenCalled();
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        it('should tolerate withdrawing the same registration twice', () => {
+            const handler = jest.fn();
+            const unregister = register({
+                combination: 'mod+k',
+                label: 'search',
+                handler
+            });
+
+            unregister();
+            unregister();
+
+            expect(() => pressModK()).not.toThrow();
+        });
+
+        it('should not disturb another combination when one is withdrawn', () => {
+            const search = jest.fn();
+            const dismiss = jest.fn();
+            const unregisterSearch = register({
+                combination: 'mod+k',
+                label: 'search',
+                handler: search
+            });
+            register({ combination: 'escape', label: 'dismiss', handler: dismiss });
+
+            unregisterSearch();
+            press({ key: 'Escape' });
+
+            expect(dismiss).toHaveBeenCalledTimes(1);
+        });
+
+        // The case that rules out "topmost surface wins outright": a surface opening over another
+        // must not swallow combinations it never claimed.
+        it('should leave a combination with the earlier claimant when a newer surface claims a different one', () => {
+            const portletEscape = jest.fn();
+            const dialogSearch = jest.fn();
+            register({ combination: 'escape', label: 'dismiss', handler: portletEscape });
+            register({ combination: 'mod+k', label: 'search', handler: dialogSearch });
+
+            press({ key: 'Escape' });
+
+            expect(portletEscape).toHaveBeenCalledTimes(1);
+        });
+    });
+
+    // A surface almost always wants several combinations at once. Handing back one withdrawal per
+    // claim puts the burden of remembering all of them on every caller, so a batch returns one.
+    describe('registering a batch', () => {
+        it('should claim every combination in the array', () => {
+            const search = jest.fn();
+            const dismiss = jest.fn();
+            const toggle = jest.fn();
+            register([
+                { combination: 'mod+k', label: 'search', handler: search },
+                { combination: 'escape', label: 'dismiss', handler: dismiss },
+                { combination: 'mod+b', label: 'toggle', handler: toggle }
+            ]);
+
+            pressModK();
+            press({ key: 'Escape' });
+            press({ key: 'b', metaKey: true });
+
+            expect(search).toHaveBeenCalledTimes(1);
+            expect(dismiss).toHaveBeenCalledTimes(1);
+            expect(toggle).toHaveBeenCalledTimes(1);
+        });
+
+        it('should withdraw the whole batch with a single call', () => {
+            const search = jest.fn();
+            const dismiss = jest.fn();
+            const unregister = register([
+                { combination: 'mod+k', label: 'search', handler: search },
+                { combination: 'escape', label: 'dismiss', handler: dismiss }
+            ]);
+
+            unregister();
+            pressModK();
+            press({ key: 'Escape' });
+
+            expect(search).not.toHaveBeenCalled();
+            expect(dismiss).not.toHaveBeenCalled();
+        });
+
+        it('should restore the claims a batch was shadowing when it is withdrawn', () => {
+            const portletSearch = jest.fn();
+            register({ combination: 'mod+k', label: 'portlet search', handler: portletSearch });
+
+            const dialogSearch = jest.fn();
+            const unregisterDialog = register([
+                { combination: 'mod+k', label: 'dialog search', handler: dialogSearch }
+            ]);
+
+            unregisterDialog();
+            pressModK();
+
+            expect(portletSearch).toHaveBeenCalledTimes(1);
+            expect(dialogSearch).not.toHaveBeenCalled();
+        });
+
+        it('should tolerate withdrawing a batch twice', () => {
+            const handler = jest.fn();
+            const unregister = register([
+                { combination: 'mod+k', label: 'search', handler },
+                { combination: 'escape', label: 'dismiss', handler }
+            ]);
+
+            unregister();
+            unregister();
+
+            expect(() => pressModK()).not.toThrow();
+        });
+
+        it('should accept a single shortcut without an array', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+k', label: 'search', handler });
+
+            pressModK();
+
+            expect(handler).toHaveBeenCalledTimes(1);
+        });
+
+        it('should leave an empty batch harmless', () => {
+            const unregister = register([]);
+
+            expect(() => unregister()).not.toThrow();
+            expect(service.activeShortcuts()).toEqual([]);
+        });
+    });
+
+    describe('declining', () => {
+        it('should fall through to the previous claimant when the newest declines', () => {
+            const first = jest.fn();
+            const second = jest.fn(() => false);
+            register({ combination: 'mod+k', label: 'search', handler: first });
+            register({ combination: 'mod+k', label: 'search', handler: second });
+
+            pressModK();
+
+            expect(second).toHaveBeenCalledTimes(1);
+            expect(first).toHaveBeenCalledTimes(1);
+        });
+
+        it('should leave the browser default intact when every claimant declines', () => {
+            register({
+                combination: 'mod+k',
+                label: 'search',
+                handler: () => false
+            });
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+    });
+
+    describe('browser defaults', () => {
+        it('should suppress the browser default for a claimed combination', () => {
+            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+
+            const event = pressModK();
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should never suppress a combination nothing claims', () => {
+            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+
+            const event = press({ key: 'p', metaKey: true });
+
+            expect(event.defaultPrevented).toBe(false);
+        });
+
+        // A component that handled the key on its own element is closer to the target and has already
+        // marked the event. The registry must not act on it a second time.
+        it('should ignore an event a nested handler already consumed', () => {
+            const handler = jest.fn();
+            register({ combination: 'mod+b', label: 'toggle', handler });
+
+            const event = new KeyboardEvent('keydown', {
+                key: 'b',
+                metaKey: true,
+                bubbles: true,
+                cancelable: true
+            });
+            event.preventDefault();
+            document.dispatchEvent(event);
+
+            expect(handler).not.toHaveBeenCalled();
+        });
+    });
+
+    describe('documentation surface', () => {
+        it('should expose the active shortcuts with their labels', () => {
+            register({ combination: 'mod+k', label: 'search', handler: jest.fn() });
+            register({ combination: 'escape', label: 'dismiss', handler: jest.fn() });
+
+            expect(service.activeShortcuts()).toEqual([
+                { combination: 'mod+k', label: 'search' },
+                { combination: 'escape', label: 'dismiss' }
+            ]);
+        });
+
+        it('should report only the claim that would actually receive the key', () => {
+            register({ combination: 'mod+k', label: 'portlet search', handler: jest.fn() });
+            register({ combination: 'mod+k', label: 'dialog search', handler: jest.fn() });
+
+            expect(service.activeShortcuts()).toEqual([
+                { combination: 'mod+k', label: 'dialog search' }
+            ]);
+        });
+    });
+});

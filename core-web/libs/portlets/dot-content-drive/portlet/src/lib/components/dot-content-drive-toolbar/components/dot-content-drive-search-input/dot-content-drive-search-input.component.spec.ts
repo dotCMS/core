@@ -79,4 +79,61 @@ describe('DotContentDriveSearchInputComponent', () => {
         expect(store.setGlobalSearch).toHaveBeenCalledWith('');
         expect(store.selectRootNode).toHaveBeenCalled();
     });
+
+    // The claim lives here rather than in the shell because this component is the one holding the
+    // search box; the shell would have to reach three levels down to find it.
+    describe('search shortcut', () => {
+        const press = () =>
+            document.dispatchEvent(
+                new KeyboardEvent('keydown', {
+                    key: 'k',
+                    metaKey: true,
+                    bubbles: true,
+                    cancelable: true
+                })
+            );
+
+        const input = () => spectator.query('[data-testid="search-input-field"]');
+
+        it('should focus the search field', () => {
+            spectator.detectChanges();
+
+            press();
+
+            expect(document.activeElement).toBe(input());
+        });
+
+        it('should preserve a term already entered', () => {
+            store.getFilterValue.mockReturnValue('blog');
+            spectator.detectChanges();
+
+            press();
+
+            expect((input() as HTMLInputElement).value).toBe('blog');
+        });
+
+        it('should suppress the browser default so its own search affordance never opens', () => {
+            spectator.detectChanges();
+
+            const event = new KeyboardEvent('keydown', {
+                key: 'k',
+                metaKey: true,
+                bubbles: true,
+                cancelable: true
+            });
+            document.dispatchEvent(event);
+
+            expect(event.defaultPrevented).toBe(true);
+        });
+
+        it('should release the claim when the component is destroyed', () => {
+            spectator.detectChanges();
+            const field = input();
+
+            spectator.fixture.destroy();
+            press();
+
+            expect(document.activeElement).not.toBe(field);
+        });
+    });
 });

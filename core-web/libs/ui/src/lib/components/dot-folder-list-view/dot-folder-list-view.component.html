@@ -81,20 +81,27 @@
         </tr>
     </ng-template>
 
-    <ng-template #body let-item>
+    <ng-template #body let-item let-rowIndex="rowIndex">
         @let isFolder = item.type === 'folder';
 
         @if ($loading() || !$items().length) {
             <ng-container [ngTemplateOutlet]="loadingRow" />
         } @else {
+            <!-- `pSelectableRowIndex`: every range operation in the table keys off this index. Left
+                 unbound it is `undefined`, which silently disabled shift-click ranges and the table's
+                 own range shortcuts, and broke the tab-stop calculation in both directions (every row
+                 tabbable on load, none reachable after a sort).
+                 `focusin`: keeps the single tab stop on the row the user actually moved to. -->
             <tr
                 class="group transition-colors duration-200"
                 [class.cursor-grabbing]="state.isDragging()"
                 [class.text-gray-900]="state.dragOverRowId() === item.identifier"
                 [class.bg-primary-100]="state.dragOverRowId() === item.identifier"
                 [pSelectableRow]="item"
+                [pSelectableRowIndex]="rowIndex"
                 [pSelectableRowDisabled]="$disabled() || $readOnly()"
                 data-testId="item-row"
+                (focusin)="onRowFocus($event)"
                 (contextmenu)="onContextMenu($event, item)"
                 (dblclick)="onDoubleClick(item)"
                 [attr.draggable]="!$readOnly()"
@@ -102,7 +109,7 @@
                 (dragend)="onDragEnd()"
                 (dragover)="onDragOver($event, item)"
                 (drop)="onDrop($event, item)">
-                <td data-testId="item-checkbox" (click)="$event.stopPropagation()">
+                <td data-testId="item-checkbox" (click)="onCheckboxClick($event, rowIndex)">
                     @if ($selectionMode() === 'multiple') {
                         <p-tableCheckbox [value]="item" [disabled]="$disabled()" />
                     } @else {

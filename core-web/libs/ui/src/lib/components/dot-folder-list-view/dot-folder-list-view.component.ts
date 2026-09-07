@@ -2,11 +2,15 @@ import { patchState, signalState } from '@ngrx/signals';
 
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
 import {
+    afterEveryRender,
+    afterNextRender,
     AfterViewInit,
     ChangeDetectionStrategy,
     Component,
     computed,
+    DestroyRef,
     effect,
+    ElementRef,
     inject,
     input,
     OnDestroy,
@@ -58,6 +62,29 @@ import { SYSTEM_HOST_ID } from '../dot-folder-tree/constants';
  * Canonical position of the "type" column. Extra columns follow it, in the header and in the body
  * alike — read from the constant rather than hardcoded so the two cannot drift.
  */
+/**
+ * Marks a row the table considers selectable. Set by PrimeNG's selectable-row directive, and the only
+ * reliable way to enumerate rendered rows in the order the keyboard walks them.
+ */
+const SELECTABLE_ROW_SELECTOR = '[data-p-selectable-row="true"]';
+
+/**
+ * Why focus landed on a row, which decides what the focus handler does with the selection anchor.
+ *
+ * - `anchor`   — ordinary movement or a plain click: the anchor follows focus.
+ * - `range`    — a Shift-modified arrow: the anchor stays put and the range is built here, because
+ *                the table owns the arrow handler and this component has nowhere else to hook it.
+ * - `preserve` — a Shift-click: the anchor stays put but the range is left to the click handler,
+ *                which has the clicked row's index directly.
+ */
+type DotRowFocusIntent = 'anchor' | 'range' | 'preserve';
+
+/**
+ * Keys that only modify another keystroke. A browser sends a keydown for these on their own, before
+ * the key they modify, and that press must not be mistaken for the start of a new gesture.
+ */
+const MODIFIER_KEYS = new Set(['Shift', 'Control', 'Meta', 'Alt']);
+
 const TYPE_COLUMN_ORDER =
     HEADER_COLUMNS.find((column) => column.field === 'contentType')?.order ?? Infinity;
 
@@ -83,6 +110,8 @@ const TYPE_COLUMN_ORDER =
 })
 export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDestroy {
     private readonly renderer = inject(Renderer2);
+    readonly #hostElement = inject(ElementRef);
+    readonly #destroyRef = inject(DestroyRef);
     private readonly dotLanguagesService = inject(DotLanguagesService);
 
     dataTable = viewChild<Table>('dataTable');
@@ -604,6 +633,327 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
     });
 
     /**
+     * Roving tab stop for keyboard navigation (issue #32591).
+     *
+     * PrimeNG decides which rows are tabbable by comparing the table's own selection anchor against
+     * each row's index, so *pointing the anchor at a row is what makes that row the single tab stop*.
+     * This drives that input rather than overriding `setRowTabIndex`, so a PrimeNG upgrade cannot
+     * silently revert us the way an override on the same attribute could.
+     *
+     * Without it the listing is not reliably reachable at all: with no row index bound the comparison
+     * was `undefined === undefined`, making every row a tab stop (a full-page tab trap), and after a
+     * sort it became `null === undefined`, making *no* row reachable. Both were measured.
+     *
+     * The anchor is cleared by the table on sort and on the value/pagination reset, so re-seeding is
+     * keyed off the rendered rows rather than done once.
+     *
+     * A listing that cannot be interacted with gets no tab stop at all: `null` matches no row index,
+     * which is exactly the state the table itself uses to mean "nothing anchored".
+     */
+    protected readonly $seedRovingTabStop = effect(() => {
+        // Every dependency is read up front: a guard placed before a read would drop that signal as
+        // a dependency and the tab stop would stop being re-seeded when it changed.
+        this.$items();
+        this.$disabled();
+        this.$readOnly();
+        this.$offset();
+
+        this.#seedTabStop();
+    });
+
+    /**
+     * Index of the row that is currently the keyboard tab stop, relative to the rendered page.
+     * Kept in step with the table's anchor so a range extends from where focus actually is.
+     */
+    protected readonly $activeRowIndex = signal(0);
+
+    /**
+     * Applies the roving tab stop to the rendered rows.
+     *
+     * Written directly to the DOM after every render rather than bound in the template, because the
+     * table declares its own `tabindex` host binding on the same row and a template binding loses to
+     * it. That was measured: adding `[attr.tabindex]` to the row changed nothing at all.
+     *
+     * Driving the table's anchor instead — the original plan — gets most of the way but cannot reach
+     * two states, both measured:
+     *   - a single-selection listing has an empty selection permanently, and the table short-circuits
+     *     to "every row is tabbable" whenever the selection is empty, before it ever consults the
+     *     anchor;
+     *   - the table clears its anchor at the *end* of a sort, after the sort event this component
+     *     listens to has already fired, so re-seeding from `onSort` is immediately overwritten.
+     *
+     * A post-render write is not the same thing as a competing binding: it is the last write in the
+     * frame, so there is nothing to lose a race against. The anchor is still driven alongside it,
+     * because that is what ranges extend from.
+     */
+    #applyRovingTabStop(): void {
+        afterEveryRender({
+            write: () => {
+                const table = this.dataTable();
+
+                if (!table) {
+                    return;
+                }
+
+                const interactive = !this.$disabled() && !this.$readOnly();
+                const activeIndex = this.$activeRowIndex();
+                // `el` is typed `ElementRef<any>`, so the host element is narrowed here rather than
+                // passing a type argument to a call on `any`, which the compiler rejects.
+                const host = table.el.nativeElement as HTMLElement;
+                const rows = Array.from(
+                    host.querySelectorAll<HTMLElement>(SELECTABLE_ROW_SELECTOR)
+                );
+
+                rows.forEach((row, index) => {
+                    const tabIndex = interactive && index === activeIndex ? 0 : -1;
+
+                    // Guarded so a render that changed nothing does not dirty the DOM.
+                    if (row.tabIndex !== tabIndex) {
+                        row.tabIndex = tabIndex;
+                    }
+                });
+            }
+        });
+    }
+
+    /**
+     * Points the table's anchor at the first row. Distinct from the tab stop above: the anchor is
+     * what a range extends *from*, and keeping the two in step is what makes shift-extension start
+     * where the user's focus actually is.
+     */
+    #seedTabStop(): void {
+        const table = this.dataTable();
+
+        if (!table) {
+            return;
+        }
+
+        const interactive = !this.$disabled() && !this.$readOnly();
+
+        table.anchorRowIndex = interactive && this.$items().length ? this.$offset() : null;
+    }
+
+    /**
+     * Keeps the tab stop on whichever row the user actually moved to.
+     *
+     * PrimeNG's arrow handlers move DOM focus but never touch the anchor, so without this the tab
+     * stop would stay pinned to the first row while focus walked away from it, and tabbing out and
+     * back would jump the user to the top of the listing.
+     *
+     * Moving the anchor with plain focus is also the correct selection semantic: a range extends from
+     * the last row the user arrived at deliberately. Shift-modified movement must *not* land here,
+     * which is why this reads the row from the event rather than being called by the arrow handler.
+     */
+    protected onRowFocus(event: FocusEvent): void {
+        // Consumed here so it only ever applies to the one focus move that set it.
+        const intent = this.#focusIntent;
+        this.#focusIntent = 'anchor';
+
+        const table = this.dataTable();
+        const row = (event.target as HTMLElement | null)?.closest<HTMLElement>(
+            SELECTABLE_ROW_SELECTOR
+        );
+
+        if (!table || !row) {
+            return;
+        }
+
+        const index = this.#rowElements().indexOf(row);
+
+        if (index === -1) {
+            return;
+        }
+
+        this.$activeRowIndex.set(index);
+
+        // Both non-default intents leave the anchor alone — that is the whole difference between
+        // extending a range and moving through the listing. They differ only in who emits: an arrow
+        // has no handler of its own, so the range is built here; a Shift-click has one, and building
+        // it here too would emit the same range twice.
+        if (intent === 'range') {
+            this.#extendSelectionTo(index);
+
+            return;
+        }
+
+        if (intent === 'preserve') {
+            return;
+        }
+
+        table.anchorRowIndex = this.$offset() + index;
+    }
+
+    /**
+     * Whether the focus move now in flight came from a Shift-modified arrow.
+     *
+     * Recorded on keydown and read on the focus that follows, because the arrow handler that
+     * actually moves focus belongs to the table, not to this component, and a `FocusEvent` carries
+     * no modifier state of its own.
+     *
+     * Set from a **capture-phase** listener on this component's host, not a template binding on the
+     * row. Measured: the table's own row keydown handler runs before a template binding on the same
+     * row, so by the time a bubble-phase handler saw the key the focus had already moved and the
+     * anchor had already been reset. Capture is the only phase that reliably runs first.
+     */
+    #focusIntent: DotRowFocusIntent = 'anchor';
+
+    #trackFocusIntent(): void {
+        afterNextRender(() => {
+            const host = this.#hostElement.nativeElement as HTMLElement;
+
+            host.addEventListener('keydown', this.#onKeydownCapture, true);
+            host.addEventListener('mousedown', this.#onMousedownCapture, true);
+            this.#destroyRef.onDestroy(() => {
+                host.removeEventListener('keydown', this.#onKeydownCapture, true);
+                host.removeEventListener('mousedown', this.#onMousedownCapture, true);
+            });
+        });
+    }
+
+    constructor() {
+        // Both register render-phase work whose only purpose is the side effect, so they are called
+        // rather than assigned: a private field nothing reads is exactly what the lint rule is for.
+        this.#applyRovingTabStop();
+        this.#trackFocusIntent();
+    }
+
+    readonly #onKeydownCapture = (event: KeyboardEvent): void => {
+        // Pressing a modifier is not a gesture, it is the *start* of one, and the browser sends a
+        // keydown for it before the arrow. Treating it as an ordinary key reset the range base, so
+        // the next arrow re-captured a base that already contained the range and shrinking the range
+        // could never unselect anything. Reported from the browser; the tests could not see it until
+        // they sent the Shift keydown too.
+        if (MODIFIER_KEYS.has(event.key)) {
+            return;
+        }
+
+        const isArrow = event.code === 'ArrowDown' || event.code === 'ArrowUp';
+        const extending = isArrow && event.shiftKey;
+
+        this.#focusIntent = extending ? 'range' : 'anchor';
+        this.#trackRangeBase(extending);
+    };
+
+    /**
+     * The selection as it stood before the current Shift gesture began.
+     *
+     * A range *extends* the selection, it does not become it: rows picked before the gesture started
+     * have to survive it. Recomputing every step as `base ∪ range` rather than accumulating is what
+     * lets the range shrink back toward the anchor without stranding the rows it passed over.
+     *
+     * `null` means no gesture is in progress; the next Shift keystroke or click captures it.
+     */
+    #rangeBase: DotContentDriveBrowseItem[] | null = null;
+
+    #trackRangeBase(extending: boolean): void {
+        if (!extending) {
+            this.#rangeBase = null;
+
+            return;
+        }
+
+        this.#rangeBase ??= this.#asSelectedArray(this.selectedItems);
+    }
+
+    /**
+     * A Shift-click focuses the row before its click handler runs, and that focus would otherwise
+     * re-anchor onto the very row the range is meant to extend *to* — collapsing every Shift-click
+     * range to a single row. Recorded on mousedown, which precedes focus, so the focus handler knows
+     * to leave the anchor alone and let the click handler do the extending.
+     */
+    readonly #onMousedownCapture = (event: MouseEvent): void => {
+        this.#focusIntent = event.shiftKey ? 'preserve' : 'anchor';
+        this.#trackRangeBase(event.shiftKey);
+    };
+
+    /**
+     * Shift-click on a row's checkbox extends the range, exactly as Shift+Arrow does.
+     *
+     * Bound on the checkbox rather than the row because the checkbox cell stops propagation, so the
+     * table's own range path is unreachable from here. A plain click is left entirely alone: the
+     * checkbox toggles as it always has, and the row it lands on becomes the new anchor.
+     */
+    protected onCheckboxClick(event: MouseEvent, rowIndex: number): void {
+        // This cell has always swallowed its clicks so the row underneath does not select as well.
+        // That behaviour is unchanged and must stay ahead of the shift check.
+        event.stopPropagation();
+
+        const pageIndex = rowIndex - this.$offset();
+
+        // With nothing selected there is no range to extend from. The anchor at this point is only
+        // the seeded tab stop, which is a keyboard-focus concern and not somewhere the user chose,
+        // so extending from it would select rows they never pointed at. Treated as a plain click:
+        // this row is selected and becomes the anchor for the next Shift-click.
+        const hasSelection = this.#asSelectedArray(this.selectedItems).length > 0;
+
+        if (!event.shiftKey || !hasSelection) {
+            // A plain click re-anchors, the same way a plain arrow does, so the next Shift-click
+            // extends from the row the user last chose deliberately rather than from wherever the
+            // anchor happened to be seeded.
+            this.$activeRowIndex.set(pageIndex);
+
+            const table = this.dataTable();
+
+            if (table) {
+                table.anchorRowIndex = rowIndex;
+            }
+
+            return;
+        }
+
+        // Stops the checkbox from also toggling: the range decides what is selected, and letting the
+        // toggle run afterwards would flip the clicked row straight back off.
+        event.preventDefault();
+
+        this.$activeRowIndex.set(pageIndex);
+        this.#extendSelectionTo(pageIndex);
+    }
+
+    /** Rendered rows, in the order the keyboard walks them. */
+    #rowElements(): HTMLElement[] {
+        const host = this.dataTable()?.el.nativeElement as HTMLElement | undefined;
+
+        return host ? Array.from(host.querySelectorAll<HTMLElement>(SELECTABLE_ROW_SELECTOR)) : [];
+    }
+
+    /**
+     * Selects everything between the anchor and `index` inclusive.
+     *
+     * Emitted through `onSelectionChange` like every other selection change rather than written onto
+     * the table directly — the controlled-selection effect re-asserts the parent's value over
+     * anything written behind its back, so a direct write would be silently reverted.
+     */
+    #extendSelectionTo(index: number): void {
+        const table = this.dataTable();
+
+        // Ranges are a multiple-selection idea, and an inert listing has no selection to extend.
+        if (
+            !table ||
+            this.$disabled() ||
+            this.$readOnly() ||
+            this.$selectionMode() !== 'multiple'
+        ) {
+            return;
+        }
+
+        const offset = this.$offset();
+        const anchor = (table.anchorRowIndex ?? offset) - offset;
+        const start = Math.min(anchor, index);
+        const end = Math.max(anchor, index);
+        const range = this.$items().slice(start, end + 1);
+
+        // Rows picked before this gesture began are kept, minus any the range now covers, so a row
+        // cannot appear twice and shrinking the range cannot strand what it passed over.
+        const key = this.$dataKey();
+        const inRange = new Set(range.map((item) => item[key as keyof typeof item]));
+        const kept = (this.#rangeBase ?? []).filter(
+            (item) => !inRange.has(item[key as keyof typeof item])
+        );
+
+        this.onSelectionChange([...kept, ...range]);
+    }
+
+    /**
      * Bound scroll handler to ensure the same reference is used for add/remove event listener
      */
     private readonly boundScrollHandler = this.scrollHandler.bind(this);
@@ -804,6 +1154,11 @@ export class DotFolderListViewComponent implements OnInit, AfterViewInit, OnDest
      * @param event The sort event containing sort field and order
      */
     onSort(event: SortEvent) {
+        // The table clears its anchor on every sort, which takes the single tab stop with it and
+        // leaves the listing unreachable by keyboard until something is clicked. Re-seeding here
+        // rather than in `$seedRovingTabStop` because a client-side sort reorders the rendered rows
+        // without changing the `items` input, so the effect never re-runs.
+        this.#seedTabStop();
         this.sort.emit(event);
     }
 
