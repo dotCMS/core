@@ -19,7 +19,9 @@
         "jest.config.ts",
         "**/*.spec.ts",
         "**/*.test.ts",
-        "**/__mocks__/**"
+        "**/__mocks__/**",
+        "src/testing.ts",
+        "**/testing/**"
     ],
     "include": ["**/*.ts"]
 }
