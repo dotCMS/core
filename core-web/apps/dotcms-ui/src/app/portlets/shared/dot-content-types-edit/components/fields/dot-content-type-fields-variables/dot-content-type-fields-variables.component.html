@@ -1,7 +1,7 @@
 @if ($showTable()) {
-    <dot-key-value-ng
-        (delete)="deleteFieldVariable($event)"
-        (save)="updateFieldVariable($event)"
-        (update)="updateFieldVariable($event.variable)"
-        [variables]="$fieldVariables()" />
+    <!--
+        `updatedList` alone: nothing is written until Save, so the per-row
+        save/update/delete channels have nothing to do here.
+    -->
+    <dot-key-value-ng (updatedList)="onVariablesChanged($event)" [variables]="$fieldVariables()" />
 }

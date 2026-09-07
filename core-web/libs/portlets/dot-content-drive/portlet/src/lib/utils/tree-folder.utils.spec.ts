@@ -146,6 +146,17 @@ describe('Sidebar Utils', () => {
             });
         });
 
+        it('should carry no icon of its own, leaving the icon to the shared tree', () => {
+            // The state-driven folder icon is rendered by DotFolderTreeComponent, not carried in
+            // the node data. A folder node that declared its own icon would opt itself out of
+            // that rule and get PrimeNG's icon instead — which is state-blind while children load.
+            const result = createTreeNode(mockFolder);
+
+            expect(result.icon).toBeUndefined();
+            expect(result.expandedIcon).toBeUndefined();
+            expect(result.collapsedIcon).toBeUndefined();
+        });
+
         it('should leave the node expandable (leaf false) when hasChildren is undefined', () => {
             const result = createTreeNode(mockFolder);
             expect(result.leaf).toBe(false);

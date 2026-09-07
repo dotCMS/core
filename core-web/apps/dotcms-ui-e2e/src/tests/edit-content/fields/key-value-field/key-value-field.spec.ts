@@ -158,6 +158,42 @@ test.describe('Key Value Field', () => {
             await reloadedField.expectEntry('keepKey', 'keepValue');
             await reloadedField.expectKeyAbsent('removeKey');
         });
+
+        // #37191 — the redesign introduces click-to-edit and hover-revealed
+        // actions. These guard the two behaviours that a mouse-only smoke test
+        // would otherwise never exercise.
+
+        test('cancelling an edit restores the original value @smoke', async ({ page }) => {
+            const formPage = new NewEditContentFormPage(page);
+            await formPage.goToNew(contentTypeVariable);
+
+            const field = new KeyValueField(page, KEY_VALUE_FIELD_VARIABLE);
+            await field.addEntry('cancelKey', 'originalValue');
+
+            await field.cancelEntryEdit('cancelKey', 'typedButDiscarded', 'originalValue');
+            await field.expectEntry('cancelKey', 'originalValue');
+        });
+
+        test('reordering rows persists after save and reload @smoke', async ({ page }) => {
+            const title = `E2E KV Reorder ${faker.lorem.word()}`;
+            const formPage = new NewEditContentFormPage(page);
+            await formPage.goToNew(contentTypeVariable);
+
+            const field = new KeyValueField(page, KEY_VALUE_FIELD_VARIABLE);
+            // New entries are prepended, so adding a → b → c yields c, b, a.
+            await field.addEntry('alpha', 'first');
+            await field.addEntry('beta', 'second');
+            await field.addEntry('gamma', 'third');
+            await field.expectKeyOrder(['gamma', 'beta', 'alpha']);
+
+            await field.dragRowTo('alpha', 0);
+            await field.expectKeyOrder(['alpha', 'gamma', 'beta']);
+
+            await saveAndReload(page, title);
+
+            const reloadedField = new KeyValueField(page, KEY_VALUE_FIELD_VARIABLE);
+            await reloadedField.expectKeyOrder(['alpha', 'gamma', 'beta']);
+        });
     });
 
     test.describe('Regression #36318 with custom field', () => {
