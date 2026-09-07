@@ -24,6 +24,7 @@ import { ConfirmDialog } from 'primeng/confirmdialog';
 import { DialogService } from 'primeng/dynamicdialog';
 
 import { type AnyExtension, Editor, type JSONContent } from '@tiptap/core';
+import { emojis } from '@tiptap/extension-emoji';
 import { type EditorView } from '@tiptap/pm/view';
 
 import { DotMessageService } from '@dotcms/data-access';
@@ -53,6 +54,7 @@ import { EditorModalService } from './services/editor-modal.service';
 import { EditorPopoverService } from './services/editor-popover.service';
 import { EditorStore } from './store/editor.store';
 import { contentMatchesEditorDocument } from './utils/content-match.utils';
+import { healEmojiNodes } from './utils/emoji-heal.utils';
 import { loadRemoteExtensions, parseCustomBlocksField } from './utils/remote-extensions.loader';
 import {
     preserveUnknownNodesInDocument,
@@ -476,23 +478,39 @@ export class DotCMSEditorComponent implements OnInit, OnDestroy, ControlValueAcc
     }
 
     /**
-     * Replaces the editor's document with `content`, normalizing unknown node types into the
-     * `dotUnsupportedBlock` placeholder first so custom blocks survive the round trip.
+     * Replaces the editor's document with `content`, normalizing it first: unknown node types
+     * become the `dotUnsupportedBlock` placeholder so custom blocks survive the round trip, and
+     * legacy `emoji` nodes become the text they should always have been.
      *
      * Every load goes through here — the initial one from {@link commitEditor}, later host
      * pushes from the `value` effect, and reactive-forms writes from {@link writeValue} — so
      * there is one place where the document is replaced rather than three near-copies.
+     *
+     * Order matters, and it is the reverse of the unknown-node/mark pair's reason. The emoji heal
+     * runs FIRST because it only ever reads and rewrites `emoji` nodes, which are known to this
+     * schema; running it after `preserveUnknownNodesInDocument` would make no difference to the
+     * result but would have it walk placeholder payloads it has no business touching.
      */
     private loadContent(editor: Editor, content: string | JSONContent): void {
         const parsed = normalizeEditorContent(content);
+
+        if (typeof parsed === 'string') {
+            // A non-JSON string value is treated as HTML by `normalizeEditorContent`. dotCMS does
+            // not store Story Block fields that way, but hosts embedding the editor can pass HTML;
+            // there is no `emoji` node to heal in that shape, only markup to parse.
+            editor.commands.setContent(parsed, { emitUpdate: false });
+
+            return;
+        }
+
+        const healed = healEmojiNodes(parsed, emojis);
+
         editor.commands.setContent(
-            typeof parsed === 'string'
-                ? parsed
-                : preserveUnknownNodesInDocument(
-                      parsed,
-                      getKnownNodeNames(editor),
-                      getKnownMarkNames(editor)
-                  ),
+            preserveUnknownNodesInDocument(
+                healed,
+                getKnownNodeNames(editor),
+                getKnownMarkNames(editor)
+            ),
             { emitUpdate: false }
         );
     }
