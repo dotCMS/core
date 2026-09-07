@@ -22,42 +22,52 @@
                         @let current = store.chatAnswer();
 
                         @if (current) {
-                            @if (current.state === states.STREAMING && !current.content) {
-                                <dot-agent-thinking
-                                    [text]="'dotai.chat.thinking' | dm"
-                                    data-testid="dotai-chat-thinking" />
-                            } @else {
-                                <!-- Answers come back as markdown, so they are rendered as markdown
-                                     rather than shown as literal `##` and `*`. ngx-markdown is the
-                                     house renderer and is already provided app-wide by
-                                     MarkdownModule.forRoot(); it sanitizes by default, which matters
-                                     because this is model output being turned into HTML.
+                            <!-- One 70ch column for the whole answer, so the thinking indicator
+                                 starts exactly where the text will appear and nothing shifts
+                                 sideways when one replaces the other. The stopped note and the
+                                 error line share it for the same reason. -->
+                            <div class="mx-auto max-w-[70ch]" data-testid="dotai-chat-column">
+                                @if (current.state === states.STREAMING && !current.content) {
+                                    <dot-agent-thinking
+                                        [text]="'dotai.chat.thinking' | dm"
+                                        data-testid="dotai-chat-thinking" />
+                                } @else {
+                                    <!-- Answers come back as markdown, so they are rendered as
+                                         markdown rather than shown as literal `##` and `*`.
+                                         ngx-markdown is the house renderer and is already provided
+                                         app-wide by MarkdownModule.forRoot(); it sanitizes by
+                                         default, which matters because this is model output being
+                                         turned into HTML.
 
-                                     `prose` comes from @tailwindcss/typography, already loaded in
-                                     style.css — without it Tailwind's preflight leaves headings and
-                                     list markers stripped. prose caps itself at 65ch, so the 70ch
-                                     here is a deliberate override for line length. -->
-                                <div
-                                    class="mx-auto prose max-w-[70ch]"
-                                    data-testid="dotai-chat-answer-text">
-                                    <markdown [data]="current.content" />
-                                </div>
-                            }
+                                         `prose` comes from @tailwindcss/typography, already loaded
+                                         in style.css — without it Tailwind's preflight leaves
+                                         headings and list markers stripped. max-w-none because
+                                         prose would otherwise re-cap itself at 65ch inside the
+                                         70ch column above. -->
+                                    <div
+                                        class="prose max-w-none"
+                                        data-testid="dotai-chat-answer-text">
+                                        <markdown [data]="current.content" />
+                                    </div>
+                                }
 
-                            @if (current.state === states.STOPPED) {
-                                <p
-                                    class="mt-1 text-xs text-muted-color"
-                                    data-testid="dotai-chat-stopped">
-                                    {{ 'dotai.chat.stopped' | dm }}
-                                </p>
-                            }
+                                @if (current.state === states.STOPPED) {
+                                    <p
+                                        class="mt-1 text-xs text-muted-color"
+                                        data-testid="dotai-chat-stopped">
+                                        {{ 'dotai.chat.stopped' | dm }}
+                                    </p>
+                                }
 
-                            @if (current.state === states.ERROR) {
-                                <!-- Inline, never a dialog over a live stream. -->
-                                <p class="mt-1 text-sm text-red-500" data-testid="dotai-chat-error">
-                                    {{ current.error }}
-                                </p>
-                            }
+                                @if (current.state === states.ERROR) {
+                                    <!-- Inline, never a dialog over a live stream. -->
+                                    <p
+                                        class="mt-1 text-sm text-red-500"
+                                        data-testid="dotai-chat-error">
+                                        {{ current.error }}
+                                    </p>
+                                }
+                            </div>
                         }
                     }
                 </div>

@@ -87,6 +87,28 @@ describe('DotAiChatComponent', () => {
         expect(spectator.query(byTestId('dotai-chat-user-message'))).toBeFalsy();
     });
 
+    it('should put the thinking indicator in the same column as the answer', async () => {
+        // Both live inside the 70ch column, so the indicator starts where the text will and
+        // nothing shifts sideways when one replaces the other.
+        withAnswer(answer({ content: '' }));
+        spectator = createComponent();
+
+        const column = spectator.query(byTestId('dotai-chat-column'));
+
+        expect(column).toBeTruthy();
+        expect(column.contains(spectator.query(byTestId('dotai-chat-thinking')))).toBe(true);
+
+        withAnswer(answer({ content: 'text', state: 'complete' }));
+        spectator = createComponent();
+        await settle();
+
+        expect(
+            spectator
+                .query(byTestId('dotai-chat-column'))
+                .contains(spectator.query(byTestId('dotai-chat-answer-text')))
+        ).toBe(true);
+    });
+
     it('should render the answer as markdown rather than literal syntax', async () => {
         withAnswer(
             answer({ content: '## Costa Rica\n\n- rainforests\n- **beaches**', state: 'complete' })
