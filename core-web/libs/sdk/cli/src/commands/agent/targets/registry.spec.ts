@@ -2,14 +2,18 @@ import * as os from 'node:os';
 
 import { TARGETS, getTarget } from './registry';
 
+import type { TargetId } from './types';
+import type { Mock } from 'vitest';
+
 /**
- * `jest.spyOn(os, 'homedir')` cannot work here: under ts-jest the `node:os` namespace object is
+ * `vi.spyOn(os, 'homedir')` cannot work here: an ES module namespace object is
  * non-configurable, so redefining a property on it throws. A module factory replaces just the
  * one function and keeps the rest of the real module.
  */
-jest.mock('node:os', () => ({ ...jest.requireActual('node:os'), homedir: jest.fn() }));
-
-import type { TargetId } from './types';
+vi.mock('node:os', async (importOriginal) => ({
+    ...(await importOriginal<typeof os>()),
+    homedir: vi.fn()
+}));
 
 const ALL: TargetId[] = [
     'claude-code',
@@ -24,7 +28,7 @@ const ALL: TargetId[] = [
 function withPlatform(platform: NodeJS.Platform, home: string, fn: () => void) {
     const desc = Object.getOwnPropertyDescriptor(process, 'platform');
     Object.defineProperty(process, 'platform', { value: platform, configurable: true });
-    (os.homedir as jest.Mock).mockReturnValue(home);
+    (os.homedir as Mock).mockReturnValue(home);
     try {
         fn();
     } finally {
@@ -34,7 +38,7 @@ function withPlatform(platform: NodeJS.Platform, home: string, fn: () => void) {
 
 describe('target registry', () => {
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
         delete process.env['CODEX_HOME'];
     });
 

@@ -15,6 +15,17 @@
                 "tsConfig": "libs/http/tsconfig.lib.json",
                 "assets": ["libs/http/*.md"]
             }
+        },
+        "test": {
+            "executor": "nx:run-commands",
+            "options": {
+                "command": "vitest run",
+                "cwd": "libs/http",
+                "forwardAllArgs": false
+            },
+            "cache": true,
+            "inputs": ["default", "^production"],
+            "outputs": ["{workspaceRoot}/coverage/libs/http"]
         }
     }
 }

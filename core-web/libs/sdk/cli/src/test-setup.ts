@@ -1,5 +1,6 @@
 import { existsSync } from 'node:fs';
 import * as path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 /**
  * A unit test must never touch the developer's machine or this repository.
@@ -11,7 +12,8 @@ import * as path from 'node:path';
  * This is the backstop. Every spec file gets it, so whichever one causes it is the one that
  * fails, rather than the damage being noticed days later in a diff.
  */
-const PROJECT_ROOT = path.resolve(__dirname, '..');
+// `__dirname` is a CommonJS global; Vite serves this file as ESM, where it does not exist.
+const PROJECT_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 
 /**
  * Everything the CLI writes at folder scope, plus what the skills installer leaves behind.

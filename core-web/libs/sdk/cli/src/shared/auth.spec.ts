@@ -5,12 +5,12 @@ const URL_ = 'https://demo.dotcms.com';
 
 describe('auth', () => {
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('mintToken (FR-006, FR-007)', () => {
         it('returns the token from entity.token on 200', async () => {
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
                 new Response(JSON.stringify({ entity: { token: 'dot_abc123' } }), { status: 200 })
             );
             const token = await mintToken({ url: URL_, user: 'a@b.com', password: 'pw' });
@@ -20,7 +20,7 @@ describe('auth', () => {
         });
 
         it('sends expirationDays as a STRING', async () => {
-            const fetchMock = jest
+            const fetchMock = vi
                 .spyOn(globalThis, 'fetch')
                 .mockResolvedValue(
                     new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
@@ -31,7 +31,7 @@ describe('auth', () => {
         });
 
         it('never puts the password in the URL', async () => {
-            const fetchMock = jest
+            const fetchMock = vi
                 .spyOn(globalThis, 'fetch')
                 .mockResolvedValue(
                     new Response(JSON.stringify({ entity: { token: 't' } }), { status: 200 })
@@ -41,14 +41,14 @@ describe('auth', () => {
         });
 
         it('says the username and password were rejected on 401', async () => {
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 401 }));
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 401 }));
             await expect(
                 mintToken({ url: URL_, user: 'a@b.com', password: 'wrong' })
             ).rejects.toThrow(/username and password|rejected/i);
         });
 
         it('gives a connection message on ECONNREFUSED, not a raw fetch error', async () => {
-            jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+            vi.spyOn(globalThis, 'fetch').mockRejectedValue(
                 Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
             );
             await expect(mintToken({ url: URL_, user: 'a@b.com', password: 'pw' })).rejects.toThrow(
@@ -59,7 +59,7 @@ describe('auth', () => {
 
     describe('verifyToken (FR-008)', () => {
         it('calls /api/v1/users/current with a bearer token', async () => {
-            const fetchMock = jest
+            const fetchMock = vi
                 .spyOn(globalThis, 'fetch')
                 .mockResolvedValue(new Response(JSON.stringify({ entity: {} }), { status: 200 }));
             await verifyToken(URL_, { value: 'dot_x', origin: 'supplied', verified: false });
@@ -69,7 +69,7 @@ describe('auth', () => {
         });
 
         it('marks a good token verified', async () => {
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(
                 new Response(JSON.stringify({ entity: {} }), { status: 200 })
             );
             const out = await verifyToken(URL_, {
@@ -81,14 +81,14 @@ describe('auth', () => {
         });
 
         it('rejects a SUPPLIED token the instance refuses — not only minted ones', async () => {
-            jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 401 }));
+            vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('', { status: 401 }));
             await expect(
                 verifyToken(URL_, { value: 'expired', origin: 'supplied', verified: false })
             ).rejects.toThrow(/token|rejected/i);
         });
 
         it('distinguishes an unreachable instance from a rejected token (FR-008b)', async () => {
-            jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+            vi.spyOn(globalThis, 'fetch').mockRejectedValue(
                 Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
             );
             await expect(
@@ -121,7 +121,7 @@ describe('no raw fetch error ever reaches the user (FR-032a)', () => {
 
     describe.each(callers)('$name', ({ call }) => {
         it.each(CAUSES)('translates %s into an actionable message', async (code) => {
-            jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+            vi.spyOn(globalThis, 'fetch').mockRejectedValue(
                 Object.assign(new TypeError('fetch failed'), { cause: { code } })
             );
             const err = (await call().catch((e: Error) => e)) as Error;

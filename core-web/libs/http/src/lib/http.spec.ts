@@ -1,3 +1,7 @@
+import { httpGet, httpPost, HttpError, isHttpError } from './http';
+
+import type { MockInstance } from 'vitest';
+
 /**
  * Contract spec for `src/utils/http.ts` — the CLI's only HTTP client.
  *
@@ -32,8 +36,6 @@
  * `acceptAnyStatus` is the readiness probe's case, where a 503 is data rather than a failure.
  */
 
-import { httpGet, httpPost, HttpError, isHttpError } from './http';
-
 const URL_OK = 'http://localhost:8082/api/v1/thing';
 
 function jsonResponse(status: number, body: unknown, statusText = 'OK') {
@@ -45,14 +47,14 @@ function jsonResponse(status: number, body: unknown, statusText = 'OK') {
 }
 
 describe('http', () => {
-    let fetchSpy: jest.SpyInstance;
+    let fetchSpy: MockInstance;
 
     beforeEach(() => {
-        fetchSpy = jest.spyOn(globalThis, 'fetch');
+        fetchSpy = vi.spyOn(globalThis, 'fetch');
     });
 
     afterEach(() => {
-        jest.restoreAllMocks();
+        vi.restoreAllMocks();
     });
 
     describe('httpGet', () => {

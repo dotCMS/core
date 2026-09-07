@@ -4,11 +4,13 @@ import { PassThrough } from 'node:stream';
 
 import { confirmConnection } from './connect';
 
+import type { Mock } from 'vitest';
+
 /** See registry.spec.ts — the `node:child_process` namespace is non-configurable under
- *  ts-jest, so `jest.spyOn` on it throws. Replace the one function via a module factory. */
-jest.mock('node:child_process', () => ({
-    ...jest.requireActual('node:child_process'),
-    spawn: jest.fn()
+ *  an ES module, so `vi.spyOn` on it throws. Replace the one function via a module factory. */
+vi.mock('node:child_process', async (importOriginal) => ({
+    ...(await importOriginal<typeof childProcess>()),
+    spawn: vi.fn()
 }));
 
 function fakeChild() {
@@ -16,13 +18,13 @@ function fakeChild() {
     child['stdin'] = new PassThrough();
     child['stdout'] = new PassThrough();
     child['stderr'] = new PassThrough();
-    child['kill'] = jest.fn();
+    child['kill'] = vi.fn();
     return child;
 }
 
 describe('confirmConnection (FR-024a-e)', () => {
     let child: ReturnType<typeof fakeChild>;
-    const spawn = childProcess.spawn as unknown as jest.Mock;
+    const spawn = childProcess.spawn as unknown as Mock;
 
     beforeEach(() => {
         child = fakeChild();
@@ -30,7 +32,7 @@ describe('confirmConnection (FR-024a-e)', () => {
     });
 
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('passes the token through the child ENVIRONMENT, never argv (FR-022)', async () => {

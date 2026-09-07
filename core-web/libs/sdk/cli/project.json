@@ -70,15 +70,15 @@
             }
         },
         "test": {
+            "executor": "nx:run-commands",
             "options": {
-                "passWithNoTests": true
+                "command": "vitest run",
+                "cwd": "libs/sdk/cli",
+                "forwardAllArgs": false
             },
-            "configurations": {
-                "ci": {
-                    "ci": true,
-                    "coverage": true
-                }
-            },
+            "cache": true,
+            "inputs": ["default", "^production"],
+            "outputs": ["{workspaceRoot}/coverage/libs/sdk/cli"],
             "dependsOn": ["verify-package"]
         },
         "verify-package": {

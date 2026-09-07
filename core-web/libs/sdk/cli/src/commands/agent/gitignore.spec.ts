@@ -30,7 +30,7 @@ describe('names the files a token went into (FR-023)', () => {
     it('offers exclusion and writes .gitignore when accepted', async () => {
         await asRepo();
         const files = [path.join(dir, '.cursor', 'mcp.json')];
-        const confirm = jest.fn().mockResolvedValue(true);
+        const confirm = vi.fn().mockResolvedValue(true);
         const out = await protectFromVersionControl({ files, cwd: dir, confirmExclude: confirm });
         expect(confirm).toHaveBeenCalled();
         expect(out.excluded).toBe(true);

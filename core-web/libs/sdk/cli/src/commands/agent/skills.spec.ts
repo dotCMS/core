@@ -2,17 +2,19 @@ import * as childProcess from 'node:child_process';
 
 import { installSkills } from './skills';
 
-/** See registry.spec.ts — namespace objects are non-configurable under ts-jest. */
-jest.mock('node:child_process', () => ({
-    ...jest.requireActual('node:child_process'),
-    spawnSync: jest.fn()
+import type { Mock } from 'vitest';
+
+/** See registry.spec.ts — namespace objects are non-configurable under ts-vi. */
+vi.mock('node:child_process', async (importOriginal) => ({
+    ...(await importOriginal<typeof childProcess>()),
+    spawnSync: vi.fn()
 }));
 
-const spawnSync = childProcess.spawnSync as unknown as jest.Mock;
+const spawnSync = childProcess.spawnSync as unknown as Mock;
 
 describe('installSkills (FR-025, FR-026)', () => {
     afterEach(() => {
-        jest.clearAllMocks();
+        vi.clearAllMocks();
     });
 
     it('makes ONE invocation covering all selected targets', async () => {

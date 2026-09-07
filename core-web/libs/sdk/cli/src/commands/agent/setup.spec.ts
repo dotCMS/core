@@ -13,18 +13,19 @@ import {
 import { TOOL_VERSION } from '../../shared/version';
 
 import type { PromptPort } from '../../shared/prompts';
+import type { Mock } from 'vitest';
 
 /**
  * setup.spec drives the WHOLE flow, including the skills install and the connection check —
  * both of which spawn processes. Without this, `installSkills` really ran `npx skills add` and
  * wrote skill trees into the repository while the suite stayed green.
  */
-jest.mock('node:child_process', () => ({
-    ...jest.requireActual('node:child_process'),
-    spawn: jest.fn(() => {
+vi.mock('node:child_process', async (importOriginal) => ({
+    ...(await importOriginal<typeof import('node:child_process')>()),
+    spawn: vi.fn(() => {
         throw new Error('spawn is not available in unit tests — mock it explicitly');
     }),
-    spawnSync: jest.fn(() => ({ status: 0 }))
+    spawnSync: vi.fn(() => ({ status: 0 }))
 }));
 
 const URL_ = 'https://demo.dotcms.com';
@@ -45,12 +46,12 @@ beforeEach(async () => {
 });
 afterEach(async () => {
     await fs.rm(dir, { recursive: true, force: true });
-    jest.restoreAllMocks();
+    vi.restoreAllMocks();
 });
 
 /** Everything reachable; the token is refused. */
 function mockRejectedToken() {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
         const u = String(input);
         if (u.includes('/appconfiguration')) return appConfigurationResponse();
         return new Response('', { status: 401 });
@@ -99,8 +100,8 @@ describe('ordering guarantee (FR-008a) — the load-bearing test', () => {
             cwd: dir
         }).catch((e: Error) => e.message);
 
-        jest.restoreAllMocks();
-        jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+        vi.restoreAllMocks();
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(
             Object.assign(new TypeError('fetch failed'), { cause: { code: 'ECONNREFUSED' } })
         );
         const unreachable = await runSetup({
@@ -130,7 +131,7 @@ describe('auth mode exclusivity (FR-003b)', () => {
     });
 
     it('mints nothing and writes nothing in that case', async () => {
-        const fetchMock = jest.spyOn(globalThis, 'fetch');
+        const fetchMock = vi.spyOn(globalThis, 'fetch');
         const err = await runSetup({
             url: URL_,
             authToken: 'tok',
@@ -155,7 +156,7 @@ describe('auth mode exclusivity (FR-003b)', () => {
  * answered with a token payload, which the dotCMS fingerprint now correctly rejects.
  */
 function mockAcceptedToken() {
-    jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+    vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
         String(input).includes('/appconfiguration')
             ? appConfigurationResponse()
             : new Response(JSON.stringify({ entity: { token: 'dot_ok' } }), { status: 200 })
@@ -165,7 +166,7 @@ function mockAcceptedToken() {
 describe('overwrite confirmation (FR-017)', () => {
     it('asks before replacing an existing dotcms entry', async () => {
         mockAcceptedToken();
-        const confirm = jest.fn().mockResolvedValue(true);
+        const confirm = vi.fn().mockResolvedValue(true);
         const file = path.join(dir, '.cursor', 'mcp.json');
         await fs.mkdir(path.dirname(file), { recursive: true });
         await fs.writeFile(
@@ -189,7 +190,7 @@ describe('overwrite confirmation (FR-017)', () => {
 
     it('does not ask when --force is supplied', async () => {
         mockAcceptedToken();
-        const confirm = jest.fn().mockResolvedValue(true);
+        const confirm = vi.fn().mockResolvedValue(true);
         const file = path.join(dir, '.cursor', 'mcp.json');
         await fs.mkdir(path.dirname(file), { recursive: true });
         await fs.writeFile(
@@ -333,7 +334,7 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
     it('configures every DETECTED editor when no --agent is given', async () => {
         mockAcceptedToken();
         // Two detected, one not — the run must use exactly the detected set.
-        const detect = jest
+        const detect = vi
             .spyOn(registry, 'detectTargets')
             .mockResolvedValue([registry.getTarget('cursor'), registry.getTarget('claude-code')]);
 
@@ -352,7 +353,7 @@ describe('defaults never block a run (FR-003j, FR-010, FR-011)', () => {
 
     it('writes nothing and does not throw when no editor is detected', async () => {
         mockAcceptedToken();
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([]);
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([]);
         const result = await runSetup({
             url: URL_,
             authToken: 'good',
@@ -384,8 +385,8 @@ describe('target selection (FR-010)', () => {
     /** A silent default in an interactive run would configure editors nobody chose. */
     it('ASKS which editors when none were named and there is a prompt port', async () => {
         mockAcceptedToken();
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
-        const multiSelect = jest.fn().mockResolvedValue(['cursor']);
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        const multiSelect = vi.fn().mockResolvedValue(['cursor']);
 
         await runSetup({
             url: URL_,
@@ -394,15 +395,15 @@ describe('target selection (FR-010)', () => {
             cwd: dir,
             skipSkills: true,
             skipVerify: true,
-            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+            promptPort: { text: vi.fn(), password: vi.fn(), select: vi.fn(), multiSelect }
         });
         expect(multiSelect).toHaveBeenCalled();
     });
 
     it('offers every supported editor, with the detected ones pre-checked', async () => {
         mockAcceptedToken();
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
-        const multiSelect = jest.fn().mockResolvedValue(['cursor']);
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        const multiSelect = vi.fn().mockResolvedValue(['cursor']);
 
         await runSetup({
             url: URL_,
@@ -411,7 +412,7 @@ describe('target selection (FR-010)', () => {
             cwd: dir,
             skipSkills: true,
             skipVerify: true,
-            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+            promptPort: { text: vi.fn(), password: vi.fn(), select: vi.fn(), multiSelect }
         });
         const choices = multiSelect.mock.calls[0][1] as { value: string; checked: boolean }[];
         expect(choices).toHaveLength(7);
@@ -421,7 +422,7 @@ describe('target selection (FR-010)', () => {
 
     it('honours a deselection rather than configuring it anyway', async () => {
         mockAcceptedToken();
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([
             registry.getTarget('cursor'),
             registry.getTarget('claude-code')
         ]);
@@ -433,10 +434,10 @@ describe('target selection (FR-010)', () => {
             skipSkills: true,
             skipVerify: true,
             promptPort: {
-                text: jest.fn(),
-                password: jest.fn(),
-                select: jest.fn(),
-                multiSelect: jest.fn().mockResolvedValue(['claude-code'])
+                text: vi.fn(),
+                password: vi.fn(),
+                select: vi.fn(),
+                multiSelect: vi.fn().mockResolvedValue(['claude-code'])
             }
         });
         expect(result.outcomes.map((o) => o.targetId)).toEqual(['claude-code']);
@@ -444,7 +445,7 @@ describe('target selection (FR-010)', () => {
 
     it('does NOT ask when --agent was supplied', async () => {
         mockAcceptedToken();
-        const multiSelect = jest.fn();
+        const multiSelect = vi.fn();
         await runSetup({
             url: URL_,
             authToken: 'good',
@@ -453,14 +454,14 @@ describe('target selection (FR-010)', () => {
             cwd: dir,
             skipSkills: true,
             skipVerify: true,
-            promptPort: { text: jest.fn(), password: jest.fn(), select: jest.fn(), multiSelect }
+            promptPort: { text: vi.fn(), password: vi.fn(), select: vi.fn(), multiSelect }
         });
         expect(multiSelect).not.toHaveBeenCalled();
     });
 
     it('falls back to every detected editor when there is no prompt port', async () => {
         mockAcceptedToken();
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([registry.getTarget('cursor')]);
         const result = await runSetup({
             url: URL_,
             authToken: 'good',
@@ -477,10 +478,10 @@ describe('skills reporting honesty (FR-027)', () => {
     it('reports "unverified" for a target whose skills location is not confirmed', async () => {
         mockAcceptedToken();
         // Simulate a future editor added on documentation alone.
-        jest.spyOn(registry, 'detectTargets').mockResolvedValue([
+        vi.spyOn(registry, 'detectTargets').mockResolvedValue([
             { ...registry.getTarget('cursor'), skillsLocationVerified: false }
         ]);
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({
+        vi.spyOn(skills, 'installSkills').mockResolvedValue({
             ok: true,
             command: 'npx skills add …'
         });
@@ -497,7 +498,7 @@ describe('skills reporting honesty (FR-027)', () => {
 
     it('reports "yes" for a target that is confirmed', async () => {
         mockAcceptedToken();
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({
+        vi.spyOn(skills, 'installSkills').mockResolvedValue({
             ok: true,
             command: 'npx skills add …'
         });
@@ -516,7 +517,7 @@ describe('skills reporting honesty (FR-027)', () => {
 describe('a rejected credential is re-asked, up to three times (FR-007)', () => {
     /** Reachable instance; the token is always refused. */
     function alwaysRejects() {
-        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             const u = String(input);
             if (u.includes('/appconfiguration')) {
                 return appConfigurationResponse();
@@ -528,7 +529,7 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
     /** Refused twice, accepted on the third. */
     function rejectsTwice() {
         let verifyCalls = 0;
-        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             const u = String(input);
             if (u.includes('/appconfiguration')) {
                 return appConfigurationResponse();
@@ -541,16 +542,16 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
     }
 
     const portThatRetypes = (token: string) => ({
-        text: jest.fn().mockResolvedValue(URL_),
-        password: jest.fn().mockResolvedValue(token),
-        select: jest.fn().mockResolvedValue('token'),
-        multiSelect: jest.fn().mockResolvedValue(['cursor'])
+        text: vi.fn().mockResolvedValue(URL_),
+        password: vi.fn().mockResolvedValue(token),
+        select: vi.fn().mockResolvedValue('token'),
+        multiSelect: vi.fn().mockResolvedValue(['cursor'])
     });
 
     it('asks again instead of giving up after one bad token', async () => {
         rejectsTwice();
         const port = portThatRetypes('eventually-good');
-        const onAuthRetry = jest.fn();
+        const onAuthRetry = vi.fn();
 
         const result = await runSetup({
             url: URL_,
@@ -570,7 +571,7 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
 
     it('gives up after exactly three attempts', async () => {
         alwaysRejects();
-        const onAuthRetry = jest.fn();
+        const onAuthRetry = vi.fn();
         const err = await runSetup({
             url: URL_,
             authToken: 'bad',
@@ -605,7 +606,7 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
 
     it('does NOT retry without a prompt port — a script cannot retype anything', async () => {
         alwaysRejects();
-        const onAuthRetry = jest.fn();
+        const onAuthRetry = vi.fn();
         await runSetup({
             url: URL_,
             authToken: 'bad',
@@ -620,10 +621,10 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
     });
 
     it('does NOT retry an unreachable instance — retyping a token cannot fix that', async () => {
-        jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(
             Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } })
         );
-        const onAuthRetry = jest.fn();
+        const onAuthRetry = vi.fn();
         await runSetup({
             url: URL_,
             authToken: 'bad',
@@ -641,33 +642,31 @@ describe('a rejected credential is re-asked, up to three times (FR-007)', () => 
 
 describe('the instance is validated BEFORE credentials are asked for', () => {
     /** A username and password typed against a wrong address is wasted effort. */
-    // Cast once: PromptPort.multiSelect is generic, which a per-property jest.fn() cannot
+    // Cast once: PromptPort.multiSelect is generic, which a per-property vi.fn() cannot
     // satisfy without more ceremony than the test is worth. What matters here is the ORDER of
     // the calls, not their types.
     const trackingPort = (calls: string[]) =>
         ({
-            text: jest.fn(async () => {
+            text: vi.fn(async () => {
                 calls.push('ask:url');
                 return URL_;
             }),
-            password: jest.fn(async () => {
+            password: vi.fn(async () => {
                 calls.push('ask:password');
                 return 'pw';
             }),
-            select: jest.fn(async () => {
+            select: vi.fn(async () => {
                 calls.push('ask:mode');
                 return 'signin';
             }),
-            multiSelect: jest.fn(async () => {
+            multiSelect: vi.fn(async () => {
                 calls.push('ask:targets');
                 return ['cursor'];
             })
         }) as unknown as PromptPort;
 
     it('never asks for a password when the address is not dotCMS', async () => {
-        jest.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response('Not Found', { status: 404 })
-        );
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response('Not Found', { status: 404 }));
         const calls: string[] = [];
         const err = await runSetup({
             url: 'https://example.com',
@@ -685,7 +684,7 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
     });
 
     it('never asks for a password when the instance is unreachable', async () => {
-        jest.spyOn(globalThis, 'fetch').mockRejectedValue(
+        vi.spyOn(globalThis, 'fetch').mockRejectedValue(
             Object.assign(new TypeError('fetch failed'), { cause: { code: 'ENOTFOUND' } })
         );
         const calls: string[] = [];
@@ -722,7 +721,7 @@ describe('the instance is validated BEFORE credentials are asked for', () => {
 describe('--skip-mcp is independent of --skip-skills', () => {
     it('still installs skills when only writing is skipped', async () => {
         mockAcceptedToken();
-        const install = jest
+        const install = vi
             .spyOn(skills, 'installSkills')
             .mockResolvedValue({ ok: true, command: 'npx skills add …' });
 
@@ -739,7 +738,7 @@ describe('--skip-mcp is independent of --skip-skills', () => {
 
     it('writes nothing, but SAYS the write was skipped', async () => {
         mockAcceptedToken();
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        vi.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
         const result = await runSetup({
             url: URL_,
             authToken: 'good',
@@ -757,8 +756,8 @@ describe('--skip-mcp is independent of --skip-skills', () => {
 
     it('does not claim files contain a token when none were written', async () => {
         mockAcceptedToken();
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
-        const confirmExclude = jest.fn().mockResolvedValue(true);
+        vi.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        const confirmExclude = vi.fn().mockResolvedValue(true);
         const result = await runSetup({
             url: URL_,
             authToken: 'good',
@@ -775,7 +774,7 @@ describe('--skip-mcp is independent of --skip-skills', () => {
 
     it('skips the connection check too — there is no configuration to prove', async () => {
         mockAcceptedToken();
-        jest.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
+        vi.spyOn(skills, 'installSkills').mockResolvedValue({ ok: true, command: 'x' });
         const result = await runSetup({
             url: URL_,
             authToken: 'good',
@@ -852,14 +851,14 @@ describe('FR-005a compatibility warning actually reaches the developer', () => {
         if (version === null) {
             delete (body.entity.config as Partial<typeof body.entity.config>).releaseInfo;
         }
-        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
             String(input).includes('/appconfiguration')
                 ? new Response(JSON.stringify(body), { status: 200 })
                 : new Response(JSON.stringify({ entity: {} }), { status: 200 })
         );
     }
 
-    const run = (onWarning?: jest.Mock) =>
+    const run = (onWarning?: Mock) =>
         runSetup({
             url: URL_,
             authToken: 'good',
@@ -873,7 +872,7 @@ describe('FR-005a compatibility warning actually reaches the developer', () => {
 
     it('warns when the instance is OLDER than this tool', async () => {
         instanceAt(OLDER);
-        const onWarning = jest.fn();
+        const onWarning = vi.fn();
         const result = await run(onWarning);
         expect(result.warnings).toHaveLength(1);
         expect(result.warnings[0]).toContain(OLDER);
@@ -913,7 +912,7 @@ describe('an auth retry asks the human, it does not re-read the environment', ()
     /** Rejects the first two credentials, accepts the third. */
     function rejectsTwice() {
         let verifies = 0;
-        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
             if (String(input).includes('/appconfiguration')) return appConfigurationResponse();
             verifies += 1;
             return verifies <= 2
@@ -927,12 +926,12 @@ describe('an auth retry asks the human, it does not re-read the environment', ()
         // token was re-submitted until the attempts ran out, with no prompt ever shown.
         process.env['DOTCMS_AUTH_TOKEN'] = 'rejected-env-token';
         rejectsTwice();
-        const password = jest.fn().mockResolvedValue('typed-by-hand');
+        const password = vi.fn().mockResolvedValue('typed-by-hand');
         const port = {
-            text: jest.fn(),
+            text: vi.fn(),
             password,
-            select: jest.fn().mockResolvedValue('token'),
-            multiSelect: jest.fn().mockResolvedValue(['cursor'])
+            select: vi.fn().mockResolvedValue('token'),
+            multiSelect: vi.fn().mockResolvedValue(['cursor'])
         } as unknown as PromptPort;
 
         const result = await runSetup({
@@ -952,12 +951,12 @@ describe('an auth retry asks the human, it does not re-read the environment', ()
     it('does not re-submit the env value on the retry', async () => {
         process.env['DOTCMS_AUTH_TOKEN'] = 'rejected-env-token';
         rejectsTwice();
-        const fetchSpy = globalThis.fetch as jest.Mock;
+        const fetchSpy = globalThis.fetch as Mock;
         const port = {
-            text: jest.fn(),
-            password: jest.fn().mockResolvedValue('typed-by-hand'),
-            select: jest.fn().mockResolvedValue('token'),
-            multiSelect: jest.fn().mockResolvedValue(['cursor'])
+            text: vi.fn(),
+            password: vi.fn().mockResolvedValue('typed-by-hand'),
+            select: vi.fn().mockResolvedValue('token'),
+            multiSelect: vi.fn().mockResolvedValue(['cursor'])
         } as unknown as PromptPort;
 
         await runSetup({
@@ -988,7 +987,7 @@ describe('the conventionally-committed warning is driven by the registry (FR-024
      * so the binding worth testing is target -> warning, not path -> warning.
      */
     beforeEach(() => {
-        jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
+        vi.spyOn(globalThis, 'fetch').mockImplementation(async (input) =>
             String(input).includes('/appconfiguration')
                 ? appConfigurationResponse()
                 : new Response(JSON.stringify({ entity: {} }), { status: 200 })
